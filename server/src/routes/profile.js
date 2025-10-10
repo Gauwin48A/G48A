@@ -1,30 +1,24 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { pool } = require('../../index');
+const { pool } = require("../../index");
+const { protect } = require("../middleware/auth");
 
-// GET /api/profile?userId=1
-router.get('/', async (req, res) => {
-  const userId = req.query.userId;
-  if (!userId) return res.status(400).json({ error: 'userId required' });
+// Get user profile
+router.get("/", protect, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
-    if (!result.rows.length) return res.status(404).json({ error: 'Profile not found' });
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const result = await pool.query(
+      "SELECT user_id, username, email, rating, created_at FROM users WHERE user_id = $1",
+      [req.user.id]
+    );
 
-// GET /api/profile/preferences?userId=1
-router.get('/preferences', async (req, res) => {
-  const userId = req.query.userId;
-  if (!userId) return res.status(400).json({ error: 'userId required' });
-  try {
-    const result = await pool.query('SELECT * FROM preferences WHERE user_id = $1', [userId]);
-    if (!result.rows.length) return res.status(404).json({ error: 'Preferences not found' });
-    res.json(result.rows[0]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ user: result.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Profile retrieval error:", err);
+    res.status(500).json({ error: "Failed to retrieve user profile" });
   }
 });
 

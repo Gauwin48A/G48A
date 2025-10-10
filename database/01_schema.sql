@@ -1,15 +1,6 @@
 -- 01_schema.sql
 -- This script creates the database schema for the application.
 
--- Users Table: Stores user information
-CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Categories Table: Stores different post categories
 CREATE TABLE categories (
     category_id SERIAL PRIMARY KEY,
