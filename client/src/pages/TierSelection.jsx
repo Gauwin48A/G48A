@@ -136,7 +136,7 @@ const TierSelection = () => {
                     ))}
                   </ul>
 
-                  <Link to={`/add-post?tier=${tier.id}`} className="block">
+                  <Link to={`/categories?tier=${tier.id}`} className="block">
                     <Button 
                       className={`w-full h-12 text-lg font-semibold rounded-xl transition-all ${
                         tier.popular 

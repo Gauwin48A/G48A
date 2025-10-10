@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,17 +22,47 @@ import {
 } from "lucide-react";
 
 const PostDetail = () => {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const post = location.state?.post;
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
 
-  if (!post) {
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const response = await fetch(`${baseUrl}/api/posts/${id}`);
+        if (!response.ok) {
+          throw new Error('Post not found');
+        }
+        const data = await response.json();
+        setPost(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-soft-gray flex items-center justify-center">
+        <p className="text-xl text-text-primary">Loading post details...</p>
+      </div>
+    );
+  }
+
+  if (error || !post) {
     return (
       <div className="min-h-screen bg-soft-gray flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-text-primary mb-4">Post not found</h2>
+          <h2 className="text-2xl font-bold text-text-primary mb-4">{error || 'Post not found'}</h2>
           <Link to="/all-posts">
             <Button className="btn-primary-modern">Back to All Posts</Button>
           </Link>
