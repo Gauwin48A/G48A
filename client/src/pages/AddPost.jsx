@@ -15,10 +15,11 @@ const AddPost = () => {
   const location = useLocation();
   const { toast } = useToast();
   
-  // Get tier from URL params or default to basic
+  // Get tier and category from URL params
   const urlParams = new URLSearchParams(location.search);
   const selectedTier = urlParams.get('tier') || 'basic';
-  
+  const selectedCategory = urlParams.get('category');
+
   // Dropdown options from backend
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -43,10 +44,10 @@ const AddPost = () => {
     fetchBrands();
   }, []);
 
-  // Add title to formData
+  // Add title to formData and pre-fill category
   const [formData, setFormData] = useState({
     title: '',
-    category: '',
+    category: selectedCategory || '',
     brand: '',
     model: '',
     condition: '',
@@ -414,15 +415,14 @@ const AddPost = () => {
                   </div>
                   <div>
                     <Label className="text-sm font-semibold text-gray-700">Category *</Label>
-                    <Select name="category" value={formData.category} onValueChange={val => setFormData({ ...formData, category: val })} required>
-                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
+                    <Select name="category" value={formData.category} onValueChange={handleSelectChange('category')} required disabled={!!selectedCategory}>
+                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map(cat => (
-                          <SelectItem key={cat.id || cat} value={cat.name || cat} className={formData.category === (cat.name || cat) ? 'bg-blue-100 font-bold' : ''}>
+                          <SelectItem key={cat.id || cat} value={cat.name || cat}>
                             {cat.name || cat}
-                            {formData.category === (cat.name || cat) && <span className="ml-2 text-blue-600">✓</span>}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -431,15 +431,14 @@ const AddPost = () => {
                   </div>
                   <div>
                     <Label className="text-sm font-semibold text-gray-700">Brand *</Label>
-                    <Select name="brand" value={formData.brand} onValueChange={val => setFormData({ ...formData, brand: val })} required>
+                    <Select name="brand" value={formData.brand} onValueChange={handleSelectChange('brand')} required>
                       <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
                         <SelectValue placeholder="Select brand" />
                       </SelectTrigger>
                       <SelectContent>
                         {brands.map(brand => (
-                          <SelectItem key={brand.id || brand} value={brand.name || brand} className={formData.brand === (brand.name || brand) ? 'bg-blue-100 font-bold' : ''}>
+                          <SelectItem key={brand.id || brand} value={brand.name || brand}>
                             {brand.name || brand}
-                            {formData.brand === (brand.name || brand) && <span className="ml-2 text-blue-600">✓</span>}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -461,7 +460,7 @@ const AddPost = () => {
                   </div>
                   <div>
                     <Label className="text-sm font-semibold text-gray-700">Condition *</Label>
-                    <Select value={formData.condition || ""} onValueChange={val => { handleSelectChange('condition')(val); setFormErrors(f => ({...f, condition: undefined})); }}>
+                    <Select value={formData.condition || ""} onValueChange={handleSelectChange('condition')}>
                       <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
                         <SelectValue placeholder="Select condition" />
                       </SelectTrigger>

@@ -1,5 +1,47 @@
 // postController.js
-const db = require('../config/db');
+const db = require('../db');
+
+// Get all posts for the main feed
+exports.getAllPosts = async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        p.post_id AS id,
+        p.title,
+        p.description,
+        p.price,
+        p.status,
+        p.created_at,
+        p.views,
+        u.username AS user_name,
+        c.name AS category_name
+      FROM posts p
+      JOIN users u ON p.user_id = u.user_id
+      JOIN categories c ON p.category_id = c.category_id
+      WHERE p.status = 'active'
+      ORDER BY p.created_at DESC
+      LIMIT 50;
+    `;
+    const result = await db.query(query);
+
+    const formattedPosts = result.rows.map(post => ({
+      id: post.id,
+      title: post.title,
+      price: post.price,
+      description: post.description,
+      isSponsored: false,
+      user: { name: post.user_name },
+      category: post.category_name,
+      views: post.views,
+      likes: 0,
+    }));
+
+    res.json({ posts: formattedPosts, total: formattedPosts.length });
+  } catch (err) {
+    console.error('Error fetching all posts:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+};
 
 // AddPost: validate and create post after tier/category selection
 exports.createPost = async (req, res) => {
@@ -42,6 +84,69 @@ exports.getRecommendations = async (req, res) => {
     res.json(recs.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// Get a single post by its ID, including seller and image info
+exports.getPostById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Increment the view count
+    await db.query('UPDATE posts SET views = views + 1 WHERE post_id = $1', [id]);
+
+    // Fetch the post details along with seller info and images
+    const postQuery = `
+      SELECT
+        p.*,
+        u.username AS seller_name,
+        u.rating AS seller_rating,
+        u.user_id AS seller_id,
+        COALESCE(i.images, '[]'::json) AS images
+      FROM posts p
+      JOIN users u ON p.user_id = u.user_id
+      LEFT JOIN (
+        SELECT
+          post_id,
+          json_agg(image_url) AS images
+        FROM post_images
+        GROUP BY post_id
+      ) i ON p.post_id = i.post_id
+      WHERE p.post_id = $1;
+    `;
+    const result = await db.query(postQuery, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    // The frontend expects a specific structure, so we format it
+    const post = result.rows[0];
+    const formattedPost = {
+      id: post.post_id,
+      title: post.title,
+      description: post.description,
+      price: `$${parseFloat(post.price).toFixed(2)}`,
+      originalPrice: post.original_price ? `$${parseFloat(post.original_price).toFixed(2)}` : null,
+      condition: post.condition,
+      age: post.age,
+      category: post.category_id, // This should be joined with categories table for name
+      location: post.location,
+      postedDate: new Date(post.created_at).toLocaleDateString(),
+      tier: post.tier_id, // This should be joined with tiers table for name
+      views: post.views,
+      images: post.images.map(img => img.image_url || img), // Ensure it handles both raw url and object
+      seller: {
+        id: post.seller_id,
+        name: post.seller_name,
+        rating: post.seller_rating,
+        verified: true, // Assuming all users are verified for now
+      },
+    };
+
+    res.json(formattedPost);
+  } catch (err) {
+    console.error('Error fetching post by ID:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
   }
 };
 

@@ -2,6 +2,7 @@
 
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const { body, validationResult } = require("express-validator");
 const { Pool } = require("pg");
 const jwt = require("jsonwebtoken");
@@ -10,6 +11,9 @@ const cors = require("cors");
 
 const app = express();
 app.use(express.json());
+
+// Serve static files from the React build directory
+app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));
 
 // CORS Setup
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -162,6 +166,12 @@ app.use("/api/feedback", require("./src/routes/feedback"));
 app.use("/api/complaints", require("./src/routes/complaints"));
 app.use("/api/tiers", require("./src/routes/tiers"));
 app.use("/api/transactions", require("./src/routes/transactions"));
+
+// The "catchall" handler: for any request that doesn't match one above,
+// send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'client', 'dist', 'index.html'));
+});
 
 // Profile enhancements
 app.use("/api/rewards", require("./src/routes/rewards"));
