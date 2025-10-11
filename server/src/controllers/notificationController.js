@@ -1,4 +1,4 @@
-const pool = require('../../config/db');
+const { pool } = require('../index');
 
 exports.getNotifications = async (req, res) => {
   try {

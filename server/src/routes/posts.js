@@ -1,22 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const postController = require('../controllers/postController'); // or your file
-// const postActionsRoutes = require('../../../routes/postActions');
+const postController = require('../controllers/postController');
+const { body, validationResult } = require('express-validator');
+const validatePost = require('../middleware/validatePost');
+const upload = require('../middleware/upload');
+const { pool } = require('../index');
+
 // GET /api/posts/all for legacy support
 router.get('/all', postController.getAllPosts);
+
 // GET /api/posts/mine for user posts
 router.get('/mine', postController.getUserPosts);
-//const express = require('express');    const router = express.Router();  const postController = require('../controllers/postController');  //
- 
-// TODO: Add image upload, expiry, repost, SaleDone/SaleUndone endpoints
 
 // Main GET /api/posts endpoint (returns { posts, total })
 // Supports query params: category, minPrice, maxPrice, minDiscount, lat, lng, sortBy, sortOrder, page, limit
 router.get('/', postController.getAllPosts);
-
-const { body, validationResult } = require('express-validator');
-const validatePost = require('../middleware/validatePost');
-const upload = require('../middleware/upload');
 
 // Accept multiple images for post creation
 router.post('/', upload.fields([
@@ -64,7 +62,7 @@ router.get('/mine', async (req, res) => {
     console.error('❌ No userId found for /mine');
     return res.status(401).json({ error: 'User not authenticated' });
   }
-  const pool = require('../../index').pool;
+
   try {
     // Use stored procedure for normalized post data
     const result = await pool.query('SELECT * FROM fetch_posts($1, NULL, NULL, 20, 0)', [userId]);
@@ -81,7 +79,6 @@ router.get('/mine', async (req, res) => {
 
 router.get('/undone', async (req, res) => {
   // Fetch undone sales from the database
-  const pool = require('../../index').pool;
   try {
     const result = await pool.query("SELECT * FROM posts WHERE status = 'undone'");
     res.json(result.rows);
@@ -92,7 +89,5 @@ router.get('/undone', async (req, res) => {
 
 // GET /api/posts/:postId - get post by ID
 router.get('/:postId', postController.getPostById);
-
-// router.use('/:id', postActionsRoutes);
 
 module.exports = router;

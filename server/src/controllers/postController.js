@@ -1,4 +1,4 @@
-const { pool } = require('../../index');
+const { pool } = require('../index');
 
 // Get posts for a specific user
 exports.getUserPosts = async (req, res) => {

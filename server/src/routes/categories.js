@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../../index');
+const { pool } = require('../index');
 
 // GET /api/categories
 router.get('/', async (req, res) => {
