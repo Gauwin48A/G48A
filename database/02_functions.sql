@@ -81,3 +81,59 @@ BEGIN
     LIMIT 20;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function to generate a unique referral code
+CREATE OR REPLACE FUNCTION generate_referral_code()
+RETURNS VARCHAR AS $$
+DECLARE
+    code VARCHAR(10);
+    is_unique BOOLEAN := FALSE;
+BEGIN
+    WHILE NOT is_unique LOOP
+        code := (
+            SELECT string_agg(substr('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', floor(random() * 36 + 1)::int, 1), '')
+            FROM generate_series(1, 8)
+        );
+        is_unique := NOT EXISTS (SELECT 1 FROM users WHERE referral_code = code);
+    END LOOP;
+    RETURN code;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to handle referral rewards
+CREATE OR REPLACE FUNCTION process_referral_rewards()
+RETURNS TRIGGER AS $$
+DECLARE
+    referrer_id INT;
+    points_to_award INT := 100;
+    current_level INT := 1;
+BEGIN
+    -- Assign a referral code to the new user
+    NEW.referral_code := generate_referral_code();
+
+    -- Award points up the referral chain
+    referrer_id := NEW.referred_by;
+    WHILE referrer_id IS NOT NULL AND current_level <= 5 LOOP
+        -- Add points to the referrer
+        PERFORM add_reward_points(referrer_id, points_to_award);
+
+        -- Log the reward
+        INSERT INTO reward_log (user_id, points, reason, related_user_id)
+        VALUES (referrer_id, points_to_award, CASE WHEN current_level = 1 THEN 'direct_referral' ELSE 'indirect_referral' END, NEW.user_id);
+
+        -- Get the next referrer in the chain
+        SELECT referred_by INTO referrer_id FROM users WHERE user_id = referrer_id;
+
+        -- Halve the points for the next level
+        points_to_award := points_to_award / 2;
+        current_level := current_level + 1;
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER user_creation_trigger
+BEFORE INSERT ON users
+FOR EACH ROW
+EXECUTE FUNCTION process_referral_rewards();

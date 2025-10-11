@@ -14,11 +14,15 @@ import {
   Calendar
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import '../i18n';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from '../components/LanguageSelector';
 
 const Profile = () => {
   // Sticky header CSS
   // .sticky-header { position: sticky; top: 0; background: #fff; z-index: 10; }
   const { toast } = useToast();
+  const { t, i18n } = useTranslation();
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -391,8 +395,12 @@ const Profile = () => {
               </div>
             )}
           </div>
+          <Button onClick={() => window.location.href = '/channels/create'} className="mt-4 w-full bg-blue-600 text-white">
+            {t('create_channel')}
+          </Button>
         </div>
       </div>
+      <LanguageSelector />
     </div>
   );
 };

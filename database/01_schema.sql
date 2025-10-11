@@ -23,7 +23,10 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     rating NUMERIC(3, 2) DEFAULT 5.0, -- Added user rating
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    referral_code VARCHAR(10) UNIQUE,
+    referred_by INT REFERENCES users(user_id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    preferred_language VARCHAR(10) DEFAULT 'en' -- Added preferred language
 );
 
 -- Posts Table: Stores user-created posts
@@ -43,7 +46,8 @@ CREATE TABLE posts (
     views INT DEFAULT 0, -- Added view count
     latitude NUMERIC(9, 6),
     longitude NUMERIC(9, 6),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    language VARCHAR(10) DEFAULT 'en' -- Added language support
 );
 
 -- Post Images Table: Stores multiple images for each post
@@ -72,9 +76,66 @@ CREATE TABLE sale_transitions (
     changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Reward Log Table: Stores a log of all rewards earned by users
+CREATE TABLE reward_log (
+    log_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    points INT NOT NULL,
+    reason VARCHAR(50) NOT NULL, -- e.g., 'post_creation', 'direct_referral', 'indirect_referral'
+    related_user_id INT REFERENCES users(user_id), -- e.g., the user who was referred
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Feeds Table: Text-only posts for sharing news/content
+CREATE TABLE feeds (
+    feed_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id),
+    description TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    language VARCHAR(10) DEFAULT 'en' -- Added language support
+);
+CREATE INDEX idx_feeds_user_id ON feeds(user_id);
+CREATE INDEX idx_feeds_created_at ON feeds(created_at);
+
+-- Channels Table: For user-created channels/pages (premium only)
+CREATE TABLE channels (
+    channel_id SERIAL PRIMARY KEY,
+    owner_id INT REFERENCES users(user_id),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_premium BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_channels_owner_id ON channels(owner_id);
+
+-- Channel Followers Table: Users following channels
+CREATE TABLE channel_followers (
+    channel_id INT REFERENCES channels(channel_id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
+    followed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (channel_id, user_id)
+);
+CREATE INDEX idx_channel_followers_user_id ON channel_followers(user_id);
+
+-- Channel Posts Table: Posts in channels (images, description, limited videos)
+CREATE TABLE channel_posts (
+    channel_post_id SERIAL PRIMARY KEY,
+    channel_id INT REFERENCES channels(channel_id) ON DELETE CASCADE,
+    owner_id INT REFERENCES users(user_id),
+    description TEXT NOT NULL,
+    image_url VARCHAR(255),
+    video_url VARCHAR(255), -- NULL if not a video post
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    language VARCHAR(10) DEFAULT 'en' -- Added language support
+);
+CREATE INDEX idx_channel_posts_channel_id ON channel_posts(channel_id);
+CREATE INDEX idx_channel_posts_owner_id ON channel_posts(owner_id);
+CREATE INDEX idx_channel_posts_created_at ON channel_posts(created_at);
+
 -- Index for faster lookups on foreign keys
 CREATE INDEX idx_posts_user_id ON posts(user_id);
 CREATE INDEX idx_posts_category_id ON posts(category_id);
 CREATE INDEX idx_sales_post_id ON sales(post_id);
 CREATE INDEX idx_sales_buyer_id ON sales(buyer_id);
 CREATE INDEX idx_sale_transitions_sale_id ON sale_transitions(sale_id);
+CREATE INDEX idx_reward_log_user_id ON reward_log(user_id);

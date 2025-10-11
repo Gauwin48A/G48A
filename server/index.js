@@ -66,6 +66,8 @@ app.use("/api/recommendations", require("./src/routes/recommendations"));
 app.use("/api/audit", require("./src/routes/audit"));
 app.use("/api/login-audit", require("./src/routes/loginAudit"));
 app.use("/api/admin/dashboard", require("./src/routes/adminDashboard"));
+app.use("/api/feeds", require("./src/routes/feeds"));
+app.use("/api/channels", require("./src/routes/channels"));
 
 // The "catchall" handler for client-side routing
 app.get("*", (req, res) => {
