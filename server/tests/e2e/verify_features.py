@@ -54,7 +54,7 @@ def run(playwright):
         expect(category_input).to_be_disabled()
 
         # Take a screenshot to visually confirm the result
-        page.screenshot(path="jules-scratch/verification/verification.png")
+        page.screenshot(path="server/tests/e2e/verification.png")
 
     finally:
         browser.close()

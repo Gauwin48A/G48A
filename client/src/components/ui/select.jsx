@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 
 export function Select({ children, onValueChange, value, defaultValue, ...props }) {
-  // Controlled select: value comes from parent, fallback to defaultValue
   const [open, setOpen] = React.useState(false);
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = React.useState(defaultValue || "");
@@ -14,7 +12,7 @@ export function Select({ children, onValueChange, value, defaultValue, ...props 
     setOpen(false);
   };
   return (
-    <div className="relative">
+    <div className="relative" tabIndex={0} onBlur={() => setOpen(false)}>
       <button
         type="button"
         aria-haspopup="listbox"
@@ -28,19 +26,14 @@ export function Select({ children, onValueChange, value, defaultValue, ...props 
         <ul
           role="listbox"
           tabIndex={-1}
-          className="absolute z-10 mt-1 w-full bg-white border rounded shadow"
+          className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-auto"
         >
-          {React.Children.map(children, (opt) => (
-            <li
-              key={opt.props.value}
-              role="option"
-              aria-selected={opt.props.value === selected}
-              className={`px-3 py-2 cursor-pointer ${opt.props.value === selected ? "bg-blue-100" : ""}`}
-              onClick={() => handleSelect(opt.props.value)}
-            >
-              {opt.props.children}
-            </li>
-          ))}
+          {React.Children.map(children, (opt) =>
+            React.cloneElement(opt, {
+              selected: opt.props.value === selected,
+              onClick: () => handleSelect(opt.props.value),
+            })
+          )}
         </ul>
       )}
     </div>
@@ -70,23 +63,28 @@ export function SelectContent({ className, children, ...props }) {
       )}
       {...props}
     >
-      {children}
+      <ul className="max-h-60 overflow-auto">{children}</ul>
     </div>
   );
 }
 
-export function SelectItem({ className, children, value, ...props }) {
+export function SelectItem({ className, children, value, selected, onClick, ...props }) {
   return (
-    <option
-      value={value}
+    <li
+      role="option"
+      aria-selected={selected}
+      tabIndex={0}
       className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground",
+        "px-3 py-2 cursor-pointer hover:bg-blue-100",
+        selected ? "bg-blue-100 font-bold" : "",
         className
       )}
+      onClick={onClick}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick && onClick(); }}
       {...props}
     >
       {children}
-    </option>
+    </li>
   );
 }
 
