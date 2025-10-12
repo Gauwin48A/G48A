@@ -1,5 +1,5 @@
 // Post actions controller (2025-09-02)
-const db = require('../../config/db');
+const db = require('../../../config/db');
 
 exports.likePost = async (req, res) => {
   const userId = req.user?.id; // You must have auth middleware to set req.user

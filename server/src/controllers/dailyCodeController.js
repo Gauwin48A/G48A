@@ -1,4 +1,4 @@
-const pool = require('../../config/db');
+const pool = require('../config/db');
 
 exports.getDailyCode = async (req, res) => {
   const { userId } = req.query;

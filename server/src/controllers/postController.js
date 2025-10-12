@@ -1,4 +1,5 @@
-const { pool } = require('../index');
+const pool = require('../config/db');
+const logger = require('../utils/logger');
 
 // Get posts for a specific user
 exports.getUserPosts = async (req, res) => {
@@ -7,6 +8,7 @@ exports.getUserPosts = async (req, res) => {
     if (!userId) return res.status(400).json({ error: 'userId required' });
     const offset = (parseInt(page) - 1) * parseInt(limit);
     let query = 'SELECT * FROM posts WHERE user_id = $1';
+    // If your schema uses id instead of user_id, change to 'id = $1'
     const params = [userId];
     if (status) { query += ` AND status = $2`; params.push(status); }
     query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -43,7 +45,7 @@ exports.getAllPosts = async (req, res) => {
     const total = parseInt(countResult.rows[0].count);
     res.json({ posts: result.rows, total });
   } catch (err) {
-    console.error('❌ Error fetching posts:', err);
+    logger.error('Error fetching posts:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -62,7 +64,7 @@ exports.createPost = async (req, res) => {
     );
     const post_id = result.rows[0]?.post_id;
     if (!post_id) {
-      console.error('❌ Post creation failed', { body: req.body });
+      logger.error('Post creation failed', { body: req.body });
       return res.status(400).json({ error: 'Post creation failed' });
     }
     // Fetch the created post and images for response
@@ -70,7 +72,7 @@ exports.createPost = async (req, res) => {
     const imagesRes = await pool.query('SELECT * FROM post_images WHERE post_id = $1', [post_id]);
     res.status(201).json({ post: postRes.rows[0], images: imagesRes.rows });
   } catch (err) {
-    console.error('❌ Error creating post:', err);
+    logger.error('Error creating post:', err);
     res.status(400).json({ error: err.message });
   }
 };

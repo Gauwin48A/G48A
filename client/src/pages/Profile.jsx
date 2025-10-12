@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import '../i18n';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
+import { createChannel, getChannelByUser } from '../lib/api';
 
 const Profile = () => {
   // Sticky header CSS
@@ -31,6 +32,9 @@ const Profile = () => {
   const [editErrors, setEditErrors] = useState({});
   const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', date: '' });
   const [editPrefMode, setEditPrefMode] = useState(false);
+  const [channel, setChannel] = useState(null);
+  const [showChannelPopup, setShowChannelPopup] = useState(false);
+  const [channelError, setChannelError] = useState(null);
 
   useEffect(() => {
     // Try to load from localStorage first for instant display after login
@@ -53,7 +57,10 @@ const Profile = () => {
       },
       credentials: 'include'
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch profile');
+        return res.json();
+      })
       .then(data => {
         if (data && typeof data === 'object') {
           setUser(data);
@@ -94,6 +101,15 @@ const Profile = () => {
         .catch(() => {
           setPreferences({ location: '', minPrice: '', maxPrice: '', date: '' });
         });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Fetch channel info if user exists
+    if (user && user.user_id) {
+      getChannelByUser(user.user_id)
+        .then(res => setChannel(res.data))
+        .catch(() => setChannel(null));
     }
   }, [user]);
 
@@ -160,6 +176,21 @@ const Profile = () => {
     });
     setEditPrefMode(false);
     toast({ title: 'Preferences updated!' });
+  };
+
+  const handleCreateChannel = async () => {
+    if (user?.role !== 'premium') {
+      setShowChannelPopup(true);
+      return;
+    }
+    try {
+      const res = await createChannel();
+      setChannel(res.data.channel);
+      setChannelError(null);
+      toast({ title: 'Channel created successfully!' });
+    } catch (err) {
+      setChannelError(err.response?.data?.error || 'Failed to create channel');
+    }
   };
 
   if (loading) {
@@ -395,6 +426,20 @@ const Profile = () => {
               </div>
             )}
           </div>
+          <div className="flex gap-2 mt-4">
+            <Button onClick={handleCreateChannel} disabled={!!channel}>Create Channel</Button>
+            <Button onClick={() => channel && window.location.assign(`/channels/${channel.channel_id}`)} disabled={!channel}>View Channel</Button>
+          </div>
+          {showChannelPopup && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white p-6 rounded shadow-lg">
+                <div className="text-lg font-bold mb-2">Channel creation is available for Premium Users only.</div>
+                <div className="mb-4">Upgrade your account to unlock this feature.</div>
+                <Button onClick={() => setShowChannelPopup(false)}>Close</Button>
+              </div>
+            </div>
+          )}
+          {channelError && <div className="text-red-500 mt-2">{channelError}</div>}
           <Button onClick={() => window.location.href = '/channels/create'} className="mt-4 w-full bg-blue-600 text-white">
             {t('create_channel')}
           </Button>

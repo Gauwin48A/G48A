@@ -1,25 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../index');
+const categoryController = require('../controllers/categoryController');
 
 // GET /api/categories
-router.get('/', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM categories ORDER BY name');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get('/', categoryController.getAllCategories);
 
-// GET /api/brands
-router.get('/brands', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM brands ORDER BY name');
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// GET /api/categories/brands
+router.get('/brands', (req, res) => res.status(501).json({ error: 'Not implemented' }));
 
 module.exports = router;

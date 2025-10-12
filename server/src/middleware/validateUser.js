@@ -2,7 +2,7 @@
 module.exports = (req, res, next) => {
   // Use DB validation function for all fields
   const { name, phone, email, password, dob, aadhaar, pan } = req.body;
-  const pool = require('../../config/db');
+  const pool = require('../config/db');
   pool.query(
     'SELECT * FROM validate_signup_fields($1, $2, $3, $4, $5, $6, $7)',
     [name, email, password, phone, dob, aadhaar, pan]

@@ -54,8 +54,8 @@ const AllPosts = () => {
 				const likes = {};
 				const views = {};
 				(data.posts || []).forEach(post => {
-					likes[post.id] = post.likes || 0;
-					views[post.id] = post.views || 0;
+					likes[post.post_id || post.id] = post.likes || 0;
+					views[post.post_id || post.id] = post.views || 0;
 				});
 				setLikeCounts(likes);
 				setViewCounts(views);

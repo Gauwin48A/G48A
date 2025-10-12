@@ -1,34 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { fetchMyFeed } from '../lib/api';
+import FeedPostCard from '../components/FeedPostCard';
 
 const MyFeedPage = () => {
-  const [feeds, setFeeds] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [category, setCategory] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
 
-  const fetchFeeds = async () => {
+  const fetchData = () => {
     setLoading(true);
-    const res = await axios.get('/api/feeds/my');
-    setFeeds(res.data);
-    setLoading(false);
+    fetchMyFeed({ category, sortBy, sortOrder, page, search })
+      .then(res => setPosts(res.data))
+      .catch(() => setError('Failed to load my feed'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchFeeds();
-  }, []);
+    fetchData();
+    // eslint-disable-next-line
+  }, [category, sortBy, sortOrder, page, search]);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Feed</h1>
-      {loading ? <p>Loading...</p> : (
-        <ul>
-          {feeds.map(feed => (
-            <li key={feed.feed_id} className="border-b py-2">
-              {feed.description}
-              <span className="text-xs text-gray-500 ml-2">{new Date(feed.created_at).toLocaleString()}</span>
-            </li>
-          ))}
-        </ul>
+    <div className="container mx-auto py-4">
+      <h2 className="text-2xl font-bold mb-4">My Feed</h2>
+      <div className="flex gap-2 mb-4">
+        <input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="border rounded px-2" />
+        <select value={category} onChange={e => setCategory(e.target.value)} className="border rounded px-2">
+          <option value="">All Categories</option>
+          {/* TODO: Dynamically load categories if needed */}
+        </select>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="border rounded px-2">
+          <option value="created_at">Date</option>
+        </select>
+        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="border rounded px-2">
+          <option value="desc">Latest</option>
+          <option value="asc">Oldest</option>
+        </select>
+      </div>
+      {loading ? <div>Loading...</div> : error ? <div className="text-red-500">{error}</div> : (
+        posts.length === 0 ? <div>No text posts found.</div> : (
+          <div className="space-y-4">
+            {posts.map(post => <FeedPostCard key={post.post_id} post={post} />)}
+          </div>
+        )
       )}
+      <div className="flex gap-2 mt-4">
+        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
+        <span>Page {page}</span>
+        <button onClick={() => setPage(p => p + 1)}>Next</button>
+      </div>
     </div>
   );
 };

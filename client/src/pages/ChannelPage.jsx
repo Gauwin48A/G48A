@@ -1,34 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { getChannelByUser, createChannelPost } from '../lib/api';
+import { useParams } from 'react-router-dom';
 
-const ChannelPage = ({ channelId }) => {
+const ChannelPage = () => {
+  const { channelId } = useParams();
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
   const [description, setDescription] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [type, setType] = useState('text');
   const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     const fetchChannel = async () => {
-      const res = await axios.get(`/api/channels/${channelId}`);
-      setChannel(res.data.channel);
-      setPosts(res.data.posts);
-      // Assume backend returns isOwner flag in channel object if needed
-      setIsOwner(res.data.channel?.isOwner || false);
+      const res = await getChannelByUser(channelId);
+      setChannel(res.data);
+      setIsOwner(res.data.isOwner || false);
+      setPosts(res.data.posts || []);
     };
     fetchChannel();
   }, [channelId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await axios.post(`/api/channels/${channelId}/posts`, { description, image_url: imageUrl, video_url: videoUrl });
+    await createChannelPost(channelId, { description, type, media_url: mediaUrl });
     setDescription('');
-    setImageUrl('');
-    setVideoUrl('');
+    setMediaUrl('');
     // Refresh posts
-    const res = await axios.get(`/api/channels/${channelId}`);
-    setPosts(res.data.posts);
+    const res = await getChannelByUser(channelId);
+    setPosts(res.data.posts || []);
   };
 
   if (!channel) return <div>Loading...</div>;
@@ -36,14 +36,14 @@ const ChannelPage = ({ channelId }) => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex items-center gap-4 mb-4">
-        {channel.logo_url && <img src={channel.logo_url} alt="logo" className="w-16 h-16 rounded-full object-cover" />}
+        {channel.profile_pic && <img src={channel.profile_pic} alt="logo" className="w-16 h-16 rounded-full object-cover" />}
         <div>
           <div className="font-bold text-xl">{channel.name}</div>
-          <div className="text-xs text-gray-500">Category: {channel.category}</div>
-          <div className="text-xs text-gray-400">Followers: {channel.followers_count}</div>
+          <div className="text-xs text-gray-500">Owner: {channel.owner_name}</div>
+          <div className="text-xs text-gray-400">Followers: {channel.follower_count}</div>
         </div>
       </div>
-      <div className="mb-4 text-gray-600">{channel.description}</div>
+      <div className="mb-4 text-gray-600">{channel.bio}</div>
       {isOwner && (
         <form onSubmit={handleSubmit} className="mb-4">
           <textarea
@@ -55,30 +55,31 @@ const ChannelPage = ({ channelId }) => {
           />
           <input
             className="w-full border rounded p-2 mb-2"
-            placeholder="Image URL (optional)"
-            value={imageUrl}
-            onChange={e => setImageUrl(e.target.value)}
+            placeholder="Media URL (optional)"
+            value={mediaUrl}
+            onChange={e => setMediaUrl(e.target.value)}
           />
-          {/* Video posting disabled */}
-          {/* <input
-            className="w-full border rounded p-2 mb-2"
-            placeholder="Video URL (optional, max 3 per channel)"
-            value={videoUrl}
-            onChange={e => setVideoUrl(e.target.value)}
-          /> */}
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Post</button>
+          <select className="w-full border rounded p-2 mb-2" value={type} onChange={e => setType(e.target.value)}>
+            <option value="text">Text</option>
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+          </select>
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Post</button>
         </form>
       )}
-      <ul>
-        {posts.map(post => (
-          <li key={post.channel_post_id} className="border-b py-2">
-            <div>{post.description}</div>
-            {post.image_url && <img src={post.image_url} alt="" className="max-w-xs my-2" />}
-            {post.video_url && <video src={post.video_url} controls className="max-w-xs my-2" />}
-            <div className="text-xs text-gray-500">{new Date(post.created_at).toLocaleString()}</div>
-          </li>
-        ))}
-      </ul>
+      <div>
+        <h3 className="font-bold mb-2">Posts</h3>
+        {posts.length === 0 ? <div>No posts yet.</div> : (
+          <ul className="space-y-2">
+            {posts.map(post => (
+              <li key={post.post_id} className="border rounded p-2">
+                <div className="font-semibold">{post.type === 'text' ? post.description : <a href={post.media_url} target="_blank" rel="noopener noreferrer">{post.type}</a>}</div>
+                <div className="text-xs text-gray-400">{new Date(post.created_at).toLocaleString()}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };

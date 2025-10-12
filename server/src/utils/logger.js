@@ -1,4 +1,4 @@
-const pool = require('../../config/db');
+const pool = require('../config/db');
 
 async function logAadhaarVerification(userId, requestId, requestType, status) {
   try {

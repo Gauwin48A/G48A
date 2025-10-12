@@ -1,25 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const { pool } = require("../index");
-const { protect } = require("../middleware/auth");
+const profileController = require('../controllers/profileController');
 
-// Get user profile
-router.get("/", protect, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT user_id, username, email, rating, created_at FROM users WHERE user_id = $1",
-      [req.user.id]
-    );
+// GET /api/profile?userId=1
+router.get('/', profileController.getProfile);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
+// POST /api/profile/update
+router.post('/update', profileController.updateProfile);
 
-    res.json({ user: result.rows[0] });
-  } catch (err) {
-    console.error("Profile retrieval error:", err);
-    res.status(500).json({ error: "Failed to retrieve user profile" });
-  }
-});
+// GET /api/profile/preferences?userId=1
+router.get('/preferences', profileController.getPreferences);
+
+// POST /api/profile/preferences/update
+router.post('/preferences/update', profileController.updatePreferences);
 
 module.exports = router;

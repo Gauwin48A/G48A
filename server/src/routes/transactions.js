@@ -8,7 +8,7 @@ router.post('/confirm', (req, res) => {
   res.send('Sale confirmation endpoint');
 });
 
-const pool = require('../../config/db');
+const pool = require('../config/db');
 router.get('/undone', async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM posts WHERE status = 'undone'");

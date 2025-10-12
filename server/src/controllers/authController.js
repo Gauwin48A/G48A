@@ -1,6 +1,7 @@
-const pool = require('../../config/db');
+const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 // Registration now supports file uploads (aadhaar_xml, pan_card, profile_pic)
 exports.register = async (req, res) => {
@@ -40,13 +41,13 @@ exports.login = async (req, res) => {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      console.error('❌ Invalid login attempt', { email });
+      logger.error('Invalid login attempt', { email });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const token = jwt.sign({ id: user.user_id, is_admin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '1d' });
     res.json({ token, user });
   } catch (err) {
-    console.error('❌ Error during login:', err);
+    logger.error('Error during login:', err);
     res.status(400).json({ error: err.message });
   }
 };

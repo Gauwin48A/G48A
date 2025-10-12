@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../../index');
+const pool = require('../config/db');
 
 // GET /api/rewards?userId=1
 router.get('/', async (req, res) => {

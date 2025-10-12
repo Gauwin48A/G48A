@@ -1,7 +1,7 @@
 // Middleware for validating post creation input
 // Validation is now handled by PostgreSQL stored procedure
 module.exports = async (req, res, next) => {
-  const pool = require('../../config/db');
+  const pool = require('../config/db');
   const { category, brand, model, price, location, contact } = req.body;
   try {
     const result = await pool.query(

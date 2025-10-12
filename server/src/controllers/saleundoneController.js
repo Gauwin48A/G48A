@@ -1,4 +1,5 @@
-const pool = require('../../config/db');
+const pool = require('../config/db');
+const logger = require('../utils/logger');
 
 exports.getSaleUndone = async (req, res) => {
   try {
@@ -6,7 +7,7 @@ exports.getSaleUndone = async (req, res) => {
     const result = await pool.query("SELECT * FROM posts WHERE status = 'undone'");
     res.json(result.rows);
   } catch (err) {
-    console.error('❌ Error fetching saleundone posts:', err);
+    logger.error('Error fetching saleundone posts:', err);
     res.status(500).json({ error: err.message });
   }
 };

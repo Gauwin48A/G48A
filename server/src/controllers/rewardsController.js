@@ -1,4 +1,5 @@
-const pool = require('../../config/db');
+const pool = require('../config/db');
+const logger = require('../utils/logger');
 
 exports.getRewardsByUser = async (req, res) => {
   try {
@@ -19,7 +20,8 @@ exports.getRewardsByUser = async (req, res) => {
 
     res.json(mockRewards);
   } catch (err) {
-    console.error('❌ getRewardsByUser error:', err);
+    logger.error('getRewardsByUser error:', err);
     res.status(500).json({ error: 'Failed to fetch rewards' });
+    logger.error('Failed to fetch rewards');
   }
 };

@@ -2,14 +2,14 @@
 -- This script creates the database schema for the application.
 
 -- Categories Table: Stores different post categories
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     category_id SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
     description TEXT
 );
 
 -- Tiers Table: Stores different pricing tiers for posts
-CREATE TABLE tiers (
+CREATE TABLE IF NOT EXISTS tiers (
     tier_id SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
     price NUMERIC(10, 2) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE tiers (
 );
 
 -- Users Table: Stores user information
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -26,39 +26,32 @@ CREATE TABLE users (
     referral_code VARCHAR(10) UNIQUE,
     referred_by INT REFERENCES users(user_id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    preferred_language VARCHAR(10) DEFAULT 'en' -- Added preferred language
+    preferred_language VARCHAR(10) DEFAULT 'en', -- Added preferred language
+    role VARCHAR(20) DEFAULT 'normal' -- normal, premium, content_creator
 );
 
 -- Posts Table: Stores user-created posts
-CREATE TABLE posts (
+CREATE TABLE IF NOT EXISTS posts (
     post_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(user_id),
     category_id INT REFERENCES categories(category_id),
-    tier_id INT REFERENCES tiers(tier_id),
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    price NUMERIC(10, 2) NOT NULL,
-    original_price NUMERIC(10, 2), -- Added for showing discounts
-    condition VARCHAR(50), -- e.g., 'New', 'Used'
-    age VARCHAR(50), -- e.g., '1 year old'
-    location VARCHAR(255), -- Simple string location
-    status VARCHAR(20) NOT NULL DEFAULT 'active', -- e.g., 'active', 'sold', 'expired'
-    views INT DEFAULT 0, -- Added view count
-    latitude NUMERIC(9, 6),
-    longitude NUMERIC(9, 6),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    language VARCHAR(10) DEFAULT 'en' -- Added language support
+    post_type VARCHAR(10) DEFAULT 'text', -- 'text' or 'media'
+    media_url VARCHAR(255),
+    channel_id INT REFERENCES channels(channel_id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Post Images Table: Stores multiple images for each post
-CREATE TABLE post_images (
+CREATE TABLE IF NOT EXISTS post_images (
     image_id SERIAL PRIMARY KEY,
     post_id INT REFERENCES posts(post_id) ON DELETE CASCADE,
     image_url VARCHAR(255) NOT NULL
 );
 
 -- Sales Table: Tracks the sale of each post
-CREATE TABLE sales (
+CREATE TABLE IF NOT EXISTS sales (
     sale_id SERIAL PRIMARY KEY,
     post_id INT REFERENCES posts(post_id),
     buyer_id INT REFERENCES users(user_id),
@@ -67,7 +60,7 @@ CREATE TABLE sales (
 );
 
 -- Sale Transitions Table: Logs changes in sale status
-CREATE TABLE sale_transitions (
+CREATE TABLE IF NOT EXISTS sale_transitions (
     transition_id SERIAL PRIMARY KEY,
     sale_id INT REFERENCES sales(sale_id),
     old_status VARCHAR(20),
@@ -77,7 +70,7 @@ CREATE TABLE sale_transitions (
 );
 
 -- Reward Log Table: Stores a log of all rewards earned by users
-CREATE TABLE reward_log (
+CREATE TABLE IF NOT EXISTS reward_log (
     log_id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
     points INT NOT NULL,
@@ -86,51 +79,26 @@ CREATE TABLE reward_log (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Feeds Table: Text-only posts for sharing news/content
-CREATE TABLE feeds (
-    feed_id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(user_id),
-    description TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    language VARCHAR(10) DEFAULT 'en' -- Added language support
-);
-CREATE INDEX idx_feeds_user_id ON feeds(user_id);
-CREATE INDEX idx_feeds_created_at ON feeds(created_at);
-
 -- Channels Table: For user-created channels/pages (premium only)
-CREATE TABLE channels (
+CREATE TABLE IF NOT EXISTS channels (
     channel_id SERIAL PRIMARY KEY,
-    owner_id INT REFERENCES users(user_id),
+    user_id INT REFERENCES users(user_id),
     name VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_premium BOOLEAN DEFAULT TRUE,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    bio TEXT,
+    profile_pic VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_channels_owner_id ON channels(owner_id);
+CREATE INDEX idx_channels_user_id ON channels(user_id);
 
 -- Channel Followers Table: Users following channels
-CREATE TABLE channel_followers (
+CREATE TABLE IF NOT EXISTS channel_followers (
+    id SERIAL PRIMARY KEY,
     channel_id INT REFERENCES channels(channel_id) ON DELETE CASCADE,
     user_id INT REFERENCES users(user_id) ON DELETE CASCADE,
-    followed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (channel_id, user_id)
+    followed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_channel_followers_user_id ON channel_followers(user_id);
-
--- Channel Posts Table: Posts in channels (images, description, limited videos)
-CREATE TABLE channel_posts (
-    channel_post_id SERIAL PRIMARY KEY,
-    channel_id INT REFERENCES channels(channel_id) ON DELETE CASCADE,
-    owner_id INT REFERENCES users(user_id),
-    description TEXT NOT NULL,
-    image_url VARCHAR(255),
-    video_url VARCHAR(255), -- NULL if not a video post
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    language VARCHAR(10) DEFAULT 'en' -- Added language support
-);
-CREATE INDEX idx_channel_posts_channel_id ON channel_posts(channel_id);
-CREATE INDEX idx_channel_posts_owner_id ON channel_posts(owner_id);
-CREATE INDEX idx_channel_posts_created_at ON channel_posts(created_at);
 
 -- Index for faster lookups on foreign keys
 CREATE INDEX idx_posts_user_id ON posts(user_id);

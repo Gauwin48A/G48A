@@ -4,7 +4,6 @@ const postController = require('../controllers/postController');
 const { body, validationResult } = require('express-validator');
 const validatePost = require('../middleware/validatePost');
 const upload = require('../middleware/upload');
-const { pool } = require('../index');
 
 // GET /api/posts/all for legacy support
 router.get('/all', postController.getAllPosts);

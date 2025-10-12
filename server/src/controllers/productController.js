@@ -1,4 +1,5 @@
-const db = require('../../config/db');
+const db = require('../config/db');
+const logger = require('../utils/logger');
 
 // GET /api/products/deals
 exports.getDeals = async (req, res) => {
@@ -6,6 +7,7 @@ exports.getDeals = async (req, res) => {
     const deals = await db.query('SELECT id, name, image_url, price, rating FROM products WHERE is_featured = true LIMIT 12');
     res.json(deals.rows);
   } catch (err) {
+    logger.error('Failed to fetch deals.');
     res.status(500).json({ error: 'Failed to fetch deals.' });
   }
 };
@@ -31,6 +33,7 @@ exports.searchProducts = async (req, res) => {
     const products = await db.query(sql, params);
     res.json(products.rows);
   } catch (err) {
+    logger.error('Failed to search products.');
     res.status(500).json({ error: 'Failed to search products.' });
   }
 };

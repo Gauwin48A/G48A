@@ -1,57 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useTranslation } from 'react-i18next';
-import LanguageSelector from '../components/LanguageSelector';
+import React, { useEffect, useState } from 'react';
+import { fetchFeed } from '../lib/api';
+import FeedPostCard from '../components/FeedPostCard';
 
 const FeedPage = () => {
-  const [feeds, setFeeds] = useState([]);
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { t, i18n } = useTranslation();
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [category, setCategory] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
 
-  const fetchFeeds = async () => {
+  const fetchData = () => {
     setLoading(true);
-    const res = await axios.get('/api/feeds');
-    setFeeds(res.data);
-    setLoading(false);
+    fetchFeed({ category, sortBy, sortOrder, page, search })
+      .then(res => setPosts(res.data))
+      .catch(() => setError('Failed to load feed'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchFeeds();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!description) return;
-    await axios.post('/api/feeds', { description });
-    setDescription('');
-    fetchFeeds();
-  };
+    fetchData();
+    // eslint-disable-next-line
+  }, [category, sortBy, sortOrder, page, search]);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{t('feed')}</h1>
-      <LanguageSelector />
-      <form onSubmit={handleSubmit} className="mb-4">
-        <textarea
-          className="w-full border rounded p-2"
-          placeholder="Share something (text only)..."
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          rows={3}
-        />
-        <button type="submit" className="mt-2 px-4 py-2 bg-blue-600 text-white rounded">{t('post')}</button>
-      </form>
-      {loading ? <p>Loading...</p> : (
-        <ul>
-          {feeds.map(feed => (
-            <li key={feed.feed_id} className="border-b py-2">
-              <span className="font-semibold">{feed.username}:</span> {feed.description}
-              <span className="text-xs text-gray-500 ml-2">{new Date(feed.created_at).toLocaleString()}</span>
-            </li>
-          ))}
-        </ul>
+    <div className="container mx-auto py-4">
+      <h2 className="text-2xl font-bold mb-4">Feed</h2>
+      <div className="flex gap-2 mb-4">
+        <input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="border rounded px-2" />
+        <select value={category} onChange={e => setCategory(e.target.value)} className="border rounded px-2">
+          <option value="">All Categories</option>
+          {/* TODO: Dynamically load categories if needed */}
+        </select>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="border rounded px-2">
+          <option value="created_at">Date</option>
+        </select>
+        <select value={sortOrder} onChange={e => setSortOrder(e.target.value)} className="border rounded px-2">
+          <option value="desc">Latest</option>
+          <option value="asc">Oldest</option>
+        </select>
+      </div>
+      {loading ? <div>Loading...</div> : error ? <div className="text-red-500">{error}</div> : (
+        posts.length === 0 ? <div>No text posts found.</div> : (
+          <div className="space-y-4">
+            {posts.map(post => <FeedPostCard key={post.post_id} post={post} />)}
+          </div>
+        )
       )}
+      <div className="flex gap-2 mt-4">
+        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
+        <span>Page {page}</span>
+        <button onClick={() => setPage(p => p + 1)}>Next</button>
+      </div>
     </div>
   );
 };

@@ -26,6 +26,8 @@ import Rewards from './pages/Rewards.jsx';
 import MyRecommendations from './pages/MyRecommendations.jsx';
 import Categories from './pages/Categories.jsx';
 import { Toaster } from "@/components/ui/toaster";
+import FeedPage from './pages/FeedPage.jsx';
+import MyFeedPage from './pages/MyFeedPage.jsx';
 
 function App() {
   return (
@@ -61,6 +63,8 @@ function App() {
           <Route path="/rewards" element={<Rewards />} />
           <Route path="/my-recommendations" element={<MyRecommendations />} />
           <Route path="/categories" element={<Categories />} />
+          <Route path="/feed" element={<FeedPage />} />
+          <Route path="/my-feed" element={<MyFeedPage />} />
           <Route path="*" element={<Navigate to="/all-posts" replace />} />
         </Routes>
       </main>
