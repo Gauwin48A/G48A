@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { Shield, Upload, Eye, EyeOff, User, Mail, Phone, FileText, Calendar, MapPin, CreditCard } from "lucide-react";
 import { registerUser } from "@/lib/auth";
+import AadhaarOtpVerify from '@/components/AadhaarOtpVerify';
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -38,6 +39,8 @@ const SignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [aadhaarVerified, setAadhaarVerified] = useState(false);
+  const [aadhaarVerifyData, setAadhaarVerifyData] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -142,6 +145,7 @@ const SignUp = () => {
     e.preventDefault();
     setIsLoading(true);
     const errors = validateForm();
+    if (!aadhaarVerified) errors.push('Aadhaar verification is required.');
     if (errors.length > 0) {
       toast({
         title: "Signup Failed",
@@ -466,6 +470,14 @@ const SignUp = () => {
                         placeholder="XXXX XXXX XXXX"
                         maxLength="12"
                       />
+                      {/* Aadhaar OTP Verification */}
+                      <div className="mt-4">
+                        <AadhaarOtpVerify
+                          onVerified={data => { setAadhaarVerified(true); setAadhaarVerifyData(data); }}
+                          onError={() => setAadhaarVerified(false)}
+                        />
+                        {aadhaarVerified && <div className="text-green-600 text-sm mt-2">Aadhaar verified successfully!</div>}
+                      </div>
                     </div>
 
                     <div>

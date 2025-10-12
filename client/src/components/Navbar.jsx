@@ -37,6 +37,9 @@ const Navbar = () => {
         {/* Nav Links */}
         <ul className="hidden lg:flex items-center gap-4 ml-4">
           <li><Link to="/" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname === '/' ? 'bg-blue-100' : ''}`}>Home</Link></li>
+          <li><Link to="/feed" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname === '/feed' ? 'bg-blue-100' : ''}`}>Feed</Link></li>
+          <li><Link to="/my-feed" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname === '/my-feed' ? 'bg-blue-100' : ''}`}>My Feed</Link></li>
+          <li><Link to="/channels" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname.startsWith('/channels') ? 'bg-blue-100' : ''}`}>Channels</Link></li>
           <li><Link to="/my-recommendations" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname === '/my-recommendations' ? 'bg-blue-100' : ''}`}>My Recommendations</Link></li>
           <li><Link to="/my-home" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname === '/my-home' ? 'bg-blue-100' : ''}`}>My Home</Link></li>
           <li><Link to="/categories" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname === '/categories' ? 'bg-blue-100' : ''}`}>Categories</Link></li>
@@ -58,6 +61,9 @@ const Navbar = () => {
         <div className="lg:hidden bg-white border-t border-light px-4 py-2">
           <ul className="flex flex-col gap-2">
             <li><Link to="/" onClick={()=>setMenuOpen(false)}>Home</Link></li>
+            <li><Link to="/feed" onClick={()=>setMenuOpen(false)}>Feed</Link></li>
+            <li><Link to="/my-feed" onClick={()=>setMenuOpen(false)}>My Feed</Link></li>
+            <li><Link to="/channels" onClick={()=>setMenuOpen(false)}>Channels</Link></li>
             <li><Link to="/my-recommendations" onClick={()=>setMenuOpen(false)}>My Recommendations</Link></li>
             <li><Link to="/my-home" onClick={()=>setMenuOpen(false)}>My Home</Link></li>
             <li><Link to="/categories" onClick={()=>setMenuOpen(false)}>Categories</Link></li>

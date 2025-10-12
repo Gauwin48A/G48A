@@ -1,39 +1,42 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requirePremium } = require('../middleware/auth');
-const db = require('../db');
+const { requireAuth } = require('../middleware/auth');
+const ChannelService = require('../services/ChannelService');
 
-// Create a channel (premium users only)
-router.post('/', requireAuth, requirePremium, async (req, res) => {
-  const { name, description } = req.body;
-  if (!name) return res.status(400).json({ error: 'Name required' });
-  const { userId } = req.user;
-  const result = await db.query(
-    'INSERT INTO channels (owner_id, name, description, is_premium) VALUES ($1, $2, $3, TRUE) RETURNING *',
-    [userId, name, description]
-  );
-  res.json(result.rows[0]);
+// Create a channel (Aadhaar-verified users, max 3)
+router.post('/', requireAuth, async (req, res) => {
+  try {
+    if (!req.user || !req.user.isAadhaarVerified) return res.status(403).json({ error: 'Aadhaar verification required' });
+    const userChannels = await ChannelService.listUserChannels(req.user.user_id);
+    if (userChannels.length >= 3) return res.status(400).json({ error: 'Channel limit reached' });
+    const channel = await ChannelService.createChannel({ owner_id: req.user.user_id, ...req.body });
+    res.json(channel);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // List all channels
 router.get('/', requireAuth, async (req, res) => {
-  const { rows } = await db.query('SELECT c.*, u.username as owner FROM channels c JOIN users u ON c.owner_id = u.user_id ORDER BY c.created_at DESC');
-  res.json(rows);
+  const channels = await ChannelService.listChannels();
+  res.json(channels);
+});
+
+// List followed channels
+router.get('/followed', requireAuth, async (req, res) => {
+  const channels = await ChannelService.listFollowedChannels(req.user.user_id);
+  res.json(channels);
 });
 
 // Follow a channel
 router.post('/:id/follow', requireAuth, async (req, res) => {
-  const { userId } = req.user;
-  const channelId = req.params.id;
-  await db.query('INSERT INTO channel_followers (channel_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [channelId, userId]);
+  await ChannelService.followChannel(req.params.id, req.user.user_id);
   res.json({ success: true });
 });
 
 // Unfollow a channel
 router.post('/:id/unfollow', requireAuth, async (req, res) => {
-  const { userId } = req.user;
-  const channelId = req.params.id;
-  await db.query('DELETE FROM channel_followers WHERE channel_id = $1 AND user_id = $2', [channelId, userId]);
+  await ChannelService.unfollowChannel(req.params.id, req.user.user_id);
   res.json({ success: true });
 });
 
