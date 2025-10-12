@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+
 const AadhaarVerify = () => {
   const { toast } = useToast();
 
