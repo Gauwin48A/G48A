@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Smartphone, Monitor, Shirt, Sofa } from 'lucide-react';
 import { FaHeart, FaRegHeart, FaShare, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import api from '../lib/api';
 
 const NAVBAR_HEIGHT = 80; // px, adjust to match your actual navbar height
 
@@ -30,12 +31,11 @@ const MyRecommendations = () => {
 	// Fetch user preferences from profile
 	useEffect(() => {
 		const fetchPreferences = async () => {
-			const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 			const userId = localStorage.getItem('userId');
 			if (!userId) return;
-			const res = await fetch(`${baseUrl}/api/profile/preferences?userId=${userId}`);
-			if (res.ok) {
-				const data = await res.json();
+			const res = await api.get(`/profile/preferences?userId=${userId}`);
+			if (res.status === 200) {
+				const data = res.data;
 				setPreferences({
 					location: data.location || '',
 					minPrice: data.minPrice || '',
@@ -52,7 +52,6 @@ const MyRecommendations = () => {
 		setLoading(true);
 		const fetchPosts = async () => {
 			try {
-				const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 				const token = localStorage.getItem('authToken');
 				const userId = localStorage.getItem('userId');
 				if (!userId) throw new Error('User not logged in');
@@ -68,20 +67,9 @@ const MyRecommendations = () => {
 				Object.keys(paramsObj).forEach(key => {
 					if (!paramsObj[key]) delete paramsObj[key];
 				});
-				const params = new URLSearchParams(paramsObj).toString();
-				const res = await fetch(`${baseUrl}/api/recommendations?${params}`, {
-					method: 'GET',
-					headers: {
-						'Content-Type': 'application/json',
-						...(token ? { 'Authorization': `Bearer ${token}` } : {})
-					},
-					credentials: 'include'
-				});
-				if (!res.ok) {
-					const errorData = await res.json().catch(() => ({}));
-					throw new Error(errorData.error || 'Failed to fetch posts');
-				}
-				const data = await res.json();
+				const res = await api.get('/recommendations', { params: paramsObj });
+				if (res.status !== 200) throw new Error(res.data.error || 'Failed to fetch posts');
+				const data = res.data;
 				setPosts(Array.isArray(data.posts) ? data.posts : []);
 				setTotal(data.total || 0);
 				setError(null);
@@ -108,15 +96,8 @@ const MyRecommendations = () => {
 	// Categories (fetched from server)
 	useEffect(() => {
 		const fetchCategories = async () => {
-			try {
-				const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-				const res = await fetch(`${baseUrl}/api/categories`);
-				if (!res.ok) throw new Error('Failed to fetch categories');
-				const data = await res.json();
-				setCategories(Array.isArray(data) ? data : []);
-			} catch (err) {
-				// ignore
-			}
+			const res = await api.get('/categories');
+			setCategories(Array.isArray(res.data) ? res.data : []);
 		};
 		fetchCategories();
 	}, []);
@@ -258,50 +239,47 @@ const MyRecommendations = () => {
 					) : currentPosts.length === 0 ? (
 						<div className="col-span-full text-center text-blue-400">No posts available right now.</div>
 					) : (
-						currentPosts.map((post, idx) => {
-							const liked = likedPosts[post.id];
-							return (
-								<Card key={post.id || post._id || idx} className="rounded-2xl shadow bg-white border border-blue-100 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow">
-									{/* Header: Avatar, Username, Category */}
-									<div className="flex items-center gap-3 px-4 pt-4 pb-2">
-										<Avatar className="w-10 h-10">
-											<AvatarFallback>{post.user?.name?.[0] || 'U'}</AvatarFallback>
-										</Avatar>
-										<div className="flex-1 min-w-0">
-											<div className="font-semibold text-blue-900 text-base md:text-lg truncate">{post.user?.name || 'Unknown'}</div>
-											<div className="text-gray-500 text-xs">{post.category}</div>
-										</div>
-										<span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">{post.status || 'STANDARD'}</span>
+						currentPosts.map((post) => (
+							<Card key={post.id} className="rounded-2xl shadow bg-white border border-blue-100 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow">
+								{/* Header: Avatar, Username, Category */}
+								<div className="flex items-center gap-3 px-4 pt-4 pb-2">
+									<Avatar className="w-10 h-10">
+										<AvatarFallback>{post.user?.name?.[0] || 'U'}</AvatarFallback>
+									</Avatar>
+									<div className="flex-1 min-w-0">
+										<div className="font-semibold text-blue-900 text-base md:text-lg truncate">{post.user?.name || 'Unknown'}</div>
+										<div className="text-gray-500 text-xs">{post.category}</div>
 									</div>
-									{/* Post Image (reduced height for more compact, Facebook/Instagram style) */}
-									<div className="w-full h-48 md:h-56 bg-gray-100 flex items-center justify-center overflow-hidden">
-										{/* Replace with actual image if available */}
-										<span className="text-gray-400">Image</span>
+									<span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">{post.status || 'STANDARD'}</span>
+								</div>
+								{/* Post Image (reduced height for more compact, Facebook/Instagram style) */}
+								<div className="w-full h-48 md:h-56 bg-gray-100 flex items-center justify-center overflow-hidden">
+									{/* Replace with actual image if available */}
+									<span className="text-gray-400">Image</span>
+								</div>
+								{/* Description (truncated, with View More) */}
+								<div className="px-4 py-3 text-gray-800 text-sm md:text-base">
+									{expandedPost === post.id || !post.description || post.description.length < 120
+										? post.description || <span className="italic text-gray-400">No description</span>
+										: <>
+											{post.description.slice(0, 120)}...{' '}
+											<button className="text-blue-600 font-semibold hover:underline" onClick={() => setExpandedPost(post.id)}>View More</button>
+										</>
+									}
+								</div>
+								{/* Actions: Like, Share, Views */}
+								<div className="flex items-center justify-between px-4 pb-4 pt-2 border-t border-gray-100">
+									<div className="flex gap-5">
+										<button className={`flex items-center gap-1 font-semibold focus:outline-none`} onClick={() => handleLike(post.id)}>
+											{liked ? <FaHeart className="w-4 h-4 text-red-500" /> : <FaRegHeart className="w-4 h-4 text-black" />} Like {likeCounts[post.id] || 0}
+										</button>
+										<button className="flex items-center gap-1 text-black font-semibold focus:outline-none" onClick={() => handleShare(post.id)}><FaShare className="w-4 h-4" /> Share</button>
+										<span className="flex items-center gap-1 text-gray-500 font-semibold"><FaEye className="w-4 h-4" />{viewCounts[post.id] || 0}</span>
 									</div>
-									{/* Description (truncated, with View More) */}
-									<div className="px-4 py-3 text-gray-800 text-sm md:text-base">
-										{expandedPost === post.id || !post.description || post.description.length < 120
-											? post.description || <span className="italic text-gray-400">No description</span>
-											: <>
-												{post.description.slice(0, 120)}...{' '}
-												<button className="text-blue-600 font-semibold hover:underline" onClick={() => setExpandedPost(post.id)}>View More</button>
-											</>
-										}
-									</div>
-									{/* Actions: Like, Share, Views */}
-									<div className="flex items-center justify-between px-4 pb-4 pt-2 border-t border-gray-100">
-										<div className="flex gap-5">
-											<button className={`flex items-center gap-1 font-semibold focus:outline-none`} onClick={() => handleLike(post.id)}>
-												{liked ? <FaHeart className="w-4 h-4 text-red-500" /> : <FaRegHeart className="w-4 h-4 text-black" />} Like {likeCounts[post.id] || 0}
-											</button>
-											<button className="flex items-center gap-1 text-black font-semibold focus:outline-none" onClick={() => handleShare(post.id)}><FaShare className="w-4 h-4" /> Share</button>
-											<span className="flex items-center gap-1 text-gray-500 font-semibold"><FaEye className="w-4 h-4" />{viewCounts[post.id] || 0}</span>
-										</div>
-										<Button className="bg-blue-600 text-white px-4 py-1 text-xs md:text-sm font-medium rounded" onClick={() => handleViewDetails(post.id)}>View Details</Button>
-									</div>
-								</Card>
-							);
-						})
+									<Button className="bg-blue-600 text-white px-4 py-1 text-xs md:text-sm font-medium rounded" onClick={() => handleViewDetails(post.id)}>View Details</Button>
+								</div>
+							</Card>
+						))
 					)}
 				</div>
 				{shareToast && <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[9999]">{shareToast}</div>}

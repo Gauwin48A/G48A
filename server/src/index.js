@@ -29,10 +29,34 @@ app.use('/api/posts', require('./routes/posts'));
 app.use('/api/notifications', require('./routes/notifications'));
 const feedRoutes = require('./routes/feed');
 app.use('/api/feed', feedRoutes);
+app.use('/api/feedback', require('./routes/feedback'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/complaints', require('./routes/complaints'));
+app.use('/api/admin/dashboard', require('./routes/adminDashboard'));
+app.use('/api/rewards', require('./routes/rewards'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', db: !!pool });
+});
+
+// Temporary route to list all mounted routes
+app.get('/api/_routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      // routes registered directly on the app
+      routes.push(middleware.route);
+    } else if (middleware.name === 'router') {
+      // router middleware
+      middleware.handle.stack.forEach((handler) => {
+        if (handler.route) {
+          routes.push(handler.route);
+        }
+      });
+    }
+  });
+  res.json(routes.map(r => ({ path: r.path, methods: r.methods })));
 });
 
 // Server port

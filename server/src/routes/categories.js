@@ -6,6 +6,6 @@ const categoryController = require('../controllers/categoryController');
 router.get('/', categoryController.getAllCategories);
 
 // GET /api/categories/brands
-router.get('/brands', (req, res) => res.status(501).json({ error: 'Not implemented' }));
+router.get('/brands', (req, res) => res.status(501).json({ code: 501, message: 'Not implemented' }));
 
 module.exports = router;

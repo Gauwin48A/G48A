@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from '../components/Navbar';
+import api from '../lib/api';
 
 const SoldPosts = () => {
   const { toast } = useToast();
@@ -28,9 +28,9 @@ const SoldPosts = () => {
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:5000/api/posts/sold')
-      .then(res => res.json())
-      .then(data => {
+    api.get('/posts/sold')
+      .then(res => {
+        const data = res.data;
         if (Array.isArray(data)) {
           setSoldPosts(data);
           setError(null);

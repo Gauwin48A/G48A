@@ -1,4 +1,4 @@
-const { pool } = require('../index');
+const pool = require('../config/db');
 const logger = require('../utils/logger');
 
 exports.getFeedback = async (req, res) => {
@@ -7,6 +7,6 @@ exports.getFeedback = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     logger.error('Error fetching feedback:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ code: 500, message: 'Failed to fetch feedback', details: err.message });
   }
 };

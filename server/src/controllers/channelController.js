@@ -32,10 +32,14 @@ exports.getChannelByUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const result = await pool.query('SELECT * FROM channels WHERE user_id = $1', [userId]);
-    if (!result.rows[0]) return res.status(404).json({ error: 'Channel not found' });
+    if (!result.rows[0]) {
+      console.error('Channel not found for user:', userId);
+      return res.status(404).json({ error: 'Channel not found', fallback: null });
+    }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Channel API error:', err);
+    res.status(500).json({ error: err.message, fallback: null });
   }
 };
 

@@ -28,6 +28,7 @@ import Categories from './pages/Categories.jsx';
 import { Toaster } from "@/components/ui/toaster";
 import FeedPage from './pages/FeedPage.jsx';
 import MyFeedPage from './pages/MyFeedPage.jsx';
+import PostAdd from './pages/PostAdd.jsx';
 
 function App() {
   return (
@@ -65,6 +66,7 @@ function App() {
           <Route path="/categories" element={<Categories />} />
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/my-feed" element={<MyFeedPage />} />
+          <Route path="/post_add" element={<PostAdd />} />
           <Route path="*" element={<Navigate to="/all-posts" replace />} />
         </Routes>
       </main>

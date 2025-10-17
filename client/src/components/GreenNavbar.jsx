@@ -25,9 +25,8 @@ const moreMenuLinks = [
 
 const bottomNavLinks = [
   { name: 'Home', path: '/all-posts', icon: <FiHome /> },
-  { name: 'My Recommendations', path: '/my-recommendations', icon: <FiList /> },
-  // + (Sell) icon will be rendered separately in the center
-  { name: 'My Home', path: '/my-home', icon: <FiGrid /> },
+  { name: 'Feed', path: '/feed', icon: <FiList /> },
+  { name: 'My Feed', path: '/my-feed', icon: <FiUserCheck /> },
   { name: 'Categories', path: '/categories', icon: <FiList /> },
   { name: 'Rewards', path: '/rewards', icon: <FiUserCheck /> },
   { name: 'Profile', path: '/profile', icon: <FiUser /> },
@@ -199,6 +198,10 @@ const GreenNavbar = () => {
                   Notifications
                 </span>
               </div>
+              {/* Channel Icon beside notifications */}
+              <Link to="/channels" aria-label="Channels" className="ml-4">
+                <FiGrid className={darkMode ? 'text-yellow-300' : 'text-white'} style={{fontSize: '1.8rem'}} />
+              </Link>
             </div>
           </div>
 

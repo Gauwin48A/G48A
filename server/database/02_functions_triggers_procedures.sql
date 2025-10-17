@@ -1,7 +1,7 @@
--- 02_functions.sql
--- This script creates the database functions for the application.
+-- 02_functions_triggers_procedures.sql
+-- All functions, triggers, and stored procedures for the Mhub application
 
--- Function to validate a new post
+-- Function: Validate new post
 CREATE OR REPLACE FUNCTION validate_add_post(
     p_user_id INT,
     p_category_id INT,
@@ -17,32 +17,27 @@ BEGIN
         RETURN QUERY SELECT FALSE, 'User not found.', 'user_id';
         RETURN;
     END IF;
-
     IF NOT EXISTS (SELECT 1 FROM categories WHERE category_id = p_category_id) THEN
         RETURN QUERY SELECT FALSE, 'Category not found.', 'category_id';
         RETURN;
     END IF;
-
     IF NOT EXISTS (SELECT 1 FROM tiers WHERE tier_id = p_tier_id) THEN
         RETURN QUERY SELECT FALSE, 'Tier not found.', 'tier_id';
         RETURN;
     END IF;
-
     IF p_title IS NULL OR LENGTH(p_title) < 3 THEN
         RETURN QUERY SELECT FALSE, 'Title must be at least 3 characters long.', 'title';
         RETURN;
     END IF;
-
     IF p_price IS NULL OR p_price <= 0 THEN
         RETURN QUERY SELECT FALSE, 'Price must be a positive number.', 'price';
         RETURN;
     END IF;
-
     RETURN QUERY SELECT TRUE, 'Validation successful.', NULL;
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to validate a sale status transition
+-- Function: Validate sale status transition
 CREATE OR REPLACE FUNCTION validate_sale_transition(
     p_sale_id INT,
     p_new_status VARCHAR
@@ -52,28 +47,22 @@ DECLARE
     current_status VARCHAR;
 BEGIN
     SELECT sale_status INTO current_status FROM sales WHERE sale_id = p_sale_id;
-
     IF current_status IS NULL THEN
         RETURN QUERY SELECT FALSE, 'Sale not found.', 'sale_id';
         RETURN;
     END IF;
-
-    -- Example transition logic: a completed sale cannot be changed
     IF current_status = 'completed' THEN
         RETURN QUERY SELECT FALSE, 'Cannot change the status of a completed sale.', 'new_status';
         RETURN;
     END IF;
-
     RETURN QUERY SELECT TRUE, 'Validation successful.', NULL;
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get post recommendations for a user
+-- Function: Get post recommendations for a user
 CREATE OR REPLACE FUNCTION get_recommendations(p_user_id INT)
 RETURNS SETOF posts AS $$
 BEGIN
-    -- This is a simple recommendation logic. It can be expanded to include
-    -- user preferences, location, and other factors.
     RETURN QUERY
     SELECT * FROM posts
     WHERE status = 'active' AND user_id != p_user_id
@@ -82,7 +71,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to generate a unique referral code
+-- Function: Generate unique referral code
 CREATE OR REPLACE FUNCTION generate_referral_code()
 RETURNS VARCHAR AS $$
 DECLARE
@@ -100,40 +89,48 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to handle referral rewards
-CREATE OR REPLACE FUNCTION process_referral_rewards()
-RETURNS TRIGGER AS $$
-DECLARE
-    referrer_id INT;
-    points_to_award INT := 100;
-    current_level INT := 1;
+-- Function: Add reward points to a user
+CREATE OR REPLACE FUNCTION add_reward_points(
+    p_user_id INT,
+    p_points INT
+)
+RETURNS VOID AS $$
 BEGIN
-    -- Assign a referral code to the new user
-    NEW.referral_code := generate_referral_code();
+    IF NOT EXISTS (SELECT 1 FROM rewards WHERE user_id = p_user_id) THEN
+        INSERT INTO rewards (user_id, points) VALUES (p_user_id, p_points);
+    ELSE
+        UPDATE rewards SET points = points + p_points, last_updated = CURRENT_TIMESTAMP WHERE user_id = p_user_id;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
-    -- Award points up the referral chain
-    referrer_id := NEW.referred_by;
-    WHILE referrer_id IS NOT NULL AND current_level <= 5 LOOP
-        -- Add points to the referrer
-        PERFORM add_reward_points(referrer_id, points_to_award);
-
-        -- Log the reward
-        INSERT INTO reward_log (user_id, points, reason, related_user_id)
-        VALUES (referrer_id, points_to_award, CASE WHEN current_level = 1 THEN 'direct_referral' ELSE 'indirect_referral' END, NEW.user_id);
-
-        -- Get the next referrer in the chain
-        SELECT referred_by INTO referrer_id FROM users WHERE user_id = referrer_id;
-
-        -- Halve the points for the next level
-        points_to_award := points_to_award / 2;
-        current_level := current_level + 1;
-    END LOOP;
-
+-- Trigger: Award points when a user creates a new post
+CREATE OR REPLACE FUNCTION award_post_creation_reward()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM add_reward_points(NEW.user_id, 10);
+    INSERT INTO reward_log (user_id, points, reason)
+    VALUES (NEW.user_id, 10, 'post_creation');
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER user_creation_trigger
-BEFORE INSERT ON users
+CREATE TRIGGER post_creation_trigger
+AFTER INSERT ON posts
 FOR EACH ROW
-EXECUTE FUNCTION process_referral_rewards();
+EXECUTE FUNCTION award_post_creation_reward();
+
+-- Audit Logging Trigger
+CREATE OR REPLACE FUNCTION log_audit_action()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO audit_log (user_id, action, details)
+    VALUES (NEW.user_id, TG_OP, row_to_json(NEW)::TEXT);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER audit_user_insert
+AFTER INSERT ON users
+FOR EACH ROW
+EXECUTE FUNCTION log_audit_action();

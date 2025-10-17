@@ -89,4 +89,7 @@ router.get('/undone', async (req, res) => {
 // GET /api/posts/:postId - get post by ID
 router.get('/:postId', postController.getPostById);
 
+// GET /api/posts/:id - get post by ID
+router.get('/:id', postController.getPostById);
+
 module.exports = router;

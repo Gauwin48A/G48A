@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-
-// Dummy feedback endpoint
 const feedbackController = require('../controllers/feedbackController');
 
+// Dummy feedback endpoint
 router.get('/', feedbackController.getFeedback);
 
 module.exports = router;

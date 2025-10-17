@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Copy } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import api from '../lib/api';
 
 // Minimal, elegant banner
 const RewardsBanner = () => (
@@ -26,29 +27,40 @@ const RewardsBanner = () => (
 );
 
 const Rewards = () => {
-  const [user] = useState({
-    name: 'John Doe',
-    id: 'USR12345',
-    rank: 'Silver',
-    totalCoins: 1250,
-    streak: 5,
-    referralCode: 'REF12345',
-    dailySecretCode: 'DAILYCODE',
-    totalReferrals: 7,
-    successfulRefs: 7,
-    xpCurrent: 340,
-    xpRequired: 500,
-    level: 8,
-  });
-  // Simple referral chain: just a list, no levels/colors
-  const [referralChain] = useState([
-    { id: "REF001", name: "Priya Singh", joinDate: "2024-01-15", coins: 100 },
-    { id: "REF002", name: "Amit Kumar", joinDate: "2024-01-18", coins: 100 },
-    { id: "REF003", name: "Sneha Patel", joinDate: "2024-01-20", coins: 100 },
-    { id: "REF004", name: "Rahul Verma", joinDate: "2024-01-22", coins: 100 },
-  ]);
-  const progressPercentage = (user.xpCurrent / user.xpRequired) * 100;
+  const [user, setUser] = useState(null);
+  const [referralChain, setReferralChain] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [tab, setTab] = useState("direct");
+
+  useEffect(() => {
+    const fetchRewards = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const userId = localStorage.getItem('userId');
+        const res = await api.get(`/rewards?userId=${userId}`);
+        if (res.status === 200 && res.data) {
+          // Assume backend returns { user, referralChain }
+          setUser(res.data.user || null);
+          setReferralChain(res.data.referralChain || []);
+        } else {
+          setError(res.data?.error || 'Failed to fetch rewards');
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to fetch rewards');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRewards();
+  }, []);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading rewards...</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  if (!user) return <div className="min-h-screen flex items-center justify-center text-gray-500">No rewards data found.</div>;
+
+  const progressPercentage = (user.xpCurrent / user.xpRequired) * 100;
 
   return (
     <div className="min-h-screen bg-gray-50">

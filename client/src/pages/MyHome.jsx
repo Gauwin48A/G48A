@@ -259,68 +259,79 @@ const MyPosts = () => {
 
   // --- MAIN RENDER ---
   return (
-    <div className="w-full min-h-screen bg-white flex flex-col items-center pb-24">
-      {/* Tabs */}
-      <div className="flex w-full justify-between gap-2 py-2 px-1 mb-2 overflow-x-auto scrollbar-hide max-w-2xl">
-        {[{label:'All',tab:'all',color:'bg-blue-600',count:allPosts.length},{label:'Active',tab:'active',color:'bg-green-500',count:allPosts.filter(p=>p.status==='active').length},{label:'Sold',tab:'sold',color:'bg-blue-500',count:soldPosts.length},{label:'Bought',tab:'bought',color:'bg-purple-500',count:boughtPosts.length}].map((item) => (
-          <button key={item.tab} className={`flex-1 min-w-0 px-0 py-2 rounded-lg font-bold text-base shadow-sm border-2 border-transparent focus:outline-none transition-all duration-150 ${activeTab===item.tab?`${item.color} text-white scale-105`:'bg-white text-blue-700'}`} onClick={()=>{
-            setActiveTab(item.tab);
-            setFilters(f => ({ ...f, status: item.tab==='all'?'':item.tab }));
-          }}>{item.label} <span className={`ml-1 ${item.color} text-white px-2 py-0.5 rounded text-xs`}>{item.count}</span></button>
-        ))}
-      </div>
-      {/* Welcome Banner - styled like Home */}
-      <div className="w-full max-w-2xl bg-blue-50 rounded-2xl shadow-lg p-6 mt-2 mb-4 flex flex-col items-start">
-        <h2 className="text-2xl font-black text-blue-900 mb-1">Welcome to MyHome</h2>
-        <p className="text-base font-medium text-blue-700 mb-2">Manage, track, and celebrate your listings</p>
-        <div className="flex w-full gap-2 mt-2">
-          <Button className="flex-1 bg-green-500 text-white font-bold rounded-lg px-0 py-2 text-base shadow" onClick={handleSaleDone}>Sale Done</Button>
-          <Button className="flex-1 bg-orange-500 text-white font-bold rounded-lg px-0 py-2 textBase shadow" onClick={handleSaleUndone}>Sale Undone</Button>
+    <div className="bg-white min-h-screen flex flex-col items-center">
+      <div className="main-container px-2 py-4 sm:px-4 sm:py-8" style={{maxWidth: '600px', margin: '0 auto'}}>
+        {/* Banner */}
+        <div className="w-full flex flex-col items-center justify-center py-8 bg-gradient-to-r from-blue-100 to-blue-300 rounded-2xl mb-8 shadow-lg relative overflow-hidden">
+          <div className="absolute left-0 top-0 w-full h-full opacity-10 pointer-events-none select-none">
+            <svg width="100%" height="100%" viewBox="0 0 600 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="300" cy="60" rx="300" ry="60" fill="#3b82f6" />
+            </svg>
+          </div>
+          <div className="relative z-10 flex flex-col items-center">
+            <span className="text-4xl mb-2">🏠</span>
+            <h1 className="text-3xl font-extrabold text-black mt-2 mb-1 drop-shadow">My Home</h1>
+            <p className="text-base text-black font-medium">Manage, track, and celebrate your listings</p>
+          </div>
         </div>
-      </div>
-      {/* Posts List - styled like Home cards */}
-      <div className="w-full max-w-2xl flex flex-col gap-6">
-        {sortedPosts.length === 0 ? (
-          <div className="text-center text-gray-400 text-lg font-bold py-10">No posts to display.</div>
-        ) : (
-          sortedPosts.filter(post => {
-            if (activeTab === 'active') return post.status === 'active';
-            if (activeTab === 'sold') return post.status === 'sold';
-            if (activeTab === 'bought') return post.status === 'bought';
-            return true;
-          }).map((post) => (
-            <div key={post.postId || post.id} className="bg-white rounded-2xl shadow-lg border border-blue-200 p-6 flex flex-col gap-2">
-              <div className="flex items-center justify-between mb-2">
-                <span className={`font-bold rounded-full px-3 py-0.5 text-xs capitalize ${post.status==='active'?'bg-blue-600 text-white':post.status==='sold'?'bg-green-500 text-white':post.status==='bought'?'bg-purple-500 text-white':'bg-gray-200 text-gray-700'}`}>{post.status}</span>
-                <span className="text-xs font-semibold text-blue-700">ID: {post.postId || post.id}</span>
+        {/* Tabs */}
+        <div className="w-full flex justify-center gap-4 py-2 mb-4">
+          {[{label:'All',tab:'all',color:'bg-blue-600',count:allPosts.length},{label:'Active',tab:'active',color:'bg-green-500',count:allPosts.filter(p=>p.status==='active').length},{label:'Sold',tab:'sold',color:'bg-blue-500',count:soldPosts.length},{label:'Bought',tab:'bought',color:'bg-purple-500',count:boughtPosts.length}].map((item) => (
+            <button key={item.tab} className={`flex-1 min-w-0 px-0 py-2 rounded-xl font-bold text-base shadow-lg border-2 border-blue-300 focus:outline-none transition-all duration-150 ${activeTab===item.tab?`${item.color} text-white scale-110 drop-shadow-xl border-2 border-blue-700`:'bg-white text-blue-700 hover:bg-blue-50'}`} onClick={()=>{
+              setActiveTab(item.tab);
+              setFilters(f => ({ ...f, status: item.tab==='all'?'':item.tab }));
+            }}>{item.label} <span className={`ml-1 ${item.color} text-white px-2 py-0.5 rounded text-xs`}>{item.count}</span></button>
+          ))}
+        </div>
+        {/* Sale Done/Undone Buttons */}
+        <div className="flex w-full gap-4 mb-6">
+          <Button className="flex-1 bg-green-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all" onClick={handleSaleDone}>Sale Done</Button>
+          <Button className="flex-1 bg-orange-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all" onClick={handleSaleUndone}>Sale Undone</Button>
+        </div>
+        {/* Posts List - wider, modern cards */}
+        <div className="w-full flex flex-col gap-8">
+          {sortedPosts.length === 0 ? (
+            <div className="text-center text-gray-400 text-lg font-bold py-10">No posts to display.</div>
+          ) : (
+            sortedPosts.filter(post => {
+              if (activeTab === 'active') return post.status === 'active';
+              if (activeTab === 'sold') return post.status === 'sold';
+              if (activeTab === 'bought') return post.status === 'bought';
+              return true;
+            }).map((post) => (
+              <div key={post.postId || post.id} className="bg-white rounded-2xl shadow-lg border border-blue-200 p-8 flex flex-col gap-4 hover:scale-[1.01] transition-all">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`font-bold rounded-full px-4 py-1 text-base capitalize ${post.status==='active'?'bg-blue-600 text-white':post.status==='sold'?'bg-green-500 text-white':post.status==='bought'?'bg-purple-500 text-white':'bg-gray-200 text-gray-700'}`}>{post.status}</span>
+                  <span className="text-base font-semibold text-blue-700">ID: {post.postId || post.id}</span>
+                </div>
+                <div className="text-xl font-bold text-blue-900 mb-1">{post.title}</div>
+                <div className="text-2xl font-black text-blue-600 mb-2">₹{typeof post.price === 'number' ? post.price.toLocaleString() : post.price}</div>
+                <div className="flex gap-4 mt-1">
+                  <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-0 py-3 text-lg shadow flex items-center justify-center gap-2 transition-all" onClick={() => navigate(`/post/${post.postId || post.id}`)}>
+                    <Eye className="w-5 h-5 mr-1" />
+                    View Details
+                  </Button>
+                  <Button className="flex-1 bg-white border-2 border-blue-600 text-blue-600 font-bold rounded-xl px-0 py-3 text-lg shadow flex items-center justify-center gap-2 hover:bg-blue-50 transition-all" onClick={() => handleDelete(post.postId || post.id)}>
+                    <Trash2 className="w-5 h-5 mr-1 text-red-500" />
+                    <span className="text-red-500">Delete</span>
+                  </Button>
+                </div>
               </div>
-              <div className="text-lg font-bold text-blue-900 mb-1">{post.title}</div>
-              <div className="text-xl font-black text-blue-600 mb-2">₹{typeof post.price === 'number' ? post.price.toLocaleString() : post.price}</div>
-              <div className="flex gap-2 mt-1">
-                <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg px-0 py-2 text-base shadow flex items-center justify-center gap-2 transition-all" onClick={() => navigate(`/post/${post.postId || post.id}`)}>
-                  <Eye className="w-4 h-4 mr-1" />
-                  View Details
-                </Button>
-                <Button className="flex-1 bg-white border-2 border-blue-600 text-blue-600 font-bold rounded-lg px-0 py-2 textBase shadow flex items-center justify-center gap-2 hover:bg-blue-50 transition-all" onClick={() => handleDelete(post.postId || post.id)}>
-                  <Trash2 className="w-4 h-4 mr-1 text-red-500" />
-                  <span className="text-red-500">Delete</span>
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-      {/* Pagination Controls */}
-      <div className="flex justify-center items-center gap-2 mt-4 mb-2">
-        <Button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)} className="text-base px-5 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700">Previous</Button>
-        <span className="px-3 py-1 text-blue-700 font-bold text-base">Page {currentPage} of {totalPages}</span>
-        <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)} className="text-base px-5 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700">Next</Button>
-      </div>
-      {/* Centered + Button at Bottom */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-        <Button className="bg-blue-600 text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center text-4xl hover:bg-blue-700" onClick={() => navigate('/add-post')}>
-          <Plus className="w-8 h-8" />
-        </Button>
+            ))
+          )}
+        </div>
+        {/* Pagination Controls */}
+        <div className="flex justify-center items-center gap-4 mt-8 mb-2">
+          <Button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)} className="text-lg px-6 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700">Previous</Button>
+          <span className="px-4 py-2 text-blue-700 font-bold text-lg">Page {currentPage} of {totalPages}</span>
+          <Button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)} className="text-lg px-6 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700">Next</Button>
+        </div>
+        {/* Centered + Button at Bottom */}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+          <Button className="bg-blue-600 text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center text-4xl hover:bg-blue-700" onClick={() => navigate('/add-post')}>
+            <Plus className="w-8 h-8" />
+          </Button>
+        </div>
       </div>
     </div>
   );

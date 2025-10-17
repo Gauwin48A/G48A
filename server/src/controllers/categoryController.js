@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const logger = require('../utils/logger');
+const logger = require('../utils/logger') || console;
 
 exports.getAllCategories = async (req, res) => {
   try {
@@ -10,13 +10,13 @@ exports.getAllCategories = async (req, res) => {
       ORDER BY c.name ASC
     `);
     if (!result.rows || result.rows.length === 0) {
-      logger.error('No categories found in DB');
-      return res.status(404).json({ error: 'No categories found' });
+      (logger.error || console.error)('No categories found in DB');
+      return res.status(404).json({ code: 404, message: 'No categories found', fallback: [] });
     }
-    logger.info('Categories fetched: %o', result.rows);
+    (logger.info || console.log)('Categories fetched: %o', result.rows);
     res.json(result.rows);
   } catch (err) {
-    logger.error('Error fetching categories: %o', err);
-    res.status(500).json({ error: err.message });
+    (logger.error || console.error)('Error fetching categories: %o', err);
+    res.status(500).json({ code: 500, message: 'Failed to fetch categories', details: err.message, fallback: [] });
   }
 };

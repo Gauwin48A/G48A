@@ -4,15 +4,19 @@ const logger = require('../utils/logger');
 exports.getProfile = async (req, res) => {
   try {
     const { userId } = req.query;
-    // Use correct column name based on schema (user_id or id)
+    if (!userId) {
+      logger.warn('Profile request missing userId');
+      return res.status(400).json({ code: 400, message: 'userId required', fallback: null });
+    }
     const result = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
     if (!result.rows || result.rows.length === 0) {
-      return res.status(404).json({ error: 'Profile not found' });
+      logger.error('Profile not found for user:', userId);
+      return res.status(404).json({ code: 404, message: 'Profile not found', fallback: null });
     }
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error fetching profile:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ code: 500, message: 'Failed to fetch profile', details: err.message, fallback: null });
   }
 };
 
@@ -28,12 +32,13 @@ exports.updateProfile = async (req, res) => {
       [full_name, phone, address, avatar_url, bio, userId]
     );
     if (!result.rows || result.rows.length === 0) {
-      return res.status(404).json({ error: 'Profile not found' });
+      logger.error('Profile not found for update:', userId);
+      return res.status(404).json({ error: 'Profile not found', fallback: null });
     }
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error updating profile:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, fallback: null });
   }
 };
 
@@ -41,14 +46,19 @@ exports.updateProfile = async (req, res) => {
 exports.getPreferences = async (req, res) => {
   try {
     const { userId } = req.query;
+    if (!userId) {
+      logger.warn('Preferences request missing userId');
+      return res.status(400).json({ code: 400, message: 'userId required', fallback: null });
+    }
     const result = await pool.query('SELECT * FROM preferences WHERE user_id = $1', [userId]);
     if (!result.rows || result.rows.length === 0) {
-      return res.status(404).json({ error: 'Preferences not found' });
+      logger.error('Preferences not found for user:', userId);
+      return res.status(404).json({ code: 404, message: 'Preferences not found', fallback: null });
     }
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error fetching preferences:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ code: 500, message: 'Failed to fetch preferences', details: err.message, fallback: null });
   }
 };
 

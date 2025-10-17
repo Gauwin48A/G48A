@@ -18,4 +18,11 @@ const protect = (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+const requireAadhaarVerified = (req, res, next) => {
+  if (!req.user || !req.user.aadhaar_verified) {
+    return res.status(403).json({ error: 'Aadhaar verification required to access this feature.' });
+  }
+  next();
+};
+
+module.exports = { protect, requireAadhaarVerified };

@@ -1,10 +1,17 @@
 const pool = require('../config/db');
-const logger = require('../utils/logger');
+let logger;
+try {
+  logger = require('../utils/logger');
+} catch (e) {
+  logger = null;
+}
+const logError = (logger && logger.error) ? logger.error : console.error;
+const logInfo = (logger && logger.info) ? logger.info : console.log;
 
 // Get posts for a specific user
 exports.getUserPosts = async (req, res) => {
   try {
-    const { userId, status, sortBy = 'posted_date', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
+    const { userId, status, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
     if (!userId) return res.status(400).json({ error: 'userId required' });
     const offset = (parseInt(page) - 1) * parseInt(limit);
     let query = 'SELECT * FROM posts WHERE user_id = $1';
@@ -23,29 +30,64 @@ exports.getUserPosts = async (req, res) => {
 
 exports.getAllPosts = async (req, res) => {
   try {
-    // Use stored procedure for fetching posts with filtering, searching, pagination
-    const { category, minPrice, maxPrice, sortBy = 'posted_date', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
+    // Prioritize least-viewed posts (first batch)
+    // Get 20 least-viewed active posts
+    const leastViewedRes = await pool.query(
+      "SELECT * FROM posts WHERE status = 'active' ORDER BY views ASC, created_at DESC LIMIT 20"
+    );
+    // Build dynamic query for filtering, searching, pagination
+    const { search, category, minPrice, maxPrice, author, startDate, endDate, page = 1, limit = 10 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    // Build dynamic query for filtering, sorting, pagination
-    let query = 'SELECT * FROM posts WHERE 1=1';
+    let query = "SELECT * FROM posts WHERE status = 'active'";
     const params = [];
-    if (category) { query += ` AND category_id = $${params.length + 1}`; params.push(category); }
-    if (minPrice) { query += ` AND price >= $${params.length + 1}`; params.push(minPrice); }
-    if (maxPrice) { query += ` AND price <= $${params.length + 1}`; params.push(maxPrice); }
-    query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    if (search) {
+      query += ` AND (title ILIKE $${params.length + 1} OR description ILIKE $${params.length + 1})`;
+      params.push(`%${search}%`);
+    }
+    if (category) {
+      query += ` AND category_id = $${params.length + 1}`;
+      params.push(category);
+    }
+    if (author) {
+      query += ` AND user_id = $${params.length + 1}`;
+      params.push(author);
+    }
+    if (startDate) {
+      query += ` AND created_at >= $${params.length + 1}`;
+      params.push(startDate);
+    }
+    if (endDate) {
+      query += ` AND created_at <= $${params.length + 1}`;
+      params.push(endDate);
+    }
+    if (minPrice) {
+      query += ` AND price >= $${params.length + 1}`;
+      params.push(minPrice);
+    }
+    if (maxPrice) {
+      query += ` AND price <= $${params.length + 1}`;
+      params.push(maxPrice);
+    }
+    query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
     const result = await pool.query(query, params);
+    // Merge least-viewed posts at the top, avoiding duplicates
+    const mergedPosts = [...leastViewedRes.rows, ...result.rows.filter(p => !leastViewedRes.rows.some(lv => lv.id === p.id))];
     // Get total count for pagination
-    let countQuery = 'SELECT COUNT(*) FROM posts WHERE 1=1';
+    let countQuery = 'SELECT COUNT(*) FROM posts WHERE status = \'active\'';
     const countParams = [];
+    if (search) { countQuery += ` AND (title ILIKE $${countParams.length + 1} OR description ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
     if (category) { countQuery += ` AND category_id = $${countParams.length + 1}`; countParams.push(category); }
+    if (author) { countQuery += ` AND user_id = $${countParams.length + 1}`; countParams.push(author); }
+    if (startDate) { countQuery += ` AND created_at >= $${countParams.length + 1}`; countParams.push(startDate); }
+    if (endDate) { countQuery += ` AND created_at <= $${countParams.length + 1}`; countParams.push(endDate); }
     if (minPrice) { countQuery += ` AND price >= $${countParams.length + 1}`; countParams.push(minPrice); }
     if (maxPrice) { countQuery += ` AND price <= $${countParams.length + 1}`; countParams.push(maxPrice); }
     const countResult = await pool.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count);
-    res.json({ posts: result.rows, total });
+    res.json({ posts: mergedPosts, total });
   } catch (err) {
-    logger.error('Error fetching posts:', err);
+    logError('Error fetching posts:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -64,7 +106,7 @@ exports.createPost = async (req, res) => {
     );
     const post_id = result.rows[0]?.post_id;
     if (!post_id) {
-      logger.error('Post creation failed', { body: req.body });
+      logError('Post creation failed', { body: req.body });
       return res.status(400).json({ error: 'Post creation failed' });
     }
     // Fetch the created post and images for response
@@ -72,7 +114,7 @@ exports.createPost = async (req, res) => {
     const imagesRes = await pool.query('SELECT * FROM post_images WHERE post_id = $1', [post_id]);
     res.status(201).json({ post: postRes.rows[0], images: imagesRes.rows });
   } catch (err) {
-    logger.error('Error creating post:', err);
+    logError('Error creating post:', err);
     res.status(400).json({ error: err.message });
   }
 };
@@ -80,18 +122,22 @@ exports.createPost = async (req, res) => {
 // Get post by ID
 exports.getPostById = async (req, res) => {
   try {
-    const postId = req.params.postId;
-    if (!postId) return res.status(400).json({ error: 'postId required' });
-    const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [postId]);
+    const postId = req.params.id;
+    // Fetch post details
+    const postRes = await pool.query('SELECT * FROM posts WHERE id = $1', [postId]);
     if (!postRes.rows.length) return res.status(404).json({ error: 'Post not found' });
-    // Optionally fetch images and user info
-    const imagesRes = await pool.query('SELECT * FROM post_images WHERE post_id = $1', [postId]);
-    const userRes = await pool.query('SELECT * FROM users WHERE user_id = $1', [postRes.rows[0].user_id]);
     const post = postRes.rows[0];
-    post.images = imagesRes.rows.map(img => img.url);
-    post.user = userRes.rows[0];
-    res.json({ post });
+    // Increment view count
+    await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [postId]);
+    // Optionally fetch comments, likes, author, category
+    const authorRes = await pool.query('SELECT username FROM users WHERE id = $1', [post.user_id]);
+    const categoryRes = await pool.query('SELECT name FROM categories WHERE category_id = $1', [post.category_id]);
+    post.author = authorRes.rows[0]?.username || 'Unknown';
+    post.category = categoryRes.rows[0]?.name || 'Unknown';
+    // Optionally fetch comments, likes if needed
+    res.json(post);
   } catch (err) {
+    logError('Error fetching post by ID:', err);
     res.status(500).json({ error: err.message });
   }
 };

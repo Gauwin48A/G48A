@@ -12,5 +12,6 @@ export const updateChannel = (channelId, data) => api.put(`/channel/${channelId}
 export const createChannelPost = (channelId, data) => api.post(`/channel/${channelId}/posts`, data);
 export const getAllChannels = () => api.get('/channel');
 export const followChannel = (channelId) => api.post(`/channel/${channelId}/follow`);
+export const addTextPost = (data) => api.post('/feed/add', data);
 
 export default api;
