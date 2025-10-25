@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { FiUser, FiBell, FiMenu, FiSearch, FiFilter, FiHome, FiList, FiGrid, FiUserCheck } from 'react-icons/fi';
 import { FiPlusSquare } from 'react-icons/fi';
 import { SkeletonLoader } from './GreenSkeletonLoader';
+import { useFilter } from '@/context/FilterContext';
 
 const navLinks = [
   { name: 'All Categories', path: '/all-posts' },
@@ -34,6 +35,7 @@ const bottomNavLinks = [
 ];
 
 const GreenNavbar = () => {
+  const { filters, setFilters } = useFilter();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   // Persist dark mode in localStorage
@@ -101,14 +103,19 @@ const GreenNavbar = () => {
               <span className="text-white text-2xl font-bold">Shop</span>
             </Link>
             {/* Search Bar with icon and filter */}
-            <form className="flex-1 mx-6 max-w-xl flex items-center gap-2" role="search" aria-label="Product Search">
+            <form className="flex-1 mx-6 max-w-xl flex items-center gap-2" role="search" aria-label="Product Search" onSubmit={e => { e.preventDefault(); }}>
               <div className="relative w-full">
                 <input
                   type="text"
                   placeholder="Search for products, brands and more"
-                  className="w-full px-4 py-2 rounded-lg border-none bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 pl-10"
+                  className="w-full px-4 py-2 rounded-lg border-none bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10"
+                  value={filters.search}
+                  onChange={e => setFilters(f => ({ ...f, search: e.target.value, page: 1 }))}
+                  onKeyDown={e => { if (e.key === 'Enter') setFilters(f => ({ ...f, search: e.target.value, page: 1 })); }}
                 />
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5" />
+                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500 w-5 h-5 flex items-center justify-center p-0 m-0 border-0 bg-transparent cursor-pointer">
+                  <FiSearch className="w-5 h-5" />
+                </button>
               </div>
               <div className="relative">
                 <button type="button" onClick={() => setShowFilter(true)} className="bg-blue-500 text-white px-3 py-2 rounded-lg flex items-center gap-1 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-white">
@@ -124,11 +131,11 @@ const GreenNavbar = () => {
                       <h4 className="font-semibold text-blue-600 dark:text-yellow-300 mb-2">Filter Products</h4>
                       <div className="mb-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                        <input type="text" placeholder="Enter location" className="w-full border rounded px-2 py-1" />
+                        <input type="text" placeholder="Enter location" className="w-full border rounded px-2 py-1" onChange={e => setFilters(f => ({ ...f, location: e.target.value, page: 1 }))} />
                       </div>
                       <div className="mb-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
-                        <select className="w-full border rounded px-2 py-1">
+                        <select className="w-full border rounded px-2 py-1" onChange={e => setFilters(f => ({ ...f, priceRange: e.target.value, page: 1 }))}>
                           <option value="">All</option>
                           <option value="0-100">Under $100</option>
                           <option value="100-500">$100 - $500</option>
@@ -138,28 +145,40 @@ const GreenNavbar = () => {
                       </div>
                       <div className="mb-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          <button className="px-3 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold hover:bg-blue-200">Today</button>
-                          <button className="px-3 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold hover:bg-blue-200">Last Week</button>
-                          <button className="px-3 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold hover:bg-blue-200">Last Month</button>
-                          <button className="px-3 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold hover:bg-blue-200">All Time</button>
-                        </div>
                         <div className="flex gap-2">
-                          <input type="date" className="w-1/2 border rounded px-2 py-1" />
-                          <input type="date" className="w-1/2 border rounded px-2 py-1" />
+                          <input type="date" className="w-1/2 border rounded px-2 py-1" onChange={e => setFilters(f => ({ ...f, startDate: e.target.value, page: 1 }))} />
+                          <input type="date" className="w-1/2 border rounded px-2 py-1" onChange={e => setFilters(f => ({ ...f, endDate: e.target.value, page: 1 }))} />
                         </div>
+                      </div>
+                      <div className="mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select className="w-full border rounded px-2 py-1" value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value, page: 1 }))}>
+                          <option value="">All</option>
+                          <option value="Electronics">Electronics</option>
+                          <option value="Fashion">Fashion</option>
+                          <option value="Home">Home</option>
+                          <option value="Mobiles">Mobiles</option>
+                          {/* Add more categories as needed */}
+                        </select>
+                      </div>
+                      <div className="mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                        <select className="w-full border rounded px-2 py-1" value={filters.sortBy || ''} onChange={e => setFilters(f => ({ ...f, sortBy: e.target.value, page: 1 }))}>
+                          <option value="">Default</option>
+                          <option value="price_asc">Price: Low to High</option>
+                          <option value="price_desc">Price: High to Low</option>
+                          <option value="date_desc">Newest First</option>
+                          <option value="date_asc">Oldest First</option>
+                        </select>
                       </div>
                       <div className="flex gap-2 mt-2">
                         <button
                           className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-                          // onClick={handleApplyFilters} // wire this to your filter logic
+                          onClick={() => setShowFilter(false)}
                         >Apply Filters</button>
                         <button
                           className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition"
-                          onClick={() => {
-                            // Clear all filter fields logic here
-                            // setLocation(''); setPrice(''); setDate(''); etc.
-                          }}
+                          onClick={() => { setFilters(f => ({ ...f, location: '', priceRange: '', startDate: '', endDate: '', category: '', sortBy: '', page: 1 })); setShowFilter(false); }}
                         >Clear Filters</button>
                       </div>
                     </div>

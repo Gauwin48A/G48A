@@ -41,10 +41,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const MyPosts = () => {
+const MyHome = () => {
   // Filtering, sorting, pagination state
   const [activeTab, setActiveTab] = useState('active');
-  const [filters, setFilters] = useState({ status: 'active', sortBy: 'posted_date', sortOrder: 'desc', page: 1, limit: 10 });
+  // Use correct backend column for sorting
+  const [filters, setFilters] = useState({ status: 'active', sortBy: 'created_at', sortOrder: 'desc', page: 1, limit: 10 });
   const [selectedPosts, setSelectedPosts] = useState(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showSaleUndoneDialog, setShowSaleUndoneDialog] = useState(false);
@@ -66,10 +67,15 @@ const MyPosts = () => {
 
   useEffect(() => {
     setLoading(true);
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      setError('You must be logged in to view your posts.');
+      setLoading(false);
+      return;
+    }
     const params = new URLSearchParams(filters).toString();
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId') || 1;
     fetch(`${baseUrl}/api/posts/mine?userId=${userId}&${params}`, {
       method: 'GET',
       headers: {
@@ -519,4 +525,4 @@ const MyPosts = () => {
   }
   // --- END RESTORED BLOCK ---
 };
-export default MyPosts;
+export default MyHome;

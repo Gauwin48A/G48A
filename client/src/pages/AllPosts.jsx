@@ -6,12 +6,12 @@ import { Smartphone, Monitor, Shirt, Sofa } from 'lucide-react';
 import { FaHeart, FaRegHeart, FaShare, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import CategoriesGrid from '@/components/CategoriesGrid'; // Importing CategoriesGrid
+import { useFilter } from '@/context/FilterContext';
 
 const NAVBAR_HEIGHT = 80; // px, adjust to match your actual navbar height
 
 const AllPosts = () => {
-	// Filtering, sorting, pagination state
-	const [filters, setFilters] = useState({ search: '', category: '', startDate: '', endDate: '', page: 1, limit: 10 });
+	const { filters, setFilters } = useFilter();
 	const [total, setTotal] = useState(0);
 	const [posts, setPosts] = useState([]);
 	const [error, setError] = useState(null);
@@ -33,8 +33,16 @@ const AllPosts = () => {
 			try {
 				const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 				const token = localStorage.getItem('authToken');
-				const params = new URLSearchParams(filters).toString();
-				const res = await fetch(`${baseUrl}/api/posts?${params}`, {
+				const params = new URLSearchParams();
+				if (filters.search) params.append('search', filters.search);
+				if (filters.category) params.append('category', filters.category);
+				if (filters.priceRange) params.append('priceRange', filters.priceRange);
+				if (filters.startDate) params.append('startDate', filters.startDate);
+				if (filters.endDate) params.append('endDate', filters.endDate);
+				if (filters.sortBy) params.append('sortBy', filters.sortBy);
+				params.append('page', filters.page || 1);
+				params.append('limit', filters.limit || 10);
+				const res = await fetch(`${baseUrl}/api/posts?${params.toString()}`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -80,7 +88,7 @@ const AllPosts = () => {
 		};
 		fetchPosts();
 		fetchCategories();
-	}, [filters]);
+	}, [filters.search, filters.category, filters.priceRange, filters.startDate, filters.endDate, filters.sortBy, filters.page, filters.limit]);
 
 	// Pagination logic
 	const totalPosts = posts.length;
@@ -113,7 +121,7 @@ const AllPosts = () => {
 
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [filters]);
+	}, [filters.search, filters.category, filters.priceRange, filters.startDate, filters.endDate]);
 
 	// Sponsored Deals (show 4/5 only)
 	const sponsoredDeals = posts.filter(post => post.isSponsored).slice(0, 5);

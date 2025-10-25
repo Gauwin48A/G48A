@@ -34,14 +34,18 @@ const Rewards = () => {
   const [tab, setTab] = useState("direct");
 
   useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      setError('You must be logged in to view rewards.');
+      setLoading(false);
+      return;
+    }
     const fetchRewards = async () => {
       setLoading(true);
       setError(null);
       try {
-        const userId = localStorage.getItem('userId');
         const res = await api.get(`/rewards?userId=${userId}`);
         if (res.status === 200 && res.data) {
-          // Assume backend returns { user, referralChain }
           setUser(res.data.user || null);
           setReferralChain(res.data.referralChain || []);
         } else {
