@@ -1,21 +1,19 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 
 const FilterContext = createContext();
 
-export const FilterProvider = ({ children }) => {
-  const [filters, setFilters] = useState({
-    search: '',
-    category: '',
-    startDate: '',
-    endDate: '',
-    page: 1,
-    limit: 10,
-  });
-  return (
-    <FilterContext.Provider value={{ filters, setFilters }}>
-      {children}
-    </FilterContext.Provider>
-  );
+const defaultFilters = {
+  search: '',
+  category: 'All',
+  sortBy: 'recent',
 };
 
-export const useFilter = () => useContext(FilterContext);
+export function FilterProvider({ children }) {
+  const [filters, setFilters] = useState(defaultFilters);
+  const value = useMemo(() => ({ filters, setFilters }), [filters]);
+  return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;
+}
+
+export function useFilter() {
+  return useContext(FilterContext);
+}

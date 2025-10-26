@@ -415,18 +415,29 @@ const AddPost = () => {
                   </div>
                   <div>
                     <Label className="text-sm font-semibold text-gray-700">Category *</Label>
-                    <Select name="category" value={formData.category} onValueChange={handleSelectChange('category')} required disabled={!!selectedCategory}>
-                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.id || cat} value={cat.name || cat}>
-                            {cat.name || cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {/* If category is pre-selected, show as read-only input, else show dropdown */}
+                    {selectedCategory ? (
+                      <Input
+                        name="category"
+                        value={formData.category}
+                        readOnly
+                        disabled
+                        className="mt-2 h-12 border-2 border-gray-200 bg-gray-100 cursor-not-allowed"
+                      />
+                    ) : (
+                      <Select name="category" value={formData.category} onValueChange={handleSelectChange('category')} required>
+                        <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.id || cat} value={cat.name || cat}>
+                              {cat.name || cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     {formErrors.category && <div className="text-red-500 text-xs mt-1">{formErrors.category}</div>}
                   </div>
                   <div>

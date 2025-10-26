@@ -68,19 +68,19 @@ const MyHome = () => {
   useEffect(() => {
     setLoading(true);
     const userId = localStorage.getItem('userId');
-    if (!userId) {
+    const token = localStorage.getItem('authToken');
+    if (!userId || !token) {
       setError('You must be logged in to view your posts.');
       setLoading(false);
       return;
     }
     const params = new URLSearchParams(filters).toString();
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    const token = localStorage.getItem('authToken');
     fetch(`${baseUrl}/api/posts/mine?userId=${userId}&${params}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Authorization': `Bearer ${token}`
       },
       credentials: 'include'
     })

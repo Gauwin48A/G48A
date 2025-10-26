@@ -1,6 +1,16 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FiSearch, FiUser, FiShoppingCart, FiBell, FiMenu } from "react-icons/fi";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useFilter } from "@/context/FilterContext";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+
+const categories = ["All", "Electronics", "Fashion", "Home", "Mobiles"];
+const sortOptions = [
+  { value: "recent", label: "Most Recent" },
+  { value: "leastViews", label: "Least Views" },
+  { value: "priceLowHigh", label: "Price: Low to High" },
+  { value: "priceHighLow", label: "Price: High to Low" },
+];
 
 const navLinks = [
   { name: "Mobiles" },
@@ -13,7 +23,21 @@ const navLinks = [
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { filters, setFilters } = useFilter();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleSearch = (e) => {
+    setFilters((prev) => ({ ...prev, search: e.target.value }));
+  };
+
+  const handleCategory = (val) => {
+    setFilters((prev) => ({ ...prev, category: val }));
+  };
+
+  const handleSort = (val) => {
+    setFilters((prev) => ({ ...prev, sortBy: val }));
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-lg">
@@ -30,10 +54,35 @@ const Navbar = () => {
               placeholder="Search for products, brands and more"
               className="w-full px-4 py-2 rounded-xl border border-light bg-light text-dark focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Search"
+              value={filters.search}
+              onChange={handleSearch}
             />
             <FiSearch className="absolute right-3 top-2.5 text-primary" />
           </div>
         </form>
+        {/* Category and Sort Filters */}
+        <div className="hidden md:flex items-center gap-2">
+          <Select value={filters.category} onValueChange={handleCategory} className="w-32">
+            <SelectTrigger>
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filters.sortBy} onValueChange={handleSort} className="w-32">
+            <SelectTrigger>
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {/* Nav Links */}
         <ul className="hidden lg:flex items-center gap-4 ml-4">
           <li><Link to="/" className={`px-3 py-2 rounded-xl font-medium transition text-dark hover:bg-light ${location.pathname === '/' ? 'bg-blue-100' : ''}`}>Home</Link></li>

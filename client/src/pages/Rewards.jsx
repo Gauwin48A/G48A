@@ -34,8 +34,9 @@ const Rewards = () => {
   const [tab, setTab] = useState("direct");
 
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
+    let userId = localStorage.getItem('userId');
+    let token = localStorage.getItem('authToken');
+    if (!userId || !token) {
       setError('You must be logged in to view rewards.');
       setLoading(false);
       return;
@@ -44,7 +45,9 @@ const Rewards = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.get(`/rewards?userId=${userId}`);
+        const res = await api.get(`/rewards?userId=${userId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (res.status === 200 && res.data) {
           setUser(res.data.user || null);
           setReferralChain(res.data.referralChain || []);

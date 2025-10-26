@@ -47,13 +47,18 @@ const Profile = () => {
     setLoading(true);
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId') || 1;
+    const userId = localStorage.getItem('userId');
+    if (!userId || !token) {
+      setError('You must be logged in to view your profile.');
+      setLoading(false);
+      return;
+    }
     // Fetch profile (always refresh from API for latest info)
     fetch(`${baseUrl}/api/profile?userId=${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Authorization': `Bearer ${token}`
       },
       credentials: 'include'
     })
