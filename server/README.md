@@ -1,23 +1,24 @@
-# Verified Mobile Phone Sale Platform Backend
+# MHUB Backend
 
-This is the backend for the Verified Mobile Phone Sale Platform. It uses Node.js, Express, and PostgreSQL.
-
-## Setup
-1. **Set up the database:** Before starting the server, you need to set up the PostgreSQL database. Follow the instructions in the [database setup guide](../database/README.md).
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Create a `.env` file:** Create a `.env` file in this directory with your database credentials. You can find more details in the [database setup guide](../database/README.md).
-4. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
+This is the backend (Node.js/Express) for the MHUB multilingual production-ready app. All backend code, migrations, middleware, services, worker, and routes should reside here.
 
 ## Structure
-- `src/` — Source code
-- `config/` — Database config
-- `migrations/` — SQL migration scripts
+- /database: DB schema and migration scripts
+- /middleware: Express middleware
+- /migrations: SQL migration scripts
+- /routes: API endpoints
+- /services: Translation, cache, etc.
+- /worker: Translation worker
+- /src: Main server code
+- /tests: Backend tests
+
+## Location Permission Feature
+- `/routes/location.js`: API endpoint for saving user location
+- `/migrations/003_create_user_locations.sql`: Migration for user_locations table
+- Frontend blocks app until location is granted and sends data to backend
+
+## Usage
+See main README in project root for setup and deployment instructions.
 
 ## Features
 - User authentication (JWT)

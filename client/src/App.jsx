@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import GreenNavbar from './components/GreenNavbar.jsx';
 import AllPosts from './pages/AllPosts.jsx';
@@ -30,13 +30,28 @@ import FeedPage from './pages/FeedPage.jsx';
 import MyFeedPage from './pages/MyFeedPage.jsx';
 import PostAdd from './pages/PostAdd.jsx';
 import { FilterProvider } from './context/FilterContext.jsx';
+import useLocationPermission from './hooks/useLocationPermission';
+import ForceLocationModal from './components/ForceLocationModal';
+import LanguageSelector from './components/LanguageSelector';
+import './i18n/index';
 
 function App() {
+  // Custom hook manages location permission, fetch, error, retry
+  const { permissionGranted, loading, error, retry } = useLocationPermission();
+
+  // Block all app content until location permission is granted
+  if (!permissionGranted) {
+    return <ForceLocationModal loading={loading} error={error} retry={retry} />;
+  }
+
+  // Main app content loads only after location is sent successfully
   return (
     <FilterProvider>
       <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Top and bottom navbars are handled inside GreenNavbar */}
         <GreenNavbar />
+        <header className="w-full flex justify-end p-2 bg-white border-b">
+          <LanguageSelector />
+        </header>
         <main className="flex-1">
           <Routes>
             {/* Authentication routes without navbar */}
@@ -69,6 +84,7 @@ function App() {
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/my-feed" element={<MyFeedPage />} />
             <Route path="/post_add" element={<PostAdd />} />
+            <Route path="/feed/feedpostadd" element={<PostAdd noImageUpload={true} />} />
             <Route path="*" element={<Navigate to="/all-posts" replace />} />
           </Routes>
         </main>

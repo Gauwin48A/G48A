@@ -270,7 +270,8 @@ const FeedPage = () => {
                         <span className="text-sm md:text-base text-blue-800 font-medium mb-2">Text-only posts from all users</span>
                         <Button 
                             className="bg-blue-600 text-white font-semibold px-5 md:px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition w-fit text-sm md:text-base" 
-                            onClick={() => window.location.assign('/post_add')}
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); navigate('/feed/feedpostadd', { replace: true }); }}
                         >
                             + Add New Post
                         </Button>
@@ -286,24 +287,16 @@ const FeedPage = () => {
             </div>
 
             {/* --- Tab Selector and Header --- */}
-            <div className="w-full flex justify-center mb-8">
-                <div className="flex gap-4 p-2 bg-gray-100 rounded-full shadow-inner">
-                    <Button 
-                        className={tab === 'feed' ? 'bg-blue-600 text-white font-extrabold shadow-lg scale-105' : 'bg-white text-gray-700 font-bold'}
-                        style={{ padding: '0.75rem 2rem', borderRadius: '1.5rem' }} 
-                        onClick={() => setTab('feed')}
-                    >
-                        General Feed
-                    </Button>
-                    <Button 
-                        className={tab === 'myFeed' ? 'bg-blue-600 text-white font-extrabold shadow-lg scale-105' : 'bg-white text-gray-700 font-bold'}
-                        style={{ padding: '0.75rem 2rem', borderRadius: '1.5rem' }} 
-                        onClick={() => setTab('myFeed')}
-                    >
-                        My Feed
-                    </Button>
-                </div>
-            </div>
+            <div className="w-full flex justify-center mb-6">
+        <div className="flex gap-2 bg-gray-100 rounded-full p-2 shadow-md">
+          <Button className={`px-6 py-2 rounded-full font-bold text-base ${tab === 'feed' ? 'bg-blue-600 text-white shadow' : 'bg-white text-blue-600'}`} type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setTab('feed'); navigate('/feed', { replace: true }); }}>
+            General Feed
+          </Button>
+          <Button className={`px-6 py-2 rounded-full font-bold text-base ${tab === 'myFeed' ? 'bg-blue-600 text-white shadow' : 'bg-white text-blue-600'}`} type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setTab('myFeed'); navigate('/feed/myfeed', { replace: true }); }}>
+            My Feed
+          </Button>
+        </div>
+      </div>
 
             {/* --- All Posts Feed (Modified to use FeedItemCard) --- */}
             <div className="w-full flex flex-col items-center mb-10">

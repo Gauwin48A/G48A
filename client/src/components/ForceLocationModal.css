@@ -1,0 +1,58 @@
+.force-location-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.force-location-modal {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 24px rgba(0,0,0,0.2);
+  max-width: 400px;
+  text-align: center;
+}
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.spinner {
+  margin: 2rem auto;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #eee;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.retry-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+.retry-btn:hover {
+  background: #0056b3;
+}
+.help-link {
+  display: block;
+  margin-top: 1rem;
+  color: #007bff;
+  text-decoration: underline;
+}
+.error {
+  color: #d32f2f;
+  margin-bottom: 1rem;
+}

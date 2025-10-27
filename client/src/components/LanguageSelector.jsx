@@ -1,34 +1,31 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import React from "react";
+import { useTranslation } from "react-i18next";
 
-const LanguageSelector = () => {
-  const { i18n, t } = useTranslation();
-  const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'te', label: 'తెలుగు' },
-    { code: 'hi', label: 'हिंदी' },
-    { code: 'ta', label: 'தமிழ்' },
-    { code: 'kn', label: 'ಕನ್ನಡ' },
-    { code: 'mr', label: 'मराठी' }
-  ];
+const LANGS = [
+  { code: "en", label: "English" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "te", label: "తెలుగు" },
+  { code: "mr", label: "मराठी" },
+  { code: "ta", label: "தமிழ்" },
+  { code: "kn", label: "ಕನ್ನಡ" },
+];
 
-  const handleChange = (e) => {
+export default function LanguageSelector() {
+  const { i18n } = useTranslation();
+  const current = i18n.language;
+
+  function changeLang(e) {
     const lang = e.target.value;
     i18n.changeLanguage(lang);
-    localStorage.setItem('lang', lang);
-    // Optionally, update user profile via API if logged in
-  };
+    localStorage.setItem("lang", lang);
+    window.dispatchEvent(new Event("languageChanged"));
+  }
 
   return (
-    <div className="mb-4">
-      <label className="mr-2 font-semibold">{t('select_language')}:</label>
-      <select value={i18n.language} onChange={handleChange} className="border rounded p-1">
-        {languages.map(l => (
-          <option key={l.code} value={l.code}>{l.label}</option>
-        ))}
-      </select>
-    </div>
+    <select value={current} onChange={changeLang} className="lang-selector">
+      {LANGS.map(l => (
+        <option key={l.code} value={l.code}>{l.label}</option>
+      ))}
+    </select>
   );
-};
-
-export default LanguageSelector;
+}
