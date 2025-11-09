@@ -10,9 +10,14 @@ export default function useLocationPermission() {
   useEffect(() => {
     const cached = localStorage.getItem("user_location");
     if (cached) {
-      setPermissionGranted(true);
-      setLocation(JSON.parse(cached));
-      return;
+      try {
+        const parsedLocation = JSON.parse(cached);
+        setPermissionGranted(true);
+        setLocation(parsedLocation);
+        return;
+      } catch (e) {
+        localStorage.removeItem("user_location");
+      }
     }
     requestLocation();
   }, []);
@@ -20,11 +25,22 @@ export default function useLocationPermission() {
   const requestLocation = () => {
     setLoading(true);
     setError(null);
+
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser.");
       setLoading(false);
+      
+      // Send error status to backend
+      sendLocation({
+        latitude: 0,
+        longitude: 0,
+        permission_status: "error",
+        provider: "browser"
+      }).catch(console.error);
+      
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const coords = {
@@ -36,27 +52,65 @@ export default function useLocationPermission() {
           speed: pos.coords.speed,
           timestamp: pos.timestamp,
           provider: "browser",
+          permission_status: "granted"
         };
+
         setLocation(coords);
+
         try {
-          await sendLocation(coords);
-          localStorage.setItem("user_location", JSON.stringify(coords));
+          const response = await sendLocation(coords);
+          
+          // Store location with city/country from backend
+          const locationData = {
+            ...coords,
+            city: response.location?.city || 'Unknown',
+            country: response.location?.country || 'Unknown'
+          };
+          
+          localStorage.setItem("user_location", JSON.stringify(locationData));
           setPermissionGranted(true);
         } catch (err) {
+          console.error("Failed to send location:", err);
           setError("Failed to send location. Please retry.");
         }
+
         setLoading(false);
       },
-      (err) => {
+      async (err) => {
         let msg = "Failed to fetch location. Please retry.";
-        if (err.code === 1)
+        let permissionStatus = "error";
+
+        if (err.code === 1) {
           msg = "Permission denied. Please allow location access to continue.";
-        if (err.code === 2) msg = "Location unavailable. Please retry.";
-        if (err.code === 3) msg = "Location request timed out. Please retry.";
+          permissionStatus = "denied";
+        } else if (err.code === 2) {
+          msg = "Location unavailable. Please retry.";
+          permissionStatus = "error";
+        } else if (err.code === 3) {
+          msg = "Location request timed out. Please retry.";
+          permissionStatus = "timeout";
+        }
+
+        // Send denied/error status to backend
+        try {
+          await sendLocation({
+            latitude: 0,
+            longitude: 0,
+            permission_status: permissionStatus,
+            provider: "browser"
+          });
+        } catch (e) {
+          console.error("Failed to record permission status:", e);
+        }
+
         setError(msg);
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 15000 }
+      { 
+        enableHighAccuracy: true, 
+        timeout: 15000,
+        maximumAge: 0
+      }
     );
   };
 
