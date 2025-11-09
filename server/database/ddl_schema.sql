@@ -142,6 +142,9 @@ CREATE TABLE IF NOT EXISTS user_locations (
   heading DECIMAL(10, 2),
   speed DECIMAL(10, 2),
   provider VARCHAR(50),
+        permission_status VARCHAR(20),
+        city VARCHAR(100),
+        country VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_user_locations_user_id ON user_locations(user_id);
