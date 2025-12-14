@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Eye, 
-  Heart, 
-  MessageCircle, 
-  Edit, 
-  Trash2, 
+import {
+  Eye,
+  Heart,
+  MessageCircle,
+  Edit,
+  Trash2,
   RefreshCw,
   Plus,
   ShoppingBag,
@@ -225,6 +225,42 @@ const MyHome = () => {
     setPostDetailData(null);
   };
 
+  // Handle delete - makes API call to delete the post
+  const handleDelete = async (postId) => {
+    const token = localStorage.getItem('authToken');
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    try {
+      const res = await fetch(`${baseUrl}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setPosts(posts => posts.filter(p => (p.postId || p.id) !== postId));
+        toast({
+          title: "Post Deleted",
+          description: "Your post has been successfully deleted."
+        });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({
+          title: "Delete Failed",
+          description: data.error || "Failed to delete post",
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Delete Failed",
+        description: err.message || "Failed to delete post",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Helper to get full image URL
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
   const getImageUrl = (img) => {
@@ -233,6 +269,29 @@ const MyHome = () => {
     if (img.startsWith('http')) return img;
     return '/placeholder.svg';
   };
+
+  // --- LOGIN REQUIRED CHECK ---
+  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-400 via-blue-100 to-blue-200 w-full">
+        <div className="bg-white border border-blue-200 rounded-3xl p-10 shadow-2xl text-center max-w-md">
+          <div className="text-6xl mb-4">🏠</div>
+          <h2 className="text-3xl font-extrabold text-blue-700 mb-4">Welcome to My Home</h2>
+          <p className="text-lg text-gray-600 mb-6">Manage your posts, track sales, and view your activity. Please login to continue.</p>
+          <div className="flex flex-col gap-3">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold" onClick={() => navigate('/login')}>
+              Login to Continue
+            </Button>
+            <Button variant="outline" className="border-blue-300 text-blue-600 text-lg px-8 py-4 rounded-xl font-semibold" onClick={() => navigate('/signup')}>
+              Create Account
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // --- ERROR BOUNDARY & SAFE RENDERING ---
   if (error) {
@@ -266,7 +325,7 @@ const MyHome = () => {
   // --- MAIN RENDER ---
   return (
     <div className="bg-white min-h-screen flex flex-col items-center">
-      <div className="main-container px-2 py-4 sm:px-4 sm:py-8" style={{maxWidth: '600px', margin: '0 auto'}}>
+      <div className="main-container px-2 py-4 sm:px-4 sm:py-8" style={{ maxWidth: '600px', margin: '0 auto' }}>
         {/* Banner */}
         <div className="w-full flex flex-col items-center justify-center py-8 bg-gradient-to-r from-blue-100 to-blue-300 rounded-2xl mb-8 shadow-lg relative overflow-hidden">
           <div className="absolute left-0 top-0 w-full h-full opacity-10 pointer-events-none select-none">
@@ -282,10 +341,10 @@ const MyHome = () => {
         </div>
         {/* Tabs */}
         <div className="w-full flex justify-center gap-4 py-2 mb-4">
-          {[{label:'All',tab:'all',color:'bg-blue-600',count:allPosts.length},{label:'Active',tab:'active',color:'bg-green-500',count:allPosts.filter(p=>p.status==='active').length},{label:'Sold',tab:'sold',color:'bg-blue-500',count:soldPosts.length},{label:'Bought',tab:'bought',color:'bg-purple-500',count:boughtPosts.length}].map((item) => (
-            <button key={item.tab} className={`flex-1 min-w-0 px-0 py-2 rounded-xl font-bold text-base shadow-lg border-2 border-blue-300 focus:outline-none transition-all duration-150 ${activeTab===item.tab?`${item.color} text-white scale-110 drop-shadow-xl border-2 border-blue-700`:'bg-white text-blue-700 hover:bg-blue-50'}`} onClick={()=>{
+          {[{ label: 'All', tab: 'all', color: 'bg-blue-600', count: allPosts.length }, { label: 'Active', tab: 'active', color: 'bg-green-500', count: allPosts.filter(p => p.status === 'active').length }, { label: 'Sold', tab: 'sold', color: 'bg-blue-500', count: soldPosts.length }, { label: 'Bought', tab: 'bought', color: 'bg-purple-500', count: boughtPosts.length }].map((item) => (
+            <button key={item.tab} className={`flex-1 min-w-0 px-0 py-2 rounded-xl font-bold text-base shadow-lg border-2 border-blue-300 focus:outline-none transition-all duration-150 ${activeTab === item.tab ? `${item.color} text-white scale-110 drop-shadow-xl border-2 border-blue-700` : 'bg-white text-blue-700 hover:bg-blue-50'}`} onClick={() => {
               setActiveTab(item.tab);
-              setFilters(f => ({ ...f, status: item.tab==='all'?'':item.tab }));
+              setFilters(f => ({ ...f, status: item.tab === 'all' ? '' : item.tab }));
             }}>{item.label} <span className={`ml-1 ${item.color} text-white px-2 py-0.5 rounded text-xs`}>{item.count}</span></button>
           ))}
         </div>
@@ -307,7 +366,7 @@ const MyHome = () => {
             }).map((post) => (
               <div key={post.postId || post.id} className="bg-white rounded-2xl shadow-lg border border-blue-200 p-8 flex flex-col gap-4 hover:scale-[1.01] transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`font-bold rounded-full px-4 py-1 text-base capitalize ${post.status==='active'?'bg-blue-600 text-white':post.status==='sold'?'bg-green-500 text-white':post.status==='bought'?'bg-purple-500 text-white':'bg-gray-200 text-gray-700'}`}>{post.status}</span>
+                  <span className={`font-bold rounded-full px-4 py-1 text-base capitalize ${post.status === 'active' ? 'bg-blue-600 text-white' : post.status === 'sold' ? 'bg-green-500 text-white' : post.status === 'bought' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-700'}`}>{post.status}</span>
                   <span className="text-base font-semibold text-blue-700">ID: {post.postId || post.id}</span>
                 </div>
                 <div className="text-xl font-bold text-blue-900 mb-1">{post.title}</div>
@@ -369,7 +428,7 @@ const MyHome = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 bg-white shadow-lg border rounded-xl">
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleEditPost(post)}
                       disabled={!isEditAvailable(post.postedTime)}
                       className={!isEditAvailable(post.postedTime) ? "opacity-50 cursor-not-allowed" : ""}
@@ -407,14 +466,14 @@ const MyHome = () => {
                     <div className="flex items-center space-x-4 mb-2">
                       <Badge className={
                         type === 'active' ? 'bg-green-500 text-white text-base font-bold px-4 py-2' :
-                        type === 'sold' ? 'bg-blue-500 text-white text-base font-bold px-4 py-2' :
-                        type === 'bought' ? 'bg-orange-500 text-white text-base font-bold px-4 py-2' :
-                        'bg-purple-500 text-white text-base font-bold px-4 py-2'
+                          type === 'sold' ? 'bg-blue-500 text-white text-base font-bold px-4 py-2' :
+                            type === 'bought' ? 'bg-orange-500 text-white text-base font-bold px-4 py-2' :
+                              'bg-purple-500 text-white text-base font-bold px-4 py-2'
                       }>
                         {type === 'active' ? 'Active' :
-                         type === 'sold' ? 'Sold' :
-                         type === 'bought' ? 'Purchased' :
-                         post.status === 'active' ? 'Active' : 'Sold'}
+                          type === 'sold' ? 'Sold' :
+                            type === 'bought' ? 'Purchased' :
+                              post.status === 'active' ? 'Active' : 'Sold'}
                       </Badge>
                       <div className="text-base text-gray-500 font-mono">
                         ID: {post.postId}
@@ -436,7 +495,7 @@ const MyHome = () => {
             </div>
 
             {(type === 'sold' || type === 'bought') && (
-              <div className={`${type === 'sold' ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'} border rounded-2xl p-5 mb-4`}> 
+              <div className={`${type === 'sold' ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'} border rounded-2xl p-5 mb-4`}>
                 <h4 className={`font-bold text-xl ${type === 'sold' ? 'text-green-800' : 'text-orange-800'} mb-3`}>
                   {type === 'sold' ? 'Sale Details' : 'Purchase Details'}
                 </h4>
@@ -470,14 +529,14 @@ const MyHome = () => {
             <div className="mt-auto space-y-4">
               {type === 'active' && (
                 <div className="flex space-x-4">
-                  <Button 
+                  <Button
                     onClick={() => handleViewPost(post, type)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl"
                   >
                     <Eye className="w-5 h-5 mr-2" />
                     View Details
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => confirmDeletePost(post.postId)}
                     className="flex-1 border-red-400 text-red-600 hover:bg-red-50 h-14 text-lg font-bold rounded-xl"
@@ -489,7 +548,7 @@ const MyHome = () => {
               )}
 
               {type === 'all' && (
-                <Button 
+                <Button
                   onClick={() => handleViewPost(post, type)}
                   className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl"
                 >
@@ -499,7 +558,7 @@ const MyHome = () => {
               )}
 
               {type === 'sold' && (
-                <Button 
+                <Button
                   onClick={() => handleViewPost(post, type)}
                   className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg font-bold rounded-xl"
                 >
@@ -509,7 +568,7 @@ const MyHome = () => {
               )}
 
               {type === 'bought' && (
-                <Button 
+                <Button
                   onClick={() => handleViewPost(post, type)}
                   className="w-full bg-orange-500 hover:bg-orange-600 h-14 text-lg font-bold rounded-xl"
                 >

@@ -12,4 +12,18 @@ async function logAadhaarVerification(userId, requestId, requestType, status) {
   }
 }
 
-module.exports = { logAadhaarVerification };
+// Simple logger functions for use across the app
+function warn(...args) {
+  console.warn('[WARN]', ...args);
+}
+
+function error(...args) {
+  console.error('[ERROR]', ...args);
+}
+
+function info(...args) {
+  console.log('[INFO]', ...args);
+}
+
+module.exports = { logAadhaarVerification, warn, error, info };
+

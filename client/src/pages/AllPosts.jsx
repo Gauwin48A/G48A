@@ -20,7 +20,7 @@ const AllPosts = () => {
   const postsPerPage = 6;
   const navigate = useNavigate();
 
-    // Location permission hook - Request location when component mounts
+  // Location permission hook - Request location when component mounts
   const { permissionGranted, isLoading: locationLoading, error: locationError } = useLocationPermission();
   const [expandedPost, setExpandedPost] = useState(null);
   const [likedPosts, setLikedPosts] = useState({});
@@ -147,7 +147,7 @@ const AllPosts = () => {
     setLikeCounts(prev => ({ ...prev, [postId]: prev[postId] + (alreadyLiked ? -1 : 1) }));
     try {
       await fetch(`/api/posts/${postId}/like`, { method: 'POST', credentials: 'include' });
-    } catch {}
+    } catch { }
   };
 
 
@@ -156,7 +156,7 @@ const AllPosts = () => {
     setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
     try {
       await fetch(`/api/posts/${postId}/view`, { method: 'POST', credentials: 'include' });
-    } catch {}
+    } catch { }
   };
 
 
@@ -191,34 +191,9 @@ const AllPosts = () => {
   // Sponsored Deals
   const sponsoredDeals = posts.filter(post => post.isSponsored).slice(0, 5);
 
-
+  // Location is now handled at App.jsx level - no blocking here
   return (
-        // Show location permission loading screen
-    locationLoading ? (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md">
-          <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Requesting Location Permission</h2>
-          <p className="text-gray-600">Please allow location access to continue...</p>
-        </div>
-      </div>
-    ) : !permissionGranted ? (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md">
-          <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Location Permission Required</h2>
-          <p className="text-gray-600 mb-4">{locationError || 'Location access is needed to show relevant posts'}</p>
-          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-            Retry
-          </Button>
-        </div>
-      </div>
-    ) :
-    (<div className="bg-white min-h-screen">
+    <div className="bg-white min-h-screen">
       <CategoriesGrid className="w-full flex justify-center mt-4 mb-8">
         <div className="flex gap-8 md:gap-16 bg-gradient-to-r from-blue-100 via-white to-blue-100 rounded-2xl shadow-lg py-6 px-4 md:px-12 items-center justify-center">
           <div className="flex flex-col items-center cursor-pointer hover:scale-110 transition">
@@ -322,9 +297,9 @@ const AllPosts = () => {
                   {expandedPost === post.id || !post.description || post.description.length < 120
                     ? post.description || <span className="italic text-gray-400">No description</span>
                     : <>
-                        {post.description.slice(0, 120)}...{' '}
-                        <button className="text-blue-600 font-semibold hover:underline" onClick={() => setExpandedPost(post.id)}>View More</button>
-                      </>
+                      {post.description.slice(0, 120)}...{' '}
+                      <button className="text-blue-600 font-semibold hover:underline" onClick={() => setExpandedPost(post.id)}>View More</button>
+                    </>
                   }
                 </div>
                 <div className="flex items-center justify-between px-4 pb-4 pt-2 border-t border-gray-100">
@@ -344,7 +319,6 @@ const AllPosts = () => {
         {shareToast && <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[9999]">{shareToast}</div>}
       </div>
     </div>
-         )
   );
 };
 

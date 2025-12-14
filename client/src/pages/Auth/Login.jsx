@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "@/lib/auth";
+import { captureLocation } from "@/services/locationService";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -82,6 +83,13 @@ const Login = () => {
       });
       localStorage.setItem("token", data.token);
       await fetchAndStoreUserProfile(data.token);
+
+      // Capture fresh location after login
+      console.log("[Login] Capturing location after successful email login...");
+      captureLocation(data.userId).catch(err =>
+        console.warn("[Login] Location capture failed (non-blocking):", err)
+      );
+
       toast({
         title: "Login Successful 🎉",
         description: "Welcome back to MobileVerify!",
@@ -183,6 +191,13 @@ const Login = () => {
       }
       localStorage.setItem("token", data.token);
       await fetchAndStoreUserProfile(data.token);
+
+      // Capture fresh location after login
+      console.log("[Login] Capturing location after successful phone login...");
+      captureLocation(data.userId).catch(err =>
+        console.warn("[Login] Location capture failed (non-blocking):", err)
+      );
+
       toast({
         title: "Login Successful 🎉",
         description: "Welcome back to MobileVerify!",

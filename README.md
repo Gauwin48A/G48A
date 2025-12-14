@@ -100,4 +100,31 @@ Once the client is built and the server dependencies are installed, you can star
 
 The server will start, and you can access the application by navigating to `http://localhost:5000` in your web browser. The Express server will serve the React application and handle all API requests.
 
-Your application is now running in production mode!
+
+### 5. Testing
+
+The application includes automated tests for both client and server.
+
+- **Run Server Tests**:
+  ```bash
+  cd server
+  npm test
+  ```
+
+- **Run Client Tests**:
+  ```bash
+  cd client
+  npm test
+  ```
+
+### 6. Security & Performance
+
+- **Security**:
+  - Helmet headers enabled.
+  - Rate limiting configured.
+  - Input validation using `express-validator`.
+  - CORS strict configuration.
+
+- **Performance**:
+  - Client uses Lazy Loading for routes to minimize initial bundle size.
+  - Server runs on port 5000 (standardized).

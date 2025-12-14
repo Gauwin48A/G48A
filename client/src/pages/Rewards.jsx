@@ -63,6 +63,29 @@ const Rewards = () => {
     fetchRewards();
   }, []);
 
+  // Check if user is logged in
+  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-200">
+        <div className="bg-white border border-blue-200 rounded-3xl p-10 shadow-2xl text-center max-w-md">
+          <div className="text-6xl mb-4">🎁</div>
+          <h2 className="text-3xl font-extrabold text-blue-700 mb-4">Rewards & Referrals</h2>
+          <p className="text-lg text-gray-600 mb-6">Track your coins, referral codes, and rewards. Please login to view your rewards.</p>
+          <div className="flex flex-col gap-3">
+            <a href="/login" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold text-center">
+              Login to Continue
+            </a>
+            <a href="/signup" className="border border-blue-300 text-blue-600 text-lg px-8 py-4 rounded-xl font-semibold text-center hover:bg-blue-50">
+              Create Account
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading rewards...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
   if (!user) return <div className="min-h-screen flex items-center justify-center text-gray-500">No rewards data found.</div>;

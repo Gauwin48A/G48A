@@ -3,7 +3,9 @@ import { pool } from '../../db/index.js';
 export const saveLocation = async (req, res) => {
   try {
     const { user_id, latitude, longitude, accuracy, altitude, heading, speed, provider, permission_status, city, country } = req.body;
-    if (!latitude || !longitude) {
+
+    // Allow 0,0 for denied/error status (for analytics), but require real coords for granted
+    if (permission_status === 'granted' && (!latitude || !longitude)) {
       return res.status(400).json({ error: 'Missing latitude or longitude' });
     }
     const query = `
@@ -12,9 +14,10 @@ export const saveLocation = async (req, res) => {
       RETURNING id;
     `;
     const result = await pool.query(query, [user_id || null, latitude, longitude, accuracy || null, altitude || null, heading || null, speed || null, provider || 'browser', permission_status || null, city || null, country || null]);
-    res.status(201).json({ status: 'success', id: result.rows[0].id });
+    res.status(201).json({ status: 'success', id: result.rows[0].id, location: { city: city || 'Unknown', country: country || 'Unknown' } });
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('saveLocation error:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 };
 

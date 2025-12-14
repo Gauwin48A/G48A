@@ -24,7 +24,7 @@ const app = express();
 
 // Security and CORS configuration
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }));
+app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:8081", credentials: true }));
 
 app.use(express.json());
 app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 100 }));
@@ -81,5 +81,5 @@ app.use((err, req, res, next) => {
 });
 
 // Server port
-const PORT = process.env.PORT || 8081;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

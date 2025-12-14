@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Shield, 
-  Copy, 
-  Edit, 
-  Phone, 
-  Mail, 
-  MapPin, 
+import {
+  Shield,
+  Copy,
+  Edit,
+  Phone,
+  Mail,
+  MapPin,
   Calendar
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -42,7 +42,7 @@ const Profile = () => {
     if (cached) {
       try {
         setUser(JSON.parse(cached));
-      } catch (e) {}
+      } catch (e) { }
     }
     setLoading(true);
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -198,6 +198,29 @@ const Profile = () => {
     }
   };
 
+  // Check if user is logged in
+  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-200">
+        <div className="bg-white border border-blue-200 rounded-3xl p-10 shadow-2xl text-center max-w-md">
+          <div className="text-6xl mb-4">👤</div>
+          <h2 className="text-3xl font-extrabold text-blue-700 mb-4">Your Profile</h2>
+          <p className="text-lg text-gray-600 mb-6">View and manage your account settings, verification status, and preferences. Please login to continue.</p>
+          <div className="flex flex-col gap-3">
+            <a href="/login" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold text-center">
+              Login to Continue
+            </a>
+            <a href="/signup" className="border border-blue-300 text-blue-600 text-lg px-8 py-4 rounded-xl font-semibold text-center hover:bg-blue-50">
+              Create Account
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen"><p className="text-gray-500">Loading...</p></div>;
   }
@@ -223,7 +246,7 @@ const Profile = () => {
 
   return (
     <div className="bg-white min-h-screen flex flex-col items-center">
-      <div className="main-container px-2 py-4 sm:px-4 sm:py-8" style={{maxWidth: '600px', margin: '0 auto'}}>
+      <div className="main-container px-2 py-4 sm:px-4 sm:py-8" style={{ maxWidth: '600px', margin: '0 auto' }}>
         {/* Spacing between navbar and banner */}
         <div className="h-2" /> {/* Reduced gap */}
         {/* Custom Profile Banner */}
@@ -255,7 +278,7 @@ const Profile = () => {
                       </AvatarFallback>
                     </Avatar>
                     <label htmlFor="profile-photo-upload" className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 cursor-pointer shadow-lg hover:bg-blue-700 transition" title="Upload profile photo">
-                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 16v-4m0 0V8m0 4h4m-4 0H8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="2"/></svg>
+                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 16v-4m0 0V8m0 4h4m-4 0H8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="2" /></svg>
                       <input id="profile-photo-upload" type="file" accept="image/*" className="hidden" />
                     </label>
                   </div>
@@ -272,7 +295,7 @@ const Profile = () => {
                 <div className="relative w-full max-w-2xl h-40 rounded-2xl overflow-hidden bg-blue-100 border border-blue-200 flex items-center justify-center">
                   <span className="text-blue-400 text-lg">Upload a wall photo</span>
                   <label htmlFor="wall-photo-upload" className="absolute bottom-3 right-3 bg-blue-600 text-white rounded-full p-2 cursor-pointer shadow-lg hover:bg-blue-700 transition" title="Upload wall photo">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 16v-4m0 0V8m0 4h4m-4 0H8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="#fff" strokeWidth="2"/></svg>
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 16v-4m0 0V8m0 4h4m-4 0H8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><rect x="3" y="3" width="18" height="18" rx="4" stroke="#fff" strokeWidth="2" /></svg>
                     <input id="wall-photo-upload" type="file" accept="image/*" className="hidden" />
                   </label>
                 </div>
