@@ -18,6 +18,25 @@ const protect = (req, res, next) => {
   }
 };
 
+// Optional auth - allows unauthenticated requests but parses token if present
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader?.split(" ")[1];
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET?.trim());
+    req.user = decoded;
+  } catch (err) {
+    req.user = null;
+  }
+  next();
+};
+
 const requireAadhaarVerified = (req, res, next) => {
   if (!req.user || !req.user.aadhaar_verified) {
     return res.status(403).json({ error: 'Aadhaar verification required to access this feature.' });
@@ -25,4 +44,4 @@ const requireAadhaarVerified = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, requireAadhaarVerified };
+module.exports = { protect, optionalAuth, requireAadhaarVerified };

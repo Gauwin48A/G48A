@@ -28,9 +28,26 @@ export const registerUser = async (userData) => {
 };
 
 export const loginUser = async (loginData) => {
-  // Only basic validation for login
-  if (!validateEmail(loginData.email)) throw { errors: ['Invalid email format.'] };
-  if (!validatePassword(loginData.password)) throw { errors: ['Password must be at least 8 characters, include uppercase, lowercase, and a number.'] };
-  const res = await api.post('/auth/login', loginData);
-  return res.data;
+  // Simple validation for login - no complex password rules
+  if (!loginData.email || !loginData.email.includes('@')) {
+    throw { errors: ['Please enter a valid email address.'] };
+  }
+  if (!loginData.password || loginData.password.length < 6) {
+    throw { errors: ['Password must be at least 6 characters.'] };
+  }
+
+  console.log('[loginUser] Attempting login for:', loginData.email);
+
+  try {
+    const res = await api.post('/api/auth/login', loginData);
+    console.log('[loginUser] Success:', res.data);
+    return res.data;
+  } catch (err) {
+    console.error('[loginUser] Error:', err.response?.data || err.message);
+    // Re-throw with proper format for Login.jsx to handle
+    if (err.response?.data?.error) {
+      throw { error: err.response.data.error };
+    }
+    throw { errors: [err.message || 'Login failed'] };
+  }
 };

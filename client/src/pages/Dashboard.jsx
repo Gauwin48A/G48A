@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  TrendingUp, 
-  Star, 
+import {
+  TrendingUp,
+  Star,
   Trophy,
   Calendar
 } from "lucide-react";
 import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [quickStats, setQuickStats] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
@@ -52,19 +54,42 @@ const Dashboard = () => {
     fetchDashboard();
   }, []);
 
+  // Check if user is logged in
+  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-200 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-3xl p-10 shadow-2xl text-center max-w-md">
+          <div className="text-6xl mb-4">📊</div>
+          <h2 className="text-3xl font-extrabold text-blue-700 dark:text-blue-400 mb-4">{t('your_dashboard')}</h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">{t('dashboard_login_msg')}</p>
+          <div className="flex flex-col gap-3">
+            <a href="/login" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold text-center">
+              {t('login_to_continue')}
+            </a>
+            <a href="/signup" className="border border-blue-300 dark:border-blue-500 text-blue-600 dark:text-blue-400 text-lg px-8 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 dark:hover:bg-gray-700">
+              {t('create_account')}
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
-    return <div className="flex items-center justify-center h-screen"><p className="text-gray-500">Loading...</p></div>;
+    return <div className="flex items-center justify-center h-screen bg-white dark:bg-gray-900"><p className="text-gray-500 dark:text-gray-400">{t('loading')}</p></div>;
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen flex-col gap-4">
+      <div className="flex items-center justify-center h-screen flex-col gap-4 bg-white dark:bg-gray-900">
         <p className="text-red-500">{error}</p>
         <button
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           onClick={() => window.location.reload()}
         >
-          Retry
+          {t('retry')}
         </button>
       </div>
     );
@@ -75,13 +100,13 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Navbar />
 
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Welcome Header */}
-        <Card className="shadow-lg border-0 rounded-2xl overflow-hidden mb-8">
-          <CardContent className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 lg:p-8">
+        <Card className="shadow-lg border-0 rounded-2xl overflow-hidden mb-8 bg-white dark:bg-gray-800">
+          <CardContent className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-900 text-white p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
               <div className="flex items-center space-x-4 lg:space-x-6">
                 <Avatar className="h-12 w-12 lg:h-16 lg:w-16 ring-4 ring-white/30">
@@ -90,7 +115,7 @@ const Dashboard = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">Welcome back, {user.name}!</h1>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">{t('welcome_back')}, {user.name}!</h1>
                   <div className="flex flex-wrap items-center gap-3 text-white/90">
                     <Badge className="bg-white/20 text-white border-white/30">{user.rank}</Badge>
                     <div className="flex items-center space-x-1">
@@ -104,8 +129,8 @@ const Dashboard = () => {
               </div>
               <div className="mt-4 sm:mt-0 text-right">
                 <div className="text-2xl lg:text-3xl font-bold text-white">{user.coins}</div>
-                <div className="text-white/80">Total Coins</div>
-                <div className="mt-2 text-sm text-white/70">Code: {user.dailyCode}</div>
+                <div className="text-white/80">{t('total_coins')}</div>
+                <div className="mt-2 text-sm text-white/70">{t('code')}: {user.dailyCode}</div>
               </div>
             </div>
           </CardContent>
@@ -116,18 +141,18 @@ const Dashboard = () => {
           {quickStats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <Card key={index} className="shadow-lg border-0 rounded-xl hover:shadow-xl transition-all duration-300">
+              <Card key={index} className="shadow-lg border-0 rounded-xl hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800">
                 <CardContent className="p-4 lg:p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`p-2 lg:p-3 rounded-xl ${stat.bg}`}>
+                    <div className={`p-2 lg:p-3 rounded-xl ${stat.bg} dark:bg-opacity-20`}>
                       {IconComponent && <IconComponent className={`w-5 h-5 lg:w-6 lg:h-6 ${stat.color}`} />}
                     </div>
-                    <Badge className="bg-green-100 text-green-800 text-xs">
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs">
                       {stat.trend}
                     </Badge>
                   </div>
-                  <div className="text-xl lg:text-2xl font-bold text-gray-800 mb-1">{stat.value}</div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
+                  <div className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white mb-1">{stat.value}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{t(stat.labelKey || stat.label.toLowerCase().replace(/ /g, '_'))}</div>
                 </CardContent>
               </Card>
             );
@@ -138,26 +163,26 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Recent Activity */}
           <div className="lg:col-span-2">
-            <Card className="shadow-lg border-0 rounded-2xl overflow-hidden">
-              <CardHeader className="bg-blue-500 text-white">
+            <Card className="shadow-lg border-0 rounded-2xl overflow-hidden bg-white dark:bg-gray-800">
+              <CardHeader className="bg-blue-500 dark:bg-blue-700 text-white">
                 <CardTitle className="flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5" />
-                  <span>Recent Activity</span>
+                  <span>{t('recent_activity')}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 lg:p-6">
                 <div className="space-y-4">
                   {recentActivity.map((activity) => (
-                    <div 
-                      key={activity.id} 
-                      className="flex items-center space-x-4 p-4 rounded-xl bg-gray-50 hover:shadow-md transition-all duration-300"
+                    <div
+                      key={activity.id}
+                      className="flex items-center space-x-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-700 hover:shadow-md transition-all duration-300"
                     >
-                      <div className="p-2 rounded-lg bg-white">
-                        <TrendingUp className="w-5 h-5 text-blue-500" />
+                      <div className="p-2 rounded-lg bg-white dark:bg-gray-600">
+                        <TrendingUp className="w-5 h-5 text-blue-500 dark:text-blue-300" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-800 text-sm lg:text-base">{activity.title}</p>
-                        <p className="text-xs lg:text-sm text-gray-600 flex items-center">
+                        <p className="font-semibold text-gray-800 dark:text-white text-sm lg:text-base">{activity.title}</p>
+                        <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-300 flex items-center">
                           <Calendar className="w-3 h-3 mr-1" />
                           {activity.time}
                         </p>
@@ -170,41 +195,40 @@ const Dashboard = () => {
           </div>
 
           {/* Top Sellers Leaderboard */}
-          <Card className="shadow-lg border-0 rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-blue-400 to-blue-500 text-white">
+          <Card className="shadow-lg border-0 rounded-2xl overflow-hidden bg-white dark:bg-gray-800">
+            <CardHeader className="bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-600 dark:to-blue-800 text-white">
               <CardTitle className="flex items-center space-x-2">
                 <Trophy className="w-5 h-5" />
-                <span>Top Sellers This Month</span>
+                <span>{t('top_sellers_month')}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 lg:p-6">
               <div className="space-y-4">
                 {topSellers.length > 0 ? (
                   topSellers.map((seller) => (
-                    <div 
-                      key={seller.rank} 
-                      className={`flex items-center justify-between p-3 lg:p-4 rounded-xl transition-all duration-300 ${
-                        seller.isCurrentUser 
-                          ? 'bg-blue-50 border-2 border-blue-200 shadow-md' 
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      }`}
+                    <div
+                      key={seller.rank}
+                      className={`flex items-center justify-between p-3 lg:p-4 rounded-xl transition-all duration-300 ${seller.isCurrentUser
+                        ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700 shadow-md'
+                        : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        }`}
                     >
                       <div className="flex items-center space-x-3 lg:space-x-4">
-                        <div className="text-lg lg:text-2xl font-bold">{seller.badge}</div>
+                        <div className="text-lg lg:text-2xl font-bold dark:text-white">{seller.badge}</div>
                         <div>
-                          <p className={`font-semibold text-sm lg:text-base ${seller.isCurrentUser ? 'text-blue-600' : 'text-gray-800'}`}>
-                            {seller.name} {seller.isCurrentUser && '(You)'}
+                          <p className={`font-semibold text-sm lg:text-base ${seller.isCurrentUser ? 'text-blue-600 dark:text-blue-300' : 'text-gray-800 dark:text-white'}`}>
+                            {seller.name} {seller.isCurrentUser && `(${t('you')})`}
                           </p>
-                          <p className="text-xs lg:text-sm text-gray-600">{seller.sales} sales • {seller.coins} coins</p>
+                          <p className="text-xs lg:text-sm text-gray-600 dark:text-gray-300">{seller.sales} {t('sales')} • {seller.coins} {t('coins')}</p>
                         </div>
                       </div>
                       {seller.isCurrentUser && (
-                        <Badge className="bg-blue-500 text-white">You</Badge>
+                        <Badge className="bg-blue-500 text-white">{t('you')}</Badge>
                       )}
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-sm">No top sellers available</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">{t('no_top_sellers')}</p>
                 )}
               </div>
             </CardContent>

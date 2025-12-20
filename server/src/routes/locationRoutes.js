@@ -1,21 +1,20 @@
-import { Router } from 'express';
-import { saveLocation, getLocations, getLocationById, updateLocation, deleteLocation } from '../controllers/locationController.js';
-
-const router = Router();
+const express = require('express');
+const router = express.Router();
+const locationController = require('../controllers/locationController');
 
 // Create a new location
-router.post('/', saveLocation);
+router.post('/', locationController.saveLocation);
 
 // Get all locations
-router.get('/', getLocations);
+router.get('/', locationController.getLocations);
 
 // Get a location by ID
-router.get('/:id', getLocationById);
+router.get('/:id', locationController.getLocationById);
 
 // Update a location by ID
-router.put('/:id', updateLocation);
+router.put('/:id', locationController.updateLocation);
 
 // Delete a location by ID
-router.delete('/:id', deleteLocation);
+router.delete('/:id', locationController.deleteLocation);
 
-export default router;
+module.exports = router;

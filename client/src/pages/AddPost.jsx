@@ -14,7 +14,7 @@ const AddPost = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
+
   // Get tier and category from URL params
   const urlParams = new URLSearchParams(location.search);
   const selectedTier = urlParams.get('tier') || 'basic';
@@ -289,9 +289,9 @@ const AddPost = () => {
       <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="mb-8">
-            <Button 
+            <Button
               onClick={() => setShowPreview(false)}
-              variant="outline" 
+              variant="outline"
               className="mb-4"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -316,11 +316,11 @@ const AddPost = () => {
                     No Image
                   </div>
                 )}
-                <Badge className={`absolute top-4 left-4 ${currentTier.color} text-white`}>
-                  {currentTier.name}
+                <Badge className={`absolute top-4 left-4 ${currentTier?.color || 'bg-gray-400'} text-white`}>
+                  {currentTier?.name || 'Basic'}
                 </Badge>
               </div>
-              
+
               <div className="flex-1 p-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   {formData.brand} {formData.model}
@@ -328,14 +328,14 @@ const AddPost = () => {
                 <div className="text-3xl font-bold text-green-600 mb-4">
                   ₹{parseInt(formData.price).toLocaleString()}
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                   <div><span className="font-medium">Condition:</span> {formData.condition}</div>
                   <div><span className="font-medium">Age:</span> {formData.age} months</div>
                   <div><span className="font-medium">Warranty:</span> {formData.warranty}</div>
                   <div><span className="font-medium">Location:</span> {formData.district}, {formData.state}</div>
                 </div>
-                
+
                 {formData.description && (
                   <p className="text-gray-600 mb-4">{formData.description}</p>
                 )}
@@ -609,7 +609,7 @@ const AddPost = () => {
                           <Upload className="mx-auto h-12 w-12 text-sky-400 mb-4" />
                           <div>
                             <label htmlFor="images" className="cursor-pointer">
-                              <Button 
+                              <Button
                                 type="button"
                                 className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700"
                                 onClick={() => document.getElementById('images').click()}
@@ -632,7 +632,7 @@ const AddPost = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {images.length > 0 && (
                         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                           {images.map((image, index) => (

@@ -10,10 +10,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { Shield, Upload, Eye, EyeOff, User, Mail, Phone, FileText, Calendar, MapPin, CreditCard } from "lucide-react";
 import { registerUser } from "@/lib/auth";
 import AadhaarOtpVerify from '@/components/AadhaarOtpVerify';
+import { useTranslation } from 'react-i18next';
 
 const SignUp = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -62,28 +64,28 @@ const SignUp = () => {
     if (file) {
       if (type === 'aadhaarXml' && !file.name.endsWith('.xml')) {
         toast({
-          title: "Invalid file",
-          description: "Please upload a valid XML file",
+          title: t('invalid_file'),
+          description: t('upload_valid_xml'),
           variant: "destructive"
         });
         return;
       }
       if ((type === 'aadhaarImage' || type === 'panImage') && !file.type.startsWith('image/')) {
         toast({
-          title: "Invalid file",
-          description: "Please upload a valid image file",
+          title: t('invalid_file'),
+          description: t('upload_valid_image'),
           variant: "destructive"
         });
         return;
       }
-      
+
       setFiles(prev => ({
         ...prev,
         [type]: file
       }));
-      
+
       toast({
-        title: "File uploaded",
+        title: t('file_uploaded'),
         description: `${type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} uploaded successfully`
       });
     }
@@ -92,15 +94,15 @@ const SignUp = () => {
   const validateStep = (stepNumber) => {
     switch (stepNumber) {
       case 1:
-        return formData.fullName && formData.phoneNumber && formData.email && 
-               formData.password && formData.confirmPassword && 
-               formData.password === formData.confirmPassword;
+        return formData.fullName && formData.phoneNumber && formData.email &&
+          formData.password && formData.confirmPassword &&
+          formData.password === formData.confirmPassword;
       case 2:
-        return formData.dateOfBirth && formData.gender && formData.address && 
-               formData.city && formData.state && formData.pincode;
+        return formData.dateOfBirth && formData.gender && formData.address &&
+          formData.city && formData.state && formData.pincode;
       case 3:
-        return formData.aadhaarNumber && formData.panNumber && 
-               files.aadhaarXml && files.aadhaarImage && files.panImage;
+        return formData.aadhaarNumber && formData.panNumber &&
+          files.aadhaarXml && files.aadhaarImage && files.panImage;
       case 4:
         return formData.agreeToTerms;
       default:
@@ -113,8 +115,8 @@ const SignUp = () => {
       setStep(step + 1);
     } else {
       toast({
-        title: "Please complete all fields",
-        description: "Fill in all required information to continue",
+        title: t('please_complete_all'),
+        description: t('fill_all_info'),
         variant: "destructive"
       });
     }
@@ -145,10 +147,10 @@ const SignUp = () => {
     e.preventDefault();
     setIsLoading(true);
     const errors = validateForm();
-    if (!aadhaarVerified) errors.push('Aadhaar verification is required.');
+    if (!aadhaarVerified) errors.push(t('aadhaar_verification_required'));
     if (errors.length > 0) {
       toast({
-        title: "Signup Failed",
+        title: t('signup_failed'),
         description: errors.join(", "),
         variant: "destructive",
       });
@@ -167,14 +169,14 @@ const SignUp = () => {
       };
       await registerUser(userData);
       toast({
-        title: "Signup Successful 🎉",
-        description: "Your account has been created!",
+        title: t('signup_successful') + " 🎉",
+        description: t('account_created'),
       });
       navigate("/login");
     } catch (err) {
       toast({
-        title: "Signup Failed",
-        description: err.errors ? err.errors.join(", ") : (err.error || "Signup failed"),
+        title: t('signup_failed'),
+        description: err.errors ? err.errors.join(", ") : (err.error || t('signup_failed')),
         variant: "destructive",
       });
     } finally {
@@ -183,24 +185,24 @@ const SignUp = () => {
   };
 
   const stepTitles = [
-    "Basic Information",
-    "Personal Details", 
-    "Identity Verification",
-    "Terms & Conditions"
+    t('basic_info'),
+    t('personal_details'),
+    t('identity_verification'),
+    t('terms_conditions')
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4" style={{ backgroundColor: '#E5EDF1' }}>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-[#E5EDF1] dark:bg-gray-900 transition-colors duration-300">
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#96C2DB' }}>
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg bg-[#96C2DB] dark:bg-blue-600 transition-colors duration-300">
               <Shield className="h-10 w-10 text-white" />
             </div>
           </div>
-          <h2 className="text-4xl font-bold mb-2" style={{ color: '#333A45' }}>Create Account</h2>
-          <p className="text-gray-600 text-lg">Join our verified mobile marketplace</p>
+          <h2 className="text-4xl font-bold mb-2 text-[#333A45] dark:text-white">{t('create_account')}</h2>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">{t('join_verified_marketplace') || "Join our verified mobile marketplace"}</p>
         </div>
 
         {/* Progress Bar */}
@@ -208,51 +210,48 @@ const SignUp = () => {
           <div className="flex items-center justify-between mb-4">
             {stepTitles.map((title, index) => (
               <div key={index} className="flex flex-col items-center">
-                <div 
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                    step > index + 1 ? 'text-white' : step === index + 1 ? 'text-white' : 'text-gray-400 bg-gray-200'
-                  }`}
-                  style={step >= index + 1 ? { backgroundColor: '#96C2DB' } : {}}
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${step > index + 1 ? 'text-white bg-[#96C2DB] dark:bg-blue-600' : step === index + 1 ? 'text-white bg-[#96C2DB] dark:bg-blue-600' : 'text-gray-400 bg-gray-200 dark:bg-gray-700'
+                    }`}
                 >
                   {index + 1}
                 </div>
-                <span className="text-xs mt-2 text-center font-medium" style={{ color: '#333A45' }}>
+                <span className="text-xs mt-2 text-center font-medium text-[#333A45] dark:text-gray-300">
                   {title}
                 </span>
               </div>
             ))}
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="h-2 rounded-full transition-all duration-300"
-              style={{ 
-                backgroundColor: '#96C2DB',
+            <div
+              className="h-2 rounded-full transition-all duration-300 bg-[#96C2DB] dark:bg-blue-600"
+              style={{
                 width: `${(step / 4) * 100}%`
               }}
             />
           </div>
         </div>
 
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
-          <CardHeader style={{ backgroundColor: '#96C2DB' }} className="text-white text-center py-8">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800">
+          <CardHeader className="text-white text-center py-8 bg-[#96C2DB] dark:bg-blue-600 transition-colors duration-300">
             <CardTitle className="text-2xl font-bold">Step {step}: {stepTitles[step - 1]}</CardTitle>
             <CardDescription className="text-blue-100">
               {step === 1 && "Enter your basic account information"}
-              {step === 2 && "Tell us more about yourself"}  
+              {step === 2 && "Tell us more about yourself"}
               {step === 3 && "Verify your identity with official documents"}
               {step === 4 && "Review and accept our terms"}
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="p-8">
             <form onSubmit={handleSubmit}>
               {/* Step 1: Basic Information */}
               {step === 1 && (
                 <div className="space-y-6">
                   <div>
-                    <Label htmlFor="fullName" className="text-sm font-semibold flex items-center space-x-2" style={{ color: '#333A45' }}>
+                    <Label htmlFor="fullName" className="text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300">
                       <User className="w-4 h-4" />
-                      <span>Full Name</span>
+                      <span>{t('full_name')}</span>
                     </Label>
                     <Input
                       id="fullName"
@@ -261,15 +260,15 @@ const SignUp = () => {
                       required
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                      placeholder="Enter your full name"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                      placeholder={t('enter_full_name') || "Enter your full name"}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="phoneNumber" className="text-sm font-semibold flex items-center space-x-2" style={{ color: '#333A45' }}>
+                    <Label htmlFor="phoneNumber" className="text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300">
                       <Phone className="w-4 h-4" />
-                      <span>Phone Number</span>
+                      <span>{t('phone')}</span>
                     </Label>
                     <Input
                       id="phoneNumber"
@@ -278,15 +277,15 @@ const SignUp = () => {
                       required
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                      placeholder="+91 XXXXXXXXXX"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                      placeholder={t('phone_placeholder') || "+91 XXXXXXXXXX"}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="email" className="text-sm font-semibold flex items-center space-x-2" style={{ color: '#333A45' }}>
+                    <Label htmlFor="email" className="text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300">
                       <Mail className="w-4 h-4" />
-                      <span>Email</span>
+                      <span>{t('email')}</span>
                     </Label>
                     <Input
                       id="email"
@@ -295,13 +294,13 @@ const SignUp = () => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                      placeholder="Enter your email"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                      placeholder={t('enter_email') || "Enter your email"}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="password" className="text-sm font-semibold" style={{ color: '#333A45' }}>Password</Label>
+                    <Label htmlFor="password" className="text-sm font-semibold text-[#333A45] dark:text-gray-300">{t('password')}</Label>
                     <div className="relative mt-2">
                       <Input
                         id="password"
@@ -310,8 +309,8 @@ const SignUp = () => {
                         required
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl pr-12"
-                        placeholder="Create a password"
+                        className="h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12"
+                        placeholder={t('password_placeholder') || "Create a password"}
                       />
                       <Button
                         type="button"
@@ -323,10 +322,31 @@ const SignUp = () => {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
+
+                    {/* Password Strength Meter */}
+                    {formData.password && (
+                      <div className="mt-3 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <div className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-2">{t('password_strength') || "Password Strength"}</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className={`flex items-center gap-1.5 ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-400'}`}>
+                            {formData.password.length >= 8 ? '✓' : '○'} 8+ Characters
+                          </div>
+                          <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                            {/[A-Z]/.test(formData.password) ? '✓' : '○'} Uppercase Letter
+                          </div>
+                          <div className={`flex items-center gap-1.5 ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                            {/[0-9]/.test(formData.password) ? '✓' : '○'} Number (0-9)
+                          </div>
+                          <div className={`flex items-center gap-1.5 ${/[!@#$%^&*]/.test(formData.password) ? 'text-green-600' : 'text-gray-400'}`}>
+                            {/[!@#$%^&*]/.test(formData.password) ? '✓' : '○'} Special (!@#$%)
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
-                    <Label htmlFor="confirmPassword" className="text-sm font-semibold" style={{ color: '#333A45' }}>Confirm Password</Label>
+                    <Label htmlFor="confirmPassword" className="text-sm font-semibold text-[#333A45] dark:text-gray-300">{t('confirm_password') || "Confirm Password"}</Label>
                     <div className="relative mt-2">
                       <Input
                         id="confirmPassword"
@@ -335,8 +355,8 @@ const SignUp = () => {
                         required
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl pr-12"
-                        placeholder="Confirm your password"
+                        className="h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12"
+                        placeholder={t('confirm_password_placeholder') || "Confirm your password"}
                       />
                       <Button
                         type="button"
@@ -357,9 +377,9 @@ const SignUp = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="dateOfBirth" className="text-sm font-semibold flex items-center space-x-2" style={{ color: '#333A45' }}>
+                      <Label htmlFor="dateOfBirth" className="text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300">
                         <Calendar className="w-4 h-4" />
-                        <span>Date of Birth</span>
+                        <span>{t('date_of_birth')}</span>
                       </Label>
                       <Input
                         id="dateOfBirth"
@@ -368,29 +388,29 @@ const SignUp = () => {
                         required
                         value={formData.dateOfBirth}
                         onChange={handleInputChange}
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
+                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
                       />
                     </div>
 
                     <div>
-                      <Label className="text-sm font-semibold" style={{ color: '#333A45' }}>Gender</Label>
+                      <Label className="text-sm font-semibold text-[#333A45] dark:text-gray-300">{t('gender')}</Label>
                       <Select value={formData.gender || ""} onValueChange={handleSelectChange('gender')}>
-                        <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
-                          <SelectValue placeholder="Select gender" />
+                        <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl">
+                          <SelectValue placeholder={t('select')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="male">{t('male')}</SelectItem>
+                          <SelectItem value="female">{t('female')}</SelectItem>
+                          <SelectItem value="other">{t('other')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="address" className="text-sm font-semibold flex items-center space-x-2" style={{ color: '#333A45' }}>
+                    <Label htmlFor="address" className="text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300">
                       <MapPin className="w-4 h-4" />
-                      <span>Address</span>
+                      <span>{t('address')}</span>
                     </Label>
                     <Input
                       id="address"
@@ -399,14 +419,14 @@ const SignUp = () => {
                       required
                       value={formData.address}
                       onChange={handleInputChange}
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
                       placeholder="Enter your full address"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <Label htmlFor="city" className="text-sm font-semibold" style={{ color: '#333A45' }}>City</Label>
+                      <Label htmlFor="city" className="text-sm font-semibold text-[#333A45] dark:text-gray-300">{t('city')}</Label>
                       <Input
                         id="city"
                         name="city"
@@ -414,13 +434,13 @@ const SignUp = () => {
                         required
                         value={formData.city}
                         onChange={handleInputChange}
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                        placeholder="City"
+                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                        placeholder={t('enter_city') || "City"}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="state" className="text-sm font-semibold" style={{ color: '#333A45' }}>State</Label>
+                      <Label htmlFor="state" className="text-sm font-semibold text-[#333A45] dark:text-gray-300">{t('state') || "State"}</Label>
                       <Input
                         id="state"
                         name="state"
@@ -428,13 +448,13 @@ const SignUp = () => {
                         required
                         value={formData.state}
                         onChange={handleInputChange}
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                        placeholder="State"
+                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                        placeholder={t('enter_state') || "State"}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="pincode" className="text-sm font-semibold" style={{ color: '#333A45' }}>Pincode</Label>
+                      <Label htmlFor="pincode" className="text-sm font-semibold text-[#333A45] dark:text-gray-300">{t('pincode') || "Pincode"}</Label>
                       <Input
                         id="pincode"
                         name="pincode"
@@ -442,8 +462,8 @@ const SignUp = () => {
                         required
                         value={formData.pincode}
                         onChange={handleInputChange}
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                        placeholder="000000"
+                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                        placeholder={t('enter_pincode') || "000000"}
                       />
                     </div>
                   </div>
@@ -455,9 +475,9 @@ const SignUp = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="aadhaarNumber" className="text-sm font-semibold flex items-center space-x-2" style={{ color: '#333A45' }}>
+                      <Label htmlFor="aadhaarNumber" className="text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300">
                         <CreditCard className="w-4 h-4" />
-                        <span>Aadhaar Number</span>
+                        <span>{t('aadhaar_number')}</span>
                       </Label>
                       <Input
                         id="aadhaarNumber"
@@ -466,8 +486,8 @@ const SignUp = () => {
                         required
                         value={formData.aadhaarNumber}
                         onChange={handleInputChange}
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                        placeholder="XXXX XXXX XXXX"
+                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                        placeholder={t('enter_aadhaar') || "XXXX XXXX XXXX"}
                         maxLength="12"
                       />
                       {/* Aadhaar OTP Verification */}
@@ -476,14 +496,14 @@ const SignUp = () => {
                           onVerified={data => { setAadhaarVerified(true); setAadhaarVerifyData(data); }}
                           onError={() => setAadhaarVerified(false)}
                         />
-                        {aadhaarVerified && <div className="text-green-600 text-sm mt-2">Aadhaar verified successfully!</div>}
+                        {aadhaarVerified && <div className="text-green-600 dark:text-green-400 text-sm mt-2">{t('aadhaar_verified_success')}</div>}
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="panNumber" className="text-sm font-semibold flex items-center space-x-2" style={{ color: '#333A45' }}>
+                      <Label htmlFor="panNumber" className="text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300">
                         <CreditCard className="w-4 h-4" />
-                        <span>PAN Number</span>
+                        <span>{t('pan_number')}</span>
                       </Label>
                       <Input
                         id="panNumber"
@@ -492,8 +512,8 @@ const SignUp = () => {
                         required
                         value={formData.panNumber}
                         onChange={handleInputChange}
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-                        placeholder="ABCDE1234F"
+                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                        placeholder={t('enter_pan') || "ABCDE1234F"}
                         maxLength="10"
                         style={{ textTransform: 'uppercase' }}
                       />
@@ -503,13 +523,13 @@ const SignUp = () => {
                   {/* File Uploads */}
                   <div className="space-y-4">
                     {/* Aadhaar XML */}
-                    <div className="border-2 border-dashed rounded-xl p-6" style={{ borderColor: '#96C2DB', backgroundColor: '#F8FBFF' }}>
-                      <Label className="text-sm font-semibold flex items-center space-x-2 mb-3" style={{ color: '#333A45' }}>
+                    <div className="border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600 transition-colors duration-300">
+                      <Label className="text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300">
                         <FileText className="w-4 h-4" />
-                        <span>Aadhaar XML File (Required)</span>
+                        <span>{t('aadhaar_xml')}</span>
                       </Label>
                       <div className="text-center">
-                        <Upload className="mx-auto h-12 w-12 mb-4" style={{ color: '#96C2DB' }} />
+                        <Upload className="mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500" />
                         <label htmlFor="aadhaarXml" className="cursor-pointer">
                           <Input
                             id="aadhaarXml"
@@ -518,13 +538,13 @@ const SignUp = () => {
                             onChange={handleFileUpload('aadhaarXml')}
                             className="sr-only"
                           />
-                          <Button 
+                          <Button
                             type="button"
-                            variant="outline" 
-                            className="border-blue-300 text-blue-600 hover:bg-blue-100"
+                            variant="outline"
+                            className="border-blue-300 text-blue-600 hover:bg-blue-100 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-gray-700"
                             onClick={() => document.getElementById('aadhaarXml').click()}
                           >
-                            Choose XML File
+                            {t('choose_file')}
                           </Button>
                         </label>
                         {files.aadhaarXml && (
@@ -536,13 +556,13 @@ const SignUp = () => {
                     </div>
 
                     {/* Aadhaar Image */}
-                    <div className="border-2 border-dashed rounded-xl p-6" style={{ borderColor: '#96C2DB', backgroundColor: '#F8FBFF' }}>
-                      <Label className="text-sm font-semibold flex items-center space-x-2 mb-3" style={{ color: '#333A45' }}>
+                    <div className="border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600 transition-colors duration-300">
+                      <Label className="text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300">
                         <FileText className="w-4 h-4" />
-                        <span>Aadhaar Card Image (Required)</span>
+                        <span>{t('aadhaar_image')}</span>
                       </Label>
                       <div className="text-center">
-                        <Upload className="mx-auto h-12 w-12 mb-4" style={{ color: '#96C2DB' }} />
+                        <Upload className="mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500" />
                         <label htmlFor="aadhaarImage" className="cursor-pointer">
                           <Input
                             id="aadhaarImage"
@@ -551,13 +571,13 @@ const SignUp = () => {
                             onChange={handleFileUpload('aadhaarImage')}
                             className="sr-only"
                           />
-                          <Button 
+                          <Button
                             type="button"
-                            variant="outline" 
-                            className="border-blue-300 text-blue-600 hover:bg-blue-100"
+                            variant="outline"
+                            className="border-blue-300 text-blue-600 hover:bg-blue-100 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-gray-700"
                             onClick={() => document.getElementById('aadhaarImage').click()}
                           >
-                            Choose Image
+                            {t('choose_image')}
                           </Button>
                         </label>
                         {files.aadhaarImage && (
@@ -569,13 +589,13 @@ const SignUp = () => {
                     </div>
 
                     {/* PAN Image */}
-                    <div className="border-2 border-dashed rounded-xl p-6" style={{ borderColor: '#96C2DB', backgroundColor: '#F8FBFF' }}>
-                      <Label className="text-sm font-semibold flex items-center space-x-2 mb-3" style={{ color: '#333A45' }}>
+                    <div className="border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600 transition-colors duration-300">
+                      <Label className="text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300">
                         <FileText className="w-4 h-4" />
-                        <span>PAN Card Image (Required)</span>
+                        <span>{t('pan_image')}</span>
                       </Label>
                       <div className="text-center">
-                        <Upload className="mx-auto h-12 w-12 mb-4" style={{ color: '#96C2DB' }} />
+                        <Upload className="mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500" />
                         <label htmlFor="panImage" className="cursor-pointer">
                           <Input
                             id="panImage"
@@ -584,13 +604,13 @@ const SignUp = () => {
                             onChange={handleFileUpload('panImage')}
                             className="sr-only"
                           />
-                          <Button 
+                          <Button
                             type="button"
-                            variant="outline" 
-                            className="border-blue-300 text-blue-600 hover:bg-blue-100"
+                            variant="outline"
+                            className="border-blue-300 text-blue-600 hover:bg-blue-100 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-gray-700"
                             onClick={() => document.getElementById('panImage').click()}
                           >
-                            Choose Image
+                            {t('choose_image')}
                           </Button>
                         </label>
                         {files.panImage && (
@@ -607,17 +627,17 @@ const SignUp = () => {
               {/* Step 4: Terms & Conditions */}
               {step === 4 && (
                 <div className="space-y-6">
-                  <div className="bg-gray-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold mb-4" style={{ color: '#333A45' }}>Review Your Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div><strong>Name:</strong> {formData.fullName}</div>
-                      <div><strong>Phone:</strong> {formData.phoneNumber}</div>
-                      <div><strong>Email:</strong> {formData.email}</div>
-                      <div><strong>Date of Birth:</strong> {formData.dateOfBirth}</div>
-                      <div><strong>Gender:</strong> {formData.gender}</div>
-                      <div><strong>City:</strong> {formData.city}, {formData.state}</div>
-                      <div><strong>Aadhaar:</strong> {formData.aadhaarNumber}</div>
-                      <div><strong>PAN:</strong> {formData.panNumber}</div>
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold mb-4 text-[#333A45] dark:text-white">{t('review_info')}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm dark:text-gray-300">
+                      <div><strong>{t('name')}:</strong> {formData.fullName}</div>
+                      <div><strong>{t('phone')}:</strong> {formData.phoneNumber}</div>
+                      <div><strong>{t('email')}:</strong> {formData.email}</div>
+                      <div><strong>{t('date_of_birth')}:</strong> {formData.dateOfBirth}</div>
+                      <div><strong>{t('gender')}:</strong> {formData.gender}</div>
+                      <div><strong>{t('city')}:</strong> {formData.city}, {formData.state}</div>
+                      <div><strong>{t('aadhaar_number')}:</strong> {formData.aadhaarNumber}</div>
+                      <div><strong>{t('pan_number')}:</strong> {formData.panNumber}</div>
                     </div>
                   </div>
 
@@ -625,12 +645,12 @@ const SignUp = () => {
                     <Checkbox
                       id="agreeToTerms"
                       checked={formData.agreeToTerms}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setFormData(prev => ({ ...prev, agreeToTerms: checked }))
                       }
                     />
                     <Label htmlFor="agreeToTerms" className="text-sm">
-                      I agree to the <Link to="/terms" className="text-blue-600 hover:underline font-medium">Terms and Conditions</Link> and <Link to="/privacy" className="text-blue-600 hover:underline font-medium">Privacy Policy</Link>
+                      I agree to the <Link to="/terms" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">{t('terms_conditions')}</Link> and <Link to="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">{t('privacy')}</Link>
                     </Label>
                   </div>
                 </div>
@@ -643,38 +663,36 @@ const SignUp = () => {
                     type="button"
                     variant="outline"
                     onClick={() => setStep(step - 1)}
-                    className="px-8"
+                    className="px-8 dark:text-white"
                   >
-                    Previous
+                    {t('previous')}
                   </Button>
                 )}
-                
+
                 {step < 4 ? (
                   <Button
                     type="button"
                     onClick={nextStep}
-                    className="ml-auto px-8 text-white"
-                    style={{ backgroundColor: '#96C2DB' }}
+                    className="ml-auto px-8 text-white bg-[#96C2DB] dark:bg-blue-600 hover:bg-blue-500 transition-colors duration-300"
                   >
-                    Next
+                    {t('next')}
                   </Button>
                 ) : (
                   <Button
                     type="submit"
-                    className="ml-auto px-8 text-white"
-                    style={{ backgroundColor: '#96C2DB' }}
+                    className="ml-auto px-8 text-white bg-[#96C2DB] dark:bg-blue-600 hover:bg-blue-500 transition-colors duration-300"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Creating Account..." : "Create Account"}
+                    {isLoading ? t('creating_account') : t('create_account')}
                   </Button>
                 )}
               </div>
             </form>
 
             <div className="text-center text-sm mt-6">
-              <span className="text-gray-600">Already have an account? </span>
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
-                Sign in here
+              <span className="text-gray-600 dark:text-gray-400">{t('already_have_account')} </span>
+              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium hover:underline">
+                {t('sign_in_here')}
               </Link>
             </div>
           </CardContent>

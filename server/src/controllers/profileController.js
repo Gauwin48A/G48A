@@ -80,3 +80,38 @@ exports.updatePreferences = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// POST /api/profile/upload-avatar - Handle profile picture upload
+exports.uploadAvatar = async (req, res) => {
+  try {
+    const userId = req.body.userId || req.user?.id;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId required' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Convert file to base64 data URI for simple storage
+    const base64 = req.file.buffer.toString('base64');
+    const mimeType = req.file.mimetype;
+    const avatar_url = `data:${mimeType};base64,${base64}`;
+
+    // Update profile with new avatar URL
+    const result = await pool.query(
+      'UPDATE profiles SET avatar_url = $1 WHERE user_id = $2 RETURNING avatar_url',
+      [avatar_url, userId]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    logger.info('Avatar updated for user:', userId);
+    res.json({ avatar_url: result.rows[0].avatar_url });
+  } catch (err) {
+    logger.error('Error uploading avatar:', err);
+    res.status(500).json({ error: err.message });
+  }
+};

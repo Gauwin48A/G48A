@@ -1,6 +1,20 @@
 const express = require("express");
 const router = express.Router();
+const multer = require('multer');
 const profileController = require('../controllers/profileController');
+
+// Multer setup for avatar uploads (store in memory for base64 conversion)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 // GET /api/profile?userId=1
 router.get('/', profileController.getProfile);
@@ -22,6 +36,9 @@ const validateProfileUpdate = [
 
 // POST /api/profile/update
 router.post('/update', validateProfileUpdate, profileController.updateProfile);
+
+// POST /api/profile/upload-avatar
+router.post('/upload-avatar', upload.single('avatar'), profileController.uploadAvatar);
 
 // GET /api/profile/preferences?userId=1
 router.get('/preferences', profileController.getPreferences);

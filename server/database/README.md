@@ -1,38 +1,51 @@
-## Database Setup
+# MHub Database Setup
 
-This directory contains the SQL scripts for setting up the application's database.
+## Quick Start
 
-### Scripts
+```bash
+# 1. Create database
+psql -U postgres -c "CREATE DATABASE mhub;"
 
-- **01_tables_and_alter.sql**: Creates all tables, relationships, constraints, and indexes required for the application.
-- **02_functions_triggers_procedures.sql**: Defines all database functions, triggers, and stored procedures for business logic, validation, audit logging, recommendations, rewards, and notifications.
-- **03_dml_realistic_data.sql**: Populates the database with realistic sample data for users (50+), posts, channels, categories, rewards, audit logs, notifications, recommendations, etc.
+# 2. Run schema (creates tables + constraints)
+psql -U postgres -d mhub -f 01_schema_ddl.sql
 
-### Data Population Steps
+# 3. Run seed data (creates demo users + posts)
+psql -U postgres -d mhub -f 02_seed_dml.sql
 
-To set up and populate the database with realistic data:
+# 4. (Optional) Run functions/triggers
+psql -U postgres -d mhub -f 03_functions_triggers.sql
+```
 
-1. Run `01_tables_and_alter.sql` to create all tables and indexes (including audit, login_audit, recommendations, profiles, etc.).
-2. Run `02_functions_triggers_procedures.sql` for all database functions, triggers, and procedures.
-3. Run `03_dml_realistic_data.sql` for realistic Indian users, profiles, Aadhaar, channels, posts, rewards, audit, login_audit, recommendations, etc.
+## Files
 
-### Notes
-- All migration scripts have been merged here. Do not use `src/db/migrations/`.
-- Aadhaar verification is integrated in backend registration/profile flows.
-- Rewards endpoint fetches from DB and supports sorting/filtering/high-value ranges.
-- Sample data uses Indian names, cities, and plausible Aadhaar numbers.
-- All features/pages (Feed, My Feed, All Posts, Profile, Channel Management, Rewards, Audit Logging, Notifications) are supported by the schema and sample data.
-- For production, update password hashes and sensitive data as needed.
+| File | Purpose |
+|------|---------|
+| `01_schema_ddl.sql` | Tables, constraints, indexes |
+| `02_seed_dml.sql` | Demo users, posts, rewards |
+| `03_functions_triggers.sql` | DB functions and triggers |
 
-### Example Entities Covered
-- Users, Profiles, Aadhaar
-- Posts, Post Images
-- Categories, Tiers
-- Channels, Channel Followers
-- Rewards, Reward Log
-- Audit Log, Aadhaar Verification Log
-- Sales, Sale Transitions
+## Demo Accounts
 
----
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@mhub.com` | `password123` | Admin |
+| `seller@mhub.com` | `password123` | Premium (Gold) |
+| `buyer@mhub.com` | `password123` | User |
+| `client_demo@mhub.com` | `password123` | Premium (Gold) |
 
-**Deploy these scripts in order for a complete, production-ready database setup.**
+## Validation Rules
+
+- **Passwords**: bcrypt format (`$2b$10$...`)
+- **Prices**: `CHECK (price >= 0)`
+- **Roles**: `CHECK (role IN ('user', 'premium', 'admin'))`
+- **Emails**: UNIQUE constraint
+- **Referrals**: Self-referencing FK with CASCADE
+
+## Tier Thresholds
+
+| Tier | Points |
+|------|--------|
+| Bronze | 0-499 |
+| Silver | 500-999 |
+| Gold | 1000-2499 |
+| Platinum | 2500+ |

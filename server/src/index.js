@@ -1,35 +1,49 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import dotenv from "dotenv";
-import pool from "./config/db.js";
-import referralRoutes from "./routes/referral.js";
-import recommendationsRoutes from "./routes/recommendations.js";
-import profileRoutes from "./routes/profile.js";
-import categoriesRoutes from "./routes/categories.js";
-import postsRoutes from "./routes/posts.js";
-import notificationsRoutes from "./routes/notifications.js";
-import feedRoutes from "./routes/feed.js";
-import feedbackRoutes from "./routes/feedback.js";
-import dashboardRoutes from "./routes/dashboard.js";
-import complaintsRoutes from "./routes/complaints.js";
-import adminDashboardRoutes from "./routes/adminDashboard.js";
-import rewardsRoutes from "./routes/rewards.js";
-import locationRoutes from "./routes/locationRoutes.js";
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
+const pool = require("./config/db.js");
+
+// Import Routes
+const authRoutes = require("./routes/auth.js");
+const referralRoutes = require("./routes/referral.js");
+const recommendationsRoutes = require("./routes/recommendations.js");
+const profileRoutes = require("./routes/profile.js");
+const categoriesRoutes = require("./routes/categories.js");
+const postsRoutes = require("./routes/posts.js");
+const notificationsRoutes = require("./routes/notifications.js");
+const feedRoutes = require("./routes/feed.js");
+const feedbackRoutes = require("./routes/feedback.js");
+const dashboardRoutes = require("./routes/dashboard.js");
+const complaintsRoutes = require("./routes/complaints.js");
+const adminDashboardRoutes = require("./routes/adminDashboard.js");
+const rewardsRoutes = require("./routes/rewards.js");
+const locationRoutes = require("./routes/locationRoutes.js");
+const inquiriesRoutes = require("./routes/inquiries.js");
+// Batch 2 Routes
+const chatRoutes = require("./routes/chat.js");
+const offersRoutes = require("./routes/offers.js");
+const savedSearchesRoutes = require("./routes/savedSearches.js");
+const analyticsRoutes = require("./routes/analytics.js");
+
 const app = express();
 
-// Security and CORS configuration
+// Security & CORS
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:8081", credentials: true }));
-
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:3000"],
+  credentials: true
+}));
 app.use(express.json());
-app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 100 }));
+// Increased rate limit for development (500 req/min)
+app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 500 }));
 
-// Import and use routes
+// MOUNT ROUTES
+app.use('/api/auth', authRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/profile', profileRoutes);
@@ -43,43 +57,36 @@ app.use('/api/complaints', complaintsRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/location', locationRoutes);
+app.use('/api/inquiries', inquiriesRoutes);
+// Batch 2 Routes
+app.use('/api/chat', chatRoutes);
+app.use('/api/offers', offersRoutes);
+app.use('/api/saved-searches', savedSearchesRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', db: !!pool });
+// Health check with DB validation
+app.get('/api/health', async (req, res) => {
+  try {
+    const time = await pool.query('SELECT NOW()');
+    res.json({ status: 'ok', db: 'connected', time: time.rows[0].now });
+  } catch (err) {
+    res.status(500).json({ status: 'error', db: 'disconnected', error: err.message });
+  }
 });
 
-// Temporary route to list all mounted routes
-app.get('/api/_routes', (req, res) => {
-  const routes = [];
-  app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-      // routes registered directly on the app
-      routes.push(middleware.route);
-    } else if (middleware.name === 'router') {
-      // router middleware
-      middleware.handle.stack.forEach((handler) => {
-        if (handler.route) {
-          routes.push(handler.route);
-        }
-      });
-    }
-  });
-  res.json(routes.map(r => ({ path: r.path, methods: r.methods })));
-});
-
+// Root endpoint
 app.get('/', (req, res) => {
   res.send('Backend running successfully.');
 });
 
+// 404 handler
 app.use((req, res) => res.status(404).json({ error: 'Not Found' }));
 
-// Error logging middleware
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Unexpected server error", details: err.message });
+  console.error("Server Error:", err);
+  res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
-// Server port
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

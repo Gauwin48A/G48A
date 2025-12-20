@@ -11,6 +11,8 @@ exports.getNotifications = async (req, res) => {
     }
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error fetching notifications:', err.message);
+    // Return empty array on error to allow page to load gracefully
+    res.json([]);
   }
 };

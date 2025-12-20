@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Upload, CheckCircle, AlertCircle, Award } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from 'react-i18next';
 
 const GetVerified = () => {
+  const { t } = useTranslation();
   const [verificationData, setVerificationData] = useState({
     fullName: '',
     aadhaarNumber: '',
@@ -33,13 +35,13 @@ const GetVerified = () => {
     if (file && file.name.endsWith('.xml')) {
       setAadhaarFile(file);
       toast({
-        title: "File Selected",
-        description: "Aadhaar XML file selected successfully"
+        title: t('file_uploaded'),
+        description: t('aadhaar_xml') + " " + t('success')
       });
     } else if (file) {
       toast({
-        title: "Invalid File",
-        description: "Please upload a valid XML file downloaded from UIDAI",
+        title: t('invalid_file'),
+        description: t('upload_valid_xml'),
         variant: "destructive"
       });
     }
@@ -49,35 +51,35 @@ const GetVerified = () => {
     e.preventDefault();
     if (!aadhaarFile) {
       toast({
-        title: "File Required",
-        description: "Please upload your Aadhaar XML file",
+        title: t('error'),
+        description: t('aadhaar_verification_required'),
         variant: "destructive"
       });
       return;
     }
 
     setIsUploading(true);
-    
+
     // Simulate verification process
     setTimeout(() => {
       setIsUploading(false);
       setVerificationStatus('verified');
       toast({
-        title: "Verification Successful",
-        description: "Your Aadhaar has been verified successfully!"
+        title: t('success'),
+        description: t('aadhaar_verified_success')
       });
     }, 3000);
   };
 
   const benefits = [
-    { icon: Shield, title: "Verified Badge", description: "Display verified status on your profile" },
-    { icon: Award, title: "Higher Trust", description: "Gain buyer and seller confidence" },
-    { icon: CheckCircle, title: "Priority Listing", description: "Your posts appear higher in search" },
-    { icon: Upload, title: "Better Rewards", description: "Earn bonus points for transactions" }
+    { icon: Shield, title: t('verified'), description: t('verification_details') || "Display verified status on your profile" },
+    { icon: Award, title: t('rewards'), description: t('points') || "Gain buyer and seller confidence" },
+    { icon: CheckCircle, title: t('top_deals'), description: t('personalized_posts') || "Your posts appear higher in search" },
+    { icon: Upload, title: t('rewards'), description: t('points') || "Earn bonus points for transactions" }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors duration-300">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -232,7 +234,7 @@ const GetVerified = () => {
                   <div>
                     <h3 className="font-medium text-amber-800">Privacy & Security</h3>
                     <p className="text-sm text-amber-700 mt-1">
-                      Your Aadhaar data is encrypted and used only for verification. 
+                      Your Aadhaar data is encrypted and used only for verification.
                       We comply with all government privacy regulations.
                     </p>
                   </div>

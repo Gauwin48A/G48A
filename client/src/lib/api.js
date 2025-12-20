@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// In development, Vite's proxy handles /api routes
+// In production, use the full API URL
+const isDev = import.meta.env.DEV;
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  baseURL: isDev ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'),
 });
 
 export const fetchFeed = (params) => api.get('/feed', { params });

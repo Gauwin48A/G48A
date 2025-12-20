@@ -15,10 +15,12 @@ import { useNavigate } from "react-router-dom";
 import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "@/lib/auth";
 import { captureLocation } from "@/services/locationService";
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [emailLogin, setEmailLogin] = useState({ email: "", password: "" });
   const [phoneLogin, setPhoneLogin] = useState({ phone: "", otp: "" });
@@ -52,8 +54,8 @@ const Login = () => {
     const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
     if (!emailLogin.email || !emailRegex.test(emailLogin.email)) {
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
+        title: t('invalid_email'),
+        description: t('invalid_email_desc'),
         variant: "destructive",
       });
       return;
@@ -81,7 +83,9 @@ const Login = () => {
         email: emailLogin.email,
         password: emailLogin.password,
       });
-      localStorage.setItem("token", data.token);
+      // Save to correct localStorage keys that rest of app uses
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("userId", data.userId);
       await fetchAndStoreUserProfile(data.token);
 
       // Capture fresh location after login
@@ -91,14 +95,14 @@ const Login = () => {
       );
 
       toast({
-        title: "Login Successful 🎉",
-        description: "Welcome back to MobileVerify!",
+        title: t('login_successful') + " 🎉",
+        description: t('welcome_back') + " to MobileVerify!",
       });
       navigate("/all-posts");
     } catch (err) {
       toast({
-        title: "Login Failed ❌",
-        description: err.errors?.join(", ") || err.error || "Login failed",
+        title: t('login_failed') + " ❌",
+        description: err.errors?.join(", ") || err.error || t('login_failed'),
         variant: "destructive",
       });
     } finally {
@@ -215,7 +219,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-6">
@@ -223,36 +227,36 @@ const Login = () => {
               <Shield className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome Back
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            {t('welcome_back')}
           </h2>
-          <p className="text-gray-600">Sign in to your account</p>
+          <p className="text-gray-600 dark:text-gray-300">{t('sign_in_to_account')}</p>
         </div>
 
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800">
           <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-8">
-            <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('sign_in')}</CardTitle>
             <CardDescription className="text-sky-100">
-              Choose your preferred login method
+              {t('choose_login_method')}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-8">
             <Tabs defaultValue="email" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 rounded-xl p-1">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
                 <TabsTrigger
                   value="email"
-                  className="rounded-lg flex items-center space-x-2"
+                  className="rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
                 >
                   <Mail className="w-4 h-4" />
-                  <span>Email</span>
+                  <span>{t('email')}</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="phone"
-                  className="rounded-lg flex items-center space-x-2"
+                  className="rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
                 >
                   <Phone className="w-4 h-4" />
-                  <span>Phone</span>
+                  <span>{t('phone')}</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -260,8 +264,8 @@ const Login = () => {
               <TabsContent value="email">
                 <form onSubmit={handleEmailLogin} className="space-y-6">
                   <div>
-                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
-                      Email Address
+                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {t('email')}
                     </Label>
                     <Input
                       id="email"
@@ -271,13 +275,13 @@ const Login = () => {
                       onChange={(e) =>
                         setEmailLogin((prev) => ({ ...prev, email: e.target.value }))
                       }
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl"
-                      placeholder="Enter your email"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                      placeholder="name@example.com"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
-                      Password
+                    <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {t('password')}
                     </Label>
                     <div className="relative mt-2">
                       <Input
@@ -288,8 +292,8 @@ const Login = () => {
                         onChange={(e) =>
                           setEmailLogin((prev) => ({ ...prev, password: e.target.value }))
                         }
-                        className="h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl pr-12"
-                        placeholder="Enter your password"
+                        className="h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12"
+                        placeholder="••••••••"
                       />
                       <Button
                         type="button"
@@ -304,13 +308,13 @@ const Login = () => {
                   </div>
 
                   {/* Signup link */}
-                  <p className="text-sm text-gray-600">
-                    Don't have an account?{" "}
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('dont_have_account')}{" "}
                     <span
-                      className="text-blue-600 cursor-pointer hover:underline"
+                      className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
                       onClick={() => navigate("/signup")}
                     >
-                      Sign up here
+                      {t('sign_up_here')}
                     </span>
                   </p>
 
@@ -319,7 +323,7 @@ const Login = () => {
                     disabled={isLoading}
                     className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"
                   >
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {isLoading ? t('logging_in') : t('sign_in')}
                   </Button>
                 </form>
               </TabsContent>
@@ -328,8 +332,8 @@ const Login = () => {
               <TabsContent value="phone">
                 <div className="space-y-6">
                   <div>
-                    <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
-                      Phone Number
+                    <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {t('phone')}
                     </Label>
                     <Input
                       id="phone"
@@ -339,19 +343,19 @@ const Login = () => {
                       onChange={(e) =>
                         setPhoneLogin((prev) => ({ ...prev, phone: e.target.value }))
                       }
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl"
-                      placeholder="+91 XXXXXXXXXX"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                      placeholder={t('phone_placeholder') || "+91 XXXXXXXXXX"}
                     />
                   </div>
 
                   {/* Signup link under phone input */}
-                  <p className="text-sm text-gray-600">
-                    Don't have an account?{" "}
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('dont_have_account')}{" "}
                     <span
-                      className="text-blue-600 cursor-pointer hover:underline"
+                      className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
                       onClick={() => navigate("/signup")}
                     >
-                      Sign up here
+                      {t('sign_up_here')}
                     </span>
                   </p>
 
@@ -361,13 +365,13 @@ const Login = () => {
                       disabled={isLoading}
                       className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"
                     >
-                      {isLoading ? "Sending..." : "Send OTP"}
+                      {isLoading ? t('loading') : t('send_otp')}
                     </Button>
                   ) : (
                     <form onSubmit={handlePhoneLogin} className="space-y-6">
                       <div>
-                        <Label htmlFor="otp" className="text-sm font-semibold text-gray-700">
-                          Enter OTP
+                        <Label htmlFor="otp" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          {t('enter_otp')}
                         </Label>
                         <Input
                           id="otp"
@@ -377,8 +381,8 @@ const Login = () => {
                           onChange={(e) =>
                             setPhoneLogin((prev) => ({ ...prev, otp: e.target.value }))
                           }
-                          className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl text-center text-lg tracking-widest"
-                          placeholder="Enter 6-digit OTP"
+                          className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest"
+                          placeholder={t('otp_placeholder') || "123456"}
                           maxLength={6}
                         />
                       </div>
@@ -387,7 +391,7 @@ const Login = () => {
                         disabled={isLoading}
                         className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"
                       >
-                        {isLoading ? "Verifying..." : "Verify & Sign In"}
+                        {isLoading ? t('logging_in') : t('verify_sign_in')}
                       </Button>
                     </form>
                   )}

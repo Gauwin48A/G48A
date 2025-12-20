@@ -1,288 +1,293 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Smartphone, Monitor, Shirt, Sofa } from 'lucide-react';
-import { FaHeart, FaRegHeart, FaShare, FaEye } from 'react-icons/fa';
+import { Badge } from '@/components/ui/badge';
+import { Heart, Share2, Eye, MapPin, Star, ShoppingBag, Sparkles, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-
-const NAVBAR_HEIGHT = 80; // px, adjust to match your actual navbar height
+import { useTranslation } from 'react-i18next';
 
 const MyRecommendations = () => {
-	// User preferences fetched from profile
-	const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', date: '' });
-	const [filters, setFilters] = useState({ category: '', minPrice: '', maxPrice: '', sortBy: 'posted_date', sortOrder: 'desc', page: 1, limit: 10 });
-	const [total, setTotal] = useState(0);
-	const [posts, setPosts] = useState([]);
-	const [error, setError] = useState(null);
-	const [loading, setLoading] = useState(false);
-	const [currentPage, setCurrentPage] = useState(1);
-	const [hasMore, setHasMore] = useState(true);
-	const postsPerPage = 6;
+	const { t } = useTranslation();
 	const navigate = useNavigate();
-	const [expandedPost, setExpandedPost] = useState(null);
+
+	// State
+	const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', date: '' });
+	const [posts, setPosts] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
 	const [likedPosts, setLikedPosts] = useState({});
-	const [likeCounts, setLikeCounts] = useState({});
-	const [viewCounts, setViewCounts] = useState({});
-	const [shareToast, setShareToast] = useState("");
+	const [selectedCategory, setSelectedCategory] = useState('');
 	const [categories, setCategories] = useState([]);
 
-	// Fetch user preferences from profile
+	// Category icons mapping
+	const categoryIcons = {
+		'Electronics': '📱',
+		'Mobiles': '📱',
+		'Fashion': '👕',
+		'Furniture': '🛋️',
+		'Vehicles': '🚗',
+		'Books': '📚',
+		'Home': '🏠',
+		'Sports': '⚽',
+		'Beauty': '💄',
+	};
+
+	// Fetch user preferences
 	useEffect(() => {
 		const fetchPreferences = async () => {
 			const userId = localStorage.getItem('userId');
 			if (!userId) return;
-			const res = await api.get(`/profile/preferences?userId=${userId}`);
-			if (res.status === 200) {
-				const data = res.data;
-				setPreferences({
-					location: data.location || '',
-					minPrice: data.minPrice || '',
-					maxPrice: data.maxPrice || '',
-					date: data.date || ''
-				});
+			try {
+				const res = await api.get(`/api/profile/preferences?userId=${userId}`);
+				if (res.data) {
+					setPreferences({
+						location: res.data.location || '',
+						minPrice: res.data.minPrice || '',
+						maxPrice: res.data.maxPrice || '',
+						date: res.data.date || ''
+					});
+				}
+			} catch (err) {
+				console.log('No preferences found');
 			}
 		};
 		fetchPreferences();
 	}, []);
 
-	// Fetch posts based on preferences
+	// Fetch categories
 	useEffect(() => {
-		setLoading(true);
-		const fetchPosts = async () => {
+		const fetchCategories = async () => {
 			try {
-				const token = localStorage.getItem('authToken');
+				const res = await api.get('/api/categories');
+				setCategories(Array.isArray(res.data) ? res.data : []);
+			} catch (err) {
+				console.error('Failed to fetch categories');
+			}
+		};
+		fetchCategories();
+	}, []);
+
+	// Fetch recommended posts based on preferences
+	useEffect(() => {
+		const fetchPosts = async () => {
+			setLoading(true);
+			try {
 				const userId = localStorage.getItem('userId');
-				if (!userId) throw new Error('User not logged in');
-				// Merge preferences into filters for recommendations
-				const paramsObj = {
-					...filters,
+				const params = {
 					location: preferences.location,
 					minPrice: preferences.minPrice,
 					maxPrice: preferences.maxPrice,
-					date: preferences.date,
+					category: selectedCategory,
 					userId
 				};
-				Object.keys(paramsObj).forEach(key => {
-					if (!paramsObj[key]) delete paramsObj[key];
-				});
-				const res = await api.get('/recommendations', { params: paramsObj });
-				if (res.status !== 200) throw new Error(res.data.error || 'Failed to fetch posts');
-				const data = res.data;
-				setPosts(Array.isArray(data.posts) ? data.posts : []);
-				setTotal(data.total || 0);
+				// Remove empty params
+				Object.keys(params).forEach(key => !params[key] && delete params[key]);
+
+				const res = await api.get('/api/recommendations', { params });
+				setPosts(Array.isArray(res.data?.posts) ? res.data.posts : []);
 				setError(null);
-				// Set like/view counts from backend if available
-				const likes = {};
-				const views = {};
-				(data.posts || []).forEach(post => {
-					likes[post.id] = post.likes || 0;
-					views[post.id] = post.views || 0;
-				});
-				setLikeCounts(likes);
-				setViewCounts(views);
 			} catch (err) {
-				setError(err.message || 'Failed to fetch posts');
+				console.error('Failed to fetch recommendations:', err);
+				setError('Failed to load recommendations');
 				setPosts([]);
-				setTotal(0);
 			} finally {
 				setLoading(false);
 			}
 		};
 		fetchPosts();
-	}, [preferences, filters]);
+	}, [preferences, selectedCategory]);
 
-	// Categories (fetched from server)
-	useEffect(() => {
-		const fetchCategories = async () => {
-			const res = await api.get('/categories');
-			setCategories(Array.isArray(res.data) ? res.data : []);
-		};
-		fetchCategories();
-	}, []);
-
-	// Pagination logic
-	const totalPosts = posts.length;
-	const totalPages = Math.ceil(totalPosts / postsPerPage);
-	const currentPosts = posts.slice(0, currentPage * postsPerPage);
-
-	// Infinite scroll
-	const loadMorePosts = useCallback(() => {
-		if (loading || currentPage >= totalPages) return;
-		setLoading(true);
-		setTimeout(() => {
-			setCurrentPage(prev => prev + 1);
-			setLoading(false);
-		}, 1000);
-	}, [loading, currentPage, totalPages]);
-
-	useEffect(() => {
-		setHasMore(currentPage < totalPages);
-	}, [currentPage, totalPages]);
-
-	useEffect(() => {
-		const handleScroll = () => {
-			if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-				loadMorePosts();
-			}
-		};
-		window.addEventListener('scroll', handleScroll);
-		return () => window.removeEventListener('scroll', handleScroll);
-	}, [loadMorePosts]);
-
-	useEffect(() => {
-		setCurrentPage(1);
-	}, [filters, preferences]);
-
-	// Sponsored Deals (show 4/5 only)
-	const sponsoredDeals = posts.filter(post => post.isSponsored).slice(0, 5);
-
-	// Like handler (API call)
+	// Handlers
 	const handleLike = async (postId) => {
-		const alreadyLiked = likedPosts[postId];
 		setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
-		setLikeCounts(prev => ({ ...prev, [postId]: prev[postId] + (alreadyLiked ? -1 : 1) }));
 		try {
-			await fetch(`/api/posts/${postId}/like`, { method: 'POST', credentials: 'include' });
-		} catch {}
+			await api.post(`/api/posts/${postId}/like`);
+		} catch (err) { }
 	};
 
-	// View handler (API call)
-	const handleView = async (postId) => {
-		setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
-		try {
-			await fetch(`/api/posts/${postId}/view`, { method: 'POST', credentials: 'include' });
-		} catch {}
-	};
-
-	// Share handler (copy link, API call)
 	const handleShare = async (postId) => {
 		const url = `${window.location.origin}/post/${postId}`;
-		try {
-			await navigator.clipboard.writeText(url);
-			setShareToast('Link copied!');
-			setTimeout(() => setShareToast(''), 2000);
-			await fetch(`/api/posts/${postId}/share`, { method: 'POST', credentials: 'include' });
-		} catch {
-			setShareToast('Failed to copy link');
-			setTimeout(() => setShareToast(''), 2000);
-		}
+		await navigator.clipboard.writeText(url);
 	};
 
-	// When user clicks View Details, increment view count and navigate
 	const handleViewDetails = (postId) => {
-		handleView(postId);
 		navigate(`/post/${postId}`);
 	};
 
+	const getImageUrl = (img) => {
+		if (!img) return '/placeholder.svg';
+		if (img.startsWith('http')) return img;
+		return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${img}`;
+	};
+
 	return (
-		<div className="bg-white min-h-screen">
-			{/* Sticky Categories Bar (improved: shadow, blur, border, more separation) */}
-			<div className="sticky z-50 w-full flex justify-center mt-6" style={{ top: NAVBAR_HEIGHT }}>
-				<div className="flex bg-white/80 backdrop-blur-md border border-blue-300 shadow-lg rounded-2xl px-2 md:px-6 py-2 md:py-4 gap-4 md:gap-8 w-full max-w-5xl items-center justify-center overflow-x-auto scrollbar-hide ring-2 ring-blue-100">
-					{categories.map((cat) => (
-						<div key={cat.label} className="flex flex-col items-center gap-1 cursor-pointer hover:bg-blue-50 rounded-xl px-2 py-1 min-w-[70px] md:min-w-[90px] transition-all">
-							{cat.icon}
-							<span className="text-xs md:text-sm font-medium text-gray-700">{cat.label}</span>
+		<div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+			{/* Premium Header Banner */}
+			<div className="relative overflow-hidden">
+				<div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-90" />
+				<div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
+
+				<div className="relative max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+					<div className="flex flex-col md:flex-row items-center justify-between gap-6">
+						<div className="text-center md:text-left">
+							<div className="flex items-center gap-3 justify-center md:justify-start mb-3">
+								<Sparkles className="w-8 h-8 text-yellow-300 animate-pulse" />
+								<h1 className="text-3xl md:text-4xl font-bold text-white">{t('my_recommendations') || 'My Recommendations'}</h1>
+							</div>
+							<p className="text-blue-100 text-lg">{t('personalized_posts') || 'Posts curated just for you based on your preferences'}</p>
 						</div>
+
+						{/* Preferences Summary */}
+						<div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+							<h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+								<Filter className="w-4 h-4" /> Your Preferences
+							</h3>
+							<div className="flex flex-wrap gap-2">
+								{preferences.location && (
+									<Badge className="bg-white/20 text-white border-white/30">
+										<MapPin className="w-3 h-3 mr-1" />{preferences.location}
+									</Badge>
+								)}
+								{(preferences.minPrice || preferences.maxPrice) && (
+									<Badge className="bg-white/20 text-white border-white/30">
+										₹{preferences.minPrice || '0'} - ₹{preferences.maxPrice || '∞'}
+									</Badge>
+								)}
+								{!preferences.location && !preferences.minPrice && !preferences.maxPrice && (
+									<Badge className="bg-white/20 text-white border-white/30">No filters - showing all</Badge>
+								)}
+							</div>
+							<Button
+								onClick={() => navigate('/profile')}
+								className="mt-3 bg-white/20 hover:bg-white/30 text-white border border-white/30 text-sm"
+								size="sm"
+							>
+								Edit Preferences
+							</Button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Category Filter Chips */}
+			<div className="max-w-7xl mx-auto px-4 py-6">
+				<div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+					<button
+						onClick={() => setSelectedCategory('')}
+						className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all whitespace-nowrap ${selectedCategory === ''
+								? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
+								: 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:shadow-md border border-gray-200 dark:border-gray-700'
+							}`}
+					>
+						<ShoppingBag className="w-4 h-4" /> All
+					</button>
+					{categories.map(cat => (
+						<button
+							key={cat.category_id || cat.name}
+							onClick={() => setSelectedCategory(cat.name)}
+							className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all whitespace-nowrap ${selectedCategory === cat.name
+									? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
+									: 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:shadow-md border border-gray-200 dark:border-gray-700'
+								}`}
+						>
+							<span>{categoryIcons[cat.name] || '📦'}</span> {cat.name}
+						</button>
 					))}
 				</div>
 			</div>
-			{/* Add margin below sticky bar so posts never go under it visually */}
-			<div className="h-6 md:h-8" />
-			{/* Banner (aligned with categories, responsive, full width) */}
-			<div className="w-full flex justify-center">
-				<div className="flex flex-col md:flex-row items-center justify-between px-3 md:px-8 py-6 md:py-8 bg-blue-100 rounded-xl mb-8 shadow-lg w-full max-w-5xl relative overflow-hidden border border-blue-200 mt-0 md:mt-6">
-					<div className="flex flex-col gap-2 z-10 w-full md:w-auto">
-						<span className="text-xl md:text-3xl font-bold text-blue-900 mb-1">Recommended For You</span>
-						<span className="text-sm md:text-base text-blue-800 font-medium mb-2">Based on your preferences</span>
-						<Button className="bg-blue-600 text-white font-semibold px-5 md:px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition w-fit text-sm md:text-base" onClick={() => navigate('/profile')}>Edit Preferences</Button>
+
+			{/* Posts Grid */}
+			<div className="max-w-7xl mx-auto px-4 pb-12">
+				{loading ? (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+						{[...Array(8)].map((_, i) => (
+							<div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 animate-pulse">
+								<div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4" />
+								<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+								<div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+							</div>
+						))}
 					</div>
-					<div className="mt-4 md:mt-0 md:ml-8 z-10">
-						<div className="w-24 h-16 md:w-32 md:h-24 bg-blue-200 rounded-lg flex items-center justify-center">
-							<svg width="64" height="48" fill="none" viewBox="0 0 64 48"><rect width="64" height="48" rx="8" fill="#2563eb" /></svg>
-						</div>
+				) : error ? (
+					<div className="text-center py-20">
+						<div className="text-6xl mb-4">😕</div>
+						<p className="text-gray-500 text-lg">{error}</p>
+						<Button onClick={() => navigate('/profile')} className="mt-4">Set Preferences</Button>
 					</div>
-					<div className="absolute right-0 bottom-0 opacity-10 w-32 h-24 md:w-40 md:h-32 bg-blue-300 rounded-bl-2xl" />
-				</div>
-			</div>
-			{/* Sponsored Deals (horizontal grid, 4/5 only) */}
-			<div className="w-full flex flex-col items-center mb-8">
-				<h2 className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4 w-full max-w-5xl px-3 md:px-0">Sponsored Deals</h2>
-				<div className="flex gap-4 md:gap-6 w-full max-w-5xl overflow-x-auto scrollbar-hide px-3 md:px-0">
-					{sponsoredDeals.length === 0 ? (
-						<div className="text-center text-blue-400">No sponsored deals right now.</div>
-					) : (
-						sponsoredDeals.map((post, idx) => (
-							<Card key={post.id || post._id || idx} className="rounded-xl shadow bg-white border border-blue-100 flex flex-col items-center p-3 md:p-4 min-w-[160px] max-w-[180px] md:min-w-[200px] md:max-w-[220px]">
-								<div className="w-20 h-20 md:w-24 md:h-24 bg-gray-100 rounded mb-2 flex items-center justify-center">
-									<span className="text-gray-400">Image</span>
+				) : posts.length === 0 ? (
+					<div className="text-center py-20">
+						<div className="text-6xl mb-4">🔍</div>
+						<h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No recommendations yet</h3>
+						<p className="text-gray-500 mb-4">Update your preferences to see personalized posts</p>
+						<Button onClick={() => navigate('/profile')} className="bg-gradient-to-r from-blue-600 to-indigo-600">
+							Set Preferences
+						</Button>
+					</div>
+				) : (
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+						{posts.map((post) => (
+							<Card
+								key={post.post_id || post.id}
+								className="group bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border-0 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300"
+							>
+								{/* Image */}
+								<div className="relative w-full h-48 overflow-hidden">
+									<img
+										src={getImageUrl(post.images?.[0] || post.image_url)}
+										alt={post.title}
+										className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+										onError={(e) => { e.target.src = '/placeholder.svg'; }}
+									/>
+									{/* Like Button */}
+									<button
+										onClick={(e) => { e.stopPropagation(); handleLike(post.post_id || post.id); }}
+										className="absolute top-3 right-3 p-2 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg hover:scale-110 transition-transform"
+									>
+										<Heart className={`w-5 h-5 ${likedPosts[post.post_id || post.id] ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+									</button>
+									{/* Category Badge */}
+									<Badge className="absolute top-3 left-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0">
+										{post.category_name || post.category || 'General'}
+									</Badge>
 								</div>
-								<div className="font-semibold text-gray-800 text-xs md:text-base text-center mb-1 line-clamp-2">{post.title}</div>
-								<div className="text-yellow-500 text-xs mb-1">★★★★★</div>
-								<div className="text-blue-900 text-base md:text-lg font-bold mb-1">₹{post.price}</div>
-								<Button className="bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2" onClick={() => navigate(`/post/${post.id}`)}>View</Button>
-							</Card>
-						))
-					)}
-				</div>
-			</div>
-			{/* All Posts Feed - Instagram/Facebook style modern card */}
-			<div className="w-full flex flex-col items-center mb-10">
-				<h2 className="text-xl md:text-2xl font-bold text-blue-800 mb-4 w-full max-w-5xl px-3 md:px-0">Recommended Posts</h2>
-				<div className="flex flex-col gap-6 w-full max-w-5xl mx-auto px-2 md:px-0">
-					{loading ? (
-						<div className="text-center text-blue-400">Loading...</div>
-					) : error ? (
-						<div className="text-center text-red-400">{error}</div>
-					) : currentPosts.length === 0 ? (
-						<div className="col-span-full text-center text-blue-400">No posts available right now.</div>
-					) : (
-						currentPosts.map((post) => (
-							<Card key={post.id} className="rounded-2xl shadow bg-white border border-blue-100 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow">
-								{/* Header: Avatar, Username, Category */}
-								<div className="flex items-center gap-3 px-4 pt-4 pb-2">
-									<Avatar className="w-10 h-10">
-										<AvatarFallback>{post.user?.name?.[0] || 'U'}</AvatarFallback>
-									</Avatar>
-									<div className="flex-1 min-w-0">
-										<div className="font-semibold text-blue-900 text-base md:text-lg truncate">{post.user?.name || 'Unknown'}</div>
-										<div className="text-gray-500 text-xs">{post.category}</div>
+
+								{/* Content */}
+								<div className="p-4">
+									<h3 className="font-semibold text-gray-800 dark:text-white text-lg mb-1 line-clamp-1">{post.title}</h3>
+									<p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{post.description || 'No description'}</p>
+
+									{/* Price & Location */}
+									<div className="flex items-center justify-between mb-3">
+										<span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+											₹{post.price?.toLocaleString() || '0'}
+										</span>
+										<div className="flex items-center gap-1 text-gray-500 text-sm">
+											<MapPin className="w-3 h-3" />
+											{post.location || 'N/A'}
+										</div>
 									</div>
-									<span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">{post.status || 'STANDARD'}</span>
-								</div>
-								{/* Post Image (reduced height for more compact, Facebook/Instagram style) */}
-								<div className="w-full h-48 md:h-56 bg-gray-100 flex items-center justify-center overflow-hidden">
-									{/* Replace with actual image if available */}
-									<span className="text-gray-400">Image</span>
-								</div>
-								{/* Description (truncated, with View More) */}
-								<div className="px-4 py-3 text-gray-800 text-sm md:text-base">
-									{expandedPost === post.id || !post.description || post.description.length < 120
-										? post.description || <span className="italic text-gray-400">No description</span>
-										: <>
-											{post.description.slice(0, 120)}...{' '}
-											<button className="text-blue-600 font-semibold hover:underline" onClick={() => setExpandedPost(post.id)}>View More</button>
-										</>
-									}
-								</div>
-								{/* Actions: Like, Share, Views */}
-								<div className="flex items-center justify-between px-4 pb-4 pt-2 border-t border-gray-100">
-									<div className="flex gap-5">
-										<button className={`flex items-center gap-1 font-semibold focus:outline-none`} onClick={() => handleLike(post.id)}>
-											{liked ? <FaHeart className="w-4 h-4 text-red-500" /> : <FaRegHeart className="w-4 h-4 text-black" />} Like {likeCounts[post.id] || 0}
+
+									{/* Actions */}
+									<div className="flex items-center gap-2">
+										<Button
+											onClick={() => handleViewDetails(post.post_id || post.id)}
+											className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+										>
+											View Details
+										</Button>
+										<button
+											onClick={(e) => { e.stopPropagation(); handleShare(post.post_id || post.id); }}
+											className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+										>
+											<Share2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
 										</button>
-										<button className="flex items-center gap-1 text-black font-semibold focus:outline-none" onClick={() => handleShare(post.id)}><FaShare className="w-4 h-4" /> Share</button>
-										<span className="flex items-center gap-1 text-gray-500 font-semibold"><FaEye className="w-4 h-4" />{viewCounts[post.id] || 0}</span>
 									</div>
-									<Button className="bg-blue-600 text-white px-4 py-1 text-xs md:text-sm font-medium rounded" onClick={() => handleViewDetails(post.id)}>View Details</Button>
 								</div>
 							</Card>
-						))
-					)}
-				</div>
-				{shareToast && <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[9999]">{shareToast}</div>}
+						))}
+					</div>
+				)}
 			</div>
 		</div>
 	);

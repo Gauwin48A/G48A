@@ -7,6 +7,7 @@ export function Select({ children, onValueChange, value, defaultValue, name, ...
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = React.useState(defaultValue || "");
   const selected = isControlled ? value : internalValue;
+  const selectRef = React.useRef(null);
 
   // Normalize children
   const childArray = React.Children.toArray(children);
@@ -34,12 +35,25 @@ export function Select({ children, onValueChange, value, defaultValue, name, ...
     setOpen(false);
   };
 
+  // Close on outside click
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (selectRef.current && !selectRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
   // Render
   return (
-    <div className="relative" tabIndex={0} onBlur={() => setOpen(false)} {...props}>
+    <div className="relative" ref={selectRef} {...props}>
       {triggerChild ? (
         React.cloneElement(triggerChild, {
-          onClick: (e) => { e?.preventDefault(); setOpen(o => !o); },
+          onClick: (e) => { e?.preventDefault(); e?.stopPropagation(); setOpen(o => !o); },
           children: (
             <span className="flex items-center justify-between w-full">
               <span>{selected ? findLabelForValue(selected) : placeholder}</span>
@@ -61,11 +75,11 @@ export function Select({ children, onValueChange, value, defaultValue, name, ...
 
       {open && (
         contentChild ? (
-          React.cloneElement(contentChild, {},
+          React.cloneElement(contentChild, { className: cn("absolute top-full left-0 mt-1 z-[9999] min-w-[8rem] bg-white border rounded-md shadow-lg", contentChild.props.className) },
             React.Children.map(contentChild.props.children, (opt) =>
               React.cloneElement(opt, {
                 selected: opt.props.value === selected,
-                onClick: () => handleSelect(opt.props.value),
+                onClick: (e) => { e?.stopPropagation(); handleSelect(opt.props.value); },
               })
             )
           )
@@ -73,12 +87,12 @@ export function Select({ children, onValueChange, value, defaultValue, name, ...
           <ul
             role="listbox"
             tabIndex={-1}
-            className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-auto"
+            className="absolute top-full left-0 z-[9999] mt-1 w-full bg-white border rounded shadow max-h-60 overflow-auto"
           >
             {React.Children.map(childArray.filter(c => c && c.type && c.type.name === 'SelectItem'), (opt) =>
               React.cloneElement(opt, {
                 selected: opt.props.value === selected,
-                onClick: () => handleSelect(opt.props.value),
+                onClick: (e) => { e?.stopPropagation(); handleSelect(opt.props.value); },
               })
             )}
           </ul>
