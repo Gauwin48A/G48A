@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation as useRouterLocation } from 'react-router-dom';
+import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
 import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useLocation } from '@/context/LocationContext';
@@ -55,6 +55,27 @@ const GreenNavbar = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Check if user is logged in
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    setIsLoggedIn(!!(token && userId));
+  }, [moreOpen]); // Re-check when menu opens
+
+  const handleLogout = () => {
+    // Clear all auth-related localStorage items
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setMoreOpen(false);
+    navigate('/login');
+  };
 
   // Add animation for sliding pane via JS-in-CSS (React-safe)
   useEffect(() => {
@@ -159,15 +180,39 @@ const GreenNavbar = () => {
                         <input type="text" placeholder={t('enter_location') || "Enter location"} className="w-full border rounded px-2 py-1" onChange={e => setFilters(f => ({ ...f, location: e.target.value, page: 1 }))} />
                       </div>
                       <div className="mb-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('price_range') || "Price Range"}</label>
-                        <select className="w-full border rounded px-2 py-1" onChange={e => setFilters(f => ({ ...f, priceRange: e.target.value, page: 1 }))}>
-                          <option value="">{t('all')}</option>
-                          <option value="0-100">{t('under_100') || "Under $100"}</option>
-                          <option value="100-500">{t('price_100_500') || "$100 - $500"}</option>
-                          <option value="500-1000">{t('price_500_1000') || "$500 - $1000"}</option>
-                          <option value="1000+">{t('above_1000') || "Above $1000"}</option>
-                        </select>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('price_range') || "Price Range"}</label>
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1">
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="Min ₹"
+                              className="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                              value={filters.minPrice || ''}
+                              onChange={e => setFilters(f => ({ ...f, minPrice: e.target.value, page: 1 }))}
+                            />
+                          </div>
+                          <span className="text-gray-400">to</span>
+                          <div className="flex-1">
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="Max ₹"
+                              className="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                              value={filters.maxPrice || ''}
+                              onChange={e => setFilters(f => ({ ...f, maxPrice: e.target.value, page: 1 }))}
+                            />
+                          </div>
+                        </div>
+                        {/* Quick preset buttons */}
+                        <div className="flex gap-1 mt-2 flex-wrap">
+                          <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '', maxPrice: '500', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">Under ₹500</button>
+                          <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '500', maxPrice: '2000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">₹500-₹2K</button>
+                          <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '2000', maxPrice: '10000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">₹2K-₹10K</button>
+                          <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '10000', maxPrice: '', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">Above ₹10K</button>
+                        </div>
                       </div>
+
                       <div className="mb-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">{t('date_range') || "Date Range"}</label>
                         <div className="flex gap-2">
@@ -271,17 +316,32 @@ const GreenNavbar = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <h2 className="text-2xl font-bold text-blue-600 dark:text-yellow-300 mb-4 drop-shadow-lg">{t('more_options')}</h2>
-            {moreMenuLinks.map(link => (
-              <Link
-                key={link.key}
-                to={link.path}
-                className="block px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-center text-base shadow transition-colors duration-150"
-                onClick={() => setMoreOpen(false)}
-                tabIndex={0}
+            {moreMenuLinks
+              .filter(link => {
+                // Hide login/signup if logged in, show logout instead
+                if (isLoggedIn && (link.key === 'login' || link.key === 'signup')) return false;
+                return true;
+              })
+              .map(link => (
+                <Link
+                  key={link.key}
+                  to={link.path}
+                  className="block px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-center text-base shadow transition-colors duration-150"
+                  onClick={() => setMoreOpen(false)}
+                  tabIndex={0}
+                >
+                  {t(link.key)}
+                </Link>
+              ))}
+            {/* Logout button - only show when logged in */}
+            {isLoggedIn && (
+              <button
+                className="block w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-semibold text-center text-base shadow transition-colors duration-150"
+                onClick={handleLogout}
               >
-                {t(link.key)}
-              </Link>
-            ))}
+                {t('logout') || 'Logout'}
+              </button>
+            )}
             <button className="mt-4 px-4 py-2 bg-blue-600 dark:bg-yellow-400 text-white dark:text-gray-900 rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-yellow-500 shadow transition-colors duration-150" onClick={() => setMoreOpen(false)}>{t('close')}</button>
           </div>
           {/* Overlay, less opaque for better background visibility */}

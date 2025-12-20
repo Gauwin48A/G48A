@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const dotenv = require("dotenv");
+const { sanitizeInput } = require('./middleware/security');
 
 dotenv.config();
 
@@ -29,6 +30,8 @@ const chatRoutes = require("./routes/chat.js");
 const offersRoutes = require("./routes/offers.js");
 const savedSearchesRoutes = require("./routes/savedSearches.js");
 const analyticsRoutes = require("./routes/analytics.js");
+// New Features
+const wishlistRoutes = require("./routes/wishlist.js");
 
 const app = express();
 
@@ -38,9 +41,13 @@ app.use(cors({
   origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:3000"],
   credentials: true
 }));
-app.use(express.json());
-// Increased rate limit for development (500 req/min)
-app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 500 }));
+app.use(express.json({ limit: '10mb' }));
+
+// Global input sanitization (Pillar 4)
+app.use(sanitizeInput);
+
+// Global rate limit for all API endpoints (Pillar 1)
+app.use('/api/', rateLimit({ windowMs: 1 * 60 * 1000, max: 100, message: { error: 'Too many requests. Please slow down.' } }));
 
 // MOUNT ROUTES
 app.use('/api/auth', authRoutes);
@@ -63,6 +70,8 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/offers', offersRoutes);
 app.use('/api/saved-searches', savedSearchesRoutes);
 app.use('/api/analytics', analyticsRoutes);
+// New Features
+app.use('/api/wishlist', wishlistRoutes);
 
 // Health check with DB validation
 app.get('/api/health', async (req, res) => {
@@ -82,10 +91,10 @@ app.get('/', (req, res) => {
 // 404 handler
 app.use((req, res) => res.status(404).json({ error: 'Not Found' }));
 
-// Global Error Handler
+// Global Error Handler - SECURITY: Never expose internal errors
 app.use((err, req, res, next) => {
-  console.error("Server Error:", err);
-  res.status(500).json({ error: "Internal Server Error", details: err.message });
+  console.error("[SECURITY] Server Error:", err.message);
+  res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
 });
 
 const PORT = process.env.PORT || 5000;

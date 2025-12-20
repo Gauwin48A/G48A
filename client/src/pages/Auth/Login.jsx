@@ -16,6 +16,7 @@ import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "@/lib/auth";
 import { captureLocation } from "@/services/locationService";
 import { useTranslation } from 'react-i18next';
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -305,6 +306,8 @@ const Login = () => {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
+                    {/* Password strength indicator */}
+                    <PasswordStrengthIndicator password={emailLogin.password} />
                   </div>
 
                   {/* Signup link */}

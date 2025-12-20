@@ -51,11 +51,31 @@ exports.getPreferences = async (req, res) => {
       return res.status(400).json({ code: 400, message: 'userId required', fallback: null });
     }
     const result = await pool.query('SELECT * FROM preferences WHERE user_id = $1', [userId]);
+
     if (!result.rows || result.rows.length === 0) {
-      logger.error('Preferences not found for user:', userId);
-      return res.status(404).json({ code: 404, message: 'Preferences not found', fallback: null });
+      // Return empty defaults instead of 404 to prevent frontend error
+      logger.info('No preferences found for user, returning defaults:', userId);
+      return res.json({
+        userId: parseInt(userId),
+        location: '',
+        minPrice: 0,
+        maxPrice: 100000,
+        categories: [],
+        date: null
+      });
     }
-    res.json(result.rows[0]);
+
+    // Convert snake_case to camelCase for frontend compatibility
+    const pref = result.rows[0];
+    res.json({
+      userId: pref.user_id,
+      location: pref.location || '',
+      minPrice: parseFloat(pref.min_price) || 0,
+      maxPrice: parseFloat(pref.max_price) || 100000,
+      categories: pref.categories || [],
+      date: pref.date || null,
+      notificationEnabled: pref.notification_enabled
+    });
   } catch (err) {
     logger.error('Error fetching preferences:', err);
     res.status(500).json({ code: 500, message: 'Failed to fetch preferences', details: err.message, fallback: null });

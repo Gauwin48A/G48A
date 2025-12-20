@@ -35,7 +35,6 @@ router.post('/create',
 );
 
 router.get('/undone', async (req, res) => {
-  // Fetch undone sales from the database
   try {
     const result = await pool.query("SELECT * FROM posts WHERE status = 'undone'");
     res.json(result.rows);
@@ -50,7 +49,10 @@ router.get('/:postId', postController.getPostById);
 // DELETE /api/posts/:postId - delete a post (owner only)
 router.delete('/:postId', protect, async (req, res) => {
   const { postId } = req.params;
-  const userId = req.user?.userId;
+  // Support both 'userId' and 'id' from JWT token for backward compatibility
+  const userId = req.user?.userId || req.user?.id;
+
+  console.log('[DELETE] Attempting delete - postId:', postId, 'userId from token:', userId);
 
   if (!userId) {
     return res.status(401).json({ error: 'Authentication required' });
@@ -64,15 +66,21 @@ router.delete('/:postId', protect, async (req, res) => {
     );
 
     if (ownerCheck.rows.length === 0) {
+      console.log('[DELETE] Post not found:', postId);
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    if (ownerCheck.rows[0].user_id !== parseInt(userId)) {
-      return res.status(403).json({ error: 'Not authorized to delete this post' });
+    const postOwnerId = ownerCheck.rows[0].user_id;
+    console.log('[DELETE] Post owner:', postOwnerId, 'Requesting user:', userId);
+
+    if (postOwnerId !== parseInt(userId)) {
+      console.log('[DELETE] Authorization failed - owner mismatch');
+      return res.status(403).json({ error: `Not authorized (owner: ${postOwnerId}, you: ${userId})` });
     }
 
     // Delete the post
     await pool.query('DELETE FROM posts WHERE post_id = $1', [postId]);
+    console.log('[DELETE] Post deleted successfully:', postId);
 
     res.json({ message: 'Post deleted successfully', postId });
   } catch (err) {
@@ -84,7 +92,7 @@ router.delete('/:postId', protect, async (req, res) => {
 // PUT /api/posts/:postId - update a post (owner only)
 router.put('/:postId', protect, async (req, res) => {
   const { postId } = req.params;
-  const userId = req.user?.userId;
+  const userId = req.user?.userId || req.user?.id;
   const { title, description, price, location, status } = req.body;
 
   if (!userId) {

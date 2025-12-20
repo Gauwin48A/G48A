@@ -32,19 +32,20 @@ exports.updateLocation = async (req, res) => {
 // Keep existing exports for compatibility
 exports.saveLocation = async (req, res) => {
   try {
-    const { user_id, latitude, longitude, accuracy, altitude, heading, speed, provider, permission_status, city, country } = req.body;
+    const { user_id, latitude, longitude, accuracy, heading, permission_status, city, country, provider } = req.body;
 
     // Allow 0,0 for denied/error status (for analytics), but require real coords for granted
     if (permission_status === 'granted' && (!latitude || !longitude)) {
       return res.status(400).json({ error: 'Missing latitude or longitude' });
     }
+    // Fixed: Only insert columns that exist in user_locations table
     const query = `
-      INSERT INTO user_locations (user_id, latitude, longitude, accuracy, altitude, heading, speed, provider, permission_status, city, country)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      INSERT INTO user_locations (user_id, latitude, longitude, accuracy, heading, permission_status, city, country)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id;
     `;
-    const result = await pool.query(query, [user_id || null, latitude, longitude, accuracy || null, altitude || null, heading || null, speed || null, provider || 'browser', permission_status || null, city || null, country || null]);
-    res.status(201).json({ status: 'success', id: result.rows[0].id, location: { city: city || 'Unknown', country: country || 'Unknown' } });
+    const result = await pool.query(query, [user_id || null, latitude, longitude, accuracy || null, heading || null, permission_status || null, city || null, country || null]);
+    res.status(201).json({ status: 'success', id: result.rows[0].id, location: { city: city || 'Unknown', country: country || 'Unknown' }, provider: provider || 'browser' });
   } catch (error) {
     console.error('saveLocation error:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });

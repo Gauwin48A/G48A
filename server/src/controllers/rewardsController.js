@@ -84,14 +84,22 @@ exports.getRewardsByUser = async (req, res) => {
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
-    // Get user and rewards data
+    // Get user and rewards data - JOIN profiles to get full_name for display
     const [userRes, rewardsRes] = await Promise.all([
-      pool.query('SELECT user_id, username, referral_code FROM users WHERE user_id = $1', [userId]),
+      pool.query(`
+        SELECT u.user_id, u.username, u.referral_code, p.full_name 
+        FROM users u 
+        LEFT JOIN profiles p ON u.user_id = p.user_id 
+        WHERE u.user_id = $1
+      `, [userId]),
       pool.query('SELECT points, tier FROM rewards WHERE user_id = $1', [userId])
     ]);
 
-    const user = userRes.rows[0] || { username: 'Unknown', referral_code: null };
+    const user = userRes.rows[0] || { username: 'Unknown', referral_code: null, full_name: null };
     const rewardsData = rewardsRes.rows[0] || { points: 0, tier: 'Bronze' };
+
+    // Use full_name if available, otherwise fall back to username
+    const displayName = user.full_name || user.username || 'Unknown User';
 
     // Calculate chain referral points
     const chainData = await calculateChainPoints(userId);
@@ -132,11 +140,10 @@ exports.getRewardsByUser = async (req, res) => {
       }))
     ];
 
-    // Response
     res.json({
       user: {
         id: userId,
-        name: user.username,
+        name: displayName,  // Use full_name from profiles, not generic username
         rank: rank,
         level: Math.floor(totalPoints / 100) + 1,
         xpCurrent: totalPoints % 100,

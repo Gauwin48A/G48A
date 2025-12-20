@@ -54,10 +54,15 @@ router.get('/', async (req, res) => {
       paramIndex++;
     }
 
-    // Order by relevance (newest first, then by views)
-    query += ` ORDER BY p.created_at DESC, COALESCE(p.views_count, 0) DESC LIMIT 50`;
+    // Order by relevance (newest first only - views_count may not exist)
+    query += ` ORDER BY p.created_at DESC LIMIT 50`;
+
+    console.log('[RECOMMENDATIONS] Query:', query);
+    console.log('[RECOMMENDATIONS] Params:', params);
 
     const result = await pool.query(query, params);
+
+    console.log('[RECOMMENDATIONS] Found', result.rows.length, 'posts');
 
     res.json({
       posts: result.rows,
@@ -65,7 +70,8 @@ router.get('/', async (req, res) => {
       filters: { location, minPrice, maxPrice, category }
     });
   } catch (err) {
-    console.error('Recommendations error:', err);
+    console.error('[RECOMMENDATIONS] Error:', err.message);
+    console.error('[RECOMMENDATIONS] Full error:', err);
     res.status(500).json({ error: 'Failed to fetch recommendations', details: err.message });
   }
 });

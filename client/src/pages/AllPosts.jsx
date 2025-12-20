@@ -55,12 +55,18 @@ const AllPosts = () => {
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
 
-
+  // Category ID mapping - MUST match database (00_master_setup.sql lines 233-243)
   const categoryMap = {
     Electronics: 1,
-    Fashion: 2,
-    Home: 3,
-    Mobiles: 4,
+    Mobiles: 2,
+    Fashion: 3,
+    Furniture: 4,
+    Vehicles: 5,
+    Books: 6,
+    Sports: 7,
+    'Home Appliances': 8,
+    Beauty: 9,
+    Kids: 10,
   };
 
   // Helper to build filter params
@@ -75,12 +81,16 @@ const AllPosts = () => {
       const catId = categoryMap[filters.category] || filters.category;
       params.append('category', catId);
     }
-    // Price range (split to minPrice/maxPrice)
-    if (filters.priceRange) {
+    // Price range - use direct minPrice/maxPrice values
+    if (filters.minPrice) params.append('minPrice', filters.minPrice);
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+    // Legacy priceRange support
+    if (filters.priceRange && !filters.minPrice && !filters.maxPrice) {
       const [min, max] = filters.priceRange.split('-').map(Number);
       if (!isNaN(min)) params.append('minPrice', min);
       if (!isNaN(max)) params.append('maxPrice', max);
     }
+
     // Date range
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
@@ -126,7 +136,12 @@ const AllPosts = () => {
         }
         const data = await res.json();
         let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
-        setPosts(loadedPosts);
+        // FIX: Append posts on page 2+, replace on page 1 (filter change)
+        if (currentPage === 1) {
+          setPosts(loadedPosts);
+        } else {
+          setPosts(prev => [...prev, ...loadedPosts]);
+        }
         setError(null);
         // Set like/view counts from backend if available
         const likes = {};
@@ -135,8 +150,8 @@ const AllPosts = () => {
           likes[post.post_id || post.id] = post.likes || 0;
           views[post.post_id || post.id] = post.views || 0;
         });
-        setLikeCounts(likes);
-        setViewCounts(views);
+        setLikeCounts(prev => ({ ...prev, ...likes }));
+        setViewCounts(prev => ({ ...prev, ...views }));
         setHasMore(loadedPosts.length === postsPerPage);
       } catch (err) {
         setError(err.message || 'Failed to fetch posts');
@@ -228,56 +243,47 @@ const AllPosts = () => {
   // Location is now handled at App.jsx level - no blocking here
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300">
-      {/* Category Filter Bar - improved spacing */}
+      {/* Category Filter Bar - all 10 categories with horizontal scroll */}
       <div className="w-full flex justify-center px-4 pt-2 pb-4">
-        <div className="flex gap-3 md:gap-6 bg-gradient-to-r from-blue-100 via-white to-blue-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl shadow-lg py-3 px-3 md:px-8 items-center justify-center flex-wrap">
+        <div className="flex gap-2 md:gap-4 bg-gradient-to-r from-blue-100 via-white to-blue-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl shadow-lg py-3 px-3 md:px-6 items-center overflow-x-auto scrollbar-hide max-w-full">
           {/* All Categories Button */}
           <button
             onClick={clearCategoryFilter}
-            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl ${filters.category === 'All' ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
+            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[60px] ${filters.category === 'All' ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
               }`}
           >
             <span className="text-xl md:text-2xl mb-1">📦</span>
             <span className={`font-semibold text-xs md:text-sm ${filters.category === 'All' ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{t('all')}</span>
           </button>
 
-          <button
-            onClick={() => handleCategoryClick('Electronics')}
-            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl ${filters.category === 'Electronics' ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
-              }`}
-          >
-            <span className="text-2xl mb-1">📱</span>
-            <span className={`font-semibold text-sm md:text-base ${filters.category === 'Electronics' ? 'text-white' : 'text-blue-700 dark:text-blue-300'}`}>{t('electronics')}</span>
-          </button>
-
-          <button
-            onClick={() => handleCategoryClick('Fashion')}
-            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl ${filters.category === 'Fashion' ? 'bg-pink-600 text-white shadow-lg ring-2 ring-pink-400' : ''
-              }`}
-          >
-            <span className="text-2xl mb-1">👗</span>
-            <span className={`font-semibold text-sm md:text-base ${filters.category === 'Fashion' ? 'text-white' : 'text-pink-600 dark:text-pink-300'}`}>{t('fashion')}</span>
-          </button>
-
-          <button
-            onClick={() => handleCategoryClick('Home')}
-            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl ${filters.category === 'Home' ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-400' : ''
-              }`}
-          >
-            <span className="text-2xl mb-1">🏠</span>
-            <span className={`font-semibold text-sm md:text-base ${filters.category === 'Home' ? 'text-white' : 'text-green-700 dark:text-green-300'}`}>{t('home')}</span>
-          </button>
-
-          <button
-            onClick={() => handleCategoryClick('Mobiles')}
-            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl ${filters.category === 'Mobiles' ? 'bg-teal-600 text-white shadow-lg ring-2 ring-teal-400' : ''
-              }`}
-          >
-            <span className="text-2xl mb-1">📲</span>
-            <span className={`font-semibold text-sm md:text-base ${filters.category === 'Mobiles' ? 'text-white' : 'text-teal-700 dark:text-teal-300'}`}>{t('mobiles')}</span>
-          </button>
+          {/* Dynamic category buttons - all 10 categories */}
+          {[
+            { name: 'Electronics', emoji: '💻', color: 'blue' },
+            { name: 'Mobiles', emoji: '📱', color: 'teal' },
+            { name: 'Fashion', emoji: '👗', color: 'pink' },
+            { name: 'Furniture', emoji: '🛋️', color: 'amber' },
+            { name: 'Vehicles', emoji: '🚗', color: 'red' },
+            { name: 'Books', emoji: '📚', color: 'indigo' },
+            { name: 'Sports', emoji: '⚽', color: 'green' },
+            { name: 'Home Appliances', emoji: '🏠', color: 'orange' },
+            { name: 'Beauty', emoji: '💄', color: 'purple' },
+            { name: 'Kids', emoji: '🧸', color: 'yellow' },
+          ].map(cat => (
+            <button
+              key={cat.name}
+              onClick={() => handleCategoryClick(cat.name)}
+              className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[70px] whitespace-nowrap ${filters.category === cat.name ? `bg-${cat.color}-600 text-white shadow-lg ring-2 ring-${cat.color}-400` : ''
+                }`}
+            >
+              <span className="text-xl md:text-2xl mb-1">{cat.emoji}</span>
+              <span className={`font-semibold text-xs md:text-sm ${filters.category === cat.name ? 'text-white' : `text-${cat.color}-700 dark:text-${cat.color}-300`}`}>
+                {t(cat.name.toLowerCase().replace(' ', '_')) || cat.name}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
+
 
       {/* Active Filter Indicator */}
       {filters.category && filters.category !== 'All' && (

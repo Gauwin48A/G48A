@@ -20,7 +20,8 @@ import {
     XCircle,
     MoreVertical,
     AlertTriangle,
-    Share2
+    Share2,
+    ArrowLeft
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -74,6 +75,7 @@ const MyHome = () => {
         return '/placeholder.svg';
     };
 
+    // Fetch ALL posts for this user (no status filter) to get correct stats
     useEffect(() => {
         setLoading(true);
         const userId = localStorage.getItem('userId');
@@ -83,8 +85,8 @@ const MyHome = () => {
             setLoading(false);
             return;
         }
-        const params = new URLSearchParams(filters).toString();
-        fetch(`${baseUrl}/api/posts/mine?userId=${userId}&${params}`, {
+        // Fetch ALL posts without status filter for accurate stats
+        fetch(`${baseUrl}/api/posts/mine?userId=${userId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -111,15 +113,23 @@ const MyHome = () => {
                 setError(null);
             })
             .finally(() => setLoading(false));
-    }, [filters]);
+    }, []); // Only fetch once on mount, not on filter change
 
     useEffect(() => {
         setTotalPages(Math.max(1, Math.ceil(posts.length / pageSize)));
     }, [posts, pageSize]);
 
+    // Calculate stats from ALL posts
     const allPosts = Array.isArray(posts) ? posts : [];
     const soldPosts = allPosts.filter(post => post.status === 'sold');
     const boughtPosts = allPosts.filter(post => post.status === 'bought');
+    const activePosts = allPosts.filter(post => post.status === 'active');
+
+    // Filter posts for display based on activeTab
+    const displayPosts = activeTab === 'all' ? allPosts :
+        activeTab === 'active' ? activePosts :
+            activeTab === 'sold' ? soldPosts :
+                activeTab === 'bought' ? boughtPosts : allPosts;
     const paginatedPosts = allPosts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     const filteredPosts = paginatedPosts.filter(post =>
         post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,8 +208,10 @@ const MyHome = () => {
                     credentials: 'include'
                 });
 
+                const data = await response.json();
+
                 if (!response.ok) {
-                    throw new Error('Failed to delete post');
+                    throw new Error(data.error || 'Failed to delete post');
                 }
 
                 // Only remove from local state after successful backend deletion
@@ -212,7 +224,7 @@ const MyHome = () => {
                 console.error('Delete error:', error);
                 toast({
                     title: "Delete Failed",
-                    description: "Could not delete the post. Please try again.",
+                    description: error.message || "Could not delete the post. Please try again.",
                     variant: "destructive"
                 });
             } finally {
@@ -285,6 +297,14 @@ const MyHome = () => {
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0YzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
 
                 <div className="relative max-w-4xl mx-auto px-4 py-10 sm:px-6">
+                    {/* Back Button */}
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="absolute top-4 left-4 p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all z-50"
+                    >
+                        <ArrowLeft className="w-6 h-6 text-white" />
+                    </button>
+
                     <div className="text-center">
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm mb-4">
                             <span className="text-4xl">🏠</span>
@@ -430,7 +450,7 @@ const MyHome = () => {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="bg-white/90 hover:bg-white shadow-lg rounded-full h-9 w-9 p-0"
+                                                        className="bg-white/90 hover:bg-white shadow-lg rounded-full h-9 w-9 p-0 z-50"
                                                     >
                                                         <MoreVertical className="h-4 w-4" />
                                                     </Button>

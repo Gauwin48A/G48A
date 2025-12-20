@@ -8,100 +8,153 @@ try {
 const logError = (logger && logger.error) ? logger.error : console.error;
 const logInfo = (logger && logger.info) ? logger.info : console.log;
 
-// Get posts for a specific user
+// Get posts for a specific user (includes own posts + posts bought by user)
 exports.getUserPosts = async (req, res) => {
   try {
-    const { userId, status, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
+    const { userId, status, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 100 } = req.query;
     if (!userId) return res.status(400).json({ error: 'userId required' });
+
+    // Query 1: Get user's own posts
+    const ownPostsResult = await pool.query(
+      `SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    // Query 2: Get posts bought BY this user
+    const boughtPostsResult = await pool.query(
+      `SELECT * FROM posts WHERE buyer_id = $1 AND user_id != $1 ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    // Mark ownership on each post
+    const ownPosts = ownPostsResult.rows.map(p => ({ ...p, ownership: 'own' }));
+    const boughtPosts = boughtPostsResult.rows.map(p => ({ ...p, ownership: 'bought', status: 'bought' }));
+
+    // Combine all posts
+    let allPosts = [...ownPosts, ...boughtPosts];
+
+    // Filter by status if requested
+    if (status) {
+      allPosts = allPosts.filter(p => p.status === status);
+    }
+
+    // Sort
+    allPosts.sort((a, b) => {
+      const aVal = a[sortBy] || a.created_at;
+      const bVal = b[sortBy] || b.created_at;
+      return sortOrder === 'desc' ? new Date(bVal) - new Date(aVal) : new Date(aVal) - new Date(bVal);
+    });
+
+    // Paginate
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    let query = 'SELECT * FROM posts WHERE user_id = $1';
-    // If your schema uses id instead of user_id, change to 'id = $1'
-    const params = [userId];
-    if (status) { query += ` AND status = $2`; params.push(status); }
-    query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(limit, offset);
-    const result = await pool.query(query, params);
-    const countRes = await pool.query('SELECT COUNT(*) FROM posts WHERE user_id = $1', [userId]);
-    res.json({ posts: result.rows, total: parseInt(countRes.rows[0].count) });
+    const paginatedPosts = allPosts.slice(offset, offset + parseInt(limit));
+
+    res.json({ posts: paginatedPosts, total: allPosts.length });
   } catch (err) {
+    console.error('[getUserPosts] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 };
 
 exports.getAllPosts = async (req, res) => {
   try {
-    // Get least viewed active posts first (prioritize posts that need more visibility)
-    const leastViewedRes = await pool.query(
-      "SELECT * FROM posts WHERE status = 'active' ORDER BY COALESCE(views_count, 0) ASC, created_at DESC LIMIT 20"
-    );
-    // Build dynamic query for filtering, searching, pagination
-    // Default sortBy is views_count ASC (least viewed first) for fair visibility
-    const { search, category, location, minPrice, maxPrice, author, startDate, endDate, sortBy = 'views_count', sortOrder = 'asc', page = 1, limit = 10 } = req.query;
+    const { search, category, location, minPrice, maxPrice, author, startDate, endDate, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    let query = "SELECT * FROM posts WHERE status = 'active'";
+
+    // Build dynamic query with JOINs for user info, category, and images
+    let query = `
+      SELECT 
+        p.*,
+        u.username,
+        u.email,
+        COALESCE(pr.full_name, u.username) as user_name,
+        c.name as category_name,
+        (SELECT array_agg(image_url) FROM post_images pi WHERE pi.post_id = p.post_id LIMIT 5) as images
+      FROM posts p
+      LEFT JOIN users u ON p.user_id = u.user_id
+      LEFT JOIN profiles pr ON p.user_id = pr.user_id
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      WHERE p.status = 'active'
+    `;
     const params = [];
+
     // Search across title, description, AND location
     if (search) {
-      query += ` AND (title ILIKE $${params.length + 1} OR description ILIKE $${params.length + 1} OR location ILIKE $${params.length + 1})`;
+      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
     }
     if (category) {
-      query += ` AND category_id = $${params.length + 1}`;
+      query += ` AND p.category_id = $${params.length + 1}`;
       params.push(category);
     }
-    // Location filter (separate from search)
     if (location) {
-      query += ` AND location ILIKE $${params.length + 1}`;
+      query += ` AND p.location ILIKE $${params.length + 1}`;
       params.push(`%${location}%`);
     }
     if (author) {
-      query += ` AND user_id = $${params.length + 1}`;
+      query += ` AND p.user_id = $${params.length + 1}`;
       params.push(author);
     }
     if (startDate) {
-      query += ` AND created_at >= $${params.length + 1}`;
+      query += ` AND p.created_at >= $${params.length + 1}`;
       params.push(startDate);
     }
     if (endDate) {
-      query += ` AND created_at <= $${params.length + 1}`;
+      query += ` AND p.created_at <= $${params.length + 1}`;
       params.push(endDate);
     }
     if (minPrice) {
-      query += ` AND price >= $${params.length + 1}`;
+      query += ` AND p.price >= $${params.length + 1}`;
       params.push(minPrice);
     }
     if (maxPrice) {
-      query += ` AND price <= $${params.length + 1}`;
+      query += ` AND p.price <= $${params.length + 1}`;
       params.push(maxPrice);
     }
-    // Dynamic sorting based on user selection
+
+    // Dynamic sorting
     const allowedSortFields = ['created_at', 'price', 'views_count'];
-    const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const safeSortBy = allowedSortFields.includes(sortBy) ? `p.${sortBy}` : 'p.created_at';
     const safeSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
     query += ` ORDER BY ${safeSortBy} ${safeSortOrder} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
+
     const result = await pool.query(query, params);
-    // Merge least-viewed posts at the top, avoiding duplicates
-    const mergedPosts = [...leastViewedRes.rows, ...result.rows.filter(p => !leastViewedRes.rows.some(lv => lv.id === p.id))];
+
+    // Transform results to include user object
+    const posts = result.rows.map(post => ({
+      ...post,
+      id: post.post_id,
+      category: post.category_name || 'General',
+      user: {
+        name: post.user_name || post.username || 'Unknown',
+        username: post.username,
+        email: post.email
+      },
+      image_url: post.images?.[0] || post.image_url || '/placeholder.svg'
+    }));
+
     // Get total count for pagination
-    let countQuery = 'SELECT COUNT(*) FROM posts WHERE status = \'active\'';
+    let countQuery = `SELECT COUNT(*) FROM posts p WHERE p.status = 'active'`;
     const countParams = [];
-    if (search) { countQuery += ` AND (title ILIKE $${countParams.length + 1} OR description ILIKE $${countParams.length + 1} OR location ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
-    if (category) { countQuery += ` AND category_id = $${countParams.length + 1}`; countParams.push(category); }
-    if (location) { countQuery += ` AND location ILIKE $${countParams.length + 1}`; countParams.push(`%${location}%`); }
-    if (author) { countQuery += ` AND user_id = $${countParams.length + 1}`; countParams.push(author); }
-    if (startDate) { countQuery += ` AND created_at >= $${countParams.length + 1}`; countParams.push(startDate); }
-    if (endDate) { countQuery += ` AND created_at <= $${countParams.length + 1}`; countParams.push(endDate); }
-    if (minPrice) { countQuery += ` AND price >= $${countParams.length + 1}`; countParams.push(minPrice); }
-    if (maxPrice) { countQuery += ` AND price <= $${countParams.length + 1}`; countParams.push(maxPrice); }
+    if (search) { countQuery += ` AND (p.title ILIKE $${countParams.length + 1} OR p.description ILIKE $${countParams.length + 1} OR p.location ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
+    if (category) { countQuery += ` AND p.category_id = $${countParams.length + 1}`; countParams.push(category); }
+    if (location) { countQuery += ` AND p.location ILIKE $${countParams.length + 1}`; countParams.push(`%${location}%`); }
+    if (author) { countQuery += ` AND p.user_id = $${countParams.length + 1}`; countParams.push(author); }
+    if (startDate) { countQuery += ` AND p.created_at >= $${countParams.length + 1}`; countParams.push(startDate); }
+    if (endDate) { countQuery += ` AND p.created_at <= $${countParams.length + 1}`; countParams.push(endDate); }
+    if (minPrice) { countQuery += ` AND p.price >= $${countParams.length + 1}`; countParams.push(minPrice); }
+    if (maxPrice) { countQuery += ` AND p.price <= $${countParams.length + 1}`; countParams.push(maxPrice); }
     const countResult = await pool.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count);
-    res.json({ posts: mergedPosts, total });
+
+    res.json({ posts, total });
   } catch (err) {
     logError('Error fetching posts:', err);
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // Post creation now supports multiple image uploads
 exports.createPost = async (req, res) => {
