@@ -5,19 +5,30 @@ exports.getFeed = async (req, res) => {
   try {
     const { category, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10, search = '' } = req.query;
     const offset = (page - 1) * limit;
-    let query = `SELECT * FROM posts WHERE post_type = 'text'`;
+
+    // Join with categories to enable category name search
+    let query = `
+      SELECT p.*, c.name as category_name 
+      FROM posts p 
+      LEFT JOIN categories c ON p.category_id = c.category_id 
+      WHERE p.post_type = 'text'
+    `;
     let params = [];
+
     if (category) {
-      query += ' AND category_id = $1';
+      query += ` AND p.category_id = $${params.length + 1}`;
       params.push(category);
     }
+
+    // Search across title, description, location, and category name
     if (search) {
-      query += params.length ? ' AND' : ' AND';
-      query += ` (title ILIKE $${params.length + 1} OR description ILIKE $${params.length + 1})`;
+      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
     }
-    query += ` ORDER BY ${sortBy} ${sortOrder} OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
+
+    query += ` ORDER BY p.${sortBy} ${sortOrder} OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
     params.push(offset, limit);
+
     const result = await pool.query(query, params);
     if (!result.rows.length) {
       console.error('No text posts found for feed');
@@ -40,19 +51,30 @@ exports.getMyFeed = async (req, res) => {
     }
     const { category, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10, search = '' } = req.query;
     const offset = (page - 1) * limit;
-    let query = `SELECT * FROM posts WHERE post_type = 'text' AND user_id = $1`;
+
+    // Join with categories to enable category name search
+    let query = `
+      SELECT p.*, c.name as category_name 
+      FROM posts p 
+      LEFT JOIN categories c ON p.category_id = c.category_id 
+      WHERE p.post_type = 'text' AND p.user_id = $1
+    `;
     let params = [userId];
+
     if (category) {
-      query += ' AND category_id = $2';
+      query += ` AND p.category_id = $${params.length + 1}`;
       params.push(category);
     }
+
+    // Search across title, description, location, and category name
     if (search) {
-      query += params.length ? ' AND' : ' AND';
-      query += ` (title ILIKE $${params.length + 1} OR description ILIKE $${params.length + 1})`;
+      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
     }
-    query += ` ORDER BY ${sortBy} ${sortOrder} OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
+
+    query += ` ORDER BY p.${sortBy} ${sortOrder} OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
     params.push(offset, limit);
+
     const result = await pool.query(query, params);
     if (!result.rows.length) {
       console.error('No text posts found for user feed');

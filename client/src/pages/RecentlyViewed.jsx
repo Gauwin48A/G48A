@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-    Clock, Eye, MapPin, ArrowLeft, Trash2, ExternalLink
+    History, Trash2, MapPin, Clock, Eye,
+    ArrowLeft, XCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
@@ -12,140 +13,223 @@ const RecentlyViewed = () => {
     const navigate = useNavigate();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [error, setError] = useState(null);
+    const [toast, setToast] = useState(null);
 
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        const userId = localStorage.getItem('userId');
-        setIsAuthenticated(!!(token && userId));
+        fetchHistory();
     }, []);
 
-    useEffect(() => {
-        if (!isAuthenticated) return;
-
-        const fetchRecentlyViewed = async () => {
+    const fetchHistory = async () => {
+        try {
             setLoading(true);
-            try {
-                const userId = localStorage.getItem('userId');
-                const res = await api.get(`/api/recently-viewed?userId=${userId}`);
-                setItems(res.data?.items || []);
-            } catch (err) {
-                console.error('Failed to fetch:', err);
-                setItems([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchRecentlyViewed();
-    }, [isAuthenticated]);
+            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('token');
+
+            const response = await api.get('/recently-viewed', {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { userId, limit: 50 }
+            });
+
+            setItems(response.data.items || []);
+        } catch (err) {
+            console.error('Failed to fetch history:', err);
+            setError('Failed to load browsing history');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRemove = async (postId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await api.delete(`/recently-viewed/${postId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setItems(items.filter(item => item.post_id !== postId));
+            showToast('Removed from history');
+        } catch (err) {
+            showToast('Failed to remove', 'error');
+        }
+    };
+
+    const handleClearAll = async () => {
+        if (!window.confirm('Clear all browsing history?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            await api.delete('/recently-viewed/clear', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setItems([]);
+            showToast('History cleared');
+        } catch (err) {
+            showToast('Failed to clear history', 'error');
+        }
+    };
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
     const getImageUrl = (item) => {
-        const img = item.images?.[0] || item.image_url;
-        if (!img) return '/placeholder.svg';
-        if (img.startsWith('http')) return img;
-        return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${img}`;
+        if (item.images) {
+            if (Array.isArray(item.images) && item.images.length > 0) {
+                return item.images[0];
+            } else if (typeof item.images === 'string') {
+                try {
+                    const parsed = JSON.parse(item.images);
+                    return Array.isArray(parsed) ? parsed[0] : item.images;
+                } catch {
+                    return item.images;
+                }
+            }
+        }
+        return 'https://via.placeholder.com/150?text=No+Image';
     };
 
-    const formatTimeAgo = (date) => {
+    const formatTimeAgo = (dateString) => {
+        const date = new Date(dateString);
         const now = new Date();
-        const viewed = new Date(date);
-        const diff = Math.floor((now - viewed) / 1000);
-        if (diff < 60) return 'Just now';
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-        return `${Math.floor(diff / 86400)}d ago`;
-    };
+        const diff = now - date;
 
-    if (!isAuthenticated) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-                <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center">
-                    <Clock className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-white mb-3">Sign in to view history</h1>
-                    <p className="text-gray-300 mb-6">See items you've browsed recently</p>
-                    <Button
-                        onClick={() => navigate('/login')}
-                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-6 text-lg rounded-xl"
-                    >
-                        Sign In
-                    </Button>
-                </div>
-            </div>
-        );
-    }
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        return `${days}d ago`;
+    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
             {/* Header */}
-            <div className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-                <div className="relative max-w-7xl mx-auto px-4 py-12">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => navigate(-1)} className="p-2 rounded-xl bg-white/20 hover:bg-white/30">
-                            <ArrowLeft className="w-6 h-6 text-white" />
-                        </button>
+            <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-lg border-b border-gray-700">
+                <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(-1)}
+                            className="text-gray-300 hover:text-white"
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
                         <div>
-                            <div className="flex items-center gap-3">
-                                <Clock className="w-8 h-8 text-blue-200" />
-                                <h1 className="text-3xl md:text-4xl font-bold text-white">Recently Viewed</h1>
-                            </div>
-                            <p className="text-blue-100 mt-1">{items.length} items in your history</p>
+                            <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                                <History className="h-5 w-5 text-blue-400" />
+                                Recently Viewed
+                            </h1>
+                            <p className="text-xs text-gray-400">{items.length} items</p>
                         </div>
                     </div>
+                    {items.length > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearAll}
+                            className="text-red-400 hover:text-red-300"
+                        >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Clear All
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* Content */}
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="p-4 pb-24">
                 {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[...Array(4)].map((_, i) => (
-                            <div key={i} className="bg-white/60 rounded-3xl p-5 animate-pulse">
-                                <div className="w-full h-48 bg-gray-200 rounded-2xl mb-4" />
-                                <div className="h-5 bg-gray-200 rounded-full w-3/4 mb-3" />
-                            </div>
-                        ))}
+                    <div className="flex justify-center items-center h-64">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-12">
+                        <XCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
+                        <p className="text-gray-400">{error}</p>
+                        <Button onClick={fetchHistory} className="mt-4">Retry</Button>
                     </div>
                 ) : items.length === 0 ? (
-                    <div className="text-center py-24">
-                        <Clock className="w-24 h-24 text-blue-300 mx-auto mb-6" />
-                        <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">No browsing history</h3>
-                        <p className="text-gray-500 mb-6">Start exploring products!</p>
-                        <Button onClick={() => navigate('/all-posts')} className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-6 text-lg rounded-2xl">
-                            Browse Products
+                    <div className="text-center py-16">
+                        <History className="h-16 w-16 mx-auto text-gray-600 mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-300 mb-2">No Browsing History</h3>
+                        <p className="text-gray-500 mb-6">Posts you view will appear here</p>
+                        <Button onClick={() => navigate('/all-posts')} className="bg-blue-600 hover:bg-blue-700">
+                            Browse Posts
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {items.map((item, idx) => (
-                            <Card key={idx} className="group bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition-all">
-                                <div className="relative w-full h-48 overflow-hidden">
-                                    <img src={getImageUrl(item)} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={(e) => { e.target.src = '/placeholder.svg'; }} />
-                                    <Badge className="absolute top-3 left-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0">
-                                        {item.category_name || 'General'}
-                                    </Badge>
-                                    <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur px-2 py-1 rounded-lg flex items-center gap-1">
-                                        <Eye className="w-3 h-3 text-white" />
-                                        <span className="text-white text-xs">{formatTimeAgo(item.viewed_at)}</span>
-                                    </div>
-                                </div>
-                                <div className="p-4">
-                                    <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2 line-clamp-1">{item.title}</h3>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">₹{item.price?.toLocaleString() || '0'}</span>
-                                        <div className="flex items-center gap-1 text-gray-500 text-sm">
-                                            <MapPin className="w-3 h-3" />{item.location || 'N/A'}
+                    <div className="space-y-3">
+                        {items.map((item) => (
+                            <Card
+                                key={item.id || item.post_id}
+                                className="bg-gray-800/60 border-gray-700 overflow-hidden cursor-pointer hover:bg-gray-700/60 transition-all"
+                                onClick={() => navigate(`/post/${item.post_id}`)}
+                            >
+                                <div className="flex gap-4 p-3">
+                                    <img
+                                        src={getImageUrl(item)}
+                                        alt={item.title}
+                                        className="w-20 h-20 object-cover rounded-lg"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-white font-medium text-sm truncate">{item.title}</h3>
+                                        <p className="text-green-400 font-bold mt-1">₹{item.price?.toLocaleString()}</p>
+                                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                                            {item.location && (
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin className="h-3 w-3" />
+                                                    {item.location}
+                                                </span>
+                                            )}
+                                            <span className="flex items-center gap-1">
+                                                <Eye className="h-3 w-3" />
+                                                Viewed {item.view_count}x
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                            <Clock className="h-3 w-3" />
+                                            {formatTimeAgo(item.viewed_at)}
                                         </div>
                                     </div>
-                                    <Button onClick={() => navigate(`/post/${item.post_id}`)} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl">
-                                        <ExternalLink className="w-4 h-4 mr-2" /> View Again
-                                    </Button>
+                                    <div className="flex flex-col justify-between items-end">
+                                        <Badge
+                                            variant="outline"
+                                            className={`text-xs ${item.status === 'active' ? 'border-green-500 text-green-400' :
+                                                    item.status === 'sold' ? 'border-red-500 text-red-400' :
+                                                        'border-gray-500 text-gray-400'
+                                                }`}
+                                        >
+                                            {item.status}
+                                        </Badge>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemove(item.post_id);
+                                            }}
+                                            className="text-gray-400 hover:text-red-400"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </Card>
                         ))}
                     </div>
                 )}
             </div>
+
+            {/* Toast */}
+            {toast && (
+                <div className={`fixed bottom-24 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-50 ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
+                    } text-white text-sm`}>
+                    {toast.message}
+                </div>
+            )}
         </div>
     );
 };

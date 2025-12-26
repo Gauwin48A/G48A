@@ -13,7 +13,6 @@ router.get('/all', postController.getAllPosts);
 router.get('/mine', postController.getUserPosts);
 
 // Main GET /api/posts endpoint (returns { posts, total })
-// Supports query params: category, minPrice, maxPrice, minDiscount, lat, lng, sortBy, sortOrder, page, limit
 router.get('/', postController.getAllPosts);
 
 // CREATE POST: Token Required + Input Sanitization + Validation
@@ -43,13 +42,50 @@ router.get('/undone', async (req, res) => {
   }
 });
 
+// POST /api/posts/:postId/view - Increment view count
+router.post('/:postId/view', async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    // Increment views column in posts table
+    const result = await pool.query(
+      `UPDATE posts SET views = COALESCE(views, 0) + 1 WHERE post_id = $1 RETURNING views`,
+      [postId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.json({ success: true, views: result.rows[0].views });
+  } catch (err) {
+    console.error('View increment error:', err);
+    res.status(500).json({ error: 'Failed to record view' });
+  }
+});
+
+// POST /api/posts/:postId/share - Track share action
+router.post('/:postId/share', async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    await pool.query(
+      `UPDATE posts SET shares = COALESCE(shares, 0) + 1 WHERE post_id = $1`,
+      [postId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Share tracking error:', err);
+    res.json({ success: true, warning: 'Share not tracked' });
+  }
+});
+
 // GET /api/posts/:postId - get post by ID
 router.get('/:postId', postController.getPostById);
 
 // DELETE /api/posts/:postId - delete a post (owner only)
 router.delete('/:postId', protect, async (req, res) => {
   const { postId } = req.params;
-  // Support both 'userId' and 'id' from JWT token for backward compatibility
   const userId = req.user?.userId || req.user?.id;
 
   console.log('[DELETE] Attempting delete - postId:', postId, 'userId from token:', userId);
@@ -59,29 +95,22 @@ router.delete('/:postId', protect, async (req, res) => {
   }
 
   try {
-    // Verify ownership before deleting
     const ownerCheck = await pool.query(
       'SELECT user_id FROM posts WHERE post_id = $1',
       [postId]
     );
 
     if (ownerCheck.rows.length === 0) {
-      console.log('[DELETE] Post not found:', postId);
       return res.status(404).json({ error: 'Post not found' });
     }
 
     const postOwnerId = ownerCheck.rows[0].user_id;
-    console.log('[DELETE] Post owner:', postOwnerId, 'Requesting user:', userId);
 
     if (postOwnerId !== parseInt(userId)) {
-      console.log('[DELETE] Authorization failed - owner mismatch');
       return res.status(403).json({ error: `Not authorized (owner: ${postOwnerId}, you: ${userId})` });
     }
 
-    // Delete the post
     await pool.query('DELETE FROM posts WHERE post_id = $1', [postId]);
-    console.log('[DELETE] Post deleted successfully:', postId);
-
     res.json({ message: 'Post deleted successfully', postId });
   } catch (err) {
     console.error('Delete post error:', err);
@@ -100,7 +129,6 @@ router.put('/:postId', protect, async (req, res) => {
   }
 
   try {
-    // Verify ownership
     const ownerCheck = await pool.query(
       'SELECT user_id, created_at FROM posts WHERE post_id = $1',
       [postId]
@@ -114,7 +142,6 @@ router.put('/:postId', protect, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to edit this post' });
     }
 
-    // Update the post
     const result = await pool.query(`
       UPDATE posts SET
         title = COALESCE($1, title),

@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Shield, Clock, Award, Star, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { CheckCircle, Shield, Clock, Award, Star, ArrowLeft, ArrowUp, Sparkles, PartyPopper, Trophy, Gift } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const Saledone = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [sellerForm, setSellerForm] = useState({
     postId: '',
     buyerId: '',
@@ -27,6 +29,19 @@ const Saledone = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationType, setConfirmationType] = useState('');
 
+  // Scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const [completedSales] = useState([
     {
       id: "SALE001",
@@ -39,7 +54,7 @@ const Saledone = () => {
       feedback: "Great seller, product as described!"
     },
     {
-      id: "SALE002", 
+      id: "SALE002",
       postTitle: "Samsung Galaxy S23 Ultra",
       buyer: "Amit Kumar",
       seller: "Sneha Patel",
@@ -47,19 +62,29 @@ const Saledone = () => {
       completedDate: "2024-01-18",
       rating: 4,
       feedback: "Good condition, fast delivery"
+    },
+    {
+      id: "SALE003",
+      postTitle: "MacBook Pro M2",
+      buyer: "Vikram Reddy",
+      seller: "Neha Gupta",
+      amount: 145000,
+      completedDate: "2024-01-15",
+      rating: 5,
+      feedback: "Excellent quality, highly recommend!"
     }
   ]);
 
   const handleSellerSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     setTimeout(() => {
       setIsLoading(false);
       setConfirmationType('seller');
       setShowConfirmation(true);
       toast({
-        title: "Sale Confirmation Initiated",
+        title: "🎉 Sale Confirmation Initiated",
         description: "Buyer will be notified to confirm the sale"
       });
     }, 1500);
@@ -68,13 +93,13 @@ const Saledone = () => {
   const handleBuyerSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     setTimeout(() => {
       setIsLoading(false);
       setConfirmationType('buyer');
       setShowConfirmation(true);
       toast({
-        title: "Sale Confirmed Successfully",
+        title: "✅ Sale Confirmed Successfully",
         description: "Both parties have verified the transaction"
       });
     }, 1500);
@@ -87,302 +112,406 @@ const Saledone = () => {
     setConfirmationType('');
   };
 
+  // Success confirmation screen with celebration
   if (showConfirmation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
-        <div className="max-w-4xl mx-auto p-4">
-          <Link to="/my-home" className="inline-flex items-center text-sky-600 hover:text-sky-700 mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My Home
-          </Link>
-          
-          <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden">
+      <div className="bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          {/* Floating confetti */}
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-3 h-3 rotate-45"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'][i % 5],
+                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            ></div>
+          ))}
+        </div>
+
+        <div className="relative max-w-2xl mx-auto p-6 pt-20">
+          <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
             <CardContent className="p-12 text-center">
-              <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
-                <CheckCircle className="w-12 h-12 text-white" />
+              {/* Success Icon with animation */}
+              <div className="relative inline-block mb-8">
+                <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-25"></div>
+                <div className="relative w-32 h-32 mx-auto bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl">
+                  <CheckCircle className="w-16 h-16 text-white" />
+                </div>
+                <PartyPopper className="absolute -top-2 -right-2 w-10 h-10 text-yellow-500 animate-bounce" />
+                <Gift className="absolute -bottom-2 -left-2 w-8 h-8 text-pink-500 animate-bounce delay-150" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                {confirmationType === 'seller' ? 'Sale Confirmation Sent!' : 'Sale Completed Successfully!'}
+
+              <h2 className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-4">
+                🎉 Sale Confirmed!
               </h2>
-              <p className="text-gray-600 text-lg mb-8">
-                {confirmationType === 'seller' 
-                  ? 'The buyer will receive a notification to confirm the sale. You will be notified once they respond.'
-                  : 'Both parties have successfully verified the transaction. Congratulations on your sale!'
-                }
+
+              <p className="text-gray-600 text-xl mb-8 max-w-md mx-auto">
+                {confirmationType === 'seller'
+                  ? 'Buyer has been notified to complete verification'
+                  : 'Both parties have successfully verified the transaction'}
               </p>
-              
-              {confirmationType === 'buyer' && (
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mb-8">
-                  <div className="flex items-center justify-center space-x-4 text-green-800">
-                    <Award className="w-6 h-6" />
-                    <span className="font-semibold">You've earned 50 reward points!</span>
+
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 mb-8 border border-green-200">
+                <div className="flex items-center justify-center gap-6">
+                  <div className="text-center">
+                    <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-green-700">+50</p>
+                    <p className="text-sm text-gray-500">Trust Points</p>
+                  </div>
+                  <div className="w-px h-16 bg-green-200"></div>
+                  <div className="text-center">
+                    <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-green-700">5.0</p>
+                    <p className="text-sm text-gray-500">Rating Boost</p>
+                  </div>
+                  <div className="w-px h-16 bg-green-200"></div>
+                  <div className="text-center">
+                    <Award className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-green-700">Verified</p>
+                    <p className="text-sm text-gray-500">Seller Badge</p>
                   </div>
                 </div>
-              )}
-              
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  onClick={resetForms}
+                <Button
                   variant="outline"
-                  className="border-sky-500 text-sky-600 hover:bg-sky-50"
+                  onClick={resetForms}
+                  className="border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-xl px-8 py-3 font-semibold"
                 >
-                  Mark Another Sale
+                  Confirm Another Sale
                 </Button>
-                <Button 
-                  className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700"
-                  onClick={() => window.location.href = '/dashboard'}
+                <Button
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl px-8 py-3 font-semibold shadow-lg"
+                  onClick={() => navigate('/my-home')}
                 >
-                  Go to Dashboard
+                  Go to My Home
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(45deg); }
+            50% { transform: translateY(-20px) rotate(45deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 main-content">
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/my-home" className="inline-flex items-center text-sky-600 hover:text-sky-700 mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+    <div className="bg-gradient-to-br from-slate-900 via-green-900 to-emerald-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+      {/* Animated background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-green-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
+        {/* Premium Header */}
+        <div className="text-center pt-8">
+          <button
+            onClick={() => navigate('/my-home')}
+            className="inline-flex items-center text-green-300 hover:text-green-200 mb-8 group transition-all"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back to My Home
-          </Link>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-2">
-            Sale Confirmation
+          </button>
+
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 shadow-2xl shadow-green-500/30 mb-6">
+            <CheckCircle className="w-10 h-10 text-white" />
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
+            Sale <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">Confirmation</span>
           </h1>
-          <p className="text-gray-600 text-lg">Complete the dual verification process to confirm your sale</p>
+          <p className="text-green-200 text-lg max-w-md mx-auto">
+            Complete the dual verification process to confirm your sale securely
+          </p>
         </div>
 
-        <div className="space-y-8">
-          {/* Dual Verification Forms */}
-          <Card className="shadow-xl border-0 rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-              <CardTitle className="flex items-center space-x-2">
+        {/* Trust Badges */}
+        <div className="flex flex-wrap justify-center gap-3">
+          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Shield className="w-4 h-4 mr-2" /> Secure Verification
+          </Badge>
+          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Clock className="w-4 h-4 mr-2" /> 24h Validity
+          </Badge>
+          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Award className="w-4 h-4 mr-2" /> Earn Trust Points
+          </Badge>
+        </div>
+
+        {/* Main Form Card */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+          <CardHeader className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-8">
+            <CardTitle className="flex items-center space-x-3 text-2xl">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                 <Shield className="w-6 h-6" />
-                <span>Dual Verification Process</span>
-              </CardTitle>
-              <CardDescription className="text-green-100">
-                Both buyer and seller must verify using secret codes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-8">
-              <Tabs defaultValue="seller" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 rounded-xl p-1">
-                  <TabsTrigger value="seller" className="rounded-lg">I'm the Seller</TabsTrigger>
-                  <TabsTrigger value="buyer" className="rounded-lg">I'm the Buyer</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="seller">
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                    <div className="flex items-start space-x-3">
-                      <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-semibold mb-2">For Sellers:</p>
-                        <ul className="space-y-1 text-blue-700">
-                          <li>• Enter your Post ID and Buyer's User ID</li>
-                          <li>• Ask buyer for their daily secret code</li>
-                          <li>• Buyer will receive notification to confirm</li>
-                          <li>• Both parties must verify within 24 hours</li>
-                        </ul>
-                      </div>
+              </div>
+              <span>Dual Verification Process</span>
+            </CardTitle>
+            <CardDescription className="text-green-100 text-base mt-2">
+              Both buyer and seller must verify using secret codes for maximum security
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="p-8">
+            <Tabs defaultValue="seller" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 rounded-2xl p-1.5 h-14">
+                <TabsTrigger value="seller" className="rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all">
+                  🏪 I'm the Seller
+                </TabsTrigger>
+                <TabsTrigger value="buyer" className="rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white transition-all">
+                  🛒 I'm the Buyer
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="seller">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 mb-8">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-green-800 text-lg mb-2">Seller Instructions</p>
+                      <ul className="space-y-2 text-green-700">
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter your Post ID and Buyer's User ID</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Ask buyer for their daily secret code</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Buyer will receive notification to confirm</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Both parties must verify within 24 hours</li>
+                      </ul>
                     </div>
                   </div>
+                </div>
 
-                  <form onSubmit={handleSellerSubmit} className="space-y-6">
+                <form onSubmit={handleSellerSubmit} className="space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="postId" className="text-sm font-semibold text-gray-700">Post ID</Label>
+                      <Label htmlFor="postId" className="text-sm font-bold text-gray-700 mb-2 block">Post ID</Label>
                       <Input
                         id="postId"
                         value={sellerForm.postId}
-                        onChange={(e) => setSellerForm(prev => ({ ...prev, postId: e.target.value }))}
-                        placeholder="e.g., POST123456"
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl"
+                        onChange={(e) => setSellerForm({ ...sellerForm, postId: e.target.value })}
+                        placeholder="e.g., POST-12345"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
                         required
                       />
                     </div>
-                    
                     <div>
-                      <Label htmlFor="buyerId" className="text-sm font-semibold text-gray-700">Buyer's User ID</Label>
+                      <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 mb-2 block">Buyer's User ID</Label>
                       <Input
                         id="buyerId"
                         value={sellerForm.buyerId}
-                        onChange={(e) => setSellerForm(prev => ({ ...prev, buyerId: e.target.value }))}
-                        placeholder="e.g., USER789012"
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl"
+                        onChange={(e) => setSellerForm({ ...sellerForm, buyerId: e.target.value })}
+                        placeholder="e.g., USER-67890"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
                         required
                       />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="buyerSecretCode" className="text-sm font-semibold text-gray-700">Buyer's Secret Code</Label>
-                      <Input
-                        id="buyerSecretCode"
-                        value={sellerForm.buyerSecretCode}
-                        onChange={(e) => setSellerForm(prev => ({ ...prev, buyerSecretCode: e.target.value.toUpperCase() }))}
-                        placeholder="e.g., ABC123"
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl font-mono text-center"
-                        maxLength={6}
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="saleAmount" className="text-sm font-semibold text-gray-700">Sale Amount (₹)</Label>
-                      <Input
-                        id="saleAmount"
-                        type="number"
-                        value={sellerForm.saleAmount}
-                        onChange={(e) => setSellerForm(prev => ({ ...prev, saleAmount: e.target.value }))}
-                        placeholder="Enter final sale amount"
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl"
-                        required
-                      />
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl text-lg font-semibold"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Processing..." : "Initiate Sale Confirmation"}
-                    </Button>
-                  </form>
-                </TabsContent>
-                
-                <TabsContent value="buyer">
-                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6">
-                    <div className="flex items-start space-x-3">
-                      <Shield className="w-5 h-5 text-purple-600 mt-0.5" />
-                      <div className="text-sm text-purple-800">
-                        <p className="font-semibold mb-2">For Buyers:</p>
-                        <ul className="space-y-1 text-purple-700">
-                          <li>• Enter Post ID and Seller's User ID</li>
-                          <li>• Ask seller for their daily secret code</li>
-                          <li>• Confirm the sale to complete transaction</li>
-                          <li>• Both parties will receive confirmation</li>
-                        </ul>
-                      </div>
                     </div>
                   </div>
 
-                  <form onSubmit={handleBuyerSubmit} className="space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="buyerPostId" className="text-sm font-semibold text-gray-700">Post ID</Label>
+                      <Label htmlFor="buyerCode" className="text-sm font-bold text-gray-700 mb-2 block">Buyer's Secret Code</Label>
+                      <Input
+                        id="buyerCode"
+                        value={sellerForm.buyerSecretCode}
+                        onChange={(e) => setSellerForm({ ...sellerForm, buyerSecretCode: e.target.value })}
+                        placeholder="Ask buyer for code"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="amount" className="text-sm font-bold text-gray-700 mb-2 block">Sale Amount (₹)</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        value={sellerForm.saleAmount}
+                        onChange={(e) => setSellerForm({ ...sellerForm, saleAmount: e.target.value })}
+                        placeholder="e.g., 50000"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-16 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-2xl shadow-xl shadow-green-500/30 transition-all hover:shadow-green-500/50 hover:scale-[1.02]"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-3">
+                        <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Verifying...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="w-6 h-6" />
+                        Initiate Sale Confirmation
+                      </span>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="buyer">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-blue-800 text-lg mb-2">Buyer Instructions</p>
+                      <ul className="space-y-2 text-blue-700">
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter the Post ID and Seller's User ID</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter seller's daily secret code</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Use the confirmation code from notification</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Sale completes when both verify</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleBuyerSubmit} className="space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="buyerPostId" className="text-sm font-bold text-gray-700 mb-2 block">Post ID</Label>
                       <Input
                         id="buyerPostId"
                         value={buyerForm.postId}
-                        onChange={(e) => setBuyerForm(prev => ({ ...prev, postId: e.target.value }))}
-                        placeholder="e.g., POST123456"
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl"
+                        onChange={(e) => setBuyerForm({ ...buyerForm, postId: e.target.value })}
+                        placeholder="e.g., POST-12345"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
                         required
                       />
                     </div>
-                    
                     <div>
-                      <Label htmlFor="sellerId" className="text-sm font-semibold text-gray-700">Seller's User ID</Label>
+                      <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 mb-2 block">Seller's User ID</Label>
                       <Input
                         id="sellerId"
                         value={buyerForm.sellerId}
-                        onChange={(e) => setBuyerForm(prev => ({ ...prev, sellerId: e.target.value }))}
-                        placeholder="e.g., USER345678"
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl"
+                        onChange={(e) => setBuyerForm({ ...buyerForm, sellerId: e.target.value })}
+                        placeholder="e.g., USER-12345"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
                         required
                       />
                     </div>
-                    
-                    <div>
-                      <Label htmlFor="sellerSecretCode" className="text-sm font-semibold text-gray-700">Seller's Secret Code</Label>
-                      <Input
-                        id="sellerSecretCode"
-                        value={buyerForm.sellerSecretCode}
-                        onChange={(e) => setBuyerForm(prev => ({ ...prev, sellerSecretCode: e.target.value.toUpperCase() }))}
-                        placeholder="e.g., XYZ789"
-                        className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl font-mono text-center"
-                        maxLength={6}
-                        required
-                      />
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl text-lg font-semibold"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Confirming..." : "Confirm Sale"}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* Completed Sales History */}
-          <div className="mt-10">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">Completed Sales</h2>
-            {completedSales.length === 0 ? (
-              <div className="text-gray-500">No completed sales yet.</div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {completedSales.map((sale, idx) => (
-                  <div key={sale.id || idx} className="bg-white rounded-2xl shadow border border-gray-100 p-4 flex flex-col gap-2">
-                    <div className="flex flex-row justify-between items-center">
-                      <div>
-                        <h3 className="font-bold text-base text-gray-900 mb-0.5">{sale.postTitle}</h3>
-                        <p className="text-gray-500 text-xs mb-1">Buyer: {sale.buyer} | Seller: {sale.seller}</p>
-                      </div>
-                      <span className="text-green-600 font-bold text-lg">₹{sale.amount}</span>
-                    </div>
-                    <div className="flex flex-row justify-between items-center">
-                      <span className="text-xs bg-green-100 text-green-700 rounded px-2 py-0.5">Completed: {sale.completedDate}</span>
-                      <span className="text-xs bg-blue-100 text-blue-700 rounded px-2 py-0.5">Rating: {sale.rating}</span>
-                    </div>
-                    <div className="text-gray-600 text-sm mt-1">{sale.feedback}</div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Help Section */}
-        <Card className="shadow-xl border-0 rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-gray-600 to-gray-700 text-white">
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="w-6 h-6" />
-              <span>How Sale Confirmation Works</span>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="sellerCode" className="text-sm font-bold text-gray-700 mb-2 block">Seller's Secret Code</Label>
+                      <Input
+                        id="sellerCode"
+                        value={buyerForm.sellerSecretCode}
+                        onChange={(e) => setBuyerForm({ ...buyerForm, sellerSecretCode: e.target.value })}
+                        placeholder="Ask seller for code"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="confirmCode" className="text-sm font-bold text-gray-700 mb-2 block">Confirmation Code</Label>
+                      <Input
+                        id="confirmCode"
+                        value={buyerForm.confirmationCode}
+                        onChange={(e) => setBuyerForm({ ...buyerForm, confirmationCode: e.target.value })}
+                        placeholder="From notification"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-16 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:shadow-blue-500/50 hover:scale-[1.02]"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-3">
+                        <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Confirming...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <CheckCircle className="w-6 h-6" />
+                        Confirm Purchase
+                      </span>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Completed Sales History */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+          <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
+            <CardTitle className="flex items-center space-x-3 text-xl">
+              <Trophy className="w-6 h-6" />
+              <span>Recent Completed Sales</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div className="space-y-3">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                  <span className="text-2xl font-bold text-blue-600">1</span>
+            <div className="space-y-4">
+              {completedSales.map((sale, index) => (
+                <div
+                  key={sale.id}
+                  className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="bg-green-100 text-green-700 font-mono">{sale.id}</Badge>
+                        <Badge className="bg-yellow-100 text-yellow-700">
+                          {'⭐'.repeat(sale.rating)}
+                        </Badge>
+                      </div>
+                      <h4 className="font-bold text-gray-900 text-lg">{sale.postTitle}</h4>
+                      <p className="text-gray-500 text-sm mt-1">
+                        {sale.seller} → {sale.buyer}
+                      </p>
+                      <p className="text-gray-600 text-sm mt-2 italic">"{sale.feedback}"</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-green-600">₹{sale.amount.toLocaleString()}</p>
+                      <p className="text-xs text-gray-400">{sale.completedDate}</p>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-gray-900">Initiate</h3>
-                <p className="text-sm text-gray-600">Seller starts the process with buyer's secret code and sale details</p>
-              </div>
-              <div className="space-y-3">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                  <span className="text-2xl font-bold text-purple-600">2</span>
-                </div>
-                <h3 className="font-semibold text-gray-900">Verify</h3>
-                <p className="text-sm text-gray-600">Buyer confirms using seller's secret code to verify the transaction</p>
-              </div>
-              <div className="space-y-3">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                  <span className="text-2xl font-bold text-green-600">3</span>
-                </div>
-                <h3 className="font-semibold text-gray-900">Complete</h3>
-                <p className="text-sm text-gray-600">Both parties receive confirmation and earn reward points</p>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full shadow-2xl shadow-green-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };

@@ -53,6 +53,10 @@ const AllPosts = () => {
   const [shareToast, setShareToast] = useState("");
   const [debugUrl, setDebugUrl] = useState("");
   const [showInterestModal, setShowInterestModal] = useState(false);
+
+  // Low-view posts boost feature - rotates every 30 seconds
+  const [boostLowViews, setBoostLowViews] = useState(true);
+  const [rotationKey, setRotationKey] = useState(0);
   const [selectedPost, setSelectedPost] = useState(null);
 
   // Category ID mapping - MUST match database (00_master_setup.sql lines 233-243)
@@ -162,13 +166,13 @@ const AllPosts = () => {
       }
     };
     fetchPosts();
-  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.startDate, filters.endDate, filters.sortBy, currentPage]);
+  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.minPrice, filters.maxPrice, filters.startDate, filters.endDate, filters.sortBy, currentPage]);
 
 
   // Reset page on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.startDate, filters.endDate, filters.sortBy]);
+  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.minPrice, filters.maxPrice, filters.startDate, filters.endDate, filters.sortBy]);
 
 
   // Infinite scroll
@@ -187,6 +191,36 @@ const AllPosts = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMorePosts]);
+
+  // Rotation interval - rotate low-view priority every 30 seconds
+  useEffect(() => {
+    const rotationInterval = setInterval(() => {
+      setRotationKey(prev => prev + 1);
+      setBoostLowViews(prev => !prev);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(rotationInterval);
+  }, []);
+
+  // Display posts with smart sorting - low-view posts get priority periodically
+  const displayPosts = React.useMemo(() => {
+    if (!posts || posts.length === 0) return [];
+
+    // Create a copy to sort
+    const sortedPosts = [...posts];
+
+    if (boostLowViews) {
+      // Sort by views ascending (low views first)
+      sortedPosts.sort((a, b) => {
+        const viewsA = viewCounts[a.post_id || a.id] ?? a.views ?? 0;
+        const viewsB = viewCounts[b.post_id || b.id] ?? b.views ?? 0;
+        return viewsA - viewsB;
+      });
+    }
+    // When boostLowViews is false, keep original order (by date/relevance from API)
+
+    return sortedPosts;
+  }, [posts, viewCounts, boostLowViews, rotationKey]);
 
 
   // Like handler
@@ -224,12 +258,29 @@ const AllPosts = () => {
   };
 
 
-  // View Details
-  const handleViewDetails = (postId) => {
+  // View Details - also tracks view and recently viewed
+  const handleViewDetails = async (postId) => {
     // Find post object by id
     const postObj = posts.find(p => p.id === postId || p.post_id === postId);
+
+    // Track view count (fire and forget)
+    fetch(`/api/posts/${postId}/view`, { method: 'POST', credentials: 'include' }).catch(() => { });
+
+    // Track recently viewed (fire and forget)
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      fetch('/api/recently-viewed/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ post_id: postId, user_id: userId })
+      }).catch(() => { });
+    }
+
+    // Update local view count
+    setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+
     if (postObj) {
-      // Pass post object via state for instant display
       navigate(`/post/${postId}`, { state: { post: postObj } });
     } else {
       navigate(`/post/${postId}`);
@@ -361,20 +412,39 @@ const AllPosts = () => {
             <div className="text-center text-blue-400 dark:text-blue-300">{t('loading')}</div>
           ) : error ? (
             <div className="text-center text-red-400">{error}</div>
-          ) : posts.length === 0 ? (
+          ) : displayPosts.length === 0 ? (
             <div className="col-span-full text-center text-blue-400 dark:text-blue-300">{t('no_posts_available')}</div>
           ) : (
-            posts.map((post, idx) => (
+            displayPosts.map((post, idx) => (
               <Card key={post.id || post.post_id} post={post} className="rounded-2xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow">
                 <div className="flex items-center gap-3 px-4 pt-4 pb-2">
                   <Avatar className="w-10 h-10">
                     <AvatarFallback className="dark:bg-gray-700 dark:text-white">{post.user?.name?.[0] || 'U'}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-blue-900 dark:text-blue-200 text-base md:text-lg truncate">{post.user?.name || 'Unknown'}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-blue-900 dark:text-blue-200 text-base md:text-lg truncate">{post.user?.name || 'Unknown'}</span>
+                      {/* Verified Seller Badge */}
+                      {post.user?.isVerified && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold rounded-full"
+                          title={`KYC Verified${post.user?.aadhaarVerified ? ' (Aadhaar)' : ''}${post.user?.panVerified ? ' (PAN)' : ''}`}
+                        >
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Verified
+                        </span>
+                      )}
+                      {/* Seller Rating */}
+                      {post.user?.rating > 0 && (
+                        <span className="text-yellow-500 text-xs font-medium">★ {post.user.rating.toFixed(1)}</span>
+                      )}
+                    </div>
                     <div className="text-gray-500 dark:text-gray-400 text-xs">{post.category}</div>
                   </div>
                 </div>
+
                 <div className="w-full h-48 md:h-56 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                   <span className="text-gray-400 dark:text-gray-500">Image</span>
                 </div>

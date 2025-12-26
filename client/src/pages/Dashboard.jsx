@@ -111,26 +111,26 @@ const Dashboard = () => {
               <div className="flex items-center space-x-4 lg:space-x-6">
                 <Avatar className="h-12 w-12 lg:h-16 lg:w-16 ring-4 ring-white/30">
                   <AvatarFallback className="text-lg lg:text-xl bg-white/20 text-white font-bold">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {(user?.name || 'U').split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">{t('welcome_back')}, {user.name}!</h1>
+                  <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">{t('welcome_back')}, {user?.name || 'User'}!</h1>
                   <div className="flex flex-wrap items-center gap-3 text-white/90">
-                    <Badge className="bg-white/20 text-white border-white/30">{user.rank}</Badge>
+                    <Badge className="bg-white/20 text-white border-white/30">{user?.rank || 'Member'}</Badge>
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-yellow-300 fill-current" />
-                      <span>{user.rating}</span>
+                      <span>{user?.rating || 'N/A'}</span>
                     </div>
                     <span>•</span>
-                    <span>ID: {user.id}</span>
+                    <span>ID: {user?.id || 'N/A'}</span>
                   </div>
                 </div>
               </div>
               <div className="mt-4 sm:mt-0 text-right">
-                <div className="text-2xl lg:text-3xl font-bold text-white">{user.coins}</div>
+                <div className="text-2xl lg:text-3xl font-bold text-white">{user?.coins || 0}</div>
                 <div className="text-white/80">{t('total_coins')}</div>
-                <div className="mt-2 text-sm text-white/70">{t('code')}: {user.dailyCode}</div>
+                <div className="mt-2 text-sm text-white/70">{t('code')}: {user?.dailyCode || 'N/A'}</div>
               </div>
             </div>
           </CardContent>

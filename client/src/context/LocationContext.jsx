@@ -20,11 +20,12 @@ export function useLocation() {
 
 /**
  * Reverse geocode coordinates to get city/state/country
- * Uses free OpenStreetMap Nominatim API
+ * Uses free OpenStreetMap Nominatim API with zoom=18 for max precision
  */
 async function reverseGeocode(lat, lng) {
     try {
-        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`;
+        // zoom=18 gives street-level detail, addressdetails=1 ensures all address components
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en&zoom=18&addressdetails=1`;
         const response = await fetch(url, {
             headers: {
                 'User-Agent': 'MHub/1.0 (marketplace app)'
@@ -38,18 +39,45 @@ async function reverseGeocode(lat, lng) {
         const data = await response.json();
         const address = data.address || {};
 
+        console.log('[LocationContext] Full address data:', address);
+
+        // Get the most specific location name available
+        // Priority: village > suburb > neighbourhood > hamlet > town > city > county
+        const specificLocation = address.village ||
+            address.suburb ||
+            address.neighbourhood ||
+            address.hamlet ||
+            address.locality ||
+            address.town ||
+            address.city ||
+            address.county ||
+            'Unknown';
+
+        // Get the broader area (for context)
+        const district = address.county || address.state_district || '';
+
+        // Create a display name showing specific location first
+        const locationDisplay = specificLocation;
+
         return {
-            city: address.city || address.town || address.village || address.county || 'Unknown',
+            // Specific location (village/area name)
+            city: specificLocation,
+            // District/county for reference
+            district: district,
             state: address.state || address.region || '',
             country: address.country || 'Unknown',
+            // Full address for detailed view
             displayName: data.display_name || '',
-            postcode: address.postcode || ''
+            postcode: address.postcode || '',
+            // Raw address for debugging
+            rawAddress: address
         };
     } catch (error) {
         console.error('[LocationContext] Reverse geocoding failed:', error);
-        return { city: 'Unknown', state: '', country: 'Unknown', displayName: '', postcode: '' };
+        return { city: 'Unknown', district: '', state: '', country: 'Unknown', displayName: '', postcode: '' };
     }
 }
+
 
 /**
  * Send location to backend for storage/analytics

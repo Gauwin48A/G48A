@@ -287,5 +287,7 @@
   "price_low_high": "Price: Low to High",
   "price_high_low": "Price: High to Low",
   "newest_first": "Newest First",
-  "oldest_first": "Oldest First"
+  "oldest_first": "Oldest First",
+  "recently_viewed": "Recently Viewed",
+  "saved_searches": "Saved Searches"
 }

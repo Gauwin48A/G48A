@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useLocation } from '@/context/LocationContext';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +45,12 @@ const GreenNavbar = () => {
     const stored = localStorage.getItem('darkMode');
     return stored ? JSON.parse(stored) : false;
   });
+
+  // Large font mode for accessibility
+  const [largeFont, setLargeFont] = useState(() => {
+    const stored = localStorage.getItem('largeFont');
+    return stored ? JSON.parse(stored) : false;
+  });
   const darkModeLabel = darkMode ? 'Disable Dark Mode' : 'Enable Dark Mode';
 
   useEffect(() => {
@@ -55,6 +61,18 @@ const GreenNavbar = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Large Font effect
+  useEffect(() => {
+    localStorage.setItem('largeFont', JSON.stringify(largeFont));
+    if (largeFont) {
+      document.body.classList.add('text-lg');
+      document.body.style.fontSize = '18px';
+    } else {
+      document.body.classList.remove('text-lg');
+      document.body.style.fontSize = '';
+    }
+  }, [largeFont]);
 
   // Check if user is logged in
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -90,7 +108,8 @@ const GreenNavbar = () => {
   }, []);
 
   // Get location from context (for city display)
-  const { city, loading: locationLoading, permissionGranted, retry: retryLocation } = useLocation();
+  const { city, displayName, loading: locationLoading, permissionGranted, retry: retryLocation, accuracy } = useLocation();
+
 
   // Router location for path detection
   const routerLocation = useRouterLocation();
@@ -136,17 +155,23 @@ const GreenNavbar = () => {
               <button
                 onClick={retryLocation}
                 className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 rounded-lg transition-colors cursor-pointer"
-                title={city || t('location') || 'Detect Location'}
+                title={displayName || city || t('location') || 'Click to detect location'}
               >
                 <FiMapPin className="text-white w-4 h-4" />
-                <span className="text-white text-sm font-medium max-w-[120px] truncate">
-                  {locationLoading ? '...' : (city || t('location') || 'Location')}
+                <span className="text-white text-sm font-medium max-w-[150px] truncate">
+                  {locationLoading ? 'Detecting...' : (city || t('location') || 'Location')}
                 </span>
+                {accuracy && accuracy < 500 && (
+                  <span className="text-white/70 text-xs hidden sm:inline">
+                    ({Math.round(accuracy)}m)
+                  </span>
+                )}
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
             </div>
+
 
             {/* Search Bar with icon and filter */}
             <form className="flex-1 mx-6 max-w-xl flex items-center gap-2" role="search" aria-label="Product Search" onSubmit={e => { e.preventDefault(); }}>
@@ -282,6 +307,24 @@ const GreenNavbar = () => {
                   {t('notifications')}
                 </span>
               </Link>
+              {/* Wishlist Heart */}
+              <Link to="/wishlist" aria-label={t('wishlist') || 'Wishlist'} className="relative group">
+                <span className="p-2 rounded-full hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white transition-colors inline-flex items-center justify-center">
+                  <FiHeart className="text-white w-6 h-6" />
+                </span>
+                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                  {t('wishlist') || 'Wishlist'}
+                </span>
+              </Link>
+              {/* Recently Viewed Clock */}
+              <Link to="/recently-viewed" aria-label={t('recently_viewed') || 'Recently Viewed'} className="relative group">
+                <span className="p-2 rounded-full hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white transition-colors inline-flex items-center justify-center">
+                  <FiClock className="text-white w-6 h-6" />
+                </span>
+                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                  {t('recently_viewed') || 'Recently Viewed'}
+                </span>
+              </Link>
               {/* Language Selector */}
               <div>
                 <LanguageSelector />
@@ -311,7 +354,7 @@ const GreenNavbar = () => {
       {moreOpen && (
         <div className="fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
           {/* Right-side vertical sliding pane, with improved highlight and shadow */}
-          <div className="fixed top-0 right-0 h-full w-80 max-w-full bg-white dark:bg-gray-800 shadow-2xl p-8 flex flex-col gap-4 animate-slideInRight ring-4 ring-blue-400 dark:ring-yellow-400 ring-opacity-80 z-50" style={{ transition: 'transform 0.3s' }} onClick={e => e.stopPropagation()}>
+          <div className="fixed top-0 right-0 h-full w-80 max-w-full bg-white dark:bg-gray-800 shadow-2xl p-8 flex flex-col gap-4 animate-slideInRight ring-4 ring-blue-400 dark:ring-yellow-400 ring-opacity-80 z-50 overflow-y-auto pb-24" style={{ transition: 'transform 0.3s' }} onClick={e => e.stopPropagation()}>
             <button className="absolute top-4 right-4 text-gray-500 hover:text-blue-600 dark:hover:text-yellow-400" onClick={() => setMoreOpen(false)}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -333,7 +376,6 @@ const GreenNavbar = () => {
                   {t(link.key)}
                 </Link>
               ))}
-            {/* Logout button - only show when logged in */}
             {isLoggedIn && (
               <button
                 className="block w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-semibold text-center text-base shadow transition-colors duration-150"
@@ -342,6 +384,20 @@ const GreenNavbar = () => {
                 {t('logout') || 'Logout'}
               </button>
             )}
+            {/* Accessibility: Font Size Toggle */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">♿ Accessibility</p>
+              <button
+                className={`block w-full px-4 py-3 rounded-lg font-semibold text-center text-base shadow transition-all duration-150 ${largeFont ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                onClick={() => setLargeFont(!largeFont)}
+                title={largeFont ? "Switch to normal font size" : "Increase font size for easier reading"}
+              >
+                {largeFont ? '🔤 Normal Size' : '🔠 Larger Text'}
+                <span className="block text-xs font-normal opacity-75 mt-1">
+                  {largeFont ? 'Currently using large fonts' : 'Easier to read for everyone'}
+                </span>
+              </button>
+            </div>
             <button className="mt-4 px-4 py-2 bg-blue-600 dark:bg-yellow-400 text-white dark:text-gray-900 rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-yellow-500 shadow transition-colors duration-150" onClick={() => setMoreOpen(false)}>{t('close')}</button>
           </div>
           {/* Overlay, less opaque for better background visibility */}

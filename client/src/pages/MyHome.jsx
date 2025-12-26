@@ -21,7 +21,10 @@ import {
     MoreVertical,
     AlertTriangle,
     Share2,
-    ArrowLeft
+    ArrowLeft,
+    Search,
+    CheckSquare,
+    Square
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +66,8 @@ const MyHome = () => {
     const [sortOrder, setSortOrder] = useState("desc");
     const [showPostDetailDialog, setShowPostDetailDialog] = useState(false);
     const [postDetailData, setPostDetailData] = useState(null);
+    const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+    const [selectAll, setSelectAll] = useState(false);
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -276,6 +281,65 @@ const MyHome = () => {
         setSelectedPosts(newSelected);
     };
 
+    // Toggle Select All
+    const toggleSelectAll = () => {
+        if (selectAll) {
+            setSelectedPosts(new Set());
+        } else {
+            const activePostIds = allPosts
+                .filter(p => p.status === 'active')
+                .map(p => p.postId || p.post_id || p.id);
+            setSelectedPosts(new Set(activePostIds));
+        }
+        setSelectAll(!selectAll);
+    };
+
+    // Bulk Delete handler
+    const handleBulkDelete = async () => {
+        if (selectedPosts.size === 0) {
+            toast({
+                title: "No Posts Selected",
+                description: "Please select posts to delete",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const deletePromises = Array.from(selectedPosts).map(postId =>
+                fetch(`${baseUrl}/api/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    credentials: 'include'
+                })
+            );
+
+            await Promise.all(deletePromises);
+
+            setPosts(posts => posts.filter(post =>
+                !selectedPosts.has(post.postId || post.post_id || post.id)
+            ));
+            setSelectedPosts(new Set());
+            setSelectAll(false);
+            setShowBulkDeleteDialog(false);
+            toast({
+                title: "Posts Deleted",
+                description: `${selectedPosts.size} posts have been deleted`
+            });
+        } catch (error) {
+            console.error('Bulk delete error:', error);
+            toast({
+                title: "Delete Failed",
+                description: "Some posts could not be deleted",
+                variant: "destructive"
+            });
+        }
+    };
+
     // --- LOADING STATE ---
     if (loading) {
         return (
@@ -299,7 +363,7 @@ const MyHome = () => {
                 <div className="relative max-w-4xl mx-auto px-4 py-10 sm:px-6">
                     {/* Back Button */}
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate('/all-posts')}
                         className="absolute top-4 left-4 p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all z-50"
                     >
                         <ArrowLeft className="w-6 h-6 text-white" />
@@ -392,13 +456,60 @@ const MyHome = () => {
                     ))}
                 </div>
 
+                {/* Search Bar */}
+                <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                        type="text"
+                        placeholder="Search your posts by title or location..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none transition-colors"
+                    />
+                </div>
+
+                {/* Bulk Actions Bar - Only for Active posts (user can only manage their own active listings) */}
+                {activeTab === 'active' && allPosts.filter(p => p.status === 'active').length > 0 && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 mb-4 border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={toggleSelectAll}
+                                    className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 transition-colors"
+                                    title="Select all active posts for bulk actions"
+                                >
+                                    {selectAll ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                                    {selectAll ? 'Deselect All' : 'Select All'}
+                                </button>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                    {selectedPosts.size} of {allPosts.filter(p => p.status === 'active').length} selected
+                                </span>
+                            </div>
+                            {selectedPosts.size > 0 && (
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setShowBulkDeleteDialog(true)}
+                                    className="bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-1" />
+                                    Delete Selected ({selectedPosts.size})
+                                </Button>
+                            )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            💡 Use this to quickly manage multiple active listings at once
+                        </p>
+                    </div>
+                )}
+
                 {/* Sale Done/Undone Buttons */}
                 <div className="flex w-full gap-4 mb-6">
                     <Button className="flex-1 bg-green-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all hover:bg-green-600" onClick={handleSaleDone}>
                         <CheckCircle2 className="w-5 h-5 mr-2" />
                         Sale Done
                     </Button>
-                    <Button className="flex-1 bg-orange-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all hover:bg-orange-600" onClick={confirmSaleUndone}>
+                    <Button className="flex-1 bg-orange-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all hover:bg-orange-600" onClick={() => navigate('/saleundone')}>
                         <XCircle className="w-5 h-5 mr-2" />
                         Sale Undone
                     </Button>
@@ -450,9 +561,9 @@ const MyHome = () => {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="bg-white/90 hover:bg-white shadow-lg rounded-full h-9 w-9 p-0 z-50"
+                                                        className="bg-gray-800/80 hover:bg-gray-700 shadow-lg rounded-full h-9 w-9 p-0 z-50"
                                                     >
-                                                        <MoreVertical className="h-4 w-4" />
+                                                        <MoreVertical className="h-4 w-4 text-white" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 shadow-lg border rounded-xl">
@@ -464,13 +575,15 @@ const MyHome = () => {
                                                         <Share2 className="w-4 h-4 mr-2" />
                                                         Share Post
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => confirmDeletePost(post.postId || post.post_id || post.id)}
-                                                        className="text-red-600"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-2" />
-                                                        Delete
-                                                    </DropdownMenuItem>
+                                                    {post.status !== 'bought' && (
+                                                        <DropdownMenuItem
+                                                            onClick={() => confirmDeletePost(post.postId || post.post_id || post.id)}
+                                                            className="text-red-600"
+                                                        >
+                                                            <Trash2 className="w-4 h-4 mr-2" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
@@ -515,19 +628,22 @@ const MyHome = () => {
                                                 <Eye className="w-5 h-5" />
                                                 View Details
                                             </Button>
-                                            <Button
-                                                variant="outline"
-                                                className="border-2 border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold rounded-xl py-3 px-4"
-                                                onClick={() => confirmDeletePost(post.postId || post.post_id || post.id)}
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </Button>
+                                            {post.status !== 'bought' && (
+                                                <Button
+                                                    variant="outline"
+                                                    className="border-2 border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold rounded-xl py-3 px-4"
+                                                    onClick={() => confirmDeletePost(post.postId || post.post_id || post.id)}
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </CardContent>
                                 </div>
                             </Card>
                         ))
-                    )}
+                    )
+                    }
                 </div>
 
                 {/* Pagination Controls */}
@@ -609,7 +725,30 @@ const MyHome = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+
+            {/* Bulk Delete Confirmation Dialog */}
+            <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+                <AlertDialogContent className="bg-white dark:bg-gray-800 rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
+                            Delete {selectedPosts.size} Posts?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
+                            This action cannot be undone. All selected posts will be permanently deleted.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleBulkDelete}
+                            className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                        >
+                            Delete All
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div >
     );
 };
 

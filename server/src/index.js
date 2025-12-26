@@ -32,13 +32,16 @@ const savedSearchesRoutes = require("./routes/savedSearches.js");
 const analyticsRoutes = require("./routes/analytics.js");
 // New Features
 const wishlistRoutes = require("./routes/wishlist.js");
+const recentlyViewedRoutes = require("./routes/recentlyViewed.js");
+const priceAlertsRoutes = require("./routes/priceAlerts.js");
+const priceHistoryRoutes = require("./routes/priceHistory.js");
 
 const app = express();
 
-// Security & CORS
+// Security & CORS - Allow all common local dev ports
 app.use(helmet());
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:3000"],
+  origin: ["http://localhost:5173", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "http://localhost:3000"],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -72,6 +75,9 @@ app.use('/api/saved-searches', savedSearchesRoutes);
 app.use('/api/analytics', analyticsRoutes);
 // New Features
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/recently-viewed', recentlyViewedRoutes);
+app.use('/api/price-alerts', priceAlertsRoutes);
+app.use('/api/price-history', priceHistoryRoutes);
 
 // Health check with DB validation
 app.get('/api/health', async (req, res) => {

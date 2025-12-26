@@ -62,25 +62,36 @@ exports.getAllPosts = async (req, res) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     // Build dynamic query with JOINs for user info, category, and images
+    // Use subqueries for verification since user_verifications uses verification_type column
     let query = `
       SELECT 
         p.*,
+        COALESCE(p.views, 0) as views,
+        COALESCE(p.shares, 0) as shares,
+        COALESCE(p.likes, 0) as likes,
         u.username,
         u.email,
+        u.rating as seller_rating,
         COALESCE(pr.full_name, u.username) as user_name,
         c.name as category_name,
-        (SELECT array_agg(image_url) FROM post_images pi WHERE pi.post_id = p.post_id LIMIT 5) as images
+        (SELECT array_agg(image_url) FROM post_images pi WHERE pi.post_id = p.post_id LIMIT 5) as images,
+
+        (SELECT is_verified FROM user_verifications WHERE user_id = p.user_id AND verification_type = 'aadhaar' LIMIT 1) as aadhaar_verified,
+        (SELECT is_verified FROM user_verifications WHERE user_id = p.user_id AND verification_type = 'pan' LIMIT 1) as pan_verified,
+        (SELECT verified_at FROM user_verifications WHERE user_id = p.user_id AND is_verified = true ORDER BY verified_at DESC LIMIT 1) as verification_date
       FROM posts p
       LEFT JOIN users u ON p.user_id = u.user_id
       LEFT JOIN profiles pr ON p.user_id = pr.user_id
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.status = 'active'
     `;
+
+
     const params = [];
 
-    // Search across title, description, AND location
+    // Search across title, description, location, AND category name
     if (search) {
-      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1})`;
+      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
     }
     if (category) {
@@ -121,7 +132,7 @@ exports.getAllPosts = async (req, res) => {
 
     const result = await pool.query(query, params);
 
-    // Transform results to include user object
+    // Transform results to include user object with verification status
     const posts = result.rows.map(post => ({
       ...post,
       id: post.post_id,
@@ -129,15 +140,21 @@ exports.getAllPosts = async (req, res) => {
       user: {
         name: post.user_name || post.username || 'Unknown',
         username: post.username,
-        email: post.email
+        email: post.email,
+        rating: parseFloat(post.seller_rating) || 0,
+        isVerified: post.aadhaar_verified || post.pan_verified,
+        aadhaarVerified: post.aadhaar_verified,
+        panVerified: post.pan_verified,
+        verificationDate: post.verification_date
       },
       image_url: post.images?.[0] || post.image_url || '/placeholder.svg'
     }));
 
-    // Get total count for pagination
-    let countQuery = `SELECT COUNT(*) FROM posts p WHERE p.status = 'active'`;
+
+    // Get total count for pagination (must join categories to search by category name)
+    let countQuery = `SELECT COUNT(*) FROM posts p LEFT JOIN categories c ON p.category_id = c.category_id WHERE p.status = 'active'`;
     const countParams = [];
-    if (search) { countQuery += ` AND (p.title ILIKE $${countParams.length + 1} OR p.description ILIKE $${countParams.length + 1} OR p.location ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
+    if (search) { countQuery += ` AND (p.title ILIKE $${countParams.length + 1} OR p.description ILIKE $${countParams.length + 1} OR p.location ILIKE $${countParams.length + 1} OR c.name ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
     if (category) { countQuery += ` AND p.category_id = $${countParams.length + 1}`; countParams.push(category); }
     if (location) { countQuery += ` AND p.location ILIKE $${countParams.length + 1}`; countParams.push(`%${location}%`); }
     if (author) { countQuery += ` AND p.user_id = $${countParams.length + 1}`; countParams.push(author); }
@@ -193,13 +210,14 @@ exports.getPostById = async (req, res) => {
     const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [postId]);
     if (!postRes.rows.length) return res.status(404).json({ error: 'Post not found' });
     const post = postRes.rows[0];
-    // Note: View count update commented out due to column name mismatch (views vs views_count)
-    // await pool.query('UPDATE posts SET views_count = views_count + 1 WHERE post_id = $1', [postId]);
+    // Increment view count when post is viewed
+    await pool.query('UPDATE posts SET views_count = views_count + 1 WHERE post_id = $1', [postId]);
     // Fetch author and category - use user_id column for users table
     const authorRes = await pool.query('SELECT username FROM users WHERE user_id = $1', [post.user_id]);
     const categoryRes = await pool.query('SELECT name FROM categories WHERE category_id = $1', [post.category_id]);
     post.author = authorRes.rows[0]?.username || 'Unknown';
     post.category = categoryRes.rows[0]?.name || 'Unknown';
+    post.views = post.views_count; // Alias for frontend compatibility
     // Return with post wrapper for consistency
     res.json({ post });
   } catch (err) {

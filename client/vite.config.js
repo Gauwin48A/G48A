@@ -4,8 +4,9 @@ import path from "path";
 
 export default defineConfig({
   server: {
-    host: "localhost",
+    host: true, // Allow connections from mobile devices on same network
     port: 8081,
+
     proxy: {
       "/api": {
         target: "http://localhost:5000",

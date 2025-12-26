@@ -1,89 +1,402 @@
 import React, { useState, useEffect } from 'react';
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { RotateCcw, Shield, Clock, ArrowLeft, XCircle, RefreshCw, Package, ArrowUp, Sparkles, AlertTriangle, HelpCircle, CheckCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { RotateCcw, Search, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const SaleUndone = () => {
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sales, setSales] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [form, setForm] = useState({
+    postId: '',
+    reason: '',
+    description: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [undonePosts, setUndonePosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
 
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+  // Scroll handler
   useEffect(() => {
-    setLoading(true);
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    fetch(`${baseUrl}/api/transactions/undone`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        setSales(Array.isArray(data) ? data : []);
-        setError(null);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message || 'Failed to fetch undone sales');
-        setLoading(false);
-      });
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const filteredSales = sales.filter(sale =>
-    (sale.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (sale.postId || '').toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (sale.brand || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Fetch undone posts on mount
+  useEffect(() => {
+    const fetchUndonePosts = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        const token = localStorage.getItem('authToken');
+        if (!userId || !token) {
+          setLoadingPosts(false);
+          return;
+        }
+
+        const res = await fetch(`${baseUrl}/api/transactions/undone?userId=${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUndonePosts(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch undone posts:', err);
+      } finally {
+        setLoadingPosts(false);
+      }
+    };
+    fetchUndonePosts();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.postId) {
+      toast({
+        title: "Post ID Required",
+        description: "Please enter the Post ID you want to reactivate",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('authToken');
+
+      const res = await fetch(`${baseUrl}/api/posts/${form.postId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: 'active',
+          userId,
+          reason: form.reason,
+          description: form.description
+        })
+      });
+
+      if (res.ok) {
+        setShowConfirmation(true);
+        toast({
+          title: "✅ Post Reactivated",
+          description: "Your post is now available for sale again"
+        });
+      } else {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to update post status');
+      }
+    } catch (err) {
+      console.error('Sale undone error:', err);
+      toast({
+        title: "Action Failed",
+        description: err.message || "Could not reactivate the post. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setForm({ postId: '', reason: '', description: '' });
+    setShowConfirmation(false);
+  };
+
+  // Success confirmation screen
+  if (showConfirmation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-pink-600 relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+
+        <div className="relative max-w-2xl mx-auto p-6 pt-20">
+          <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+            <CardContent className="p-12 text-center">
+              {/* Success Icon */}
+              <div className="relative inline-block mb-8">
+                <div className="absolute inset-0 bg-orange-400 rounded-full animate-ping opacity-25"></div>
+                <div className="relative w-32 h-32 mx-auto bg-gradient-to-br from-orange-400 to-red-600 rounded-full flex items-center justify-center shadow-2xl">
+                  <RefreshCw className="w-16 h-16 text-white" />
+                </div>
+              </div>
+
+              <h2 className="text-4xl font-black bg-gradient-to-r from-orange-600 to-red-700 bg-clip-text text-transparent mb-4">
+                🔄 Post Reactivated!
+              </h2>
+
+              <p className="text-gray-600 text-xl mb-8 max-w-md mx-auto">
+                Your post is now active and visible to potential buyers again.
+              </p>
+
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-6 mb-8 border border-orange-200">
+                <div className="flex items-center justify-center gap-6">
+                  <div className="text-center">
+                    <Package className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                    <p className="text-lg font-bold text-orange-700">Active</p>
+                    <p className="text-sm text-gray-500">Post Status</p>
+                  </div>
+                  <div className="w-px h-16 bg-orange-200"></div>
+                  <div className="text-center">
+                    <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <p className="text-lg font-bold text-green-700">Visible</p>
+                    <p className="text-sm text-gray-500">To Buyers</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={resetForm}
+                  className="border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl px-8 py-3 font-semibold"
+                >
+                  Reactivate Another
+                </Button>
+                <Button
+                  className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl px-8 py-3 font-semibold shadow-lg"
+                  onClick={() => navigate('/my-home')}
+                >
+                  Go to My Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Link to="/my-home" className="flex items-center text-blue-600 hover:text-blue-700 mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My Home
-          </Link>
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl flex items-center justify-center shadow-lg">
-              <RotateCcw className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Unsold Posts</h1>
-              <p className="text-gray-600 text-lg">Manage your expired or unsold listings</p>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search by title, Post ID, or brand..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl"
-              />
-            </div>
-          </div>
-        </div>
-        {loading ? <div>Loading...</div> : filteredSales.map((sale, idx) => (
-          <div key={sale.id || idx} className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 mb-4 flex flex-col gap-2">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-1">{sale.title}</h4>
-                <p className="text-sm text-gray-600">Brand: {sale.brand}</p>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-orange-600">Post ID: {sale.postId}</div>
-                <div className="text-xs text-gray-500">Status: {sale.status}</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Reason: {sale.reason || (
-                <input type='text' placeholder='Enter reason' className='border rounded px-2 py-1 text-sm' onBlur={e => {/* TODO: Save reason to DB */}} />
-              )}</span>
-              <Badge className="bg-orange-500 text-white">Unsold</Badge>
-            </div>
-          </div>
-        ))}
+    <div className="bg-gradient-to-br from-slate-900 via-orange-900 to-red-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+      {/* Animated background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-orange-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-500/10 rounded-full blur-3xl"></div>
       </div>
+
+      <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
+        {/* Premium Header */}
+        <div className="text-center pt-8">
+          <button
+            onClick={() => navigate('/my-home')}
+            className="inline-flex items-center text-orange-300 hover:text-orange-200 mb-8 group transition-all"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back to My Home
+          </button>
+
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-red-600 shadow-2xl shadow-orange-500/30 mb-6">
+            <RotateCcw className="w-10 h-10 text-white" />
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
+            Sale <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">Undone</span>
+          </h1>
+          <p className="text-orange-200 text-lg max-w-md mx-auto">
+            Reactivate sold posts that didn't go through - give them another chance!
+          </p>
+        </div>
+
+        {/* Info Badges */}
+        <div className="flex flex-wrap justify-center gap-3">
+          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <RefreshCw className="w-4 h-4 mr-2" /> Instant Reactivation
+          </Badge>
+          <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Shield className="w-4 h-4 mr-2" /> No Penalties
+          </Badge>
+          <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Package className="w-4 h-4 mr-2" /> Keep Original Details
+          </Badge>
+        </div>
+
+        {/* Main Form Card */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+          <CardHeader className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white p-8">
+            <CardTitle className="flex items-center space-x-3 text-2xl">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <span>Reactivate Your Post</span>
+            </CardTitle>
+            <CardDescription className="text-orange-100 text-base mt-2">
+              Enter the Post ID to bring your listing back to life
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="p-8">
+            {/* Why Undo Section */}
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-2xl p-6 mb-8">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <HelpCircle className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-orange-800 text-lg mb-2">When to use Sale Undone?</p>
+                  <ul className="space-y-2 text-orange-700">
+                    <li className="flex items-center gap-2"><XCircle className="w-4 h-4" /> No buyers found for your post</li>
+                    <li className="flex items-center gap-2"><XCircle className="w-4 h-4" /> Buyer was not interested after all</li>
+                    <li className="flex items-center gap-2"><XCircle className="w-4 h-4" /> Deal didn't go through</li>
+                    <li className="flex items-center gap-2"><XCircle className="w-4 h-4" /> Want to relist with updated details</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <Label htmlFor="postId" className="text-sm font-bold text-gray-700 mb-2 block">Post ID *</Label>
+                <Input
+                  id="postId"
+                  value={form.postId}
+                  onChange={(e) => setForm(prev => ({ ...prev, postId: e.target.value }))}
+                  placeholder="e.g., 12345 (find it in My Home page)"
+                  className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-orange-500 transition-colors"
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-2">💡 You can find the Post ID on your post card in My Home</p>
+              </div>
+
+              <div>
+                <Label htmlFor="reason" className="text-sm font-bold text-gray-700 mb-2 block">Reason for Undoing</Label>
+                <select
+                  id="reason"
+                  value={form.reason}
+                  onChange={(e) => setForm(prev => ({ ...prev, reason: e.target.value }))}
+                  className="w-full h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-orange-500 transition-colors px-4 bg-white"
+                >
+                  <option value="">Select a reason (optional)</option>
+                  <option value="no_buyers_found">No Buyers Found</option>
+                  <option value="buyer_not_interested">Buyer Found But Not Interested</option>
+                  <option value="buyer_changed_mind">Buyer Changed Their Mind</option>
+                  <option value="price_too_high">Price Too High for Buyers</option>
+                  <option value="item_condition_issue">Item Condition Concerns</option>
+                  <option value="location_issue">Location Not Convenient for Buyers</option>
+                  <option value="communication_failed">Communication Failed with Buyer</option>
+                  <option value="payment_issue">Payment Issue</option>
+                  <option value="want_to_relist">Want to Relist with New Details</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="description" className="text-sm font-bold text-gray-700 mb-2 block">Additional Notes</Label>
+                <textarea
+                  id="description"
+                  value={form.description}
+                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Any additional details (optional)"
+                  className="w-full min-h-[100px] text-lg rounded-xl border-2 border-gray-200 focus:border-orange-500 transition-colors px-4 py-3 resize-none"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-16 text-lg font-bold bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-2xl shadow-xl shadow-orange-500/30 transition-all hover:shadow-orange-500/50 hover:scale-[1.02]"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-3">
+                    <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Reactivating...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <RefreshCw className="w-6 h-6" />
+                    Reactivate Post
+                  </span>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Previously Undone Posts */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+          <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6">
+            <CardTitle className="flex items-center space-x-3 text-xl">
+              <Clock className="w-6 h-6" />
+              <span>Previously Reactivated Posts</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {loadingPosts ? (
+              <div className="text-center py-8">
+                <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading history...</p>
+              </div>
+            ) : undonePosts.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-500 text-lg">No reactivated posts yet</p>
+                <p className="text-gray-400 text-sm mt-1">Posts you reactivate will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {undonePosts.map((post) => (
+                  <div
+                    key={post.id || post.post_id}
+                    className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 hover:shadow-lg transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Badge className="bg-orange-100 text-orange-700 font-mono mb-2">
+                          ID: {post.post_id || post.id}
+                        </Badge>
+                        <h4 className="font-bold text-gray-900">{post.title}</h4>
+                        <p className="text-sm text-gray-500">{post.reason || 'No reason specified'}</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">Active</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full shadow-2xl shadow-orange-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };

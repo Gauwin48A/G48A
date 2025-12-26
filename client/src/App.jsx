@@ -38,6 +38,7 @@ const MyFeedPage = lazy(() => import('./pages/MyFeedPage.jsx'));
 const PostAdd = lazy(() => import('./pages/PostAdd.jsx'));
 const Wishlist = lazy(() => import('./pages/Wishlist.jsx'));
 const RecentlyViewed = lazy(() => import('./pages/RecentlyViewed.jsx'));
+const SavedSearches = lazy(() => import('./pages/SavedSearches.jsx'));
 
 /**
  * Location Banner - Shows when location is not granted
@@ -170,6 +171,7 @@ function AppContent() {
                 <Route path="/feed/feedpostadd" element={<PostAdd noImageUpload={true} />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/recently-viewed" element={<RecentlyViewed />} />
+                <Route path="/saved-searches" element={<SavedSearches />} />
                 <Route path="*" element={<Navigate to="/all-posts" replace />} />
               </Routes>
             </Suspense>

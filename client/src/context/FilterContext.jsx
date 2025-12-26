@@ -6,6 +6,12 @@ const defaultFilters = {
   search: '',
   category: 'All',
   sortBy: 'recent',
+  location: '',
+  minPrice: '',
+  maxPrice: '',
+  priceRange: '',
+  startDate: '',
+  endDate: '',
 };
 
 export function FilterProvider({ children }) {

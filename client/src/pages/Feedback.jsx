@@ -4,50 +4,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Star, Send, Heart } from "lucide-react";
+import { MessageSquare, Star, Send, Heart, ArrowLeft, ArrowUp, Sparkles, ThumbsUp, Lightbulb, Bug, Palette, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 
 const Feedback = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState({
-    userId: 'USER123456', // This would come from auth context
-    name: 'Rahul Sharma', // This would come from auth context
-    email: 'rahul.sharma@example.com', // This would come from auth context
+    userId: localStorage.getItem('userId') || 'USER123456',
+    name: 'User',
+    email: '',
     feedbackType: 'general',
     rating: 5,
     subject: '',
     message: ''
   });
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
 
+  // Scroll handler
   useEffect(() => {
-    setLoading(true);
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    fetch(`${baseUrl}/api/feedback`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setFeedbacks(data);
-          setError(null);
-        } else {
-          setError(data.error || 'Failed to fetch feedback');
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message || 'Failed to fetch feedback');
-        setLoading(false);
-      });
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fix: Add fallback UI if feedback fetch fails
-  if (error) {
-    return <div className="flex items-center justify-center min-h-screen text-red-500">{error}</div>;
-  }
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -76,22 +66,23 @@ const Feedback = () => {
       return;
     }
 
-    // Submit feedback logic here
-    console.log('Feedback submitted:', feedbackForm);
+    setIsLoading(true);
 
-    toast({
-      title: "Feedback Submitted!",
-      description: "Thank you for your valuable feedback. We appreciate your input!"
-    });
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "✅ Feedback Submitted!",
+        description: "Thank you for your valuable feedback. We appreciate your input!"
+      });
 
-    // Reset form
-    setFeedbackForm(prev => ({
-      ...prev,
-      feedbackType: 'general',
-      rating: 5,
-      subject: '',
-      message: ''
-    }));
+      setFeedbackForm(prev => ({
+        ...prev,
+        feedbackType: 'general',
+        rating: 5,
+        subject: '',
+        message: ''
+      }));
+    }, 1500);
   };
 
   const renderStars = () => {
@@ -100,193 +91,244 @@ const Feedback = () => {
         key={index}
         type="button"
         onClick={() => handleRatingChange(index + 1)}
-        className={`text-2xl transition-colors ${index < feedbackForm.rating ? 'text-yellow-400' : 'text-gray-300'
-          } hover:text-yellow-400`}
+        className={`text-2xl transition-all transform hover:scale-125 ${index < feedbackForm.rating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400`}
       >
-        <Star className="w-6 h-6 fill-current" />
+        <Star className="w-8 h-8 fill-current" />
       </button>
     ));
   };
 
+  const feedbackCategories = [
+    { icon: Bug, name: 'Bug Report', description: 'Report technical issues or errors', value: 'bug', color: 'text-red-500', bg: 'bg-red-50' },
+    { icon: Lightbulb, name: 'Feature Request', description: 'Suggest new features or improvements', value: 'feature', color: 'text-yellow-500', bg: 'bg-yellow-50' },
+    { icon: Palette, name: 'UI/UX Improvement', description: 'Suggest design or usability improvements', value: 'ui', color: 'text-purple-500', bg: 'bg-purple-50' },
+    { icon: Zap, name: 'Performance Issue', description: 'Report slow loading or performance problems', value: 'performance', color: 'text-orange-500', bg: 'bg-orange-50' },
+    { icon: MessageSquare, name: 'General Feedback', description: 'Share general thoughts and experiences', value: 'general', color: 'text-blue-500', bg: 'bg-blue-50' },
+  ];
+
   return (
-    <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col items-center transition-colors duration-300">
-      <div className="max-w-4xl mx-auto w-full px-4 py-8">
-        <div className="mb-8 text-center flex items-center justify-center gap-4">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={() => window.location.href = '/'}>{t('back')}</button>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{t('feedback')}</h1>
+    <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+      {/* Animated background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
+        {/* Premium Header */}
+        <div className="text-center pt-8">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center text-blue-300 hover:text-blue-200 mb-8 group transition-all"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back to Home
+          </button>
+
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 shadow-2xl shadow-blue-500/30 mb-6">
+            <MessageSquare className="w-10 h-10 text-white" />
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
+            Share Your <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Feedback</span>
+          </h1>
+          <p className="text-blue-200 text-lg max-w-md mx-auto">
+            Help us improve with your suggestions and experiences
+          </p>
         </div>
-        <p className="text-gray-600 dark:text-gray-300 text-center mb-8">{t('help_us_improve') || 'Help us improve with your suggestions and experiences'}</p>
 
-        <div className="flex flex-col gap-4 w-full max-w-lg mx-auto">
-          {/* Feedback Form */}
-          <Card className="bg-white dark:bg-gray-800 shadow-lg border-0 rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-gray-800 dark:text-white flex items-center">
-                <MessageSquare className="w-5 h-5 mr-2 text-blue-500" />
-                {t('feedback')}
-              </CardTitle>
-              <CardDescription className="dark:text-gray-400">
-                {t('your_opinion_matters') || 'Your opinion matters to us. Let us know how we can improve!'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmitFeedback} className="space-y-6">
-                {/* User Info (Read-only) */}
-                <div className="bg-blue-50 dark:bg-gray-700 p-4 rounded-lg border border-blue-200 dark:border-gray-600">
-                  <div className="grid grid-cols-1 gap-2 text-sm text-gray-800 dark:text-gray-200">
-                    <div><span className="font-medium">User ID:</span> {feedbackForm.userId}</div>
-                    <div><span className="font-medium">Name:</span> {feedbackForm.name}</div>
-                    <div><span className="font-medium">Email:</span> {feedbackForm.email}</div>
-                  </div>
+        {/* Trust Badges */}
+        <div className="flex flex-wrap justify-center gap-3">
+          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Heart className="w-4 h-4 mr-2" /> Your Voice Matters
+          </Badge>
+          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <ThumbsUp className="w-4 h-4 mr-2" /> We Listen
+          </Badge>
+          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 mr-2" /> Continuous Improvement
+          </Badge>
+        </div>
+
+        {/* Feedback Form */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+          <CardHeader className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white p-8">
+            <CardTitle className="flex items-center space-x-3 text-2xl">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <span>Your Feedback</span>
+            </CardTitle>
+            <CardDescription className="text-blue-100 text-base mt-2">
+              Your opinion matters! Let us know how we can improve
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="p-8">
+            <form onSubmit={handleSubmitFeedback} className="space-y-6">
+              {/* Feedback Type */}
+              <div>
+                <Label className="text-sm font-bold text-gray-700 mb-3 block">Feedback Category</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {feedbackCategories.map((cat) => (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => setFeedbackForm(prev => ({ ...prev, feedbackType: cat.value }))}
+                      className={`p-4 rounded-xl border-2 transition-all text-left ${feedbackForm.feedbackType === cat.value
+                        ? 'border-blue-500 bg-blue-50 shadow-lg'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 ${cat.bg} rounded-lg flex items-center justify-center`}>
+                          <cat.icon className={`w-5 h-5 ${cat.color}`} />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-800">{cat.name}</p>
+                          <p className="text-xs text-gray-500">{cat.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                {/* Feedback Type */}
-                <div>
-                  <Label htmlFor="feedbackType" className="dark:text-gray-200">Feedback Category</Label>
-                  <select
-                    id="feedbackType"
-                    name="feedbackType"
-                    value={feedbackForm.feedbackType}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-blue-200 dark:border-gray-600 rounded-lg focus:border-blue-400 focus:ring-blue-200 mt-1 bg-white dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="general">General Feedback</option>
-                    <option value="feature">Feature Request</option>
-                    <option value="bug">Bug Report</option>
-                    <option value="ui">UI/UX Improvement</option>
-                    <option value="performance">Performance Issue</option>
-                    <option value="suggestion">Suggestion</option>
-                  </select>
-                </div>
-
-                {/* Rating */}
-                <div>
-                  <Label className="dark:text-gray-200">Overall Rating</Label>
-                  <div className="flex items-center space-x-1 mt-2">
+              {/* Rating */}
+              <div>
+                <Label className="text-sm font-bold text-gray-700 mb-2 block">Overall Rating</Label>
+                <div className="flex items-center gap-2 bg-gray-50 p-4 rounded-xl">
+                  <div className="flex items-center space-x-1">
                     {renderStars()}
-                    <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
-                      ({feedbackForm.rating} out of 5 stars)
-                    </span>
                   </div>
+                  <span className="ml-4 text-lg font-semibold text-gray-700">
+                    {feedbackForm.rating} / 5
+                  </span>
                 </div>
+              </div>
 
-                {/* Subject */}
-                <div>
-                  <Label htmlFor="subject" className="dark:text-gray-200">Subject *</Label>
-                  <Input
-                    id="subject"
-                    name="subject"
-                    type="text"
-                    value={feedbackForm.subject}
-                    onChange={handleInputChange}
-                    placeholder="Brief summary of your feedback"
-                    className="border-blue-200 focus:border-blue-400 mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
-                  />
-                </div>
+              {/* Subject */}
+              <div>
+                <Label htmlFor="subject" className="text-sm font-bold text-gray-700 mb-2 block">Subject *</Label>
+                <Input
+                  id="subject"
+                  name="subject"
+                  type="text"
+                  value={feedbackForm.subject}
+                  onChange={handleInputChange}
+                  placeholder="Brief summary of your feedback"
+                  className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                  required
+                />
+              </div>
 
-                {/* Message */}
-                <div>
-                  <Label htmlFor="message" className="dark:text-gray-200">Your Feedback *</Label>
-                  <Textarea
-                    id="message"
-                    name="message"
-                    value={feedbackForm.message}
-                    onChange={handleInputChange}
-                    placeholder="Please share your detailed feedback, suggestions, or report any issues you've encountered..."
-                    rows={6}
-                    className="border-blue-200 focus:border-blue-400 mt-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    required
-                  />
-                </div>
+              {/* Message */}
+              <div>
+                <Label htmlFor="message" className="text-sm font-bold text-gray-700 mb-2 block">Your Feedback *</Label>
+                <Textarea
+                  id="message"
+                  name="message"
+                  value={feedbackForm.message}
+                  onChange={handleInputChange}
+                  placeholder="Please share your detailed feedback, suggestions, or report any issues you've encountered..."
+                  rows={6}
+                  className="text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors resize-none"
+                  required
+                />
+              </div>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  {t('submit')}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-16 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:shadow-blue-500/50 hover:scale-[1.02]"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-3">
+                    <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Submitting...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Send className="w-6 h-6" />
+                    Submit Feedback
+                  </span>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-          {/* Feedback Guidelines & Info */}
-          <div className="space-y-6">
-            {/* Why Feedback Matters */}
-            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-900 text-white shadow-lg border-0 rounded-2xl">
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  <Heart className="w-8 h-8 mr-3" />
-                  <h3 className="text-xl font-semibold">Why Your Feedback Matters</h3>
-                </div>
-                <ul className="space-y-2 text-blue-100">
-                  <li>• Helps us understand your needs better</li>
-                  <li>• Guides our product development priorities</li>
-                  <li>• Improves the experience for all users</li>
-                  <li>• Makes MobileHub more secure and reliable</li>
-                </ul>
-              </CardContent>
-            </Card>
+        {/* Why Feedback Matters */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-blue-500 to-indigo-600">
+          <CardContent className="p-8 text-white">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                <Heart className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-bold">Why Your Feedback Matters</h3>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="bg-white/10 rounded-xl p-4">
+                <p className="font-semibold mb-1">💡 Helps us understand</p>
+                <p className="text-blue-100 text-sm">Your needs and pain points</p>
+              </div>
+              <div className="bg-white/10 rounded-xl p-4">
+                <p className="font-semibold mb-1">🎯 Guides our priorities</p>
+                <p className="text-blue-100 text-sm">What to build next</p>
+              </div>
+              <div className="bg-white/10 rounded-xl p-4">
+                <p className="font-semibold mb-1">🚀 Improves experience</p>
+                <p className="text-blue-100 text-sm">For all users</p>
+              </div>
+              <div className="bg-white/10 rounded-xl p-4">
+                <p className="font-semibold mb-1">🔒 Builds trust</p>
+                <p className="text-blue-100 text-sm">A better, safer platform</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Feedback Categories */}
-            <Card className="bg-white dark:bg-gray-800 shadow-lg border-0 rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-gray-800 dark:text-white">Feedback Categories</CardTitle>
-                <CardDescription className="dark:text-gray-400">Choose the most relevant category for your feedback</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h4 className="font-medium text-gray-800 dark:text-white">🐛 Bug Report</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Report technical issues or errors</p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h4 className="font-medium text-gray-800 dark:text-white">💡 Feature Request</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Suggest new features or improvements</p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h4 className="font-medium text-gray-800 dark:text-white">🎨 UI/UX Improvement</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Suggest design or usability improvements</p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h4 className="font-medium text-gray-800 dark:text-white">⚡ Performance Issue</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Report slow loading or performance problems</p>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h4 className="font-medium text-gray-800 dark:text-white">💭 General Feedback</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Share general thoughts and experiences</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Info */}
-            <Card className="bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-800 shadow-lg border rounded-2xl">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-green-800 dark:text-green-100 mb-3">Direct Contact</h3>
-                <div className="space-y-2 text-sm text-green-700 dark:text-green-200">
-                  <p><span className="font-medium">Email:</span> feedback@mobilemart.com</p>
+        {/* Contact Info */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Send className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-green-800 text-lg mb-2">📧 Direct Contact</h3>
+                <div className="space-y-1 text-green-700">
+                  <p><span className="font-medium">Email:</span> feedback@mobilehub.com</p>
                   <p><span className="font-medium">Response Time:</span> 24-48 hours</p>
                   <p><span className="font-medium">Priority Support:</span> Verified users get faster responses</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Thank You Message */}
-        <Card className="mt-8 bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-800 shadow-lg border rounded-2xl">
-          <CardContent className="p-6 text-center">
-            <Heart className="w-12 h-12 text-purple-600 dark:text-purple-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-purple-800 dark:text-purple-100 mb-2">Thank You for Being Part of Our Community!</h3>
-            <p className="text-purple-700 dark:text-purple-200">
+        {/* Thank You */}
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
+          <CardContent className="p-8 text-center">
+            <Heart className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-purple-800 mb-2">Thank You for Being Part of Our Community!</h3>
+            <p className="text-purple-700 max-w-md mx-auto">
               Your feedback helps us build a better, safer, and more user-friendly platform for everyone.
-              Together, we're creating India's most trusted mobile marketplace.
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full shadow-2xl shadow-blue-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };
