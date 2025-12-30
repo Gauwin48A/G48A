@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Shield, Upload, Eye, EyeOff, User, Mail, Phone, FileText, Calendar, MapPin, CreditCard } from "lucide-react";
 import { registerUser } from "@/lib/auth";
 import AadhaarOtpVerify from '@/components/AadhaarOtpVerify';
@@ -14,9 +14,13 @@ import { useTranslation } from 'react-i18next';
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [step, setStep] = useState(1);
+  // Get step from URL param (e.g., /signup?step=2) or default to 1
+  const urlParams = new URLSearchParams(location.search);
+  const initialStep = parseInt(urlParams.get('step')) || 1;
+  const [step, setStep] = useState(initialStep);
   const [formData, setFormData] = useState({
     fullName: '',
     phoneNumber: '',

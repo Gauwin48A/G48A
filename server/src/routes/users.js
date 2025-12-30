@@ -1,13 +1,9 @@
-// GET /api/users/profile
-router.get('/profile', userController.getProfile);
 const express = require('express');
 const router = express.Router();
+const pool = require('../config/db');
 
-// TODO: Add profile, badges, secret code, referral, rank endpoints
-
+// GET /api/users/:id
 router.get('/:id', async (req, res) => {
-  // Get user profile from DB
-  const pool = require('../../index').pool;
   try {
     const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [req.params.id]);
     if (!result.rows || result.rows.length === 0) {

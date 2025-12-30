@@ -32,7 +32,7 @@ const SavedSearches = () => {
     const fetchSearches = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             const response = await api.get('/saved-searches', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -51,7 +51,7 @@ const SavedSearches = () => {
         }
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             await api.post('/saved-searches', newSearch, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -68,7 +68,7 @@ const SavedSearches = () => {
         if (!window.confirm('Delete this saved search?')) return;
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             await api.delete(`/saved-searches/${searchId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -81,7 +81,7 @@ const SavedSearches = () => {
 
     const toggleNotifications = async (searchId) => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             await api.put(`/saved-searches/${searchId}/toggle-notifications`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });

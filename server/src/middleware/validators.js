@@ -40,19 +40,22 @@ const authValidation = {
 const postValidation = {
     create: [
         body('title')
+            .optional()
             .trim()
-            .isLength({ min: 5, max: 100 }).withMessage('Title must be 5-100 characters')
+            .isLength({ max: 200 }).withMessage('Title must be under 200 characters')
             .escape(), // ESCAPES HTML CHARACTERS (Prevents XSS)
 
         body('price')
-            .isFloat({ min: 1 }).withMessage('Price must be a positive number'),
+            .optional()
+            .isFloat({ min: 0 }).withMessage('Price cannot be negative'),
 
         body('description')
             .trim()
-            .isLength({ min: 10 }).withMessage('Description must be detailed (min 10 chars)')
+            .isLength({ min: 3 }).withMessage('Description must be at least 3 characters')
             .escape(), // ESCAPES HTML
 
         body('category_id')
+            .optional()
             .isInt().withMessage('Invalid Category ID'),
     ]
 };

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "@/lib/auth";
 import { captureLocation } from "@/services/locationService";
@@ -306,8 +306,6 @@ const Login = () => {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
                     </div>
-                    {/* Password strength indicator */}
-                    <PasswordStrengthIndicator password={emailLogin.password} />
                   </div>
 
                   {/* Signup link */}
@@ -320,6 +318,16 @@ const Login = () => {
                       {t('sign_up_here')}
                     </span>
                   </p>
+
+                  {/* Forgot Password link */}
+                  <div className="text-right">
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
 
                   <Button
                     type="submit"

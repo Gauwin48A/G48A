@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock, FiFileText } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useLocation } from '@/context/LocationContext';
 import { useTranslation } from 'react-i18next';
@@ -17,8 +17,8 @@ const navLinks = [
 ];
 
 const moreMenuLinks = [
+  { key: 'verification', path: '/verification' },
   { key: 'categories', path: '/categories' },
-  { key: 'feed', path: '/feed' },
   { key: 'my_feed', path: '/my-feed' },
   { key: 'feedback', path: '/feedback' },
   { key: 'complaints', path: '/complaints' },
@@ -30,6 +30,7 @@ const moreMenuLinks = [
 
 const bottomNavLinks = [
   { key: 'home', path: '/all-posts', icon: <FiHome /> },
+  { key: 'feed', path: '/feed', icon: <FiFileText /> },
   { key: 'rewards', path: '/rewards', icon: <FiUserCheck /> },
   { key: 'profile', path: '/profile', icon: <FiUser /> },
   { key: 'more', path: '#', icon: <FiMenu /> },

@@ -25,7 +25,7 @@ const AddPost = () => {
   const [brands, setBrands] = useState([]);
 
   useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     fetch(`${API_BASE}/api/categories`).then(res => res.json()).then(data => setCategories(Array.isArray(data) ? data : [])).catch(() => setCategories([]));
   }, []);
 
@@ -69,7 +69,7 @@ const AddPost = () => {
   const [tiers, setTiers] = useState([]);
   const [currentTier, setCurrentTier] = useState(null);
   useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     fetch(`${API_BASE}/api/tiers`)
       .then(async (res) => {
         if (!res.ok) {

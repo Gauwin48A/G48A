@@ -35,6 +35,8 @@ const wishlistRoutes = require("./routes/wishlist.js");
 const recentlyViewedRoutes = require("./routes/recentlyViewed.js");
 const priceAlertsRoutes = require("./routes/priceAlerts.js");
 const priceHistoryRoutes = require("./routes/priceHistory.js");
+const tiersRoutes = require("./routes/tiers.js");
+const brandsRoutes = require("./routes/brands.js");
 
 const app = express();
 
@@ -78,6 +80,8 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/recently-viewed', recentlyViewedRoutes);
 app.use('/api/price-alerts', priceAlertsRoutes);
 app.use('/api/price-history', priceHistoryRoutes);
+app.use('/api/tiers', tiersRoutes);
+app.use('/api/brands', brandsRoutes);
 
 // Health check with DB validation
 app.get('/api/health', async (req, res) => {

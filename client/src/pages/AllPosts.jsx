@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -23,6 +23,7 @@ const AllPosts = () => {
   const [hasMore, setHasMore] = useState(true);
   const postsPerPage = 6;
   const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
 
   // Read category from URL params and update filter
   useEffect(() => {
@@ -58,19 +59,31 @@ const AllPosts = () => {
   const [boostLowViews, setBoostLowViews] = useState(true);
   const [rotationKey, setRotationKey] = useState(0);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [viewedPosts, setViewedPosts] = useState(new Set()); // Track which posts have been viewed
+  const postRefs = useRef({}); // Refs for each post card
 
-  // Category ID mapping - MUST match database (00_master_setup.sql lines 233-243)
-  const categoryMap = {
-    Electronics: 1,
-    Mobiles: 2,
-    Fashion: 3,
-    Furniture: 4,
-    Vehicles: 5,
-    Books: 6,
-    Sports: 7,
-    'Home Appliances': 8,
-    Beauty: 9,
-    Kids: 10,
+  // Fetch categories from API on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const res = await fetch(`${baseUrl}/api/categories`);
+        const data = await res.json();
+        setCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Emoji mapping for categories
+  const categoryEmojis = {
+    'Electronics': '💻', 'Mobiles': '📱', 'Fashion': '👗', 'Furniture': '🛋️',
+    'Vehicles': '🚗', 'Books': '📚', 'Sports': '⚽', 'Home Appliances': '🏠',
+    'Beauty': '💄', 'Kids': '🧸', 'Grocery': '🛒', 'Toys': '🎮',
+    'Jewelry': '💎', 'Tools': '🔧', 'Garden': '🌿', 'Pet Supplies': '🐾'
   };
 
   // Helper to build filter params
@@ -152,7 +165,7 @@ const AllPosts = () => {
         const views = {};
         loadedPosts.forEach(post => {
           likes[post.post_id || post.id] = post.likes || 0;
-          views[post.post_id || post.id] = post.views || 0;
+          views[post.post_id || post.id] = post.views_count || post.views || 0;
         });
         setLikeCounts(prev => ({ ...prev, ...likes }));
         setViewCounts(prev => ({ ...prev, ...views }));
@@ -212,8 +225,8 @@ const AllPosts = () => {
     if (boostLowViews) {
       // Sort by views ascending (low views first)
       sortedPosts.sort((a, b) => {
-        const viewsA = viewCounts[a.post_id || a.id] ?? a.views ?? 0;
-        const viewsB = viewCounts[b.post_id || b.id] ?? b.views ?? 0;
+        const viewsA = viewCounts[a.post_id || a.id] ?? a.views_count ?? a.views ?? 0;
+        const viewsB = viewCounts[b.post_id || b.id] ?? b.views_count ?? b.views ?? 0;
         return viewsA - viewsB;
       });
     }
@@ -221,6 +234,39 @@ const AllPosts = () => {
 
     return sortedPosts;
   }, [posts, viewCounts, boostLowViews, rotationKey]);
+
+  // IntersectionObserver to track views when posts scroll into viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const postId = entry.target.dataset.postId;
+            if (postId && !viewedPosts.has(postId)) {
+              // Mark as viewed locally
+              setViewedPosts(prev => new Set([...prev, postId]));
+              // Increment view count in UI
+              setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+              // Send view to backend (fire and forget)
+              const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+              fetch(`${baseUrl}/api/posts/${postId}/view`, {
+                method: 'POST',
+                credentials: 'include'
+              }).catch(() => { });
+            }
+          }
+        });
+      },
+      { threshold: 0.5 } // Post is considered "viewed" when 50% visible
+    );
+
+    // Observe all post cards
+    Object.values(postRefs.current).forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [posts, viewedPosts]);
 
 
   // Like handler
@@ -307,27 +353,16 @@ const AllPosts = () => {
             <span className={`font-semibold text-xs md:text-sm ${filters.category === 'All' ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{t('all')}</span>
           </button>
 
-          {/* Dynamic category buttons - all 10 categories */}
-          {[
-            { name: 'Electronics', emoji: '💻', color: 'blue' },
-            { name: 'Mobiles', emoji: '📱', color: 'teal' },
-            { name: 'Fashion', emoji: '👗', color: 'pink' },
-            { name: 'Furniture', emoji: '🛋️', color: 'amber' },
-            { name: 'Vehicles', emoji: '🚗', color: 'red' },
-            { name: 'Books', emoji: '📚', color: 'indigo' },
-            { name: 'Sports', emoji: '⚽', color: 'green' },
-            { name: 'Home Appliances', emoji: '🏠', color: 'orange' },
-            { name: 'Beauty', emoji: '💄', color: 'purple' },
-            { name: 'Kids', emoji: '🧸', color: 'yellow' },
-          ].map(cat => (
+          {/* Dynamic category buttons - fetched from API */}
+          {categories.map(cat => (
             <button
-              key={cat.name}
+              key={cat.category_id || cat.name}
               onClick={() => handleCategoryClick(cat.name)}
-              className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[70px] whitespace-nowrap ${filters.category === cat.name ? `bg-${cat.color}-600 text-white shadow-lg ring-2 ring-${cat.color}-400` : ''
+              className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[70px] whitespace-nowrap ${filters.category === cat.name ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
                 }`}
             >
-              <span className="text-xl md:text-2xl mb-1">{cat.emoji}</span>
-              <span className={`font-semibold text-xs md:text-sm ${filters.category === cat.name ? 'text-white' : `text-${cat.color}-700 dark:text-${cat.color}-300`}`}>
+              <span className="text-xl md:text-2xl mb-1">{categoryEmojis[cat.name] || '📦'}</span>
+              <span className={`font-semibold text-xs md:text-sm ${filters.category === cat.name ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                 {t(cat.name.toLowerCase().replace(' ', '_')) || cat.name}
               </span>
             </button>
@@ -416,7 +451,13 @@ const AllPosts = () => {
             <div className="col-span-full text-center text-blue-400 dark:text-blue-300">{t('no_posts_available')}</div>
           ) : (
             displayPosts.map((post, idx) => (
-              <Card key={post.id || post.post_id} post={post} className="rounded-2xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow">
+              <Card
+                key={post.id || post.post_id}
+                ref={el => postRefs.current[post.post_id || post.id] = el}
+                data-post-id={post.post_id || post.id}
+                post={post}
+                className="rounded-2xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow"
+              >
                 <div className="flex items-center gap-3 px-4 pt-4 pb-2">
                   <Avatar className="w-10 h-10">
                     <AvatarFallback className="dark:bg-gray-700 dark:text-white">{post.user?.name?.[0] || 'U'}</AvatarFallback>

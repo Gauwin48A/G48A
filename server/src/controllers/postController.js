@@ -66,7 +66,8 @@ exports.getAllPosts = async (req, res) => {
     let query = `
       SELECT 
         p.*,
-        COALESCE(p.views, 0) as views,
+        COALESCE(p.views_count, p.views, 0) as views,
+        COALESCE(p.views_count, 0) as views_count,
         COALESCE(p.shares, 0) as shares,
         COALESCE(p.likes, 0) as likes,
         u.username,
@@ -173,28 +174,55 @@ exports.getAllPosts = async (req, res) => {
 };
 
 
-// Post creation now supports multiple image uploads
+// Post creation - supports regular posts with images OR feed posts (text-only)
 exports.createPost = async (req, res) => {
   try {
     // SECURITY FIX: Get user_id from authenticated token, NOT from request body
-    // This prevents IDOR attacks where attacker could post as another user
-    const user_id = req.user?.id || req.body.user_id; // Fallback for backwards compatibility
-    const { category, title, description, price } = req.body;
+    const user_id = req.user?.id || req.user?.userId || req.body.user_id;
+    const { category_id, title, description, price, type, location } = req.body;
     const images = req.files?.images || [];
-    // Use stored procedure for post creation with images
-    const imageUrls = images.map(img => img.path);
-    const result = await pool.query(
-      'SELECT add_post_with_images($1, $2, $3, $4, $5, $6) AS post_id',
-      [user_id, category, title, description, price, imageUrls]
+
+    if (!user_id) {
+      return res.status(401).json({ error: 'User ID required' });
+    }
+
+    // Insert the post directly (no stored procedure needed)
+    const insertResult = await pool.query(
+      `INSERT INTO posts (user_id, category_id, title, description, price, location, post_type, status, created_at, views_count, likes, shares)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', NOW(), 0, 0, 0)
+       RETURNING post_id`,
+      [
+        user_id,
+        category_id || 1, // Default category
+        title || 'Update',
+        description || '',
+        price || 0,
+        location || null,
+        type || 'sale' // 'feed' for feed posts, 'sale' for regular
+      ]
     );
-    const post_id = result.rows[0]?.post_id;
+
+    const post_id = insertResult.rows[0]?.post_id;
     if (!post_id) {
       logError('Post creation failed', { body: req.body });
       return res.status(400).json({ error: 'Post creation failed' });
     }
-    // Fetch the created post and images for response
+
+    // Insert images if any
+    if (images.length > 0) {
+      const imageValues = images.map((img, idx) =>
+        `(${post_id}, '${img.path || img.filename}', ${idx + 1})`
+      ).join(',');
+      await pool.query(
+        `INSERT INTO post_images (post_id, image_url, display_order) VALUES ${imageValues}`
+      );
+    }
+
+    // Fetch the created post for response
     const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [post_id]);
     const imagesRes = await pool.query('SELECT * FROM post_images WHERE post_id = $1', [post_id]);
+
+    logInfo('Post created successfully', { post_id, user_id, type: type || 'sale' });
     res.status(201).json({ post: postRes.rows[0], images: imagesRes.rows });
   } catch (err) {
     logError('Error creating post:', err);

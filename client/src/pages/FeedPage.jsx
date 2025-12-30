@@ -1,337 +1,336 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { FaHeart, FaRegHeart, FaShare, FaEye } from 'react-icons/fa';
-// Assuming FeedPostCard is used for text-based feed posts, 
-// and the post list card styling is now integrated below for consistency.
-import { useFilter } from '@/context/FilterContext';
-
-// Assuming you have an endpoint for general feed and user-specific feed.
-// We will call the API directly using fetch/axios as done in AllPosts.
-const POSTS_PER_PAGE = 6;
+import { FaHeart, FaRegHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaUser } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const FeedPage = () => {
-    const { filters } = useFilter();
-    const [tab, setTab] = useState('feed'); // 'feed' (all) or 'myFeed' (user's)
-    const [posts, setPosts] = useState([]);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    
-    // State needed for actions and toasts (from AllPosts)
-    const [expandedPost, setExpandedPost] = useState(null);
-    const [likedPosts, setLikedPosts] = useState({});
-    const [likeCounts, setLikeCounts] = useState({});
-    const [viewCounts, setViewCounts] = useState({});
-    const [shareToast, setShareToast] = useState("");
-    
-    const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [posts, setPosts] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const postsPerPage = 10;
+  const navigate = useNavigate();
 
-    // --- Utility Functions from AllPosts ---
+  const [expandedPosts, setExpandedPosts] = useState({});
+  const [likedPosts, setLikedPosts] = useState({});
+  const [likeCounts, setLikeCounts] = useState({});
+  const [viewCounts, setViewCounts] = useState({});
+  const [shareToast, setShareToast] = useState("");
 
-    // Note: Feed Posts are typically text-only and don't usually have these categories/filters.
-    // However, if the feed API *does* support them, you can keep this mapping.
-    const categoryMap = {
-        Electronics: 1,
-        Fashion: 2,
-        Home: 3,
-        Mobiles: 4,
-    };
+  // Fetch feed posts
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    const fetchPosts = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const url = `${baseUrl}/api/posts?page=${currentPage}&limit=${postsPerPage}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch feed');
+        const data = await res.json();
+        let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
 
-    const buildFeedParams = () => {
-        const params = new URLSearchParams();
-        // Search (title/description)
-        if (filters.search) params.append('search', filters.search);
-        // Category (map name to ID) - Assuming the Feed API supports this filter
-        if (filters.category && filters.category !== 'All') {
-            const catId = categoryMap[filters.category] || filters.category;
-            params.append('category', catId);
-        }
-        
-        // Add specific feed/myFeed parameters
-        if (tab === 'myFeed') {
-            const userId = localStorage.getItem('userId');
-            if (userId) {
-                params.append('userId', userId);
-            }
-        }
-        
-        // Pagination
-        params.append('page', currentPage);
-        params.append('limit', POSTS_PER_PAGE);
-        return params;
-    };
-
-    // --- Data Fetching Logic (Modified from AllPosts) ---
-
-    // Fetch posts with filters
-    const fetchFeedPosts = useCallback(async (pageToFetch = 1) => {
-        if (pageToFetch === 1) {
-            setLoading(true);
-        }
-        setError(null);
-
-        try {
-            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-            // Use 'all-posts' or 'feed' endpoint based on your API structure. 
-            // Assuming '/api/feed' for the purpose of the provided API function name.
-            const endpoint = `/api/feed`; 
-            
-            // Re-build params for the current page
-            const params = buildFeedParams();
-            params.set('page', pageToFetch);
-            
-            const url = `${baseUrl}${endpoint}?${params.toString()}`;
-            
-            const res = await fetch(url);
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || `Failed to fetch ${tab} feed`);
-            }
-            
-            const data = await res.json();
-            // Assuming the feed API returns an array named 'posts' or 'data'
-            let loadedPosts = Array.isArray(data.posts) ? data.posts : (Array.isArray(data.data) ? data.data : []);
-
-            if (pageToFetch === 1) {
-                setPosts(loadedPosts);
-            } else {
-                setPosts(prev => [...prev, ...loadedPosts]);
-            }
-            
-            setError(null);
-            
-            // Set like/view counts from backend if available
-            const likes = {};
-            const views = {};
-            loadedPosts.forEach(post => {
-                const id = post.post_id || post.id;
-                likes[id] = post.likes || 0;
-                views[id] = post.views || 0;
-            });
-            
-            // Only merge counts, don't overwrite
-            setLikeCounts(prev => ({ ...prev, ...likes }));
-            setViewCounts(prev => ({ ...prev, ...views }));
-            
-            setHasMore(loadedPosts.length === POSTS_PER_PAGE);
-            
-        } catch (err) {
-            setError(err.message || 'Failed to fetch feed posts');
-            if (pageToFetch === 1) {
-                setPosts([]);
-            }
-            setHasMore(false);
-        } finally {
-            setLoading(false);
-        }
-    }, [tab, filters.search, filters.category]);
-
-
-    // Effect 1: Trigger fetch on tab/filter change (Resets page to 1)
-    useEffect(() => {
-        setCurrentPage(1);
-        fetchFeedPosts(1);
-    }, [tab, filters.search, filters.category, filters.sortBy]); // Note: Removed priceRange/dates as they rarely apply to a text feed
-
-    // Effect 2: Trigger fetch on page change (Loads more posts)
-    useEffect(() => {
-        if (currentPage > 1) {
-            fetchFeedPosts(currentPage);
-        }
-    }, [currentPage, fetchFeedPosts]);
-
-
-    // --- Infinite Scroll Logic (From AllPosts) ---
-
-    const loadMorePosts = useCallback(() => {
-        // Prevent loading if already loading, no more posts, or on page 1
-        if (loading || !hasMore || currentPage === 1) return; 
-        setCurrentPage(prev => prev + 1);
-    }, [loading, hasMore, currentPage]);
-
-
-    useEffect(() => {
-        const handleScroll = () => {
-            // Check if user is near the bottom (e.g., 1000px margin)
-            if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-                loadMorePosts();
-            }
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [loadMorePosts]);
-
-
-    // --- Action Handlers (From AllPosts) ---
-
-    // Like handler
-    const handleLike = async (postId) => {
-        const alreadyLiked = likedPosts[postId];
-        setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
-        setLikeCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + (alreadyLiked ? -1 : 1) }));
-        try {
-            // Adjust API call for the feed endpoint if different
-            await fetch(`/api/feed/posts/${postId}/like`, { method: 'POST', credentials: 'include' });
-        } catch {}
-    };
-
-    // Share handler
-    const handleShare = async (postId) => {
-        const url = `${window.location.origin}/feed/post/${postId}`; // Use the correct path for feed post detail
-        try {
-            await navigator.clipboard.writeText(url);
-            setShareToast('Link copied!');
-            setTimeout(() => setShareToast(''), 2000);
-            await fetch(`/api/feed/posts/${postId}/share`, { method: 'POST', credentials: 'include' });
-        } catch {
-            setShareToast('Failed to copy link');
-            setTimeout(() => setShareToast(''), 2000);
-        }
-    };
-
-    // View Details (navigate to a detailed feed post page)
-    const handleViewDetails = (postId) => {
-        const postObj = posts.find(p => p.id === postId || p.post_id === postId);
-        if (postObj) {
-             // Assuming your router has a route like /feed/:id or /post/:id that can handle a feed post
-            navigate(`/post/${postId}`, { state: { post: postObj } }); 
+        if (currentPage === 1) {
+          setPosts(loadedPosts);
         } else {
-            navigate(`/post/${postId}`);
+          setPosts(prev => [...prev, ...loadedPosts]);
         }
+
+        const likes = {};
+        const views = {};
+        loadedPosts.forEach(post => {
+          const id = post.post_id || post.id;
+          likes[id] = post.likes || 0;
+          views[id] = post.views_count || post.views || 0;
+        });
+        setLikeCounts(prev => ({ ...prev, ...likes }));
+        setViewCounts(prev => ({ ...prev, ...views }));
+        setHasMore(loadedPosts.length === postsPerPage);
+      } catch (err) {
+        setError(err.message);
+        setPosts([]);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    // Simple View handler (for completeness, though usually tracked server-side)
-    const handleView = (postId) => {
-        setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
-        // API call to increment view count if necessary
-        // try { await fetch(`/api/feed/posts/${postId}/view`, { method: 'POST', credentials: 'include' }); } catch {}
+    fetchPosts();
+  }, [currentPage]);
+
+  // Infinite scroll
+  const loadMorePosts = useCallback(() => {
+    if (loading || !hasMore) return;
+    setCurrentPage(prev => prev + 1);
+  }, [loading, hasMore]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
+        loadMorePosts();
+      }
     };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMorePosts]);
 
+  // Toggle expand for long descriptions
+  const toggleExpand = (postId) => {
+    setExpandedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
+  };
 
-    // --- Render Logic (Based on AllPosts Card Style) ---
+  // Like handler
+  const handleLike = async (postId) => {
+    const alreadyLiked = likedPosts[postId];
+    setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
+    setLikeCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + (alreadyLiked ? -1 : 1) }));
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      await fetch(`${baseUrl}/api/posts/${postId}/like`, { method: 'POST', credentials: 'include' });
+    } catch { }
+  };
 
-    // Reusable Post Card component logic integrated for feed items
-    const FeedItemCard = ({ post }) => {
-        const postId = post.id || post.post_id;
-        const isLiked = likedPosts[postId];
-        const likeCount = likeCounts[postId] || post.likes || 0;
-        const viewCount = viewCounts[postId] || post.views || 0;
-        
-        return (
-            <Card className="rounded-2xl shadow bg-white border border-blue-100 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow">
-                <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-                    <Avatar className="w-10 h-10">
-                        <AvatarFallback>{post.user?.name?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-blue-900 text-base md:text-lg truncate">{post.user?.name || 'Unknown'}</div>
-                        <div className="text-gray-500 text-xs">{post.location || 'Global'} - {post.createdAt || 'N/A'}</div>
-                    </div>
-                    {/* Add an image if available - feed posts might have one */}
-                </div>
-                
-                {/* Text Content */}
-                <div className="px-4 py-3 text-gray-800 text-sm md:text-base">
-                    {expandedPost === postId || !post.description || post.description.length < 300
-                        ? post.description || <span className="italic text-gray-400">No content</span>
-                        : <>
-                            {post.description.slice(0, 300)}...{' '}
-                            <button className="text-blue-600 font-semibold hover:underline" onClick={() => setExpandedPost(postId)}>View More</button>
-                          </>
-                    }
-                </div>
-                
-                <div className="flex items-center justify-between px-4 pb-4 pt-2 border-t border-gray-100">
-                    <div className="flex gap-5">
-                        <button className={`flex items-center gap-1 font-semibold focus:outline-none`} onClick={() => handleLike(postId)}>
-                            {isLiked ? <FaHeart className="w-4 h-4 text-red-500" /> : <FaRegHeart className="w-4 h-4 text-black" />} Like {likeCount}
-                        </button>
-                        <button className="flex items-center gap-1 text-black font-semibold focus:outline-none" onClick={() => handleShare(postId)}><FaShare className="w-4 h-4" /> Share</button>
-                        <span className="flex items-center gap-1 text-gray-500 font-semibold"><FaEye className="w-4 h-4" />{viewCount}</span>
-                    </div>
-                    <Button className="bg-blue-600 text-white px-4 py-1 text-xs md:text-sm font-medium rounded" onClick={() => handleViewDetails(postId)}>View Post</Button>
-                </div>
-            </Card>
-        );
-    };
+  // Share handler
+  const handleShare = async (postId) => {
+    const url = `${window.location.origin}/feed/${postId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareToast('Link copied!');
+      setTimeout(() => setShareToast(''), 2000);
+    } catch {
+      setShareToast('Failed to copy');
+      setTimeout(() => setShareToast(''), 2000);
+    }
+  };
 
+  // View full post
+  const handleViewDetails = (postId) => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const postObj = posts.find(p => p.id === postId || p.post_id === postId);
+    fetch(`${baseUrl}/api/posts/${postId}/view`, { method: 'POST', credentials: 'include' }).catch(() => { });
+    navigate(`/feed/${postId}`, { state: { post: postObj } });
+  };
 
-    return (
-        <div className="bg-white min-h-screen">
-            {/* Banner section */}
-            <div className="w-full flex justify-center">
-                <div className="flex flex-col md:flex-row items-center justify-between px-3 md:px-8 py-6 md:py-8 bg-blue-100 rounded-xl mb-8 shadow-lg w-full max-w-5xl relative overflow-hidden border border-blue-200 mt-0 md:mt-6">
-                    <div className="flex flex-col gap-2 z-10 w-full md:w-auto">
-                        <span className="text-xl md:text-3xl font-bold text-blue-900 mb-1">Latest News & Updates</span>
-                        <span className="text-sm md:text-base text-blue-800 font-medium mb-2">Text-only posts from all users</span>
-                        <Button 
-                            className="bg-blue-600 text-white font-semibold px-5 md:px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition w-fit text-sm md:text-base" 
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); navigate('/feed/feedpostadd', { replace: true }); }}
-                        >
-                            + Add New Post
-                        </Button>
-                    </div>
-                    <div className="mt-4 md:mt-0 md:ml-8 z-10">
-                        <div className="w-24 h-16 md:w-32 md:h-24 bg-blue-200 rounded-lg flex items-center justify-center">
-                            {/* Placeholder/Icon */}
-                            <svg width="64" height="48" fill="none" viewBox="0 0 64 48"><rect width="64" height="48" rx="8" fill="#2563eb" /></svg>
-                        </div>
-                    </div>
-                    <div className="absolute right-0 bottom-0 opacity-10 w-32 h-24 md:w-40 md:h-32 bg-blue-300 rounded-bl-2xl" />
-                </div>
+  // Format time ago
+  const timeAgo = (dateString) => {
+    if (!dateString) return '';
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const mins = Math.floor(diffMs / 60000);
+    const hrs = Math.floor(diffMs / 3600000);
+    const days = Math.floor(diffMs / 86400000);
+
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hrs < 24) return `${hrs}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  return (
+    <div className="bg-gradient-to-b from-slate-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
+      {/* Header */}
+      <div className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 dark:from-indigo-800 dark:via-purple-800 dark:to-blue-800">
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                <FaNewspaper className="text-3xl text-white/90" />
+                <h1 className="text-2xl md:text-3xl font-bold text-white">
+                  {t('news_updates') || 'News & Updates'}
+                </h1>
+              </div>
+              <p className="text-white/70 text-sm">
+                {t('share_knowledge') || 'Share knowledge, news, and updates with the community'}
+              </p>
             </div>
 
-            {/* --- Tab Selector and Header --- */}
-            <div className="w-full flex justify-center mb-6">
-        <div className="flex gap-2 bg-gray-100 rounded-full p-2 shadow-md">
-          <Button className={`px-6 py-2 rounded-full font-bold text-base ${tab === 'feed' ? 'bg-blue-600 text-white shadow' : 'bg-white text-blue-600'}`} type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setTab('feed'); navigate('/feed', { replace: true }); }}>
-            General Feed
-          </Button>
-          <Button className={`px-6 py-2 rounded-full font-bold text-base ${tab === 'myFeed' ? 'bg-blue-600 text-white shadow' : 'bg-white text-blue-600'}`} type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setTab('myFeed'); navigate('/feed/myfeed', { replace: true }); }}>
-            My Feed
-          </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => navigate('/my-feed')}
+                variant="outline"
+                className="bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl flex items-center gap-2"
+              >
+                <FaUser /> {t('my_posts') || 'My Posts'}
+              </Button>
+              <Button
+                onClick={() => navigate('/feed/feedpostadd')}
+                className="bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
+              >
+                <FaPlus /> {t('share_update') || 'Share Update'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-            {/* --- All Posts Feed (Modified to use FeedItemCard) --- */}
-            <div className="w-full flex flex-col items-center mb-10">
-                <h2 className="text-xl md:text-2xl font-bold text-blue-800 mb-4 w-full max-w-5xl px-3 md:px-0">{tab === 'feed' ? 'All Posts Feed' : 'My Personal Feed'}</h2>
-                
-                <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto px-2 md:px-0">
-                    {loading && currentPage === 1 ? (
-                        <div className="text-center text-blue-400 p-8">Loading feed...</div>
-                    ) : error ? (
-                        <div className="text-center text-red-400 p-8">{error}</div>
-                    ) : posts.length === 0 ? (
-                        <div className="col-span-full text-center text-gray-500 p-8 border-2 border-dashed border-gray-200 rounded-xl">
-                            No posts found in this feed. Try adjusting your filters.
-                        </div>
-                    ) : (
-                        posts.map((post, idx) => (
-                            <FeedItemCard key={post.post_id || post.id || idx} post={post} />
-                        ))
-                    )}
-                </div>
+      {/* Content */}
+      <div className="max-w-3xl mx-auto px-4 py-6">
 
-                {/* Loading indicator for infinite scroll */}
-                {loading && currentPage > 1 && (
-                    <div className="text-center text-blue-400 mt-4">Loading more posts...</div>
-                )}
-
-                {/* End of results message */}
-                {!hasMore && posts.length > 0 && (
-                    <div className="text-center text-gray-500 mt-8 py-4 border-t border-gray-200 w-full max-w-5xl">You've reached the end of the {tab} feed.</div>
-                )}
+        {/* Quick Post */}
+        <Card
+          className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border cursor-pointer hover:shadow-md transition"
+          onClick={() => navigate('/feed/feedpostadd')}
+        >
+          <div className="flex items-center gap-4">
+            <Avatar className="w-11 h-11 bg-indigo-100 dark:bg-indigo-900">
+              <AvatarFallback className="text-indigo-600 dark:text-indigo-300 font-bold">
+                {localStorage.getItem('username')?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-5 py-3 text-gray-400">
+              {t('share_something') || "Share something with the community..."}
             </div>
+          </div>
+        </Card>
 
-            {shareToast && <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[9999]">{shareToast}</div>}
+        {/* Posts */}
+        <div className="space-y-4">
+          {loading && currentPage === 1 ? (
+            <div className="text-center py-12">
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-gray-500">{t('loading') || 'Loading...'}</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-red-500">{error}</div>
+          ) : posts.length === 0 ? (
+            <Card className="p-8 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed">
+              <FaNewspaper className="text-5xl text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">{t('no_posts') || 'No posts yet. Be the first to share!'}</p>
+              <Button onClick={() => navigate('/feed/feedpostadd')} className="bg-indigo-600 text-white">
+                {t('create_post') || 'Create Post'}
+              </Button>
+            </Card>
+          ) : (
+            posts.map((post) => {
+              const postId = post.post_id || post.id;
+              const isExpanded = expandedPosts[postId];
+              const description = post.description || '';
+              const isLong = description.length > 250;
+
+              return (
+                <Card
+                  key={postId}
+                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border overflow-hidden hover:shadow-md transition"
+                >
+                  {/* Author */}
+                  <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+                    <Avatar className="w-11 h-11 bg-gradient-to-br from-indigo-400 to-purple-500">
+                      <AvatarFallback className="text-white font-bold">
+                        {post.user?.name?.[0] || post.username?.[0] || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {post.user?.name || post.username || 'Anonymous'}
+                      </span>
+                      <div className="text-gray-400 text-xs flex items-center gap-2">
+                        <span>{post.location || 'Global'}</span>
+                        <span>•</span>
+                        <span>{timeAgo(post.created_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="px-5 pb-4">
+                    {post.title && (
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        {post.title}
+                      </h3>
+                    )}
+
+                    <div className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                      {isLong && !isExpanded ? (
+                        <>
+                          {description.slice(0, 250)}...
+                          <button
+                            onClick={() => toggleExpand(postId)}
+                            className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline ml-1"
+                          >
+                            {t('view_more') || 'View more'}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {description || <span className="italic text-gray-400">No content</span>}
+                          {isLong && isExpanded && (
+                            <button
+                              onClick={() => toggleExpand(postId)}
+                              className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline ml-1 block mt-2"
+                            >
+                              {t('view_less') || 'View less'}
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between px-5 py-3 border-t bg-gray-50 dark:bg-gray-800/50">
+                    <div className="flex gap-5">
+                      <button
+                        className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition font-medium text-sm"
+                        onClick={() => handleLike(postId)}
+                      >
+                        {likedPosts[postId] ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
+                        <span>{likeCounts[postId] || 0}</span>
+                      </button>
+
+                      <button
+                        className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition font-medium text-sm"
+                        onClick={() => handleShare(postId)}
+                      >
+                        <FaShare />
+                        <span>{t('share') || 'Share'}</span>
+                      </button>
+
+                      <span className="flex items-center gap-2 text-gray-400 text-sm">
+                        <FaEye />
+                        <span>{viewCounts[postId] || 0}</span>
+                      </span>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      className="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 font-medium text-sm"
+                      onClick={() => handleViewDetails(postId)}
+                    >
+                      {t('view_details') || 'View Details'}
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })
+          )}
+
+          {loading && currentPage > 1 && (
+            <div className="text-center py-4">
+              <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            </div>
+          )}
+
+          {!hasMore && posts.length > 0 && (
+            <div className="text-center py-6 text-gray-400 text-sm">
+              {t('end_of_feed') || "You've reached the end"}
+            </div>
+          )}
         </div>
-    );
+      </div>
+
+      {shareToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50">
+          {shareToast}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default FeedPage;

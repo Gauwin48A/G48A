@@ -16,7 +16,7 @@ const PriceAlertButton = ({ postId, currentPrice, initialSubscribed = false }) =
     const [showSuccess, setShowSuccess] = useState(false);
 
     const handleToggle = async () => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('authToken');
         if (!token) {
             alert('Please login to set price alerts');
             return;
@@ -55,8 +55,8 @@ const PriceAlertButton = ({ postId, currentPrice, initialSubscribed = false }) =
                 onClick={handleToggle}
                 disabled={loading}
                 className={`transition-all ${subscribed
-                        ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : 'border-yellow-500 text-yellow-500 hover:bg-yellow-500/10'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'border-yellow-500 text-yellow-500 hover:bg-yellow-500/10'
                     }`}
             >
                 {loading ? (

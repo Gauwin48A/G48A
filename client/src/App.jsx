@@ -15,6 +15,7 @@ const Profile = lazy(() => import('./pages/Profile.jsx'));
 const SignUp = lazy(() => import('./pages/Auth/SignUp.jsx'));
 const Login = lazy(() => import('./pages/Auth/Login.jsx'));
 const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword.jsx'));
+const ResetPassword = lazy(() => import('./pages/Auth/ResetPassword.jsx'));
 const AddPost = lazy(() => import('./pages/AddPost.jsx'));
 const TierSelection = lazy(() => import('./pages/TierSelection.jsx'));
 const BuyerView = lazy(() => import('./pages/BuyerView.jsx'));
@@ -34,11 +35,13 @@ const Rewards = lazy(() => import('./pages/Rewards.jsx'));
 const MyRecommendations = lazy(() => import('./pages/MyRecommendations.jsx'));
 const Categories = lazy(() => import('./pages/Categories.jsx'));
 const FeedPage = lazy(() => import('./pages/FeedPage.jsx'));
+const FeedPostDetail = lazy(() => import('./pages/FeedPostDetail.jsx'));
 const MyFeedPage = lazy(() => import('./pages/MyFeedPage.jsx'));
 const PostAdd = lazy(() => import('./pages/PostAdd.jsx'));
 const Wishlist = lazy(() => import('./pages/Wishlist.jsx'));
 const RecentlyViewed = lazy(() => import('./pages/RecentlyViewed.jsx'));
 const SavedSearches = lazy(() => import('./pages/SavedSearches.jsx'));
+const Verification = lazy(() => import('./pages/Verification.jsx'));
 
 /**
  * Location Banner - Shows when location is not granted
@@ -142,6 +145,7 @@ function AppContent() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 {/* Main app routes */}
                 <Route path="/" element={<Navigate to="/all-posts" replace />} />
                 <Route path="/all-posts" element={<AllPosts />} />
@@ -166,12 +170,14 @@ function AppContent() {
                 <Route path="/my-recommendations" element={<MyRecommendations />} />
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/feed" element={<FeedPage />} />
+                <Route path="/feed/:id" element={<FeedPostDetail />} />
                 <Route path="/my-feed" element={<MyFeedPage />} />
                 <Route path="/post_add" element={<PostAdd />} />
                 <Route path="/feed/feedpostadd" element={<PostAdd noImageUpload={true} />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/recently-viewed" element={<RecentlyViewed />} />
                 <Route path="/saved-searches" element={<SavedSearches />} />
+                <Route path="/verification" element={<Verification />} />
                 <Route path="*" element={<Navigate to="/all-posts" replace />} />
               </Routes>
             </Suspense>

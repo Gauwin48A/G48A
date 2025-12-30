@@ -47,7 +47,7 @@ export default function BuyerInterestModal({ isOpen, onClose, postId, postTitle 
 
         try {
             const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
 
             const response = await fetch(`${baseUrl}/api/inquiries`, {
                 method: 'POST',

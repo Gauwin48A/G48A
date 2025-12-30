@@ -148,6 +148,9 @@ CREATE TABLE posts (
     images JSONB,
     condition VARCHAR(20) DEFAULT 'good',
     views_count INTEGER DEFAULT 0,
+    views INTEGER DEFAULT 0,
+    shares INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -694,6 +697,55 @@ BEGIN
     RAISE NOTICE 'Created 120 posts with descriptions';
 END $$;
 
+-- Additional Sports-specific posts with unique descriptions
+DO $$
+DECLARE
+  v_sports_cat_id INTEGER;
+  v_user_id INTEGER;
+  v_tier_id INTEGER;
+BEGIN
+  SELECT category_id INTO v_sports_cat_id FROM categories WHERE name = 'Sports';
+  SELECT user_id INTO v_user_id FROM users WHERE role = 'user' LIMIT 1;
+  SELECT tier_id INTO v_tier_id FROM tiers WHERE name = 'Free' LIMIT 1;
+  
+  IF v_sports_cat_id IS NOT NULL AND v_user_id IS NOT NULL THEN
+    INSERT INTO posts (user_id, category_id, tier_id, title, description, price, location, status)
+    SELECT v_user_id, v_sports_cat_id, v_tier_id, 
+           'Yonex Badminton Racket Pro', 
+           'Professional-grade badminton racket used by Olympic players. Perfect for attacking gameplay. Strung with BG80 at 28lbs. Includes cover and extra grip.',
+           12500, 'Bangalore', 'active'
+    WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Yonex Badminton Racket Pro');
+    
+    INSERT INTO posts (user_id, category_id, tier_id, title, description, price, location, status)
+    SELECT v_user_id, v_sports_cat_id, v_tier_id,
+           'Complete Cricket Kit - SS Ton',
+           'Full cricket kit for adults. SS Ton bat, MRF pads, SG gloves, helmet, abdominal guard, kit bag. Used for one season.',
+           15000, 'Chennai', 'active'
+    WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Complete Cricket Kit - SS Ton');
+    
+    INSERT INTO posts (user_id, category_id, tier_id, title, description, price, location, status)
+    SELECT v_user_id, v_sports_cat_id, v_tier_id,
+           'Football Nike Merlin Size 5',
+           'Official match ball. FIFA approved quality. Used only twice in indoor games. Original packaging included.',
+           3500, 'Mumbai', 'active'
+    WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Football Nike Merlin Size 5');
+    
+    INSERT INTO posts (user_id, category_id, tier_id, title, description, price, location, status)
+    SELECT v_user_id, v_sports_cat_id, v_tier_id,
+           'Gym Dumbbells Set 20kg',
+           'Adjustable dumbbell set with weight plates. Chrome finish, anti-slip grip. Includes stand and case.',
+           8000, 'Hyderabad', 'active'
+    WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Gym Dumbbells Set 20kg');
+    
+    INSERT INTO posts (user_id, category_id, tier_id, title, description, price, location, status)
+    SELECT v_user_id, v_sports_cat_id, v_tier_id,
+           'Swimming Goggles Arena',
+           'Competition swimming goggles. Anti-fog coating, UV protection. Adjustable strap. Like new condition.',
+           1800, 'Pune', 'active'
+    WHERE NOT EXISTS (SELECT 1 FROM posts WHERE title = 'Swimming Goggles Arena');
+  END IF;
+END $$;
+
 -- ===========================================
 -- STEP 8: CREATE PREFERENCES & NOTIFICATIONS
 -- ===========================================
@@ -1017,6 +1069,27 @@ SELECT 'User Verifications: ' || COUNT(*) FROM user_verifications;
 SELECT 'Push Tokens: ' || COUNT(*) FROM push_tokens;
 SELECT 'Offers: ' || COUNT(*) FROM offers;
 SELECT 'Price Drop Alerts: ' || COUNT(*) FROM price_drop_alerts;
+
+-- Apply distinct descriptions to make posts more realistic
+UPDATE posts SET description = CASE (post_id % 10)
+  WHEN 0 THEN 'Exceptional quality product at an unbeatable price. Thoroughly tested and working perfectly. Original packaging available.'
+  WHEN 1 THEN 'Gently used item in mint condition. All original accessories included with box. Pet-free, smoke-free home.'
+  WHEN 2 THEN 'Premium product with warranty remaining. Purchased 6 months ago from authorized dealer.'
+  WHEN 3 THEN 'Like-new condition with minimal usage signs. Perfect working order verified. Best offer wins.'
+  WHEN 4 THEN 'Excellent value for money. Regular maintenance done. Clean and sanitized.'
+  WHEN 5 THEN 'High-quality item from reputed brand. Original purchase receipt available. Selling due to upgrade.'
+  WHEN 6 THEN 'Well-maintained product with care. All features working flawlessly. Great for first-time buyers.'
+  WHEN 7 THEN 'Authentic product with certification. Barely used, practically new. Steal deal!'
+  WHEN 8 THEN 'Reliable product for daily use. Tested before listing. Can demonstrate before sale.'
+  WHEN 9 THEN 'Feature-rich item at fraction of retail price. Ideal upgrade opportunity.'
+  ELSE 'Quality assured item. Contact for more information. Flexible on price for genuine buyers.'
+END
+WHERE description LIKE '%Contact for more details and photos%';
+
+-- Append location to descriptions
+UPDATE posts SET description = description || ' Located in ' || location || '.' 
+WHERE location IS NOT NULL AND location != '' AND description NOT LIKE '%Located in%';
+
 SELECT '=============================================' as separator;
 SELECT 'Login with: rahul.sharma@mhub.com / password123' as credentials;
 SELECT '=============================================' as separator;

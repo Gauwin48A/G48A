@@ -24,7 +24,7 @@ const RecentlyViewed = () => {
         try {
             setLoading(true);
             const userId = localStorage.getItem('userId');
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
 
             const response = await api.get('/recently-viewed', {
                 headers: { Authorization: `Bearer ${token}` },
@@ -42,7 +42,7 @@ const RecentlyViewed = () => {
 
     const handleRemove = async (postId) => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             await api.delete(`/recently-viewed/${postId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -57,7 +57,7 @@ const RecentlyViewed = () => {
         if (!window.confirm('Clear all browsing history?')) return;
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             await api.delete('/recently-viewed/clear', {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -198,8 +198,8 @@ const RecentlyViewed = () => {
                                         <Badge
                                             variant="outline"
                                             className={`text-xs ${item.status === 'active' ? 'border-green-500 text-green-400' :
-                                                    item.status === 'sold' ? 'border-red-500 text-red-400' :
-                                                        'border-gray-500 text-gray-400'
+                                                item.status === 'sold' ? 'border-red-500 text-red-400' :
+                                                    'border-gray-500 text-gray-400'
                                                 }`}
                                         >
                                             {item.status}
