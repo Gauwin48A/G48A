@@ -21,7 +21,7 @@ export const registerUser = async (userData) => {
   if (userData.aadhaar_xml instanceof File) formData.append('aadhaar_xml', userData.aadhaar_xml);
   if (userData.pan_card instanceof File) formData.append('pan_card', userData.pan_card);
   if (userData.profile_pic instanceof File) formData.append('profile_pic', userData.profile_pic);
-  const res = await api.post('/auth/register', formData, {
+  const res = await api.post('/api/auth/register', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   return res.data;

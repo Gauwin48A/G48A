@@ -9,8 +9,10 @@ import { useFilter } from '@/context/FilterContext';
 import useLocationPermission from '@/hooks/useLocationPermission';
 import { useTranslation } from 'react-i18next';
 import BuyerInterestModal from '@/components/BuyerInterestModal';
+import LoginPromptModal from '@/components/LoginPromptModal';
 
 const NAVBAR_HEIGHT = 80;
+const GUEST_POST_LIMIT = 5; // Limit posts for non-logged-in users
 
 const AllPosts = () => {
   const { t } = useTranslation();
@@ -61,6 +63,17 @@ const AllPosts = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [viewedPosts, setViewedPosts] = useState(new Set()); // Track which posts have been viewed
   const postRefs = useRef({}); // Refs for each post card
+
+  // Guest user restrictions
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Check login status on mount
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    setIsLoggedIn(!!(token && userId));
+  }, []);
 
   // Fetch categories from API on mount
   useEffect(() => {
@@ -197,13 +210,20 @@ const AllPosts = () => {
 
   useEffect(() => {
     const handleScroll = () => {
+      // For guests, show login modal when scrolling past limit instead of loading more
+      if (!isLoggedIn) {
+        if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200) {
+          setShowLoginModal(true);
+        }
+        return;
+      }
       if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
         loadMorePosts();
       }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadMorePosts]);
+  }, [loadMorePosts, isLoggedIn]);
 
   // Rotation interval - rotate low-view priority every 30 seconds
   useEffect(() => {
@@ -216,11 +236,12 @@ const AllPosts = () => {
   }, []);
 
   // Display posts with smart sorting - low-view posts get priority periodically
+  // For guests, limit to GUEST_POST_LIMIT posts
   const displayPosts = React.useMemo(() => {
     if (!posts || posts.length === 0) return [];
 
     // Create a copy to sort
-    const sortedPosts = [...posts];
+    let sortedPosts = [...posts];
 
     if (boostLowViews) {
       // Sort by views ascending (low views first)
@@ -232,8 +253,13 @@ const AllPosts = () => {
     }
     // When boostLowViews is false, keep original order (by date/relevance from API)
 
+    // Limit posts for guests
+    if (!isLoggedIn) {
+      sortedPosts = sortedPosts.slice(0, GUEST_POST_LIMIT);
+    }
+
     return sortedPosts;
-  }, [posts, viewCounts, boostLowViews, rotationKey]);
+  }, [posts, viewCounts, boostLowViews, rotationKey, isLoggedIn]);
 
   // IntersectionObserver to track views when posts scroll into viewport
   useEffect(() => {
@@ -527,6 +553,12 @@ const AllPosts = () => {
         onClose={() => { setShowInterestModal(false); setSelectedPost(null); }}
         postId={selectedPost?.post_id || selectedPost?.id}
         postTitle={selectedPost?.title}
+      />
+
+      {/* Login Prompt Modal for Guest Users */}
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
       />
     </div >
   );

@@ -5,6 +5,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FaHeart, FaRegHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaUser } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import LoginPromptModal from '@/components/LoginPromptModal';
+
+const GUEST_POST_LIMIT = 5; // Limit posts for non-logged-in users
 
 const FeedPage = () => {
   const { t } = useTranslation();
@@ -21,6 +24,17 @@ const FeedPage = () => {
   const [likeCounts, setLikeCounts] = useState({});
   const [viewCounts, setViewCounts] = useState({});
   const [shareToast, setShareToast] = useState("");
+
+  // Guest user restrictions
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Check login status on mount
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('userId');
+    setIsLoggedIn(!!(token && userId));
+  }, []);
 
   // Fetch feed posts
   useEffect(() => {
@@ -70,13 +84,20 @@ const FeedPage = () => {
 
   useEffect(() => {
     const handleScroll = () => {
+      // For guests, show login modal when scrolling past limit
+      if (!isLoggedIn) {
+        if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200) {
+          setShowLoginModal(true);
+        }
+        return;
+      }
       if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
         loadMorePosts();
       }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadMorePosts]);
+  }, [loadMorePosts, isLoggedIn]);
 
   // Toggle expand for long descriptions
   const toggleExpand = (postId) => {
@@ -150,21 +171,24 @@ const FeedPage = () => {
               </p>
             </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={() => navigate('/my-feed')}
-                variant="outline"
-                className="bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl flex items-center gap-2"
-              >
-                <FaUser /> {t('my_posts') || 'My Posts'}
-              </Button>
-              <Button
-                onClick={() => navigate('/feed/feedpostadd')}
-                className="bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
-              >
-                <FaPlus /> {t('share_update') || 'Share Update'}
-              </Button>
-            </div>
+            {/* Only show action buttons for logged-in users */}
+            {isLoggedIn && (
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => navigate('/my-feed')}
+                  variant="outline"
+                  className="bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl flex items-center gap-2"
+                >
+                  <FaUser /> {t('my_posts') || 'My Posts'}
+                </Button>
+                <Button
+                  onClick={() => navigate('/feed/feedpostadd')}
+                  className="bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
+                >
+                  <FaPlus /> {t('share_update') || 'Share Update'}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -172,22 +196,24 @@ const FeedPage = () => {
       {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-6">
 
-        {/* Quick Post */}
-        <Card
-          className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border cursor-pointer hover:shadow-md transition"
-          onClick={() => navigate('/feed/feedpostadd')}
-        >
-          <div className="flex items-center gap-4">
-            <Avatar className="w-11 h-11 bg-indigo-100 dark:bg-indigo-900">
-              <AvatarFallback className="text-indigo-600 dark:text-indigo-300 font-bold">
-                {localStorage.getItem('username')?.[0]?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-5 py-3 text-gray-400">
-              {t('share_something') || "Share something with the community..."}
+        {/* Quick Post - Only show for logged-in users */}
+        {isLoggedIn && (
+          <Card
+            className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border cursor-pointer hover:shadow-md transition"
+            onClick={() => navigate('/feed/feedpostadd')}
+          >
+            <div className="flex items-center gap-4">
+              <Avatar className="w-11 h-11 bg-indigo-100 dark:bg-indigo-900">
+                <AvatarFallback className="text-indigo-600 dark:text-indigo-300 font-bold">
+                  {localStorage.getItem('username')?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-5 py-3 text-gray-400">
+                {t('share_something') || "Share something with the community..."}
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Posts */}
         <div className="space-y-4">
@@ -202,12 +228,14 @@ const FeedPage = () => {
             <Card className="p-8 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed">
               <FaNewspaper className="text-5xl text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">{t('no_posts') || 'No posts yet. Be the first to share!'}</p>
-              <Button onClick={() => navigate('/feed/feedpostadd')} className="bg-indigo-600 text-white">
-                {t('create_post') || 'Create Post'}
-              </Button>
+              {isLoggedIn && (
+                <Button onClick={() => navigate('/feed/feedpostadd')} className="bg-indigo-600 text-white">
+                  {t('create_post') || 'Create Post'}
+                </Button>
+              )}
             </Card>
           ) : (
-            posts.map((post) => {
+            (isLoggedIn ? posts : posts.slice(0, GUEST_POST_LIMIT)).map((post) => {
               const postId = post.post_id || post.id;
               const isExpanded = expandedPosts[postId];
               const description = post.description || '';
@@ -329,6 +357,12 @@ const FeedPage = () => {
           {shareToast}
         </div>
       )}
+
+      {/* Login Prompt Modal for Guest Users */}
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </div>
   );
 };

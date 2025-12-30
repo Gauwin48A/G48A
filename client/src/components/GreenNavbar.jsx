@@ -284,21 +284,23 @@ const GreenNavbar = () => {
 
             {/* Icons */}
             <div className="flex items-center gap-4">
-              {/* Add Post Button */}
-              <Link to="/tier-selection" aria-label="Add Post" className="relative group">
-                <span
-                  className="inline-flex items-center justify-center rounded-full border-2 border-blue-600 bg-gradient-to-br from-blue-400 to-blue-600 text-white w-12 h-12 text-3xl font-extrabold shadow-xl hover:scale-110 hover:shadow-2xl transition-all duration-200 ring-4 ring-blue-300 focus:ring-4 focus:ring-blue-400"
-                  style={{ cursor: 'pointer', zIndex: 20 }}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Add Post"
-                >
-                  +
-                </span>
-                <span className="absolute left-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
-                  {t('sell') || 'Add Post'}
-                </span>
-              </Link>
+              {/* Add Post Button - Only show for logged-in users */}
+              {isLoggedIn && (
+                <Link to="/tier-selection" aria-label="Add Post" className="relative group">
+                  <span
+                    className="inline-flex items-center justify-center rounded-full border-2 border-blue-600 bg-gradient-to-br from-blue-400 to-blue-600 text-white w-12 h-12 text-3xl font-extrabold shadow-xl hover:scale-110 hover:shadow-2xl transition-all duration-200 ring-4 ring-blue-300 focus:ring-4 focus:ring-blue-400"
+                    style={{ cursor: 'pointer', zIndex: 20 }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Add Post"
+                  >
+                    +
+                  </span>
+                  <span className="absolute left-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                    {t('sell') || 'Add Post'}
+                  </span>
+                </Link>
+              )}
               {/* Notifications Bell */}
               <Link to="/notifications" aria-label={t('notifications')} className="relative group">
                 <span className="p-2 rounded-full hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white transition-colors inline-flex items-center justify-center">
@@ -428,17 +430,19 @@ const GreenNavbar = () => {
             </button>
           ))}
         </div>
-        {/* Center + (Sell) icon */}
-        <div className="flex-none">
-          <button
-            aria-label={t('sell') || "Sell"}
-            className="bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-4xl shadow-lg hover:bg-blue-700 transition-all -translate-y-4 border-4 border-white dark:border-gray-900"
-            onClick={() => window.location.assign('/tier-selection')}
-            style={{ zIndex: 100 }}
-          >
-            +
-          </button>
-        </div>
+        {/* Center + (Sell) icon - Only show for logged-in users */}
+        {isLoggedIn && (
+          <div className="flex-none">
+            <button
+              aria-label={t('sell') || "Sell"}
+              className="bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-4xl shadow-lg hover:bg-blue-700 transition-all -translate-y-4 border-4 border-white dark:border-gray-900"
+              onClick={() => window.location.assign('/tier-selection')}
+              style={{ zIndex: 100 }}
+            >
+              +
+            </button>
+          </div>
+        )}
         {/* Right nav links */}
         <div className="flex flex-1 justify-evenly">
           {bottomNavLinks.filter(link => link.key !== '+Sell').slice(2).map((link) => (
