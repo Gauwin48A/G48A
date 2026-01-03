@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from 'react-i18next';
 import BuyerInterestModal from "@/components/BuyerInterestModal";
+import MakeOfferModal from "@/components/MakeOfferModal";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -25,7 +26,8 @@ import {
   Sparkles,
   ShieldCheck,
   Truck,
-  BadgePercent
+  BadgePercent,
+  DollarSign
 } from "lucide-react";
 
 export default function PostDetail() {
@@ -37,7 +39,41 @@ export default function PostDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [showInterestModal, setShowInterestModal] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
   const navigate = useNavigate();
+
+  // Separate effect for tracking - fires once when post data is available
+  useEffect(() => {
+    const postIdToTrack = post?.post_id || post?.id || id;
+    if (!postIdToTrack) return;
+
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('authToken');
+    if (!userId || !token) return;
+
+    // Determine source based on referrer path
+    const previousPath = document.referrer || '';
+    const source = previousPath.includes('/feed') ? 'feed' : 'allposts';
+
+    // Track this view in recently viewed history
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    fetch(`${baseUrl}/api/recently-viewed/track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        postId: postIdToTrack,
+        userId: userId,
+        source: source
+      })
+    })
+      .then(res => res.json())
+      .then(data => console.log(`[RecentlyViewed] Tracked post ${postIdToTrack} from ${source}`, data))
+      .catch(err => console.log('[RecentlyViewed] Tracking failed (non-critical)', err));
+  }, [id]); // Only run when id changes (i.e., on page load)
 
   useEffect(() => {
     // Scroll to top when page loads
@@ -66,7 +102,7 @@ export default function PostDetail() {
       };
       fetchPost();
     }
-  }, [id, post]);
+  }, [id]);
 
   if (loading) {
     return (
@@ -310,6 +346,17 @@ export default function PostDetail() {
             <HandHeart className="w-6 h-6 mr-3" />
             I'm Interested - Contact Seller
           </Button>
+
+          {/* Make Offer Button */}
+          <Button
+            onClick={() => setShowOfferModal(true)}
+            variant="outline"
+            className="w-full border-2 border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-bold py-4 text-lg rounded-2xl transition-all"
+          >
+            <DollarSign className="w-5 h-5 mr-2" />
+            Make an Offer
+          </Button>
+
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             🔒 Share your contact details securely with only this seller
           </p>
@@ -345,6 +392,13 @@ export default function PostDetail() {
         onClose={() => setShowInterestModal(false)}
         postId={post?.post_id || post?.id || id}
         postTitle={post?.title}
+      />
+
+      {/* Make Offer Modal */}
+      <MakeOfferModal
+        isOpen={showOfferModal}
+        onClose={() => setShowOfferModal(false)}
+        post={post}
       />
     </div>
   );

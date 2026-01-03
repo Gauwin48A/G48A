@@ -270,6 +270,15 @@ const Saledone = () => {
           </CardHeader>
 
           <CardContent className="p-8">
+            {/* Helpful Tips - Where to find IDs */}
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 mb-6">
+              <p className="text-amber-800 text-sm font-medium mb-2">💡 Where to find IDs:</p>
+              <ul className="text-amber-700 text-sm space-y-1">
+                <li>• <strong>Post ID</strong>: Go to <a href="/my-home" className="underline hover:text-amber-900">My Home</a> → Each post shows its ID with a copy button</li>
+                <li>• <strong>User ID</strong>: Go to <a href="/profile" className="underline hover:text-amber-900">Profile</a> → Your ID is displayed at the top of Personal Info</li>
+              </ul>
+            </div>
+
             <Tabs defaultValue="seller" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 rounded-2xl p-1.5 h-14">
                 <TabsTrigger value="seller" className="rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all">

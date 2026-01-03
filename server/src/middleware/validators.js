@@ -1,92 +1,158 @@
-const { body, validationResult } = require('express-validator');
+/**
+ * Input Validators - The Firewall
+ * Operation Ironclad
+ * 
+ * Rules:
+ * - Sanitize HTML (Anti-XSS)
+ * - Validate data types
+ * - Reject invalid business logic (negative prices)
+ */
 
-// 1. Universal Error Handler
-// Stops the request immediately if validation fails
+const { body, query, param, validationResult } = require('express-validator');
+
+/**
+ * Middleware to check validation results
+ * Returns 400 with detailed errors if validation fails
+ */
 const validate = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        // Return 400 Bad Request with the specific error message
-        return res.status(400).json({ error: errors.array()[0].msg });
+        console.warn('⚠️ Validation failed:', errors.array());
+        return res.status(400).json({
+            error: 'Validation Failed',
+            details: errors.array().map(e => ({
+                field: e.path,
+                message: e.msg,
+                value: e.value
+            }))
+        });
     }
     next();
 };
 
-// 2. Auth Rules (Paranoid Security)
+/**
+ * Authentication Validators
+ */
 const authValidation = {
-    register: [
-        body('username')
-            .trim()
-            .notEmpty().withMessage('Username is required')
-            .isLength({ min: 3, max: 20 }).withMessage('Username must be 3-20 characters')
-            .matches(/^[a-zA-Z0-9_]+$/).withMessage('Username can only contain letters, numbers, and underscores'),
-
+    signup: [
         body('email')
-            .isEmail().withMessage('Invalid email format')
-            .normalizeEmail(), // Sanitizes email (e.g. converts to lowercase)
-
+            .isEmail().withMessage('Valid email required')
+            .normalizeEmail(),
         body('password')
             .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
-            .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter')
-            .matches(/[0-9]/).withMessage('Password must contain a number')
-            .matches(/[!@#$%^&*]/).withMessage('Password must contain a special char (!@#$%^&*)'),
+            .matches(/[A-Z]/).withMessage('Password must contain uppercase letter')
+            .matches(/[0-9]/).withMessage('Password must contain a number'),
+        body('username')
+            .optional()
+            .trim()
+            .isLength({ min: 3, max: 50 }).withMessage('Username must be 3-50 characters')
+            .escape()
     ],
     login: [
-        body('email').isEmail().withMessage('Invalid email format'),
-        body('password').exists().withMessage('Password is required'),
+        body('email').isEmail().normalizeEmail(),
+        body('password').notEmpty().withMessage('Password required')
     ]
 };
 
-// 3. Post Rules (Data Integrity & XSS Prevention)
+/**
+ * Post Validators - Critical for Anti-Fraud
+ */
 const postValidation = {
     create: [
         body('title')
-            .optional()
             .trim()
-            .isLength({ max: 200 }).withMessage('Title must be under 200 characters')
-            .escape(), // ESCAPES HTML CHARACTERS (Prevents XSS)
-
-        body('price')
-            .optional()
-            .isFloat({ min: 0 }).withMessage('Price cannot be negative'),
-
+            .notEmpty().withMessage('Title is required')
+            .isLength({ max: 200 }).withMessage('Title too long')
+            .escape(), // Anti-XSS: Escape HTML tags
         body('description')
+            .optional()
             .trim()
-            .isLength({ min: 3 }).withMessage('Description must be at least 3 characters')
-            .escape(), // ESCAPES HTML
-
+            .isLength({ max: 5000 }).withMessage('Description too long')
+            .escape(),
+        body('price')
+            .isFloat({ gt: 0 }).withMessage('Price must be a positive number'), // ANTI-FRAUD: Block negative prices
         body('category_id')
             .optional()
-            .isInt().withMessage('Invalid Category ID'),
+            .isInt({ min: 1 }).withMessage('Invalid category'),
+        body('latitude')
+            .optional()
+            .isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
+        body('longitude')
+            .optional()
+            .isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude'),
+        body('location')
+            .optional()
+            .trim()
+            .escape()
+    ],
+
+    update: [
+        param('postId').isInt({ min: 1 }).withMessage('Invalid post ID'),
+        body('title')
+            .optional()
+            .trim()
+            .isLength({ max: 200 })
+            .escape(),
+        body('price')
+            .optional()
+            .isFloat({ gt: 0 }).withMessage('Price must be positive'),
+        body('status')
+            .optional()
+            .isIn(['active', 'sold', 'inactive']).withMessage('Invalid status')
+    ],
+
+    nearby: [
+        query('lat')
+            .isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
+        query('long')
+            .isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude'),
+        query('radius')
+            .optional()
+            .isFloat({ min: 0.1, max: 100 }).withMessage('Radius must be 0.1-100 km')
+    ],
+
+    getById: [
+        param('postId').isInt({ min: 1 }).withMessage('Invalid post ID')
     ]
 };
 
-// 4. Profile Validation Rules
+/**
+ * User/Profile Validators
+ */
 const profileValidation = {
     update: [
-        body('email').optional().isEmail().withMessage('Invalid email format').normalizeEmail(),
-        body('phone').optional().isMobilePhone().withMessage('Invalid phone number'),
-        body('full_name').optional().trim().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
-        body('bio').optional().trim().isLength({ max: 500 }).withMessage('Bio must be under 500 characters').escape(),
-    ]
-};
-
-// 5. Location Validation Rules
-const locationValidation = {
-    save: [
-        body('latitude').isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
-        body('longitude').isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude'),
-    ]
-};
-
-// 6. Feedback/Complaints Validation
-const feedbackValidation = {
-    create: [
-        body('message')
+        body('full_name')
+            .optional()
             .trim()
-            .notEmpty().withMessage('Message is required')
-            .isLength({ min: 10, max: 1000 }).withMessage('Message must be 10-1000 characters')
+            .isLength({ max: 100 })
             .escape(),
-        body('rating').optional().isInt({ min: 1, max: 5 }).withMessage('Rating must be 1-5'),
+        body('phone')
+            .optional()
+            .matches(/^[0-9]{10,15}$/).withMessage('Invalid phone number'),
+        body('address')
+            .optional()
+            .trim()
+            .isLength({ max: 500 })
+            .escape()
+    ]
+};
+
+/**
+ * SaleDone Validators
+ */
+const saleDoneValidation = {
+    confirm: [
+        body('postId')
+            .isInt({ min: 1 }).withMessage('Invalid post ID'),
+        body('buyerId')
+            .optional()
+            .isInt({ min: 1 }).withMessage('Invalid buyer ID'),
+        body('sellerId')
+            .optional()
+            .isInt({ min: 1 }).withMessage('Invalid seller ID'),
+        body('secretCode')
+            .optional()
+            .isLength({ min: 4, max: 10 }).withMessage('Invalid secret code')
     ]
 };
 
@@ -95,6 +161,5 @@ module.exports = {
     authValidation,
     postValidation,
     profileValidation,
-    locationValidation,
-    feedbackValidation
+    saleDoneValidation
 };

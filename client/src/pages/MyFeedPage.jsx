@@ -146,34 +146,21 @@ const MyFeedPage = () => {
     return date.toLocaleDateString();
   };
 
-  // If not logged in, show login prompt
+  // If not logged in, show login prompt (matching Profile page style)
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-          <FaNewspaper className="text-5xl text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {t('login_required') || 'Login Required'}
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
-            {t('login_to_see_posts') || 'Please login to see your feed posts'}
-          </p>
-          <div className="flex gap-3 justify-center">
-            <Button
-              onClick={() => navigate('/login')}
-              className="bg-green-600 hover:bg-green-700 text-white px-6"
-            >
-              {t('login') || 'Login'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/feed')}
-              className="border-green-300 text-green-600"
-            >
-              {t('browse_feed') || 'Browse Feed'}
-            </Button>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-10 shadow-2xl text-center max-w-md">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+            <FaNewspaper className="w-10 h-10 text-white" />
           </div>
-        </Card>
+          <h2 className="text-3xl font-bold text-white mb-4">{t('my_feed') || 'My Feed'}</h2>
+          <p className="text-white/80 text-lg mb-8">{t('view_manage_posts') || 'View and manage your posts'}</p>
+          <div className="flex flex-col gap-3">
+            <a href="/login" className="bg-white text-emerald-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">{t('login_to_continue') || 'Login to Continue'}</a>
+            <a href="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">{t('create_account') || 'Create Account'}</a>
+          </div>
+        </div>
       </div>
     );
   }

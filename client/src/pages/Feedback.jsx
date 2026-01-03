@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Star, Send, Heart, ArrowLeft, ArrowUp, Sparkles, ThumbsUp, Lightbulb, Bug, Palette, Zap } from "lucide-react";
+import { MessageSquare, Star, Send, Heart, ArrowLeft, ArrowUp, Sparkles, ThumbsUp, Lightbulb, Bug, Palette, Zap, CheckCircle, ChevronRight, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 
@@ -105,6 +105,61 @@ const Feedback = () => {
     { icon: Zap, name: 'Performance Issue', description: 'Report slow loading or performance problems', value: 'performance', color: 'text-orange-500', bg: 'bg-orange-50' },
     { icon: MessageSquare, name: 'General Feedback', description: 'Share general thoughts and experiences', value: 'general', color: 'text-blue-500', bg: 'bg-blue-50' },
   ];
+
+  // Check login status
+  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" style={{ paddingBottom: '120px' }}>
+        {/* Hero Section */}
+        <div className="pt-16 pb-12 px-6 text-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl">
+            <MessageSquare className="w-12 h-12 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-3">{t('feedback') || 'Feedback'}</h1>
+          <p className="text-white/80 text-lg max-w-md mx-auto">
+            {t('feedback_login_desc') || 'We value your feedback! Please login to share your thoughts.'}
+          </p>
+        </div>
+
+        {/* Login/Signup Cards */}
+        <div className="max-w-lg mx-auto px-6 space-y-4">
+          <a
+            href="/login"
+            className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900">{t('login') || 'Login'}</h3>
+                <p className="text-gray-500 text-sm">{t('login_desc') || 'Already have an account? Sign in here'}</p>
+              </div>
+              <ChevronRight className="w-6 h-6 text-gray-400" />
+            </div>
+          </a>
+
+          <a
+            href="/signup"
+            className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shadow-lg">
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white">{t('signup') || 'Create Account'}</h3>
+                <p className="text-white/70 text-sm">{t('signup_desc') || 'New user? Join us in just a few steps'}</p>
+              </div>
+              <ChevronRight className="w-6 h-6 text-white/60" />
+            </div>
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>

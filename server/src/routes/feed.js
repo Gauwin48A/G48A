@@ -5,6 +5,15 @@ const { protect } = require('../middleware/auth');
 
 router.get('/', feedController.getFeed);
 router.get('/mine', protect, feedController.getMyFeed);
+
+// NEW: High-Performance Dynamic Feed (Stratified Distribution)
+router.get('/dynamic', feedController.getDynamicFeed);
+
+// NEW: Trending Posts (cached for 5 min)
+router.get('/trending', feedController.getTrendingPosts);
+
+// NEW: Track feed impressions for exploration analytics
+router.post('/impression', feedController.trackImpression);
 // Add description length validation (min 5, max 500 chars)
 router.post('/add', protect, async (req, res) => {
   try {

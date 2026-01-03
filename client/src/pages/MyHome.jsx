@@ -24,7 +24,10 @@ import {
     ArrowLeft,
     Search,
     CheckSquare,
-    Square
+    Square,
+    Sparkles,
+    ChevronRight,
+    Copy,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -353,6 +356,59 @@ const MyHome = () => {
     }
 
     // --- MAIN RENDER ---
+    const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+
+    if (!isLoggedIn) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" style={{ paddingBottom: '120px' }}>
+                {/* Hero Section */}
+                <div className="pt-16 pb-12 px-6 text-center">
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-2xl">
+                        <Package className="w-12 h-12 text-white" />
+                    </div>
+                    <h1 className="text-4xl font-bold text-white mb-3">My Home</h1>
+                    <p className="text-white/80 text-lg max-w-md mx-auto">
+                        Manage your listings, track sales, and view your activity history.
+                    </p>
+                </div>
+
+                {/* Login/Signup Cards */}
+                <div className="max-w-lg mx-auto px-6 space-y-4">
+                    <a
+                        href="/login"
+                        className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
+                                <CheckCircle2 className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-gray-900">Login</h3>
+                                <p className="text-gray-500 text-sm">Already have an account? Sign in here</p>
+                            </div>
+                            <ChevronRight className="w-6 h-6 text-gray-400" />
+                        </div>
+                    </a>
+
+                    <a
+                        href="/signup"
+                        className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shadow-lg">
+                                <Sparkles className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-white">Create Account</h3>
+                                <p className="text-white/70 text-sm">New user? Join us in just a few steps</p>
+                            </div>
+                            <ChevronRight className="w-6 h-6 text-white/60" />
+                        </div>
+                    </a>
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
             {/* Premium Header */}
@@ -592,9 +648,22 @@ const MyHome = () => {
                                     {/* Content Section */}
                                     <CardContent className="p-5">
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                                                ID: {post.postId || post.post_id || post.id}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-mono text-xs px-2 py-1">
+                                                    Post ID: {post.postId || post.post_id || post.id}
+                                                </Badge>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigator.clipboard.writeText(String(post.postId || post.post_id || post.id));
+                                                        toast({ title: "📋 Copied!", description: "Post ID copied to clipboard" });
+                                                    }}
+                                                    className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                    title="Copy Post ID (use this in SaleDone)"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                             {post.status === 'active' && (
                                                 <Switch
                                                     checked={selectedPosts.has(post.postId || post.post_id || post.id)}

@@ -42,10 +42,23 @@ const FeedPostDetail = () => {
         }
     }, [id, post]);
 
-    // Track view
+    // Track view and recently viewed
     useEffect(() => {
         if (id) {
+            // Track view count
             fetch(`/api/posts/${id}/view`, { method: 'POST', credentials: 'include' }).catch(() => { });
+
+            // Track recently viewed (for feed posts)
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                fetch(`${baseUrl}/api/recently-viewed/track`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ postId: id, userId: userId, source: 'feed' })
+                }).catch(() => { });
+            }
         }
     }, [id]);
 

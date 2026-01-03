@@ -7,24 +7,27 @@ const pool = require('../config/db');
 
 // Add/Update recently viewed
 const addRecentlyViewed = async (req, res) => {
-    const userId = req.user?.userId || req.body.userId;
-    const { postId } = req.body;
+    // Support both naming conventions
+    const userId = req.user?.userId || req.body.userId || req.body.user_id;
+    const postId = req.body.postId || req.body.post_id;
+    const source = req.body.source || 'allposts'; // Default to 'allposts'
 
     if (!userId || !postId) {
         return res.status(400).json({ error: 'userId and postId required' });
     }
 
     try {
-        // Upsert - insert or update view count
+        // Upsert - insert or update view count (with source)
         const result = await pool.query(`
-            INSERT INTO recently_viewed (user_id, post_id, view_count, viewed_at)
-            VALUES ($1, $2, 1, NOW())
+            INSERT INTO recently_viewed (user_id, post_id, view_count, viewed_at, source)
+            VALUES ($1, $2, 1, NOW(), $3)
             ON CONFLICT (user_id, post_id) 
             DO UPDATE SET 
                 view_count = recently_viewed.view_count + 1,
-                viewed_at = NOW()
+                viewed_at = NOW(),
+                source = EXCLUDED.source
             RETURNING *
-        `, [userId, postId]);
+        `, [userId, postId, source]);
 
         res.json({ success: true, item: result.rows[0] });
     } catch (error) {
@@ -37,17 +40,19 @@ const addRecentlyViewed = async (req, res) => {
 const getRecentlyViewed = async (req, res) => {
     const userId = req.user?.userId || req.query.userId;
     const limit = parseInt(req.query.limit) || 20;
+    const source = req.query.source; // Optional: 'allposts', 'feed', or undefined for all
 
     if (!userId) {
         return res.status(400).json({ error: 'userId required' });
     }
 
     try {
-        const result = await pool.query(`
+        let query = `
             SELECT 
                 rv.id,
                 rv.view_count,
                 rv.viewed_at,
+                rv.source,
                 p.post_id,
                 p.title,
                 p.price,
@@ -63,9 +68,19 @@ const getRecentlyViewed = async (req, res) => {
             LEFT JOIN profiles pr ON p.user_id = pr.user_id
             LEFT JOIN categories c ON p.category_id = c.category_id
             WHERE rv.user_id = $1
-            ORDER BY rv.viewed_at DESC
-            LIMIT $2
-        `, [userId, limit]);
+        `;
+
+        const params = [userId];
+
+        if (source) {
+            query += ` AND rv.source = $2`;
+            params.push(source);
+        }
+
+        query += ` ORDER BY rv.viewed_at DESC LIMIT $${params.length + 1}`;
+        params.push(limit);
+
+        const result = await pool.query(query, params);
 
         res.json({
             items: result.rows,

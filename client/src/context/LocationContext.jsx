@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + "/api/location";
 const LOCATION_TIMEOUT = 10000; // 10 seconds
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const SKIP_TTL = 24 * 60 * 60 * 1000; // 24 hours - don't ask again for a day if skipped
 
 /**
  * Location Context - Global state for user location
@@ -138,6 +139,49 @@ function setCachedLocation(locationData) {
     }
 }
 
+/**
+ * Check if user has skipped location (within 24 hours)
+ */
+function hasSkippedLocation() {
+    try {
+        const skipped = localStorage.getItem('mhub_location_skipped');
+        if (skipped) {
+            const data = JSON.parse(skipped);
+            if (data.timestamp && Date.now() - data.timestamp < SKIP_TTL) {
+                console.log('[LocationContext] User previously skipped location');
+                return true;
+            }
+            // Expired, remove it
+            localStorage.removeItem('mhub_location_skipped');
+        }
+    } catch (e) {
+        console.error('[LocationContext] Failed to check skip status:', e);
+    }
+    return false;
+}
+
+/**
+ * Set skip preference (persists for 24 hours)
+ */
+function setSkippedLocation() {
+    try {
+        localStorage.setItem('mhub_location_skipped', JSON.stringify({
+            skipped: true,
+            timestamp: Date.now()
+        }));
+        console.log('[LocationContext] Skip preference saved for 24 hours');
+    } catch (e) {
+        console.error('[LocationContext] Failed to save skip preference:', e);
+    }
+}
+
+/**
+ * Clear skip preference (when user wants to enable location)
+ */
+function clearSkippedLocation() {
+    localStorage.removeItem('mhub_location_skipped');
+}
+
 export function LocationProvider({ children }) {
     // Location state
     const [coords, setCoords] = useState(null);
@@ -149,6 +193,7 @@ export function LocationProvider({ children }) {
     const [error, setError] = useState(null);
     const [permissionGranted, setPermissionGranted] = useState(false);
     const [permissionDenied, setPermissionDenied] = useState(false);
+    const [userSkipped, setUserSkipped] = useState(() => hasSkippedLocation());
 
     const timeoutRef = useRef(null);
     const hasRequestedRef = useRef(false);
@@ -298,12 +343,14 @@ export function LocationProvider({ children }) {
     }, [requestLocation]);
 
     /**
-     * Skip location for now
+     * Skip location for now - persists for 24 hours
      */
     const skipForNow = useCallback(() => {
-        console.log('[LocationContext] User skipped location');
+        console.log('[LocationContext] User skipped location (saved for 24 hours)');
         setLoading(false);
         setError(null);
+        setUserSkipped(true);
+        setSkippedLocation();
     }, []);
 
     /**
@@ -322,12 +369,21 @@ export function LocationProvider({ children }) {
 
     /**
      * Initialize: Check cache first, then request fresh location
+     * IMPORTANT: Don't prompt if user has skipped within 24 hours
      */
     useEffect(() => {
         if (hasRequestedRef.current) return;
         hasRequestedRef.current = true;
 
         console.log('[LocationContext] Initializing...');
+
+        // Check if user previously skipped (within 24 hours)
+        if (hasSkippedLocation()) {
+            console.log('[LocationContext] User skipped location within 24 hours, not prompting again');
+            setLoading(false);
+            setUserSkipped(true);
+            return;
+        }
 
         // Check for cached location first
         const cached = getCachedLocation();
@@ -344,7 +400,7 @@ export function LocationProvider({ children }) {
             console.log('[LocationContext] Using cache, but requesting fresh location in background...');
             setTimeout(() => {
                 requestLocation();
-            }, 2000);
+            }, 5000); // Delay background refresh to 5 seconds
         } else {
             // No cache, request immediately
             requestLocation();
@@ -379,9 +435,15 @@ export function LocationProvider({ children }) {
         retry,
         skipForNow,
         clearLocation,
+        enableLocation: () => {
+            clearSkippedLocation();
+            setUserSkipped(false);
+            requestLocation();
+        },
 
         // Helpers
         hasLocation: !!coords,
+        userSkipped,
         locationString: city ? `${city}${state ? ', ' + state : ''}` : 'Location not set'
     };
 

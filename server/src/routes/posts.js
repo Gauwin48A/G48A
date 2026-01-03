@@ -12,6 +12,23 @@ router.get('/all', postController.getAllPosts);
 // GET /api/posts/mine for user posts
 router.get('/mine', postController.getUserPosts);
 
+// GET /api/posts/nearby - Geo-spatial search (Fortress Schema)
+router.get('/nearby',
+  postValidation.nearby,
+  validate,
+  postController.getNearbyPosts
+);
+
+// GET /api/posts/trust/:userId - User trust score
+router.get('/trust/:userId', postController.getUserTrustScore);
+
+// GET /api/posts/for-you - Guaranteed Reach Algorithm
+// Returns posts with fair distribution ensuring all sellers get visibility
+router.get('/for-you', postController.getGuaranteedReachPosts);
+
+// GET /api/posts/cache-stats - Performance monitoring for high-scale operations
+router.get('/cache-stats', postController.getCacheStats);
+
 // Main GET /api/posts endpoint (returns { posts, total })
 router.get('/', postController.getAllPosts);
 
@@ -77,6 +94,50 @@ router.post('/:postId/share', async (req, res) => {
   } catch (err) {
     console.error('Share tracking error:', err);
     res.json({ success: true, warning: 'Share not tracked' });
+  }
+});
+
+// POST /api/posts/:postId/like - Toggle like on a post
+router.post('/:postId/like', protect, async (req, res) => {
+  const { postId } = req.params;
+  const userId = req.user?.userId || req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required to like posts' });
+  }
+
+  try {
+    // Try to use post_likes table if it exists, otherwise just increment
+    try {
+      const existingLike = await pool.query(
+        'SELECT * FROM post_likes WHERE user_id = $1 AND post_id = $2',
+        [userId, postId]
+      );
+
+      if (existingLike.rows.length > 0) {
+        await pool.query('DELETE FROM post_likes WHERE user_id = $1 AND post_id = $2', [userId, postId]);
+        await pool.query('UPDATE posts SET likes = GREATEST(COALESCE(likes, 0) - 1, 0) WHERE post_id = $1', [postId]);
+        return res.json({ liked: false, message: 'Post unliked' });
+      } else {
+        await pool.query('INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)', [userId, postId]);
+        await pool.query('UPDATE posts SET likes = COALESCE(likes, 0) + 1 WHERE post_id = $1', [postId]);
+        return res.json({ liked: true, message: 'Post liked' });
+      }
+    } catch (tableErr) {
+      // Fallback: If post_likes table doesn't exist, just increment likes
+      console.log('post_likes table not found, incrementing likes directly');
+      const result = await pool.query(
+        'UPDATE posts SET likes = COALESCE(likes, 0) + 1 WHERE post_id = $1 RETURNING likes',
+        [postId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Post not found' });
+      }
+      return res.json({ liked: true, likes: result.rows[0].likes, message: 'Post liked' });
+    }
+  } catch (err) {
+    console.error('Like toggle error:', err);
+    res.status(500).json({ error: 'Failed to toggle like' });
   }
 });
 

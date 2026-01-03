@@ -20,9 +20,13 @@ exports.getUserPosts = async (req, res) => {
       [userId]
     );
 
-    // Query 2: Get posts bought BY this user
+    // Query 2: Get posts bought BY this user (from transactions table)
+    // Join with posts to get full post details where this user is the buyer
     const boughtPostsResult = await pool.query(
-      `SELECT * FROM posts WHERE buyer_id = $1 AND user_id != $1 ORDER BY created_at DESC`,
+      `SELECT p.* FROM posts p
+       INNER JOIN transactions t ON p.post_id = t.post_id
+       WHERE t.buyer_id = $1 AND t.status = 'completed' AND p.user_id != $1
+       ORDER BY t.completed_at DESC`,
       [userId]
     );
 
@@ -30,8 +34,22 @@ exports.getUserPosts = async (req, res) => {
     const ownPosts = ownPostsResult.rows.map(p => ({ ...p, ownership: 'own' }));
     const boughtPosts = boughtPostsResult.rows.map(p => ({ ...p, ownership: 'bought', status: 'bought' }));
 
-    // Combine all posts
-    let allPosts = [...ownPosts, ...boughtPosts];
+    // Combine all posts (avoid duplicates by using Set of post_ids)
+    const seenIds = new Set();
+    let allPosts = [];
+
+    for (const post of ownPosts) {
+      if (!seenIds.has(post.post_id)) {
+        seenIds.add(post.post_id);
+        allPosts.push(post);
+      }
+    }
+    for (const post of boughtPosts) {
+      if (!seenIds.has(post.post_id)) {
+        seenIds.add(post.post_id);
+        allPosts.push(post);
+      }
+    }
 
     // Filter by status if requested
     if (status) {
@@ -103,9 +121,9 @@ exports.getAllPosts = async (req, res) => {
       query += ` AND p.location ILIKE $${params.length + 1}`;
       params.push(`%${location}%`);
     }
-    if (author) {
+    if (author && !isNaN(parseInt(author))) {
       query += ` AND p.user_id = $${params.length + 1}`;
-      params.push(author);
+      params.push(parseInt(author));
     }
     if (startDate) {
       query += ` AND p.created_at >= $${params.length + 1}`;
@@ -158,7 +176,7 @@ exports.getAllPosts = async (req, res) => {
     if (search) { countQuery += ` AND (p.title ILIKE $${countParams.length + 1} OR p.description ILIKE $${countParams.length + 1} OR p.location ILIKE $${countParams.length + 1} OR c.name ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
     if (category) { countQuery += ` AND p.category_id = $${countParams.length + 1}`; countParams.push(category); }
     if (location) { countQuery += ` AND p.location ILIKE $${countParams.length + 1}`; countParams.push(`%${location}%`); }
-    if (author) { countQuery += ` AND p.user_id = $${countParams.length + 1}`; countParams.push(author); }
+    if (author && !isNaN(parseInt(author))) { countQuery += ` AND p.user_id = $${countParams.length + 1}`; countParams.push(parseInt(author)); }
     if (startDate) { countQuery += ` AND p.created_at >= $${countParams.length + 1}`; countParams.push(startDate); }
     if (endDate) { countQuery += ` AND p.created_at <= $${countParams.length + 1}`; countParams.push(endDate); }
     if (minPrice) { countQuery += ` AND p.price >= $${countParams.length + 1}`; countParams.push(minPrice); }
@@ -253,3 +271,259 @@ exports.getPostById = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Get nearby posts using Haversine geo-spatial search
+// Uses get_nearby_posts() SQL function from fortress schema
+exports.getNearbyPosts = async (req, res) => {
+  try {
+    const { lat, long, radius = 10 } = req.query;
+
+    if (!lat || !long) {
+      return res.status(400).json({ error: 'Latitude and longitude required' });
+    }
+
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(long);
+    const searchRadius = parseFloat(radius);
+
+    // Use the geo-spatial function from fortress schema
+    const result = await pool.query(
+      'SELECT * FROM get_nearby_posts($1, $2, $3)',
+      [latitude, longitude, searchRadius]
+    );
+
+    logInfo(`[getNearbyPosts] Found ${result.rows.length} posts within ${searchRadius}km of (${latitude}, ${longitude})`);
+
+    res.json({
+      posts: result.rows,
+      total: result.rows.length,
+      searchParams: { lat: latitude, long: longitude, radius: searchRadius }
+    });
+  } catch (err) {
+    logError('[getNearbyPosts] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get user trust score
+exports.getUserTrustScore = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID required' });
+    }
+
+    const result = await pool.query(
+      'SELECT * FROM view_user_trust_score WHERE user_id = $1',
+      [userId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    logError('[getUserTrustScore] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ============================================
+// GUARANTEED REACH ALGORITHM
+// Ensures every seller's post reaches all users
+// ============================================
+const { GUARANTEED_REACH_QUERY, GUARANTEED_REACH_FALLBACK } = require('../queries/guaranteedReachQuery');
+
+// Query timeout for high availability
+const QUERY_TIMEOUT = 3000;
+
+// ===========================================
+// REDIS DISTRIBUTED CACHING FOR 10 LAKH+ USERS
+// Uses Redis when available, falls back to in-memory
+// ===========================================
+const redisCache = require('../config/redisCache');
+
+// Legacy in-memory fallback (used if Redis module fails to load)
+const feedCache = new Map();
+const CACHE_TTL = 5;  // 5 seconds (in seconds for Redis)
+const MAX_CACHE_ENTRIES = 1000;
+
+function getCacheKey(userId, limit, refreshSeed, filters) {
+  // IMPORTANT: Use the FULL refresh seed for unique results on every refresh
+  // This ensures users get new posts when they refresh the page
+  // Only cache identical requests (same exact seed = same user revisiting quickly)
+  const filterKey = filters ? JSON.stringify(filters) : '';
+  return `feed:${refreshSeed}:${limit}:${filterKey}`;
+}
+
+// Async cache operations using Redis
+async function getFromCache(key) {
+  try {
+    const data = await redisCache.get(key);
+    if (data) {
+      redisCache.recordHit();
+      return data;
+    }
+    redisCache.recordMiss();
+    return null;
+  } catch (err) {
+    console.log('[PostController] Cache get error, continuing without cache');
+    return null;
+  }
+}
+
+async function setCache(key, data) {
+  try {
+    await redisCache.set(key, data, CACHE_TTL);
+  } catch (err) {
+    console.log('[PostController] Cache set error:', err.message);
+  }
+}
+
+// Performance stats endpoint - shows Redis status
+exports.getCacheStats = async (req, res) => {
+  try {
+    const stats = redisCache.getStats();
+    const health = await redisCache.healthCheck();
+    res.json({
+      ...stats,
+      health,
+      message: stats.isRedisAvailable
+        ? `Redis distributed cache active - ${stats.hitRate} hit rate`
+        : `In-memory fallback active - ${stats.hitRate} hit rate`
+    });
+  } catch (err) {
+    res.json({
+      error: err.message,
+      fallback: 'Using in-memory cache'
+    });
+  }
+};
+
+async function queryWithTimeout(query, params, timeoutMs = QUERY_TIMEOUT) {
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+  );
+  const queryPromise = pool.query(query, params);
+  return Promise.race([queryPromise, timeoutPromise]);
+}
+
+/**
+ * GET /api/posts/for-you
+ * Returns posts with Guaranteed Reach algorithm
+ * 
+ * Features:
+ * - Low-view posts get priority (seller fairness)
+ * - Fresh posts (< 48 hours) get visibility boost
+ * - Time-seeded randomization (different every 30s)
+ * - Author diversity (max 1 post per seller)
+ */
+exports.getGuaranteedReachPosts = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id || req.query.userId || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+
+    // Refresh seed - client sends random number on each refresh for instant variety
+    const refreshSeed = parseInt(req.query.refresh) || Math.floor(Math.random() * 10000);
+
+    // Category filter support
+    const { category, search, minPrice, maxPrice, location } = req.query;
+    const hasFilters = search || minPrice || maxPrice || location || (category && category !== 'All');
+    const queryLimit = hasFilters ? Math.max(200, limit * 10) : (limit + offset);
+
+    // === REDIS DISTRIBUTED CACHING ===
+    // For 10 lakh+ concurrent users, Redis cache prevents database overload
+    const cacheKey = getCacheKey(userId, queryLimit, refreshSeed, { category, search, minPrice, maxPrice, location });
+    let rows = await getFromCache(cacheKey);
+    let fromCache = false;
+
+    const startTime = Date.now();
+
+    if (rows) {
+      fromCache = true;
+      logInfo(`[GuaranteedReach] REDIS CACHE HIT - ${cacheKey.substring(0, 30)}...`);
+    } else {
+      // Cache miss - execute DB query
+      try {
+        const result = await queryWithTimeout(GUARANTEED_REACH_QUERY, [userId, queryLimit, refreshSeed]);
+        rows = result.rows;
+        await setCache(cacheKey, rows);
+        logInfo(`[GuaranteedReach] CACHE MISS - Query: ${Date.now() - startTime}ms, ${rows.length} posts`);
+      } catch (queryErr) {
+        // Fallback on timeout
+        logInfo(`[GuaranteedReach] Timeout, using fallback query`);
+        const fallback = await pool.query(GUARANTEED_REACH_FALLBACK, [queryLimit]);
+        rows = fallback.rows;
+      }
+    }
+
+    const queryTime = Date.now() - startTime;
+
+    // Apply client-side filters if needed (category, search, price, location)
+    let posts = rows;
+
+    if (category && category !== 'All') {
+      posts = posts.filter(p =>
+        p.category_id == category ||
+        p.category_name?.toLowerCase() === category.toLowerCase()
+      );
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      posts = posts.filter(p =>
+        p.title?.toLowerCase().includes(searchLower) ||
+        p.description?.toLowerCase().includes(searchLower) ||
+        p.location?.toLowerCase().includes(searchLower) ||
+        p.author_name?.toLowerCase().includes(searchLower) ||  // Search by seller name
+        p.category_name?.toLowerCase().includes(searchLower)   // Search by category
+      );
+    }
+    if (minPrice) {
+      posts = posts.filter(p => p.price >= parseFloat(minPrice));
+    }
+    if (maxPrice) {
+      posts = posts.filter(p => p.price <= parseFloat(maxPrice));
+    }
+    if (location) {
+      posts = posts.filter(p => p.location?.toLowerCase().includes(location.toLowerCase()));
+    }
+
+    // Paginate the filtered results
+    const paginatedPosts = posts.slice(offset, offset + limit);
+
+    // Transform for frontend compatibility
+    const transformedPosts = paginatedPosts.map(post => ({
+      ...post,
+      id: post.post_id,
+      category: post.category_name || 'General',
+      user: {
+        name: post.author_name || 'Seller',
+        id: post.author_id
+      },
+      image_url: post.images?.[0] || '/placeholder.svg'
+    }));
+
+    res.json({
+      posts: transformedPosts,
+      total: posts.length,
+      page,
+      limit,
+      cached: fromCache,
+      queryTimeMs: queryTime,
+      feedMeta: {
+        lowReachCount: paginatedPosts.filter(p => p.feed_phase === 'low_reach').length,
+        freshCount: paginatedPosts.filter(p => p.feed_phase === 'fresh').length,
+        rotatingCount: paginatedPosts.filter(p => p.feed_phase === 'rotating').length
+      }
+    });
+
+  } catch (err) {
+    logError('[GuaranteedReach] Error:', err.message);
+    res.status(500).json({ error: err.message, posts: [] });
+  }
+};
+

@@ -171,24 +171,24 @@ const FeedPage = () => {
               </p>
             </div>
 
-            {/* Only show action buttons for logged-in users */}
-            {isLoggedIn && (
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => navigate('/my-feed')}
-                  variant="outline"
-                  className="bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl flex items-center gap-2"
-                >
-                  <FaUser /> {t('my_posts') || 'My Posts'}
-                </Button>
+            {/* Action buttons - visible for all users */}
+            <div className="flex gap-3">
+              <Button
+                onClick={() => navigate('/my-feed')}
+                variant="outline"
+                className="bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl flex items-center gap-2"
+              >
+                <FaUser /> {t('my_feed') || 'My Feed'}
+              </Button>
+              {isLoggedIn && (
                 <Button
                   onClick={() => navigate('/feed/feedpostadd')}
                   className="bg-white text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
                 >
                   <FaPlus /> {t('share_update') || 'Share Update'}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

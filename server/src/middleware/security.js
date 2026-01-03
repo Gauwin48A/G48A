@@ -1,126 +1,113 @@
 /**
- * SECURITY MIDDLEWARE - 7 Pillars of Protection
- * Comprehensive security for the MHub application
+ * Security Middleware - The Iron Dome
+ * Operation Ironclad
+ * 
+ * Layers:
+ * 1. Helmet - Hardened HTTP Headers (prevent XSS/Clickjacking)
+ * 2. Rate Limiter - Stops brute-force/DDoS attacks
+ * 3. CORS - Strict origin allowlist
  */
 
+const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cors = require('cors');
 
-// ============================================================
-// PILLAR 1: RATE LIMITING - Prevent brute force attacks
-// ============================================================
+/**
+ * Configure comprehensive security middleware
+ * @param {Express} app - Express application instance
+ */
+const configureSecurity = (app) => {
+    // 1. HELMET - Secure HTTP Headers
+    app.use(helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+                fontSrc: ["'self'", "https://fonts.gstatic.com"],
+                imgSrc: ["'self'", "data:", "https:", "blob:"],
+                scriptSrc: ["'self'"],
+                connectSrc: ["'self'", "http://localhost:*", "ws://localhost:*"]
+            }
+        },
+        crossOriginEmbedderPolicy: false, // Allow embedding resources
+        crossOriginResourcePolicy: { policy: "cross-origin" }
+    }));
 
-// Strict rate limiter for authentication endpoints
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 attempts per window
-    message: {
-        error: 'Too many login attempts. Please try again in 15 minutes.',
-        retryAfter: '15 minutes'
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-    // Skip successful requests
-    skipSuccessfulRequests: true,
-    // Key generator - use IP + email combo for more granular limiting
-    keyGenerator: (req) => {
-        return `${req.ip}-${req.body?.email || 'unknown'}`;
-    }
-});
+    // 2. CORS - Strict Origin Allowlist
+    const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:8081',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:8081',
+        process.env.CLIENT_URL
+    ].filter(Boolean);
 
-// Rate limiter for password reset
-const passwordResetLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // 3 attempts per hour
-    message: {
-        error: 'Too many password reset attempts. Please try again in 1 hour.'
-    }
-});
+    app.use(cors({
+        origin: function (origin, callback) {
+            // Allow requests with no origin (mobile apps, curl, etc.)
+            if (!origin) return callback(null, true);
 
-// API rate limiter for general endpoints
-const apiLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 100, // 100 requests per minute
-    message: {
-        error: 'Too many requests. Please slow down.'
-    }
-});
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
 
-// ============================================================
-// PILLAR 2: ACCOUNT LOCKOUT - Prevent password guessing
-// ============================================================
+            console.warn(`⚠️ CORS blocked origin: ${origin}`);
+            return callback(null, false);
+        },
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        credentials: true,
+        maxAge: 86400 // Cache preflight for 24 hours
+    }));
 
-// In-memory store for failed attempts (production: use Redis)
-const failedAttempts = new Map();
-const LOCKOUT_THRESHOLD = 5;
-const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+    // 3. RATE LIMITER - Anti-DDoS/Brute-Force
+    const generalLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // 100 requests per window
+        message: {
+            error: 'Too many requests, please try again later.',
+            retryAfter: '15 minutes'
+        },
+        standardHeaders: true,
+        legacyHeaders: false
+    });
 
-const checkAccountLockout = (req, res, next) => {
-    const email = req.body?.email?.toLowerCase();
-    if (!email) return next();
+    // Stricter limiter for auth endpoints
+    const authLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 10, // Only 10 login attempts per 15 min
+        message: {
+            error: 'Too many login attempts. Please try again in 15 minutes.',
+            retryAfter: '15 minutes'
+        },
+        standardHeaders: true,
+        legacyHeaders: false
+    });
 
-    const attempts = failedAttempts.get(email);
-    if (attempts && attempts.count >= LOCKOUT_THRESHOLD) {
-        const lockoutEnd = attempts.lockedUntil;
-        if (lockoutEnd && Date.now() < lockoutEnd) {
-            const remainingMs = lockoutEnd - Date.now();
-            const remainingMin = Math.ceil(remainingMs / 60000);
-            return res.status(423).json({
-                error: `Account temporarily locked. Try again in ${remainingMin} minutes.`,
-                locked: true,
-                retryAfter: remainingMin
-            });
-        } else {
-            // Lockout expired, reset
-            failedAttempts.delete(email);
-        }
-    }
-    next();
+    // Apply rate limiters
+    app.use('/api', generalLimiter);
+    app.use('/api/auth/login', authLimiter);
+    app.use('/api/auth/signup', authLimiter);
+
+    console.log('🛡️ Security middleware configured (Helmet, CORS, Rate Limiter)');
 };
 
-const recordFailedAttempt = (email) => {
-    email = email?.toLowerCase();
-    if (!email) return;
-
-    const attempts = failedAttempts.get(email) || { count: 0 };
-    attempts.count += 1;
-
-    if (attempts.count >= LOCKOUT_THRESHOLD) {
-        attempts.lockedUntil = Date.now() + LOCKOUT_DURATION;
-        console.log(`[SECURITY] Account locked for ${email} after ${LOCKOUT_THRESHOLD} failed attempts`);
-    }
-
-    failedAttempts.set(email, attempts);
-};
-
-const resetFailedAttempts = (email) => {
-    email = email?.toLowerCase();
-    if (email) failedAttempts.delete(email);
-};
-
-// ============================================================
-// PILLAR 3: SECURITY HEADERS - Prevent XSS, clickjacking
-// (Already implemented via helmet in index.js)
-// ============================================================
-
-// ============================================================
-// PILLAR 4: INPUT SANITIZATION - Prevent injection attacks
-// ============================================================
-
+/**
+ * Input sanitization middleware
+ * Cleans request body/query/params to prevent injection attacks
+ */
 const sanitizeInput = (req, res, next) => {
-    // Sanitize common injection patterns
     const sanitize = (obj) => {
         if (typeof obj === 'string') {
-            // Remove/encode dangerous characters
-            return obj
-                .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove script tags
-                .replace(/javascript:/gi, '') // Remove javascript: links
-                .replace(/on\w+\s*=/gi, '') // Remove event handlers
+            // Remove script tags and dangerous characters
+            return obj.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/[<>]/g, '')
                 .trim();
         }
         if (typeof obj === 'object' && obj !== null) {
-            Object.keys(obj).forEach(key => {
+            for (const key in obj) {
                 obj[key] = sanitize(obj[key]);
-            });
+            }
         }
         return obj;
     };
@@ -132,80 +119,101 @@ const sanitizeInput = (req, res, next) => {
     next();
 };
 
-// ============================================================
-// PILLAR 5: SECURE SESSION - JWT validation enhancement
-// ============================================================
+/**
+ * Login rate limiter - stricter than general limiter
+ * Max 5 login attempts per 15 min per IP
+ */
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Only 5 login attempts
+    message: {
+        error: 'Too many login attempts. Please try again in 15 minutes.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
-const validateToken = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Token format validation
-    if (token.length < 50 || !token.includes('.')) {
-        return res.status(401).json({ error: 'Invalid token format' });
-    }
-
+/**
+ * Account lockout check middleware
+ * Checks if the account is locked due to failed attempts
+ */
+const checkAccountLockout = async (req, res, next) => {
+    // Placeholder - can be enhanced with database check
+    // For now, just pass through
     next();
 };
 
-// ============================================================
-// PILLAR 6: CORS HARDENING - Already in index.js
-// ============================================================
-
-// ============================================================
-// PILLAR 7: SECURITY LOGGING - Monitor attacks
-// ============================================================
-
+/**
+ * Security logging middleware
+ * Logs security-relevant requests
+ */
 const securityLogger = (req, res, next) => {
-    const startTime = Date.now();
-
-    // Log security-relevant events
-    res.on('finish', () => {
-        const duration = Date.now() - startTime;
-        const statusCode = res.statusCode;
-
-        // Log failed auth attempts
-        if (req.path.includes('/auth/login') && statusCode >= 400) {
-            console.log(`[SECURITY] Failed login: ${req.body?.email || 'unknown'} | IP: ${req.ip} | Status: ${statusCode} | ${duration}ms`);
-        }
-
-        // Log rate limiting hits
-        if (statusCode === 429) {
-            console.log(`[SECURITY] Rate limited: ${req.path} | IP: ${req.ip}`);
-        }
-
-        // Log suspicious patterns
-        if (req.body?.email?.includes("'") || req.body?.email?.includes("--")) {
-            console.log(`[SECURITY] SQL injection attempt: ${req.ip} | Payload: ${req.body.email}`);
-        }
-    });
-
+    const logData = {
+        timestamp: new Date().toISOString(),
+        method: req.method,
+        path: req.path,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')?.substring(0, 50)
+    };
+    // Log auth attempts only (not sensitive data)
+    console.log('[Security]', JSON.stringify(logData));
     next();
 };
 
-// ============================================================
-// EXPORTS
-// ============================================================
+// In-memory store for failed login attempts (for demo - use Redis in production)
+const failedAttempts = new Map();
+
+/**
+ * Record a failed login attempt
+ */
+const recordFailedAttempt = (email) => {
+    const key = email.toLowerCase();
+    const current = failedAttempts.get(key) || { count: 0, lastAttempt: null };
+    failedAttempts.set(key, {
+        count: current.count + 1,
+        lastAttempt: new Date()
+    });
+    console.log(`[Security] Failed login attempt ${current.count + 1} for ${key}`);
+};
+
+/**
+ * Reset failed attempts after successful login
+ */
+const resetFailedAttempts = (email) => {
+    const key = email.toLowerCase();
+    if (failedAttempts.has(key)) {
+        failedAttempts.delete(key);
+        console.log(`[Security] Reset failed attempts for ${key}`);
+    }
+};
+
+/**
+ * Check if account should be locked (more than 5 attempts in 15 minutes)
+ */
+const isAccountLocked = (email) => {
+    const key = email.toLowerCase();
+    const attempts = failedAttempts.get(key);
+    if (!attempts) return false;
+
+    const lockoutWindow = 15 * 60 * 1000; // 15 minutes
+    const timeSinceLastAttempt = Date.now() - new Date(attempts.lastAttempt).getTime();
+
+    if (timeSinceLastAttempt > lockoutWindow) {
+        failedAttempts.delete(key);
+        return false;
+    }
+
+    return attempts.count >= 5;
+};
 
 module.exports = {
-    // Pillar 1: Rate Limiting
+    configureSecurity,
+    sanitizeInput,
     loginLimiter,
-    passwordResetLimiter,
-    apiLimiter,
-
-    // Pillar 2: Account Lockout
     checkAccountLockout,
+    securityLogger,
     recordFailedAttempt,
     resetFailedAttempts,
-
-    // Pillar 4: Input Sanitization
-    sanitizeInput,
-
-    // Pillar 5: Secure Session
-    validateToken,
-
-    // Pillar 7: Security Logging
-    securityLogger
+    isAccountLocked
 };

@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import {
   Bell, Check, Trash2, Package, DollarSign, Shield, Heart,
   AlertCircle, MessageCircle, Gift, ChevronRight, RefreshCw,
   Sparkles, TrendingUp, ShoppingBag, Star, Zap, Clock, Filter,
-  CheckCheck, X, MoreHorizontal
+  CheckCheck, X, MoreHorizontal, ArrowLeft
 } from "lucide-react";
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState(null);
@@ -266,11 +268,19 @@ const Notifications = () => {
                   </span>
                 )}
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">{t('notifications') || 'Notifications'}</h1>
-                <p className="text-purple-300 text-sm">
-                  {unreadCount > 0 ? `${unreadCount} new updates` : 'You\'re all caught up!'}
-                </p>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => navigate(-1)}
+                  className="p-2 -ml-2 hover:bg-white/10 rounded-xl transition-colors text-white"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+                <div>
+                  <h1 className="text-2xl font-bold text-white">{t('notifications') || 'Notifications'}</h1>
+                  <p className="text-purple-300 text-sm">
+                    {unreadCount > 0 ? `${unreadCount} new updates` : 'You\'re all caught up!'}
+                  </p>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">

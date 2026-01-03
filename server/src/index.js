@@ -37,8 +37,42 @@ const priceAlertsRoutes = require("./routes/priceAlerts.js");
 const priceHistoryRoutes = require("./routes/priceHistory.js");
 const tiersRoutes = require("./routes/tiers.js");
 const brandsRoutes = require("./routes/brands.js");
+const pushNotificationsRoutes = require("./routes/pushNotifications.js");
+const nearbyRoutes = require("./routes/nearby.js");
+
+const http = require('http');
+const { Server } = require("socket.io");
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "http://localhost:3000"],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+// Socket.io connection handler
+io.on('connection', (socket) => {
+  console.log(`User Connected: ${socket.id}`);
+
+  socket.on('join_room', (data) => {
+    socket.join(data);
+    console.log(`User with ID: ${socket.id} joined room: ${data}`);
+  });
+
+  socket.on('send_message', (data) => {
+    socket.to(data.room).emit('receive_message', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User Disconnected', socket.id);
+  });
+});
+
+// Make io accessible globally if needed (optional)
+app.set('io', io);
 
 // Security & CORS - Allow all common local dev ports
 app.use(helmet());
@@ -51,8 +85,8 @@ app.use(express.json({ limit: '10mb' }));
 // Global input sanitization (Pillar 4)
 app.use(sanitizeInput);
 
-// Global rate limit for all API endpoints (Pillar 1)
-app.use('/api/', rateLimit({ windowMs: 1 * 60 * 1000, max: 100, message: { error: 'Too many requests. Please slow down.' } }));
+// Global rate limit for all API endpoints (Pillar 1) - Increased for page loads with multiple API calls
+app.use('/api/', rateLimit({ windowMs: 1 * 60 * 1000, max: 500, message: { error: 'Too many requests. Please slow down.' } }));
 
 // MOUNT ROUTES
 app.use('/api/auth', authRoutes);
@@ -82,6 +116,8 @@ app.use('/api/price-alerts', priceAlertsRoutes);
 app.use('/api/price-history', priceHistoryRoutes);
 app.use('/api/tiers', tiersRoutes);
 app.use('/api/brands', brandsRoutes);
+app.use('/api/push', pushNotificationsRoutes);
+app.use('/api/nearby', nearbyRoutes);
 
 // Health check with DB validation
 app.get('/api/health', async (req, res) => {
@@ -98,6 +134,19 @@ app.get('/', (req, res) => {
   res.send('Backend running successfully.');
 });
 
+// Test Notification Endpoint
+app.post('/api/test-notification', (req, res) => {
+  const { message, type = 'info' } = req.body;
+  io.emit('notification', {
+    id: Date.now(),
+    title: 'Test Notification',
+    message: message || 'This is a test notification from server',
+    type,
+    timestamp: new Date()
+  });
+  res.json({ status: 'sent', message });
+});
+
 // 404 handler
 app.use((req, res) => res.status(404).json({ error: 'Not Found' }));
 
@@ -108,4 +157,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Send, ArrowLeft, Search, MoreVertical } from 'lucide-react';
+import { MessageCircle, Send, ArrowLeft, Search, MoreVertical, Check, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { socket } from '../lib/socket';
 
 const Chat = () => {
     const navigate = useNavigate();
@@ -18,16 +19,98 @@ const Chat = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const messagesEndRef = useRef(null);
 
+    // Real-time features
+    const [isTyping, setIsTyping] = useState(false);
+    const [typingUser, setTypingUser] = useState(null);
+    const [onlineUsers, setOnlineUsers] = useState(new Set());
+    const typingTimeoutRef = useRef(null);
+
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('authToken');
 
     useEffect(() => {
         fetchConversations();
-    }, []);
+
+        // Join user's room for real-time updates
+        if (userId) {
+            socket.emit('join_room', `user_${userId}`);
+        }
+
+        // Listen for new messages
+        socket.on('new_message', (data) => {
+            if (selectedConversation?.conversation_id === data.conversation_id) {
+                setMessages(prev => [...prev, data.message]);
+            }
+            // Update conversation list with new message
+            setConversations(prev => prev.map(conv =>
+                conv.conversation_id === data.conversation_id
+                    ? { ...conv, last_message: data.message.content, last_message_time: data.message.created_at }
+                    : conv
+            ));
+        });
+
+        // Listen for typing indicators
+        socket.on('user_typing', (data) => {
+            if (selectedConversation?.other_user_id === data.user_id) {
+                setIsTyping(true);
+                setTypingUser(data.username);
+                // Auto-hide after 3 seconds
+                clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+            }
+        });
+
+        socket.on('user_stopped_typing', (data) => {
+            if (selectedConversation?.other_user_id === data.user_id) {
+                setIsTyping(false);
+            }
+        });
+
+        // Listen for online status
+        socket.on('user_online', (data) => {
+            setOnlineUsers(prev => new Set([...prev, data.user_id]));
+        });
+
+        socket.on('user_offline', (data) => {
+            setOnlineUsers(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(data.user_id);
+                return newSet;
+            });
+        });
+
+        // Listen for read receipts
+        socket.on('messages_read', (data) => {
+            if (data.conversation_id === selectedConversation?.conversation_id) {
+                setMessages(prev => prev.map(msg => ({ ...msg, is_read: true })));
+            }
+        });
+
+        return () => {
+            socket.off('new_message');
+            socket.off('user_typing');
+            socket.off('user_stopped_typing');
+            socket.off('user_online');
+            socket.off('user_offline');
+            socket.off('messages_read');
+            clearTimeout(typingTimeoutRef.current);
+        };
+    }, [selectedConversation]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    // Emit typing event when user types
+    const handleTyping = (e) => {
+        setNewMessage(e.target.value);
+        if (selectedConversation && e.target.value) {
+            socket.emit('typing', {
+                conversation_id: selectedConversation.conversation_id,
+                receiver_id: selectedConversation.other_user_id
+            });
+        }
+    };
 
     const fetchConversations = async () => {
         try {
@@ -199,8 +282,8 @@ const Chat = () => {
                                         {messages.map((msg, idx) => (
                                             <div key={idx} className={`flex ${msg.sender_id === parseInt(userId) ? 'justify-end' : 'justify-start'}`}>
                                                 <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${msg.sender_id === parseInt(userId)
-                                                        ? 'bg-blue-600 text-white rounded-br-sm'
-                                                        : 'bg-gray-100 dark:bg-gray-700 rounded-bl-sm'
+                                                    ? 'bg-blue-600 text-white rounded-br-sm'
+                                                    : 'bg-gray-100 dark:bg-gray-700 rounded-bl-sm'
                                                     }`}>
                                                     <p>{msg.content}</p>
                                                     <p className={`text-xs mt-1 ${msg.sender_id === parseInt(userId) ? 'text-blue-100' : 'text-gray-500'}`}>

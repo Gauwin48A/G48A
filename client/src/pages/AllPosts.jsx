@@ -64,16 +64,25 @@ const AllPosts = () => {
   const [viewedPosts, setViewedPosts] = useState(new Set()); // Track which posts have been viewed
   const postRefs = useRef({}); // Refs for each post card
 
-  // Guest user restrictions
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-
-  // Check login status on mount
-  useEffect(() => {
+  // Guest user restrictions - initialize immediately from localStorage
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
     const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('userId');
-    setIsLoggedIn(!!(token && userId));
-  }, []);
+    return !!(token && userId);
+  });
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Restore scroll position when returning from post details
+  useEffect(() => {
+    const savedPosition = sessionStorage.getItem('allPostsScrollPosition');
+    if (savedPosition && posts.length > 0) {
+      // Use requestAnimationFrame for smooth restoration after render
+      requestAnimationFrame(() => {
+        window.scrollTo(0, parseInt(savedPosition, 10));
+        sessionStorage.removeItem('allPostsScrollPosition');
+      });
+    }
+  }, [posts.length]);
 
   // Fetch categories from API on mount
   useEffect(() => {
@@ -98,6 +107,12 @@ const AllPosts = () => {
     'Beauty': '💄', 'Kids': '🧸', 'Grocery': '🛒', 'Toys': '🎮',
     'Jewelry': '💎', 'Tools': '🔧', 'Garden': '🌿', 'Pet Supplies': '🐾'
   };
+
+  // Create categoryMap from fetched categories (name -> category_id)
+  const categoryMap = categories.reduce((map, cat) => {
+    map[cat.name] = cat.category_id || cat.name;
+    return map;
+  }, {});
 
   // Helper to build filter params
   const buildParams = () => {
@@ -149,7 +164,7 @@ const AllPosts = () => {
   };
 
 
-  // Fetch posts with filters
+  // Fetch posts with Guaranteed Reach algorithm
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -157,7 +172,11 @@ const AllPosts = () => {
       try {
         const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
         const params = buildParams();
-        const url = `${baseUrl}/api/posts?${params.toString()}`;
+        // Add refresh seed for instant new posts on every page load
+        params.append('refresh', Math.floor(Math.random() * 100000));
+        // Use /api/posts/for-you for Guaranteed Reach algorithm
+        // This ensures all sellers get fair visibility to all buyers
+        const url = `${baseUrl}/api/posts/for-you?${params.toString()}`;
         setDebugUrl(url);
         const res = await fetch(url);
         if (!res.ok) {
@@ -332,6 +351,9 @@ const AllPosts = () => {
 
   // View Details - also tracks view and recently viewed
   const handleViewDetails = async (postId) => {
+    // Save scroll position before navigating
+    sessionStorage.setItem('allPostsScrollPosition', window.scrollY.toString());
+
     // Find post object by id
     const postObj = posts.find(p => p.id === postId || p.post_id === postId);
 
@@ -341,11 +363,12 @@ const AllPosts = () => {
     // Track recently viewed (fire and forget)
     const userId = localStorage.getItem('userId');
     if (userId) {
-      fetch('/api/recently-viewed/track', {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      fetch(`${baseUrl}/api/recently-viewed/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ post_id: postId, user_id: userId })
+        body: JSON.stringify({ postId: postId, userId: userId, source: 'allposts' })
       }).catch(() => { });
     }
 
@@ -366,8 +389,8 @@ const AllPosts = () => {
   // Location is now handled at App.jsx level - no blocking here
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300">
-      {/* Category Filter Bar - all 10 categories with horizontal scroll */}
-      <div className="w-full flex justify-center px-4 pt-2 pb-4">
+      {/* Category Filter Bar - sticky on scroll */}
+      <div className="w-full flex justify-center px-4 pt-2 pb-4 sticky top-[80px] z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm">
         <div className="flex gap-2 md:gap-4 bg-gradient-to-r from-blue-100 via-white to-blue-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl shadow-lg py-3 px-3 md:px-6 items-center overflow-x-auto scrollbar-hide max-w-full">
           {/* All Categories Button */}
           <button

@@ -30,6 +30,7 @@ const Profile = () => {
   const [editPrefMode, setEditPrefMode] = useState(false);
   const [channel, setChannel] = useState(null);
   const [activeTab, setActiveTab] = useState('personal');
+  const [userStats, setUserStats] = useState({ postCount: 0, rank: 'Bronze', memberDays: 0 });
 
   useEffect(() => {
     const cached = localStorage.getItem('userProfile');
@@ -84,6 +85,17 @@ const Profile = () => {
       getChannelByUser(user.user_id)
         .then(res => setChannel(res.data))
         .catch(() => setChannel(null));
+
+      // Fetch user's real stats (post count, rank, member days)
+      Promise.all([
+        fetch(`${baseUrl}/api/posts/mine?userId=${user.user_id}`).then(r => r.json()),
+        fetch(`${baseUrl}/api/rewards/user/${user.user_id}`).then(r => r.json()).catch(() => ({ tier: 'Bronze' }))
+      ]).then(([postsData, rewardsData]) => {
+        const postCount = postsData?.total || postsData?.posts?.length || 0;
+        const rank = rewardsData?.tier || 'Bronze';
+        const memberDays = user.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        setUserStats({ postCount, rank, memberDays });
+      }).catch(() => { });
     }
   }, [user]);
 
@@ -145,16 +157,67 @@ const Profile = () => {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-10 shadow-2xl text-center max-w-md">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-            <User className="w-10 h-10 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" style={{ paddingBottom: '120px' }}>
+        {/* Hero Section */}
+        <div className="pt-16 pb-12 px-6 text-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-2xl">
+            <User className="w-12 h-12 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-4">{t('profile')}</h2>
-          <p className="text-white/80 text-lg mb-8">Manage your account, preferences, and settings</p>
-          <div className="flex flex-col gap-3">
-            <a href="/login" className="bg-white text-indigo-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">Login to Continue</a>
-            <a href="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">Create Account</a>
+          <h1 className="text-4xl font-bold text-white mb-3">{t('profile') || 'Profile'}</h1>
+          <p className="text-white/80 text-lg max-w-md mx-auto">
+            {t('profile_desc') || 'Manage your account, preferences, and settings'}
+          </p>
+        </div>
+
+        {/* Login/Signup Cards - Styled like MyRecommendations/MyPosts */}
+        <div className="max-w-lg mx-auto px-6 space-y-4">
+          <a
+            href="/login"
+            className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900">{t('login') || 'Login'}</h3>
+                <p className="text-gray-500 text-sm">{t('login_desc') || 'Already have an account? Sign in here'}</p>
+              </div>
+              <ChevronRight className="w-6 h-6 text-gray-400" />
+            </div>
+          </a>
+
+          <a
+            href="/signup"
+            className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shadow-lg">
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white">{t('signup') || 'Create Account'}</h3>
+                <p className="text-white/70 text-sm">{t('signup_desc') || 'New user? Join us in just a few steps'}</p>
+              </div>
+              <ChevronRight className="w-6 h-6 text-white/60" />
+            </div>
+          </a>
+        </div>
+
+        {/* Features Grid */}
+        <div className="max-w-lg mx-auto px-6 mt-10">
+          <p className="text-center text-white/60 text-sm mb-6">{t('features') || 'Features you unlock with an account'}</p>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { icon: Star, label: 'Wishlist' },
+              { icon: Bell, label: 'Alerts' },
+              { icon: Settings, label: 'Settings' }
+            ].map((item, i) => (
+              <div key={i} className="bg-white/10 rounded-xl p-4 text-center">
+                <item.icon className="w-6 h-6 mx-auto mb-2 text-white/80" />
+                <p className="text-white/80 text-xs font-medium">{item.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -278,21 +341,21 @@ const Profile = () => {
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl">
             <CardContent className="p-4 text-center">
               <TrendingUp className="w-6 h-6 mx-auto mb-2 text-green-500" />
-              <p className="text-2xl font-bold text-gray-800 dark:text-white">15</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">{userStats.postCount}</p>
               <p className="text-xs text-gray-500">Posts</p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl">
             <CardContent className="p-4 text-center">
               <Award className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
-              <p className="text-2xl font-bold text-gray-800 dark:text-white">Bronze</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">{userStats.rank}</p>
               <p className="text-xs text-gray-500">Rank</p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl">
             <CardContent className="p-4 text-center">
               <Calendar className="w-6 h-6 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold text-gray-800 dark:text-white">30</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">{userStats.memberDays}</p>
               <p className="text-xs text-gray-500">Days</p>
             </CardContent>
           </Card>
@@ -379,6 +442,38 @@ const Profile = () => {
                     </div>
                   </div>
                 )}
+
+                {/* User ID Display - For SaleDone */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Your User ID</p>
+                        <p className="font-bold text-indigo-700 dark:text-indigo-300 font-mono text-lg">
+                          {profileData.user_id || user?.user_id || '-'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const userId = profileData.user_id || user?.user_id;
+                        if (userId) {
+                          navigator.clipboard.writeText(String(userId));
+                          toast({ title: "📋 Copied!", description: "User ID copied to clipboard" });
+                        }
+                      }}
+                      className="border-indigo-300 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
+                    >
+                      <Copy className="w-4 h-4 mr-1" /> Copy
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">💡 Use this ID when filling SaleDone forms as the Buyer/Seller ID</p>
+                </div>
 
                 {/* Verification Status */}
                 <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800">

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock, FiFileText } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useLocation } from '@/context/LocationContext';
 import { useTranslation } from 'react-i18next';
+import { useToast } from "@/hooks/use-toast";
 import LanguageSelector from './LanguageSelector';
 
 const navLinks = [
@@ -17,15 +18,14 @@ const navLinks = [
 ];
 
 const moreMenuLinks = [
+  { key: 'nearby', path: '/nearby' },
+  { key: 'chat', path: '/chat' },
   { key: 'verification', path: '/verification' },
   { key: 'categories', path: '/categories' },
-  { key: 'my_feed', path: '/my-feed' },
   { key: 'feedback', path: '/feedback' },
   { key: 'complaints', path: '/complaints' },
   { key: 'dashboard', path: '/dashboard' },
   { key: 'admin_panel', path: '/admin-panel' },
-  { key: 'login', path: '/login' },
-  { key: 'signup', path: '/signup' },
 ];
 
 const bottomNavLinks = [
@@ -38,10 +38,11 @@ const bottomNavLinks = [
 
 const GreenNavbar = () => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const { filters, setFilters } = useFilter();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
-  // Persist dark mode in localStorage
+  const [categories, setCategories] = useState([]);
   const [darkMode, setDarkMode] = useState(() => {
     const stored = localStorage.getItem('darkMode');
     return stored ? JSON.parse(stored) : false;
@@ -53,6 +54,22 @@ const GreenNavbar = () => {
     return stored ? JSON.parse(stored) : false;
   });
   const darkModeLabel = darkMode ? 'Disable Dark Mode' : 'Enable Dark Mode';
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const res = await fetch(`${baseUrl}/api/categories`);
+        const data = await res.json();
+        setCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
@@ -102,7 +119,7 @@ const GreenNavbar = () => {
       if (!document.getElementById('slideInRightStyle')) {
         const style = document.createElement('style');
         style.id = 'slideInRightStyle';
-        style.textContent = `@keyframes slideInRight {from {transform: translateX(100%);}to {transform: translateX(0);}} .animate-slideInRight {animation: slideInRight 0.3s cubic-bezier(0.4,0,0.2,1);}`;
+        style.textContent = `@keyframes slideInRight {from { transform: translateX(100 %); }to { transform: translateX(0); } } .animate - slideInRight { animation: slideInRight 0.3s cubic - bezier(0.4, 0, 0.2, 1); } `;
         document.head.appendChild(style);
       }
     }
@@ -250,10 +267,11 @@ const GreenNavbar = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
                         <select className="w-full border rounded px-2 py-1" value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value, page: 1 }))}>
                           <option value="">{t('all')}</option>
-                          <option value="Electronics">{t('electronics')}</option>
-                          <option value="Fashion">{t('fashion')}</option>
-                          <option value="Home">{t('home')}</option>
-                          <option value="Mobiles">{t('mobiles')}</option>
+                          {categories.map(cat => (
+                            <option key={cat.category_id || cat.name} value={cat.name}>
+                              {t(cat.name.toLowerCase().replace(' ', '_')) || cat.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="mb-2">
@@ -368,17 +386,36 @@ const GreenNavbar = () => {
                 if (isLoggedIn && (link.key === 'login' || link.key === 'signup')) return false;
                 return true;
               })
-              .map(link => (
-                <Link
-                  key={link.key}
-                  to={link.path}
-                  className="block px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-center text-base shadow transition-colors duration-150"
-                  onClick={() => setMoreOpen(false)}
-                  tabIndex={0}
-                >
-                  {t(link.key)}
-                </Link>
-              ))}
+              .map(link => {
+                const restrictedKeys = ['chat', 'verification', 'feedback', 'complaints', 'dashboard', 'admin_panel'];
+                const isRestricted = !isLoggedIn && restrictedKeys.includes(link.key);
+
+                return (
+                  <Link
+                    key={link.key}
+                    to={isRestricted ? '#' : link.path}
+                    className={`block px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-center text-base shadow transition-all duration-150 ${isRestricted ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : ''}`}
+                    onClick={(e) => {
+                      if (isRestricted) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toast({
+                          description: "Please login to access this feature",
+                          variant: "destructive",
+                        });
+                      } else {
+                        setMoreOpen(false);
+                      }
+                    }}
+                    tabIndex={0}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      {isRestricted && <FiLock className="w-4 h-4 text-gray-500" />}
+                      {t(link.key)}
+                    </span>
+                  </Link>
+                );
+              })}
             {isLoggedIn && (
               <button
                 className="block w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-semibold text-center text-base shadow transition-colors duration-150"

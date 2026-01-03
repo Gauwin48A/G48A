@@ -1,7 +1,9 @@
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import GreenNavbar from './components/GreenNavbar.jsx';
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/components/ui/use-toast";
+import { socket } from './lib/socket';
 import { FilterProvider } from './context/FilterContext.jsx';
 import { LocationProvider, useLocation } from './context/LocationContext.jsx';
 import LanguageSelector from './components/LanguageSelector';
@@ -28,6 +30,7 @@ const Notifications = lazy(() => import('./pages/Notifications.jsx'));
 const Complaints = lazy(() => import('./pages/Complaints.jsx'));
 const Feedback = lazy(() => import('./pages/Feedback.jsx'));
 const MyHome = lazy(() => import('./pages/MyHome.jsx'));
+const Home = lazy(() => import('./pages/Home.jsx'));
 const BoughtPosts = lazy(() => import('./pages/BoughtPosts.jsx'));
 const SoldPosts = lazy(() => import('./pages/SoldPosts.jsx'));
 const PostDetail = lazy(() => import('./pages/PostDetail.jsx'));
@@ -42,6 +45,8 @@ const Wishlist = lazy(() => import('./pages/Wishlist.jsx'));
 const RecentlyViewed = lazy(() => import('./pages/RecentlyViewed.jsx'));
 const SavedSearches = lazy(() => import('./pages/SavedSearches.jsx'));
 const Verification = lazy(() => import('./pages/Verification.jsx'));
+const NearbyPosts = lazy(() => import('./pages/NearbyPosts.jsx'));
+const Chat = lazy(() => import('./pages/Chat.jsx'));
 
 /**
  * Location Banner - Shows when location is not granted
@@ -49,10 +54,10 @@ const Verification = lazy(() => import('./pages/Verification.jsx'));
  */
 function LocationBanner() {
   const { t } = useTranslation();
-  const { error, retry, loading, skipForNow, permissionGranted } = useLocation();
-  const [dismissed, setDismissed] = useState(false);
+  const { error, retry, loading, skipForNow, permissionGranted, userSkipped, enableLocation } = useLocation();
 
-  if (dismissed || permissionGranted) return null;
+  // Don't show banner if permission granted or user skipped
+  if (permissionGranted || userSkipped) return null;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-100 border-b-2 border-yellow-400 shadow-lg">
@@ -76,7 +81,7 @@ function LocationBanner() {
                 {t('allow_location') || 'Enable'}
               </button>
               <button
-                onClick={() => { setDismissed(true); skipForNow(); }}
+                onClick={skipForNow}
                 className="px-3 py-2 text-yellow-700 hover:text-yellow-900 font-medium"
               >
                 {t('later') || 'Later'}
@@ -100,16 +105,32 @@ function LocationBanner() {
  */
 function AppContent() {
   const { t } = useTranslation();
-  const { loading, permissionGranted, skipForNow, city } = useLocation();
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const { loading, permissionGranted, skipForNow, city, userSkipped, enableLocation } = useLocation();
+  const { toast } = useToast();
 
-  // Show loading state only for initial location capture
-  const showInitialLoader = loading && !bannerDismissed;
+  // Socket listener for notifications
+  useEffect(() => {
+    socket.on('notification', (data) => {
+      toast({
+        title: data.title,
+        description: data.message,
+        variant: data.type === 'error' ? 'destructive' : 'default',
+        className: "bg-gradient-to-r from-purple-500/90 to-pink-500/90 text-white border-none",
+      });
+    });
+
+    return () => {
+      socket.off('notification');
+    };
+  }, [toast]);
+
+  // Show loading state only for initial location capture (not if user skipped)
+  const showInitialLoader = loading && !userSkipped;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      {/* Show location banner if not granted and not dismissed */}
-      {!permissionGranted && !bannerDismissed && !showInitialLoader && (
+      {/* Show location banner if not granted and not skipped */}
+      {!permissionGranted && !userSkipped && !showInitialLoader && (
         <LocationBanner />
       )}
 
@@ -128,7 +149,7 @@ function AppContent() {
               {t('skip_for_now') || '(You can skip this)'}
             </p>
             <button
-              onClick={() => { setBannerDismissed(true); skipForNow(); }}
+              onClick={skipForNow}
               className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
             >
               {t('skip_for_now') || 'Skip for now'}
@@ -138,7 +159,7 @@ function AppContent() {
       ) : (
         <>
           <GreenNavbar />
-          <main className="flex-1" style={{ marginTop: !permissionGranted && !bannerDismissed ? '60px' : '0' }}>
+          <main className="flex-1" style={{ marginTop: !permissionGranted && !userSkipped ? '60px' : '0' }}>
             <Suspense fallback={<div className="flex justify-center items-center h-full py-20">{t('loading') || 'Loading...'}</div>}>
               <Routes>
                 {/* Authentication routes */}
@@ -155,6 +176,7 @@ function AppContent() {
                 <Route path="/add-post" element={<AddPost />} />
                 <Route path="/tier-selection" element={<TierSelection />} />
                 <Route path="/my-home" element={<MyHome />} />
+                <Route path="/home" element={<Home />} />
                 <Route path="/bought-posts" element={<BoughtPosts />} />
                 <Route path="/sold-posts" element={<SoldPosts />} />
                 <Route path="/buyer-view" element={<BuyerView />} />
@@ -178,6 +200,8 @@ function AppContent() {
                 <Route path="/recently-viewed" element={<RecentlyViewed />} />
                 <Route path="/saved-searches" element={<SavedSearches />} />
                 <Route path="/verification" element={<Verification />} />
+                <Route path="/nearby" element={<NearbyPosts />} />
+                <Route path="/chat" element={<Chat />} />
                 <Route path="*" element={<Navigate to="/all-posts" replace />} />
               </Routes>
             </Suspense>
