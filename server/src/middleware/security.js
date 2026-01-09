@@ -6,11 +6,20 @@
  * 1. Helmet - Hardened HTTP Headers (prevent XSS/Clickjacking)
  * 2. Rate Limiter - Stops brute-force/DDoS attacks
  * 3. CORS - Strict origin allowlist
+ * 4. CSRF - Cross-Site Request Forgery protection
+ * 5. HTTPS - SSL/TLS enforcement
+ * 6. 2FA - Two-Factor Authentication support
  */
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
+// Security sub-modules
+const { csrfProtection, csrfTokenEndpoint } = require('./csrf');
+const { enforceHttps, enableHSTS } = require('../config/https');
+const twoFactor = require('./twoFactor');
 
 /**
  * Configure comprehensive security middleware
