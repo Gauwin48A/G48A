@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiMapPin, FiX, FiSearch, FiNavigation } from 'react-icons/fi';
 import { useLocation } from '@/context/LocationContext';
 
+import { useTranslation } from 'react-i18next';
+
 /**
  * LocationSelector Modal
  * Allows users to manually enter their location when GPS is inaccurate
@@ -34,6 +36,7 @@ const POPULAR_CITIES = [
 ];
 
 const LocationSelector = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
     const { city, retry: retryLocation, setManualLocation } = useLocation();
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredCities, setFilteredCities] = useState(POPULAR_CITIES.slice(0, 10));

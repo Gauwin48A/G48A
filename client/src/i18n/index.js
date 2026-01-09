@@ -1,31 +1,43 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import en from "../locales/en.json";
-import hi from "../locales/hi.json";
-import te from "../locales/te.json";
-import mr from "../locales/mr.json";
-import ta from "../locales/ta.json";
-import kn from "../locales/kn.json";
-import bn from "../locales/bn.json";
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import HttpBackend from 'i18next-http-backend';
 
-const resources = {
-  en: { translation: en },
-  hi: { translation: hi },
-  te: { translation: te },
-  mr: { translation: mr },
-  ta: { translation: ta },
-  kn: { translation: kn },
-  bn: { translation: bn },
-};
+// Get saved language or default to English
+const savedLanguage = localStorage.getItem('mhub_language') || 'en';
 
 i18n
+  .use(HttpBackend)
   .use(initReactI18next)
   .init({
-    resources,
-    lng: localStorage.getItem("mhub_language") || "en",
-    fallbackLng: "en",
-    interpolation: { escapeValue: false },
+    lng: savedLanguage,
+    fallbackLng: 'en',
+    supportedLngs: ['en', 'hi', 'te', 'ta', 'kn', 'mr', 'bn'],
+
+    backend: {
+      // Load translations from public folder with cache-busting
+      loadPath: '/locales/{{lng}}.json?v=' + Date.now(),
+    },
+
+    interpolation: {
+      escapeValue: false,
+    },
+
+    debug: false,
+
+    react: {
+      useSuspense: false,
+      bindI18n: 'languageChanged loaded',
+      bindI18nStore: 'added removed',
+    },
   });
 
-export default i18n;
+// Force reload translations when language changes
+i18n.on('languageChanged', (lng) => {
+  localStorage.setItem('mhub_language', lng);
+  // Reload all resources to ensure fresh translations
+  i18n.reloadResources(lng).then(() => {
+    console.log(`Language changed to: ${lng}`);
+  });
+});
 
+export default i18n;

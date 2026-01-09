@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
 
+import { useTranslation } from 'react-i18next';
+
 const ImageZoomModal = ({ isOpen, onClose, imageUrl, alt = 'Image' }) => {
+  const { t } = useTranslation();
     const [scale, setScale] = useState(1);
 
     useEffect(() => {

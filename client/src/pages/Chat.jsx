@@ -9,7 +9,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 
+import { useTranslation } from 'react-i18next';
+
 const Chat = () => {
+  const { t } = useTranslation();
     const navigate = useNavigate();
     const [conversations, setConversations] = useState([]);
     const [selectedConversation, setSelectedConversation] = useState(null);

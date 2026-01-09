@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, AlertCircle, Info, XCircle } from "lucide-react";
 
+import { useTranslation } from 'react-i18next';
+
 const ToastDemo = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   const showSuccessToast = () => {

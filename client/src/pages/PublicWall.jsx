@@ -4,7 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Star, Medal, Crown, Shield, TrendingUp } from "lucide-react";
 
+import { useTranslation } from 'react-i18next';
+
 const PublicWall = () => {
+  const { t } = useTranslation();
   const [topSellers, setTopSellers] = useState([]);
   const [topBuyers, setTopBuyers] = useState([]);
   const [topUsers, setTopUsers] = useState([]);
@@ -46,7 +49,7 @@ const PublicWall = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -55,8 +58,8 @@ const PublicWall = () => {
               <Trophy className="w-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">Public Wall</h1>
-              <p className="text-gray-600 text-lg">Celebrating our top performers</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Public Wall</h1>
+              <p className="text-gray-600 dark:text-gray-300 text-lg">Celebrating our top performers</p>
             </div>
           </div>
           <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-2xl p-6 inline-block">
@@ -67,7 +70,7 @@ const PublicWall = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Top Sellers */}
-          <Card className="shadow-xl border-0 rounded-3xl overflow-hidden">
+          <Card className="shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800">
             <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-center py-8">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-8 h-8 text-white" />
@@ -80,13 +83,13 @@ const PublicWall = () => {
             <CardContent className="p-8">
               <div className="space-y-6">
                 {topSellers.map((seller, index) => (
-                  <div key={seller.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl">
+                  <div key={seller.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl">
                     <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-lg">
                       {index + 1}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-bold text-gray-900">{seller.name}</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white">{seller.name}</h4>
                         {seller.verified && <Shield className="w-4 h-4 text-green-600" />}
                       </div>
                       <div className="flex items-center space-x-2 mt-1">
@@ -112,7 +115,7 @@ const PublicWall = () => {
           </Card>
 
           {/* Top Buyers */}
-          <Card className="shadow-xl border-0 rounded-3xl overflow-hidden">
+          <Card className="shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800">
             <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-8">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Star className="w-8 h-8 text-white" />
@@ -125,20 +128,20 @@ const PublicWall = () => {
             <CardContent className="p-8">
               <div className="space-y-6">
                 {topBuyers.map((buyer, index) => (
-                  <div key={buyer.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
+                  <div key={buyer.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl">
                     <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white font-bold text-lg">
                       {index + 1}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-bold text-gray-900">{buyer.name}</h4>
+                        <h4 className="font-bold text-gray-900 dark:text-white">{buyer.name}</h4>
                         {buyer.verified && <Shield className="w-4 h-4 text-blue-600" />}
                       </div>
                       <div className="flex items-center space-x-1 mt-1">
                         <Star className="w-4 h-4 text-yellow-500 fill-current" />
                         <span className="text-sm font-medium">{buyer.rating}</span>
                       </div>
-                      <div className="text-sm text-gray-600 mt-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {buyer.purchases} purchases • {buyer.coins} coins
                       </div>
                     </div>
@@ -149,7 +152,7 @@ const PublicWall = () => {
           </Card>
 
           {/* Top Users Overall */}
-          <Card className="shadow-xl border-0 rounded-3xl overflow-hidden">
+          <Card className="shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800">
             <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-600 text-white text-center py-8">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Crown className="w-8 h-8 text-white" />
@@ -162,16 +165,16 @@ const PublicWall = () => {
             <CardContent className="p-8">
               <div className="space-y-6">
                 {topUsers.map((user, index) => (
-                  <div key={user.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
+                  <div key={user.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl">
                     <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl text-white font-bold text-lg">
                       {index + 1}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-gray-900">{user.name}</h4>
+                      <h4 className="font-bold text-gray-900 dark:text-white">{user.name}</h4>
                       <Badge className="bg-purple-100 text-purple-800 border-purple-300 mt-1">
                         Level {user.level}
                       </Badge>
-                      <div className="text-sm text-gray-600 mt-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {user.totalCoins} coins • {user.badge}
                       </div>
                     </div>
@@ -183,7 +186,7 @@ const PublicWall = () => {
         </div>
 
         {/* Monthly Stats */}
-        <Card className="mt-8 shadow-xl border-0 rounded-3xl overflow-hidden">
+        <Card className="mt-8 shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800">
           <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-8">
             <CardTitle className="text-2xl font-bold">📊 This Month's Statistics</CardTitle>
             <CardDescription className="text-sky-100 text-lg">
@@ -192,21 +195,21 @@ const PublicWall = () => {
           </CardHeader>
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl">
-                <div className="text-3xl font-bold text-green-600">127</div>
-                <div className="text-gray-600 font-medium">Total Sales</div>
+              <div className="text-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">127</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Total Sales</div>
               </div>
-              <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
-                <div className="text-3xl font-bold text-blue-600">89</div>
-                <div className="text-gray-600 font-medium">Active Buyers</div>
+              <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">89</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Active Buyers</div>
               </div>
-              <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
-                <div className="text-3xl font-bold text-purple-600">₹2.3M</div>
-                <div className="text-gray-600 font-medium">Total Volume</div>
+              <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl">
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">₹2.3M</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Total Volume</div>
               </div>
-              <div className="text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl">
-                <div className="text-3xl font-bold text-yellow-600">95%</div>
-                <div className="text-gray-600 font-medium">Success Rate</div>
+              <div className="text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl">
+                <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">95%</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Success Rate</div>
               </div>
             </div>
           </CardContent>

@@ -98,7 +98,46 @@ const configureSecurity = (app) => {
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/signup', authLimiter);
 
-    console.log('🛡️ Security middleware configured (Helmet, CORS, Rate Limiter)');
+    // 4. COOKIE PARSER (required for CSRF)
+    app.use(cookieParser());
+
+    // 5. HTTPS ENFORCEMENT (production only)
+    if (process.env.NODE_ENV === 'production') {
+        app.use(enforceHttps);
+        app.use(enableHSTS);
+        console.log('🔒 HTTPS enforcement enabled');
+    }
+
+    // 6. CSRF PROTECTION
+    // Skip for API endpoints that need to be accessible externally
+    app.use(csrfProtection({
+        skipPaths: [
+            '/api/webhooks',
+            '/api/auth/refresh',
+            '/api/posts/for-you',  // Public read endpoint
+            '/api/posts/cache-stats',
+            '/health'
+        ]
+    }));
+
+    // CSRF Token endpoint for SPA
+    app.get('/api/csrf-token', csrfTokenEndpoint);
+
+    // 7. 2FA Routes
+    app.post('/api/auth/2fa/setup', twoFactor.setup2FA);
+    app.post('/api/auth/2fa/verify', twoFactor.verify2FA);
+    app.post('/api/auth/2fa/challenge', twoFactor.challenge2FA);
+    app.post('/api/auth/2fa/disable', twoFactor.disable2FA);
+
+    console.log('🛡️ Security middleware configured:');
+    console.log('   ✅ Helmet (HTTP Headers)');
+    console.log('   ✅ CORS (Origin Allowlist)');
+    console.log('   ✅ Rate Limiting');
+    console.log('   ✅ CSRF Protection');
+    console.log('   ✅ 2FA Support');
+    if (process.env.NODE_ENV === 'production') {
+        console.log('   ✅ HTTPS + HSTS');
+    }
 };
 
 /**
@@ -170,50 +209,95 @@ const securityLogger = (req, res, next) => {
     next();
 };
 
-// In-memory store for failed login attempts (for demo - use Redis in production)
-const failedAttempts = new Map();
+// ============================================
+// POSTGRES-BACKED LOCKOUT (Survives Restarts)
+// ============================================
+const pool = require('../config/db');
+
+const LOCKOUT_LIMIT = 5;
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
- * Record a failed login attempt
+ * Record a failed login attempt (Postgres-backed)
  */
-const recordFailedAttempt = (email) => {
-    const key = email.toLowerCase();
-    const current = failedAttempts.get(key) || { count: 0, lastAttempt: null };
-    failedAttempts.set(key, {
-        count: current.count + 1,
-        lastAttempt: new Date()
-    });
-    console.log(`[Security] Failed login attempt ${current.count + 1} for ${key}`);
-};
+const recordFailedAttempt = async (identifier) => {
+    const key = identifier.toLowerCase();
+    const now = new Date();
+    const lockTime = new Date(now.getTime() + LOCKOUT_WINDOW_MS);
 
-/**
- * Reset failed attempts after successful login
- */
-const resetFailedAttempts = (email) => {
-    const key = email.toLowerCase();
-    if (failedAttempts.has(key)) {
-        failedAttempts.delete(key);
-        console.log(`[Security] Reset failed attempts for ${key}`);
+    try {
+        await pool.query(`
+            INSERT INTO login_attempts (ip_address, attempt_count, last_attempt_at)
+            VALUES ($1, 1, $2)
+            ON CONFLICT (ip_address) 
+            DO UPDATE SET 
+                attempt_count = login_attempts.attempt_count + 1,
+                last_attempt_at = $2,
+                locked_until = CASE 
+                    WHEN login_attempts.attempt_count + 1 >= $3 THEN $4 
+                    ELSE login_attempts.locked_until 
+                END
+        `, [key, now, LOCKOUT_LIMIT, lockTime]);
+
+        console.log(`[Security] Failed login recorded for ${key}`);
+    } catch (err) {
+        console.error('[Security] Failed to record attempt:', err.message);
     }
 };
 
 /**
- * Check if account should be locked (more than 5 attempts in 15 minutes)
+ * Reset failed attempts after successful login (Postgres-backed)
  */
-const isAccountLocked = (email) => {
-    const key = email.toLowerCase();
-    const attempts = failedAttempts.get(key);
-    if (!attempts) return false;
-
-    const lockoutWindow = 15 * 60 * 1000; // 15 minutes
-    const timeSinceLastAttempt = Date.now() - new Date(attempts.lastAttempt).getTime();
-
-    if (timeSinceLastAttempt > lockoutWindow) {
-        failedAttempts.delete(key);
-        return false;
+const resetFailedAttempts = async (identifier) => {
+    const key = identifier.toLowerCase();
+    try {
+        await pool.query(`
+            UPDATE login_attempts 
+            SET attempt_count = 0, locked_until = NULL 
+            WHERE ip_address = $1
+        `, [key]);
+        console.log(`[Security] Reset attempts for ${key}`);
+    } catch (err) {
+        console.error('[Security] Failed to reset attempts:', err.message);
     }
+};
 
-    return attempts.count >= 5;
+/**
+ * Check if account is locked (Postgres-backed)
+ */
+const isAccountLocked = async (identifier) => {
+    const key = identifier.toLowerCase();
+    try {
+        const result = await pool.query(`
+            SELECT attempt_count, locked_until 
+            FROM login_attempts 
+            WHERE ip_address = $1
+        `, [key]);
+
+        if (result.rows.length === 0) return false;
+
+        const { attempt_count, locked_until } = result.rows[0];
+
+        // Check if currently locked
+        if (locked_until && new Date(locked_until) > new Date()) {
+            return true;
+        }
+
+        // Reset if lock expired
+        if (locked_until && new Date(locked_until) < new Date()) {
+            await pool.query(`
+                UPDATE login_attempts 
+                SET attempt_count = 0, locked_until = NULL 
+                WHERE ip_address = $1
+            `, [key]);
+            return false;
+        }
+
+        return attempt_count >= LOCKOUT_LIMIT;
+    } catch (err) {
+        console.error('[Security] Lockout check failed:', err.message);
+        return false; // Fail open
+    }
 };
 
 module.exports = {
@@ -224,5 +308,11 @@ module.exports = {
     securityLogger,
     recordFailedAttempt,
     resetFailedAttempts,
-    isAccountLocked
+    isAccountLocked,
+    // New security modules
+    csrfProtection,
+    csrfTokenEndpoint,
+    twoFactor,
+    enforceHttps,
+    enableHSTS
 };

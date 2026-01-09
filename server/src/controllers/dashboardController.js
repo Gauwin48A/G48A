@@ -71,6 +71,7 @@ exports.getDashboard = async (req, res) => {
         labelKey: 'active_listings',
         value: parseInt(postsStats.active_posts || 0),
         trend: '+Active',
+        trendKey: 'trend_active',
         bg: 'bg-blue-100',
         color: 'text-blue-600'
       },
@@ -79,6 +80,7 @@ exports.getDashboard = async (req, res) => {
         labelKey: 'total_sales',
         value: parseInt(postsStats.sold_posts || 0),
         trend: '+Sold',
+        trendKey: 'trend_sold',
         bg: 'bg-green-100',
         color: 'text-green-600'
       },
@@ -87,6 +89,7 @@ exports.getDashboard = async (req, res) => {
         labelKey: 'total_views',
         value: parseInt(postsStats.total_views || 0),
         trend: '+Views',
+        trendKey: 'trend_views',
         bg: 'bg-purple-100',
         color: 'text-purple-600'
       },
@@ -95,6 +98,7 @@ exports.getDashboard = async (req, res) => {
         labelKey: 'coins_earned',
         value: user.coins,
         trend: '+Coins',
+        trendKey: 'trend_coins',
         bg: 'bg-yellow-100',
         color: 'text-yellow-600'
       }

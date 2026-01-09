@@ -10,7 +10,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
+import { useTranslation } from 'react-i18next';
+
 const SavedSearches = () => {
+  const { t } = useTranslation();
     const navigate = useNavigate();
     const [searches, setSearches] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -111,25 +114,25 @@ const SavedSearches = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
             {/* Header */}
-            <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-lg border-b border-gray-700">
+            <div className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => navigate(-1)}
-                            className="text-gray-300 hover:text-white"
+                            className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <div>
-                            <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                 <Search className="h-5 w-5 text-purple-400" />
                                 Saved Searches
                             </h1>
-                            <p className="text-xs text-gray-400">{searches.length} saved</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{searches.length} saved</p>
                         </div>
                     </div>
                     <Button
@@ -144,26 +147,26 @@ const SavedSearches = () => {
 
                 {/* Add Form */}
                 {showAddForm && (
-                    <div className="p-4 bg-gray-800 border-b border-gray-700">
+                    <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                         <div className="space-y-3">
                             <Input
                                 placeholder="Search name (e.g., 'Cheap iPhones')"
                                 value={newSearch.name}
                                 onChange={(e) => setNewSearch({ ...newSearch, name: e.target.value })}
-                                className="bg-gray-700 border-gray-600 text-white"
+                                className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                             />
                             <Input
                                 placeholder="Search keywords (e.g., 'iPhone 14')"
                                 value={newSearch.searchQuery}
                                 onChange={(e) => setNewSearch({ ...newSearch, searchQuery: e.target.value })}
-                                className="bg-gray-700 border-gray-600 text-white"
+                                className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                             />
                             <div className="flex gap-2">
                                 <Input
                                     placeholder="Location"
                                     value={newSearch.location}
                                     onChange={(e) => setNewSearch({ ...newSearch, location: e.target.value })}
-                                    className="bg-gray-700 border-gray-600 text-white"
+                                    className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                                 />
                             </div>
                             <div className="flex gap-2">
@@ -172,14 +175,14 @@ const SavedSearches = () => {
                                     placeholder="Min price"
                                     value={newSearch.minPrice}
                                     onChange={(e) => setNewSearch({ ...newSearch, minPrice: e.target.value })}
-                                    className="bg-gray-700 border-gray-600 text-white"
+                                    className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                                 />
                                 <Input
                                     type="number"
                                     placeholder="Max price"
                                     value={newSearch.maxPrice}
                                     onChange={(e) => setNewSearch({ ...newSearch, maxPrice: e.target.value })}
-                                    className="bg-gray-700 border-gray-600 text-white"
+                                    className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                                 />
                             </div>
                             <div className="flex gap-2">
@@ -190,7 +193,7 @@ const SavedSearches = () => {
                                 <Button
                                     variant="outline"
                                     onClick={() => setShowAddForm(false)}
-                                    className="border-gray-600 text-gray-300"
+                                    className="border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
                                 >
                                     Cancel
                                 </Button>
@@ -209,8 +212,8 @@ const SavedSearches = () => {
                 ) : searches.length === 0 ? (
                     <div className="text-center py-16">
                         <Search className="h-16 w-16 mx-auto text-gray-600 mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-300 mb-2">No Saved Searches</h3>
-                        <p className="text-gray-500 mb-6">Save your searches to get alerts when new posts match</p>
+                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Saved Searches</h3>
+                        <p className="text-gray-500 dark:text-gray-500 mb-6">Save your searches to get alerts when new posts match</p>
                         <Button
                             onClick={() => setShowAddForm(true)}
                             className="bg-purple-600 hover:bg-purple-700"
@@ -224,20 +227,20 @@ const SavedSearches = () => {
                         {searches.map((search) => (
                             <Card
                                 key={search.search_id}
-                                className="bg-gray-800/60 border-gray-700 overflow-hidden"
+                                className="bg-white dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 overflow-hidden"
                             >
                                 <div className="p-4">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1" onClick={() => runSearch(search)}>
-                                            <h3 className="text-white font-semibold flex items-center gap-2 cursor-pointer hover:text-purple-400">
+                                            <h3 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2 cursor-pointer hover:text-purple-600 dark:hover:text-purple-400">
                                                 {search.search_name || search.name}
                                             </h3>
-                                            <p className="text-sm text-gray-400 mt-1">
+                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                                 Keywords: {search.search_query}
                                             </p>
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {search.location && (
-                                                    <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
+                                                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300">
                                                         <MapPin className="h-3 w-3 mr-1" />
                                                         {search.location}
                                                     </Badge>
@@ -271,7 +274,7 @@ const SavedSearches = () => {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDelete(search.search_id)}
-                                                className="text-gray-400 hover:text-red-400"
+                                                className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
                                             >
                                                 <Trash2 className="h-5 w-5" />
                                             </Button>

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 const GreenHeroBanner = () => {
+  const { t } = useTranslation();
   const [banner, setBanner] = useState({ headline: '', subtext: '', image: '', button: '' });
   useEffect(() => {
     const fetchBanner = async () => {

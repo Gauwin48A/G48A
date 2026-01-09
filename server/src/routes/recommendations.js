@@ -55,7 +55,9 @@ router.get('/', async (req, res) => {
     }
 
     // Order by relevance (newest first only - views_count may not exist)
-    query += ` ORDER BY p.created_at DESC LIMIT 50`;
+    query += ` ORDER BY p.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit);
+    params.push(offset);
 
     console.log('[RECOMMENDATIONS] Query:', query);
     console.log('[RECOMMENDATIONS] Params:', params);

@@ -93,8 +93,8 @@ exports.getAllPosts = async (req, res) => {
         u.rating as seller_rating,
         COALESCE(pr.full_name, u.username) as user_name,
         c.name as category_name,
-        (SELECT array_agg(image_url) FROM post_images pi WHERE pi.post_id = p.post_id LIMIT 5) as images,
 
+        
         (SELECT is_verified FROM user_verifications WHERE user_id = p.user_id AND verification_type = 'aadhaar' LIMIT 1) as aadhaar_verified,
         (SELECT is_verified FROM user_verifications WHERE user_id = p.user_id AND verification_type = 'pan' LIMIT 1) as pan_verified,
         (SELECT verified_at FROM user_verifications WHERE user_id = p.user_id AND is_verified = true ORDER BY verified_at DESC LIMIT 1) as verification_date
@@ -205,9 +205,12 @@ exports.createPost = async (req, res) => {
     }
 
     // Insert the post directly (no stored procedure needed)
+    // Images are stored as JSONB array strings
+    const imagesJson = JSON.stringify(images.map(img => img.path || img.filename));
+
     const insertResult = await pool.query(
-      `INSERT INTO posts (user_id, category_id, title, description, price, location, post_type, status, created_at, views_count, likes, shares)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', NOW(), 0, 0, 0)
+      `INSERT INTO posts (user_id, category_id, title, description, price, location, post_type, images, status, created_at, views_count, likes, shares)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::JSONB, 'active', NOW(), 0, 0, 0)
        RETURNING post_id`,
       [
         user_id,
@@ -216,7 +219,8 @@ exports.createPost = async (req, res) => {
         description || '',
         price || 0,
         location || null,
-        type || 'sale' // 'feed' for feed posts, 'sale' for regular
+        type || 'sale',
+        imagesJson
       ]
     );
 
@@ -226,22 +230,12 @@ exports.createPost = async (req, res) => {
       return res.status(400).json({ error: 'Post creation failed' });
     }
 
-    // Insert images if any
-    if (images.length > 0) {
-      const imageValues = images.map((img, idx) =>
-        `(${post_id}, '${img.path || img.filename}', ${idx + 1})`
-      ).join(',');
-      await pool.query(
-        `INSERT INTO post_images (post_id, image_url, display_order) VALUES ${imageValues}`
-      );
-    }
-
     // Fetch the created post for response
     const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [post_id]);
-    const imagesRes = await pool.query('SELECT * FROM post_images WHERE post_id = $1', [post_id]);
+    // Mock imagesRes for consistency if needed, or just return post
 
     logInfo('Post created successfully', { post_id, user_id, type: type || 'sale' });
-    res.status(201).json({ post: postRes.rows[0], images: imagesRes.rows });
+    res.status(201).json({ post: postRes.rows[0], images: postRes.rows[0].images });
   } catch (err) {
     logError('Error creating post:', err);
     res.status(400).json({ error: err.message });

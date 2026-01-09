@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MapPin, Clock, Eye, Shield, Phone } from "lucide-react";
 
+import { useTranslation } from 'react-i18next';
+
 const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
+  const { t } = useTranslation();
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       {/* Image Section */}

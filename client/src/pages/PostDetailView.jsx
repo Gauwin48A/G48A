@@ -4,7 +4,10 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
+import { useTranslation } from 'react-i18next';
+
 const PostDetailView = () => {
+  const { t } = useTranslation();
   const { postId } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);

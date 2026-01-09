@@ -72,10 +72,10 @@ const Rewards = () => {
             <Gift className="w-10 h-10 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">{t('rewards_referrals')}</h2>
-          <p className="text-white/80 text-lg mb-8">Earn coins, unlock rewards, and grow your network!</p>
+          <p className="text-white/80 text-lg mb-8">{t('earn_coins_unlock_rewards')}</p>
           <div className="flex flex-col gap-3">
-            <a href="/login" className="bg-white text-indigo-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">Login to Continue</a>
-            <a href="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">Create Account</a>
+            <a href="/login" className="bg-white text-indigo-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">{t('login_to_continue')}</a>
+            <a href="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">{t('create_account')}</a>
           </div>
         </div>
       </div>
@@ -87,7 +87,7 @@ const Rewards = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading your rewards...</p>
+          <p className="text-gray-600 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -172,7 +172,7 @@ const Rewards = () => {
                 <Zap className="w-6 h-6 text-white" />
               </div>
               <p className="text-3xl font-bold text-gray-800 dark:text-white">{user.totalCoins}</p>
-              <p className="text-sm text-gray-500">Total Coins</p>
+              <p className="text-sm text-gray-500">{t('total_coins')}</p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1">
@@ -181,7 +181,7 @@ const Rewards = () => {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <p className="text-3xl font-bold text-gray-800 dark:text-white">{user.totalReferrals}</p>
-              <p className="text-sm text-gray-500">Total Referrals</p>
+              <p className="text-sm text-gray-500">{t('total_referrals')}</p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1">
@@ -190,7 +190,7 @@ const Rewards = () => {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <p className="text-3xl font-bold text-gray-800 dark:text-white">{user.streak}</p>
-              <p className="text-sm text-gray-500">Day Streak 🔥</p>
+              <p className="text-sm text-gray-500">{t('day_streak')} 🔥</p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1">
@@ -199,7 +199,7 @@ const Rewards = () => {
                 <Award className="w-6 h-6 text-white" />
               </div>
               <p className="text-3xl font-bold text-gray-800 dark:text-white">{user.successfulRefs}</p>
-              <p className="text-sm text-gray-500">Verified Refs</p>
+              <p className="text-sm text-gray-500">{t('verified_refs')}</p>
             </CardContent>
           </Card>
         </div>
@@ -215,16 +215,16 @@ const Rewards = () => {
             <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Gift className="w-5 h-5" /> Your Referral Code
+                  <Gift className="w-5 h-5" /> {t('your_referral_code')}
                 </h3>
                 <Button variant="ghost" size="sm" className="text-white hover:bg-white/20" onClick={() => copyToClipboard(user.referralCode, 'Referral code')}>
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>
               <div className="text-4xl font-bold text-white mb-4 tracking-wider">{user.referralCode}</div>
-              <p className="text-white/70 text-sm mb-4">Share & earn 50 coins per successful referral!</p>
+              <p className="text-white/70 text-sm mb-4">{t('share_earn_coins', { amount: 50 })}</p>
               <Button onClick={shareReferral} className="w-full bg-white text-indigo-600 hover:bg-white/90 font-bold">
-                <Share2 className="w-4 h-4 mr-2" /> Share Now
+                <Share2 className="w-4 h-4 mr-2" /> {t('share_now')}
               </Button>
             </CardContent>
           </Card>
@@ -235,14 +235,14 @@ const Rewards = () => {
             <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" /> Daily Secret Code
+                  <Sparkles className="w-5 h-5" /> {t('daily_secret_code')}
                 </h3>
                 <Button variant="ghost" size="sm" className="text-white hover:bg-white/20" onClick={() => copyToClipboard(user.dailySecretCode, 'Secret code')}>
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>
               <div className="text-4xl font-bold text-white mb-4 tracking-wider">{user.dailySecretCode}</div>
-              <p className="text-white/70 text-sm mb-2">Required for sale confirmations</p>
+              <p className="text-white/70 text-sm mb-2">{t('required_for_sale')}</p>
               <div className="flex items-center gap-2 text-white/80">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm">Expires in 12h 30m</span>
@@ -255,13 +255,13 @@ const Rewards = () => {
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="w-full flex bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-lg mb-6">
             <TabsTrigger value="overview" className="flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 font-semibold">
-              Overview
+              {t('overview')}
             </TabsTrigger>
             <TabsTrigger value="referrals" className="flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 font-semibold">
-              Referrals
+              {t('referrals')}
             </TabsTrigger>
             <TabsTrigger value="milestones" className="flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 font-semibold">
-              Milestones
+              {t('milestones')}
             </TabsTrigger>
           </TabsList>
 
@@ -269,15 +269,15 @@ const Rewards = () => {
             <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-indigo-600" /> Daily Challenges
+                  <Target className="w-5 h-5 text-indigo-600" /> {t('daily_challenges')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { title: 'Share a post', reward: 10, completed: true },
-                  { title: 'Invite a friend', reward: 50, completed: false },
-                  { title: 'Complete your profile', reward: 25, completed: true },
-                  { title: 'Make a sale', reward: 100, completed: false },
+                  { title: t('share_a_post'), reward: 10, completed: true },
+                  { title: t('invite_a_friend'), reward: 50, completed: false },
+                  { title: t('complete_your_profile'), reward: 25, completed: true },
+                  { title: t('make_a_sale'), reward: 100, completed: false },
                 ].map((challenge, i) => (
                   <div key={i} className={`flex items-center justify-between p-4 rounded-xl ${challenge.completed ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700'}`}>
                     <div className="flex items-center gap-3">
@@ -287,7 +287,7 @@ const Rewards = () => {
                       <span className={challenge.completed ? 'line-through text-gray-400' : 'text-gray-700 dark:text-white font-medium'}>{challenge.title}</span>
                     </div>
                     <Badge className={challenge.completed ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700'}>
-                      +{challenge.reward} coins
+                      +{challenge.reward} {t('coins')}
                     </Badge>
                   </div>
                 ))}
@@ -299,16 +299,16 @@ const Rewards = () => {
             <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-indigo-600" /> Your Referrals ({referralChain.length})
+                  <Users className="w-5 h-5 text-indigo-600" /> {t('your_referrals')} ({referralChain.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {referralChain.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="text-6xl mb-4">👥</div>
-                    <p className="text-gray-500 mb-4">No referrals yet. Share your code to start earning!</p>
+                    <p className="text-gray-500 mb-4">{t('no_referrals_yet')}</p>
                     <Button onClick={shareReferral} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                      <Share2 className="w-4 h-4 mr-2" /> Share Your Code
+                      <Share2 className="w-4 h-4 mr-2" /> {t('share_your_code')}
                     </Button>
                   </div>
                 ) : (

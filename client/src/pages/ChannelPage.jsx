@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { getChannelByUser, createChannelPost } from '../lib/api';
 import { useParams } from 'react-router-dom';
 
+import { useTranslation } from 'react-i18next';
+
 const ChannelPage = () => {
+  const { t } = useTranslation();
   const { channelId } = useParams();
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -31,7 +34,7 @@ const ChannelPage = () => {
     setPosts(res.data.posts || []);
   };
 
-  if (!channel) return <div>Loading...</div>;
+  if (!channel) return <div>{t('loading')}</div>;
 
   return (
     <div className="container mx-auto p-4">
@@ -39,8 +42,8 @@ const ChannelPage = () => {
         {channel.profile_pic && <img src={channel.profile_pic} alt="logo" className="w-16 h-16 rounded-full object-cover" />}
         <div>
           <div className="font-bold text-xl">{channel.name}</div>
-          <div className="text-xs text-gray-500">Owner: {channel.owner_name}</div>
-          <div className="text-xs text-gray-400">Followers: {channel.follower_count}</div>
+          <div className="text-xs text-gray-500">{t('owner_label', { name: channel.owner_name })}</div>
+          <div className="text-xs text-gray-400">{t('followers_count', { count: channel.follower_count })}</div>
         </div>
       </div>
       <div className="mb-4 text-gray-600">{channel.bio}</div>
@@ -48,28 +51,28 @@ const ChannelPage = () => {
         <form onSubmit={handleSubmit} className="mb-4">
           <textarea
             className="w-full border rounded p-2 mb-2"
-            placeholder="Description"
+            placeholder={t('description_placeholder')}
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={2}
           />
           <input
             className="w-full border rounded p-2 mb-2"
-            placeholder="Media URL (optional)"
+            placeholder={t('media_url_optional')}
             value={mediaUrl}
             onChange={e => setMediaUrl(e.target.value)}
           />
           <select className="w-full border rounded p-2 mb-2" value={type} onChange={e => setType(e.target.value)}>
-            <option value="text">Text</option>
-            <option value="image">Image</option>
-            <option value="video">Video</option>
+            <option value="text">{t('text_type')}</option>
+            <option value="image">{t('image_type')}</option>
+            <option value="video">{t('video_type')}</option>
           </select>
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Post</button>
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">{t('post_button')}</button>
         </form>
       )}
       <div>
-        <h3 className="font-bold mb-2">Posts</h3>
-        {posts.length === 0 ? <div>No posts yet.</div> : (
+        <h3 className="font-bold mb-2">{t('channel_posts')}</h3>
+        {posts.length === 0 ? <div>{t('no_posts')}</div> : (
           <ul className="space-y-2">
             {posts.map(post => (
               <li key={post.post_id} className="border rounded p-2">

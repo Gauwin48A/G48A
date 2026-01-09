@@ -25,30 +25,30 @@ const Complaints = () => {
     description: ''
   });
 
-  const [myComplaints] = useState([
+  const myComplaints = [
     {
       id: 'COMP001',
-      type: 'Transaction Issue',
+      type: t('transaction_issue'),
       postId: 'POST001',
       sellerId: 'USER123',
       buyerId: 'USER456',
-      status: 'Under Review',
+      status: t('under_review'),
       submittedDate: '2024-01-20',
-      description: 'Seller not responding after payment',
+      description: t('seller_not_responding'),
       adminResponse: null
     },
     {
       id: 'COMP002',
-      type: 'Product Quality',
+      type: t('product_quality'),
       postId: 'POST002',
       sellerId: 'USER789',
       buyerId: 'USER456',
-      status: 'Resolved',
+      status: t('resolved'),
       submittedDate: '2024-01-15',
-      description: 'Phone condition was not as described',
-      adminResponse: 'Issue resolved. Refund processed.'
+      description: t('phone_condition_not_described'),
+      adminResponse: t('issue_resolved_refund')
     }
-  ]);
+  ];
 
   const [complaints, setComplaints] = useState([]);
   const [error, setError] = useState(null);
@@ -225,7 +225,7 @@ const Complaints = () => {
             className="inline-flex items-center text-red-300 hover:text-red-200 mb-8 group transition-all"
           >
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to Home
+            {t('back_to_home')}
           </button>
 
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-red-400 to-orange-600 shadow-2xl shadow-red-500/30 mb-6">
@@ -233,23 +233,23 @@ const Complaints = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
-            File a <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">Complaint</span>
+            {t('file_a')} <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t('complaint')}</span>
           </h1>
           <p className="text-red-200 text-lg max-w-md mx-auto">
-            Report issues and get help from our support team
+            {t('report_issues_support')}
           </p>
         </div>
 
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-3">
           <Badge className="bg-red-500/20 text-red-300 border-red-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
-            <Shield className="w-4 h-4 mr-2" /> Secure & Confidential
+            <Shield className="w-4 h-4 mr-2" /> {t('secure_confidential')}
           </Badge>
           <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
-            <Clock className="w-4 h-4 mr-2" /> 24-48h Response
+            <Clock className="w-4 h-4 mr-2" /> {t('24_48h_response')}
           </Badge>
           <Badge className="bg-green-500/20 text-green-300 border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
-            <MessageSquare className="w-4 h-4 mr-2" /> Fair Resolution
+            <MessageSquare className="w-4 h-4 mr-2" /> {t('fair_resolution')}
           </Badge>
         </div>
 
@@ -260,10 +260,10 @@ const Complaints = () => {
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <span>Submit New Complaint</span>
+              <span>{t('submit_new_complaint')}</span>
             </CardTitle>
             <CardDescription className="text-red-100 text-base mt-2">
-              Provide details about your issue for faster resolution
+              {t('provide_details_issue')}
             </CardDescription>
           </CardHeader>
 
@@ -271,7 +271,7 @@ const Complaints = () => {
             <form onSubmit={handleSubmitComplaint} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 mb-2 block">Seller ID *</Label>
+                  <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('seller_id')} *</Label>
                   <Input
                     id="sellerId"
                     name="sellerId"
@@ -283,7 +283,7 @@ const Complaints = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 mb-2 block">Buyer ID *</Label>
+                  <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('buyer_id')} *</Label>
                   <Input
                     id="buyerId"
                     name="buyerId"
@@ -298,7 +298,7 @@ const Complaints = () => {
 
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="postId" className="text-sm font-bold text-gray-700 mb-2 block">Post ID *</Label>
+                  <Label htmlFor="postId" className="text-sm font-bold text-gray-700 mb-2 block">{t('post_id')} *</Label>
                   <Input
                     id="postId"
                     name="postId"
@@ -310,7 +310,7 @@ const Complaints = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="secretCode" className="text-sm font-bold text-gray-700 mb-2 block">Transaction Code (Optional)</Label>
+                  <Label htmlFor="secretCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('transaction_code')}</Label>
                   <Input
                     id="secretCode"
                     name="secretCode"
@@ -323,7 +323,7 @@ const Complaints = () => {
               </div>
 
               <div>
-                <Label htmlFor="complaintType" className="text-sm font-bold text-gray-700 mb-2 block">Complaint Type</Label>
+                <Label htmlFor="complaintType" className="text-sm font-bold text-gray-700 mb-2 block">{t('complaint_type')}</Label>
                 <select
                   id="complaintType"
                   name="complaintType"
@@ -331,23 +331,23 @@ const Complaints = () => {
                   onChange={handleInputChange}
                   className="w-full h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors px-4 bg-white"
                 >
-                  <option value="transaction">💳 Transaction Issue</option>
-                  <option value="quality">📦 Product Quality</option>
-                  <option value="communication">💬 Communication Problem</option>
-                  <option value="fraud">⚠️ Suspected Fraud</option>
-                  <option value="delivery">🚚 Delivery Issue</option>
-                  <option value="other">❓ Other</option>
+                  <option value="transaction">💳 {t('transaction_issue')}</option>
+                  <option value="quality">📦 {t('product_quality')}</option>
+                  <option value="communication">💬 {t('communication_problem')}</option>
+                  <option value="fraud">⚠️ {t('suspected_fraud')}</option>
+                  <option value="delivery">🚚 {t('delivery_issue')}</option>
+                  <option value="other">❓ {t('other')}</option>
                 </select>
               </div>
 
               <div>
-                <Label htmlFor="description" className="text-sm font-bold text-gray-700 mb-2 block">Description *</Label>
+                <Label htmlFor="description" className="text-sm font-bold text-gray-700 mb-2 block">{t('description')} *</Label>
                 <Textarea
                   id="description"
                   name="description"
                   value={complaintForm.description}
                   onChange={handleInputChange}
-                  placeholder="Describe your issue in detail. Include dates, amounts, and any relevant information..."
+                  placeholder={t('describe_issue_detail')}
                   rows={5}
                   className="text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors resize-none"
                   required
@@ -362,12 +362,12 @@ const Complaints = () => {
                 {isLoading ? (
                   <span className="flex items-center gap-3">
                     <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Submitting...
+                    {t('submitting')}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <Send className="w-6 h-6" />
-                    Submit Complaint
+                    {t('submit_complaint')}
                   </span>
                 )}
               </Button>
@@ -380,25 +380,25 @@ const Complaints = () => {
           <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6">
             <CardTitle className="flex items-center space-x-3 text-xl">
               <FileText className="w-6 h-6" />
-              <span>My Complaints</span>
+              <span>{t('my_complaints')}</span>
             </CardTitle>
             <CardDescription className="text-purple-100">
-              Track the status of your submitted complaints
+              {t('track_status')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             {loading ? (
               <div className="text-center py-8">
                 <div className="w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading complaints...</p>
+                <p className="text-gray-500">{t('loading_complaints')}</p>
               </div>
             ) : displayedComplaints.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <AlertCircle className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 text-lg">No complaints yet</p>
-                <p className="text-gray-400 text-sm mt-1">Your submitted complaints will appear here</p>
+                <p className="text-gray-500 text-lg">{t('no_complaints_yet')}</p>
+                <p className="text-gray-400 text-sm mt-1">{t('completed_your_complaints_here')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -437,7 +437,7 @@ const Complaints = () => {
                       <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                         <p className="text-sm font-semibold text-green-800 mb-1 flex items-center gap-2">
                           <CheckCircle className="w-4 h-4" />
-                          Admin Response:
+                          {t('admin_response')}:
                         </p>
                         <p className="text-sm text-green-700">{complaint.adminResponse}</p>
                       </div>
@@ -457,23 +457,23 @@ const Complaints = () => {
                 <AlertCircle className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-bold text-yellow-800 text-lg mb-3">📋 Important Guidelines</h3>
+                <h3 className="font-bold text-yellow-800 text-lg mb-3">📋 {t('important_guidelines')}</h3>
                 <ul className="space-y-2 text-yellow-700">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" />
-                    <span>Provide accurate Post ID and User IDs for faster processing</span>
+                    <span>{t('provide_accurate_ids')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" />
-                    <span>Include transaction details if available</span>
+                    <span>{t('include_transaction_details')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" />
-                    <span>Response time: 24-48 hours for most complaints</span>
+                    <span>{t('response_time_24_48')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" />
-                    <span>Keep all evidence (screenshots, chats) for verification</span>
+                    <span>{t('keep_evidence')}</span>
                   </li>
                 </ul>
               </div>

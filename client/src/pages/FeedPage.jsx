@@ -6,11 +6,13 @@ import { FaHeart, FaRegHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaUser } from
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LoginPromptModal from '@/components/LoginPromptModal';
+import { translatePosts } from '@/utils/translateContent';
 
 const GUEST_POST_LIMIT = 5; // Limit posts for non-logged-in users
 
 const FeedPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,11 @@ const FeedPage = () => {
         const data = await res.json();
         let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
 
+        // Translate posts to current language
+        if (currentLang && currentLang !== 'en') {
+          loadedPosts = await translatePosts(loadedPosts, currentLang);
+        }
+
         if (currentPage === 1) {
           setPosts(loadedPosts);
         } else {
@@ -74,7 +81,7 @@ const FeedPage = () => {
       }
     };
     fetchPosts();
-  }, [currentPage]);
+  }, [currentPage, currentLang]);
 
   // Infinite scroll
   const loadMorePosts = useCallback(() => {
@@ -286,7 +293,7 @@ const FeedPage = () => {
                         </>
                       ) : (
                         <>
-                          {description || <span className="italic text-gray-400">No content</span>}
+                          {description || <span className="italic text-gray-400">{t('no_content')}</span>}
                           {isLong && isExpanded && (
                             <button
                               onClick={() => toggleExpand(postId)}

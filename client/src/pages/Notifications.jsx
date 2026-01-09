@@ -8,6 +8,7 @@ import {
   Sparkles, TrendingUp, ShoppingBag, Star, Zap, Clock, Filter,
   CheckCheck, X, MoreHorizontal, ArrowLeft
 } from "lucide-react";
+import PageHeader from '../components/PageHeader';
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -253,53 +254,36 @@ const Notifications = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 pt-8 pb-6 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30">
-                  <Bell className="w-6 h-6 text-white" />
-                </div>
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white animate-bounce">
-                    {unreadCount}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => navigate(-1)}
-                  className="p-2 -ml-2 hover:bg-white/10 rounded-xl transition-colors text-white"
-                >
-                  <ArrowLeft className="w-6 h-6" />
-                </button>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">{t('notifications') || 'Notifications'}</h1>
-                  <p className="text-purple-300 text-sm">
-                    {unreadCount > 0 ? `${unreadCount} new updates` : 'You\'re all caught up!'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {selectedIds.size > 0 && (
-                <button
-                  onClick={deleteSelected}
-                  className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-xl transition-all"
-                >
-                  <Trash2 className="w-5 h-5 text-red-400" />
-                </button>
-              )}
+      <PageHeader
+        title={t('notifications') || 'Notifications'}
+        rightAction={
+          <div className="flex items-center gap-2">
+            {selectedIds.size > 0 && (
               <button
-                onClick={() => window.location.reload()}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                onClick={deleteSelected}
+                className="p-2 bg-red-500/20 hover:bg-red-500/30 rounded-xl transition-all"
               >
-                <RefreshCw className="w-5 h-5 text-purple-300" />
+                <Trash2 className="w-5 h-5 text-red-400" />
               </button>
-            </div>
+            )}
+            <button
+              onClick={() => window.location.reload()}
+              className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+            >
+              <RefreshCw className="w-5 h-5 text-purple-300" />
+            </button>
           </div>
+        }
+        className="bg-slate-900/90 border-slate-700 text-white"
+        transparent={false}
+      />
+
+      {/* Sub-header / Stats */}
+      <div className="relative z-10 px-4 mb-4">
+        <div className="max-w-2xl mx-auto pt-2">
+          <p className="text-purple-300 text-sm mb-4 ps-2">
+            {unreadCount > 0 ? `${unreadCount} ${t('new_updates') || 'new updates'}` : t('all_caught_up') || 'You\'re all caught up!'}
+          </p>
 
           {/* Quick Actions */}
           {unreadCount > 0 && (
@@ -308,7 +292,7 @@ const Notifications = () => {
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/30 rounded-xl transition-all text-sm font-medium text-purple-200 mb-4"
             >
               <CheckCheck className="w-4 h-4" />
-              Mark all as read
+              {t('mark_all_as_read') || 'Mark all as read'}
             </button>
           )}
 
@@ -323,8 +307,8 @@ const Notifications = () => {
                 key={tab.key}
                 onClick={() => setFilter(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${filter === tab.key
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
-                    : 'bg-white/5 text-purple-200 hover:bg-white/10 border border-white/10'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30'
+                  : 'bg-white/5 text-purple-200 hover:bg-white/10 border border-white/10'
                   }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -348,12 +332,12 @@ const Notifications = () => {
                 <Bell className="w-12 h-12 text-purple-400" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
-                {filter === 'unread' ? 'All caught up!' : 'No notifications'}
+                {filter === 'unread' ? (t('all_caught_up') || 'All caught up!') : (t('no_notifications') || 'No notifications')}
               </h3>
               <p className="text-purple-300/70">
                 {filter === 'unread'
-                  ? 'Great job! You\'ve read all your notifications.'
-                  : 'Check back later for updates and offers.'
+                  ? (t('read_all_notifications') || 'Great job! You\'ve read all your notifications.')
+                  : (t('check_back_later') || 'Check back later for updates and offers.')
                 }
               </p>
             </div>
@@ -362,8 +346,8 @@ const Notifications = () => {
               <div
                 key={notif.notification_id || notif.id}
                 className={`group relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${!notif.read
-                    ? 'bg-gradient-to-r from-white/10 to-white/5 border border-purple-500/30 shadow-lg shadow-purple-500/10'
-                    : 'bg-white/5 border border-white/10 hover:border-white/20'
+                  ? 'bg-gradient-to-r from-white/10 to-white/5 border border-purple-500/30 shadow-lg shadow-purple-500/10'
+                  : 'bg-white/5 border border-white/10 hover:border-white/20'
                   }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -403,7 +387,7 @@ const Notifications = () => {
                       <button
                         onClick={() => {
                           markAsRead(notif.notification_id || notif.id);
-                          window.location.href = notif.action.path;
+                          navigate(notif.action.path);
                         }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 rounded-lg text-sm font-medium text-purple-200 transition-all group/btn"
                       >
@@ -443,15 +427,15 @@ const Notifications = () => {
           <div className="grid grid-cols-3 gap-3 mt-8">
             <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20 rounded-2xl p-4 text-center">
               <div className="text-2xl font-bold text-white">{notifications.length}</div>
-              <div className="text-xs text-blue-300 mt-1">Total</div>
+              <div className="text-xs text-blue-300 mt-1">{t('total') || 'Total'}</div>
             </div>
             <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/20 rounded-2xl p-4 text-center">
               <div className="text-2xl font-bold text-white">{unreadCount}</div>
-              <div className="text-xs text-purple-300 mt-1">Unread</div>
+              <div className="text-xs text-purple-300 mt-1">{t('unread') || 'Unread'}</div>
             </div>
             <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/20 rounded-2xl p-4 text-center">
               <div className="text-2xl font-bold text-white">{notifications.length - unreadCount}</div>
-              <div className="text-xs text-green-300 mt-1">Read</div>
+              <div className="text-xs text-green-300 mt-1">{t('read') || 'Read'}</div>
             </div>
           </div>
         )}
@@ -463,9 +447,9 @@ const Notifications = () => {
               <Sparkles className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <h4 className="font-semibold text-amber-200 mb-1">Pro Tip</h4>
+              <h4 className="font-semibold text-amber-200 mb-1">{t('pro_tip') || 'Pro Tip'}</h4>
               <p className="text-sm text-amber-200/70">
-                Enable push notifications to never miss a buyer inquiry or price drop on your wishlist items!
+                {t('enable_push_notifications') || 'Enable push notifications to never miss a buyer inquiry or price drop on your wishlist items!'}
               </p>
             </div>
           </div>

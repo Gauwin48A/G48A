@@ -1,12 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
+import { useTranslation } from 'react-i18next';
+
 /**
  * Renders a clickable image carousel for a post.
  * It's crucial that carousel navigation stops event propagation 
  * to prevent accidental navigation when viewing the next/prev image.
  */
 const PostImageCarousel = ({ imageUrls = [], title, postId, handleViewDetails }) => {
+  const { t } = useTranslation();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const totalImages = imageUrls.length;

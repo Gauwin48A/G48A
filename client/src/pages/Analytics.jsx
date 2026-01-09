@@ -9,7 +9,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
+import { useTranslation } from 'react-i18next';
+
 const Analytics = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [overview, setOverview] = useState(null);
     const [postPerformance, setPostPerformance] = useState([]);
@@ -158,7 +161,7 @@ const Analytics = () => {
                     </CardHeader>
                     <CardContent>
                         {postPerformance.length === 0 ? (
-                            <p className="text-gray-500 text-center py-8">No posts yet</p>
+                            <p className="text-gray-500 text-center py-8">{t('no_posts')}</p>
                         ) : (
                             <div className="space-y-4">
                                 {postPerformance.slice(0, 5).map((post) => (

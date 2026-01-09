@@ -5,7 +5,10 @@ import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { getNearbyPosts } from '@/lib/api';
 
+import { useTranslation } from 'react-i18next';
+
 const NearbyPosts = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,7 +23,7 @@ const NearbyPosts = () => {
     // Request user's location
     const requestLocation = useCallback(() => {
         if (!navigator.geolocation) {
-            setError('Geolocation is not supported by your browser');
+            setError(t('geolocation_unsupported'));
             setLocationPermission('denied');
             return;
         }
@@ -36,7 +39,7 @@ const NearbyPosts = () => {
             },
             (err) => {
                 console.error('Location error:', err);
-                setError('Please enable location access to see nearby posts');
+                setError(t('enable_location_access'));
                 setLocationPermission('denied');
                 setLoading(false);
             },
@@ -63,10 +66,10 @@ const NearbyPosts = () => {
                 if (data.success) {
                     setPosts(data.posts || []);
                 } else {
-                    setError(data.error || 'Failed to fetch nearby posts');
+                    setError(data.error || t('failed_fetch_nearby'));
                 }
             } catch (err) {
-                setError('Failed to load nearby posts. Please try again.');
+                setError(t('failed_load_nearby_retry'));
             } finally {
                 setLoading(false);
             }
@@ -93,8 +96,8 @@ const NearbyPosts = () => {
                         <div className="flex items-center gap-3">
                             <MapPin className="w-8 h-8 text-white" />
                             <div>
-                                <h1 className="text-2xl font-bold text-white">Nearby Posts</h1>
-                                <p className="text-green-100 text-sm">Find items close to you</p>
+                                <h1 className="text-2xl font-bold text-white">{t('nearby_posts_title')}</h1>
+                                <p className="text-green-100 text-sm">{t('find_items_close')}</p>
                             </div>
                         </div>
                         <Button
@@ -110,7 +113,7 @@ const NearbyPosts = () => {
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-3">
                             <Sliders className="w-4 h-4 text-white" />
-                            <span className="text-white font-medium">Search Radius: {radius} km</span>
+                            <span className="text-white font-medium">{t('search_radius')}: {radius} km</span>
                         </div>
                         <div className="flex gap-2 flex-wrap">
                             {radiusOptions.map((r) => (
@@ -118,8 +121,8 @@ const NearbyPosts = () => {
                                     key={r}
                                     onClick={() => setRadius(r)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${radius === r
-                                            ? 'bg-white text-green-600 shadow-lg'
-                                            : 'bg-white/20 text-white hover:bg-white/30'
+                                        ? 'bg-white text-green-600 shadow-lg'
+                                        : 'bg-white/20 text-white hover:bg-white/30'
                                         }`}
                                 >
                                     {r} km
@@ -137,13 +140,13 @@ const NearbyPosts = () => {
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6 text-center mb-6">
                         <Navigation className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
                         <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-                            Location Access Required
+                            {t('location_access_required')}
                         </h3>
                         <p className="text-yellow-600 dark:text-yellow-300 mb-4">
-                            We need your location to show nearby items
+                            {t('need_location_msg')}
                         </p>
                         <Button onClick={requestLocation} className="bg-yellow-500 hover:bg-yellow-600 text-white">
-                            Enable Location
+                            {t('enable_location')}
                         </Button>
                     </div>
                 )}
@@ -152,7 +155,7 @@ const NearbyPosts = () => {
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-16">
                         <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-gray-500 dark:text-gray-400">Finding items near you...</p>
+                        <p className="text-gray-500 dark:text-gray-400">{t('finding_items')}</p>
                     </div>
                 )}
 
@@ -161,7 +164,7 @@ const NearbyPosts = () => {
                     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
                         <p className="text-red-600 dark:text-red-400">{error}</p>
                         <Button onClick={requestLocation} className="mt-4" variant="outline">
-                            Try Again
+                            {t('try_again')}
                         </Button>
                     </div>
                 )}
@@ -192,7 +195,7 @@ const NearbyPosts = () => {
                                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
-                                            Verified
+                                            {t('verified')}
                                         </div>
                                     )}
                                 </div>
@@ -213,7 +216,7 @@ const NearbyPosts = () => {
                                     </div>
                                     {post.seller_name && (
                                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                                            Seller: {post.seller_name}
+                                            {t('seller_label')}: {post.seller_name}
                                             {post.seller_rating > 0 && (
                                                 <span className="ml-2 text-yellow-500">★ {parseFloat(post.seller_rating).toFixed(1)}</span>
                                             )}
@@ -230,13 +233,13 @@ const NearbyPosts = () => {
                     <div className="text-center py-16">
                         <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                         <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">
-                            No posts found within {radius} km
+                            {t('no_posts_radius', { radius })}
                         </h3>
                         <p className="text-gray-500 dark:text-gray-400 mb-4">
-                            Try increasing the search radius
+                            {t('increase_radius')}
                         </p>
                         <Button onClick={() => setRadius(50)} variant="outline">
-                            Search within 50 km
+                            {t('search_50km')}
                         </Button>
                     </div>
                 )}

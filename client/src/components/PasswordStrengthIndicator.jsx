@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 /**
  * Password Strength Indicator Component
  * Shows real-time feedback on password strength
  */
 const PasswordStrengthIndicator = ({ password }) => {
+  const { t } = useTranslation();
     const analysis = useMemo(() => {
         if (!password) {
             return { score: 0, level: 'empty', message: '', checks: [] };

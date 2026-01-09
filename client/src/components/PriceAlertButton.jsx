@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Bell, BellOff, Check } from 'lucide-react';
 import api from '../lib/api';
 
+import { useTranslation } from 'react-i18next';
+
 /**
  * PriceAlertButton - Subscribe to price drop notifications
  * 
@@ -11,6 +13,7 @@ import api from '../lib/api';
  * @param {boolean} initialSubscribed - Initial subscription state
  */
 const PriceAlertButton = ({ postId, currentPrice, initialSubscribed = false }) => {
+  const { t } = useTranslation();
     const [subscribed, setSubscribed] = useState(initialSubscribed);
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);

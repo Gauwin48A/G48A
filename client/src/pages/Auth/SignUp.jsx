@@ -159,8 +159,8 @@ const SignUp = () => {
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center animate-bounce">
             <CheckCircle className="w-14 h-14 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Account Created!</h2>
-          <p className="text-white/80">Redirecting you to login...</p>
+          <h2 className="text-3xl font-bold text-white mb-2">{t('account_created')}</h2>
+          <p className="text-white/80">{t('redirecting_login')}</p>
         </div>
       </div>
     );
@@ -190,10 +190,10 @@ const SignUp = () => {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            {t('create_account') || 'Create Account'}
+            {t('create_account')}
           </h1>
           <p className="text-gray-400">
-            Join thousands of verified buyers & sellers
+            {t('join_thousands') || "Join thousands of verified buyers & sellers"}
           </p>
         </div>
 
@@ -213,7 +213,7 @@ const SignUp = () => {
                   {/* Full Name */}
                   <div className="relative">
                     <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <User className="w-4 h-4" /> Full Name
+                      <User className="w-4 h-4" /> {t('full_name_label')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -224,7 +224,7 @@ const SignUp = () => {
                         onFocus={() => setFocusedField('fullName')}
                         onBlur={() => setFocusedField(null)}
                         className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'fullName' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder="Enter your full name"
+                        placeholder={t('enter_full_name')}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         <ValidationIcon status={validations.fullName} />
@@ -235,7 +235,7 @@ const SignUp = () => {
                   {/* Phone Number */}
                   <div className="relative">
                     <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Phone className="w-4 h-4" /> Phone Number
+                      <Phone className="w-4 h-4" /> {t('phone')}
                     </Label>
                     <div className="relative flex">
                       <span className="inline-flex items-center px-3 bg-white/5 border border-r-0 border-white/20 rounded-l-xl text-gray-400 text-sm">
@@ -261,7 +261,7 @@ const SignUp = () => {
                   {/* Email */}
                   <div className="relative">
                     <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Mail className="w-4 h-4" /> Email Address
+                      <Mail className="w-4 h-4" /> {t('email')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -272,7 +272,7 @@ const SignUp = () => {
                         onFocus={() => setFocusedField('email')}
                         onBlur={() => setFocusedField(null)}
                         className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'email' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder="you@example.com"
+                        placeholder={t('email_placeholder')}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         <ValidationIcon status={validations.email} />
@@ -283,7 +283,7 @@ const SignUp = () => {
                   {/* Password */}
                   <div className="relative">
                     <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Lock className="w-4 h-4" /> Password
+                      <Lock className="w-4 h-4" /> {t('password')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -294,7 +294,7 @@ const SignUp = () => {
                         onFocus={() => setFocusedField('password')}
                         onBlur={() => setFocusedField(null)}
                         className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-20 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'password' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder="Create a strong password"
+                        placeholder={t('create_password_placeholder')}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <button
@@ -319,7 +319,7 @@ const SignUp = () => {
                           ))}
                         </div>
                         <p className="text-xs text-gray-400">
-                          Password: <span className={`font-medium ${getPasswordStrength().score === 3 ? 'text-green-400' : getPasswordStrength().score === 2 ? 'text-yellow-400' : 'text-red-400'}`}>{getPasswordStrength().label}</span>
+                          {t('password_strength') || "Password strength"}: <span className={`font-medium ${getPasswordStrength().score === 3 ? 'text-green-400' : getPasswordStrength().score === 2 ? 'text-yellow-400' : 'text-red-400'}`}>{getPasswordStrength().label}</span>
                         </p>
                       </div>
                     )}
@@ -328,7 +328,7 @@ const SignUp = () => {
                   {/* Confirm Password */}
                   <div className="relative">
                     <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Lock className="w-4 h-4" /> Confirm Password
+                      <Lock className="w-4 h-4" /> {t('confirm_new_password_label')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -339,7 +339,7 @@ const SignUp = () => {
                         onFocus={() => setFocusedField('confirmPassword')}
                         onBlur={() => setFocusedField(null)}
                         className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-20 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'confirmPassword' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder="Confirm your password"
+                        placeholder={t('confirm_password_placeholder')}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <button
@@ -361,7 +361,7 @@ const SignUp = () => {
                     disabled={!canProceedStep1()}
                     className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                   >
-                    Continue <ArrowRight className="w-5 h-5" />
+                    {t('continue')} <ArrowRight className="w-5 h-5" />
                   </Button>
                 </div>
               )}
@@ -372,7 +372,7 @@ const SignUp = () => {
                   {/* Referral Code */}
                   <div className="relative">
                     <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Gift className="w-4 h-4" /> Referral Code <span className="text-gray-500 text-xs">(Optional)</span>
+                      <Gift className="w-4 h-4" /> {t('referral_code_label')} <span className="text-gray-500 text-xs">{t('optional_label')}</span>
                     </Label>
                     <Input
                       name="referralCode"
@@ -380,35 +380,35 @@ const SignUp = () => {
                       value={formData.referralCode}
                       onChange={handleInputChange}
                       className="h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl focus:border-purple-500 focus:ring-purple-500/20 uppercase"
-                      placeholder="Enter referral code"
+                      placeholder={t('enter_referral_code')}
                       maxLength={8}
                     />
                     {formData.referralCode && (
-                      <p className="text-xs text-purple-400 mt-1">🎁 You'll get bonus coins after signup!</p>
+                      <p className="text-xs text-purple-400 mt-1">{t('signup_bonus_msg')}</p>
                     )}
                   </div>
 
                   {/* Benefits Card */}
                   <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                     <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-purple-400" /> What you get
+                      <Shield className="w-5 h-5 text-purple-400" /> {t('what_you_get')}
                     </h3>
                     <ul className="space-y-2 text-sm text-gray-300">
                       <li className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-400" />
-                        Buy & sell products securely
+                        {t('buy_sell_securely') || "Buy & sell products securely"}
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-400" />
-                        Earn rewards & referral coins
+                        {t('earn_rewards') || "Earn rewards & referral coins"}
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-400" />
-                        Get personalized recommendations
+                        {t('personalized_recommendations') || "Get personalized recommendations"}
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-400" />
-                        Optional KYC for verified badge
+                        {t('optional_kyc') || "Optional KYC for verified badge"}
                       </li>
                     </ul>
                   </div>
@@ -424,13 +424,13 @@ const SignUp = () => {
                       className="mt-0.5 border-white/30 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                     />
                     <Label htmlFor="agreeToTerms" className="text-sm text-gray-300 leading-relaxed cursor-pointer">
-                      I agree to the{' '}
+                      {t('agree_to_terms_prefix') || "I agree to the "}{' '}
                       <Link to="/terms" className="text-purple-400 hover:text-purple-300 underline">
-                        Terms of Service
+                        {t('terms_of_service')}
                       </Link>{' '}
-                      and{' '}
+                      {t('and')}{' '}
                       <Link to="/privacy" className="text-purple-400 hover:text-purple-300 underline">
-                        Privacy Policy
+                        {t('privacy_policy')}
                       </Link>
                     </Label>
                   </div>
@@ -443,7 +443,7 @@ const SignUp = () => {
                       onClick={() => setStep(1)}
                       className="flex-1 h-12 bg-transparent border-white/20 text-white hover:bg-white/10 rounded-xl"
                     >
-                      Back
+                      {t('back')}
                     </Button>
                     <Button
                       type="submit"
@@ -453,7 +453,7 @@ const SignUp = () => {
                       {isLoading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        'Create Account'
+                        t('create_account')
                       )}
                     </Button>
                   </div>
@@ -467,7 +467,7 @@ const SignUp = () => {
                 <div className="w-full border-t border-white/10"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-transparent px-3 text-gray-500">or continue with</span>
+                <span className="bg-transparent px-3 text-gray-500">{t('continue_with')}</span>
               </div>
             </div>
 
@@ -491,18 +491,18 @@ const SignUp = () => {
                 type="button"
                 variant="outline"
                 className="h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2"
-                onClick={() => toast({ title: "Coming Soon", description: "Phone OTP login will be available soon!" })}
+                onClick={() => toast({ title: t('coming_soon'), description: t('phone_otp_coming_soon') })}
               >
                 <Phone className="w-5 h-5" />
-                Phone OTP
+                {t('phone_otp')}
               </Button>
             </div>
 
             {/* Login Link */}
             <p className="text-center text-sm text-gray-400 mt-6">
-              Already have an account?{' '}
+              {t('already_have_account') || "Already have an account?"}{' '}
               <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">
-                Sign in
+                {t('sign_in')}
               </Link>
             </p>
           </CardContent>
@@ -512,15 +512,15 @@ const SignUp = () => {
         <div className="flex justify-center gap-6 mt-6 text-gray-500 text-xs">
           <div className="flex items-center gap-1">
             <Shield className="w-4 h-4" />
-            <span>Secure</span>
+            <span>{t('secure_signup')}</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>10K+ Users</span>
+            <span>{t('users_count_signup')}</span>
           </div>
           <div className="flex items-center gap-1">
             <CheckCircle className="w-4 h-4" />
-            <span>Verified</span>
+            <span>{t('verified_signup')}</span>
           </div>
         </div>
       </div>

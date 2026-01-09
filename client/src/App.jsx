@@ -8,7 +8,7 @@ import { FilterProvider } from './context/FilterContext.jsx';
 import { LocationProvider, useLocation } from './context/LocationContext.jsx';
 import LanguageSelector from './components/LanguageSelector';
 import { useTranslation } from 'react-i18next';
-import './i18n/index';
+
 
 // Lazy load pages
 const AllPosts = lazy(() => import('./pages/AllPosts.jsx'));
@@ -47,6 +47,7 @@ const SavedSearches = lazy(() => import('./pages/SavedSearches.jsx'));
 const Verification = lazy(() => import('./pages/Verification.jsx'));
 const NearbyPosts = lazy(() => import('./pages/NearbyPosts.jsx'));
 const Chat = lazy(() => import('./pages/Chat.jsx'));
+const SearchPage = lazy(() => import('./pages/SearchPage.jsx'));
 
 /**
  * Location Banner - Shows when location is not granted
@@ -65,9 +66,9 @@ function LocationBanner() {
         <div className="flex items-center gap-3">
           <span className="text-2xl">📍</span>
           <div>
-            <p className="font-semibold text-yellow-900">{t('location_required') || 'Location Required'}</p>
+            <p className="font-semibold text-yellow-900">{t('location_required')}</p>
             <p className="text-sm text-yellow-800">
-              {loading ? (t('requesting_location') || 'Requesting location...') : error || (t('grant_permission') || 'Enable location for better experience')}
+              {loading ? t('requesting_location') : error || t('grant_permission')}
             </p>
           </div>
         </div>
@@ -78,20 +79,20 @@ function LocationBanner() {
                 onClick={retry}
                 className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition"
               >
-                {t('allow_location') || 'Enable'}
+                {t('allow_location')}
               </button>
               <button
                 onClick={skipForNow}
                 className="px-3 py-2 text-yellow-700 hover:text-yellow-900 font-medium"
               >
-                {t('later') || 'Later'}
+                {t('later')}
               </button>
             </>
           )}
           {loading && (
             <div className="flex items-center gap-2 text-yellow-700">
               <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm">{t('loading') || 'Please wait...'}</span>
+              <span className="text-sm">{t('loading')}</span>
             </div>
           )}
         </div>
@@ -140,19 +141,19 @@ function AppContent() {
           <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md">
             <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              {t('loading') || 'Initializing App'}
+              {t('initializing_app')}
             </h2>
             <p className="text-gray-600 dark:text-gray-300">
-              {t('requesting_location') || 'Detecting your location...'}
+              {t('detecting_location')}
             </p>
             <p className="text-sm text-gray-400 mt-2">
-              {t('skip_for_now') || '(You can skip this)'}
+              {t('can_skip_hint')}
             </p>
             <button
               onClick={skipForNow}
               className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
             >
-              {t('skip_for_now') || 'Skip for now'}
+              {t('skip_for_now')}
             </button>
           </div>
         </div>
@@ -160,7 +161,7 @@ function AppContent() {
         <>
           <GreenNavbar />
           <main className="flex-1" style={{ marginTop: !permissionGranted && !userSkipped ? '60px' : '0' }}>
-            <Suspense fallback={<div className="flex justify-center items-center h-full py-20">{t('loading') || 'Loading...'}</div>}>
+            <Suspense fallback={<div className="flex justify-center items-center h-full py-20">{t('loading')}</div>}>
               <Routes>
                 {/* Authentication routes */}
                 <Route path="/login" element={<Login />} />
@@ -202,6 +203,7 @@ function AppContent() {
                 <Route path="/verification" element={<Verification />} />
                 <Route path="/nearby" element={<NearbyPosts />} />
                 <Route path="/chat" element={<Chat />} />
+                <Route path="/search" element={<SearchPage />} />
                 <Route path="*" element={<Navigate to="/all-posts" replace />} />
               </Routes>
             </Suspense>

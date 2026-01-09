@@ -3,7 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+import { useTranslation } from 'react-i18next';
+
 export default function AadhaarOtpVerify({ onVerified, onError }) {
+  const { t } = useTranslation();
   const [aadhaar, setAadhaar] = useState('');
   const [masked, setMasked] = useState('');
   const [step, setStep] = useState('input'); // input | otp | verified

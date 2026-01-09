@@ -36,12 +36,10 @@ const AdminPanel = () => {
   }, []);
 
   const handleUserAction = (userId, action) => {
-    console.log(`${action} user ${userId}`);
     // Implementation for user actions
   };
 
   const handlePostAction = (postId, action) => {
-    console.log(`${action} post ${postId}`);
     // Implementation for post actions
   };
 
@@ -298,10 +296,10 @@ const AdminPanel = () => {
                 <div className="space-y-3">
                   {recentActivity.map((activity, index) => (
                     <div key={index} className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${activity.type === 'signup' ? 'border-l-green-500 bg-green-50 dark:bg-green-900/20' :
-                        activity.type === 'flag' ? 'border-l-red-500 bg-red-50 dark:bg-red-900/20' :
-                          activity.type === 'sale' ? 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/20' :
-                            activity.type === 'verification' ? 'border-l-purple-500 bg-purple-50 dark:bg-purple-900/20' :
-                              'border-l-gray-500 bg-gray-50 dark:bg-gray-700'
+                      activity.type === 'flag' ? 'border-l-red-500 bg-red-50 dark:bg-red-900/20' :
+                        activity.type === 'sale' ? 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/20' :
+                          activity.type === 'verification' ? 'border-l-purple-500 bg-purple-50 dark:bg-purple-900/20' :
+                            'border-l-gray-500 bg-gray-50 dark:bg-gray-700'
                       }`}>
                       <div className="flex-1">
                         <p className="font-medium text-gray-900 dark:text-white">{activity.action}</p>
@@ -311,10 +309,10 @@ const AdminPanel = () => {
                       <div className="text-right">
                         <span className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</span>
                         <div className={`inline-block w-2 h-2 rounded-full ml-2 ${activity.type === 'signup' ? 'bg-green-500' :
-                            activity.type === 'flag' ? 'bg-red-500' :
-                              activity.type === 'sale' ? 'bg-blue-500' :
-                                activity.type === 'verification' ? 'bg-purple-500' :
-                                  'bg-gray-500'
+                          activity.type === 'flag' ? 'bg-red-500' :
+                            activity.type === 'sale' ? 'bg-blue-500' :
+                              activity.type === 'verification' ? 'bg-purple-500' :
+                                'bg-gray-500'
                           }`}></div>
                       </div>
                     </div>

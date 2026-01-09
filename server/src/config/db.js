@@ -1,6 +1,9 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Production SSL check (Audit Fix: Encrypt DB traffic)
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Create a new pool instance with robust configuration
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
@@ -11,6 +14,8 @@ const pool = new Pool({
   max: 20, // Max clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
+  // SECURITY: Enforce SSL in production
+  ssl: isProduction ? { rejectUnauthorized: false } : false
 });
 
 pool.on('connect', () => {

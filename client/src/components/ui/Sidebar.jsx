@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { useTranslation } from 'react-i18next';
+
 import { 
   Home, 
   LayoutDashboard, 
@@ -16,6 +18,7 @@ import {
 } from "lucide-react";
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 

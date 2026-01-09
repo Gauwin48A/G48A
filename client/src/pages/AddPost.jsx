@@ -10,7 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, Shield, Crown, Star, Eye } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
+import { useTranslation } from 'react-i18next';
+
 const AddPost = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -286,7 +289,7 @@ const AddPost = () => {
 
   if (showPreview) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="mb-8">
             <Button
@@ -297,13 +300,13 @@ const AddPost = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Edit Post
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Preview Your Post</h1>
-            <p className="text-gray-600">Review your listing before publishing</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Preview Your Post</h1>
+            <p className="text-gray-600 dark:text-gray-300">Review your listing before publishing</p>
           </div>
 
-          <Card className="shadow-xl border-0 rounded-2xl overflow-hidden mb-6">
+          <Card className="shadow-xl border-0 rounded-2xl overflow-hidden mb-6 dark:bg-gray-800">
             <div className="flex">
-              <div className="w-80 h-64 relative bg-gray-100 flex-shrink-0">
+              <div className="w-80 h-64 relative bg-gray-100 dark:bg-gray-700 flex-shrink-0">
                 {images[0] ? (
                   <img
                     src={URL.createObjectURL(images[0])}
@@ -322,14 +325,14 @@ const AddPost = () => {
               </div>
 
               <div className="flex-1 p-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {formData.brand} {formData.model}
                 </h3>
-                <div className="text-3xl font-bold text-green-600 mb-4">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">
                   ₹{parseInt(formData.price).toLocaleString()}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300">
                   <div><span className="font-medium">Condition:</span> {formData.condition}</div>
                   <div><span className="font-medium">Age:</span> {formData.age} months</div>
                   <div><span className="font-medium">Warranty:</span> {formData.warranty}</div>
@@ -337,7 +340,7 @@ const AddPost = () => {
                 </div>
 
                 {formData.description && (
-                  <p className="text-gray-600 mb-4">{formData.description}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">{formData.description}</p>
                 )}
               </div>
             </div>
@@ -347,7 +350,7 @@ const AddPost = () => {
             <Button
               onClick={() => setShowPreview(false)}
               variant="outline"
-              className="flex-1"
+              className="flex-1 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               Edit Post
             </Button>
@@ -365,48 +368,48 @@ const AddPost = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-4xl mx-auto px-4 py-8 pb-40"> {/* Add bottom padding for sticky bar */}
         {/* Header */}
         <div className="mb-8">
-          <Link to="/all-posts" className="inline-flex items-center text-sky-600 hover:text-sky-700 mb-4">
+          <Link to="/all-posts" className="inline-flex items-center text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Browse
+            {t('back_to_browse')}
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Create New Listing</h1>
-              <p className="text-gray-600 mt-2">Fill in the details to list your mobile phone</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('create_new_listing')}</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-2">{t('fill_details')}</p>
             </div>
             <Badge className={`${currentTier?.color || 'bg-gray-400'} text-white text-lg px-4 py-2`}>
               {currentTier?.icon ? <currentTier.icon className="w-5 h-5 mr-2" /> : null}
-              {currentTier?.name ? `${currentTier.name} Tier` : 'Tier'}
+              {currentTier?.name ? `${currentTier.name} ${t('tier')}` : t('tier')}
             </Badge>
           </div>
         </div>
 
-        <Card className="shadow-xl border-0 rounded-2xl overflow-hidden">
+        <Card className="shadow-xl border-0 rounded-2xl overflow-hidden dark:bg-gray-800">
           <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white">
-            <CardTitle className="text-2xl">Mobile Phone Details</CardTitle>
+            <CardTitle className="text-2xl">{t('mobile_phone_details')}</CardTitle>
             <CardDescription className="text-sky-100">
-              Provide accurate information to attract genuine buyers
+              {t('provide_accurate_info')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-8 dark:bg-gray-800">
             <div className="space-y-8">
               {/* Basic Information */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('basic_information')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="title" className="text-sm font-semibold text-gray-700">Title *</Label>
+                    <Label htmlFor="title" className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('title')} *</Label>
                     <Input
                       id="title"
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
                       placeholder="e.g., iPhone 14 Pro for Sale"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                       maxLength={100}
                       minLength={5}
@@ -414,7 +417,7 @@ const AddPost = () => {
                     {formErrors.title && <div className="text-red-500 text-xs mt-1">{formErrors.title}</div>}
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold text-gray-700">Category *</Label>
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('category')} *</Label>
                     {/* If category is pre-selected, show as read-only input, else show dropdown */}
                     {selectedCategory ? (
                       <Input
@@ -422,11 +425,11 @@ const AddPost = () => {
                         value={formData.category}
                         readOnly
                         disabled
-                        className="mt-2 h-12 border-2 border-gray-200 bg-gray-100 cursor-not-allowed"
+                        className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed"
                       />
                     ) : (
                       <Select name="category" value={formData.category} onValueChange={handleSelectChange('category')} required>
-                        <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
+                        <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -441,10 +444,10 @@ const AddPost = () => {
                     {formErrors.category && <div className="text-red-500 text-xs mt-1">{formErrors.category}</div>}
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold text-gray-700">Brand *</Label>
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('brand')} *</Label>
                     <Select name="brand" value={formData.brand} onValueChange={handleSelectChange('brand')} required>
-                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
-                        <SelectValue placeholder="Select brand" />
+                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500">
+                        <SelectValue placeholder={t('select_brand')} />
                       </SelectTrigger>
                       <SelectContent>
                         {brands.map(brand => (
@@ -457,23 +460,23 @@ const AddPost = () => {
                     {formErrors.brand && <div className="text-red-500 text-xs mt-1">{formErrors.brand}</div>}
                   </div>
                   <div>
-                    <Label htmlFor="model" className="text-sm font-semibold text-gray-700">Model *</Label>
+                    <Label htmlFor="model" className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('model')} *</Label>
                     <Input
                       id="model"
                       name="model"
                       value={formData.model}
                       onChange={handleInputChange}
                       placeholder="e.g., iPhone 14 Pro, Galaxy S23"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
                     {formErrors.model && <div className="text-red-500 text-xs mt-1">{formErrors.model}</div>}
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold text-gray-700">Condition *</Label>
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('condition')} *</Label>
                     <Select value={formData.condition || ""} onValueChange={handleSelectChange('condition')}>
-                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
-                        <SelectValue placeholder="Select condition" />
+                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500">
+                        <SelectValue placeholder={t('select_condition')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="new">New</SelectItem>
@@ -490,10 +493,10 @@ const AddPost = () => {
 
               {/* Additional Details */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Details</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('additional_details')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <Label htmlFor="age" className="text-sm font-semibold text-gray-700">Age (months)</Label>
+                    <Label htmlFor="age" className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('age_months')}</Label>
                     <Input
                       id="age"
                       name="age"
@@ -501,16 +504,16 @@ const AddPost = () => {
                       value={formData.age}
                       onChange={handleInputChange}
                       placeholder="0-48 months"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       min="0"
                       max="48"
                     />
                   </div>
 
                   <div>
-                    <Label className="text-sm font-semibold text-gray-700">Warranty Status</Label>
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('warranty_status')}</Label>
                     <Select value={formData.warranty || ""} onValueChange={handleSelectChange('warranty')}>
-                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500">
+                      <SelectTrigger className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500">
                         <SelectValue placeholder="Warranty status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -522,14 +525,14 @@ const AddPost = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="dimensions" className="text-sm font-semibold text-gray-700">Dimensions</Label>
+                    <Label htmlFor="dimensions" className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('dimensions')}</Label>
                     <Input
                       id="dimensions"
                       name="dimensions"
                       value={formData.dimensions}
                       onChange={handleInputChange}
                       placeholder="e.g., 6.1 inch"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                     />
                   </div>
                 </div>
@@ -537,10 +540,10 @@ const AddPost = () => {
 
               {/* Pricing & Location */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Location</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('pricing_location')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <Label htmlFor="price" className="text-sm font-semibold text-gray-700">Price (₹) *</Label>
+                    <Label htmlFor="price" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Price (₹) *</Label>
                     <Input
                       id="price"
                       name="price"
@@ -548,33 +551,33 @@ const AddPost = () => {
                       value={formData.price}
                       onChange={handleInputChange}
                       placeholder="Enter price"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="district" className="text-sm font-semibold text-gray-700">District *</Label>
+                    <Label htmlFor="district" className="text-sm font-semibold text-gray-700 dark:text-gray-300">District *</Label>
                     <Input
                       id="district"
                       name="district"
                       value={formData.district}
                       onChange={handleInputChange}
                       placeholder="Enter district"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="state" className="text-sm font-semibold text-gray-700">State *</Label>
+                    <Label htmlFor="state" className="text-sm font-semibold text-gray-700 dark:text-gray-300">State *</Label>
                     <Input
                       id="state"
                       name="state"
                       value={formData.state}
                       onChange={handleInputChange}
                       placeholder="Enter state"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
                   </div>
@@ -583,10 +586,10 @@ const AddPost = () => {
 
               {/* Contact & Images */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact & Images</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contact & Images</h3>
                 <div className="space-y-6">
                   <div>
-                    <Label htmlFor="contactNumber" className="text-sm font-semibold text-gray-700">Contact Number *</Label>
+                    <Label htmlFor="contactNumber" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Contact Number *</Label>
                     <Input
                       id="contactNumber"
                       name="contactNumber"
@@ -594,17 +597,17 @@ const AddPost = () => {
                       value={formData.contactNumber}
                       onChange={handleInputChange}
                       placeholder="+91 XXXXXXXXXX"
-                      className="mt-2 h-12 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label className="text-sm font-semibold text-gray-700">
+                    <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       Images (1-{currentTier?.maxImages || 1} photos) *
                     </Label>
                     <div className="mt-2">
-                      <div className="border-2 border-dashed border-sky-300 rounded-xl p-8 bg-sky-50">
+                      <div className="border-2 border-dashed border-sky-300 dark:border-sky-600 rounded-xl p-8 bg-sky-50 dark:bg-gray-700">
                         <div className="text-center">
                           <Upload className="mx-auto h-12 w-12 text-sky-400 mb-4" />
                           <div>
@@ -626,7 +629,7 @@ const AddPost = () => {
                                 className="sr-only"
                               />
                             </label>
-                            <p className="mt-2 text-sm text-gray-500">
+                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                               PNG, JPG up to 10MB each • Max {currentTier?.maxImages || 1} images
                             </p>
                           </div>
@@ -641,7 +644,7 @@ const AddPost = () => {
                                 src={URL.createObjectURL(image)}
                                 onError={e => { e.target.onerror = null; e.target.src = '/placeholder.svg'; }}
                                 alt={`Upload ${index + 1}`}
-                                className="h-24 w-full object-cover rounded-lg border-2 border-gray-200"
+                                className="h-24 w-full object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
                               />
                               <button
                                 type="button"
@@ -658,14 +661,14 @@ const AddPost = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="description" className="text-sm font-semibold text-gray-700">Description *</Label>
+                    <Label htmlFor="description" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Description *</Label>
                     <Textarea
                       id="description"
                       name="description"
                       value={formData.description}
                       onChange={handleInputChange}
                       placeholder="Add any additional details about your mobile phone..."
-                      className="mt-2 border-2 border-gray-200 focus:border-sky-500"
+                      className="mt-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       rows={4}
                       required
                       minLength={20}
@@ -677,12 +680,12 @@ const AddPost = () => {
               </div>
 
               {/* Action Buttons - moved below description, not sticky */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-6 border-t mt-8">
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-6 border-t dark:border-gray-600 mt-8">
                 <Button
                   type="button"
                   onClick={handlePreview}
                   variant="outline"
-                  className="border-sky-500 text-sky-600 hover:bg-sky-50 font-semibold px-6 py-3 text-base shadow"
+                  className="border-sky-500 text-sky-600 hover:bg-sky-50 dark:hover:bg-gray-700 font-semibold px-6 py-3 text-base shadow"
                   style={{ minWidth: 120 }}
                 >
                   <Eye className="w-5 h-5 mr-2" />

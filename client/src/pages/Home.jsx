@@ -140,16 +140,16 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-900 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24">
       {/* Premium Header */}
-      <div className="sticky top-0 z-50 bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-900/95 backdrop-blur-xl border-b border-white/10">
+      <div className="sticky top-0 z-50 bg-gradient-to-r from-white/95 via-gray-50/95 to-white/95 dark:from-slate-900/95 dark:via-gray-900/95 dark:to-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 For You
               </h1>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {feedMeta ? `${feedMeta.freshCount} fresh • ${feedMeta.explorationCount} discoveries` : 'Personalized feed'}
               </p>
             </div>
@@ -159,12 +159,12 @@ const Home = () => {
                 size="icon"
                 onClick={handleRefresh}
                 disabled={refreshing || refreshCooldown.current}
-                className={`text-gray-400 hover:text-white hover:bg-white/10 rounded-xl ${refreshing ? 'animate-spin' : ''}`}
+                className={`text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl ${refreshing ? 'animate-spin' : ''}`}
               >
                 <RefreshCw className="h-5 w-5" />
               </Button>
               {lastRefresh && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-500">
                   {formatTimeAgo(lastRefresh)}
                 </span>
               )}
@@ -187,7 +187,7 @@ const Home = () => {
             <button
               key={cat.category_id || cat.id}
               onClick={() => navigate(`/all-posts?category=${cat.category_id || cat.id}`)}
-              className="px-4 py-2 bg-gray-800/60 text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-700/60 hover:text-white transition-all border border-gray-700/50"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-700/60 hover:text-gray-900 dark:hover:text-white transition-all border border-gray-200 dark:border-gray-700/50"
             >
               {cat.name}
             </button>
@@ -199,11 +199,11 @@ const Home = () => {
       {trendingPosts.length > 0 && (
         <div className="px-4 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-orange-400" />
               Trending Now
             </h2>
-            <button className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1">
+            <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
               View All <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -212,13 +212,13 @@ const Home = () => {
               <div
                 key={post.post_id}
                 onClick={() => navigate(`/post/${post.post_id}`)}
-                className="flex-shrink-0 w-40 bg-gray-800/60 rounded-xl p-3 cursor-pointer hover:bg-gray-700/60 transition-all border border-gray-700/50"
+                className="flex-shrink-0 w-40 bg-white dark:bg-gray-800/60 rounded-xl p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-all border border-gray-200 dark:border-gray-700/50 shadow-sm"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-orange-400 font-bold text-lg">#{idx + 1}</span>
                   <TrendingUp className="h-4 w-4 text-orange-400" />
                 </div>
-                <p className="text-white text-sm font-medium truncate">{post.title}</p>
+                <p className="text-gray-900 dark:text-white text-sm font-medium truncate">{post.title}</p>
                 <p className="text-emerald-400 font-bold text-sm mt-1">{formatPrice(post.price)}</p>
               </div>
             ))}
@@ -241,7 +241,7 @@ const Home = () => {
               <div className="w-16 h-16 border-4 border-blue-500/30 rounded-full"></div>
               <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
             </div>
-            <p className="text-gray-400">Loading your personalized feed...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading your personalized feed...</p>
           </div>
         ) : feedPosts.length === 0 ? (
           <div className="text-center py-16">
@@ -262,7 +262,7 @@ const Home = () => {
             {feedPosts.map((post) => (
               <Card
                 key={post.post_id}
-                className="group bg-gradient-to-br from-gray-800/80 to-gray-900/80 border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl"
+                className="group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 border-gray-200 dark:border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl shadow-sm"
                 onClick={() => navigate(`/post/${post.post_id}`)}
               >
                 {/* Image */}
@@ -282,7 +282,7 @@ const Home = () => {
 
                   {/* Price */}
                   <div className="absolute bottom-3 left-3">
-                    <p className="text-2xl font-bold text-white drop-shadow-lg">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white drop-shadow-lg">
                       {formatPrice(post.price)}
                     </p>
                   </div>
@@ -309,7 +309,7 @@ const Home = () => {
                     </Badge>
                   )}
 
-                  <h3 className="text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-400 transition-colors">
+                  <h3 className="text-gray-900 dark:text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {post.title}
                   </h3>
 
@@ -328,11 +328,11 @@ const Home = () => {
                   )}
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-gray-400">
+                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                       <MapPin className="h-3.5 w-3.5" />
                       {post.location || 'Unknown'}
                     </span>
-                    <span className="flex items-center gap-1 text-gray-500">
+                    <span className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
                       <Clock className="h-3.5 w-3.5" />
                       {formatTimeAgo(post.created_at)}
                     </span>

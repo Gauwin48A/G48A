@@ -23,7 +23,7 @@ const LoginPromptModal = ({ isOpen, onClose }) => {
             />
 
             {/* Modal */}
-            <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 animate-fadeIn border border-gray-200 dark:border-gray-700">
+            <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 md:p-8 w-[95%] max-w-md mx-auto animate-fadeIn border border-gray-200 dark:border-gray-700">
                 {/* Close button */}
                 <button
                     onClick={onClose}

@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Shield, MapPin, Clock, Phone } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
 
+import { useTranslation } from 'react-i18next';
+
 export default function PostCard({ post }) {
+  const { t } = useTranslation();
   const {
     id,
     title,

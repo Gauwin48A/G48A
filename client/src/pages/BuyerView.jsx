@@ -2,7 +2,10 @@
 import React, { useState } from 'react'
 import { Search, Filter, MapPin, Phone, Heart } from 'lucide-react'
 
+import { useTranslation } from 'react-i18next';
+
 const BuyerView = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBrand, setSelectedBrand] = useState('')
   const [priceRange, setPriceRange] = useState('')

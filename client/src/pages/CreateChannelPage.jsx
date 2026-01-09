@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+import { useTranslation } from 'react-i18next';
+
 const CreateChannelPage = () => {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState('');

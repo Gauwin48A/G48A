@@ -1,8 +1,18 @@
 const jwt = require("jsonwebtoken");
 
+/**
+ * Auth Middleware - Operation Polish
+ * Reads JWT from HttpOnly cookie first (secure), then falls back to Authorization header
+ */
 const protect = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1];
+  // Priority 1: HttpOnly cookie (most secure - XSS-proof)
+  let token = req.cookies?.accessToken;
+
+  // Priority 2: Authorization header (backward compatibility)
+  if (!token) {
+    const authHeader = req.headers["authorization"];
+    token = authHeader?.split(" ")[1];
+  }
 
   if (!token) {
     return res.status(401).json({ error: "No token provided, authorization denied" });
@@ -18,10 +28,19 @@ const protect = (req, res, next) => {
   }
 };
 
-// Optional auth - allows unauthenticated requests but parses token if present
+/**
+ * Optional Auth - allows unauthenticated requests but parses token if present
+ * Also checks HttpOnly cookie first
+ */
 const optionalAuth = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1];
+  // Priority 1: HttpOnly cookie
+  let token = req.cookies?.accessToken;
+
+  // Priority 2: Authorization header
+  if (!token) {
+    const authHeader = req.headers["authorization"];
+    token = authHeader?.split(" ")[1];
+  }
 
   if (!token) {
     req.user = null;

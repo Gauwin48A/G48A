@@ -4,7 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
+import { useTranslation } from 'react-i18next';
+
 const FeedPostCard = ({ post }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow mb-4 rounded-2xl border border-blue-100 flex flex-col p-0">

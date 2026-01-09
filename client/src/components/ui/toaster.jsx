@@ -1,6 +1,8 @@
 
 import React from "react"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from 'react-i18next';
+
 import {
   Toast,
   ToastClose,
@@ -11,6 +13,7 @@ import {
 } from "@/components/ui/toast"
 
 export function Toaster() {
+  const { t } = useTranslation();
   const { toasts } = useToast()
 
   return (

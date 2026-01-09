@@ -1,0 +1,54 @@
+=== Translation Readiness Report ===
+
+Base Language (EN): 876 keys
+
+[HI] Translated: 100%
+Total Keys: 879
+Untranslated (English): 2 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   price_100_500: "₹100 - ₹500"
+   price_500_1000: "₹500 - ₹1000"
+
+[TE] Translated: 100%
+Total Keys: 879
+Untranslated (English): 2 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   price_100_500: "₹100 - ₹500"
+   price_500_1000: "₹500 - ₹1000"
+
+[TA] Translated: 100%
+Total Keys: 892
+Untranslated (English): 2 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   price_100_500: "₹100 - ₹500"
+   price_500_1000: "₹500 - ₹1000"
+
+[KN] Translated: 100%
+Total Keys: 909
+Untranslated (English): 3 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   price_100_500: "₹100 - ₹500"
+   price_500_1000: "₹500 - ₹1000"
+   try_different_search: "Try a different search term"
+
+[MR] Translated: 100%
+Total Keys: 909
+Untranslated (English): 3 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   price_100_500: "₹100 - ₹500"
+   price_500_1000: "₹500 - ₹1000"
+   try_different_search: "Try a different search term"
+
+[BN] Translated: 100%
+Total Keys: 909
+Untranslated (English): 3 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   price_100_500: "₹100 - ₹500"
+   price_500_1000: "₹500 - ₹1000"
+   try_different_search: "Try a different search term"

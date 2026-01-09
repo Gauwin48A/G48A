@@ -1,7 +1,10 @@
 import React from "react";
 import { AiFillStar } from "react-icons/ai";
 
+import { useTranslation } from 'react-i18next';
+
 const ProductCard = ({ product }) => {
+  const { t } = useTranslation();
   // Defensive: Ensure product is a valid object
   if (!product || typeof product !== "object") {
     return <div className="bg-white p-4 rounded-xl">Invalid product data</div>;

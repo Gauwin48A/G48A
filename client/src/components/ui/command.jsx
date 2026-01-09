@@ -5,6 +5,8 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
+import { useTranslation } from 'react-i18next';
+
 const Command = React.forwardRef(({ className, ...props }, ref) => (
   <CommandPrimitive
     ref={ref}
@@ -18,6 +20,7 @@ const Command = React.forwardRef(({ className, ...props }, ref) => (
 Command.displayName = "Command";
 
 const CommandDialog = ({ children, ...props }) => {
+  const { t } = useTranslation();
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">

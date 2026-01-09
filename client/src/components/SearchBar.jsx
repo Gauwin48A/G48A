@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 const SearchBar = ({ onSearch }) => {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e) => {

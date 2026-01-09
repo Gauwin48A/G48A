@@ -2,7 +2,10 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+import { useTranslation } from 'react-i18next';
+
 export function Input({ className, type, ...props }) {
+  const { t } = useTranslation();
   return (
     <input
       type={type}

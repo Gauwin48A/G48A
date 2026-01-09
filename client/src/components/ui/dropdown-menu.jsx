@@ -4,6 +4,8 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { useTranslation } from 'react-i18next';
+
 const DropdownMenu = DropdownMenuPrimitive.Root
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
@@ -134,6 +136,7 @@ const DropdownMenuSeparator = React.forwardRef(({ className, ...props }, ref) =>
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
 
 const DropdownMenuShortcut = ({ className, ...props }) => {
+  const { t } = useTranslation();
   return (
     <span
       className={cn("ml-auto text-xs tracking-widest opacity-60", className)}

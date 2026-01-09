@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { addTextPost } from '../lib/api';
 
+import { useTranslation } from 'react-i18next';
+
 const PostAdd = () => {
+  const { t } = useTranslation();
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

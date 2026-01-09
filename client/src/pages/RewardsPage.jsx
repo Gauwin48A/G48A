@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 const RewardsPage = () => {
+    const { t } = useTranslation();
     const [rewards, setRewards] = useState({ points: 0 });
     const [directReferrals, setDirectReferrals] = useState([]);
     const [indirectReferrals, setIndirectReferrals] = useState([]);
@@ -69,7 +72,6 @@ const RewardsPage = () => {
                     }
                 } catch (logErr) {
                     // Log endpoint might not exist yet - continue without it
-                    console.log('Reward log not available');
                 }
 
             } catch (err) {

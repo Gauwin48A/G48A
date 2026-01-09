@@ -94,7 +94,7 @@ export default function BuyerInterestModal({ isOpen, onClose, postId, postTitle 
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-md bg-white dark:bg-gray-800 border-0 shadow-2xl rounded-2xl">
+            <DialogContent className="w-[95%] max-w-md bg-white dark:bg-gray-800 border-0 shadow-2xl rounded-2xl mx-auto">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <span className="text-2xl">📞</span>

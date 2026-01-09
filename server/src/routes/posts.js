@@ -59,6 +59,28 @@ router.get('/undone', async (req, res) => {
   }
 });
 
+// POST /api/posts/batch-view - Batch increment views (Optimized for scale)
+router.post('/batch-view', async (req, res) => {
+  const { postIds } = req.body;
+  if (!postIds || !Array.isArray(postIds) || postIds.length === 0) {
+    return res.json({ success: true, message: 'No IDs provided' });
+  }
+
+  try {
+    // Single query to update multiple rows
+    const result = await pool.query(
+      `UPDATE posts SET views = COALESCE(views, 0) + 1 WHERE post_id = ANY($1::int[])`,
+      [postIds]
+    );
+
+    res.json({ success: true, updated: result.rowCount });
+  } catch (err) {
+    console.error('Batch view error:', err);
+    // Don't error out on client for stats issues, just log it
+    res.json({ success: false, error: 'Batch update failed' });
+  }
+});
+
 // POST /api/posts/:postId/view - Increment view count
 router.post('/:postId/view', async (req, res) => {
   const { postId } = req.params;

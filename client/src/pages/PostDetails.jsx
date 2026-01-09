@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import api from '../lib/api';
 
+import { useTranslation } from 'react-i18next';
+
 const PostDetails = () => {
+  const { t } = useTranslation();
   const { postId } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);

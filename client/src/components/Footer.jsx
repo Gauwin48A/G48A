@@ -2,7 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Shield } from 'lucide-react';
 
+import { useTranslation } from 'react-i18next';
+
 export default function Footer() {
+  const { t } = useTranslation();
   return (
     <footer className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between">
@@ -11,12 +14,12 @@ export default function Footer() {
           <span className="text-xl font-bold text-gray-900">MobileVerify</span>
         </div>
         <div className="flex gap-6">
-          <Link to="/buyer-view" className="text-gray-600 hover:text-blue-600 font-semibold">Browse Phones</Link>
-          <Link to="/add-post" className="text-gray-600 hover:text-blue-600 font-semibold">Sell Your Phone</Link>
-          <Link to="/aadhaar-verify" className="text-gray-600 hover:text-blue-600 font-semibold">Get Verified</Link>
-          <Link to="/rewards" className="text-gray-600 hover:text-blue-600 font-semibold">Rewards</Link>
+          <Link to="/buyer-view" className="text-gray-600 hover:text-blue-600 font-semibold">{t('browse_phones')}</Link>
+          <Link to="/add-post" className="text-gray-600 hover:text-blue-600 font-semibold">{t('sell_your_phone')}</Link>
+          <Link to="/aadhaar-verify" className="text-gray-600 hover:text-blue-600 font-semibold">{t('get_verified_link')}</Link>
+          <Link to="/rewards" className="text-gray-600 hover:text-blue-600 font-semibold">{t('rewards_link')}</Link>
         </div>
-        <div className="text-gray-500 text-xs">© 2025 MobileVerify. All rights reserved.</div>
+        <div className="text-gray-500 text-xs">{t('copyright_mobileverify')}</div>
       </div>
     </footer>
   );

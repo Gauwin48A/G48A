@@ -10,12 +10,14 @@ import useLocationPermission from '@/hooks/useLocationPermission';
 import { useTranslation } from 'react-i18next';
 import BuyerInterestModal from '@/components/BuyerInterestModal';
 import LoginPromptModal from '@/components/LoginPromptModal';
+import { translatePosts } from '@/utils/translateContent';
 
 const NAVBAR_HEIGHT = 80;
 const GUEST_POST_LIMIT = 5; // Limit posts for non-logged-in users
 
 const AllPosts = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
   const { filters, setFilters } = useFilter();
   const location = useLocation();
   const [posts, setPosts] = useState([]);
@@ -28,13 +30,29 @@ const AllPosts = () => {
   const [categories, setCategories] = useState([]);
 
   // Read category from URL params and update filter
+  // Wait for categories to load before setting filter to properly match ID -> name
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const categoryFromUrl = urlParams.get('category');
-    if (categoryFromUrl) {
-      setFilters(prev => ({ ...prev, category: categoryFromUrl }));
+    if (categoryFromUrl && categories.length > 0) {
+      // Check if it's a numeric ID - if so, find the category name
+      const isNumericId = !isNaN(parseInt(categoryFromUrl, 10));
+      if (isNumericId) {
+        const matchedCategory = categories.find(cat =>
+          String(cat.category_id) === String(categoryFromUrl) || String(cat.id) === String(categoryFromUrl)
+        );
+        if (matchedCategory) {
+          setFilters(prev => ({ ...prev, category: matchedCategory.name }));
+        } else {
+          // Fallback: use the ID directly
+          setFilters(prev => ({ ...prev, category: categoryFromUrl }));
+        }
+      } else {
+        // It's already a category name
+        setFilters(prev => ({ ...prev, category: categoryFromUrl }));
+      }
     }
-  }, [location.search, setFilters]);
+  }, [location.search, setFilters, categories]);
 
   // Handle category click - navigate with category param
   const handleCategoryClick = (categoryName) => {
@@ -61,7 +79,7 @@ const AllPosts = () => {
   const [boostLowViews, setBoostLowViews] = useState(true);
   const [rotationKey, setRotationKey] = useState(0);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [viewedPosts, setViewedPosts] = useState(new Set()); // Track which posts have been viewed
+  // const [viewedPosts, setViewedPosts] = useState(new Set()); // Replaced with ref for batching logic
   const postRefs = useRef({}); // Refs for each post card
 
   // Guest user restrictions - initialize immediately from localStorage
@@ -185,6 +203,12 @@ const AllPosts = () => {
         }
         const data = await res.json();
         let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
+
+        // Translate posts to current language
+        if (currentLang && currentLang !== 'en') {
+          loadedPosts = await translatePosts(loadedPosts, currentLang);
+        }
+
         // FIX: Append posts on page 2+, replace on page 1 (filter change)
         if (currentPage === 1) {
           setPosts(loadedPosts);
@@ -211,7 +235,7 @@ const AllPosts = () => {
       }
     };
     fetchPosts();
-  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.minPrice, filters.maxPrice, filters.startDate, filters.endDate, filters.sortBy, currentPage]);
+  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.minPrice, filters.maxPrice, filters.startDate, filters.endDate, filters.sortBy, currentPage, currentLang]);
 
 
   // Reset page on filter change
@@ -280,38 +304,66 @@ const AllPosts = () => {
     return sortedPosts;
   }, [posts, viewCounts, boostLowViews, rotationKey, isLoggedIn]);
 
-  // IntersectionObserver to track views when posts scroll into viewport
+  // Batch View Tracking Refs
+  const viewQueue = useRef(new Set());
+  const viewedPostsRef = useRef(new Set());
+  const observerRef = useRef(null);
+
+  // Flush view queue every 5 seconds
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    const flushInterval = setInterval(() => {
+      if (viewQueue.current.size > 0) {
+        const batchIds = Array.from(viewQueue.current);
+        viewQueue.current.clear();
+
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        fetch(`${baseUrl}/api/posts/batch-view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postIds: batchIds }),
+          credentials: 'include'
+        }).catch(err => console.error("Batch view error:", err));
+      }
+    }, 5000);
+
+    return () => clearInterval(flushInterval);
+  }, []);
+
+  // IntersectionObserver to track views
+  useEffect(() => {
+    // Disconnect previous observer
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const postId = entry.target.dataset.postId;
-            if (postId && !viewedPosts.has(postId)) {
-              // Mark as viewed locally
-              setViewedPosts(prev => new Set([...prev, postId]));
-              // Increment view count in UI
+            const postId = parseInt(entry.target.dataset.postId);
+            if (postId && !viewedPostsRef.current.has(postId)) {
+              // Mark as viewed locally (ref based, no re-render)
+              viewedPostsRef.current.add(postId);
+
+              // Add to batch queue
+              viewQueue.current.add(postId);
+
+              // Optimistically update UI count (optional, can be throttled)
               setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
-              // Send view to backend (fire and forget)
-              const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-              fetch(`${baseUrl}/api/posts/${postId}/view`, {
-                method: 'POST',
-                credentials: 'include'
-              }).catch(() => { });
             }
           }
         });
       },
-      { threshold: 0.5 } // Post is considered "viewed" when 50% visible
+      { threshold: 0.5 }
     );
 
     // Observe all post cards
     Object.values(postRefs.current).forEach((ref) => {
-      if (ref) observer.observe(ref);
+      if (ref) observerRef.current.observe(ref);
     });
 
-    return () => observer.disconnect();
-  }, [posts, viewedPosts]);
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, [posts]); // Only re-run when posts list changes
 
 
   // Like handler
@@ -388,7 +440,7 @@ const AllPosts = () => {
 
   // Location is now handled at App.jsx level - no blocking here
   return (
-    <div className="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300">
+    <div className="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300 pb-24">
       {/* Category Filter Bar - sticky on scroll */}
       <div className="w-full flex justify-center px-4 pt-2 pb-4 sticky top-[80px] z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm">
         <div className="flex gap-2 md:gap-4 bg-gradient-to-r from-blue-100 via-white to-blue-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl shadow-lg py-3 px-3 md:px-6 items-center overflow-x-auto scrollbar-hide max-w-full">
@@ -457,37 +509,20 @@ const AllPosts = () => {
             <div className="text-center text-blue-400 dark:text-blue-300">{t('no_sponsored_deals')}</div>
           ) : (
             sponsoredDeals.map((post, idx) => (
-              <Card key={post.id || post._id || idx} className="rounded-xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[160px] max-w-[180px] md:min-w-[200px] md:max-w-[220px]">
+              <Card key={post.id || post._id || idx} className="rounded-xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[140px] max-w-[160px] md:min-w-[200px] md:max-w-[220px] hover:scale-105 transition-transform duration-200">
                 <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-100 dark:bg-gray-700 rounded mb-2 flex items-center justify-center">
-                  <span className="text-gray-400 dark:text-gray-500">Image</span>
+                  <span className="text-gray-400 dark:text-gray-500">{t('image') || 'Image'}</span>
                 </div>
                 <div className="font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2">{post.title}</div>
                 <div className="text-yellow-500 text-xs mb-1">★★★★★</div>
                 <div className="text-blue-900 dark:text-blue-300 text-base md:text-lg font-bold mb-1">₹{post.price}</div>
-                <Button className="bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2" onClick={() => navigate(`/post/${post.id}`)}>View</Button>
+                <Button className="bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2" onClick={() => navigate(`/post/${post.id}`)}>{t('view') || 'View'}</Button>
               </Card>
             ))
           )}
         </div>
       </div>
-      <div className="w-full flex flex-col items-center mb-6">
-        <div className="flex gap-6 w-full max-w-5xl px-3 md:px-0">
-          <div className="flex-1 bg-gradient-to-r from-green-200 to-green-400 dark:from-green-800 dark:to-green-600 rounded-xl shadow-lg p-4 flex items-center cursor-pointer hover:scale-105 transition" onClick={() => navigate('/my-recommendations')}>
-            <span className="text-2xl mr-3">🌟</span>
-            <div>
-              <div className="font-bold text-green-900 dark:text-green-100 text-lg">{t('my_recommendations')}</div>
-              <div className="text-green-800 dark:text-green-200 text-sm">{t('personalized_posts')}</div>
-            </div>
-          </div>
-          <div className="flex-1 bg-gradient-to-r from-blue-200 to-blue-400 dark:from-blue-800 dark:to-blue-600 rounded-xl shadow-lg p-4 flex items-center cursor-pointer hover:scale-105 transition" onClick={() => navigate('/my-home')}>
-            <span className="text-2xl mr-3">🏠</span>
-            <div>
-              <div className="font-bold text-blue-900 dark:text-blue-100 text-lg">{t('my_home')}</div>
-              <div className="text-blue-800 dark:text-blue-200 text-sm">{t('activity_stats')}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+
       {/* All Posts Feed */}
       <div className="w-full flex flex-col items-center mb-10">
         <h2 className="text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-300 mb-4 w-full max-w-5xl px-3 md:px-0">{t('all_posts')}</h2>
@@ -513,7 +548,7 @@ const AllPosts = () => {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-blue-900 dark:text-blue-200 text-base md:text-lg truncate">{post.user?.name || 'Unknown'}</span>
+                      <span className="font-semibold text-blue-900 dark:text-blue-200 text-base md:text-lg truncate">{post.user?.name || t('unknown') || 'Unknown'}</span>
                       {/* Verified Seller Badge */}
                       {post.user?.isVerified && (
                         <span
@@ -523,7 +558,7 @@ const AllPosts = () => {
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
-                          Verified
+                          {t('verified') || 'Verified'}
                         </span>
                       )}
                       {/* Seller Rating */}
@@ -536,11 +571,11 @@ const AllPosts = () => {
                 </div>
 
                 <div className="w-full h-48 md:h-56 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                  <span className="text-gray-400 dark:text-gray-500">Image</span>
+                  <span className="text-gray-400 dark:text-gray-500">{t('image') || 'Image'}</span>
                 </div>
                 <div className="px-4 py-3 text-gray-800 dark:text-gray-200 text-sm md:text-base">
                   {expandedPost === post.id || !post.description || post.description.length < 120
-                    ? post.description || <span className="italic text-gray-400 dark:text-gray-500">No description</span>
+                    ? post.description || <span className="italic text-gray-400 dark:text-gray-500">{t('no_description') || 'No description'}</span>
                     : <>
                       {post.description.slice(0, 120)}...{' '}
                       <button className="text-blue-600 dark:text-blue-400 font-semibold hover:underline" onClick={() => setExpandedPost(post.id)}>{t('view_more')}</button>
@@ -561,7 +596,7 @@ const AllPosts = () => {
                     </button>
                     <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-semibold"><FaEye className="w-4 h-4" />{viewCounts[post.post_id || post.id] || 0}</span>
                   </div>
-                  <Button className="bg-blue-600 text-white px-4 py-1 text-xs md:text-sm font-medium rounded" onClick={() => handleViewDetails(post.post_id || post.id)}>View Details</Button>
+                  <Button className="bg-blue-600 text-white px-4 py-1 text-xs md:text-sm font-medium rounded" onClick={() => handleViewDetails(post.post_id || post.id)}>{t('view_details') || 'View Details'}</Button>
                 </div>
               </Card>
             ))

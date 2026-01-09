@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getAllChannels, followChannel } from '../lib/api';
 
+import { useTranslation } from 'react-i18next';
+
 const ChannelsListPage = () => {
+  const { t } = useTranslation();
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(false);
 

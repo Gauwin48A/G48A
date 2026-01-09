@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Bell, BellOff, X, Smartphone } from 'lucide-react';
 import { isFirebaseConfigured, requestNotificationPermission, registerTokenWithBackend } from '../lib/firebase';
 
+import { useTranslation } from 'react-i18next';
+
 /**
  * Notification Permission Component
  * 
@@ -9,6 +11,7 @@ import { isFirebaseConfigured, requestNotificationPermission, registerTokenWithB
  * Appears after user logs in if they haven't granted permission.
  */
 export default function NotificationPermission({ userId, onDismiss }) {
+  const { t } = useTranslation();
     const [status, setStatus] = useState('idle'); // idle, requesting, granted, denied, not-configured
     const [showPrompt, setShowPrompt] = useState(false);
 

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import LazyImage from './LazyImage';
+import { useTranslation } from 'react-i18next';
+
 import './ImageGallery.css';
 
 const ImageGallery = ({ images = [], alt = 'Product image' }) => {
+  const { t } = useTranslation();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showLightbox, setShowLightbox] = useState(false);
 

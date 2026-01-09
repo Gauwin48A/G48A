@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Shield, Star, Phone, Users, Award, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { useTranslation } from 'react-i18next';
+
 const Index = () => {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* Hero Section */}

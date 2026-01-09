@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -10,6 +11,7 @@ import {
   Calendar
 } from "lucide-react";
 import Navbar from '../components/Navbar';
+import { translateText } from '../utils/translateContent';
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -19,6 +21,8 @@ const Dashboard = () => {
   const [topSellers, setTopSellers] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const currentLang = i18n.language || localStorage.getItem('mhub_language') || 'en';
 
   useEffect(() => {
     setLoading(true);
@@ -42,9 +46,30 @@ const Dashboard = () => {
         const data = await res.json();
         setUser(data.user || null);
         setQuickStats(data.quickStats || []);
-        setRecentActivity(data.recentActivity || []);
         setTopSellers(data.topSellers || []);
         setError(null);
+
+        // Translate activity titles if not English
+        let activities = data.recentActivity || [];
+        if (currentLang !== 'en' && activities.length > 0) {
+          try {
+            const translatedActivities = await Promise.all(
+              activities.map(async (activity) => {
+                const translatedTitle = await translateText(activity.title, currentLang);
+                return {
+                  ...activity,
+                  title: translatedTitle
+                };
+              })
+            );
+            setRecentActivity(translatedActivities);
+          } catch (e) {
+            console.warn('Translation failed:', e);
+            setRecentActivity(activities);
+          }
+        } else {
+          setRecentActivity(activities);
+        }
       } catch (err) {
         setError(err.message || 'Failed to fetch dashboard');
       } finally {
@@ -52,7 +77,7 @@ const Dashboard = () => {
       }
     };
     fetchDashboard();
-  }, []);
+  }, [currentLang]);
 
   // Check if user is logged in
   const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
@@ -148,7 +173,7 @@ const Dashboard = () => {
                       {IconComponent && <IconComponent className={`w-5 h-5 lg:w-6 lg:h-6 ${stat.color}`} />}
                     </div>
                     <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs">
-                      {stat.trend}
+                      {t(stat.trendKey || (stat.trend === '+Active' ? 'trend_active' : stat.trend === '+Sold' ? 'trend_sold' : stat.trend === '+Views' ? 'trend_views' : stat.trend === '+Coins' ? 'trend_coins' : 'trend_active')) || stat.trend}
                     </Badge>
                   </div>
                   <div className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white mb-1">{stat.value}</div>

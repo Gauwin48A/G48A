@@ -18,8 +18,8 @@ const LanguageSelector = () => {
     i18n.changeLanguage(value);
     localStorage.setItem('mhub_language', value);
 
-    // Optional: Dispatch a custom event if other components need to know immediately
-    window.dispatchEvent(new Event('languageChanged'));
+    // Force reload to ensure all components and context update correctly
+    window.location.reload();
   };
 
   return (

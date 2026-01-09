@@ -5,9 +5,12 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
+import { useTranslation } from 'react-i18next';
+
 const CarouselContext = createContext(null)
 
 function useCarousel() {
+  const { t } = useTranslation();
   const context = useContext(CarouselContext)
   if (!context) {
     throw new Error("useCarousel must be used within a <Carousel />")

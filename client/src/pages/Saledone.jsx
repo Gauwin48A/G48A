@@ -9,7 +9,11 @@ import { CheckCircle, Shield, Clock, Award, Star, ArrowLeft, ArrowUp, Sparkles, 
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+import { useTranslation } from 'react-i18next';
+import PageHeader from '../components/PageHeader';
+
 const Saledone = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -42,38 +46,38 @@ const Saledone = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const [completedSales] = useState([
+  const completedSales = [
     {
       id: "SALE001",
-      postTitle: "iPhone 14 Pro Max 128GB",
-      buyer: "Priya Singh",
-      seller: "Rahul Sharma",
+      postTitle: t('sample_iphone_title') || "iPhone 14 Pro Max 128GB",
+      buyer: t('sample_buyer_1') || "Priya Singh",
+      seller: t('sample_seller_1') || "Rahul Sharma",
       amount: 95000,
       completedDate: "2024-01-20",
       rating: 5,
-      feedback: "Great seller, product as described!"
+      feedback: t('sample_feedback_1') || "Great seller, product as described!"
     },
     {
       id: "SALE002",
-      postTitle: "Samsung Galaxy S23 Ultra",
-      buyer: "Amit Kumar",
-      seller: "Sneha Patel",
+      postTitle: t('sample_samsung_title') || "Samsung Galaxy S23 Ultra",
+      buyer: t('sample_buyer_2') || "Amit Kumar",
+      seller: t('sample_seller_2') || "Sneha Patel",
       amount: 75000,
       completedDate: "2024-01-18",
       rating: 4,
-      feedback: "Good condition, fast delivery"
+      feedback: t('sample_feedback_2') || "Good condition, fast delivery"
     },
     {
       id: "SALE003",
-      postTitle: "MacBook Pro M2",
-      buyer: "Vikram Reddy",
-      seller: "Neha Gupta",
+      postTitle: t('sample_macbook_title') || "MacBook Pro M2",
+      buyer: t('sample_buyer_3') || "Vikram Reddy",
+      seller: t('sample_seller_3') || "Neha Gupta",
       amount: 145000,
       completedDate: "2024-01-15",
       rating: 5,
-      feedback: "Excellent quality, highly recommend!"
+      feedback: t('sample_feedback_3') || "Excellent quality, highly recommend!"
     }
-  ]);
+  ];
 
   const handleSellerSubmit = async (e) => {
     e.preventDefault();
@@ -84,8 +88,8 @@ const Saledone = () => {
       setConfirmationType('seller');
       setShowConfirmation(true);
       toast({
-        title: "🎉 Sale Confirmation Initiated",
-        description: "Buyer will be notified to confirm the sale"
+        title: "🎉 " + t('sale_confirmation_initiated'),
+        description: t('buyer_will_be_notified')
       });
     }, 1500);
   };
@@ -99,8 +103,8 @@ const Saledone = () => {
       setConfirmationType('buyer');
       setShowConfirmation(true);
       toast({
-        title: "✅ Sale Confirmed Successfully",
-        description: "Both parties have verified the transaction"
+        title: "✅ " + t('sale_confirmed_successfully'),
+        description: t('both_parties_verified')
       });
     }, 1500);
   };
@@ -150,13 +154,13 @@ const Saledone = () => {
               </div>
 
               <h2 className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-4">
-                🎉 Sale Confirmed!
+                🎉 {t('sale_confirmed')}
               </h2>
 
               <p className="text-gray-600 text-xl mb-8 max-w-md mx-auto">
                 {confirmationType === 'seller'
-                  ? 'Buyer has been notified to complete verification'
-                  : 'Both parties have successfully verified the transaction'}
+                  ? t('buyer_notified')
+                  : t('both_verified')}
               </p>
 
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 mb-8 border border-green-200">
@@ -164,19 +168,19 @@ const Saledone = () => {
                   <div className="text-center">
                     <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-green-700">+50</p>
-                    <p className="text-sm text-gray-500">Trust Points</p>
+                    <p className="text-sm text-gray-500">{t('trust_points')}</p>
                   </div>
                   <div className="w-px h-16 bg-green-200"></div>
                   <div className="text-center">
                     <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
                     <p className="text-2xl font-bold text-green-700">5.0</p>
-                    <p className="text-sm text-gray-500">Rating Boost</p>
+                    <p className="text-sm text-gray-500">{t('rating_boost')}</p>
                   </div>
                   <div className="w-px h-16 bg-green-200"></div>
                   <div className="text-center">
                     <Award className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-green-700">Verified</p>
-                    <p className="text-sm text-gray-500">Seller Badge</p>
+                    <p className="text-2xl font-bold text-green-700">{t('verified')}</p>
+                    <p className="text-sm text-gray-500">{t('seller_badge')}</p>
                   </div>
                 </div>
               </div>
@@ -187,13 +191,13 @@ const Saledone = () => {
                   onClick={resetForms}
                   className="border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-xl px-8 py-3 font-semibold"
                 >
-                  Confirm Another Sale
+                  {t('confirm_another_sale')}
                 </Button>
                 <Button
                   className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl px-8 py-3 font-semibold shadow-lg"
                   onClick={() => navigate('/my-home')}
                 >
-                  Go to My Home
+                  {t('go_to_my_home')}
                 </Button>
               </div>
             </CardContent>
@@ -219,39 +223,39 @@ const Saledone = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-3xl"></div>
       </div>
 
+      <PageHeader
+        transparent={true}
+        backTo="/profile"
+        className="text-white"
+        title=""
+      />
+
       <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
         {/* Premium Header */}
-        <div className="text-center pt-8">
-          <button
-            onClick={() => navigate('/my-home')}
-            className="inline-flex items-center text-green-300 hover:text-green-200 mb-8 group transition-all"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to My Home
-          </button>
+        <div className="text-center pt-4">
 
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 shadow-2xl shadow-green-500/30 mb-6">
             <CheckCircle className="w-10 h-10 text-white" />
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
-            Sale <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">Confirmation</span>
+            {t('sale')} <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">{t('confirmation')}</span>
           </h1>
           <p className="text-green-200 text-lg max-w-md mx-auto">
-            Complete the dual verification process to confirm your sale securely
+            {t('complete_dual_verification')}
           </p>
         </div>
 
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-3">
           <Badge className="bg-green-500/20 text-green-300 border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
-            <Shield className="w-4 h-4 mr-2" /> Secure Verification
+            <Shield className="w-4 h-4 mr-2" /> {t('secure_verification')}
           </Badge>
           <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
-            <Clock className="w-4 h-4 mr-2" /> 24h Validity
+            <Clock className="w-4 h-4 mr-2" /> {t('24h_validity')}
           </Badge>
           <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
-            <Award className="w-4 h-4 mr-2" /> Earn Trust Points
+            <Award className="w-4 h-4 mr-2" /> {t('earn_trust_points')}
           </Badge>
         </div>
 
@@ -262,10 +266,10 @@ const Saledone = () => {
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                 <Shield className="w-6 h-6" />
               </div>
-              <span>Dual Verification Process</span>
+              <span>{t('dual_verification_process')}</span>
             </CardTitle>
             <CardDescription className="text-green-100 text-base mt-2">
-              Both buyer and seller must verify using secret codes for maximum security
+              {t('dual_verification_desc')}
             </CardDescription>
           </CardHeader>
 
@@ -282,10 +286,10 @@ const Saledone = () => {
             <Tabs defaultValue="seller" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 rounded-2xl p-1.5 h-14">
                 <TabsTrigger value="seller" className="rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all">
-                  🏪 I'm the Seller
+                  🏪 {t('im_the_seller')}
                 </TabsTrigger>
                 <TabsTrigger value="buyer" className="rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white transition-all">
-                  🛒 I'm the Buyer
+                  🛒 {t('im_the_buyer')}
                 </TabsTrigger>
               </TabsList>
 
@@ -296,7 +300,7 @@ const Saledone = () => {
                       <Sparkles className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-green-800 text-lg mb-2">Seller Instructions</p>
+                      <p className="font-bold text-green-800 text-lg mb-2">{t('seller_instructions')}</p>
                       <ul className="space-y-2 text-green-700">
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter your Post ID and Buyer's User ID</li>
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Ask buyer for their daily secret code</li>
@@ -321,7 +325,7 @@ const Saledone = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 mb-2 block">Buyer's User ID</Label>
+                      <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('buyers_user_id')}</Label>
                       <Input
                         id="buyerId"
                         value={sellerForm.buyerId}
@@ -335,24 +339,24 @@ const Saledone = () => {
 
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="buyerCode" className="text-sm font-bold text-gray-700 mb-2 block">Buyer's Secret Code</Label>
+                      <Label htmlFor="buyerCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('buyers_secret_code')}</Label>
                       <Input
                         id="buyerCode"
                         value={sellerForm.buyerSecretCode}
                         onChange={(e) => setSellerForm({ ...sellerForm, buyerSecretCode: e.target.value })}
-                        placeholder="Ask buyer for code"
+                        placeholder={t('ask_buyer_for_code')}
                         className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="amount" className="text-sm font-bold text-gray-700 mb-2 block">Sale Amount (₹)</Label>
+                      <Label htmlFor="amount" className="text-sm font-bold text-gray-700 mb-2 block">{t('sale_amount')} (₹)</Label>
                       <Input
                         id="amount"
                         type="number"
                         value={sellerForm.saleAmount}
                         onChange={(e) => setSellerForm({ ...sellerForm, saleAmount: e.target.value })}
-                        placeholder="e.g., 50000"
+                        placeholder={t('eg_50000') || 'e.g., 50000'}
                         className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
                         required
                       />
@@ -367,12 +371,12 @@ const Saledone = () => {
                     {isLoading ? (
                       <span className="flex items-center gap-3">
                         <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Verifying...
+                        {t('verifying')}
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
                         <CheckCircle className="w-6 h-6" />
-                        Initiate Sale Confirmation
+                        {t('initiate_sale_confirmation')}
                       </span>
                     )}
                   </Button>
@@ -386,7 +390,7 @@ const Saledone = () => {
                       <Sparkles className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-bold text-blue-800 text-lg mb-2">Buyer Instructions</p>
+                      <p className="font-bold text-blue-800 text-lg mb-2">{t('buyer_instructions')}</p>
                       <ul className="space-y-2 text-blue-700">
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter the Post ID and Seller's User ID</li>
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter seller's daily secret code</li>
@@ -411,7 +415,7 @@ const Saledone = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 mb-2 block">Seller's User ID</Label>
+                      <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('sellers_user_id')}</Label>
                       <Input
                         id="sellerId"
                         value={buyerForm.sellerId}
@@ -425,7 +429,7 @@ const Saledone = () => {
 
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="sellerCode" className="text-sm font-bold text-gray-700 mb-2 block">Seller's Secret Code</Label>
+                      <Label htmlFor="sellerCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('sellers_secret_code')}</Label>
                       <Input
                         id="sellerCode"
                         value={buyerForm.sellerSecretCode}
@@ -436,7 +440,7 @@ const Saledone = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="confirmCode" className="text-sm font-bold text-gray-700 mb-2 block">Confirmation Code</Label>
+                      <Label htmlFor="confirmCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('confirmation_code')}</Label>
                       <Input
                         id="confirmCode"
                         value={buyerForm.confirmationCode}
@@ -456,12 +460,12 @@ const Saledone = () => {
                     {isLoading ? (
                       <span className="flex items-center gap-3">
                         <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Confirming...
+                        {t('confirming')}
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
                         <CheckCircle className="w-6 h-6" />
-                        Confirm Purchase
+                        {t('confirm_purchase')}
                       </span>
                     )}
                   </Button>
@@ -476,7 +480,7 @@ const Saledone = () => {
           <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
             <CardTitle className="flex items-center space-x-3 text-xl">
               <Trophy className="w-6 h-6" />
-              <span>Recent Completed Sales</span>
+              <span>{t('recent_completed_sales')}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">

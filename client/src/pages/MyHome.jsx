@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { translatePosts } from '@/utils/translateContent';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -73,6 +75,8 @@ const MyHome = () => {
     const [selectAll, setSelectAll] = useState(false);
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { t, i18n } = useTranslation();
+    const currentLang = i18n.language || 'en';
 
     // Helper to get full image URL
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -105,10 +109,24 @@ const MyHome = () => {
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data.posts)) {
-                    setPosts(data.posts);
+                    // Translate posts if not English
+                    if (currentLang !== 'en' && data.posts.length > 0) {
+                        translatePosts(data.posts, currentLang).then(translated => {
+                            setPosts(translated);
+                        });
+                    } else {
+                        setPosts(data.posts);
+                    }
                     setError(null);
                 } else if (Array.isArray(data)) {
-                    setPosts(data);
+                    // Translate posts if not English
+                    if (currentLang !== 'en' && data.length > 0) {
+                        translatePosts(data, currentLang).then(translated => {
+                            setPosts(translated);
+                        });
+                    } else {
+                        setPosts(data);
+                    }
                     setError(null);
                 } else {
                     // Return empty array on error to show empty state gracefully
@@ -121,7 +139,7 @@ const MyHome = () => {
                 setError(null);
             })
             .finally(() => setLoading(false));
-    }, []); // Only fetch once on mount, not on filter change
+    }, [currentLang]); // Re-fetch on language change
 
     useEffect(() => {
         setTotalPages(Math.max(1, Math.ceil(posts.length / pageSize)));
@@ -349,7 +367,7 @@ const MyHome = () => {
             <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-blue-100">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600 font-medium">Loading your posts...</p>
+                    <p className="text-gray-600 font-medium">{t('loading_posts')}</p>
                 </div>
             </div>
         );
@@ -366,9 +384,9 @@ const MyHome = () => {
                     <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-2xl">
                         <Package className="w-12 h-12 text-white" />
                     </div>
-                    <h1 className="text-4xl font-bold text-white mb-3">My Home</h1>
+                    <h1 className="text-4xl font-bold text-white mb-3">{t('my_home_title')}</h1>
                     <p className="text-white/80 text-lg max-w-md mx-auto">
-                        Manage your listings, track sales, and view your activity history.
+                        {t('manage_listings')}
                     </p>
                 </div>
 
@@ -383,8 +401,8 @@ const MyHome = () => {
                                 <CheckCircle2 className="w-7 h-7 text-white" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-xl font-bold text-gray-900">Login</h3>
-                                <p className="text-gray-500 text-sm">Already have an account? Sign in here</p>
+                                <h3 className="text-xl font-bold text-gray-900">{t('login')}</h3>
+                                <p className="text-gray-500 text-sm">{t('already_account')}</p>
                             </div>
                             <ChevronRight className="w-6 h-6 text-gray-400" />
                         </div>
@@ -399,8 +417,8 @@ const MyHome = () => {
                                 <Sparkles className="w-7 h-7 text-white" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-xl font-bold text-white">Create Account</h3>
-                                <p className="text-white/70 text-sm">New user? Join us in just a few steps</p>
+                                <h3 className="text-xl font-bold text-white">{t('signup')}</h3>
+                                <p className="text-white/70 text-sm">{t('new_user')}</p>
                             </div>
                             <ChevronRight className="w-6 h-6 text-white/60" />
                         </div>
@@ -410,7 +428,7 @@ const MyHome = () => {
         );
     }
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 pt-20">
             {/* Premium Header */}
             <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
@@ -429,8 +447,8 @@ const MyHome = () => {
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm mb-4">
                             <span className="text-4xl">🏠</span>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">My Home</h1>
-                        <p className="text-blue-100 text-lg">Manage, track, and celebrate your listings</p>
+                        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('my_home_title')}</h1>
+                        <p className="text-blue-100 text-lg">{t('my_home_subtitle')}</p>
                     </div>
                 </div>
             </div>
@@ -445,7 +463,7 @@ const MyHome = () => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-gray-800 dark:text-white">{allPosts.length}</p>
-                                <p className="text-sm text-gray-500">Total Posts</p>
+                                <p className="text-sm text-gray-500">{t('total_posts')}</p>
                             </div>
                         </div>
                     </div>
@@ -456,7 +474,7 @@ const MyHome = () => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-gray-800 dark:text-white">{allPosts.filter(p => p.status === 'active').length}</p>
-                                <p className="text-sm text-gray-500">Active</p>
+                                <p className="text-sm text-gray-500">{t('active')}</p>
                             </div>
                         </div>
                     </div>
@@ -467,7 +485,7 @@ const MyHome = () => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-gray-800 dark:text-white">{soldPosts.length}</p>
-                                <p className="text-sm text-gray-500">Sold</p>
+                                <p className="text-sm text-gray-500">{t('sold')}</p>
                             </div>
                         </div>
                     </div>
@@ -478,7 +496,7 @@ const MyHome = () => {
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-gray-800 dark:text-white">{boughtPosts.length}</p>
-                                <p className="text-sm text-gray-500">Bought</p>
+                                <p className="text-sm text-gray-500">{t('bought')}</p>
                             </div>
                         </div>
                     </div>
@@ -490,10 +508,10 @@ const MyHome = () => {
                 {/* Tabs */}
                 <div className="w-full flex justify-center gap-2 py-2 mb-4 overflow-x-auto">
                     {[
-                        { label: 'All', tab: 'all', color: 'bg-blue-600', count: allPosts.length },
-                        { label: 'Active', tab: 'active', color: 'bg-green-500', count: allPosts.filter(p => p.status === 'active').length },
-                        { label: 'Sold', tab: 'sold', color: 'bg-blue-500', count: soldPosts.length },
-                        { label: 'Bought', tab: 'bought', color: 'bg-purple-500', count: boughtPosts.length }
+                        { label: t('all'), tab: 'all', color: 'bg-blue-600', count: allPosts.length },
+                        { label: t('active'), tab: 'active', color: 'bg-green-500', count: allPosts.filter(p => p.status === 'active').length },
+                        { label: t('sold'), tab: 'sold', color: 'bg-blue-500', count: soldPosts.length },
+                        { label: t('bought'), tab: 'bought', color: 'bg-purple-500', count: boughtPosts.length }
                     ].map((item) => (
                         <button
                             key={item.tab}
@@ -517,7 +535,7 @@ const MyHome = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
-                        placeholder="Search your posts by title or location..."
+                        placeholder={t('search_posts_placeholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none transition-colors"
@@ -532,13 +550,13 @@ const MyHome = () => {
                                 <button
                                     onClick={toggleSelectAll}
                                     className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 transition-colors"
-                                    title="Select all active posts for bulk actions"
+                                    title={t('select_all_tooltip')}
                                 >
                                     {selectAll ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                                    {selectAll ? 'Deselect All' : 'Select All'}
+                                    {selectAll ? t('deselect_all') : t('select_all')}
                                 </button>
                                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    {selectedPosts.size} of {allPosts.filter(p => p.status === 'active').length} selected
+                                    {selectedPosts.size} {t('of')} {allPosts.filter(p => p.status === 'active').length} {t('selected')}
                                 </span>
                             </div>
                             {selectedPosts.size > 0 && (
@@ -549,12 +567,12 @@ const MyHome = () => {
                                     className="bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg"
                                 >
                                     <Trash2 className="w-4 h-4 mr-1" />
-                                    Delete Selected ({selectedPosts.size})
+                                    {t('delete')} ({selectedPosts.size})
                                 </Button>
                             )}
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            💡 Use this to quickly manage multiple active listings at once
+                            💡 {t('bulk_selection_tip')}
                         </p>
                     </div>
                 )}
@@ -563,27 +581,27 @@ const MyHome = () => {
                 <div className="flex w-full gap-4 mb-6">
                     <Button className="flex-1 bg-green-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all hover:bg-green-600" onClick={handleSaleDone}>
                         <CheckCircle2 className="w-5 h-5 mr-2" />
-                        Sale Done
+                        {t('sale_done')}
                     </Button>
                     <Button className="flex-1 bg-orange-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all hover:bg-orange-600" onClick={() => navigate('/saleundone')}>
                         <XCircle className="w-5 h-5 mr-2" />
-                        Sale Undone
+                        {t('sale_undone')}
                     </Button>
                 </div>
 
                 {/* Posts List */}
-                <div className="w-full flex flex-col gap-6 pb-24">
+                <div className="w-full flex flex-col gap-6 pb-24 pt-20">
                     {sortedPosts.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="text-6xl mb-4">📭</div>
-                            <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">No posts to display</h3>
-                            <p className="text-gray-500 dark:text-gray-400 mb-6">Start selling by creating your first listing!</p>
+                            <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">{t('no_posts')}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mb-6">{t('start_selling')}</p>
                             <Button
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl"
                                 onClick={() => navigate('/tier-selection')}
                             >
                                 <Plus className="w-5 h-5 mr-2" />
-                                Create New Listing
+                                {t('create_new_listing')}
                             </Button>
                         </div>
                     ) : (
@@ -601,7 +619,7 @@ const MyHome = () => {
                                             src={getImageUrl(post.image || post.images?.[0])}
                                             onError={e => { e.target.onerror = null; e.target.src = '/placeholder.svg'; }}
                                             alt={post.title}
-                                            className="w-full h-48 object-cover"
+                                            className="w-full h-40 md:h-48 object-cover"
                                         />
                                         <Badge className={`absolute top-3 left-3 ${post.status === 'active' ? 'bg-green-500' :
                                             post.status === 'sold' ? 'bg-blue-500' :
@@ -625,11 +643,11 @@ const MyHome = () => {
                                                 <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-800 shadow-lg border rounded-xl">
                                                     <DropdownMenuItem onClick={() => handleEditPost(post)}>
                                                         <Edit className="w-4 h-4 mr-2" />
-                                                        Edit Post
+                                                        {t('edit_post')}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleSharePost(post)}>
                                                         <Share2 className="w-4 h-4 mr-2" />
-                                                        Share Post
+                                                        {t('share_post')}
                                                     </DropdownMenuItem>
                                                     {post.status !== 'bought' && (
                                                         <DropdownMenuItem
@@ -637,7 +655,7 @@ const MyHome = () => {
                                                             className="text-red-600"
                                                         >
                                                             <Trash2 className="w-4 h-4 mr-2" />
-                                                            Delete
+                                                            {t('delete')}
                                                         </DropdownMenuItem>
                                                     )}
                                                 </DropdownMenuContent>
@@ -659,7 +677,7 @@ const MyHome = () => {
                                                         toast({ title: "📋 Copied!", description: "Post ID copied to clipboard" });
                                                     }}
                                                     className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                                    title="Copy Post ID (use this in SaleDone)"
+                                                    title={t('copy_post_id_tooltip')}
                                                 >
                                                     <Copy className="w-4 h-4" />
                                                 </button>
@@ -723,17 +741,17 @@ const MyHome = () => {
                             onClick={() => setCurrentPage(currentPage - 1)}
                             className="text-base px-5 py-2 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                         >
-                            Previous
+                            {t('previous')}
                         </Button>
                         <span className="px-4 py-2 text-blue-700 dark:text-blue-300 font-bold text-base">
-                            Page {currentPage} of {totalPages}
+                            {t('page')} {currentPage} {t('of')} {totalPages}
                         </span>
                         <Button
                             disabled={currentPage === totalPages}
                             onClick={() => setCurrentPage(currentPage + 1)}
                             className="text-base px-5 py-2 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                         >
-                            Next
+                            {t('next')}
                         </Button>
                     </div>
                 )}
@@ -754,19 +772,19 @@ const MyHome = () => {
                 <AlertDialogContent className="bg-white dark:bg-gray-800 rounded-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                            Delete Post?
+                            {t('delete_post_title')}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
-                            This action cannot be undone. This will permanently delete your post.
+                            {t('delete_post_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl">{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeletePost}
                             className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
                         >
-                            Delete
+                            {t('delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -777,19 +795,19 @@ const MyHome = () => {
                 <AlertDialogContent className="bg-white dark:bg-gray-800 rounded-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                            Move to Sale Undone?
+                            {t('move_sale_undone_title')}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
-                            {selectedPosts.size} post(s) will be moved to Sale Undone section.
+                            {t('move_sale_undone_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl">{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleSaleUndone}
                             className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl"
                         >
-                            Confirm
+                            {t('confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -800,19 +818,19 @@ const MyHome = () => {
                 <AlertDialogContent className="bg-white dark:bg-gray-800 rounded-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                            Delete {selectedPosts.size} Posts?
+                            {t('bulk_delete_title', { count: selectedPosts.size })}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
-                            This action cannot be undone. All selected posts will be permanently deleted.
+                            {t('bulk_delete_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="rounded-xl">{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleBulkDelete}
                             className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
                         >
-                            Delete All
+                            {t('delete_all')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

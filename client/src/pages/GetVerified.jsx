@@ -85,8 +85,8 @@ const GetVerified = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Get Aadhaar Verified</h1>
-          <p className="text-gray-600">Verify your identity to unlock premium features and build trust</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('get_aadhaar_verified')}</h1>
+          <p className="text-gray-600">{t('aadhaar_subtitle')}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -95,17 +95,17 @@ const GetVerified = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Shield className="w-5 h-5 text-green-600" />
-                <span>Aadhaar Verification</span>
+                <span>{t('aadhaar_verification_title')}</span>
               </CardTitle>
               <CardDescription>
-                Upload your Aadhaar XML file to verify your identity
+                {t('aadhaar_upload_desc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {verificationStatus === 'pending' && (
                 <form onSubmit={handleSubmitVerification} className="space-y-4">
                   <div>
-                    <Label htmlFor="fullName">Full Name (as per Aadhaar)</Label>
+                    <Label htmlFor="fullName">{t('full_name_aadhaar')}</Label>
                     <Input
                       id="fullName"
                       name="fullName"
@@ -118,7 +118,7 @@ const GetVerified = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="aadhaarNumber">Aadhaar Number (Last 4 digits)</Label>
+                    <Label htmlFor="aadhaarNumber">{t('aadhaar_last_4')}</Label>
                     <Input
                       id="aadhaarNumber"
                       name="aadhaarNumber"
@@ -149,7 +149,7 @@ const GetVerified = () => {
                     <div className="text-center">
                       <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <Label htmlFor="aadhaarFile" className="block text-sm font-medium mb-2">
-                        Upload Aadhaar XML File
+                        {t('upload_aadhaar_xml')}
                       </Label>
                       <Input
                         id="aadhaarFile"
@@ -164,9 +164,9 @@ const GetVerified = () => {
                         </p>
                       )}
                       <p className="text-xs text-gray-500 mt-2">
-                        Download XML file from{' '}
+                        {t('download_xml_from')}{' '}
                         <a href="https://resident.uidai.gov.in/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          UIDAI website
+                          {t('uidai_website')}
                         </a>
                       </p>
                     </div>
@@ -177,7 +177,7 @@ const GetVerified = () => {
                     className="w-full"
                     disabled={isUploading}
                   >
-                    {isUploading ? "Verifying..." : "Submit for Verification"}
+                    {isUploading ? t('verifying') : t('submit_verification')}
                   </Button>
                 </form>
               )}
@@ -188,8 +188,8 @@ const GetVerified = () => {
                     <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-green-600">Verification Complete!</h3>
-                    <p className="text-gray-600">Your Aadhaar has been successfully verified</p>
+                    <h3 className="font-semibold text-lg text-green-600">{t('verification_complete')}</h3>
+                    <p className="text-gray-600">{t('aadhaar_success_msg')}</p>
                   </div>
                   <Badge className="bg-green-600">
                     <Shield className="w-3 h-3 mr-1" />
@@ -204,8 +204,8 @@ const GetVerified = () => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Verification Benefits</CardTitle>
-                <CardDescription>Why you should get verified</CardDescription>
+                <CardTitle>{t('verification_benefits')}</CardTitle>
+                <CardDescription>{t('why_get_verified')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -232,10 +232,9 @@ const GetVerified = () => {
                 <div className="flex items-start space-x-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-medium text-amber-800">Privacy & Security</h3>
+                    <h3 className="font-medium text-amber-800">{t('privacy_security')}</h3>
                     <p className="text-sm text-amber-700 mt-1">
-                      Your Aadhaar data is encrypted and used only for verification.
-                      We comply with all government privacy regulations.
+                      {t('privacy_desc')}
                     </p>
                   </div>
                 </div>

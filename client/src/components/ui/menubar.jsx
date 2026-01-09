@@ -4,6 +4,8 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+import { useTranslation } from 'react-i18next';
+
 const MenubarMenu = MenubarPrimitive.Menu;
 const MenubarGroup = MenubarPrimitive.Group;
 const MenubarPortal = MenubarPrimitive.Portal;
@@ -154,6 +156,7 @@ const MenubarSeparator = React.forwardRef(({ className, ...props }, ref) => (
 MenubarSeparator.displayName = "MenubarSeparator";
 
 const MenubarShortcut = ({ className, ...props }) => {
+  const { t } = useTranslation();
   return (
     <span
       className={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)}

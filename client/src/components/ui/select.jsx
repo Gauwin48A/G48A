@@ -1,8 +1,11 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+import { useTranslation } from 'react-i18next';
+
 // Fix: Ensure select dropdown works for both controlled and uncontrolled usage
 export function Select({ children, onValueChange, value, defaultValue, name, ...props }) {
+  const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = React.useState(defaultValue || "");

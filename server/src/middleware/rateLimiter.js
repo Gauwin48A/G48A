@@ -22,7 +22,7 @@ setInterval(() => {
 // General API rate limiter
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // 100 requests per window
+    max: 2000, // Increased to support view tracking bursts
     message: {
         error: 'Too many requests',
         message: 'You have exceeded the rate limit. Please try again later.',

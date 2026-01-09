@@ -71,8 +71,7 @@ export default function PostDetail() {
       })
     })
       .then(res => res.json())
-      .then(data => console.log(`[RecentlyViewed] Tracked post ${postIdToTrack} from ${source}`, data))
-      .catch(err => console.log('[RecentlyViewed] Tracking failed (non-critical)', err));
+      .catch(() => { });
   }, [id]); // Only run when id changes (i.e., on page load)
 
   useEffect(() => {
@@ -102,6 +101,7 @@ export default function PostDetail() {
       };
       fetchPost();
     }
+    setCurrentImageIndex(0);
   }, [id]);
 
   if (loading) {

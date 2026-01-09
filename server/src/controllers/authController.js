@@ -2,7 +2,7 @@ const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { recordFailedAttempt, resetFailedAttempts } = require('../middleware/security');
+const { recordFailedAttempt, resetFailedAttempts, isAccountLocked } = require('../middleware/security');
 
 // Password strength validation helper
 const validatePasswordStrength = (password) => {
@@ -28,6 +28,13 @@ exports.login = async (req, res) => {
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  // SECURITY: Check if account is locked (5-strike rule)
+  if (isAccountLocked(email)) {
+    return res.status(429).json({
+      error: 'Account temporarily locked due to multiple failed attempts. Please try again in 15 minutes.'
+    });
   }
 
   try {
@@ -82,9 +89,26 @@ exports.login = async (req, res) => {
 
     console.log('[AUTH] Login successful for user:', user.user_id);
 
+    // OPERATION POLISH: Set tokens as HttpOnly cookies (XSS-proof)
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     user.password_hash = undefined;
     user.refresh_token = undefined;
 
+    // Still return token in body for backward compatibility with localStorage clients
+    // Frontend can choose to ignore this and rely on cookies instead
     res.json({
       token: accessToken,
       refreshToken,

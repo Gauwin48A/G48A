@@ -119,10 +119,10 @@ const Verification = () => {
                             <Shield className="w-8 h-8 text-white" />
                         </div>
                         <CardTitle className="text-2xl text-white">{t('identity_verification') || 'Identity Verification'}</CardTitle>
-                        <CardDescription className="text-blue-100">Verify your identity with government documents</CardDescription>
+                        <CardDescription className="text-blue-100">{t('aadhaar_subtitle')}</CardDescription>
                     </CardHeader>
                     <CardContent className="p-8 text-center">
-                        <p className="text-gray-600 dark:text-gray-300 mb-6">Please log in to access verification.</p>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6">{t('please_login_verify')}</p>
                         <div className="flex flex-col gap-3">
                             <Link to="/login">
                                 <Button className="w-full bg-[#96C2DB] hover:bg-blue-500 text-white">Login</Button>
@@ -157,13 +157,13 @@ const Verification = () => {
                         <Shield className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-1">{t('identity_verification') || 'Identity Verification'}</h1>
-                    <p className="text-gray-400">Verify your identity with government documents</p>
+                    <p className="text-gray-400">{t('aadhaar_subtitle')}</p>
                 </div>
 
                 <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800">
                     <CardHeader className="bg-gradient-to-r from-[#96C2DB] to-blue-600 text-white">
                         <CardTitle className="text-xl">{t('identity_verification') || 'Identity Verification'}</CardTitle>
-                        <CardDescription className="text-blue-100">Enter your Aadhaar and PAN details</CardDescription>
+                        <CardDescription className="text-blue-100">{t('enter_aadhaar_pan')}</CardDescription>
                     </CardHeader>
 
                     <CardContent className="p-8">
@@ -291,7 +291,7 @@ const Verification = () => {
                                 className="w-full py-6 text-white bg-[#96C2DB] dark:bg-blue-600 hover:bg-blue-500 transition-colors duration-300 text-lg font-semibold rounded-xl"
                                 disabled={saving}
                             >
-                                {saving ? 'Saving...' : (t('save') || 'Save Verification Details')}
+                                {saving ? t('saving') + '...' : (t('save_verification_details'))}
                             </Button>
                         </div>
                     </CardContent>

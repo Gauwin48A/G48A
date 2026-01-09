@@ -8,11 +8,17 @@ import {
     ArrowLeft, XCircle, Sparkles, ShoppingBag, Newspaper,
     Grid3X3, List, RefreshCw
 } from 'lucide-react';
+import { FaLock, FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
+import { translatePosts } from '@/utils/translateContent';
+import PageHeader from '../components/PageHeader';
 
 const RecentlyViewed = () => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
+    const currentLang = i18n.language || 'en';
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -22,7 +28,7 @@ const RecentlyViewed = () => {
 
     useEffect(() => {
         fetchHistory();
-    }, [activeTab]);
+    }, [activeTab, currentLang]);
 
     const fetchHistory = async () => {
         try {
@@ -32,7 +38,7 @@ const RecentlyViewed = () => {
             const token = localStorage.getItem('authToken');
 
             if (!userId || !token) {
-                setError('Please login to view your browsing history');
+                setError(t('please_login_history'));
                 setLoading(false);
                 return;
             }
@@ -46,15 +52,18 @@ const RecentlyViewed = () => {
                 headers: { Authorization: `Bearer ${token}` },
                 params
             });
-
-            setItems(response.data.items || []);
-        } catch (err) {
+            let loadedItems = response.data.items || [];
+            // Translate post content if not English
+            if (currentLang !== 'en' && loadedItems.length > 0) {
+                loadedItems = await translatePosts(loadedItems, currentLang);
+            }
+            setItems(loadedItems);
             console.error('Failed to fetch history:', err);
             if (err.response?.status === 401) {
-                setError('Session expired. Please login again.');
-                localStorage.removeItem('authToken');
+                // Determine if we should show a login prompt or just an error
+                setError('session_expired');
             } else {
-                setError('Failed to load browsing history');
+                setError(t('failed_load_history'));
             }
         } finally {
             setLoading(false);
@@ -68,14 +77,14 @@ const RecentlyViewed = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setItems(items.filter(item => item.post_id !== postId));
-            showToast('Removed from history');
+            showToast(t('removed_from_history'));
         } catch (err) {
             showToast('Failed to remove', 'error');
         }
     };
 
     const handleClearAll = async () => {
-        if (!window.confirm('Clear all browsing history?')) return;
+        if (!window.confirm(t('clear_browsing_history'))) return;
 
         try {
             const token = localStorage.getItem('authToken');
@@ -83,7 +92,7 @@ const RecentlyViewed = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setItems([]);
-            showToast('History cleared');
+            showToast(t('history_cleared'));
         } catch (err) {
             showToast('Failed to clear history', 'error');
         }
@@ -134,83 +143,66 @@ const RecentlyViewed = () => {
     };
 
     const tabs = [
-        { id: 'all', label: 'All', icon: Sparkles, color: 'from-blue-500 to-indigo-600' },
-        { id: 'allposts', label: 'All Posts', icon: ShoppingBag, color: 'from-emerald-500 to-teal-600' },
-        { id: 'feed', label: 'Feed', icon: Newspaper, color: 'from-purple-500 to-pink-600' }
+        { id: 'all', label: t('all') || 'All', icon: Sparkles, color: 'from-blue-500 to-indigo-600' },
+        { id: 'allposts', label: t('all_posts') || 'All Posts', icon: ShoppingBag, color: 'from-emerald-500 to-teal-600' },
+        { id: 'feed', label: t('feed') || 'Feed', icon: Newspaper, color: 'from-purple-500 to-pink-600' }
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-900">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900">
             {/* Premium Header with Glassmorphism */}
-            <div className="sticky top-0 z-50 bg-gradient-to-r from-slate-900/95 via-gray-900/95 to-slate-900/95 backdrop-blur-xl border-b border-white/10">
-                <div className="max-w-6xl mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+            {/* Premium Header */}
+            <PageHeader
+                title={t('recently_viewed') || 'Recently Viewed'}
+                rightAction={
+                    <div className="flex items-center gap-2">
+                        {/* View Toggle */}
+                        <div className="flex bg-gray-100 dark:bg-gray-800/50 rounded-xl p-1">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-2 rounded-lg transition-all ${viewMode === 'grid'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+                            >
+                                <Grid3X3 className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`p-2 rounded-lg transition-all ${viewMode === 'list'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+                            >
+                                <List className="h-4 w-4" />
+                            </button>
+                        </div>
+                        {/* Refresh */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={fetchHistory}
+                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        {/* Clear All */}
+                        {items.length > 0 && (
                             <Button
                                 variant="ghost"
-                                size="icon"
-                                onClick={() => navigate(-1)}
-                                className="text-gray-300 hover:text-white hover:bg-white/10 rounded-xl"
+                                size="sm"
+                                onClick={handleClearAll}
+                                className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl"
                             >
-                                <ArrowLeft className="h-5 w-5" />
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                {t('clear_all') || 'Clear All'}
                             </Button>
-                            <div>
-                                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent flex items-center gap-2">
-                                    <History className="h-6 w-6 text-blue-400" />
-                                    Recently Viewed
-                                </h1>
-                                <p className="text-sm text-gray-400 mt-0.5">{items.length} items in your history</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {/* View Toggle */}
-                            <div className="flex bg-gray-800/50 rounded-xl p-1">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-2 rounded-lg transition-all ${viewMode === 'grid'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    <Grid3X3 className="h-4 w-4" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={`p-2 rounded-lg transition-all ${viewMode === 'list'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    <List className="h-4 w-4" />
-                                </button>
-                            </div>
-                            {/* Refresh */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={fetchHistory}
-                                className="text-gray-400 hover:text-white hover:bg-white/10 rounded-xl"
-                            >
-                                <RefreshCw className="h-4 w-4" />
-                            </Button>
-                            {/* Clear All */}
-                            {items.length > 0 && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleClearAll}
-                                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl"
-                                >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Clear All
-                                </Button>
-                            )}
-                        </div>
+                        )}
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             {/* Modern Tab Navigation */}
             <div className="max-w-6xl mx-auto px-4 py-4">
-                <div className="flex gap-3 p-1.5 bg-gray-800/30 rounded-2xl backdrop-blur-sm">
+                <div className="flex gap-3 p-1.5 bg-gray-100 dark:bg-gray-800/30 rounded-2xl backdrop-blur-sm">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = activeTab === tab.id;
@@ -220,7 +212,7 @@ const RecentlyViewed = () => {
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold text-sm transition-all duration-300 ${isActive
                                     ? `bg-gradient-to-r ${tab.color} text-white shadow-lg shadow-${tab.color.split('-')[1]}-500/25 scale-[1.02]`
-                                    : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/5'
+                                    : 'bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white dark:hover:bg-white/5'
                                     }`}
                             >
                                 <Icon className={`h-4 w-4 ${isActive ? 'animate-pulse' : ''}`} />
@@ -242,38 +234,57 @@ const RecentlyViewed = () => {
                             <div className="w-16 h-16 border-4 border-blue-500/30 rounded-full"></div>
                             <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
                         </div>
-                        <p className="text-gray-400">Loading your history...</p>
+                        <p className="text-gray-600 dark:text-gray-400">{t('loading_history') || 'Loading your history...'}</p>
                     </div>
                 ) : error ? (
                     <div className="text-center py-16">
-                        <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <XCircle className="h-10 w-10 text-red-400" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-white mb-2">Something went wrong</h3>
-                        <p className="text-gray-400 mb-6">{error}</p>
-                        <Button
-                            onClick={fetchHistory}
-                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-6"
-                        >
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Try Again
-                        </Button>
+                        {error === 'session_expired' ? (
+                            <>
+                                <div className="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <FaLock className="h-10 w-10 text-orange-400" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('session_expired') || 'Session Expired'}</h3>
+                                <p className="text-gray-600 dark:text-gray-400 mb-6">{t('login_to_view_history') || 'Please login to view your browsing history.'}</p>
+                                <Button
+                                    onClick={() => navigate('/login')}
+                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-8 py-2"
+                                >
+                                    <FaSignInAlt className="h-4 w-4 mr-2" />
+                                    {t('login_now') || 'Login Now'}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <XCircle className="h-10 w-10 text-red-400" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('something_went_wrong')}</h3>
+                                <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+                                <Button
+                                    onClick={fetchHistory}
+                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-6"
+                                >
+                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                    {t('try_again')}
+                                </Button>
+                            </>
+                        )}
                     </div>
                 ) : items.length === 0 ? (
                     <div className="text-center py-20">
                         <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <History className="h-12 w-12 text-blue-400" />
                         </div>
-                        <h3 className="text-2xl font-bold text-white mb-3">No Browsing History</h3>
-                        <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                            Posts you view will appear here. Start exploring to build your history!
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t('no_browsing_history')}</h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
+                            {t('posts_you_view_appear')}
                         </p>
                         <Button
                             onClick={() => navigate('/all-posts')}
                             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl shadow-blue-500/25"
                         >
                             <ShoppingBag className="h-5 w-5 mr-2" />
-                            Browse Posts
+                            {t('browse_posts')}
                         </Button>
                     </div>
                 ) : (
@@ -286,7 +297,7 @@ const RecentlyViewed = () => {
                                 /* Grid View Card */
                                 <Card
                                     key={item.id || item.post_id}
-                                    className="group bg-gradient-to-br from-gray-800/80 to-gray-900/80 border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl"
+                                    className="group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 border-gray-200 dark:border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl shadow-sm"
                                     onClick={() => navigate(`/post/${item.post_id}`)}
                                 >
                                     {/* Image Container */}
@@ -315,7 +326,7 @@ const RecentlyViewed = () => {
                                         {/* View Count */}
                                         <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-xs flex items-center gap-1">
                                             <Eye className="h-3 w-3" />
-                                            {item.view_count || 1}x viewed
+                                            {item.view_count || 1}{t('x_viewed')}
                                         </div>
 
                                         {/* Price Tag */}
@@ -346,7 +357,7 @@ const RecentlyViewed = () => {
                                             </Badge>
                                         )}
 
-                                        <h3 className="text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-400 transition-colors">
+                                        <h3 className="text-gray-900 dark:text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                             {item.title}
                                         </h3>
 
@@ -365,11 +376,11 @@ const RecentlyViewed = () => {
                                         )}
 
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="flex items-center gap-1 text-gray-400">
+                                            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                                                 <MapPin className="h-3.5 w-3.5" />
-                                                {item.location || 'Unknown'}
+                                                {item.location || t('unknown')}
                                             </span>
-                                            <span className="flex items-center gap-1 text-gray-500">
+                                            <span className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
                                                 <Clock className="h-3.5 w-3.5" />
                                                 {formatTimeAgo(item.viewed_at)}
                                             </span>
@@ -380,7 +391,7 @@ const RecentlyViewed = () => {
                                 /* List View Card */
                                 <Card
                                     key={item.id || item.post_id}
-                                    className="group bg-gradient-to-r from-gray-800/60 to-gray-900/60 border-gray-700/30 overflow-hidden cursor-pointer hover:border-blue-500/30 hover:bg-gray-800/80 transition-all duration-300 rounded-2xl"
+                                    className="group bg-white dark:bg-gradient-to-r dark:from-gray-800/60 dark:to-gray-900/60 border-gray-200 dark:border-gray-700/30 overflow-hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/30 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-all duration-300 rounded-2xl shadow-sm"
                                     onClick={() => navigate(`/post/${item.post_id}`)}
                                 >
                                     <div className="flex gap-4 p-4">
@@ -410,13 +421,13 @@ const RecentlyViewed = () => {
                                                     {item.category_name}
                                                 </Badge>
                                             )}
-                                            <h3 className="text-white font-semibold truncate group-hover:text-blue-400 transition-colors">
+                                            <h3 className="text-gray-900 dark:text-white font-semibold truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                                 {item.title}
                                             </h3>
                                             <p className="text-xl font-bold text-emerald-400 mt-1">
                                                 {formatPrice(item.price)}
                                             </p>
-                                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
+                                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
                                                 {/* Seller */}
                                                 {item.seller_name && (
                                                     <span className="flex items-center gap-1">
@@ -430,11 +441,11 @@ const RecentlyViewed = () => {
                                                 )}
                                                 <span className="flex items-center gap-1">
                                                     <MapPin className="h-3 w-3" />
-                                                    {item.location || 'Unknown'}
+                                                    {item.location || t('unknown')}
                                                 </span>
                                                 <span className="flex items-center gap-1">
                                                     <Eye className="h-3 w-3" />
-                                                    Viewed {item.view_count}x
+                                                    {t('viewed')} {item.view_count}x
                                                 </span>
                                                 <span className="flex items-center gap-1">
                                                     <Clock className="h-3 w-3" />
@@ -452,7 +463,7 @@ const RecentlyViewed = () => {
                                                     e.stopPropagation();
                                                     handleRemove(item.post_id);
                                                 }}
-                                                className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl"
+                                                className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useTranslation } from 'react-i18next';
+
 import { 
   ArrowLeft, 
   ChevronLeft, 
@@ -25,6 +27,7 @@ import {
 } from "lucide-react";
 
 const PostDetailView = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { post, type } = location.state || {};

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import {
   Shield, Copy, Edit, Phone, Mail, MapPin, Calendar, Camera,
   User, Settings, Bell, Lock, CreditCard, Star, CheckCircle,
-  ChevronRight, Sparkles, Award, TrendingUp
+  ChevronRight, Sparkles, Award, TrendingUp, LayoutDashboard, Rss, XCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import '../i18n';
@@ -229,7 +229,7 @@ const Profile = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading profile...</p>
+          <p className="text-gray-600 font-medium">{t('loading_profile') || 'Loading profile...'}</p>
         </div>
       </div>
     );
@@ -240,8 +240,8 @@ const Profile = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
         <div className="text-center p-8">
           <div className="text-6xl mb-4">😕</div>
-          <p className="text-red-500 text-xl mb-4">{error || 'Profile not found'}</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
+          <p className="text-red-500 text-xl mb-4">{error || t('profile_not_found') || 'Profile not found'}</p>
+          <Button onClick={() => window.location.reload()}>{t('retry') || 'Retry'}</Button>
         </div>
       </div>
     );
@@ -314,51 +314,91 @@ const Profile = () => {
               <p className="text-white/80 mb-3">{profileData.email}</p>
               <div className="flex flex-wrap justify-center md:justify-start gap-2">
                 <Badge className="bg-white/20 text-white border-0">
-                  <Shield className="w-3 h-3 mr-1" /> {profileData.verified ? 'Verified' : 'Unverified'}
+                  <Shield className="w-3 h-3 mr-1" /> {profileData.verified ? t('verified') || 'Verified' : t('unverified')}
                 </Badge>
                 <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0">
-                  <Star className="w-3 h-3 mr-1" /> {profileData.role || 'Member'}
+                  <Star className="w-3 h-3 mr-1" /> {t(profileData.role?.toLowerCase()) || profileData.role || t('member')}
                 </Badge>
                 {channel && (
                   <Badge className="bg-purple-500 text-white border-0">
-                    <Sparkles className="w-3 h-3 mr-1" /> Channel Owner
+                    <Sparkles className="w-3 h-3 mr-1" /> {t('channel_owner')}
                   </Badge>
                 )}
               </div>
             </div>
 
-            {/* Edit Button */}
-            <Button onClick={() => setEditMode(true)} className="bg-white text-indigo-600 hover:bg-white/90 font-bold shadow-lg">
-              <Edit className="w-4 h-4 mr-2" /> Edit Profile
-            </Button>
+            {/* Edit Button & Sale Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
+              <Button
+                onClick={() => navigate('/saledone')}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" /> {t('btn_sale_done') || 'Sale Done'}
+              </Button>
+              <Button
+                onClick={() => navigate('/saleundone')}
+                variant="destructive"
+                className="bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-lg"
+              >
+                <XCircle className="w-4 h-4 mr-2" /> {t('btn_sale_undone') || 'Sale Undone'}
+              </Button>
+              <Button onClick={() => setEditMode(true)} className="bg-white text-indigo-600 hover:bg-white/90 font-bold shadow-lg">
+                <Edit className="w-4 h-4 mr-2" /> {t('edit_profile')}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Quick Stats */}
       <div className="max-w-4xl mx-auto px-4 -mt-8 mb-8 relative z-10">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl">
             <CardContent className="p-4 text-center">
               <TrendingUp className="w-6 h-6 mx-auto mb-2 text-green-500" />
               <p className="text-2xl font-bold text-gray-800 dark:text-white">{userStats.postCount}</p>
-              <p className="text-xs text-gray-500">Posts</p>
+              <p className="text-xs text-gray-500">{t('posts_count')}</p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl">
             <CardContent className="p-4 text-center">
               <Award className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
               <p className="text-2xl font-bold text-gray-800 dark:text-white">{userStats.rank}</p>
-              <p className="text-xs text-gray-500">Rank</p>
+              <p className="text-xs text-gray-500">{t('rank')}</p>
             </CardContent>
           </Card>
           <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl">
             <CardContent className="p-4 text-center">
               <Calendar className="w-6 h-6 mx-auto mb-2 text-blue-500" />
               <p className="text-2xl font-bold text-gray-800 dark:text-white">{userStats.memberDays}</p>
-              <p className="text-xs text-gray-500">Days</p>
+              <p className="text-xs text-gray-500">{t('days')}</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Quick Actions - My Home & My Feed */}
+        <div className="grid grid-cols-2 gap-4">
+          <Button
+            onClick={() => navigate('/my-home')}
+            className="h-auto py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg rounded-xl flex items-center justify-center gap-3 transition-transform hover:scale-[1.02]"
+          >
+            <LayoutDashboard className="w-6 h-6" />
+            <div className="text-left">
+              <p className="font-bold text-lg">{t('my_home')}</p>
+              <p className="text-xs text-blue-100 font-normal">{t('access_dashboard')}</p>
+            </div>
+          </Button>
+
+          <Button
+            onClick={() => navigate('/my-feed')}
+            className="h-auto py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg rounded-xl flex items-center justify-center gap-3 transition-transform hover:scale-[1.02]"
+          >
+            <Rss className="w-6 h-6" />
+            <div className="text-left">
+              <p className="font-bold text-lg">{t('my_feed')}</p>
+              <p className="text-xs text-indigo-100 font-normal">{t('view_feed')}</p>
+            </div>
+          </Button>
         </div>
       </div>
 
@@ -367,13 +407,13 @@ const Profile = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full flex bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-lg mb-6">
             <TabsTrigger value="personal" className="flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white py-3 font-semibold">
-              <User className="w-4 h-4 mr-2" /> Personal
+              <User className="w-4 h-4 mr-2" /> {t('personal')}
             </TabsTrigger>
             <TabsTrigger value="preferences" className="flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white py-3 font-semibold">
-              <Settings className="w-4 h-4 mr-2" /> Preferences
+              <Settings className="w-4 h-4 mr-2" /> {t('preferences')}
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white py-3 font-semibold">
-              <Lock className="w-4 h-4 mr-2" /> Settings
+              <Lock className="w-4 h-4 mr-2" /> {t('settings')}
             </TabsTrigger>
           </TabsList>
 
@@ -381,33 +421,33 @@ const Profile = () => {
             <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-blue-600" /> Personal Information
+                  <User className="w-5 h-5 text-blue-600" /> {t('personal_information') || 'Personal Information'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {editMode ? (
                   <form onSubmit={handleEditSubmit} className="space-y-4">
                     <div>
-                      <Label htmlFor="full_name">Full Name</Label>
+                      <Label htmlFor="full_name">{t('full_name') || 'Full Name'}</Label>
                       <Input id="full_name" name="full_name" value={editData.full_name} onChange={handleEditChange} className="mt-1" />
                       {editErrors.full_name && <p className="text-red-500 text-sm mt-1">{editErrors.full_name}</p>}
                     </div>
                     <div>
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="phone">{t('phone') || 'Phone'}</Label>
                       <Input id="phone" name="phone" value={editData.phone} onChange={handleEditChange} className="mt-1" />
                       {editErrors.phone && <p className="text-red-500 text-sm mt-1">{editErrors.phone}</p>}
                     </div>
                     <div>
-                      <Label htmlFor="address">Address</Label>
+                      <Label htmlFor="address">{t('address') || 'Address'}</Label>
                       <Input id="address" name="address" value={editData.address} onChange={handleEditChange} className="mt-1" />
                     </div>
                     <div>
-                      <Label htmlFor="bio">Bio</Label>
-                      <Input id="bio" name="bio" value={editData.bio} onChange={handleEditChange} className="mt-1" placeholder="Tell us about yourself..." />
+                      <Label htmlFor="bio">{t('bio') || 'Bio'}</Label>
+                      <Input id="bio" name="bio" value={editData.bio} onChange={handleEditChange} className="mt-1" placeholder={t('about_yourself') || 'Tell us about yourself...'} />
                     </div>
                     <div className="flex gap-3 pt-4">
-                      <Button type="submit" className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600">Save Changes</Button>
-                      <Button type="button" variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
+                      <Button type="submit" className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600">{t('save_changes') || 'Save Changes'}</Button>
+                      <Button type="button" variant="outline" onClick={() => setEditMode(false)}>{t('cancel') || 'Cancel'}</Button>
                     </div>
                   </form>
                 ) : (
@@ -415,28 +455,28 @@ const Profile = () => {
                     <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                       <div className="flex items-center gap-3 mb-2">
                         <User className="w-5 h-5 text-blue-500" />
-                        <span className="text-sm text-gray-500">Full Name</span>
+                        <span className="text-sm text-gray-500">{t('full_name') || 'Full Name'}</span>
                       </div>
                       <p className="font-semibold text-gray-800 dark:text-white">{profileData.name || profileData.full_name || '-'}</p>
                     </div>
                     <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                       <div className="flex items-center gap-3 mb-2">
                         <Mail className="w-5 h-5 text-blue-500" />
-                        <span className="text-sm text-gray-500">Email</span>
+                        <span className="text-sm text-gray-500">{t('email') || 'Email'}</span>
                       </div>
                       <p className="font-semibold text-gray-800 dark:text-white">{profileData.email || '-'}</p>
                     </div>
                     <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                       <div className="flex items-center gap-3 mb-2">
                         <Phone className="w-5 h-5 text-blue-500" />
-                        <span className="text-sm text-gray-500">Phone</span>
+                        <span className="text-sm text-gray-500">{t('phone') || 'Phone'}</span>
                       </div>
                       <p className="font-semibold text-gray-800 dark:text-white">{profileData.phone || '-'}</p>
                     </div>
                     <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                       <div className="flex items-center gap-3 mb-2">
                         <MapPin className="w-5 h-5 text-blue-500" />
-                        <span className="text-sm text-gray-500">Address</span>
+                        <span className="text-sm text-gray-500">{t('address') || 'Address'}</span>
                       </div>
                       <p className="font-semibold text-gray-800 dark:text-white">{profileData.address || '-'}</p>
                     </div>
@@ -451,7 +491,7 @@ const Profile = () => {
                         <Shield className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Your User ID</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('your_user_id')}</p>
                         <p className="font-bold text-indigo-700 dark:text-indigo-300 font-mono text-lg">
                           {profileData.user_id || user?.user_id || '-'}
                         </p>
@@ -469,10 +509,10 @@ const Profile = () => {
                       }}
                       className="border-indigo-300 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
                     >
-                      <Copy className="w-4 h-4 mr-1" /> Copy
+                      <Copy className="w-4 h-4 mr-1" /> {t('copy') || 'Copy'}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">💡 Use this ID when filling SaleDone forms as the Buyer/Seller ID</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">💡 {t('use_id_for_forms')}</p>
                 </div>
 
                 {/* Verification Status */}
@@ -483,12 +523,12 @@ const Profile = () => {
                         <CheckCircle className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-green-800 dark:text-green-300">Verification Status</p>
-                        <p className="text-sm text-green-600 dark:text-green-400">{profileData.verified ? 'Your account is verified' : 'Verify your account for more features'}</p>
+                        <p className="font-semibold text-green-800 dark:text-green-300">{t('verification_status')}</p>
+                        <p className="text-sm text-green-600 dark:text-green-400">{profileData.verified ? (t('account_verified') || 'Your account is verified') : (t('verify_for_features') || 'Verify your account for more features')}</p>
                       </div>
                     </div>
                     {!profileData.verified && (
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700">Verify Now</Button>
+                      <Button size="sm" className="bg-green-600 hover:bg-green-700">{t('verify_now')}</Button>
                     )}
                   </div>
                 </div>
@@ -500,21 +540,21 @@ const Profile = () => {
             <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-blue-600" /> Recommendation Preferences
+                  <Settings className="w-5 h-5 text-blue-600" /> {t('recommendation_preferences') || 'Recommendation Preferences'}
                 </CardTitle>
                 <Button size="sm" variant="outline" onClick={() => setEditPrefMode(!editPrefMode)}>
-                  {editPrefMode ? 'Cancel' : 'Edit'}
+                  {editPrefMode ? (t('cancel') || 'Cancel') : (t('edit') || 'Edit')}
                 </Button>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500 mb-6">These preferences are used to show personalized recommendations on your feed.</p>
+                <p className="text-gray-500 mb-6">{t('preferences_desc') || 'These preferences are used to show personalized recommendations on your feed.'}</p>
 
                 {editPrefMode ? (
                   <form onSubmit={handlePrefSubmit} className="space-y-4">
                     <div>
-                      <Label>Preferred Location</Label>
+                      <Label>{t('preferred_location') || 'Preferred Location'}</Label>
                       <select name="location" value={preferences.location} onChange={handlePrefChange} className="w-full mt-1 p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
-                        <option value="">Any Location</option>
+                        <option value="">{t('any_location') || 'Any Location'}</option>
                         <option value="Delhi">Delhi</option>
                         <option value="Mumbai">Mumbai</option>
                         <option value="Bangalore">Bangalore</option>
@@ -525,29 +565,29 @@ const Profile = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Min Price (₹)</Label>
+                        <Label>{t('min_price') || 'Min Price'} (₹)</Label>
                         <Input name="minPrice" type="number" value={preferences.minPrice} onChange={handlePrefChange} className="mt-1" placeholder="0" />
                       </div>
                       <div>
-                        <Label>Max Price (₹)</Label>
+                        <Label>{t('max_price') || 'Max Price'} (₹)</Label>
                         <Input name="maxPrice" type="number" value={preferences.maxPrice} onChange={handlePrefChange} className="mt-1" placeholder="100000" />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600">Save Preferences</Button>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600">{t('save_preferences') || 'Save Preferences'}</Button>
                   </form>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
                       <MapPin className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-                      <p className="text-sm text-gray-500">Location</p>
-                      <p className="font-bold text-gray-800 dark:text-white">{preferences.location || 'Any'}</p>
+                      <p className="text-sm text-gray-500">{t('location') || 'Location'}</p>
+                      <p className="font-bold text-gray-800 dark:text-white">{preferences.location || (t('any') || 'Any')}</p>
                     </div>
                     <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
-                      <p className="text-sm text-gray-500 mb-1">Min Price</p>
+                      <p className="text-sm text-gray-500 mb-1">{t('min_price') || 'Min Price'}</p>
                       <p className="font-bold text-gray-800 dark:text-white text-xl">₹{preferences.minPrice || '0'}</p>
                     </div>
                     <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-center">
-                      <p className="text-sm text-gray-500 mb-1">Max Price</p>
+                      <p className="text-sm text-gray-500 mb-1">{t('max_price') || 'Max Price'}</p>
                       <p className="font-bold text-gray-800 dark:text-white text-xl">₹{preferences.maxPrice || '∞'}</p>
                     </div>
                   </div>
@@ -560,14 +600,14 @@ const Profile = () => {
             <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-blue-600" /> Account Settings
+                  <Lock className="w-5 h-5 text-blue-600" /> {t('account_settings') || 'Account Settings'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { icon: Bell, label: 'Notifications', desc: 'Manage push notifications', action: 'Configure' },
-                  { icon: Lock, label: 'Privacy & Security', desc: 'Password and login settings', action: 'Manage' },
-                  { icon: CreditCard, label: 'Payment Methods', desc: 'Add or remove payment options', action: 'Update' },
+                  { icon: Bell, labelKey: 'notifications', descKey: 'manage_push_notifications', action: 'Configure' },
+                  { icon: Lock, labelKey: 'privacy_security', descKey: 'password_login_settings', action: 'Manage' },
+                  { icon: CreditCard, labelKey: 'payment_methods', descKey: 'add_remove_payment_options', action: 'Update' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer">
                     <div className="flex items-center gap-4">
@@ -575,8 +615,8 @@ const Profile = () => {
                         <item.icon className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800 dark:text-white">{item.label}</p>
-                        <p className="text-sm text-gray-500">{item.desc}</p>
+                        <p className="font-semibold text-gray-800 dark:text-white">{t(item.labelKey)}</p>
+                        <p className="text-sm text-gray-500">{t(item.descKey)}</p>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -587,8 +627,8 @@ const Profile = () => {
                 <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-800 dark:text-white">Language</p>
-                      <p className="text-sm text-gray-500">Choose your preferred language</p>
+                      <p className="font-semibold text-gray-800 dark:text-white">{t('language') || 'Language'}</p>
+                      <p className="text-sm text-gray-500">{t('choose_language') || 'Choose your preferred language'}</p>
                     </div>
                     <LanguageSelector />
                   </div>
@@ -596,10 +636,10 @@ const Profile = () => {
 
                 {/* Danger Zone */}
                 <div className="mt-8 p-4 border-2 border-red-200 dark:border-red-800 rounded-xl">
-                  <p className="font-semibold text-red-600 mb-2">Danger Zone</p>
+                  <p className="font-semibold text-red-600 mb-2">{t('danger_zone') || 'Danger Zone'}</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500">Delete your account permanently</p>
-                    <Button variant="destructive" size="sm">Delete Account</Button>
+                    <p className="text-sm text-gray-500">{t('delete_account_desc') || 'Delete your account permanently'}</p>
+                    <Button variant="destructive" size="sm">{t('delete_account') || 'Delete Account'}</Button>
                   </div>
                 </div>
               </CardContent>

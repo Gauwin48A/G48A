@@ -11,7 +11,10 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useToast } from '@/hooks/use-toast';
 
+import { useTranslation } from 'react-i18next';
+
 const Offers = () => {
+  const { t } = useTranslation();
     const navigate = useNavigate();
     const { toast } = useToast();
     const [offers, setOffers] = useState([]);

@@ -11,7 +11,10 @@ import CreateChannelPage from '../pages/CreateChannelPage';
 import ChannelsListPage from '../pages/ChannelsListPage';
 import ChannelPage from '../pages/ChannelPage';
 
+import { useTranslation } from 'react-i18next';
+
 const AppRoutes = () => {
+  const { t } = useTranslation();
   return (
     <Routes>
       <Route path="/" element={<AllPosts />} />

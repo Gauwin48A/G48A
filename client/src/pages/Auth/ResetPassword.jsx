@@ -25,17 +25,17 @@ const ResetPassword = () => {
         e.preventDefault();
 
         if (!token) {
-            toast({ title: "Error", description: "Invalid reset link", variant: "destructive" });
+            toast({ title: t('error'), description: t('invalid_reset_link'), variant: "destructive" });
             return;
         }
 
         if (!password || !confirmPassword) {
-            toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
+            toast({ title: t('error'), description: t('fill_all_fields') || "Please fill in all fields", variant: "destructive" });
             return;
         }
 
         if (password !== confirmPassword) {
-            toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
+            toast({ title: t('error'), description: t('passwords_do_not_match') || "Passwords do not match", variant: "destructive" });
             return;
         }
 
@@ -48,8 +48,8 @@ const ResetPassword = () => {
 
         if (!isLongEnough || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
             toast({
-                title: "Weak Password",
-                description: "Password must be 8+ characters with uppercase, lowercase, number, and special character",
+                title: t('weak_password') || "Weak Password",
+                description: t('password_requirements_msg') || "Password must be 8+ characters with uppercase, lowercase, number, and special character",
                 variant: "destructive"
             });
             return;
@@ -68,13 +68,13 @@ const ResetPassword = () => {
 
             if (res.ok) {
                 setSuccess(true);
-                toast({ title: "Success", description: "Password reset successfully!" });
+                toast({ title: t('success'), description: t('password_reset_success') || "Password reset successfully!" });
                 setTimeout(() => navigate('/login'), 3000);
             } else {
-                toast({ title: "Error", description: data.error || "Failed to reset password", variant: "destructive" });
+                toast({ title: t('error'), description: data.error || t('failed_reset_password') || "Failed to reset password", variant: "destructive" });
             }
         } catch (err) {
-            toast({ title: "Error", description: "Network error. Please try again.", variant: "destructive" });
+            toast({ title: t('error'), description: t('network_error'), variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -85,10 +85,10 @@ const ResetPassword = () => {
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4">
                 <Card className="max-w-md w-full shadow-2xl border-0 rounded-3xl bg-white dark:bg-gray-800">
                     <CardContent className="p-8 text-center">
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Invalid Reset Link</h2>
-                        <p className="text-gray-600 dark:text-gray-300 mb-6">This password reset link is invalid or has expired.</p>
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('invalid_reset_link')}</h2>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6">{t('invalid_reset_link_desc')}</p>
                         <Link to="/forgot-password">
-                            <Button className="w-full bg-[#96C2DB] hover:bg-blue-500 text-white">Request New Link</Button>
+                            <Button className="w-full bg-[#96C2DB] hover:bg-blue-500 text-white">{t('request_new_link')}</Button>
                         </Link>
                     </CardContent>
                 </Card>
@@ -104,10 +104,10 @@ const ResetPassword = () => {
                         {success ? <CheckCircle className="w-8 h-8 text-white" /> : <Lock className="w-8 h-8 text-white" />}
                     </div>
                     <CardTitle className="text-2xl text-white">
-                        {success ? 'Password Reset!' : 'Reset Password'}
+                        {success ? t('password_reset_title') || 'Password Reset!' : t('reset_password_title')}
                     </CardTitle>
                     <CardDescription className="text-blue-100">
-                        {success ? 'Redirecting to login...' : 'Create a new secure password'}
+                        {success ? t('redirecting_to_login') || 'Redirecting to login...' : t('create_new_password_msg') || 'Create a new secure password'}
                     </CardDescription>
                 </CardHeader>
 
@@ -115,17 +115,17 @@ const ResetPassword = () => {
                     {success ? (
                         <div className="text-center space-y-4">
                             <p className="text-gray-600 dark:text-gray-300">
-                                Your password has been reset successfully. You will be redirected to the login page.
+                                {t('password_reset_success_msg') || "Your password has been reset successfully. You will be redirected to the login page."}
                             </p>
                             <Link to="/login">
-                                <Button className="w-full bg-[#96C2DB] hover:bg-blue-500 text-white">Go to Login</Button>
+                                <Button className="w-full bg-[#96C2DB] hover:bg-blue-500 text-white">{t('go_to_login')}</Button>
                             </Link>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
                                 <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    New Password
+                                    {t('new_password_label')}
                                 </Label>
                                 <div className="relative mt-2">
                                     <Input
@@ -134,7 +134,7 @@ const ResetPassword = () => {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12"
-                                        placeholder="Create new password"
+                                        placeholder={t('create_password_placeholder')}
                                         disabled={loading}
                                     />
                                     <Button
@@ -151,7 +151,7 @@ const ResetPassword = () => {
 
                             <div>
                                 <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    Confirm Password
+                                    {t('confirm_new_password_label')}
                                 </Label>
                                 <Input
                                     id="confirmPassword"
@@ -159,20 +159,20 @@ const ResetPassword = () => {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
-                                    placeholder="Confirm new password"
+                                    placeholder={t('confirm_password_placeholder')}
                                     disabled={loading}
                                 />
                             </div>
 
                             {/* Password Requirements */}
                             <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-xs">
-                                <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Password Requirements:</p>
+                                <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300">{t('password_requirements')}</p>
                                 <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-                                    <li className={password.length >= 8 ? 'text-green-600' : ''}>✓ At least 8 characters</li>
-                                    <li className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>✓ Uppercase letter (A-Z)</li>
-                                    <li className={/[a-z]/.test(password) ? 'text-green-600' : ''}>✓ Lowercase letter (a-z)</li>
-                                    <li className={/\d/.test(password) ? 'text-green-600' : ''}>✓ Number (0-9)</li>
-                                    <li className={/[!@#$%^&*]/.test(password) ? 'text-green-600' : ''}>✓ Special character (!@#$%^&*)</li>
+                                    <li className={password.length >= 8 ? 'text-green-600' : ''}>✓ {t('req_min_chars')}</li>
+                                    <li className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>✓ {t('req_uppercase')}</li>
+                                    <li className={/[a-z]/.test(password) ? 'text-green-600' : ''}>✓ {t('req_lowercase')}</li>
+                                    <li className={/\d/.test(password) ? 'text-green-600' : ''}>✓ {t('req_number')}</li>
+                                    <li className={/[!@#$%^&*]/.test(password) ? 'text-green-600' : ''}>✓ {t('req_special')}</li>
                                 </ul>
                             </div>
 
@@ -181,7 +181,7 @@ const ResetPassword = () => {
                                 disabled={loading}
                                 className="w-full py-6 text-lg bg-[#96C2DB] hover:bg-blue-500 text-white rounded-xl"
                             >
-                                {loading ? 'Resetting...' : 'Reset Password'}
+                                {loading ? t('resetting_password') || 'Resetting...' : t('reset_password_title')}
                             </Button>
                         </form>
                     )}

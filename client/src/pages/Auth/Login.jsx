@@ -63,8 +63,8 @@ const Login = () => {
     }
     if (!emailLogin.password || emailLogin.password.length < 6) {
       toast({
-        title: "Invalid Password",
-        description: "Password must be at least 6 characters.",
+        title: t('invalid_password') || "Invalid Password",
+        description: t('password_min_chars') || "Password must be at least 6 characters.",
         variant: "destructive",
       });
       return;
@@ -72,8 +72,8 @@ const Login = () => {
     const testEmails = ['test@test.com', 'admin@admin.com', 'user@user.com'];
     if (testEmails.includes(emailLogin.email.toLowerCase())) {
       toast({
-        title: "Test Email Not Allowed",
-        description: "Test/dummy emails are not allowed for login.",
+        title: t('test_email_not_allowed') || "Test Email Not Allowed",
+        description: t('test_email_not_allowed_desc') || "Test/dummy emails are not allowed for login.",
         variant: "destructive",
       });
       return;
@@ -90,10 +90,8 @@ const Login = () => {
       await fetchAndStoreUserProfile(data.token);
 
       // Capture fresh location after login
-      console.log("[Login] Capturing location after successful email login...");
-      captureLocation(data.userId).catch(err =>
-        console.warn("[Login] Location capture failed (non-blocking):", err)
-      );
+      // Capture fresh location after login
+      captureLocation(data.userId).catch(() => { });
 
       toast({
         title: t('login_successful') + " 🎉",
@@ -117,23 +115,24 @@ const Login = () => {
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneLogin.phone || !phoneRegex.test(phoneLogin.phone)) {
       toast({
-        title: "Invalid Phone Number",
-        description: "Please enter a valid 10-digit phone number starting with 6-9.",
+        title: t('invalid_phone_number') || "Invalid Phone Number",
+        description: t('invalid_phone_desc') || "Please enter a valid 10-digit phone number starting with 6-9.",
         variant: "destructive",
       });
       return;
     }
     if (/^1234567890$|^9999999999$/.test(phoneLogin.phone)) {
       toast({
-        title: "Test Phone Not Allowed",
-        description: "Test/dummy phone numbers are not allowed for login.",
+        title: t('test_phone_not_allowed') || "Test Phone Not Allowed",
+        description: t('test_phone_not_allowed_desc') || "Test/dummy phone numbers are not allowed for login.",
         variant: "destructive",
       });
       return;
     }
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/send-otp", {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: phoneLogin.phone }),
@@ -141,21 +140,21 @@ const Login = () => {
       const data = await response.json();
       if (!response.ok) {
         toast({
-          title: "Error",
-          description: data.error || "Failed to send OTP",
+          title: t('error') || "Error",
+          description: data.error || t('otp_send_failed') || "Failed to send OTP",
           variant: "destructive",
         });
         return;
       }
       setOtpSent(true);
       toast({
-        title: "OTP Sent",
-        description: "Check your phone for the verification code",
+        title: t('otp_sent') || "OTP Sent",
+        description: t('check_phone_otp') || "Check your phone for the verification code",
       });
     } catch (err) {
       toast({
-        title: "Network Error",
-        description: "Could not send OTP",
+        title: t('network_error') || "Network Error",
+        description: t('could_not_send_otp') || "Could not send OTP",
         variant: "destructive",
       });
     } finally {
@@ -169,15 +168,16 @@ const Login = () => {
     const otpRegex = /^\d{4,8}$/;
     if (!phoneLogin.otp || !otpRegex.test(phoneLogin.otp)) {
       toast({
-        title: "Invalid OTP",
-        description: "Please enter a valid OTP (4-8 digits).",
+        title: t('invalid_otp') || "Invalid OTP",
+        description: t('otp_valid_desc') || "Please enter a valid OTP (4-8 digits).",
         variant: "destructive",
       });
       return;
     }
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/verify-otp", {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -188,8 +188,8 @@ const Login = () => {
       const data = await response.json();
       if (!response.ok) {
         toast({
-          title: "OTP Verification Failed",
-          description: data.error || "Invalid OTP",
+          title: t('otp_verification_failed') || "OTP Verification Failed",
+          description: data.error || t('invalid_otp') || "Invalid OTP",
           variant: "destructive",
         });
         return;
@@ -198,20 +198,18 @@ const Login = () => {
       await fetchAndStoreUserProfile(data.token);
 
       // Capture fresh location after login
-      console.log("[Login] Capturing location after successful phone login...");
-      captureLocation(data.userId).catch(err =>
-        console.warn("[Login] Location capture failed (non-blocking):", err)
-      );
+      // Capture fresh location after login
+      captureLocation(data.userId).catch(() => { });
 
       toast({
-        title: "Login Successful 🎉",
-        description: "Welcome back to MobileVerify!",
+        title: t('login_successful') + " 🎉" || "Login Successful 🎉",
+        description: t('welcome_back_msg') || "Welcome back to MobileVerify!",
       });
       navigate("/all-posts");
     } catch (err) {
       toast({
-        title: "Network Error",
-        description: "Could not verify OTP",
+        title: t('network_error') || "Network Error",
+        description: t('could_not_verify_otp') || "Could not verify OTP",
         variant: "destructive",
       });
     } finally {
@@ -277,7 +275,7 @@ const Login = () => {
                         setEmailLogin((prev) => ({ ...prev, email: e.target.value }))
                       }
                       className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl"
-                      placeholder="name@example.com"
+                      placeholder={t('email_placeholder')}
                     />
                   </div>
                   <div>
@@ -294,7 +292,7 @@ const Login = () => {
                           setEmailLogin((prev) => ({ ...prev, password: e.target.value }))
                         }
                         className="h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12"
-                        placeholder="••••••••"
+                        placeholder={t('password_placeholder')}
                       />
                       <Button
                         type="button"
@@ -325,7 +323,7 @@ const Login = () => {
                       to="/forgot-password"
                       className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Forgot Password?
+                      {t('forgot_password')}
                     </Link>
                   </div>
 

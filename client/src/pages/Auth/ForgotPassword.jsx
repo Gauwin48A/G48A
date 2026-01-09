@@ -19,7 +19,7 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (!email) {
-      toast({ title: "Error", description: "Please enter your email", variant: "destructive" });
+      toast({ title: t('error'), description: t('enter_your_email'), variant: "destructive" });
       return;
     }
 
@@ -36,12 +36,12 @@ const ForgotPassword = () => {
 
       if (res.ok) {
         setSent(true);
-        toast({ title: "Success", description: "Password reset link has been sent to your email" });
+        toast({ title: t('success'), description: t('reset_link_sent') || "Password reset link has been sent to your email" });
       } else {
-        toast({ title: "Error", description: data.error || "Failed to send reset link", variant: "destructive" });
+        toast({ title: t('error'), description: data.error || t('failed_send_link') || "Failed to send reset link", variant: "destructive" });
       }
     } catch (err) {
-      toast({ title: "Error", description: "Network error. Please try again.", variant: "destructive" });
+      toast({ title: t('error'), description: t('network_error'), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ const ForgotPassword = () => {
       <div className="max-w-md w-full">
         <Link to="/login" className="flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Login</span>
+          <span>{t('back_to_login')}</span>
         </Link>
 
         <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800">
@@ -61,10 +61,10 @@ const ForgotPassword = () => {
               {sent ? <CheckCircle className="w-8 h-8 text-white" /> : <Mail className="w-8 h-8 text-white" />}
             </div>
             <CardTitle className="text-2xl text-white">
-              {sent ? 'Check Your Email' : 'Forgot Password'}
+              {sent ? t('check_your_email') || 'Check Your Email' : t('forgot_password')}
             </CardTitle>
             <CardDescription className="text-blue-100">
-              {sent ? 'We sent you a password reset link' : 'Enter your email to reset your password'}
+              {sent ? t('sent_reset_link_msg') || 'We sent you a password reset link' : t('enter_email_reset_msg') || 'Enter your email to reset your password'}
             </CardDescription>
           </CardHeader>
 
@@ -72,13 +72,13 @@ const ForgotPassword = () => {
             {sent ? (
               <div className="text-center space-y-4">
                 <p className="text-gray-600 dark:text-gray-300">
-                  We've sent a password reset link to <strong>{email}</strong>.
-                  Please check your inbox and follow the instructions.
+                  {t('sent_link_to') || "We've sent a password reset link to"} <strong>{email}</strong>.
+                  {t('check_inbox_instructions') || "Please check your inbox and follow the instructions."}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Didn't receive the email? Check your spam folder or
+                  {t('didnt_receive_email') || "Didn't receive the email?"} {t('check_spam') || "Check your spam folder or"}
                   <button onClick={() => setSent(false)} className="text-blue-600 hover:underline ml-1">
-                    try again
+                    {t('try_again')}
                   </button>
                 </p>
               </div>
@@ -86,7 +86,7 @@ const ForgotPassword = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Email Address
+                    {t('email_address') || "Email Address"}
                   </Label>
                   <Input
                     id="email"
@@ -94,7 +94,7 @@ const ForgotPassword = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
-                    placeholder="Enter your email"
+                    placeholder={t('enter_your_email')}
                     disabled={loading}
                   />
                 </div>
@@ -104,15 +104,15 @@ const ForgotPassword = () => {
                   disabled={loading}
                   className="w-full py-6 text-lg bg-[#96C2DB] hover:bg-blue-500 text-white rounded-xl"
                 >
-                  {loading ? 'Sending...' : 'Send Reset Link'}
+                  {loading ? t('sending') + "..." : t('send_reset_link') || 'Send Reset Link'}
                 </Button>
               </form>
             )}
 
             <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400">
-              Remember your password?{' '}
+              {t('remember_password') || "Remember your password?"}{' '}
               <Link to="/login" className="text-blue-600 hover:underline font-medium">
-                Sign In
+                {t('sign_in')}
               </Link>
             </div>
           </CardContent>
