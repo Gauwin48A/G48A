@@ -141,7 +141,7 @@ const Saledone = () => {
         </div>
 
         <div className="relative max-w-2xl mx-auto p-6 pt-20">
-          <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+          <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
             <CardContent className="p-12 text-center">
               {/* Success Icon with animation */}
               <div className="relative inline-block mb-8">
@@ -215,12 +215,12 @@ const Saledone = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-green-900 to-emerald-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+    <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-green-900 dark:to-emerald-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       {/* Animated background */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-green-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-green-500/10 dark:bg-green-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-500/5 dark:bg-teal-500/10 rounded-full blur-3xl"></div>
       </div>
 
       <PageHeader
@@ -238,29 +238,29 @@ const Saledone = () => {
             <CheckCircle className="w-10 h-10 text-white" />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
-            {t('sale')} <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">{t('confirmation')}</span>
+          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3">
+            {t('sale')} <span className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">{t('confirmation')}</span>
           </h1>
-          <p className="text-green-200 text-lg max-w-md mx-auto">
+          <p className="text-green-700 dark:text-green-200 text-lg max-w-md mx-auto">
             {t('complete_dual_verification')}
           </p>
         </div>
 
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-3">
-          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Shield className="w-4 h-4 mr-2" /> {t('secure_verification')}
           </Badge>
-          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Clock className="w-4 h-4 mr-2" /> {t('24h_validity')}
           </Badge>
-          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Award className="w-4 h-4 mr-2" /> {t('earn_trust_points')}
           </Badge>
         </div>
 
         {/* Main Form Card */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-8">
             <CardTitle className="flex items-center space-x-3 text-2xl">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -274,17 +274,16 @@ const Saledone = () => {
           </CardHeader>
 
           <CardContent className="p-8">
-            {/* Helpful Tips - Where to find IDs */}
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 mb-6">
-              <p className="text-amber-800 text-sm font-medium mb-2">💡 Where to find IDs:</p>
-              <ul className="text-amber-700 text-sm space-y-1">
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/30 dark:to-yellow-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-4 mb-6">
+              <p className="text-amber-800 dark:text-amber-300 text-sm font-medium mb-2">💡 Where to find IDs:</p>
+              <ul className="text-amber-700 dark:text-amber-400 text-sm space-y-1">
                 <li>• <strong>Post ID</strong>: Go to <a href="/my-home" className="underline hover:text-amber-900">My Home</a> → Each post shows its ID with a copy button</li>
                 <li>• <strong>User ID</strong>: Go to <a href="/profile" className="underline hover:text-amber-900">Profile</a> → Your ID is displayed at the top of Personal Info</li>
               </ul>
             </div>
 
             <Tabs defaultValue="seller" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 rounded-2xl p-1.5 h-14">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 dark:bg-gray-700 rounded-2xl p-1.5 h-14">
                 <TabsTrigger value="seller" className="rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all">
                   🏪 {t('im_the_seller')}
                 </TabsTrigger>
@@ -294,14 +293,14 @@ const Saledone = () => {
               </TabsList>
 
               <TabsContent value="seller">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 mb-8">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-2 border-green-200 dark:border-green-700 rounded-2xl p-6 mb-8">
                   <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-6 h-6 text-green-600" />
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                      <p className="font-bold text-green-800 text-lg mb-2">{t('seller_instructions')}</p>
-                      <ul className="space-y-2 text-green-700">
+                      <p className="font-bold text-green-800 dark:text-green-300 text-lg mb-2">{t('seller_instructions')}</p>
+                      <ul className="space-y-2 text-green-700 dark:text-green-400">
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter your Post ID and Buyer's User ID</li>
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Ask buyer for their daily secret code</li>
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Buyer will receive notification to confirm</li>
@@ -314,24 +313,24 @@ const Saledone = () => {
                 <form onSubmit={handleSellerSubmit} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="postId" className="text-sm font-bold text-gray-700 mb-2 block">Post ID</Label>
+                      <Label htmlFor="postId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">Post ID</Label>
                       <Input
                         id="postId"
                         value={sellerForm.postId}
                         onChange={(e) => setSellerForm({ ...sellerForm, postId: e.target.value })}
                         placeholder="e.g., POST-12345"
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-green-500 transition-colors"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('buyers_user_id')}</Label>
+                      <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('buyers_user_id')}</Label>
                       <Input
                         id="buyerId"
                         value={sellerForm.buyerId}
                         onChange={(e) => setSellerForm({ ...sellerForm, buyerId: e.target.value })}
                         placeholder="e.g., USER-67890"
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-green-500 transition-colors"
                         required
                       />
                     </div>
@@ -339,25 +338,25 @@ const Saledone = () => {
 
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="buyerCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('buyers_secret_code')}</Label>
+                      <Label htmlFor="buyerCode" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('buyers_secret_code')}</Label>
                       <Input
                         id="buyerCode"
                         value={sellerForm.buyerSecretCode}
                         onChange={(e) => setSellerForm({ ...sellerForm, buyerSecretCode: e.target.value })}
                         placeholder={t('ask_buyer_for_code')}
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-green-500 transition-colors"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="amount" className="text-sm font-bold text-gray-700 mb-2 block">{t('sale_amount')} (₹)</Label>
+                      <Label htmlFor="amount" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('sale_amount')} (₹)</Label>
                       <Input
                         id="amount"
                         type="number"
                         value={sellerForm.saleAmount}
                         onChange={(e) => setSellerForm({ ...sellerForm, saleAmount: e.target.value })}
                         placeholder={t('eg_50000') || 'e.g., 50000'}
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-green-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-green-500 transition-colors"
                         required
                       />
                     </div>
@@ -384,14 +383,14 @@ const Saledone = () => {
               </TabsContent>
 
               <TabsContent value="buyer">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 mb-8">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-2 border-blue-200 dark:border-blue-700 rounded-2xl p-6 mb-8">
                   <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-6 h-6 text-blue-600" />
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="font-bold text-blue-800 text-lg mb-2">{t('buyer_instructions')}</p>
-                      <ul className="space-y-2 text-blue-700">
+                      <p className="font-bold text-blue-800 dark:text-blue-300 text-lg mb-2">{t('buyer_instructions')}</p>
+                      <ul className="space-y-2 text-blue-700 dark:text-blue-400">
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter the Post ID and Seller's User ID</li>
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Enter seller's daily secret code</li>
                         <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Use the confirmation code from notification</li>
@@ -404,24 +403,24 @@ const Saledone = () => {
                 <form onSubmit={handleBuyerSubmit} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="buyerPostId" className="text-sm font-bold text-gray-700 mb-2 block">Post ID</Label>
+                      <Label htmlFor="buyerPostId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">Post ID</Label>
                       <Input
                         id="buyerPostId"
                         value={buyerForm.postId}
                         onChange={(e) => setBuyerForm({ ...buyerForm, postId: e.target.value })}
                         placeholder="e.g., POST-12345"
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('sellers_user_id')}</Label>
+                      <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('sellers_user_id')}</Label>
                       <Input
                         id="sellerId"
                         value={buyerForm.sellerId}
                         onChange={(e) => setBuyerForm({ ...buyerForm, sellerId: e.target.value })}
                         placeholder="e.g., USER-12345"
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors"
                         required
                       />
                     </div>
@@ -429,24 +428,24 @@ const Saledone = () => {
 
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="sellerCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('sellers_secret_code')}</Label>
+                      <Label htmlFor="sellerCode" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('sellers_secret_code')}</Label>
                       <Input
                         id="sellerCode"
                         value={buyerForm.sellerSecretCode}
                         onChange={(e) => setBuyerForm({ ...buyerForm, sellerSecretCode: e.target.value })}
                         placeholder="Ask seller for code"
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="confirmCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('confirmation_code')}</Label>
+                      <Label htmlFor="confirmCode" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('confirmation_code')}</Label>
                       <Input
                         id="confirmCode"
                         value={buyerForm.confirmationCode}
                         onChange={(e) => setBuyerForm({ ...buyerForm, confirmationCode: e.target.value })}
                         placeholder="From notification"
-                        className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors"
                         required
                       />
                     </div>
@@ -476,7 +475,7 @@ const Saledone = () => {
         </Card>
 
         {/* Completed Sales History */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
             <CardTitle className="flex items-center space-x-3 text-xl">
               <Trophy className="w-6 h-6" />
@@ -488,7 +487,7 @@ const Saledone = () => {
               {completedSales.map((sale, index) => (
                 <div
                   key={sale.id}
-                  className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 hover:shadow-lg transition-all"
+                  className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -498,11 +497,11 @@ const Saledone = () => {
                           {'⭐'.repeat(sale.rating)}
                         </Badge>
                       </div>
-                      <h4 className="font-bold text-gray-900 text-lg">{sale.postTitle}</h4>
-                      <p className="text-gray-500 text-sm mt-1">
+                      <h4 className="font-bold text-gray-900 dark:text-white text-lg">{sale.postTitle}</h4>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                         {sale.seller} → {sale.buyer}
                       </p>
-                      <p className="text-gray-600 text-sm mt-2 italic">"{sale.feedback}"</p>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 italic">"{sale.feedback}"</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-green-600">₹{sale.amount.toLocaleString()}</p>
@@ -517,15 +516,17 @@ const Saledone = () => {
       </div>
 
       {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full shadow-2xl shadow-green-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
-        >
-          <ArrowUp className="w-6 h-6" />
-        </button>
-      )}
-    </div>
+      {
+        showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full shadow-2xl shadow-green-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
+          >
+            <ArrowUp className="w-6 h-6" />
+          </button>
+        )
+      }
+    </div >
   );
 };
 

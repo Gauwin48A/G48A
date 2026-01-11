@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Upload, Shield, Crown, Star, Eye } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import AudioRecorder from '@/components/AudioRecorder';
 
 import { useTranslation } from 'react-i18next';
 
@@ -64,6 +65,8 @@ const AddPost = () => {
     dimensions: ''
   });
   const [images, setImages] = useState([]);
+  const [audioBlob, setAudioBlob] = useState(null); // Voice description
+  const [isFlashSale, setIsFlashSale] = useState(false); // 24-hour Flash Sale
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -258,6 +261,14 @@ const AddPost = () => {
         if (value) data.append(key, value);
       });
       images.forEach((img, idx) => data.append('images', img));
+
+      // Add voice description if recorded (Voice-First Commerce)
+      if (audioBlob) {
+        data.append('audio', audioBlob, 'voice-description.webm');
+      }
+
+      // Add Flash Sale flag (24-hour urgent listing)
+      data.append('is_flash_sale', isFlashSale);
       // Send to backend
       const res = await fetch('http://localhost:5000/api/posts', {
         method: 'POST',
@@ -675,6 +686,45 @@ const AddPost = () => {
                       maxLength={1000}
                     />
                     {formErrors.description && <div className="text-red-500 text-xs mt-1">{formErrors.description}</div>}
+                  </div>
+
+                  {/* Voice Description - The Defender's Voice-First Commerce */}
+                  <AudioRecorder
+                    onAudioReady={(blob) => setAudioBlob(blob)}
+                    existingAudio={null}
+                  />
+
+                  {/* Flash Sale Toggle - The Defender's Hyperlocal Urgency */}
+                  <div className="flex flex-col gap-3 p-4 border-2 border-dashed border-orange-300 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">⏳</span>
+                        <div>
+                          <h3 className="text-sm font-semibold text-orange-800 dark:text-orange-300">
+                            24-Hour Flash Sale
+                          </h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            Auto-expires in 24 hours • Gets 2x visibility boost
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsFlashSale(!isFlashSale)}
+                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isFlashSale ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'
+                          }`}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${isFlashSale ? 'translate-x-7' : 'translate-x-1'
+                            }`}
+                        />
+                      </button>
+                    </div>
+                    {isFlashSale && (
+                      <div className="text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg">
+                        🔥 Your listing will appear at the TOP of feeds and auto-delete after 24 hours!
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

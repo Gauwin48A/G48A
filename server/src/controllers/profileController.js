@@ -85,21 +85,41 @@ exports.getPreferences = async (req, res) => {
 // POST /api/profile/preferences/update
 exports.updatePreferences = async (req, res) => {
   try {
-    const { userId, location, minPrice, maxPrice, date } = req.body;
-    const result = await pool.query(
-      `UPDATE preferences SET location = $1, min_price = $2, max_price = $3, date = $4
-       WHERE user_id = $5 RETURNING *`,
-      [location, minPrice, maxPrice, date, userId]
-    );
-    if (!result.rows || result.rows.length === 0) {
-      return res.status(404).json({ error: 'Preferences not found' });
+    const { userId, location, minPrice, maxPrice, categories } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
     }
+
+    // Ensure categories is properly formatted for PostgreSQL JSONB
+    const categoriesJson = JSON.stringify(Array.isArray(categories) ? categories : []);
+
+    logger.info('Saving preferences for user:', userId, { location, minPrice, maxPrice, categories: categoriesJson });
+
+    // Use UPSERT pattern - insert if not exists, update if exists
+    // Note: preferences table has: user_id, location, min_price, max_price, categories, notification_enabled
+    const result = await pool.query(
+      `INSERT INTO preferences (user_id, location, min_price, max_price, categories)
+       VALUES ($1, $2, $3, $4, $5::jsonb)
+       ON CONFLICT (user_id) 
+       DO UPDATE SET location = $2, min_price = $3, max_price = $4, categories = $5::jsonb
+       RETURNING *`,
+      [userId, location || '', parseFloat(minPrice) || 0, parseFloat(maxPrice) || 100000, categoriesJson]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      return res.status(404).json({ error: 'Failed to save preferences' });
+    }
+
+    logger.info('Preferences saved successfully for user:', userId);
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error updating preferences:', err);
     res.status(500).json({ error: err.message });
   }
 };
+
+
 
 // POST /api/profile/upload-avatar - Handle profile picture upload
 exports.uploadAvatar = async (req, res) => {

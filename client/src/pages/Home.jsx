@@ -5,11 +5,11 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   RefreshCw, TrendingUp, Sparkles, Clock, Eye, Heart,
-  MapPin, ChevronRight, Zap, ShoppingBag, Star
+  MapPin, ChevronRight, Zap, ShoppingBag, Star, AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import api from '../lib/api';
+import api from '../services/api'; // Centralized Axios Service
 
 const Home = () => {
   const { t } = useTranslation();
@@ -18,6 +18,7 @@ const Home = () => {
   const [trendingPosts, setTrendingPosts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // Defensive UI: Error State
   const [refreshing, setRefreshing] = useState(false);
   const [feedMeta, setFeedMeta] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
@@ -26,6 +27,7 @@ const Home = () => {
   // Fetch dynamic feed
   const fetchDynamicFeed = useCallback(async (forceRefresh = false) => {
     if (refreshCooldown.current && !forceRefresh) return;
+    setError(null);
 
     try {
       if (forceRefresh) {
@@ -34,21 +36,24 @@ const Home = () => {
         setTimeout(() => { refreshCooldown.current = false; }, 3000); // 3s cooldown
       }
 
+      // Always fetch fresh data with cache buster
+      const cacheBuster = Date.now();
       const response = await api.get('/api/feed/dynamic', {
-        params: { refresh: forceRefresh ? 'true' : 'false', limit: 20 }
+        params: { refresh: 'true', limit: 20, _t: cacheBuster }
       });
 
-      setFeedPosts(response.data.posts || []);
-      setFeedMeta(response.data.feedMeta);
+      setFeedPosts(response.posts || []);
+      setFeedMeta(response.feedMeta);
       setLastRefresh(new Date());
 
       // Track impressions for exploration analytics
-      if (response.data.posts?.length > 0) {
-        const postIds = response.data.posts.map(p => p.post_id);
+      if (response.posts?.length > 0) {
+        const postIds = response.posts.map(p => p.post_id);
         api.post('/api/feed/impression', { postIds }).catch(() => { });
       }
     } catch (err) {
       console.error('Feed fetch error:', err);
+      setError('Failed to load your feed. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -59,18 +64,18 @@ const Home = () => {
   const fetchTrending = useCallback(async () => {
     try {
       const response = await api.get('/api/feed/trending');
-      setTrendingPosts(response.data.posts || []);
+      setTrendingPosts(response.posts || []);
     } catch (err) {
       console.error('Trending fetch error:', err);
+      // Non-critical, don't set global error
     }
   }, []);
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/api/categories`);
-      const data = await response.json();
+      // Replaced raw fetch with centralized api
+      const data = await api.get('/api/categories');
       setCategories(Array.isArray(data) ? data.slice(0, 8) : []);
     } catch (err) {
       console.error('Categories fetch error:', err);
@@ -138,6 +143,19 @@ const Home = () => {
         return null;
     }
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900 p-4">
+        <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
+        <p className="text-gray-500 mb-6 text-center">{error}</p>
+        <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+          Reload Page
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24">

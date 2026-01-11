@@ -31,9 +31,14 @@ const AllPosts = () => {
 
   // Read category from URL params and update filter
   // Wait for categories to load before setting filter to properly match ID -> name
+  // Sync all filters from URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const categoryFromUrl = urlParams.get('category');
+
+    // 1. Resolve Category
+    const categoryFromUrl = urlParams.get('category') || '';
+    let resolvedCategory = categoryFromUrl;
+
     if (categoryFromUrl && categories.length > 0) {
       // Check if it's a numeric ID - if so, find the category name
       const isNumericId = !isNaN(parseInt(categoryFromUrl, 10));
@@ -42,17 +47,28 @@ const AllPosts = () => {
           String(cat.category_id) === String(categoryFromUrl) || String(cat.id) === String(categoryFromUrl)
         );
         if (matchedCategory) {
-          setFilters(prev => ({ ...prev, category: matchedCategory.name }));
-        } else {
-          // Fallback: use the ID directly
-          setFilters(prev => ({ ...prev, category: categoryFromUrl }));
+          resolvedCategory = matchedCategory.name;
         }
-      } else {
-        // It's already a category name
-        setFilters(prev => ({ ...prev, category: categoryFromUrl }));
       }
     }
-  }, [location.search, setFilters, categories]);
+
+    // 2. Sync all filters (URL is source of truth)
+    setFilters(prev => ({
+      ...prev,
+      category: resolvedCategory,
+      search: urlParams.get('search') || '', // Clear search if not in URL
+      location: urlParams.get('location') || '',
+      minPrice: urlParams.get('minPrice') || '',
+      maxPrice: urlParams.get('maxPrice') || '',
+      startDate: urlParams.get('startDate') || '',
+      endDate: urlParams.get('endDate') || '',
+      // Preserve sort if not in URL? Or sync? Typically sort is persistent or default.
+      // Let's preserve existing sort unless URL overrides (if we supported sort params in URL)
+      // Current buildParams adds sortBy to API call, but doesn't necessarily READ it from URL for UI state.
+      // We'll leave sortBy as is for now to avoid side effects.
+    }));
+
+  }, [location.search, categories, setFilters]);
 
   // Handle category click - navigate with category param
   const handleCategoryClick = (categoryName) => {
@@ -135,13 +151,29 @@ const AllPosts = () => {
   // Helper to build filter params
   const buildParams = () => {
     const params = new URLSearchParams();
+
+    // Determine effective category and search term
+    let appliedCategory = filters.category;
+    let appliedSearch = filters.search;
+
+    // If search term matches a category name EXACTLY (and we aren't already filtering by another category)
+    if (filters.search && (filters.category === 'All' || !filters.category)) {
+      const matchCat = categories.find(c => c.name.toLowerCase() === filters.search.trim().toLowerCase());
+      if (matchCat) {
+        appliedCategory = matchCat.name;
+        // Clear search term to enforce strict category filtering
+        // This prevents posts from other categories that happen to have the keyword from showing up
+        appliedSearch = '';
+      }
+    }
+
     // Search (title/description/location)
-    if (filters.search) params.append('search', filters.search);
+    if (appliedSearch) params.append('search', appliedSearch);
     // Location filter (separate from search)
     if (filters.location) params.append('location', filters.location);
     // Category (map name to ID)
-    if (filters.category && filters.category !== 'All') {
-      const catId = categoryMap[filters.category] || filters.category;
+    if (appliedCategory && appliedCategory !== 'All') {
+      const catId = categoryMap[appliedCategory] || appliedCategory;
       params.append('category', catId);
     }
     // Price range - use direct minPrice/maxPrice values
@@ -235,7 +267,7 @@ const AllPosts = () => {
       }
     };
     fetchPosts();
-  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.minPrice, filters.maxPrice, filters.startDate, filters.endDate, filters.sortBy, currentPage, currentLang]);
+  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.minPrice, filters.maxPrice, filters.startDate, filters.endDate, filters.sortBy, currentPage, currentLang, categories]);
 
 
   // Reset page on filter change
@@ -439,6 +471,11 @@ const AllPosts = () => {
   const sponsoredDeals = posts.filter(post => post.isSponsored).slice(0, 5);
 
   // Location is now handled at App.jsx level - no blocking here
+
+  // Determine effective category for UI highlighting (sync search with category icons)
+  const searchMatchCategory = filters.search ? categories.find(c => c.name.toLowerCase() === filters.search.trim().toLowerCase())?.name : null;
+  const uiCategory = ((!filters.category || filters.category === 'All') && searchMatchCategory) ? searchMatchCategory : (filters.category || 'All');
+
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300 pb-24">
       {/* Category Filter Bar - sticky on scroll */}
@@ -447,11 +484,11 @@ const AllPosts = () => {
           {/* All Categories Button */}
           <button
             onClick={clearCategoryFilter}
-            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[60px] ${filters.category === 'All' ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
+            className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[60px] ${uiCategory === 'All' ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
               }`}
           >
             <span className="text-xl md:text-2xl mb-1">📦</span>
-            <span className={`font-semibold text-xs md:text-sm ${filters.category === 'All' ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{t('all')}</span>
+            <span className={`font-semibold text-xs md:text-sm ${uiCategory === 'All' ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{t('all')}</span>
           </button>
 
           {/* Dynamic category buttons - fetched from API */}
@@ -459,11 +496,11 @@ const AllPosts = () => {
             <button
               key={cat.category_id || cat.name}
               onClick={() => handleCategoryClick(cat.name)}
-              className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[70px] whitespace-nowrap ${filters.category === cat.name ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
+              className={`flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[70px] whitespace-nowrap ${uiCategory === cat.name ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' : ''
                 }`}
             >
               <span className="text-xl md:text-2xl mb-1">{categoryEmojis[cat.name] || '📦'}</span>
-              <span className={`font-semibold text-xs md:text-sm ${filters.category === cat.name ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+              <span className={`font-semibold text-xs md:text-sm ${uiCategory === cat.name ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                 {t(cat.name.toLowerCase().replace(' ', '_')) || cat.name}
               </span>
             </button>

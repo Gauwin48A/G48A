@@ -162,12 +162,12 @@ const Feedback = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       {/* Animated background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 dark:bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
@@ -175,7 +175,7 @@ const Feedback = () => {
         <div className="text-center pt-8">
           <button
             onClick={() => navigate('/')}
-            className="inline-flex items-center text-blue-300 hover:text-blue-200 mb-8 group transition-all"
+            className="inline-flex items-center text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 mb-8 group transition-all"
           >
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             {t('back_to_home')}
@@ -185,29 +185,29 @@ const Feedback = () => {
             <MessageSquare className="w-10 h-10 text-white" />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
-            {t('share_your')} <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{t('feedback')}</span>
+          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3">
+            {t('share_your')} <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">{t('feedback')}</span>
           </h1>
-          <p className="text-blue-200 text-lg max-w-md mx-auto">
+          <p className="text-blue-700 dark:text-blue-200 text-lg max-w-md mx-auto">
             {t('help_us_improve')}
           </p>
         </div>
 
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-3">
-          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Heart className="w-4 h-4 mr-2" /> {t('your_voice_matters')}
           </Badge>
-          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <ThumbsUp className="w-4 h-4 mr-2" /> {t('we_listen')}
           </Badge>
-          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Sparkles className="w-4 h-4 mr-2" /> {t('continuous_improvement')}
           </Badge>
         </div>
 
         {/* Feedback Form */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white p-8">
             <CardTitle className="flex items-center space-x-3 text-2xl">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -224,7 +224,7 @@ const Feedback = () => {
             <form onSubmit={handleSubmitFeedback} className="space-y-6">
               {/* Feedback Type */}
               <div>
-                <Label className="text-sm font-bold text-gray-700 mb-3 block">{t('feedback_category')}</Label>
+                <Label className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 block">{t('feedback_category')}</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {feedbackCategories.map((cat) => (
                     <button
@@ -232,17 +232,17 @@ const Feedback = () => {
                       type="button"
                       onClick={() => setFeedbackForm(prev => ({ ...prev, feedbackType: cat.value }))}
                       className={`p-4 rounded-xl border-2 transition-all text-left ${feedbackForm.feedbackType === cat.value
-                        ? 'border-blue-500 bg-blue-50 shadow-lg'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-lg'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 ${cat.bg} rounded-lg flex items-center justify-center`}>
+                        <div className={`w-10 h-10 ${cat.bg} dark:bg-opacity-20 rounded-lg flex items-center justify-center`}>
                           <cat.icon className={`w-5 h-5 ${cat.color}`} />
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-800">{cat.name}</p>
-                          <p className="text-xs text-gray-500">{cat.description}</p>
+                          <p className="font-semibold text-gray-800 dark:text-gray-100">{cat.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{cat.description}</p>
                         </div>
                       </div>
                     </button>
@@ -250,22 +250,20 @@ const Feedback = () => {
                 </div>
               </div>
 
-              {/* Rating */}
               <div>
-                <Label className="text-sm font-bold text-gray-700 mb-2 block">{t('overall_rating')}</Label>
-                <div className="flex items-center gap-2 bg-gray-50 p-4 rounded-xl">
+                <Label className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('overall_rating')}</Label>
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
                   <div className="flex items-center space-x-1">
                     {renderStars()}
                   </div>
-                  <span className="ml-4 text-lg font-semibold text-gray-700">
+                  <span className="ml-4 text-lg font-semibold text-gray-700 dark:text-gray-200">
                     {feedbackForm.rating} / 5
                   </span>
                 </div>
               </div>
 
-              {/* Subject */}
               <div>
-                <Label htmlFor="subject" className="text-sm font-bold text-gray-700 mb-2 block">{t('subject')} *</Label>
+                <Label htmlFor="subject" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('subject')} *</Label>
                 <Input
                   id="subject"
                   name="subject"
@@ -273,14 +271,13 @@ const Feedback = () => {
                   value={feedbackForm.subject}
                   onChange={handleInputChange}
                   placeholder={t('brief_summary')}
-                  className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                  className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors"
                   required
                 />
               </div>
 
-              {/* Message */}
               <div>
-                <Label htmlFor="message" className="text-sm font-bold text-gray-700 mb-2 block">{t('your_feedback')} *</Label>
+                <Label htmlFor="message" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('your_feedback')} *</Label>
                 <Textarea
                   id="message"
                   name="message"
@@ -288,7 +285,7 @@ const Feedback = () => {
                   onChange={handleInputChange}
                   placeholder={t('share_detailed_feedback')}
                   rows={6}
-                  className="text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors resize-none"
+                  className="text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors resize-none"
                   required
                 />
               </div>
@@ -345,15 +342,15 @@ const Feedback = () => {
         </Card>
 
         {/* Contact Info */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-2 border-green-200 dark:border-green-700">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Send className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <h3 className="font-bold text-green-800 text-lg mb-2">📧 {t('direct_contact')}</h3>
-                <div className="space-y-1 text-green-700">
+                <h3 className="font-bold text-green-800 dark:text-green-300 text-lg mb-2">📧 {t('direct_contact')}</h3>
+                <div className="space-y-1 text-green-700 dark:text-green-400">
                   <p><span className="font-medium">{t('email')}:</span> feedback@mobilehub.com</p>
                   <p><span className="font-medium">{t('response_time')}:</span> {t('24_48_hours')}</p>
                   <p><span className="font-medium">{t('priority_support')}:</span> {t('verified_users_faster')}</p>
@@ -364,11 +361,11 @@ const Feedback = () => {
         </Card>
 
         {/* Thank You */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border-2 border-purple-200 dark:border-purple-700">
           <CardContent className="p-8 text-center">
             <Heart className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-purple-800 mb-2">{t('thank_you_community')}</h3>
-            <p className="text-purple-700 max-w-md mx-auto">
+            <h3 className="text-2xl font-bold text-purple-800 dark:text-purple-300 mb-2">{t('thank_you_community')}</h3>
+            <p className="text-purple-700 dark:text-purple-400 max-w-md mx-auto">
               {t('feedback_helps_build')}
             </p>
           </CardContent>

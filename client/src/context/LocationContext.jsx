@@ -1,9 +1,39 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + "/api/location";
-const LOCATION_TIMEOUT = 10000; // 10 seconds
+const LOCATION_TIMEOUT = 30000; // 30 seconds (increased from 10s)
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-const SKIP_TTL = 24 * 60 * 60 * 1000; // 24 hours - don't ask again for a day if skipped
+const SKIP_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * Get location from IP address (fallback when GPS fails/denied)
+ * Uses free ipapi.co service
+ */
+async function getIPBasedLocation() {
+    try {
+        console.log('[LocationContext] Attempting IP-based location fallback...');
+        const response = await fetch('https://ipapi.co/json/', { timeout: 5000 });
+
+        if (!response.ok) throw new Error('IP lookup failed');
+
+        const data = await response.json();
+        console.log('[LocationContext] IP location found:', data.city, data.country_name);
+
+        return {
+            latitude: data.latitude,
+            longitude: data.longitude,
+            city: data.city || 'Unknown',
+            state: data.region || '',
+            country: data.country_name || 'Unknown',
+            displayName: `${data.city}, ${data.region}`,
+            accuracy: 5000, // ~5km accuracy for IP
+            provider: 'ip_fallback'
+        };
+    } catch (error) {
+        console.error('[LocationContext] IP fallback failed:', error);
+        return null;
+    }
+}
 
 /**
  * Location Context - Global state for user location
@@ -183,15 +213,21 @@ function clearSkippedLocation() {
 }
 
 export function LocationProvider({ children }) {
-    // Location state
-    const [coords, setCoords] = useState(null);
-    const [city, setCity] = useState('');
-    const [state, setState] = useState('');
-    const [country, setCountry] = useState('');
-    const [displayName, setDisplayName] = useState('');
-    const [loading, setLoading] = useState(true);
+    // Read cache synchronously on mount to prevent flash
+    const initialCache = getCachedLocation();
+    const hasCache = !!initialCache;
+
+    // Location state - Initialize from cache if available
+    const [coords, setCoords] = useState(
+        hasCache ? { latitude: initialCache.latitude, longitude: initialCache.longitude, accuracy: initialCache.accuracy } : null
+    );
+    const [city, setCity] = useState(initialCache?.city || '');
+    const [state, setState] = useState(initialCache?.state || '');
+    const [country, setCountry] = useState(initialCache?.country || '');
+    const [displayName, setDisplayName] = useState(initialCache?.displayName || '');
+    const [loading, setLoading] = useState(!hasCache); // NOT loading if cache exists
     const [error, setError] = useState(null);
-    const [permissionGranted, setPermissionGranted] = useState(false);
+    const [permissionGranted, setPermissionGranted] = useState(hasCache); // Granted if cache exists
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [userSkipped, setUserSkipped] = useState(() => hasSkippedLocation());
 
@@ -305,6 +341,50 @@ export function LocationProvider({ children }) {
 
             console.warn('[LocationContext] ⚠️ Location error:', err.message);
 
+            // TRY IP-BASED FALLBACK immediately
+            console.log('[LocationContext] Trying IP-based fallback...');
+            const ipLocation = await getIPBasedLocation();
+
+            if (ipLocation) {
+                // SUCCESS! Use IP location as fallback
+                console.log('[LocationContext] ✅ Using IP-based location:', ipLocation.city);
+
+                setCoords({
+                    latitude: ipLocation.latitude,
+                    longitude: ipLocation.longitude,
+                    accuracy: ipLocation.accuracy
+                });
+                setCity(ipLocation.city);
+                setState(ipLocation.state);
+                setCountry(ipLocation.country);
+                setDisplayName(ipLocation.displayName);
+                setPermissionGranted(true); // Allow app access with IP location
+                setPermissionDenied(false);
+                setError(null);
+                setLoading(false);
+
+                // Cache the IP location
+                setCachedLocation({
+                    latitude: ipLocation.latitude,
+                    longitude: ipLocation.longitude,
+                    accuracy: ipLocation.accuracy,
+                    city: ipLocation.city,
+                    state: ipLocation.state,
+                    country: ipLocation.country,
+                    displayName: ipLocation.displayName,
+                    provider: 'ip_fallback'
+                });
+
+                // Send to backend
+                sendLocationToBackend({
+                    ...ipLocation,
+                    permission_status: 'granted_via_ip'
+                });
+
+                return; // Success! Exit early
+            }
+
+            // IP FALLBACK ALSO FAILED - Show error to user
             let userMessage = 'Unable to get location';
             let status = 'error';
 
@@ -323,7 +403,7 @@ export function LocationProvider({ children }) {
             setError(userMessage);
             setLoading(false);
 
-            // Still send status to backend for analytics
+            // Send status to backend for analytics
             sendLocationToBackend({
                 latitude: 0,
                 longitude: 0,

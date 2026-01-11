@@ -1,12 +1,18 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
 
+// MINIMAL CONFIG FOR BUILD TESTING
 export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   server: {
-    host: true, // Allow connections from mobile devices on same network
+    host: true,
     port: 8081,
-
     proxy: {
       "/api": {
         target: "http://localhost:5000",
@@ -15,16 +21,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
-    }
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/setupTests.js',
+  build: {
+    sourcemap: false,
   }
 });
-

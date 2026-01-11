@@ -5,17 +5,23 @@
 
 const pool = require('../config/db');
 
-// Create a new offer
+// Create a new offer - works with both old (postId/offeredPrice) and new (post_id/offer_amount) formats
 const createOffer = async (req, res) => {
-    const buyerId = req.user?.userId;
-    const { postId, offeredPrice, message } = req.body;
+    const buyerId = req.user?.userId || req.user?.id;
+
+    // Support both parameter naming conventions
+    const postId = req.body.postId || req.body.post_id;
+    const offeredPrice = req.body.offeredPrice || req.body.offer_amount;
+    const sellerId = req.body.seller_id;
+    const message = req.body.message;
+    const discountPercent = req.body.discount_percent;
 
     if (!buyerId) {
-        return res.status(401).json({ error: 'Authentication required' });
+        return res.status(401).json({ error: 'Authentication required', message: 'Login required to make offers' });
     }
 
     if (!postId || !offeredPrice) {
-        return res.status(400).json({ error: 'Post ID and offered price required' });
+        return res.status(400).json({ error: 'Post ID and offered price required', message: 'Missing required fields' });
     }
 
     try {
@@ -32,7 +38,7 @@ const createOffer = async (req, res) => {
         const post = postResult.rows[0];
         const sellerId = post.user_id;
 
-        if (parseInt(buyerId) === sellerId) {
+        if (buyerId === sellerId) {
             return res.status(400).json({ error: 'Cannot make offer on your own post' });
         }
 
@@ -65,7 +71,7 @@ const createOffer = async (req, res) => {
 
 // Get offers for a user (as seller or buyer)
 const getOffers = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = req.user?.userId || req.user?.id;
     const { role = 'seller', status } = req.query; // role: 'seller' or 'buyer'
 
     if (!userId) {
@@ -77,16 +83,12 @@ const getOffers = async (req, res) => {
       SELECT o.*, 
              p.title as post_title,
              p.images as post_images,
-             bu.username as buyer_username,
-             bp.full_name as buyer_name,
-             su.username as seller_username,
-             sp.full_name as seller_name
+             bu.full_name as buyer_name,
+             su.full_name as seller_name
       FROM offers o
       JOIN posts p ON p.post_id = o.post_id
       JOIN users bu ON bu.user_id = o.buyer_id
-      LEFT JOIN profiles bp ON bp.user_id = o.buyer_id
       JOIN users su ON su.user_id = o.seller_id
-      LEFT JOIN profiles sp ON sp.user_id = o.seller_id
       WHERE ${role === 'seller' ? 'o.seller_id' : 'o.buyer_id'} = $1
     `;
 

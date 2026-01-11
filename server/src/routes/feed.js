@@ -12,6 +12,18 @@ router.get('/dynamic', feedController.getDynamicFeed);
 // NEW: Trending Posts (cached for 5 min)
 router.get('/trending', feedController.getTrendingPosts);
 
+// PROTOCOL: CHAOS ENGINE - High-Performance Random Feed (The Architect)
+// Uses TABLESAMPLE for O(1) random access - 1000x faster than ORDER BY RANDOM()
+router.get('/random', feedController.getRandomFeed);
+
+// GEO-FENCED FEED - Posts near user's location (PostGIS)
+// GET /api/feed/nearby?lat=17.38&lng=78.48&radius=10
+router.get('/nearby', feedController.getNearbyFeed);
+
+// FULL-TEXT SEARCH - Fuzzy search using tsvector
+// GET /api/feed/search?q=iphone&category=1
+router.get('/search', feedController.searchPosts);
+
 // NEW: Track feed impressions for exploration analytics
 router.post('/impression', feedController.trackImpression);
 // Add description length validation (min 5, max 500 chars)

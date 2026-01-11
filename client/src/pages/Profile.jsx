@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,13 +21,15 @@ import { createChannel, getChannelByUser } from '../lib/api';
 const Profile = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState({});
   const [editErrors, setEditErrors] = useState({});
-  const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', date: '' });
+  const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', categories: [] });
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [editPrefMode, setEditPrefMode] = useState(false);
   const [channel, setChannel] = useState(null);
   const [activeTab, setActiveTab] = useState('personal');
@@ -78,9 +81,20 @@ const Profile = () => {
       fetch(`${baseUrl}/api/profile/preferences?userId=${user.user_id}`)
         .then(res => res.ok ? res.json() : null)
         .then(data => {
-          if (data) setPreferences(data);
+          if (data) setPreferences({
+            location: data.location || '',
+            minPrice: data.minPrice || '',
+            maxPrice: data.maxPrice || '',
+            categories: data.categories || []
+          });
         })
         .catch(() => { });
+
+      // Fetch available categories for preferences selection
+      fetch(`${baseUrl}/api/categories`)
+        .then(res => res.json())
+        .then(data => setAvailableCategories(Array.isArray(data) ? data : []))
+        .catch(() => setAvailableCategories([]));
 
       getChannelByUser(user.user_id)
         .then(res => setChannel(res.data))
@@ -142,15 +156,37 @@ const Profile = () => {
 
   const handlePrefSubmit = async (e) => {
     e.preventDefault();
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    const token = localStorage.getItem('authToken');
-    await fetch(`${baseUrl}/api/profile/preferences/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ userId: user.user_id, ...preferences })
-    });
-    setEditPrefMode(false);
-    toast({ title: 'Preferences saved!' });
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const token = localStorage.getItem('authToken');
+
+      const response = await fetch(`${baseUrl}/api/profile/preferences/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId: user.user_id, ...preferences })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update local state with the saved preferences from the response
+        setPreferences({
+          location: data.location || '',
+          minPrice: data.min_price || data.minPrice || '',
+          maxPrice: data.max_price || data.maxPrice || '',
+          categories: data.categories || []
+        });
+        setEditPrefMode(false);
+        toast({ title: 'Preferences saved!', description: 'Your recommendations will now be personalized.' });
+        console.log('[Profile] Preferences saved successfully:', data);
+      } else {
+        toast({ title: 'Failed to save preferences', description: data.error || 'Please try again.', variant: 'destructive' });
+        console.error('[Profile] Error saving preferences:', data);
+      }
+    } catch (err) {
+      console.error('[Profile] Exception saving preferences:', err);
+      toast({ title: 'Error saving preferences', description: err.message, variant: 'destructive' });
+    }
   };
 
   const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
@@ -563,6 +599,34 @@ const Profile = () => {
                         <option value="Hyderabad">Hyderabad</option>
                       </select>
                     </div>
+                    <div>
+                      <Label>{t('preferred_categories') || 'Preferred Categories'}</Label>
+                      <p className="text-sm text-gray-500 mb-2">{t('select_categories_desc') || 'Select categories to see in For You page'}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {availableCategories.map(cat => (
+                          <label
+                            key={cat.category_id || cat.name}
+                            className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${preferences.categories?.includes(cat.name) ? 'bg-blue-100 border-blue-500 dark:bg-blue-900/30 dark:border-blue-400' : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 hover:border-blue-300'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={preferences.categories?.includes(cat.name) || false}
+                              onChange={(e) => {
+                                const catName = cat.name;
+                                setPreferences(prev => ({
+                                  ...prev,
+                                  categories: e.target.checked
+                                    ? [...(prev.categories || []), catName]
+                                    : (prev.categories || []).filter(c => c !== catName)
+                                }));
+                              }}
+                              className="w-4 h-4 text-blue-600"
+                            />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{cat.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>{t('min_price') || 'Min Price'} (₹)</Label>
@@ -576,19 +640,37 @@ const Profile = () => {
                     <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600">{t('save_preferences') || 'Save Preferences'}</Button>
                   </form>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
-                      <MapPin className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-                      <p className="text-sm text-gray-500">{t('location') || 'Location'}</p>
-                      <p className="font-bold text-gray-800 dark:text-white">{preferences.location || (t('any') || 'Any')}</p>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
+                        <MapPin className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                        <p className="text-sm text-gray-500">{t('location') || 'Location'}</p>
+                        <p className="font-bold text-gray-800 dark:text-white">{preferences.location || (t('any') || 'Any')}</p>
+                      </div>
+                      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
+                        <p className="text-sm text-gray-500 mb-1">{t('min_price') || 'Min Price'}</p>
+                        <p className="font-bold text-gray-800 dark:text-white text-xl">₹{preferences.minPrice || '0'}</p>
+                      </div>
+                      <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-center">
+                        <p className="text-sm text-gray-500 mb-1">{t('max_price') || 'Max Price'}</p>
+                        <p className="font-bold text-gray-800 dark:text-white text-xl">₹{preferences.maxPrice || '∞'}</p>
+                      </div>
                     </div>
-                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl text-center">
-                      <p className="text-sm text-gray-500 mb-1">{t('min_price') || 'Min Price'}</p>
-                      <p className="font-bold text-gray-800 dark:text-white text-xl">₹{preferences.minPrice || '0'}</p>
-                    </div>
-                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-center">
-                      <p className="text-sm text-gray-500 mb-1">{t('max_price') || 'Max Price'}</p>
-                      <p className="font-bold text-gray-800 dark:text-white text-xl">₹{preferences.maxPrice || '∞'}</p>
+
+                    {/* Display selected categories */}
+                    <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+                      <p className="text-sm text-gray-500 mb-2">{t('preferred_categories') || 'Preferred Categories'}</p>
+                      {preferences.categories && preferences.categories.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {preferences.categories.map(cat => (
+                            <Badge key={cat} className="bg-indigo-100 text-indigo-700 dark:bg-indigo-800 dark:text-indigo-200 border-0 px-3 py-1">
+                              {cat}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 italic">{t('no_categories_selected') || 'No categories selected - showing all'}</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -605,18 +687,23 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
+                  { icon: Shield, labelKey: 'security_settings', descKey: 'two_factor_auth', action: 'Setup', link: '/security' },
                   { icon: Bell, labelKey: 'notifications', descKey: 'manage_push_notifications', action: 'Configure' },
                   { icon: Lock, labelKey: 'privacy_security', descKey: 'password_login_settings', action: 'Manage' },
                   { icon: CreditCard, labelKey: 'payment_methods', descKey: 'add_remove_payment_options', action: 'Update' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer">
+                  <div
+                    key={i}
+                    onClick={() => item.link && navigate(item.link)}
+                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
+                  >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                         <item.icon className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800 dark:text-white">{t(item.labelKey)}</p>
-                        <p className="text-sm text-gray-500">{t(item.descKey)}</p>
+                        <p className="font-semibold text-gray-800 dark:text-white">{t(item.labelKey) || item.labelKey}</p>
+                        <p className="text-sm text-gray-500">{t(item.descKey) || item.descKey}</p>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400" />

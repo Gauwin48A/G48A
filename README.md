@@ -1,325 +1,213 @@
-# 🛒 MHub - Verified Marketplace Platform
+# 🛒 MHub - The Fortified Marketplace
 
-A full-stack, production-ready marketplace application for buying and selling products with verified sellers, real-time location, and intelligent feed algorithms.
-
-![MHub](https://img.shields.io/badge/Version-2.0-blue) ![Node](https://img.shields.io/badge/Node.js-18+-green) ![React](https://img.shields.io/badge/React-18-blue) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
+A high-performance, secure, and tiered marketplace platform built for scale.
 
 ---
 
-## 📋 Table of Contents
+# 📋 PROJECT REQUIREMENT DOCUMENT (PRD) v2.0
+> **Status:** Production Ready  
+> **Classification:** Pin-to-Pin Detail  
+> **Last Updated:** 2024
 
-1. [Features](#-features)
-2. [Pages & Routes](#-pages--routes)
-3. [Tech Stack](#-tech-stack)
-4. [Quick Start](#-quick-start)
-5. [Configuration](#-configuration)
-6. [API Endpoints](#-api-endpoints)
-7. [Database](#-database)
-8. [Deployment](#-deployment)
-9. [Documentation](#-documentation)
+## 1. Executive Summary
+**Project Name:** MHub (Marketplace Hub)  
+**Vision:** Establish a "Fortress Marketplace" where trust is the currency. Eliminate the 40% fraud rate prevalent in C2C platforms via proactive protocols, while maximizing revenue for honest sellers through a tiered value system.  
+**Tech Stack:** React 18, Node.js v20, PostgreSQL 16 (Pure SQL), Socket.io.
 
 ---
 
-## ✨ Features
+## 2. Detailed Functional Modules
 
-### Core Marketplace
-| Feature | Description |
-|---------|-------------|
-| 🏪 **All Posts** | Browse all listings with Guaranteed Reach algorithm |
-| 🔍 **Smart Search** | Search by title, description, seller, category |
-| 📍 **Location-Based** | Geo-spatial search for nearby items |
-| ❤️ **Wishlist** | Save favorite items for later |
-| 👁️ **Recently Viewed** | Track browsing history |
-| 📊 **Feed Algorithm** | Fair seller visibility with randomization |
+### Module A: Identity & Access Management (IAM)
+**Goal:** Prevent authorized access by bots, scammers, and banned entities.
 
-### Seller Features
-| Feature | Description |
-|---------|-------------|
-| ➕ **Create Posts** | Add listings with images, price, location |
-| 📈 **Dashboard** | View stats, manage listings |
-| 🏆 **Tier System** | Free, Premium, Gold seller tiers |
-| ✅ **Verification** | Aadhaar/KYC verification for trust |
-| 💬 **Chat** | Real-time messaging with buyers |
+| Feature ID | Feature Name | Description | Tchnical Implementation |
+|:---:|:---:|:---|:---|
+| **IAM-01** | **Proxy/VPN Detection** | Block connection if using VPN/Tor. | Middleware `fraudCheck.js` uses `proxycheck.io` or internal IP lists. Checks `X-Forwarded-For`. |
+| **IAM-02** | **Session Handling** | Stateless JWT with Rotation. | Access Token (15min, Memory), Refresh Token (7d, HttpOnly Cookie). |
+| **IAM-03** | **Trust Score** | Dynamic user reputation. | Calculated via SQL Func: `BASE(50) + PROFILE_COMPLETE(20) + AGE(10) + RATING(20) - REPORTS(50)`. |
+| **IAM-04** | **RBAC** | Role Based Access Control. | Roles: `User`, `Seller` (Verified), `Admin`, `SuperAdmin`. |
 
-### User Experience
-| Feature | Description |
-|---------|-------------|
-| 🌐 **Multi-Language** | i18n support for regional languages |
-| 🌙 **Dark Mode** | System-aware theme switching |
-| 📱 **Responsive** | Mobile-first design |
-| 🔔 **Notifications** | Real-time push notifications |
-| 🏅 **Rewards** | Gamification with points system |
+### Module B: The Feed Engine ("Cube Approximation")
+**Goal:** Deliver relevant listings in <200ms without heavy geospatial dependencies.
 
-### Performance & Scale
-| Feature | Description |
-|---------|-------------|
-| ⚡ **Redis Caching** | Distributed caching for 10L+ users |
-| 📊 **Read Replicas** | Database scaling with read replicas |
-| ⚖️ **Load Balancing** | Nginx + PM2 cluster mode |
-| 🔄 **Lazy Loading** | Code splitting for fast initial load |
+| Feature ID | Feature Name | Description | Technical Implementation |
+|:---:|:---:|:---|:---|
+| **FED-01** | **Geo-Fencing** | Show items within X km. | Pure SQL Haversine Formula. `WHERE acos(...) * 6371 < radius`. |
+| **FED-02** | **Stratified Algorithm** | Mix tiers in specific ratios. | `UNION ALL` query: top 70% Premium, 20% Silver, 10% Basic. O(1) Fetch. |
+| **FED-03** | **Full-Text Search** | Fuzzy search for typos. | PostgreSQL `to_tsvector` on `title` + `description`. GIN Indexing. |
+| **FED-04** | **Infinite Scroll** | Load 20 items at a time. | Cursor-based pagination (`WHERE id < last_id`) for performance. |
 
----
+### Module C: Posting & Inventory
+**Goal:** Frictionless listing experience with built-in quality control.
 
-## 📄 Pages & Routes
+| Feature ID | Feature Name | Description | Technical Implementation |
+|:---:|:---:|:---|:---|
+| **INV-01** | **Compression** | Uploads < 200KB. | `browser-image-compression` (Max 1920x1080, 0.7 quality) BEFORE upload. |
+| **INV-02** | **Tier Quotas** | Enforce daily limits. | Check `posts` table count WHERE `created_at > TODAY` before allowing INSERT. |
+| **INV-03** | **Lifecycle** | State Machine. | Statuses: `active` → `sold` (soft lock) → `deleted` (soft delete) → `expired`. |
 
-### Authentication
-| Route | Page | Description |
-|-------|------|-------------|
-| `/login` | Login | User authentication |
-| `/signup` | Signup | Multi-step user registration |
-| `/forgot-password` | Forgot Password | Password reset request |
-| `/reset-password` | Reset Password | Set new password |
+### Module D: Monetization ("The Vault")
+**Goal:** Secure, audit-trail verified payments without gateway fees.
 
-### Main Application
-| Route | Page | Description |
-|-------|------|-------------|
-| `/` | Redirect | Redirects to All Posts |
-| `/all-posts` | All Posts | Main marketplace feed |
-| `/post/:id` | Post Detail | View single listing details |
-| `/nearby` | Nearby Posts | Location-based search |
-
-### User Dashboard
-| Route | Page | Description |
-|-------|------|-------------|
-| `/dashboard` | Dashboard | User statistics and overview |
-| `/profile` | Profile | Edit user profile |
-| `/my-home` | My Home | Personal dashboard |
-| `/bought-posts` | Bought Posts | Purchase history |
-| `/sold-posts` | Sold Posts | Sales history |
-
-### Selling
-| Route | Page | Description |
-|-------|------|-------------|
-| `/add-post` | Add Post | Create new listing |
-| `/post_add` | Post Add | Alternative create form |
-| `/tier-selection` | Tier Selection | Choose seller tier |
-| `/saledone` | Sale Done | Completed sales |
-| `/saleundone` | Sale Undone | Cancelled sales |
-
-### Social Feed
-| Route | Page | Description |
-|-------|------|-------------|
-| `/feed` | Feed | Social-style post feed |
-| `/feed/:id` | Feed Post Detail | Single feed post |
-| `/my-feed` | My Feed | User's own feed posts |
-| `/public-wall` | Public Wall | Community posts |
-
-### Features
-| Route | Page | Description |
-|-------|------|-------------|
-| `/wishlist` | Wishlist | Saved items |
-| `/recently-viewed` | Recently Viewed | Browsing history |
-| `/saved-searches` | Saved Searches | Saved search queries |
-| `/my-recommendations` | Recommendations | Personalized suggestions |
-| `/categories` | Categories | Browse by category |
-| `/rewards` | Rewards | Points and achievements |
-| `/notifications` | Notifications | User notifications |
-| `/chat` | Chat | Messaging system |
-
-### Other
-| Route | Page | Description |
-|-------|------|-------------|
-| `/verification` | Verification | KYC/Aadhaar verification |
-| `/aadhaar-verify` | Aadhaar Verify | ID verification |
-| `/admin-panel` | Admin Panel | Admin dashboard |
-| `/complaints` | Complaints | Report issues |
-| `/feedback` | Feedback | Submit feedback |
+| Feature ID | Feature Name | Description | Technical Implementation |
+|:---:|:---:|:---|:---|
+| **MON-01** | **Manual UPI** | User pays via QR, submits TxID. | Table `payments` stores `tx_id`, `screenshot_url`. Status: `pending`. |
+| **MON-02** | **Admin Verify** | Manual approval workflow. | Admin View: compare Amt/TxID → Click Approve → Trigger `user_subscriptions` UPDATE. |
+| **MON-03** | **Subscription** | Tier validity tracking. | Cron Job (Daily Midnight) checks `expiry_date` & downgrades to Basic. |
 
 ---
 
-## 🛠️ Tech Stack
+## 3. Database Schema Specification (PostgreSQL)
 
-### Frontend
-- **React 18** with Vite
-- **Tailwind CSS** + shadcn/ui
-- **React Router v6** for navigation
-- **i18next** for internationalization
-- **Socket.IO Client** for real-time
+### 3.1. Users & Profiles
+```sql
+TABLE users (
+  user_id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR NOT NULL,
+  tier VARCHAR(20) DEFAULT 'basic', -- basic, silver, premium
+  trust_score INT DEFAULT 50,
+  post_credits INT DEFAULT 1, -- For basic users
+  created_at TIMESTAMP DEFAULT NOW()
+);
 
-### Backend
-- **Node.js 18+** with Express
-- **PostgreSQL 15** database
-- **Redis** for caching
-- **JWT** authentication
-- **Socket.IO** for WebSockets
-
-### Infrastructure
-- **Docker + Docker Compose**
-- **Nginx** load balancer
-- **PM2** process manager
-- **Cloudinary** for images
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- PostgreSQL 15+
-- Redis (optional, falls back to in-memory)
-
-### Installation
-
-```bash
-# Clone repository
-git clone https://github.com/your-repo/mhub.git
-cd mhub
-
-# Install server dependencies
-cd server
-npm install
-
-# Install client dependencies
-cd ../client
-npm install
-
-# Build client
-npm run build
-
-# Run database migrations
-cd ../server
-psql -U postgres -f database/MASTER_COMPLETE.sql
-psql -U postgres -f database/seed_500_posts.sql
-psql -U postgres -f database/seed_50_profiles.sql
-
-# Start server
-npm run dev
+TABLE profiles (
+  user_id INT FK,
+  full_name VARCHAR(100),
+  bio TEXT,
+  avatar_url VARCHAR,
+  location VARCHAR,
+  verified_seller BOOLEAN DEFAULT FALSE
+);
 ```
 
-### Development
+### 3.2. Inventory (Posts)
+```sql
+TABLE posts (
+  post_id BIGSERIAL PRIMARY KEY,
+  user_id INT FK,
+  category_id INT FK,
+  title VARCHAR(150),
+  description TEXT, -- Indexed for Search
+  price DECIMAL(10,2),
+  images JSONB, -- ["url1", "url2"]
+  latitude DECIMAL(10,8), -- Pure SQL Geo
+  longitude DECIMAL(11,8),
+  tier_priority INT DEFAULT 1, -- 1=Basic, 2=Silver, 3=Premium
+  status VARCHAR(20), -- active, sold, deleted
+  sold_at TIMESTAMP,
+  search_vector TSVECTOR -- GIN Index
+);
+```
 
-```bash
-# Terminal 1: Start server
-cd server && npm run dev
+### 3.3. Commerce (Subscriptions & Payments)
+```sql
+TABLE user_subscriptions (
+  sub_id SERIAL PRIMARY KEY,
+  user_id INT FK,
+  plan_type VARCHAR(20), -- silver, premium
+  start_date TIMESTAMP,
+  end_date TIMESTAMP,
+  status VARCHAR(20) -- active, expired
+);
 
-# Terminal 2: Start client
-cd client && npm run dev
+TABLE payments (
+  payment_id SERIAL PRIMARY KEY,
+  user_id INT FK,
+  amount DECIMAL(10,2),
+  upi_ref_id VARCHAR(50) UNIQUE, -- The TxID
+  status VARCHAR(20), -- pending, verified, rejected
+  admin_note TEXT,
+  created_at TIMESTAMP
+);
 ```
 
 ---
 
-## ⚙️ Configuration
+## 4. API Specification (REST)
 
-### Environment Variables (server/.env)
+### Auth
+- `POST /api/auth/register` - { email, password, name }
+- `POST /api/auth/login` - { email, password } -> Set-Cookie: refresh_token
+- `POST /api/auth/refresh` - Rotate tokens
 
-```env
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=mhub
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_POOL_MAX=20
-
-# Read Replicas (optional)
-DB_REPLICA_HOSTS=
-
-# Redis (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# JWT
-JWT_SECRET=your-super-secret-key
-
-# Server
-PORT=5000
-NODE_ENV=development
-```
-
----
-
-## 📡 API Endpoints
+### Feed
+- `GET /api/feed` - ?page=1&limit=20
+- `GET /api/feed/nearby` - ?lat=17.38&lng=78.48&radius=10
+- `GET /api/feed/search` - ?q=iphone
 
 ### Posts
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/posts` | Get all posts |
-| GET | `/api/posts/for-you` | Guaranteed Reach feed |
-| GET | `/api/posts/:id` | Get single post |
-| POST | `/api/posts` | Create post |
-| PUT | `/api/posts/:id` | Update post |
-| DELETE | `/api/posts/:id` | Delete post |
-| POST | `/api/posts/:id/like` | Like a post |
-| POST | `/api/posts/:id/view` | Track view |
+- `POST /api/posts` - { title, price, images[], lat, lng, category } (Protect: Auth)
+- `PUT /api/posts/:id/sold` - Mark as sold (Protect: Owner)
+- `DELETE /api/posts/:id` - Soft delete (Protect: Owner)
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register user |
-| POST | `/api/auth/login` | Login user |
-| POST | `/api/auth/logout` | Logout user |
-| POST | `/api/auth/refresh` | Refresh token |
+### Payments
+- `POST /api/payments/submit` - { plan, tx_id }
+- `GET /api/payments/pending` - (Protect: Admin)
+- `POST /api/payments/:id/verify` - (Protect: Admin)
 
 ### User
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users/profile` | Get profile |
-| PUT | `/api/users/profile` | Update profile |
-| GET | `/api/users/wishlist` | Get wishlist |
-
-### Performance
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/posts/cache-stats` | Cache statistics |
-| GET | `/health` | Health check |
+- `GET /api/users/profile`
+- `PUT /api/users/profile` - { bio, location, avatar }
 
 ---
 
-## 🗄️ Database
+## 5. Security & Deployment
 
-### Core Tables
-- `users` - User accounts
-- `profiles` - User profiles
-- `posts` - Product listings
-- `categories` - Product categories
-- `tiers` - Seller tier levels
+### 5.1. Environment Variables
+```env
+# Server
+PORT=5000
+NODE_ENV=production
 
-### Feature Tables
-- `wishlist` - Saved items
-- `recently_viewed` - View history
-- `notifications` - User notifications
-- `chat_messages` - Chat history
-- `rewards` - User points
+# DB
+DB_HOST=localhost
+DB_USER=postgres
+DB_PASSWORD=secret
 
----
-
-## 🚢 Deployment
-
-### Docker Compose
-```bash
-cd server
-docker-compose up -d
+# Keys
+JWT_SECRET=complex_string_32_chars
+ADMIN_KEY=setup_admin_secret
 ```
 
-### PM2 Cluster
-```bash
-pm2 start ecosystem.config.js
+### 5.2. Folder Structure
 ```
-
-### Production Checklist
-- [ ] Set `NODE_ENV=production`
-- [ ] Configure SSL certificates
-- [ ] Set up Redis cluster
-- [ ] Configure read replicas
-- [ ] Enable rate limiting
-- [ ] Set up monitoring
+server/
+├── config/         # DB Connection
+├── controllers/    # Business Logic (paymentController, etc.)
+├── database/       # SQL Migrations (production_hardening.sql)
+├── middleware/     # Auth, FraudCheck
+├── routes/         # Express Routes
+├── src/            # Utils
+└── index.js        # Entry Point
+```
 
 ---
 
-## 📚 Documentation
+## 6. User Experience Flows (Human-Centric)
 
-| Document | Description |
-|----------|-------------|
-| [SECURITY.md](SECURITY.md) | Security features and recommendations |
-| [PERFORMANCE.md](PERFORMANCE.md) | Performance optimizations |
-| [database/README.md](server/database/README.md) | Database setup guide |
+### Flow 1: "The Trust-First Purchase"
+1. **Discovery:** User lands on Feed. Sees "Premium" badge on a MacBook Pro listing.
+2. **Verification:** Clicks item. Sees "Trust Score: 85/100" and "Verified Seller".
+3. **Geo-Check:** Map shows item is 4.2km away (verified by GPS).
+4. **Action:** Clicks "Chat".
+
+### Flow 2: "The Upward Mobility Seller"
+1. **Limit Hit:** Seller tries to post 2nd item today.
+2. **Block:** System shows "Basic Plan Limit Reached".
+3. **Upsell:** "Upgrade to Silver for ₹499/mo? Get 5 posts/day + 2x Visibility."
+4. **Payment:** Scans QR code → Pays → Enters TxID.
+5. **Approval:** Admin approves in <1hr. Seller gets notification.
+
+---
+
+## 7. Future Roadmap
+- [ ] **AI Price Prediction:** Suggest price based on history.
+- [ ] **Video Listings:** 30s video uploads.
+- [ ] **Escrow Service:** Hold money until delivery.
 
 ---
 
 ## 📄 License
-
-MIT License - see LICENSE file for details.
-
----
-
-**Built with ❤️ for the Indian marketplace**
+MIT License. Built for MHub.

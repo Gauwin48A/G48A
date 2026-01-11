@@ -13,95 +13,131 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
-import { loginUser } from "@/lib/auth";
-import { captureLocation } from "@/services/locationService";
-import { useTranslation } from 'react-i18next';
-import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+import { getDeviceId } from '@/utils/device';
+import { captureLocation as getCurrentLocation } from '@/services/locationService';
+import { useTranslation } from "react-i18next";
+import api from "@/services/api";
 
 const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
-  const [emailLogin, setEmailLogin] = useState({ email: "", password: "" });
-  const [phoneLogin, setPhoneLogin] = useState({ phone: "", otp: "" });
   const [isLoading, setIsLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Utility: After login, fetch and store user profile for profile page
+  // State for Inputs
+  const [emailLogin, setEmailLogin] = useState({ email: "", password: "" });
+  const [phoneLogin, setPhoneLogin] = useState({ phone: "", otp: "" });
+
+  // State for OTP/Risk Logic
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+
+  // Helper: Login API Call
+  const loginUser = async (payload) => {
+    // api.post returns response.data directly due to interceptor in services/api.js 
+    // BUT wait, standard axios returns object. 
+    // Let's check services/api.js interceptor. 
+    // Usually it returns response.data. 
+    // If not, we handle it.
+    // Safe bet: api.post returns the data (intercepted).
+    return api.post('/auth/login', payload);
+  };
+
+  // Helper: Fetch Profile
   const fetchAndStoreUserProfile = async (token) => {
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const res = await fetch(`${baseUrl}/api/profile`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include'
-      });
-      if (res.ok) {
-        const user = await res.json();
-        localStorage.setItem('userProfile', JSON.stringify(user));
-      }
-    } catch (e) { /* ignore */ }
+      const user = await api.get('/users/profile/me');
+      localStorage.setItem('user', JSON.stringify(user));
+    } catch (e) {
+      console.error("Failed to fetch profile", e);
+    }
   };
 
   // ------------------ EMAIL LOGIN ------------------ //
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    // Frontend validation
-    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    if (!emailLogin.email || !emailRegex.test(emailLogin.email)) {
+    if (!emailLogin.email || !emailLogin.password) {
       toast({
-        title: t('invalid_email'),
-        description: t('invalid_email_desc'),
+        title: t('validation_error') || "Validation Error",
+        description: t('email_password_required') || "Email and password are required",
         variant: "destructive",
       });
       return;
     }
-    if (!emailLogin.password || emailLogin.password.length < 6) {
+
+    // OTP validation if visible
+    if (showOtpInput && (!otpValue || otpValue.length < 4)) {
       toast({
-        title: t('invalid_password') || "Invalid Password",
-        description: t('password_min_chars') || "Password must be at least 6 characters.",
+        title: "OTP Required",
+        description: "Please enter the code sent to your email.",
         variant: "destructive",
       });
       return;
     }
-    const testEmails = ['test@test.com', 'admin@admin.com', 'user@user.com'];
-    if (testEmails.includes(emailLogin.email.toLowerCase())) {
-      toast({
-        title: t('test_email_not_allowed') || "Test Email Not Allowed",
-        description: t('test_email_not_allowed_desc') || "Test/dummy emails are not allowed for login.",
-        variant: "destructive",
-      });
-      return;
-    }
+
     setIsLoading(true);
     try {
-      const data = await loginUser({
+      // 1. Get Device Fingerprint
+      const deviceId = getDeviceId();
+
+      // 2. Get Location (Best effort)
+      let location = { lat: null, lng: null };
+      try {
+        location = await getCurrentLocation();
+      } catch (err) {
+        console.warn("Location fetch failed for login:", err);
+      }
+
+      const payload = {
         email: emailLogin.email,
         password: emailLogin.password,
-      });
-      // Save to correct localStorage keys that rest of app uses
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("userId", data.userId);
-      await fetchAndStoreUserProfile(data.token);
+        deviceId: deviceId,
+        lat: location?.latitude || null,
+        lng: location?.longitude || null,
+      };
 
-      // Capture fresh location after login
-      // Capture fresh location after login
-      captureLocation(data.userId).catch(() => { });
+      // Add OTP if in challenge mode
+      if (showOtpInput) {
+        payload.otp = otpValue;
+      }
 
-      toast({
-        title: t('login_successful') + " 🎉",
-        description: t('welcome_back') + " to MobileVerify!",
-      });
-      navigate("/all-posts");
+      const data = await loginUser(payload);
+
+      // Success Handling
+      if (data && data.token) {
+        localStorage.setItem("token", data.token);
+        if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+
+        await fetchAndStoreUserProfile(data.token);
+
+        toast({
+          title: t('login_successful') + " 🎉" || "Login Successful 🎉",
+          description: t('welcome_back_msg') || "Welcome back!",
+        });
+        navigate("/all-posts");
+      }
+
     } catch (err) {
+      console.error("Login Error:", err);
+
+      // Handle 202 Challenge specifically (Risk Engine)
+      // Note: If using axios, err.response holds the server response
+      if (err.response && err.response.status === 202 && err.response.data.requireOtp) {
+        setShowOtpInput(true);
+        toast({
+          title: "Security Check",
+          description: err.response.data.message || "Unusual activity detected.",
+        });
+        return; // Stop here, let user enter OTP
+      }
+
+      const errorMessage = err.response?.data?.error || err.message || t('login_failed') || "Login failed";
       toast({
-        title: t('login_failed') + " ❌",
-        description: err.errors?.join(", ") || err.error || t('login_failed'),
+        title: "Error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -109,7 +145,7 @@ const Login = () => {
     }
   };
 
-  // ------------------ PHONE OTP LOGIN ------------------ //
+  // ------------------ PHONE OTP LOGIN (Legacy/Alternative) ------------------ //
   const handleSendOTP = async () => {
     // Phone validation
     const phoneRegex = /^[6-9]\d{9}$/;
@@ -121,31 +157,10 @@ const Login = () => {
       });
       return;
     }
-    if (/^1234567890$|^9999999999$/.test(phoneLogin.phone)) {
-      toast({
-        title: t('test_phone_not_allowed') || "Test Phone Not Allowed",
-        description: t('test_phone_not_allowed_desc') || "Test/dummy phone numbers are not allowed for login.",
-        variant: "destructive",
-      });
-      return;
-    }
+
     setIsLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/api/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phoneLogin.phone }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        toast({
-          title: t('error') || "Error",
-          description: data.error || t('otp_send_failed') || "Failed to send OTP",
-          variant: "destructive",
-        });
-        return;
-      }
+      await api.post('/auth/send-otp', { phone: phoneLogin.phone });
       setOtpSent(true);
       toast({
         title: t('otp_sent') || "OTP Sent",
@@ -153,8 +168,8 @@ const Login = () => {
       });
     } catch (err) {
       toast({
-        title: t('network_error') || "Network Error",
-        description: t('could_not_send_otp') || "Could not send OTP",
+        title: t('network_error') || "Error",
+        description: err.response?.data?.error || t('could_not_send_otp') || "Could not send OTP",
         variant: "destructive",
       });
     } finally {
@@ -169,47 +184,33 @@ const Login = () => {
     if (!phoneLogin.otp || !otpRegex.test(phoneLogin.otp)) {
       toast({
         title: t('invalid_otp') || "Invalid OTP",
-        description: t('otp_valid_desc') || "Please enter a valid OTP (4-8 digits).",
+        description: t('otp_valid_desc') || "Please enter a valid OTP.",
         variant: "destructive",
       });
       return;
     }
     setIsLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/api/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: phoneLogin.phone,
-          otp: phoneLogin.otp,
-        }),
+      const data = await api.post('/auth/verify-otp', {
+        phone: phoneLogin.phone,
+        otp: phoneLogin.otp,
       });
-      const data = await response.json();
-      if (!response.ok) {
-        toast({
-          title: t('otp_verification_failed') || "OTP Verification Failed",
-          description: data.error || t('invalid_otp') || "Invalid OTP",
-          variant: "destructive",
-        });
-        return;
-      }
+
       localStorage.setItem("token", data.token);
       await fetchAndStoreUserProfile(data.token);
 
       // Capture fresh location after login
-      // Capture fresh location after login
-      captureLocation(data.userId).catch(() => { });
+      getCurrentLocation(data.userId).catch(() => { });
 
       toast({
         title: t('login_successful') + " 🎉" || "Login Successful 🎉",
-        description: t('welcome_back_msg') || "Welcome back to MobileVerify!",
+        description: t('welcome_back_msg') || "Welcome back!",
       });
       navigate("/all-posts");
     } catch (err) {
       toast({
-        title: t('network_error') || "Network Error",
-        description: t('could_not_verify_otp') || "Could not verify OTP",
+        title: t('network_error') || "Error",
+        description: err.response?.data?.error || t('could_not_verify_otp') || "Could not verify OTP",
         variant: "destructive",
       });
     } finally {
@@ -227,16 +228,16 @@ const Login = () => {
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t('welcome_back')}
+            {t('welcome_back') || "Welcome Back"}
           </h2>
-          <p className="text-gray-600 dark:text-gray-300">{t('sign_in_to_account')}</p>
+          <p className="text-gray-600 dark:text-gray-300">{t('sign_in_to_account') || "Sign in to your account"}</p>
         </div>
 
         <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800">
           <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-8">
-            <CardTitle className="text-2xl font-bold">{t('sign_in')}</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('sign_in') || "Sign In"}</CardTitle>
             <CardDescription className="text-sky-100">
-              {t('choose_login_method')}
+              {t('choose_login_method') || "Choose your preferred login method"}
             </CardDescription>
           </CardHeader>
 
@@ -248,14 +249,14 @@ const Login = () => {
                   className="rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
                 >
                   <Mail className="w-4 h-4" />
-                  <span>{t('email')}</span>
+                  <span>{t('email') || "Email"}</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="phone"
                   className="rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
                 >
                   <Phone className="w-4 h-4" />
-                  <span>{t('phone')}</span>
+                  <span>{t('phone') || "Phone"}</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -264,7 +265,7 @@ const Login = () => {
                 <form onSubmit={handleEmailLogin} className="space-y-6">
                   <div>
                     <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t('email')}
+                      {t('email') || "Email"}
                     </Label>
                     <Input
                       id="email"
@@ -275,12 +276,12 @@ const Login = () => {
                         setEmailLogin((prev) => ({ ...prev, email: e.target.value }))
                       }
                       className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl"
-                      placeholder={t('email_placeholder')}
+                      placeholder={t('email_placeholder') || "Enter your email"}
                     />
                   </div>
                   <div>
                     <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t('password')}
+                      {t('password') || "Password"}
                     </Label>
                     <div className="relative mt-2">
                       <Input
@@ -292,7 +293,7 @@ const Login = () => {
                           setEmailLogin((prev) => ({ ...prev, password: e.target.value }))
                         }
                         className="h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12"
-                        placeholder={t('password_placeholder')}
+                        placeholder={t('password_placeholder') || "Enter your password"}
                       />
                       <Button
                         type="button"
@@ -306,33 +307,52 @@ const Login = () => {
                     </div>
                   </div>
 
-                  {/* Signup link */}
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('dont_have_account')}{" "}
+                    {t('dont_have_account') || "Don't have an account?"}{" "}
                     <span
                       className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
                       onClick={() => navigate("/signup")}
                     >
-                      {t('sign_up_here')}
+                      {t('sign_up_here') || "Sign up here"}
                     </span>
                   </p>
 
-                  {/* Forgot Password link */}
                   <div className="text-right">
                     <Link
                       to="/forgot-password"
                       className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      {t('forgot_password')}
+                      {t('forgot_password') || "Forgot Password?"}
                     </Link>
                   </div>
+
+                  {showOtpInput && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                      <Label htmlFor="challenge-otp" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        {t('security_code') || "Security Code"}
+                      </Label>
+                      <Input
+                        id="challenge-otp"
+                        type="text"
+                        value={otpValue}
+                        onChange={(e) => setOtpValue(e.target.value)}
+                        className="mt-2 h-12 border-2 border-orange-300 focus:border-orange-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest bg-orange-50"
+                        placeholder="• • • • • •"
+                        maxLength={6}
+                        autoFocus
+                      />
+                      <p className="text-xs text-orange-600 mt-1">
+                        {t('enter_code_sent_email') || "Enter the code sent to your email to continue."}
+                      </p>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"
+                    className={`w-full h-12 rounded-xl text-lg font-semibold ${showOtpInput ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gradient-to-r from-sky-500 to-blue-600'}`}
                   >
-                    {isLoading ? t('logging_in') : t('sign_in')}
+                    {isLoading ? t('verifying') || "Verifying..." : (showOtpInput ? t('verify_login') || "Verify Login" : t('sign_in') || "Sign In")}
                   </Button>
                 </form>
               </TabsContent>
@@ -342,7 +362,7 @@ const Login = () => {
                 <div className="space-y-6">
                   <div>
                     <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t('phone')}
+                      {t('phone') || "Phone Number"}
                     </Label>
                     <Input
                       id="phone"
@@ -357,14 +377,13 @@ const Login = () => {
                     />
                   </div>
 
-                  {/* Signup link under phone input */}
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('dont_have_account')}{" "}
+                    {t('dont_have_account') || "Don't have an account?"}{" "}
                     <span
                       className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
                       onClick={() => navigate("/signup")}
                     >
-                      {t('sign_up_here')}
+                      {t('sign_up_here') || "Sign up here"}
                     </span>
                   </p>
 
@@ -374,13 +393,13 @@ const Login = () => {
                       disabled={isLoading}
                       className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"
                     >
-                      {isLoading ? t('loading') : t('send_otp')}
+                      {isLoading ? t('loading') || "Loading..." : t('send_otp') || "Send OTP"}
                     </Button>
                   ) : (
                     <form onSubmit={handlePhoneLogin} className="space-y-6">
                       <div>
                         <Label htmlFor="otp" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          {t('enter_otp')}
+                          {t('enter_otp') || "Enter OTP"}
                         </Label>
                         <Input
                           id="otp"
@@ -400,7 +419,7 @@ const Login = () => {
                         disabled={isLoading}
                         className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"
                       >
-                        {isLoading ? t('logging_in') : t('verify_sign_in')}
+                        {isLoading ? t('logging_in') || "Logging In..." : t('verify_sign_in') || "Verify & Sign In"}
                       </Button>
                     </form>
                   )}

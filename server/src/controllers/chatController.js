@@ -1,9 +1,11 @@
 /**
  * Chat/Messages Controller
  * Real-time messaging between buyers and sellers
+ * Protocol: Ironclad - Pusher Realtime
  */
 
 const pool = require('../config/db');
+const { sendChatMessage } = require('../config/pusher');
 
 // Generate conversation ID from two user IDs (always same regardless of order)
 const getConversationId = (userId1, userId2, postId = null) => {
@@ -127,9 +129,17 @@ const sendMessage = async (req, res) => {
       RETURNING *
     `, [conversationId, senderId, receiverId, postId, content, messageType]);
 
+        const savedMessage = result.rows[0];
+
+        // Protocol: Ironclad - Trigger Pusher realtime event
+        // Fire-and-forget: don't block response on Pusher
+        sendChatMessage(conversationId, savedMessage).catch(err => {
+            console.error('[Pusher] Failed to send realtime:', err);
+        });
+
         res.status(201).json({
             message: 'Message sent',
-            data: result.rows[0]
+            data: savedMessage
         });
     } catch (error) {
         console.error('Send message error:', error);

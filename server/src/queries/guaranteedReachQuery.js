@@ -8,10 +8,10 @@
  * 4. Time-seeded randomization for variety
  * 5. Author diversity (max 1 post per seller per page)
  * 
- * TIERS:
- * - Tier 1 (40%): Low impression posts (need more views)
- * - Tier 2 (35%): Fresh posts (< 48 hours)
- * - Tier 3 (25%): Random rotation
+ * PROTOCOL: VALUE HIERARCHY - Tier Priority
+ * - Premium (tier 3): TOP of feed, highest priority (+25000)
+ * - Silver (tier 2): Medium priority (+10000)
+ * - Basic (tier 1): Standard priority
  */
 
 const GUARANTEED_REACH_QUERY = `
@@ -34,8 +34,17 @@ all_posts_scored AS (
         p.images,
         p.location,
         p.created_at,
+        COALESCE(p.tier_priority, 1) AS tier_priority,
         COALESCE(p.views_count, 0) AS views_count,
         COALESCE(p.likes, 0) AS likes_count,
+        
+        -- TIER PRIORITY BOOST (Protocol: Value Hierarchy)
+        -- Premium posts get TOP placement (God Mode)
+        CASE 
+            WHEN COALESCE(p.tier_priority, 1) = 3 THEN 25000   -- Premium: TOP of feed
+            WHEN COALESCE(p.tier_priority, 1) = 2 THEN 10000   -- Silver: Medium priority
+            ELSE 0                                              -- Basic: Standard
+        END AS tier_boost,
         
         -- LOW IMPRESSION BOOST (guarantees reach for new sellers)
         -- Posts with fewer views get HIGHEST priority
@@ -71,6 +80,7 @@ all_posts_scored AS (
         
         -- FEED PHASE for debugging/analytics
         CASE 
+            WHEN COALESCE(p.tier_priority, 1) = 3 THEN 'premium'
             WHEN COALESCE(p.views_count, 0) < 50 THEN 'low_reach'
             WHEN p.created_at > NOW() - INTERVAL '48 hours' THEN 'fresh'
             ELSE 'rotating'
@@ -79,6 +89,7 @@ all_posts_scored AS (
     FROM posts p
     WHERE p.status = 'active'
       AND p.created_at > NOW() - INTERVAL '30 days'  -- Include posts up to 30 days
+      AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
       AND (
           (SELECT uid FROM config) = 0 
           OR p.user_id != (SELECT uid FROM config)  -- Don't show own posts
@@ -88,17 +99,18 @@ all_posts_scored AS (
 ranked_posts AS (
     SELECT 
         a.*,
-        -- Total score = impression_boost + freshness_boost + random
-        (a.impression_boost + a.freshness_boost + a.random_score) AS total_score,
+        -- Total score = TIER_BOOST + impression_boost + freshness_boost + random
+        -- Tier boost DOMINATES to ensure Premium posts appear FIRST
+        (a.tier_boost + a.impression_boost + a.freshness_boost + a.random_score) AS total_score,
         -- Author diversity: Only 1 post per author per page
         ROW_NUMBER() OVER (
             PARTITION BY a.author_id 
-            ORDER BY a.impression_boost DESC, a.freshness_boost DESC, a.random_score DESC
+            ORDER BY a.tier_boost DESC, a.impression_boost DESC, a.freshness_boost DESC, a.random_score DESC
         ) AS author_rank,
         -- Category diversity: Max 3 posts per category
         ROW_NUMBER() OVER (
             PARTITION BY a.category_id 
-            ORDER BY a.impression_boost DESC, a.freshness_boost DESC, a.random_score DESC
+            ORDER BY a.tier_boost DESC, a.impression_boost DESC, a.freshness_boost DESC, a.random_score DESC
         ) AS category_rank
     FROM all_posts_scored a
 )
@@ -112,6 +124,7 @@ SELECT
     r.images,
     r.location,
     r.created_at,
+    r.tier_priority,
     r.views_count,
     r.likes_count,
     r.feed_phase,
@@ -124,8 +137,10 @@ LEFT JOIN categories c ON r.category_id = c.category_id
 WHERE r.author_rank = 1        -- Max 1 post per author
   AND r.category_rank <= 3     -- Max 3 posts per category  
 ORDER BY 
-    -- Sort by TOTAL SCORE which includes randomization
-    -- This ensures genuine shuffling on each refresh
+    -- TIER PRIORITY FIRST (Protocol: Value Hierarchy)
+    -- Premium (3) > Silver (2) > Basic (1)
+    r.tier_priority DESC,
+    -- Then by TOTAL SCORE which includes tier_boost + randomization
     r.total_score DESC,
     -- Tie-breaker: use random score
     r.random_score DESC
@@ -135,6 +150,7 @@ LIMIT $2;
 /**
  * Fallback query - Simple and fast
  * Used when main query times out
+ * Still respects Protocol: Value Hierarchy (tier priority)
  */
 const GUARANTEED_REACH_FALLBACK = `
 SELECT 
@@ -147,6 +163,7 @@ SELECT
     p.images,
     p.location,
     p.created_at,
+    COALESCE(p.tier_priority, 1) AS tier_priority,
     COALESCE(p.views_count, 0) AS views_count,
     COALESCE(p.likes, 0) AS likes_count,
     'fallback' AS feed_phase,
@@ -156,12 +173,16 @@ FROM posts p
 LEFT JOIN profiles pr ON p.user_id = pr.user_id
 LEFT JOIN categories c ON p.category_id = c.category_id
 WHERE p.status = 'active'
+  AND (p.expires_at IS NULL OR p.expires_at > NOW())
 ORDER BY 
+    -- Protocol: Value Hierarchy - Premium posts FIRST
+    COALESCE(p.tier_priority, 1) DESC,
     -- Prioritize low-view posts even in fallback
     COALESCE(p.views_count, 0) ASC,
     p.created_at DESC
 LIMIT $1;
 `;
+
 
 module.exports = {
     GUARANTEED_REACH_QUERY,

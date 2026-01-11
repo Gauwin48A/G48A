@@ -145,8 +145,124 @@ const getCategoryBreakdown = async (req, res) => {
     }
 };
 
+// ============================================
+// DEVICE FINGERPRINTING & ANALYTICS
+// ============================================
+
+/**
+ * Store device fingerprint and info
+ * POST /api/analytics/device
+ */
+const saveDeviceInfo = async (req, res) => {
+    try {
+        const {
+            fingerprint,
+            userAgent,
+            deviceType,
+            browser,
+            browserVersion,
+            os,
+            osVersion,
+            screenWidth,
+            screenHeight,
+            pixelRatio,
+            language,
+            timezone,
+            networkInfo,
+            cpuCores,
+            capturedAt
+        } = req.body;
+
+        // Get user_id from auth if available
+        const userId = req.user?.id || req.user?.userId || null;
+
+        // Get IP from request
+        const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
+            req.connection?.remoteAddress ||
+            req.socket?.remoteAddress ||
+            'unknown';
+
+        const query = `
+            INSERT INTO device_analytics (
+                user_id, fingerprint, ip_address, user_agent, device_type,
+                browser, browser_version, os, os_version,
+                screen_width, screen_height, pixel_ratio,
+                language, timezone, network_type, cpu_cores,
+                captured_at, created_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+            RETURNING id;
+        `;
+
+        const result = await pool.query(query, [
+            userId,
+            fingerprint,
+            ip,
+            userAgent?.substring(0, 500),
+            deviceType,
+            browser,
+            browserVersion,
+            os,
+            osVersion,
+            screenWidth,
+            screenHeight,
+            pixelRatio,
+            language,
+            timezone,
+            networkInfo?.effectiveType || null,
+            cpuCores,
+            capturedAt
+        ]);
+
+        console.log(`[Analytics] Device captured: ${fingerprint} (${deviceType})`);
+
+        res.status(201).json({
+            success: true,
+            id: result.rows[0].id,
+            fingerprint
+        });
+
+    } catch (error) {
+        console.error('[Analytics] Device save error:', error);
+        res.status(200).json({ success: false, error: 'Analytics temporarily unavailable' });
+    }
+};
+
+/**
+ * Get device analytics summary (admin)
+ * GET /api/analytics/devices/summary
+ */
+const getDeviceSummary = async (req, res) => {
+    try {
+        const summary = await pool.query(`
+            SELECT 
+                device_type,
+                browser,
+                os,
+                COUNT(*) as count,
+                COUNT(DISTINCT fingerprint) as unique_devices
+            FROM device_analytics
+            WHERE created_at > NOW() - INTERVAL '30 days'
+            GROUP BY device_type, browser, os
+            ORDER BY count DESC
+            LIMIT 50
+        `);
+
+        res.json({
+            summary: summary.rows,
+            period: '30 days'
+        });
+
+    } catch (error) {
+        console.error('[Analytics] Summary error:', error);
+        res.status(500).json({ error: 'Failed to get summary' });
+    }
+};
+
 module.exports = {
     getSellerAnalytics,
     getPostPerformance,
-    getCategoryBreakdown
+    getCategoryBreakdown,
+    saveDeviceInfo,
+    getDeviceSummary
 };

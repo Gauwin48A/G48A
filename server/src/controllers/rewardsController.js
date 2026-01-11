@@ -80,7 +80,7 @@ const calculateChainPoints = async (userId) => {
 };
 
 exports.getRewardsByUser = async (req, res) => {
-  const { userId } = req.query;
+  const userId = req.query.userId || req.params.userId;
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {

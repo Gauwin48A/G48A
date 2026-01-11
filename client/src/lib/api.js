@@ -1,96 +1,49 @@
-import axios from 'axios';
+import api from '../services/api';
 
-// In development, Vite's proxy handles /api routes
-// In production, use the full API URL
-const isDev = import.meta.env.DEV;
-const api = axios.create({
-  baseURL: isDev ? '' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'),
-  timeout: 15000, // 15 second timeout
-});
+// Export the centralized instance (shimmed)
+export default api;
 
-// User-friendly error messages
-const ERROR_MESSAGES = {
-  network: "We couldn't reach the server. Please check your internet connection.",
-  timeout: "The request is taking too long. Please try again.",
-  server: "Something went wrong on our end. We're working on it!",
-  notFound: "The requested resource was not found.",
-  unauthorized: "Please log in to continue.",
-  forbidden: "You don't have permission to do that.",
-  default: "An unexpected error occurred. Please try again."
+// Helper to handle legacy "getWithRetry" if needed
+// The new api service has internal retry for 401, but we can wrap for others if strictly needed.
+// For now, simple mapping is sufficient as per "Centralized Axios" requirement.
+export const getWithRetry = (url, config) => api.get(url, config);
+export const postWithRetry = (url, data, config) => api.post(url, data, config);
+
+// ============================================
+// COMPATIBILITY LAYER
+// Redirects legacy function calls to the new secure API
+// NOTE: These now automatically get Device ID, Tokens, and Error Handling!
+// ============================================
+
+// Feed
+// Legacy: api.get('/feed') -> Now: api.get('/api/feed') (since BaseURL is root)
+// We assume legacy calls expected /api prefix to be handled by proxy or base. 
+// Given we set services/api BaseURL to root (localhost:5000), we must add /api here.
+
+const PF = '/api'; // Prefix
+
+export const fetchFeed = (params) => api.get(`${PF}/feed`, { params });
+export const fetchMyFeed = (params) => api.get(`${PF}/feed/mine`, { params });
+
+// Channels
+export const createChannel = (data) => api.post(`${PF}/channel/create`, data);
+export const getChannelByUser = (userId) => api.get(`${PF}/channel/${userId}`);
+export const updateChannel = (channelId, data) => api.put(`${PF}/channel/${channelId}`, data);
+export const createChannelPost = (channelId, data) => api.post(`${PF}/channel/${channelId}/posts`, data);
+export const getAllChannels = () => api.get(`${PF}/channel`);
+export const followChannel = (channelId) => api.post(`${PF}/channel/${channelId}/follow`);
+
+// Posts
+export const addTextPost = (data) => api.post(`${PF}/feed/add`, data);
+
+// Nearby (Note: legacy URL was /api/nearby, so we keep it as is if it included /api)
+// Wait, legacy line 93: getWithRetry(`/api/nearby...`)
+export const getNearbyPosts = (lat, long, radius = 10) =>
+  api.get(`${PF}/nearby?lat=${lat}&long=${long}&radius=${radius}`);
+
+// Error helper for legacy components
+export const getFriendlyError = (error) => {
+  return error.message || "An unexpected error occurred.";
 };
 
-// Get user-friendly error message
-function getFriendlyError(error) {
-  if (!error.response) {
-    if (error.code === 'ECONNABORTED') return ERROR_MESSAGES.timeout;
-    return ERROR_MESSAGES.network;
-  }
-
-  const status = error.response.status;
-  if (status === 401) return ERROR_MESSAGES.unauthorized;
-  if (status === 403) return ERROR_MESSAGES.forbidden;
-  if (status === 404) return ERROR_MESSAGES.notFound;
-  if (status >= 500) return ERROR_MESSAGES.server;
-
-  return error.response.data?.error || ERROR_MESSAGES.default;
-}
-
-// Retry logic with exponential backoff
-async function withRetry(requestFn, maxRetries = 3) {
-  let lastError;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await requestFn();
-    } catch (error) {
-      lastError = error;
-
-      // Don't retry client errors (4xx) except 408 (timeout) and 429 (rate limit)
-      const status = error.response?.status;
-      if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) {
-        throw error;
-      }
-
-      if (attempt < maxRetries) {
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-        console.log(`[API] Retry ${attempt}/${maxRetries} after ${delay}ms`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-
-  throw lastError;
-}
-
-// Response interceptor for error handling
-api.interceptors.response.use(
-  response => response,
-  error => {
-    error.friendlyMessage = getFriendlyError(error);
-    console.error('[API Error]', error.friendlyMessage);
-    return Promise.reject(error);
-  }
-);
-
-// Exported helper for GET with retry
-export const getWithRetry = (url, config) => withRetry(() => api.get(url, config));
-
-// Exported helper for POST with retry
-export const postWithRetry = (url, data, config) => withRetry(() => api.post(url, data, config));
-
-export const fetchFeed = (params) => api.get('/feed', { params });
-export const fetchMyFeed = (params) => api.get('/feed/mine', { params });
-export const createChannel = (data) => api.post('/channel/create', data);
-export const getChannelByUser = (userId) => api.get(`/channel/${userId}`);
-export const updateChannel = (channelId, data) => api.put(`/channel/${channelId}`, data);
-export const createChannelPost = (channelId, data) => api.post(`/channel/${channelId}/posts`, data);
-export const getAllChannels = () => api.get('/channel');
-export const followChannel = (channelId) => api.post(`/channel/${channelId}/follow`);
-export const addTextPost = (data) => api.post('/feed/add', data);
-
-// Nearby posts API
-export const getNearbyPosts = (lat, long, radius = 10) =>
-  getWithRetry(`/api/nearby?lat=${lat}&long=${long}&radius=${radius}`);
-
-export default api;
 

@@ -114,7 +114,7 @@ const getMatchingPosts = async (req, res) => {
 
         if (search.keywords && search.keywords.length > 0) {
             const keywordConditions = search.keywords.map((_, i) =>
-                `(LOWER(p.title) LIKE LOWER($${paramIndex + i}) OR LOWER(p.description) LIKE LOWER($${paramIndex + i}))`
+                `(LOWER(p.title) LIKE LOWER($${paramIndex + i}) OR LOWER(p.description) LIKE LOWER($${paramIndex + i}) OR LOWER(c.name) LIKE LOWER($${paramIndex + i}))`
             ).join(' OR ');
             query += ` AND (${keywordConditions})`;
             search.keywords.forEach(k => params.push(`%${k}%`));

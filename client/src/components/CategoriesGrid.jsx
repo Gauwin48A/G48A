@@ -68,6 +68,15 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
     navigate('/');
   };
 
+  const effectiveSelectedCategory = (() => {
+    if (activeCategory !== undefined) return activeCategory || 'All';
+    if (filters?.search) {
+      const match = categories.find(c => c.name.toLowerCase() === filters.search.trim().toLowerCase());
+      if (match) return match.name;
+    }
+    return selectedCategory || 'All';
+  })();
+
   if (loading) return <div className="h-20 animate-pulse bg-gray-100 rounded-xl mb-6"></div>;
   if (error) return null;
 
@@ -76,10 +85,7 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
       <div className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide -mx-2">
         {categories.map((cat) => {
           const IconComponent = iconMap[cat.name] || iconMap[cat.icon] || LayoutGrid;
-          const isActive = (activeCategory !== undefined ? activeCategory : selectedCategory) === (cat.name === 'All' ? 'All' : cat.name);
-          const isSelected = (activeCategory === '' && cat.name === 'All') ||
-            (activeCategory === cat.name) ||
-            (activeCategory === undefined && selectedCategory === cat.name);
+          const isSelected = effectiveSelectedCategory === cat.name;
 
           return (
             <button

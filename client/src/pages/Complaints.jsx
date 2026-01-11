@@ -209,12 +209,12 @@ const Complaints = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-red-900 to-orange-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+    <div className="bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       {/* Animated background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-red-500/10 dark:bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/10 dark:bg-orange-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/5 dark:bg-yellow-500/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
@@ -222,7 +222,7 @@ const Complaints = () => {
         <div className="text-center pt-8">
           <button
             onClick={() => navigate('/')}
-            className="inline-flex items-center text-red-300 hover:text-red-200 mb-8 group transition-all"
+            className="inline-flex items-center text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-200 mb-8 group transition-all"
           >
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             {t('back_to_home')}
@@ -232,29 +232,29 @@ const Complaints = () => {
             <AlertTriangle className="w-10 h-10 text-white" />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
-            {t('file_a')} <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t('complaint')}</span>
+          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3">
+            {t('file_a')} <span className="bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">{t('complaint')}</span>
           </h1>
-          <p className="text-red-200 text-lg max-w-md mx-auto">
+          <p className="text-red-700 dark:text-red-200 text-lg max-w-md mx-auto">
             {t('report_issues_support')}
           </p>
         </div>
 
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-3">
-          <Badge className="bg-red-500/20 text-red-300 border-red-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/20 dark:border-red-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Shield className="w-4 h-4 mr-2" /> {t('secure_confidential')}
           </Badge>
-          <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/20 dark:border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Clock className="w-4 h-4 mr-2" /> {t('24_48h_response')}
           </Badge>
-          <Badge className="bg-green-500/20 text-green-300 border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <MessageSquare className="w-4 h-4 mr-2" /> {t('fair_resolution')}
           </Badge>
         </div>
 
         {/* Submit Complaint Form */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white p-8">
             <CardTitle className="flex items-center space-x-3 text-2xl">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -271,26 +271,26 @@ const Complaints = () => {
             <form onSubmit={handleSubmitComplaint} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('seller_id')} *</Label>
+                  <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('seller_id')} *</Label>
                   <Input
                     id="sellerId"
                     name="sellerId"
                     value={complaintForm.sellerId}
                     onChange={handleInputChange}
                     placeholder="e.g., USER123456"
-                    className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors"
+                    className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 mb-2 block">{t('buyer_id')} *</Label>
+                  <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('buyer_id')} *</Label>
                   <Input
                     id="buyerId"
                     name="buyerId"
                     value={complaintForm.buyerId}
                     onChange={handleInputChange}
                     placeholder="e.g., USER654321"
-                    className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors"
+                    className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"
                     required
                   />
                 </div>
@@ -298,38 +298,38 @@ const Complaints = () => {
 
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="postId" className="text-sm font-bold text-gray-700 mb-2 block">{t('post_id')} *</Label>
+                  <Label htmlFor="postId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('post_id')} *</Label>
                   <Input
                     id="postId"
                     name="postId"
                     value={complaintForm.postId}
                     onChange={handleInputChange}
                     placeholder="e.g., POST001"
-                    className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors"
+                    className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="secretCode" className="text-sm font-bold text-gray-700 mb-2 block">{t('transaction_code')}</Label>
+                  <Label htmlFor="secretCode" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('transaction_code')}</Label>
                   <Input
                     id="secretCode"
                     name="secretCode"
                     value={complaintForm.secretCode}
                     onChange={handleInputChange}
                     placeholder="e.g., ABC123"
-                    className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors"
+                    className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="complaintType" className="text-sm font-bold text-gray-700 mb-2 block">{t('complaint_type')}</Label>
+                <Label htmlFor="complaintType" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('complaint_type')}</Label>
                 <select
                   id="complaintType"
                   name="complaintType"
                   value={complaintForm.complaintType}
                   onChange={handleInputChange}
-                  className="w-full h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors px-4 bg-white"
+                  className="w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors px-4 bg-white"
                 >
                   <option value="transaction">💳 {t('transaction_issue')}</option>
                   <option value="quality">📦 {t('product_quality')}</option>
@@ -341,7 +341,7 @@ const Complaints = () => {
               </div>
 
               <div>
-                <Label htmlFor="description" className="text-sm font-bold text-gray-700 mb-2 block">{t('description')} *</Label>
+                <Label htmlFor="description" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('description')} *</Label>
                 <Textarea
                   id="description"
                   name="description"
@@ -349,7 +349,7 @@ const Complaints = () => {
                   onChange={handleInputChange}
                   placeholder={t('describe_issue_detail')}
                   rows={5}
-                  className="text-lg rounded-xl border-2 border-gray-200 focus:border-red-500 transition-colors resize-none"
+                  className="text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors resize-none"
                   required
                 />
               </div>
@@ -376,7 +376,7 @@ const Complaints = () => {
         </Card>
 
         {/* My Complaints History */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6">
             <CardTitle className="flex items-center space-x-3 text-xl">
               <FileText className="w-6 h-6" />
@@ -390,27 +390,27 @@ const Complaints = () => {
             {loading ? (
               <div className="text-center py-8">
                 <div className="w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-500">{t('loading_complaints')}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('loading_complaints')}</p>
               </div>
             ) : displayedComplaints.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <AlertCircle className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 text-lg">{t('no_complaints_yet')}</p>
-                <p className="text-gray-400 text-sm mt-1">{t('completed_your_complaints_here')}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">{t('no_complaints_yet')}</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{t('completed_your_complaints_here')}</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {displayedComplaints.map((complaint) => (
                   <div
                     key={complaint.complaint_id || complaint.id || complaint._id}
-                    className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 hover:shadow-lg transition-all"
+                    className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h4 className="font-bold text-gray-900 text-lg">{complaint.type}</h4>
-                        <p className="text-sm text-gray-500 font-mono">ID: {complaint.complaint_id || complaint.id}</p>
+                        <h4 className="font-bold text-gray-900 dark:text-white text-lg">{complaint.type}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">ID: {complaint.complaint_id || complaint.id}</p>
                       </div>
                       <Badge className={getStatusColor(complaint.status)}>
                         <div className="flex items-center gap-1">
@@ -431,7 +431,7 @@ const Complaints = () => {
                       </div>
                     </div>
 
-                    <p className="text-gray-700 text-sm mb-3">{complaint.description}</p>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">{complaint.description}</p>
 
                     {complaint.adminResponse && (
                       <div className="bg-green-50 border border-green-200 rounded-xl p-4">
@@ -450,15 +450,15 @@ const Complaints = () => {
         </Card>
 
         {/* Important Guidelines */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-200 dark:border-yellow-700">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <AlertCircle className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <h3 className="font-bold text-yellow-800 text-lg mb-3">📋 {t('important_guidelines')}</h3>
-                <ul className="space-y-2 text-yellow-700">
+                <h3 className="font-bold text-yellow-800 dark:text-yellow-300 text-lg mb-3">📋 {t('important_guidelines')}</h3>
+                <ul className="space-y-2 text-yellow-700 dark:text-yellow-400">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" />
                     <span>{t('provide_accurate_ids')}</span>

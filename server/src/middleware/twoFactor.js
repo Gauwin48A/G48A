@@ -7,6 +7,8 @@
 
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
+const bcrypt = require('bcrypt');
+const pool = require('../config/db');
 
 const APP_NAME = 'MHub';
 
@@ -67,29 +69,46 @@ function generateBackupCodes(count = 10) {
  */
 const setup2FA = async (req, res) => {
     try {
-        const userId = req.user?.id;
+        const userId = req.user?.id || req.user?.userId;
         const userEmail = req.user?.email;
 
-        if (!userId || !userEmail) {
+        if (!userId) {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
+        // Check if already enabled
+        const existingCheck = await pool.query(
+            'SELECT two_factor_enabled FROM users WHERE user_id = $1',
+            [userId]
+        );
+        if (existingCheck.rows[0]?.two_factor_enabled) {
+            return res.status(400).json({ error: '2FA is already enabled' });
+        }
+
         // Generate secret and QR code
-        const { secret, qrCode, otpauthUrl } = await generate2FASecret(userEmail);
+        const email = userEmail || `user${userId}@mhub.app`;
+        const { secret, qrCode, otpauthUrl } = await generate2FASecret(email);
 
         // Generate backup codes
         const backupCodes = generateBackupCodes(10);
 
-        // TODO: Store secret and backup codes in database
-        // await db.query('UPDATE users SET two_factor_secret = $1, backup_codes = $2 WHERE user_id = $3',
-        //   [secret, JSON.stringify(backupCodes.map(c => bcrypt.hashSync(c, 10))), userId]);
+        // Hash backup codes for storage
+        const hashedBackupCodes = await Promise.all(
+            backupCodes.map(code => bcrypt.hash(code, 10))
+        );
+
+        // Store secret temporarily (pending verification)
+        await pool.query(
+            `UPDATE users SET two_factor_secret = $1, backup_codes = $2 WHERE user_id = $3`,
+            [secret, hashedBackupCodes, userId]
+        );
 
         res.json({
             message: '2FA setup initiated',
             qrCode,
             otpauthUrl,
             backupCodes, // Show once, user must save these
-            instructions: 'Scan the QR code with Google Authenticator, Authy, or similar app'
+            instructions: 'Scan the QR code with Google Authenticator, Authy, or similar app. Then verify with a code.'
         });
 
     } catch (error) {
@@ -104,17 +123,35 @@ const setup2FA = async (req, res) => {
  */
 const verify2FA = async (req, res) => {
     try {
-        const { token, secret } = req.body;
+        const { token } = req.body;
+        const userId = req.user?.id || req.user?.userId || req.body.userId;
 
-        if (!token || !secret) {
-            return res.status(400).json({ error: 'Token and secret required' });
+        if (!token || !userId) {
+            return res.status(400).json({ error: 'Token and user ID required' });
+        }
+
+        // Get secret from database
+        const result = await pool.query(
+            'SELECT two_factor_secret FROM users WHERE user_id = $1',
+            [userId]
+        );
+        const secret = result.rows[0]?.two_factor_secret;
+
+        if (!secret) {
+            return res.status(400).json({ error: '2FA not set up. Call /api/auth/2fa/setup first.' });
         }
 
         const isValid = verify2FAToken(token, secret);
 
         if (isValid) {
-            // TODO: Mark 2FA as enabled in database
-            // await db.query('UPDATE users SET two_factor_enabled = true WHERE user_id = $1', [req.user.id]);
+            // Mark 2FA as enabled in database
+            await pool.query(
+                'UPDATE users SET two_factor_enabled = true WHERE user_id = $1',
+                [userId]
+            );
+
+            // Log the security event
+            console.log(`[2FA] Enabled for user ${userId}`);
 
             res.json({
                 success: true,
@@ -123,7 +160,7 @@ const verify2FA = async (req, res) => {
         } else {
             res.status(400).json({
                 success: false,
-                error: 'Invalid verification code'
+                error: 'Invalid verification code. Please try again.'
             });
         }
 
@@ -140,21 +177,50 @@ const verify2FA = async (req, res) => {
  */
 const challenge2FA = async (req, res) => {
     try {
-        const { userId, token } = req.body;
+        const { userId, token, backupCode } = req.body;
 
-        if (!userId || !token) {
-            return res.status(400).json({ error: 'User ID and token required' });
+        if (!userId || (!token && !backupCode)) {
+            return res.status(400).json({ error: 'User ID and token (or backup code) required' });
         }
 
-        // TODO: Get secret from database
-        // const result = await db.query('SELECT two_factor_secret FROM users WHERE user_id = $1', [userId]);
-        // const secret = result.rows[0]?.two_factor_secret;
+        // Get secret and backup codes from database
+        const result = await pool.query(
+            'SELECT two_factor_secret, two_factor_enabled, backup_codes FROM users WHERE user_id = $1',
+            [userId]
+        );
 
-        // For now, return error as secret retrieval needs DB implementation
-        res.status(501).json({
-            error: '2FA verification requires database integration',
-            note: 'Store two_factor_secret in users table'
-        });
+        const user = result.rows[0];
+        if (!user || !user.two_factor_enabled) {
+            return res.status(400).json({ error: '2FA not enabled for this user' });
+        }
+
+        let isValid = false;
+
+        if (token) {
+            // Verify TOTP token
+            isValid = verify2FAToken(token, user.two_factor_secret);
+        } else if (backupCode && user.backup_codes) {
+            // Verify backup code
+            for (let i = 0; i < user.backup_codes.length; i++) {
+                if (await bcrypt.compare(backupCode, user.backup_codes[i])) {
+                    isValid = true;
+                    // Remove used backup code
+                    const updatedCodes = [...user.backup_codes];
+                    updatedCodes.splice(i, 1);
+                    await pool.query(
+                        'UPDATE users SET backup_codes = $1 WHERE user_id = $2',
+                        [updatedCodes, userId]
+                    );
+                    break;
+                }
+            }
+        }
+
+        if (isValid) {
+            res.json({ success: true, message: '2FA verification successful' });
+        } else {
+            res.status(400).json({ success: false, error: 'Invalid code' });
+        }
 
     } catch (error) {
         console.error('[2FA] Challenge error:', error);
@@ -169,20 +235,38 @@ const challenge2FA = async (req, res) => {
 const disable2FA = async (req, res) => {
     try {
         const { token } = req.body;
-        const userId = req.user?.id;
+        const userId = req.user?.id || req.user?.userId;
 
         if (!userId) {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        // TODO: Verify current 2FA token and disable
-        // const result = await db.query('SELECT two_factor_secret FROM users WHERE user_id = $1', [userId]);
-        // if (verify2FAToken(token, result.rows[0].two_factor_secret)) {
-        //     await db.query('UPDATE users SET two_factor_enabled = false, two_factor_secret = null WHERE user_id = $1', [userId]);
-        // }
+        // Get and verify current 2FA secret
+        const result = await pool.query(
+            'SELECT two_factor_secret, two_factor_enabled FROM users WHERE user_id = $1',
+            [userId]
+        );
+
+        if (!result.rows[0]?.two_factor_enabled) {
+            return res.status(400).json({ error: '2FA is not currently enabled' });
+        }
+
+        // Verify current token before disabling
+        if (!verify2FAToken(token, result.rows[0].two_factor_secret)) {
+            return res.status(400).json({ error: 'Invalid verification code' });
+        }
+
+        // Disable 2FA
+        await pool.query(
+            'UPDATE users SET two_factor_enabled = false, two_factor_secret = null, backup_codes = null WHERE user_id = $1',
+            [userId]
+        );
+
+        console.log(`[2FA] Disabled for user ${userId}`);
 
         res.json({
-            message: '2FA disabled (requires DB integration)'
+            success: true,
+            message: '2FA has been disabled'
         });
 
     } catch (error) {
@@ -195,13 +279,33 @@ const disable2FA = async (req, res) => {
  * Middleware to require 2FA on protected routes
  */
 const require2FA = async (req, res, next) => {
-    // Skip if 2FA not enabled for user
-    // TODO: Check from database
-    // const result = await db.query('SELECT two_factor_enabled FROM users WHERE user_id = $1', [req.user.id]);
-    // if (!result.rows[0]?.two_factor_enabled) return next();
+    try {
+        const userId = req.user?.id || req.user?.userId;
+        if (!userId) return next();
 
-    // For now, just pass through (enable after DB integration)
-    next();
+        // Check if 2FA is enabled for this user
+        const result = await pool.query(
+            'SELECT two_factor_enabled FROM users WHERE user_id = $1',
+            [userId]
+        );
+
+        if (!result.rows[0]?.two_factor_enabled) {
+            return next(); // 2FA not enabled, continue
+        }
+
+        // Check if 2FA was already verified in this session
+        if (req.session?.twoFactorVerified) {
+            return next();
+        }
+
+        return res.status(403).json({
+            error: '2FA verification required',
+            requiresTwoFactor: true
+        });
+    } catch (error) {
+        console.error('[2FA] Middleware error:', error);
+        next(); // Fail open
+    }
 };
 
 module.exports = {

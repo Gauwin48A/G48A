@@ -1,187 +1,254 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Image, Star, Crown } from "lucide-react";
-import { useTranslation } from 'react-i18next';
+/**
+ * TierSelection Page - Protocol: Value Hierarchy
+ * The Defender's Strategy: Make Premium feel like "God Mode"
+ * 
+ * Displays pricing tiers with clear value proposition
+ */
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Check, Star, Shield, Zap, Crown, Clock, TrendingUp, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const TierSelection = () => {
-  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const handleSelectTier = async (tier) => {
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('authToken');
+
+    if (!userId || !token) {
+      navigate('/login', { state: { returnTo: '/tiers' } });
+      return;
+    }
+
+    setLoading(tier);
+
+    try {
+      // In production, this would trigger Razorpay/Stripe payment
+      // For MVP, we simulate success and update DB directly
+      const response = await fetch(`${API_BASE}/api/users/upgrade-tier`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include',
+        body: JSON.stringify({ tier })
+      });
+
+      if (response.ok) {
+        setSuccess(tier);
+        setTimeout(() => {
+          navigate('/add-post');
+        }, 1500);
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to upgrade tier');
+      }
+    } catch (err) {
+      console.error('Tier upgrade error:', err);
+      alert('Failed to upgrade. Please try again.');
+    } finally {
+      setLoading(null);
+    }
+  };
 
   const tiers = [
     {
-      id: 'basic',
-      name: t('basic') || 'Basic',
-      price: t('free') || 'Free',
-      images: 1,
-      features: [
-        t('one_image') || '1 High-quality image',
-        t('basic_listing') || 'Basic listing details',
-        t('fifteen_days') || '15 days visibility',
-        t('standard_support') || 'Standard support'
-      ],
-      icon: Image,
-      color: '#96C2DB',
-      popular: false
-    },
-    {
-      id: 'silver',
-      name: t('silver') || 'Silver',
+      key: 'basic',
+      name: 'Basic',
+      subtitle: 'Pay-As-You-Go',
       price: '₹49',
-      images: 3,
+      period: '/post',
+      icon: Clock,
+      color: 'bg-gray-100 border-gray-200',
+      buttonClass: 'bg-gray-600 hover:bg-gray-700',
       features: [
-        t('three_images') || 'Up to 3 images',
-        t('enhanced_listing') || 'Enhanced listing details',
-        t('thirty_days') || '30 days visibility',
-        t('priority_support') || 'Priority support',
-        t('featured_category') || 'Featured in category'
-      ],
-      icon: Star,
-      color: '#C5ADC5',
-      popular: true
+        { text: '1 Single Post', included: true },
+        { text: '15 Days Visibility', included: true },
+        { text: 'Standard Reach', included: true },
+        { text: 'Priority Support', included: false },
+        { text: 'Verified Badge', included: false }
+      ]
     },
     {
-      id: 'premium',
-      name: t('premium') || 'Premium',
-      price: '₹99',
-      images: 10,
+      key: 'silver',
+      name: 'Silver Seller',
+      subtitle: 'Semi-Pro',
+      price: '₹499',
+      period: '/6 months',
+      icon: Shield,
+      color: 'bg-blue-50 border-blue-200',
+      buttonClass: 'bg-blue-600 hover:bg-blue-700',
+      popular: true,
       features: [
-        t('ten_images') || 'Up to 10 images',
-        t('complete_listing') || 'Complete listing details',
-        t('fortyfive_days') || '45 days visibility',
-        t('premium_support') || 'Premium support',
-        t('top_featured') || 'Top featured placement',
-        t('social_promotion') || 'Social media promotion'
-      ],
+        { text: '1 Post Per Day', included: true },
+        { text: '25 Days Visibility', included: true },
+        { text: 'Medium Priority Reach', included: true },
+        { text: 'Verified Badge', included: true },
+        { text: 'Priority Support', included: false }
+      ]
+    },
+    {
+      key: 'premium',
+      name: 'Premium',
+      subtitle: 'God Mode 🔥',
+      price: '₹999',
+      period: '/year',
       icon: Crown,
-      color: '#FFD700',
-      popular: false
+      color: 'bg-gradient-to-br from-gray-900 to-gray-800 border-yellow-500',
+      textColor: 'text-white',
+      buttonClass: 'bg-yellow-500 hover:bg-yellow-400 text-black',
+      featured: true,
+      features: [
+        { text: 'Unlimited Posts', included: true },
+        { text: '45 Days Visibility', included: true },
+        { text: 'Top of Feed Priority', included: true },
+        { text: 'Verified Badge + Crown', included: true },
+        { text: 'Premium Support 24/7', included: true }
+      ]
     }
   ];
 
   return (
-    <div className="min-h-screen py-8 bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <Link to="/all-posts" className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('back')}
-          </Link>
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4 text-gray-800 dark:text-white">
-              {t('choose_tier') || 'Choose Your Listing Tier'}
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              {t('tier_description') || 'Select the perfect plan for your mobile phone listing.'}
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <div className="flex justify-center mb-4">
+          <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl">
+            <TrendingUp className="w-8 h-8 text-white" />
           </div>
         </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+          Choose Your Selling Power
+        </h1>
+        <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          Unlock higher visibility and sell <span className="font-bold text-green-600">3x faster</span> with Premium.
+          More visibility = More buyers = Faster sales.
+        </p>
+      </div>
 
-        {/* Tier Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {tiers.map((tier) => {
-            const IconComponent = tier.icon;
-            return (
-              <Card
-                key={tier.id}
-                className={`relative bg-white dark:bg-gray-800 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 border-0 rounded-3xl overflow-hidden ${tier.popular ? 'ring-4 ring-opacity-50' : ''
-                  }`}
-                style={tier.popular ? { ringColor: tier.color } : {}}
-              >
-                {tier.popular && (
-                  <div
-                    className="absolute top-0 left-0 right-0 text-white text-center py-2 text-sm font-semibold"
-                    style={{ backgroundColor: tier.color }}
-                  >
-                    {t('most_popular') || 'MOST POPULAR'}
+      {/* Success Banner */}
+      {success && (
+        <div className="max-w-md mx-auto mb-8 p-4 bg-green-100 dark:bg-green-900/50 border border-green-300 rounded-xl text-center">
+          <Sparkles className="w-8 h-8 text-green-600 mx-auto mb-2" />
+          <p className="text-green-800 dark:text-green-300 font-semibold">
+            🎉 {success.toUpperCase()} plan activated! Redirecting...
+          </p>
+        </div>
+      )}
+
+      {/* Tier Cards */}
+      <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-3 items-stretch">
+        {tiers.map((tier) => {
+          const Icon = tier.icon;
+          const isLoading = loading === tier.key;
+
+          return (
+            <Card
+              key={tier.key}
+              className={`relative overflow-hidden rounded-2xl shadow-xl border-2 transition-all duration-300 hover:shadow-2xl ${tier.color} ${tier.featured ? 'lg:scale-105 lg:-mt-4 lg:mb-4' : ''
+                } ${tier.textColor || ''}`}
+            >
+              {/* Popular Badge */}
+              {tier.popular && (
+                <div className="absolute top-0 right-0">
+                  <Badge className="bg-blue-600 text-white rounded-none rounded-bl-xl px-4 py-1 font-bold">
+                    Popular
+                  </Badge>
+                </div>
+              )}
+
+              {/* Featured Badge */}
+              {tier.featured && (
+                <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-center py-1 font-bold text-sm">
+                  ⭐ BEST VALUE
+                </div>
+              )}
+
+              <CardHeader className={tier.featured ? 'pt-10' : ''}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-xl ${tier.featured ? 'bg-yellow-400/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                    <Icon className={`w-6 h-6 ${tier.featured ? 'text-yellow-400' : 'text-blue-600'}`} />
                   </div>
-                )}
-
-                <CardHeader className={`text-center ${tier.popular ? 'pt-12' : 'pt-8'} pb-4`}>
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
-                    style={{ backgroundColor: tier.color }}
-                  >
-                    <IconComponent className="w-10 h-10 text-white" />
+                  <div>
+                    <CardTitle className={`text-xl font-bold ${tier.textColor || 'text-gray-900'}`}>
+                      {tier.name}
+                    </CardTitle>
+                    <p className={`text-sm ${tier.featured ? 'text-yellow-400' : 'text-gray-500'}`}>
+                      {tier.subtitle}
+                    </p>
                   </div>
+                </div>
 
-                  <CardTitle className="text-3xl font-bold text-gray-800 dark:text-white">
-                    {tier.name}
-                  </CardTitle>
-
-                  <div className="text-4xl font-bold mb-2" style={{ color: tier.color }}>
+                {/* Price */}
+                <div className="mt-4 flex items-baseline">
+                  <span className={`text-4xl font-extrabold tracking-tight ${tier.textColor || 'text-gray-900'}`}>
                     {tier.price}
-                  </div>
-
-                  <CardDescription className="text-lg dark:text-gray-400">
-                    {t('upload_up_to') || 'Upload up to'} <strong>{tier.images} {t('image')}{tier.images > 1 ? 's' : ''}</strong>
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="px-8 pb-8">
-                  <ul className="space-y-4 mb-8">
-                    {tier.features.map((feature, index) => (
-                      <li key={index} className="flex items-center space-x-3">
-                        <div
-                          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: tier.color }}
-                        >
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link to={`/categories?tier=${tier.id}`} className="block">
-                    <Button
-                      className={`w-full h-12 text-lg font-semibold rounded-xl transition-all ${tier.popular
-                          ? 'text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-                          : 'text-white hover:opacity-90'
-                        }`}
-                      style={{ backgroundColor: tier.color }}
-                    >
-                      {t('choose')} {tier.name}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Additional Info */}
-        <div className="mt-12 text-center">
-          <Card className="bg-white dark:bg-gray-800 border-0 rounded-2xl shadow-lg max-w-2xl mx-auto">
-            <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
-                {t('why_higher_tiers') || 'Why Choose Higher Tiers?'}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <div>
-                  <h4 className="font-semibold mb-2" style={{ color: '#96C2DB' }}>{t('more_visibility') || 'More Visibility'}</h4>
-                  <p className="text-gray-600 dark:text-gray-400">{t('visibility_desc') || 'Higher tier listings appear first in search results.'}</p>
+                  </span>
+                  <span className={`ml-1 text-lg ${tier.featured ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {tier.period}
+                  </span>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2" style={{ color: '#96C2DB' }}>{t('better_presentation') || 'Better Presentation'}</h4>
-                  <p className="text-gray-600 dark:text-gray-400">{t('presentation_desc') || 'Multiple images help buyers see your phone better.'}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2" style={{ color: '#96C2DB' }}>{t('faster_sales') || 'Faster Sales'}</h4>
-                  <p className="text-gray-600 dark:text-gray-400">{t('sales_desc') || 'Premium listings typically sell 3x faster.'}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2" style={{ color: '#96C2DB' }}>{t('support_priority') || 'Support Priority'}</h4>
-                  <p className="text-gray-600 dark:text-gray-400">{t('support_desc') || 'Get faster response times for any questions.'}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardHeader>
+
+              <CardContent>
+                {/* Features List */}
+                <ul className="space-y-3 mb-8">
+                  {tier.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-center">
+                      {feature.included ? (
+                        <Check className={`w-5 h-5 mr-3 flex-shrink-0 ${tier.featured ? 'text-yellow-400' : 'text-green-500'}`} />
+                      ) : (
+                        <span className="w-5 h-5 mr-3 flex-shrink-0 text-gray-300">—</span>
+                      )}
+                      <span className={`${feature.included ? (tier.textColor || 'text-gray-700') : 'text-gray-400 line-through'}`}>
+                        {feature.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA Button */}
+                <Button
+                  onClick={() => handleSelectTier(tier.key)}
+                  disabled={isLoading || success}
+                  className={`w-full py-6 text-lg font-bold rounded-xl transition-all ${tier.buttonClass}`}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : tier.key === 'basic' ? (
+                    'Buy 1 Post Credit'
+                  ) : tier.key === 'silver' ? (
+                    'Get Silver Access'
+                  ) : (
+                    '🚀 Go Premium'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Trust Indicators */}
+      <div className="max-w-4xl mx-auto mt-16 text-center">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
+          🔒 Secure payments • 📞 24/7 Support • ⚡ Instant activation
+        </p>
       </div>
     </div>
   );

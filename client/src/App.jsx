@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import GreenNavbar from './components/GreenNavbar.jsx';
+import LocationGate from './components/LocationGate.jsx';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import { socket } from './lib/socket';
@@ -8,6 +9,7 @@ import { FilterProvider } from './context/FilterContext.jsx';
 import { LocationProvider, useLocation } from './context/LocationContext.jsx';
 import LanguageSelector from './components/LanguageSelector';
 import { useTranslation } from 'react-i18next';
+import { AuthProvider } from './context/AuthContext';
 
 
 // Lazy load pages
@@ -31,6 +33,7 @@ const Complaints = lazy(() => import('./pages/Complaints.jsx'));
 const Feedback = lazy(() => import('./pages/Feedback.jsx'));
 const MyHome = lazy(() => import('./pages/MyHome.jsx'));
 const Home = lazy(() => import('./pages/Home.jsx'));
+const ForYou = lazy(() => import('./pages/ForYou.jsx'));
 const BoughtPosts = lazy(() => import('./pages/BoughtPosts.jsx'));
 const SoldPosts = lazy(() => import('./pages/SoldPosts.jsx'));
 const PostDetail = lazy(() => import('./pages/PostDetail.jsx'));
@@ -48,6 +51,9 @@ const Verification = lazy(() => import('./pages/Verification.jsx'));
 const NearbyPosts = lazy(() => import('./pages/NearbyPosts.jsx'));
 const Chat = lazy(() => import('./pages/Chat.jsx'));
 const SearchPage = lazy(() => import('./pages/SearchPage.jsx'));
+const SecuritySettings = lazy(() => import('./pages/SecuritySettings.jsx'));
+const KycVerification = lazy(() => import('./pages/KYC/KycVerification.jsx'));
+const PaymentPage = lazy(() => import('./pages/Payments/PaymentPage.jsx'));
 
 /**
  * Location Banner - Shows when location is not granted
@@ -108,6 +114,26 @@ function AppContent() {
   const { t } = useTranslation();
   const { loading, permissionGranted, skipForNow, city, userSkipped, enableLocation } = useLocation();
   const { toast } = useToast();
+
+  // Initialize security and location sync on mount
+  useEffect(() => {
+    // Initialize security measures (domain lock, anti-tamper)
+    import('@/utils/security').then(({ initializeSecurity }) => {
+      initializeSecurity();
+    }).catch(() => {
+      // Security module not critical, continue
+    });
+
+    // Smart location sync (only if user moved > 500m)
+    const token = localStorage.getItem('token');
+    if (token) {
+      import('@/services/locationService').then(({ checkAndSyncLocation }) => {
+        checkAndSyncLocation();
+      }).catch(() => {
+        // Location sync not critical
+      });
+    }
+  }, []);
 
   // Socket listener for notifications
   useEffect(() => {
@@ -174,10 +200,14 @@ function AppContent() {
                 <Route path="/post/:id" element={<PostDetail />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/security" element={<SecuritySettings />} />
                 <Route path="/add-post" element={<AddPost />} />
                 <Route path="/tier-selection" element={<TierSelection />} />
+                <Route path="/tiers" element={<TierSelection />} />
+                <Route path="/pricing" element={<TierSelection />} />
                 <Route path="/my-home" element={<MyHome />} />
                 <Route path="/home" element={<Home />} />
+                <Route path="/for-you" element={<ForYou />} />
                 <Route path="/bought-posts" element={<BoughtPosts />} />
                 <Route path="/sold-posts" element={<SoldPosts />} />
                 <Route path="/buyer-view" element={<BuyerView />} />
@@ -204,6 +234,8 @@ function AppContent() {
                 <Route path="/nearby" element={<NearbyPosts />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/kyc" element={<KycVerification />} />
+                <Route path="/payment" element={<PaymentPage />} />
                 <Route path="*" element={<Navigate to="/all-posts" replace />} />
               </Routes>
             </Suspense>
@@ -219,7 +251,12 @@ function App() {
   return (
     <LocationProvider>
       <FilterProvider>
-        <AppContent />
+        <AuthProvider>
+          {/* MANDATORY: Location must be granted to use app */}
+          <LocationGate>
+            <AppContent />
+          </LocationGate>
+        </AuthProvider>
       </FilterProvider>
     </LocationProvider>
   );

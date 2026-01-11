@@ -118,7 +118,7 @@ exports.getDashboard = async (req, res) => {
       name: seller.username || 'Seller',
       sales: parseInt(seller.sales_count || 0),
       coins: parseInt(seller.sales_count || 0) * 10,
-      isCurrentUser: parseInt(seller.user_id) === parseInt(userId)
+      isCurrentUser: seller.user_id === userId
     }));
 
     res.json({

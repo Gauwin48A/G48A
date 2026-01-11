@@ -1,12 +1,10 @@
 const express = require("express");
 const cors = require("cors");
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
 const dotenv = require("dotenv");
 const compression = require("compression");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
-const { sanitizeInput } = require('./middleware/security');
+const { apiLimiter, sanitizeInput, securityHeaders } = require('./middleware/security');
 
 dotenv.config();
 
@@ -47,6 +45,10 @@ const http = require('http');
 const { Server } = require("socket.io");
 
 const app = express();
+
+// Enable extended query string parsing for array parameters (e.g., ?category[]=X&category[]=Y)
+app.set('query parser', 'extended');
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -85,23 +87,7 @@ app.set('io', io);
 app.use(compression());
 
 // 2. HELMET with Content Security Policy (CSP)
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.google.com", "https://www.gstatic.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "http://localhost:*", "ws://localhost:*", "https://api.haveibeenpwned.com"],
-      frameSrc: ["'self'", "https://www.google.com"], // For reCAPTCHA
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
-    }
-  },
-  crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+app.use(securityHeaders);
 
 // 2.1 HIDE TECH STACK - Security Best Practice
 app.disable('x-powered-by');
@@ -130,41 +116,40 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 
-// 4. COOKIE PARSER - Required for HttpOnly JWT cookies
+// 4. RATE LIMITING (DDoS Protection)
+app.use(apiLimiter);
+
+// 5. COOKIE PARSER - Required for HttpOnly JWT cookies
 app.use(cookieParser());
 
-// 5. BODY PARSERS with STRICT size limits (Audit Fix: Prevent DoS)
-app.use(express.json({ limit: '10kb' })); // Sufficient for API calls
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+// 6. BODY PARSERS with STRICT size limits (Audit Fix: Prevent DoS)
+app.use(express.json({ limit: '50kb' })); // Adjusted for slightly larger payloads if needed
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
-// 6. HPP - Prevent HTTP Parameter Pollution
+// 7. HPP - Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// 7. Custom Input Sanitization (Defense in depth - includes XSS prevention)
+// 8. Custom Input Sanitization (Defense in depth - includes XSS prevention)
 app.use(sanitizeInput);
 
-// 8. RATE LIMITING (Audit Fix: Split Limits)
-// General API: 300 req/15min for browsing
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20000, // limit each IP to 20000 requests per windowMs tracking
-  message: { error: 'Too many requests. Please slow down.' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
+console.log('🛡️ Operation Polish: Security & Performance middleware loaded');
 
-// Auth endpoints: 100 req/hour (stricter)
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 100,
-  message: { error: 'Too many login attempts. Please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-app.use('/api/', generalLimiter);
 
 console.log('🛡️ Operation Polish: Security & Performance middleware loaded');
+
+// 9. PRESENCE TRACKING: Throttled heartbeat for "Last Seen"
+// Only updates DB every 5 minutes per user - saves 99.9% of writes
+const { trackActivity } = require('./middleware/activityTracker.js');
+app.use('/api', trackActivity);
+
+// 10. HEALTH CHECK (For Production Monitoring)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // GDPR Routes (Data Export & Deletion)
 const gdprRoutes = require("./routes/gdpr.js");
@@ -200,6 +185,38 @@ app.use('/api/tiers', tiersRoutes);
 app.use('/api/brands', brandsRoutes);
 app.use('/api/push', pushNotificationsRoutes);
 app.use('/api/nearby', nearbyRoutes);
+// Blue Team Gap 1: Dual-Handshake Sale Logic
+const saleRoutes = require('./routes/sale.js');
+app.use('/api/sale', saleRoutes);
+
+// Blue Team Gap 3: Initialize CRON Jobs
+const { initCronJobs } = require('./jobs/cronJobs.js');
+initCronJobs();
+
+// Defender Prompt 5: Translation Worker
+const translationRoutes = require('./routes/translation.js');
+app.use('/api/translation', translationRoutes);
+
+// Protocol Native Hybrid: Contacts Sync
+const contactsRoutes = require('./routes/contacts.js');
+app.use('/api/contacts', contactsRoutes);
+
+// Two-Factor Authentication (2FA)
+const twoFactorRoutes = require('./routes/twoFactor.js');
+app.use('/api/auth/2fa', twoFactorRoutes);
+
+// PROTOCOL: VALUE HIERARCHY - Zero-Cost Payment System
+const paymentRoutes = require('./routes/payments.js');
+app.use('/api/payments', paymentRoutes);
+
+// Admin Routes (Verification, Payments, Dashboard)
+const adminRoutes = require('./routes/admin.js');
+app.use('/api/admin', adminRoutes);
+
+// Users Routes (Profile management)
+const usersRoutes = require('./routes/users.js');
+app.use('/api/users', usersRoutes);
+
 
 // ============================================
 // STATIC FILE CACHING (CDN Optimization)
@@ -260,17 +277,48 @@ app.use((req, res) => res.status(404).json({ error: 'Not Found' }));
 
 const logger = require('./config/logger');
 
-// Global Error Handler - SECURITY: Never expose internal errors
-app.use((err, req, res, next) => {
-  logger.error("[SECURITY] Server Error: " + err.message);
-  logger.error(err);
-  res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
+// ============================================
+// GLOBAL ERROR HANDLING (The Safety Net)
+// ============================================
+const errorHandler = require('./middleware/errorHandler');
+
+// 404 Handler for unknown routes
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  error.statusCode = 404;
+  next(error);
 });
 
+// GLOBAL ERROR HANDLER
+app.use(errorHandler);
+
+// ============================================
+// SERVER STARTUP
+// ============================================
 const PORT = process.env.PORT || 5000;
 const serverInstance = server.listen(PORT, () => {
   logger.info(`✅ Server running on port ${PORT}`);
   logger.info(`🚀 System Online: Enforced Architecture`);
+
+  // PROTOCOL: VALUE HIERARCHY - Check expiring subscriptions on startup
+  try {
+    const { checkExpiringSubscriptions } = require('./services/subscriptionNotifications');
+
+    // Run once on startup (after 5 second delay to let DB connect)
+    setTimeout(async () => {
+      logger.info('🔔 Checking expiring subscriptions...');
+      await checkExpiringSubscriptions();
+      logger.info(`🔔 Subscription check complete`);
+    }, 5000);
+
+    // Schedule to run every 24 hours
+    setInterval(async () => {
+      logger.info('🔔 Running daily subscription expiry check...');
+      await checkExpiringSubscriptions();
+    }, 24 * 60 * 60 * 1000); // 24 hours
+  } catch (e) {
+    logger.warn('Subscription service not loaded:', e.message);
+  }
 });
 
 // ============================================

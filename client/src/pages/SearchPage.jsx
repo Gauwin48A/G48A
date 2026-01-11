@@ -23,6 +23,10 @@ const SearchPage = () => {
     const [recentSearches, setRecentSearches] = useState([]);
     const inputRef = useRef(null);
 
+    // Get context from URL params - determines where to navigate after search
+    const searchContext = searchParams.get('context') || 'all-posts';
+    const isForYouContext = searchContext === 'for-you';
+
     // Trending searches (can be fetched from API later)
     const trendingSearches = [
         'iPhone 15',
@@ -59,13 +63,22 @@ const SearchPage = () => {
         localStorage.setItem('recentSearches', JSON.stringify(updated));
     };
 
+    // Get the target URL based on context
+    const getTargetUrl = (query, category = null) => {
+        const baseUrl = isForYouContext ? '/for-you' : '/all-posts';
+        const params = new URLSearchParams();
+        if (query) params.set('search', query);
+        if (category) params.set('category', category);
+        return `${baseUrl}?${params.toString()}`;
+    };
+
     // Handle search submit
     const handleSearch = (e) => {
         e?.preventDefault();
         if (searchQuery.trim()) {
             saveRecentSearch(searchQuery.trim());
             setFilters(prev => ({ ...prev, search: searchQuery.trim() }));
-            navigate(`/all-posts?search=${encodeURIComponent(searchQuery.trim())}`);
+            navigate(getTargetUrl(searchQuery.trim()));
         }
     };
 
@@ -74,7 +87,7 @@ const SearchPage = () => {
         setSearchQuery(query);
         saveRecentSearch(query);
         setFilters(prev => ({ ...prev, search: query }));
-        navigate(`/all-posts?search=${encodeURIComponent(query)}`);
+        navigate(getTargetUrl(query));
     };
 
     // Clear all recent searches
@@ -113,7 +126,9 @@ const SearchPage = () => {
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder={t('search_placeholder') || 'Search for products, brands and more'}
+                                placeholder={isForYouContext
+                                    ? (t('search_for_you') || 'Search in For You...')
+                                    : (t('search_placeholder') || 'Search for products, brands and more')}
                                 className="w-full h-12 pl-4 pr-12 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition outline-none text-base"
                             />
                             {searchQuery && (
@@ -229,7 +244,7 @@ const SearchPage = () => {
                                 key={index}
                                 onClick={() => {
                                     setFilters(prev => ({ ...prev, category: cat.value }));
-                                    navigate(`/all-posts?category=${encodeURIComponent(cat.value)}`);
+                                    navigate(getTargetUrl(null, cat.value));
                                 }}
                                 className="flex flex-col items-center gap-2 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                             >

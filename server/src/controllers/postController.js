@@ -81,9 +81,11 @@ exports.getAllPosts = async (req, res) => {
 
     // Build dynamic query with JOINs for user info, category, and images
     // Use subqueries for verification since user_verifications uses verification_type column
+    // PROTOCOL: VALUE HIERARCHY - Include tier_priority for Premium post prioritization
     let query = `
       SELECT 
         p.*,
+        COALESCE(p.tier_priority, 1) as tier_priority,
         COALESCE(p.views_count, p.views, 0) as views,
         COALESCE(p.views_count, 0) as views_count,
         COALESCE(p.shares, 0) as shares,
@@ -103,6 +105,7 @@ exports.getAllPosts = async (req, res) => {
       LEFT JOIN profiles pr ON p.user_id = pr.user_id
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.status = 'active'
+        AND (p.expires_at IS NULL OR p.expires_at > NOW())
     `;
 
 
@@ -121,9 +124,9 @@ exports.getAllPosts = async (req, res) => {
       query += ` AND p.location ILIKE $${params.length + 1}`;
       params.push(`%${location}%`);
     }
-    if (author && !isNaN(parseInt(author))) {
+    if (author) {
       query += ` AND p.user_id = $${params.length + 1}`;
-      params.push(parseInt(author));
+      params.push(author); // UUID is string
     }
     if (startDate) {
       query += ` AND p.created_at >= $${params.length + 1}`;
@@ -142,11 +145,26 @@ exports.getAllPosts = async (req, res) => {
       params.push(maxPrice);
     }
 
-    // Dynamic sorting
-    const allowedSortFields = ['created_at', 'price', 'views_count'];
-    const safeSortBy = allowedSortFields.includes(sortBy) ? `p.${sortBy}` : 'p.created_at';
-    const safeSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-    query += ` ORDER BY ${safeSortBy} ${safeSortOrder} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    // Dynamic sorting - includes shuffle option and TIER PRIORITY for Protocol: Value Hierarchy
+    const allowedSortFields = ['created_at', 'price', 'views_count', 'shuffle', 'tier_priority'];
+    let sortClause;
+
+    if (sortBy === 'shuffle' || sortBy === 'random') {
+      // Time-seeded random: changes every 30 seconds for fresh content
+      // Premium posts still get priority even in shuffle mode
+      const timeSeed = Math.floor(Date.now() / 30000); // Changes every 30 seconds
+      sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, (p.post_id * ${timeSeed % 1000}) % 1000, p.created_at DESC`;
+    } else if (sortBy === 'tier_priority' || sortBy === 'priority') {
+      // Explicit tier priority sorting (Protocol: Value Hierarchy)
+      sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, p.created_at DESC`;
+    } else {
+      // Default sorting - always include tier_priority as secondary sort
+      const safeSortBy = ['created_at', 'price', 'views_count'].includes(sortBy) ? `p.${sortBy}` : 'p.created_at';
+      const safeSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+      sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, ${safeSortBy} ${safeSortOrder}`;
+    }
+
+    query += ` ${sortClause} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
 
     const result = await pool.query(query, params);
@@ -155,6 +173,7 @@ exports.getAllPosts = async (req, res) => {
     const posts = result.rows.map(post => ({
       ...post,
       id: post.post_id,
+      tier_priority: post.tier_priority || 1,
       category: post.category_name || 'General',
       user: {
         name: post.user_name || post.username || 'Unknown',
@@ -176,7 +195,7 @@ exports.getAllPosts = async (req, res) => {
     if (search) { countQuery += ` AND (p.title ILIKE $${countParams.length + 1} OR p.description ILIKE $${countParams.length + 1} OR p.location ILIKE $${countParams.length + 1} OR c.name ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
     if (category) { countQuery += ` AND p.category_id = $${countParams.length + 1}`; countParams.push(category); }
     if (location) { countQuery += ` AND p.location ILIKE $${countParams.length + 1}`; countParams.push(`%${location}%`); }
-    if (author && !isNaN(parseInt(author))) { countQuery += ` AND p.user_id = $${countParams.length + 1}`; countParams.push(parseInt(author)); }
+    if (author) { countQuery += ` AND p.user_id = $${countParams.length + 1}`; countParams.push(author); }
     if (startDate) { countQuery += ` AND p.created_at >= $${countParams.length + 1}`; countParams.push(startDate); }
     if (endDate) { countQuery += ` AND p.created_at <= $${countParams.length + 1}`; countParams.push(endDate); }
     if (minPrice) { countQuery += ` AND p.price >= $${countParams.length + 1}`; countParams.push(minPrice); }
@@ -193,54 +212,151 @@ exports.getAllPosts = async (req, res) => {
 
 
 // Post creation - supports regular posts with images OR feed posts (text-only)
+// PROTOCOL: VALUE HIERARCHY - Tier Enforcement (The Defender)
+// TRANSACTIONAL INTEGRITY: ZERO TRUST
 exports.createPost = async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN'); // START TRANSACTION
+
     // SECURITY FIX: Get user_id from authenticated token, NOT from request body
     const user_id = req.user?.id || req.user?.userId || req.body.user_id;
-    const { category_id, title, description, price, type, location } = req.body;
+
+    // Use req.body directly but sanitize/validate
+    const { category_id, title, description, price, type, location, is_flash_sale } = req.body;
     const images = req.files?.images || [];
+    const audioFile = req.files?.audio?.[0] || req.file;
 
     if (!user_id) {
-      return res.status(401).json({ error: 'User ID required' });
+      throw new Error('User ID required');
     }
 
-    // Insert the post directly (no stored procedure needed)
-    // Images are stored as JSONB array strings
-    const imagesJson = JSON.stringify(images.map(img => img.path || img.filename));
+    // ============================================
+    // TIER ENFORCEMENT - Protocol: Value Hierarchy
+    // ============================================
+    const { getTierRules } = require('../config/tierRules');
 
-    const insertResult = await pool.query(
-      `INSERT INTO posts (user_id, category_id, title, description, price, location, post_type, images, status, created_at, views_count, likes, shares)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::JSONB, 'active', NOW(), 0, 0, 0)
+    // 1. GET USER TIER DETAILS (Within Transaction)
+    const userResult = await client.query(
+      `SELECT tier, subscription_expiry, post_credits FROM users WHERE user_id = $1 FOR UPDATE`,
+      [user_id]
+    );
+
+    const user = userResult.rows[0];
+    if (!user) throw new Error('User not found');
+
+    const tier = user.tier || 'basic';
+    const rules = getTierRules(tier);
+
+    // 2. CHECK SUBSCRIPTION VALIDITY
+    if (tier !== 'basic' && user.subscription_expiry) {
+      if (new Date(user.subscription_expiry) < new Date()) {
+        throw new Error('Subscription expired. Please renew.');
+      }
+    }
+
+    // 3. CHECK DAILY LIMIT (Silver)
+    if (tier === 'silver') {
+      const today = new Date().toISOString().split('T')[0];
+      const dailyCountResult = await client.query(
+        `SELECT COUNT(*) as count FROM posts 
+         WHERE user_id = $1 AND created_at::date = $2::date`,
+        [user_id, today]
+      );
+
+      const todayCount = parseInt(dailyCountResult.rows[0]?.count || 0);
+      if (todayCount >= rules.dailyLimit) {
+        throw new Error(`Daily limit reached (${rules.dailyLimit} per day). Upgrade to Premium.`);
+      }
+    }
+
+    // 4. CHECK CREDITS (Basic)
+    if (tier === 'basic') {
+      const credits = user.post_credits || 0;
+      if (credits < 1) {
+        throw new Error('No post credits remaining. Buy more credits or upgrade.');
+      }
+    }
+
+    // 5. CALCULATE EXPIRY
+    let expiresAt;
+    if (is_flash_sale === 'true' || is_flash_sale === true) {
+      expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    } else {
+      expiresAt = rules.getExpiry();
+    }
+
+    // ============================================
+    // CREATE THE POST
+    // ============================================
+    const imagesJson = JSON.stringify(images.map(img => img.path || img.filename));
+    const audioUrl = audioFile ? (audioFile.path || audioFile.filename || `/uploads/${audioFile.filename}`) : null;
+
+    const insertResult = await client.query(
+      `INSERT INTO posts (user_id, category_id, title, description, price, location, post_type, images, status, created_at, views_count, likes, shares, audio_url, is_flash_sale, expires_at, tier_priority)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::JSONB, 'active', NOW(), 0, 0, 0, $9, $10, $11, $12)
        RETURNING post_id`,
       [
         user_id,
-        category_id || 1, // Default category
+        category_id || 1,
         title || 'Update',
         description || '',
         price || 0,
         location || null,
         type || 'sale',
-        imagesJson
+        imagesJson,
+        audioUrl,
+        is_flash_sale === 'true' || is_flash_sale === true,
+        expiresAt,
+        rules.priority
       ]
     );
 
     const post_id = insertResult.rows[0]?.post_id;
-    if (!post_id) {
-      logError('Post creation failed', { body: req.body });
-      return res.status(400).json({ error: 'Post creation failed' });
+
+    // TIER ENFORCEMENT: Deduct credit for Basic tier
+    if (tier === 'basic') {
+      await client.query(
+        `UPDATE users SET post_credits = post_credits - 1 WHERE user_id = $1`,
+        [user_id]
+      );
     }
 
-    // Fetch the created post for response
-    const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [post_id]);
-    // Mock imagesRes for consistency if needed, or just return post
+    // Translation queue (Outside main logic, can fail safely but included in Tx just in case)
+    if (title || description) {
+      const textToTranslate = `${title || ''}\n\n${description || ''}`.trim();
+      await client.query(
+        `INSERT INTO translation_queue (post_id, source_text, source_lang, target_lang, status)
+             VALUES ($1, $2, 'en', 'hi', 'pending')
+             ON CONFLICT DO NOTHING`,
+        [post_id, textToTranslate]
+      );
+    }
 
-    logInfo('Post created successfully', { post_id, user_id, type: type || 'sale' });
-    res.status(201).json({ post: postRes.rows[0], images: postRes.rows[0].images });
+    await client.query('COMMIT'); // COMMIT TRANSACTION
+
+    // Fetch final post for response (Read committed)
+    const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [post_id]);
+
+    logInfo('Post created successfully', { post_id, user_id, tier });
+
+    res.status(201).json({
+      post: postRes.rows[0],
+      images: postRes.rows[0].images,
+      tier: tier,
+      expiresAt: expiresAt
+    });
+
   } catch (err) {
-    logError('Error creating post:', err);
+    await client.query('ROLLBACK'); // ROLLBACK ON ERROR
+    logError('Error creating post (Transaction Rolled Back):', err);
     res.status(400).json({ error: err.message });
+  } finally {
+    client.release();
   }
 };
+
 
 // Get post by ID
 exports.getPostById = async (req, res) => {
@@ -518,6 +634,254 @@ exports.getGuaranteedReachPosts = async (req, res) => {
   } catch (err) {
     logError('[GuaranteedReach] Error:', err.message);
     res.status(500).json({ error: err.message, posts: [] });
+  }
+};
+
+// ============================================
+// SIMILAR PRODUCTS ENGINE
+// Returns products matching category + price ±20%
+// ============================================
+exports.getSimilarPosts = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const limit = parseInt(req.query.limit) || 5;
+
+    if (!postId) {
+      return res.status(400).json({ error: 'Post ID required' });
+    }
+
+    // Get the reference post
+    const refPost = await pool.query(
+      'SELECT category_id, price FROM posts WHERE post_id = $1',
+      [postId]
+    );
+
+    if (refPost.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const { category_id, price } = refPost.rows[0];
+    const priceMin = price * 0.8;  // -20%
+    const priceMax = price * 1.2;  // +20%
+
+    // Find similar posts
+    const result = await pool.query(`
+      SELECT 
+        p.post_id, p.title, p.price, p.images, p.location, p.created_at,
+        u.name as seller_name, u.avatar_url
+      FROM posts p
+      LEFT JOIN users u ON p.user_id = u.user_id
+      WHERE p.category_id = $1
+        AND p.price BETWEEN $2 AND $3
+        AND p.post_id != $4
+        AND p.status = 'active'
+      ORDER BY 
+        ABS(p.price - $5) ASC,  -- Closest price first
+        p.created_at DESC
+      LIMIT $6
+    `, [category_id, priceMin, priceMax, postId, price, limit]);
+
+    logInfo(`[SimilarPosts] Found ${result.rows.length} similar to post ${postId}`);
+
+    res.json({
+      similar: result.rows,
+      referencePost: { post_id: postId, category_id, price }
+    });
+
+  } catch (err) {
+    logError('[SimilarPosts] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ============================================
+// MARK AS SOLD
+// Hides post from feed, keeps in user's history
+// ============================================
+
+/**
+ * POST /api/posts/:id/sold
+ * Mark a post as sold
+ * Only the post owner can mark their post as sold
+ */
+exports.markAsSold = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId || req.user?.id;
+    const { buyer_id, sale_price } = req.body; // Optional: record buyer info
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Verify ownership
+    const postCheck = await pool.query(
+      'SELECT post_id, user_id, title, status FROM posts WHERE post_id = $1',
+      [id]
+    );
+
+    if (postCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const post = postCheck.rows[0];
+
+    if (post.user_id !== userId) {
+      return res.status(403).json({ error: 'You can only mark your own posts as sold' });
+    }
+
+    if (post.status === 'sold') {
+      return res.status(400).json({ error: 'Post is already marked as sold' });
+    }
+
+    // Update post status
+    await pool.query(
+      `UPDATE posts 
+       SET status = 'sold', sold_at = NOW(), updated_at = NOW()
+       WHERE post_id = $1`,
+      [id]
+    );
+
+    // Optional: Create transaction record if buyer info provided
+    if (buyer_id) {
+      try {
+        await pool.query(
+          `INSERT INTO transactions (seller_id, buyer_id, post_id, amount, status, completed_at)
+           VALUES ($1, $2, $3, $4, 'completed', NOW())`,
+          [userId, buyer_id, id, sale_price || post.price || 0]
+        );
+      } catch (txErr) {
+        logError('[MarkAsSold] Transaction record failed (non-fatal):', txErr.message);
+      }
+    }
+
+    logInfo(`[MarkAsSold] Post ${id} marked as sold by user ${userId}`);
+
+    res.json({
+      success: true,
+      message: 'Post marked as sold',
+      post_id: id,
+      status: 'sold'
+    });
+
+  } catch (err) {
+    logError('[MarkAsSold] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * POST /api/posts/:id/reactivate
+ * Reactivate a sold or expired post
+ * Only the post owner can reactivate their post
+ */
+exports.reactivatePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Verify ownership
+    const postCheck = await pool.query(
+      'SELECT post_id, user_id, status FROM posts WHERE post_id = $1',
+      [id]
+    );
+
+    if (postCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const post = postCheck.rows[0];
+
+    if (post.user_id !== parseInt(userId)) {
+      return res.status(403).json({ error: 'You can only reactivate your own posts' });
+    }
+
+    if (post.status === 'active') {
+      return res.status(400).json({ error: 'Post is already active' });
+    }
+
+    // Check user's tier for new expiry calculation
+    const { getTierRules } = require('../config/tierRules');
+    const userResult = await pool.query(
+      'SELECT tier FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const tier = userResult.rows[0]?.tier || 'basic';
+    const rules = getTierRules(tier);
+    const newExpiresAt = rules.getExpiry();
+
+    // Reactivate post
+    await pool.query(
+      `UPDATE posts 
+       SET status = 'active', sold_at = NULL, expires_at = $2, updated_at = NOW()
+       WHERE post_id = $1`,
+      [id, newExpiresAt]
+    );
+
+    logInfo(`[Reactivate] Post ${id} reactivated by user ${userId}`);
+
+    res.json({
+      success: true,
+      message: 'Post reactivated',
+      post_id: id,
+      status: 'active',
+      expires_at: newExpiresAt
+    });
+
+  } catch (err) {
+    logError('[Reactivate] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * DELETE /api/posts/:id
+ * Soft delete a post (sets status to 'deleted')
+ */
+exports.deletePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Verify ownership
+    const postCheck = await pool.query(
+      'SELECT post_id, user_id FROM posts WHERE post_id = $1',
+      [id]
+    );
+
+    if (postCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    if (postCheck.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: 'You can only delete your own posts' });
+    }
+
+    // Soft delete
+    await pool.query(
+      `UPDATE posts SET status = 'deleted', updated_at = NOW() WHERE post_id = $1`,
+      [id]
+    );
+
+    logInfo(`[DeletePost] Post ${id} deleted by user ${userId}`);
+
+    res.json({
+      success: true,
+      message: 'Post deleted',
+      post_id: id
+    });
+
+  } catch (err) {
+    logError('[DeletePost] Error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 };
 

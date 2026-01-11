@@ -5,6 +5,7 @@ const { validate, postValidation } = require('../middleware/validators');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const pool = require('../config/db');
+const { searchPosts, getNearbyPosts } = require('../services/searchService');
 
 // GET /api/posts/all for legacy support
 router.get('/all', postController.getAllPosts);
@@ -19,6 +20,91 @@ router.get('/nearby',
   postController.getNearbyPosts
 );
 
+// GET /api/posts/:postId/similar - Similar Products Engine
+router.get('/:postId/similar', postController.getSimilarPosts);
+
+// ============================================
+// SECURITY FORTRESS V2 ENDPOINTS (Optimized)
+// ============================================
+
+// GET /api/posts/search-v2 - Optimized full-text + location search
+router.get('/search-v2', async (req, res) => {
+  try {
+    const {
+      q: query,
+      lat,
+      lng,
+      radius = 50,
+      category_id: categoryId,
+      min_price: minPrice,
+      max_price: maxPrice,
+      limit = 20,
+      offset = 0
+    } = req.query;
+
+    const results = await searchPosts({
+      query: query || null,
+      lat: lat ? parseFloat(lat) : null,
+      lng: lng ? parseFloat(lng) : null,
+      radius: parseInt(radius),
+      categoryId: categoryId || null,
+      minPrice: minPrice ? parseFloat(minPrice) : null,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : null,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      success: true,
+      posts: results,
+      count: results.length,
+      query: {
+        search: query,
+        location: lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng), radius: parseInt(radius) } : null,
+        filters: { categoryId, minPrice, maxPrice }
+      }
+    });
+  } catch (error) {
+    console.error('[Posts] search-v2 error:', error);
+    res.status(500).json({ error: 'Search failed', details: error.message });
+  }
+});
+
+// GET /api/posts/nearby-v2 - Optimized nearby posts
+router.get('/nearby-v2', async (req, res) => {
+  try {
+    const {
+      lat,
+      lng,
+      radius = 25,
+      category_id: categoryId,
+      limit = 20
+    } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'lat and lng are required' });
+    }
+
+    const results = await getNearbyPosts({
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
+      radius: parseInt(radius),
+      categoryId: categoryId || null,
+      limit: parseInt(limit)
+    });
+
+    res.json({
+      success: true,
+      posts: results,
+      count: results.length,
+      location: { lat: parseFloat(lat), lng: parseFloat(lng), radius: parseInt(radius) }
+    });
+  } catch (error) {
+    console.error('[Posts] nearby-v2 error:', error);
+    res.status(500).json({ error: 'Nearby search failed', details: error.message });
+  }
+});
+
 // GET /api/posts/trust/:userId - User trust score
 router.get('/trust/:userId', postController.getUserTrustScore);
 
@@ -32,10 +118,15 @@ router.get('/cache-stats', postController.getCacheStats);
 // Main GET /api/posts endpoint (returns { posts, total })
 router.get('/', postController.getAllPosts);
 
+const optimizeLocalImages = require('../middleware/imageOptimizer');
+
+// ... (existing GET routes)
+
 // CREATE POST: Token Required + Input Sanitization + Validation
 router.post('/',
   protect,
   upload.fields([{ name: 'images', maxCount: 10 }]),
+  optimizeLocalImages, // Optimize images before controller
   postValidation.create,
   validate,
   postController.createPost
@@ -45,6 +136,7 @@ router.post('/',
 router.post('/create',
   protect,
   upload.fields([{ name: 'images', maxCount: 10 }]),
+  optimizeLocalImages, // Optimize images before controller
   postValidation.create,
   validate,
   postController.createPost
@@ -163,6 +255,12 @@ router.post('/:postId/like', protect, async (req, res) => {
   }
 });
 
+// POST /api/posts/:postId/sold - Mark post as sold (hides from feed)
+router.post('/:postId/sold', protect, postController.markAsSold);
+
+// POST /api/posts/:postId/reactivate - Reactivate sold/expired post
+router.post('/:postId/reactivate', protect, postController.reactivatePost);
+
 // GET /api/posts/:postId - get post by ID
 router.get('/:postId', postController.getPostById);
 
@@ -189,7 +287,7 @@ router.delete('/:postId', protect, async (req, res) => {
 
     const postOwnerId = ownerCheck.rows[0].user_id;
 
-    if (postOwnerId !== parseInt(userId)) {
+    if (postOwnerId !== userId) {
       return res.status(403).json({ error: `Not authorized (owner: ${postOwnerId}, you: ${userId})` });
     }
 
@@ -221,7 +319,7 @@ router.put('/:postId', protect, async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    if (ownerCheck.rows[0].user_id !== parseInt(userId)) {
+    if (ownerCheck.rows[0].user_id !== userId) {
       return res.status(403).json({ error: 'Not authorized to edit this post' });
     }
 

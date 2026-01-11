@@ -26,6 +26,7 @@ const FeedPage = () => {
   const [likeCounts, setLikeCounts] = useState({});
   const [viewCounts, setViewCounts] = useState({});
   const [shareToast, setShareToast] = useState("");
+  const [isShuffling, setIsShuffling] = useState(false); // Chaos Engine shuffle state
 
   // Guest user restrictions
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,7 +46,9 @@ const FeedPage = () => {
     const fetchPosts = async () => {
       try {
         const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        const url = `${baseUrl}/api/posts?page=${currentPage}&limit=${postsPerPage}`;
+        // Add shuffle sort and cache buster to ensure fresh content on every refresh
+        const cacheBuster = Date.now();
+        const url = `${baseUrl}/api/posts?page=${currentPage}&limit=${postsPerPage}&sortBy=shuffle&_t=${cacheBuster}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch feed');
         const data = await res.json();
@@ -82,6 +85,48 @@ const FeedPage = () => {
     };
     fetchPosts();
   }, [currentPage, currentLang]);
+
+  // CHAOS ENGINE: Shuffle feed with high-performance random query
+  const handleShuffle = useCallback(async () => {
+    setIsShuffling(true);
+    setError(null);
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const cacheBuster = Date.now();
+      const res = await fetch(`${baseUrl}/api/feed/random?limit=20&_t=${cacheBuster}`);
+      if (!res.ok) throw new Error('Failed to shuffle');
+      const data = await res.json();
+      let shuffledPosts = Array.isArray(data.posts) ? data.posts : [];
+
+      // Translate if needed
+      if (currentLang && currentLang !== 'en') {
+        shuffledPosts = await translatePosts(shuffledPosts, currentLang);
+      }
+
+      setPosts(shuffledPosts);
+      setCurrentPage(1);
+      setHasMore(shuffledPosts.length >= 10);
+
+      // Update counts
+      const likes = {};
+      const views = {};
+      shuffledPosts.forEach(post => {
+        const id = post.post_id || post.id;
+        likes[id] = post.likes_count || post.likes || 0;
+        views[id] = post.views_count || post.views || 0;
+      });
+      setLikeCounts(likes);
+      setViewCounts(views);
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.log(`[Chaos Engine] Shuffled ${shuffledPosts.length} posts in ${data.queryTimeMs}ms (${data.engine})`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsShuffling(false);
+    }
+  }, [currentLang]);
 
   // Infinite scroll
   const loadMorePosts = useCallback(() => {
@@ -180,6 +225,20 @@ const FeedPage = () => {
 
             {/* Action buttons - visible for all users */}
             <div className="flex gap-3">
+              {/* CHAOS ENGINE: Shuffle Button */}
+              <Button
+                onClick={handleShuffle}
+                disabled={isShuffling}
+                variant="outline"
+                className="bg-transparent border-2 border-yellow-400/70 text-yellow-300 hover:bg-yellow-400/20 font-bold px-4 py-3 rounded-xl flex items-center gap-2"
+              >
+                {isShuffling ? (
+                  <><span className="animate-spin">🔄</span> Shuffling...</>
+                ) : (
+                  <>🎰 Shuffle</>
+                )}
+              </Button>
+
               <Button
                 onClick={() => navigate('/my-feed')}
                 variant="outline"

@@ -143,7 +143,7 @@ const SaleUndone = () => {
         </div>
 
         <div className="relative max-w-2xl mx-auto p-6 pt-20">
-          <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+          <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
             <CardContent className="p-12 text-center">
               {/* Success Icon */}
               <div className="relative inline-block mb-8">
@@ -200,12 +200,12 @@ const SaleUndone = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-orange-900 to-red-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
+    <div className="bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 dark:from-slate-900 dark:via-orange-900 dark:to-red-900 relative" style={{ minHeight: '100vh', paddingBottom: '120px' }}>
       {/* Animated background */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-orange-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-orange-500/10 dark:bg-orange-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-500/10 dark:bg-red-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-500/5 dark:bg-pink-500/10 rounded-full blur-3xl"></div>
       </div>
 
       <PageHeader
@@ -223,29 +223,29 @@ const SaleUndone = () => {
             <RotateCcw className="w-10 h-10 text-white" />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3">
-            🔄 <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">{t('sale_undone_title')}</span>
+          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3">
+            🔄 <span className="bg-gradient-to-r from-orange-600 to-red-600 dark:from-orange-400 dark:to-red-400 bg-clip-text text-transparent">{t('sale_undone_title')}</span>
           </h1>
-          <p className="text-orange-200 text-lg max-w-md mx-auto">
+          <p className="text-orange-700 dark:text-orange-200 text-lg max-w-md mx-auto">
             {t('reactivate_sold_posts')}
           </p>
         </div>
 
         {/* Info Badges */}
         <div className="flex flex-wrap justify-center gap-3">
-          <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-orange-500/10 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/20 dark:border-orange-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <RefreshCw className="w-4 h-4 mr-2" /> {t('instant_reactivation')}
           </Badge>
-          <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/20 dark:border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Shield className="w-4 h-4 mr-2" /> {t('no_penalties')}
           </Badge>
-          <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          <Badge className="bg-pink-500/10 dark:bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/20 dark:border-pink-500/30 px-4 py-2 rounded-full backdrop-blur-sm">
             <Package className="w-4 h-4 mr-2" /> {t('keep_original_details')}
           </Badge>
         </div>
 
         {/* Main Form Card */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white p-8">
             <CardTitle className="flex items-center space-x-3 text-2xl">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -260,14 +260,14 @@ const SaleUndone = () => {
 
           <CardContent className="p-8">
             {/* Why Undo Section */}
-            <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-2xl p-6 mb-8">
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 border-2 border-orange-200 dark:border-orange-700 rounded-2xl p-6 mb-8">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <HelpCircle className="w-6 h-6 text-orange-600" />
+                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <HelpCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
-                  <p className="font-bold text-orange-800 text-lg mb-2">{t('when_to_use_sale_undone')}</p>
-                  <ul className="space-y-2 text-orange-700">
+                  <p className="font-bold text-orange-800 dark:text-orange-300 text-lg mb-2">{t('when_to_use_sale_undone')}</p>
+                  <ul className="space-y-2 text-orange-700 dark:text-orange-400">
                     <li className="flex items-center gap-2"><XCircle className="w-4 h-4" /> {t('no_buyers_found_for_post')}</li>
                     <li className="flex items-center gap-2"><XCircle className="w-4 h-4" /> {t('buyer_not_interested_after_all')}</li>
                     <li className="flex items-center gap-2"><XCircle className="w-4 h-4" /> {t('deal_didnt_go_through')}</li>
@@ -279,25 +279,25 @@ const SaleUndone = () => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label htmlFor="postId" className="text-sm font-bold text-gray-700 mb-2 block">{t('post_id')} *</Label>
+                <Label htmlFor="postId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('post_id')} *</Label>
                 <Input
                   id="postId"
                   value={form.postId}
                   onChange={(e) => setForm(prev => ({ ...prev, postId: e.target.value }))}
                   placeholder={t('post_id_placeholder')}
-                  className="h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-orange-500 transition-colors"
+                  className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-orange-500 transition-colors"
                   required
                 />
-                <p className="text-sm text-gray-500 mt-2">💡 {t('post_id_hint')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">💡 {t('post_id_hint')}</p>
               </div>
 
               <div>
-                <Label htmlFor="reason" className="text-sm font-bold text-gray-700 mb-2 block">{t('reason_for_undoing')}</Label>
+                <Label htmlFor="reason" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('reason_for_undoing')}</Label>
                 <select
                   id="reason"
                   value={form.reason}
                   onChange={(e) => setForm(prev => ({ ...prev, reason: e.target.value }))}
-                  className="w-full h-14 text-lg rounded-xl border-2 border-gray-200 focus:border-orange-500 transition-colors px-4 bg-white"
+                  className="w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-orange-500 transition-colors px-4 bg-white"
                 >
                   <option value="">{t('select_reason_optional')}</option>
                   <option value="no_buyers_found">{t('no_buyers_found')}</option>
@@ -314,13 +314,13 @@ const SaleUndone = () => {
               </div>
 
               <div>
-                <Label htmlFor="description" className="text-sm font-bold text-gray-700 mb-2 block">{t('additional_notes')}</Label>
+                <Label htmlFor="description" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('additional_notes')}</Label>
                 <textarea
                   id="description"
                   value={form.description}
                   onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
                   placeholder={t('additional_notes_placeholder')}
-                  className="w-full min-h-[100px] text-lg rounded-xl border-2 border-gray-200 focus:border-orange-500 transition-colors px-4 py-3 resize-none"
+                  className="w-full min-h-[100px] text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-orange-500 transition-colors px-4 py-3 resize-none"
                 />
               </div>
 
@@ -346,7 +346,7 @@ const SaleUndone = () => {
         </Card>
 
         {/* Previously Undone Posts */}
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95">
+        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6">
             <CardTitle className="flex items-center space-x-3 text-xl">
               <Clock className="w-6 h-6" />
@@ -357,30 +357,30 @@ const SaleUndone = () => {
             {loadingPosts ? (
               <div className="text-center py-8">
                 <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-500">{t('loading_history')}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('loading_history')}</p>
               </div>
             ) : undonePosts.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package className="w-8 h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 text-lg">{t('no_reactivated_posts')}</p>
-                <p className="text-gray-400 text-sm mt-1">{t('posts_you_reactivate')}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">{t('no_reactivated_posts')}</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">{t('posts_you_reactivate')}</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {undonePosts.map((post) => (
                   <div
                     key={post.id || post.post_id}
-                    className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200 hover:shadow-lg transition-all"
+                    className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all"
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <Badge className="bg-orange-100 text-orange-700 font-mono mb-2">
                           ID: {post.post_id || post.id}
                         </Badge>
-                        <h4 className="font-bold text-gray-900">{post.title}</h4>
-                        <p className="text-sm text-gray-500">{post.reason || 'No reason specified'}</p>
+                        <h4 className="font-bold text-gray-900 dark:text-white">{post.title}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{post.reason || 'No reason specified'}</p>
                       </div>
                       <Badge className="bg-green-100 text-green-700">Active</Badge>
                     </div>
@@ -393,15 +393,17 @@ const SaleUndone = () => {
       </div>
 
       {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full shadow-2xl shadow-orange-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
-        >
-          <ArrowUp className="w-6 h-6" />
-        </button>
-      )}
-    </div>
+      {
+        showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full shadow-2xl shadow-orange-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
+          >
+            <ArrowUp className="w-6 h-6" />
+          </button>
+        )
+      }
+    </div >
   );
 };
 

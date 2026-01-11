@@ -13,4 +13,7 @@ router.get('/log', rewardsController.getRewardLog);
 // Legacy endpoint for backwards compatibility
 router.get('/by-user', rewardsController.getRewardsByUser);
 
+// GET /api/rewards/user/:userId
+router.get('/user/:userId', rewardsController.getRewardsByUser);
+
 module.exports = router;

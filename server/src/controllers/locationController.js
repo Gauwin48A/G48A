@@ -30,22 +30,48 @@ exports.updateLocation = async (req, res) => {
 };
 
 // Keep existing exports for compatibility
+// Protocol: Reality Check - Save location with fraud verification data
 exports.saveLocation = async (req, res) => {
   try {
-    const { user_id, latitude, longitude, accuracy, heading, permission_status, city, country, provider } = req.body;
+    const { user_id, latitude, longitude, accuracy, heading, permission_status, city, country, provider, timezone } = req.body;
 
     // Allow 0,0 for denied/error status (for analytics), but require real coords for granted
     if (permission_status === 'granted' && (!latitude || !longitude)) {
       return res.status(400).json({ error: 'Missing latitude or longitude' });
     }
+
+    // Get IP-verified location from fraud check middleware (if available)
+    const ipLocation = req.ipLocation || null;
+    const locationVerified = req.locationVerified || false;
+    const fraudRisk = req.fraudRisk || null;
+
+    // Log security verification
+    if (locationVerified) {
+      logger.info(`[Location] ✅ Verified location save - User: ${user_id}, GPS: (${latitude}, ${longitude}), IP: ${ipLocation?.city}`);
+    } else if (fraudRisk) {
+      logger.warn(`[Location] ⚠️ Risk detected - User: ${user_id}, Risk: ${fraudRisk.level} (${fraudRisk.reason})`);
+    }
+
+    // Use IP-detected city/country as fallback if not provided
+    const finalCity = city || ipLocation?.city || 'Unknown';
+    const finalCountry = country || ipLocation?.country || 'Unknown';
+
     // Fixed: Only insert columns that exist in user_locations table
     const query = `
       INSERT INTO user_locations (user_id, latitude, longitude, accuracy, heading, permission_status, city, country)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id;
     `;
-    const result = await pool.query(query, [user_id || null, latitude, longitude, accuracy || null, heading || null, permission_status || null, city || null, country || null]);
-    res.status(201).json({ status: 'success', id: result.rows[0].id, location: { city: city || 'Unknown', country: country || 'Unknown' }, provider: provider || 'browser' });
+    const result = await pool.query(query, [user_id || null, latitude, longitude, accuracy || null, heading || null, permission_status || null, finalCity, finalCountry]);
+
+    res.status(201).json({
+      status: 'success',
+      id: result.rows[0].id,
+      location: { city: finalCity, country: finalCountry },
+      provider: provider || 'browser',
+      verified: locationVerified,
+      timezone: timezone || ipLocation?.timezone || null
+    });
   } catch (error) {
     console.error('saveLocation error:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });

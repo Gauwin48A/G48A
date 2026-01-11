@@ -1,64 +1,35 @@
-const express = require("express");
-const router = express.Router();
-const authController = require("../controllers/authController");
-const { validate, authValidation } = require('../middleware/validators');
-const {
-    loginLimiter,
-    checkAccountLockout,
-    sanitizeInput,
-    securityLogger
-} = require('../middleware/security');
-const { protect } = require('../middleware/auth');
+const router = require('express').Router();
+const authController = require('../controllers/authController');
+const { body } = require('express-validator');
+const rateLimit = require('express-rate-limit');
+const { authenticateToken } = require('../middleware/security');
 
-// Apply security logging to all auth routes
-router.use(securityLogger);
+// SECURITY: Brute Force Protection (Ironclad)
+// Limit login attempts to 5 per 15 minutes per IP
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: "Too many login attempts. Please try again in 15 minutes." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
-// Apply input sanitization to all auth routes
-router.use(sanitizeInput);
+// VALIDATION RULES
+const signupValidation = [
+    body('phone').isMobilePhone().withMessage('Invalid phone number'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 chars'),
+    body('fullName').notEmpty().withMessage('Name is required')
+];
 
-// ============================================
-// PUBLIC ROUTES
-// ============================================
+// ROUTES
+router.post('/signup', signupValidation, authController.signup);
+router.post('/login', authLimiter, authController.login);
 
-// REGISTER: Create new account
-router.post("/register", authController.register);
+// Protected Routes
+router.get('/me', authenticateToken, authController.getMe);
+router.get('/validate', authenticateToken, (req, res) => res.json({ valid: true, user: req.user }));
 
-// LOGIN: Authenticate user
-router.post("/login",
-    loginLimiter,           // Max 5 attempts per 15 min
-    checkAccountLockout,    // Check if account is locked
-    authController.login
-);
-
-// EMAIL VERIFICATION
-router.post("/verify-email", authController.verifyEmail);
-router.post("/resend-verification", authController.resendVerification);
-
-// FORGOT PASSWORD
-router.post("/forgot-password", authController.forgotPassword);
-router.post("/reset-password", authController.resetPassword);
-
-// REFRESH TOKEN
-router.post("/refresh-token", authController.refreshToken);
-
-// LOGOUT
-router.post("/logout", authController.logout);
-
-// ============================================
-// AUTHENTICATED ROUTES
-// ============================================
-
-// CHANGE PASSWORD (requires authentication)
-router.post("/change-password", protect, authController.changePassword);
-
-// ============================================
-// DEV ONLY ROUTES (Remove in production)
-// ============================================
-router.post("/reset-passwords", authController.resetAllPasswords);
-router.get("/list-users", authController.listUsers);
-
-// Legacy OTP routes (stub)
-router.post("/send-otp", (req, res) => res.json({ message: "OTP Sent" }));
-router.post("/verify-otp", (req, res) => res.json({ token: "mock-token" }));
+// Verify/One-time OTP (Legacy/Hybrid support)
+// router.post('/send-otp', ...); // If needed later
 
 module.exports = router;

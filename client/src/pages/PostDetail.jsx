@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from 'react-i18next';
 import BuyerInterestModal from "@/components/BuyerInterestModal";
 import MakeOfferModal from "@/components/MakeOfferModal";
+import BargainActions from "@/components/BargainActions";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -309,6 +310,20 @@ export default function PostDetail() {
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
               {post.description || "No description provided for this product. Contact the seller for more details."}
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Smart Bargain - The Defender's Quick Offer Feature */}
+        <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg rounded-2xl">
+          <CardContent className="p-5">
+            <BargainActions
+              post={post}
+              currentUser={{
+                userId: localStorage.getItem('userId'),
+                id: localStorage.getItem('userId')
+              }}
+              onChatClick={() => setShowInterestModal(true)}
+            />
           </CardContent>
         </Card>
 

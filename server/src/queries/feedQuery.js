@@ -8,6 +8,11 @@
  * 4. Category diversity (max 3 per category)
  * 5. Author diversity (max 1 per author)
  * 6. Handles 100k+ concurrent users efficiently
+ * 
+ * PROTOCOL: VALUE HIERARCHY - Tier Priority
+ * - Premium (tier 3): TOP of feed (+15000)
+ * - Silver (tier 2): Medium priority (+5000)  
+ * - Basic (tier 1): Standard priority
  */
 
 /**
@@ -32,14 +37,24 @@ all_active_posts AS (
         p.images,
         p.location,
         p.created_at,
+        COALESCE(p.tier_priority, 1) AS tier_priority,
         COALESCE(p.views_count, 0) AS views_count,
         COALESCE(p.likes, 0) AS likes_count,
-        -- Determine feed phase based on age
+        -- Determine feed phase based on age and tier
         CASE 
+            WHEN COALESCE(p.tier_priority, 1) = 3 THEN 'premium'
             WHEN p.created_at > NOW() - INTERVAL '12 hours' THEN 'fresh'
             WHEN p.created_at > NOW() - INTERVAL '48 hours' THEN 'exploration'
             ELSE 'exploitation'
         END AS feed_phase,
+        
+        -- TIER PRIORITY BOOST (Protocol: Value Hierarchy)
+        CASE 
+            WHEN COALESCE(p.tier_priority, 1) = 3 THEN 15000  -- Premium: TOP priority
+            WHEN COALESCE(p.tier_priority, 1) = 2 THEN 5000   -- Silver: Medium priority
+            ELSE 0                                             -- Basic: Standard
+        END AS tier_boost,
+        
         -- TIME-SEEDED RANDOM SCORE
         -- Different every 30 seconds, different per user, different per post
         ABS(HASHTEXT(
@@ -63,18 +78,19 @@ all_active_posts AS (
     FROM posts p
     WHERE p.status = 'active'
       AND p.created_at > NOW() - INTERVAL '30 days'  -- Include older posts as fallback
+      AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
       AND ((SELECT uid FROM config) = 0 OR p.user_id != (SELECT uid FROM config))  -- Exclude own posts
 ),
 -- Apply diversity constraints
 ranked_posts AS (
     SELECT 
         a.*,
-        -- Total score = random + engagement + freshness
-        (a.random_score + a.engagement_boost + a.freshness_boost) AS total_score,
+        -- Total score = tier_boost + random + engagement + freshness
+        (a.tier_boost + a.random_score + a.engagement_boost + a.freshness_boost) AS total_score,
         -- Author diversity: Only 1 post per author
-        ROW_NUMBER() OVER (PARTITION BY a.author_id ORDER BY a.freshness_boost DESC, a.random_score DESC) AS author_rank,
+        ROW_NUMBER() OVER (PARTITION BY a.author_id ORDER BY a.tier_boost DESC, a.freshness_boost DESC, a.random_score DESC) AS author_rank,
         -- Category diversity: Priority within category
-        ROW_NUMBER() OVER (PARTITION BY a.category_id ORDER BY a.freshness_boost DESC, a.random_score DESC) AS category_rank
+        ROW_NUMBER() OVER (PARTITION BY a.category_id ORDER BY a.tier_boost DESC, a.freshness_boost DESC, a.random_score DESC) AS category_rank
     FROM all_active_posts a
 )
 SELECT 
@@ -87,6 +103,7 @@ SELECT
     r.images,
     r.location,
     r.created_at,
+    r.tier_priority,
     r.views_count,
     r.likes_count,
     r.feed_phase,
@@ -98,16 +115,20 @@ LEFT JOIN categories c ON r.category_id = c.category_id
 WHERE r.author_rank = 1        -- Max 1 post per author
   AND r.category_rank <= 4     -- Max 4 posts per category
 ORDER BY 
-    -- Fresh posts first (sellers happy!)
+    -- TIER PRIORITY FIRST (Protocol: Value Hierarchy)
+    r.tier_priority DESC,
+    -- Fresh posts (sellers happy!)
     r.freshness_boost DESC,
-    -- Then by total score (random + engagement)
+    -- Then by total score (tier + random + engagement)
     r.total_score DESC
 LIMIT $2;
 `;
 
+
 /**
  * FALLBACK query - Ultra-simple, guaranteed to work
  * Used when stratified query times out or fails
+ * Still respects Protocol: Value Hierarchy (tier priority)
  */
 const FALLBACK_FEED_QUERY = `
 SELECT 
@@ -120,6 +141,7 @@ SELECT
     p.images,
     p.location,
     p.created_at,
+    COALESCE(p.tier_priority, 1) AS tier_priority,
     COALESCE(p.views_count, 0) AS views_count,
     COALESCE(p.likes, 0) AS likes_count,
     'exploitation' AS feed_phase,
@@ -129,12 +151,16 @@ FROM posts p
 LEFT JOIN profiles pr ON p.user_id = pr.user_id
 LEFT JOIN categories c ON p.category_id = c.category_id
 WHERE p.status = 'active'
-ORDER BY p.created_at DESC
+  AND (p.expires_at IS NULL OR p.expires_at > NOW())
+ORDER BY 
+    COALESCE(p.tier_priority, 1) DESC,
+    p.created_at DESC
 LIMIT $1;
 `;
 
 /**
  * Query for trending posts (heavily cached)
+ * Also respects tier priority for Premium boost
  */
 const TRENDING_POSTS_QUERY = `
 SELECT 
@@ -142,12 +168,14 @@ SELECT
     p.title,
     p.price,
     p.images,
-    COALESCE(p.views_count, 0) + (COALESCE(p.likes, 0) * 10) AS engagement_score,
+    COALESCE(p.tier_priority, 1) AS tier_priority,
+    COALESCE(p.views_count, 0) + (COALESCE(p.likes, 0) * 10) + (COALESCE(p.tier_priority, 1) * 1000) AS engagement_score,
     c.name AS category_name
 FROM posts p
 LEFT JOIN categories c ON p.category_id = c.category_id
 WHERE p.status = 'active'
   AND p.created_at > NOW() - INTERVAL '7 days'
+  AND (p.expires_at IS NULL OR p.expires_at > NOW())
 ORDER BY engagement_score DESC
 LIMIT 5;
 `;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useLocation } from '@/context/LocationContext';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +33,7 @@ const GreenNavbar = () => {
 
   const bottomNavLinks = [
     { key: 'home', path: '/all-posts', icon: <FiHome /> },
-    { key: 'for_you', path: '/my-recommendations', icon: <FiStar /> },
+    { key: 'for_you', path: '/for-you', icon: <FiStar /> },
     { key: 'feed', path: '/feed', icon: <FiFileText /> },
     { key: 'rewards', path: '/rewards', icon: <FiUserCheck /> },
     { key: 'profile', path: '/profile', icon: <FiUser /> },
@@ -103,6 +103,12 @@ const GreenNavbar = () => {
     setIsLoggedIn(!!(token && userId));
   }, [moreOpen]); // Re-check when menu opens
 
+  // User preferences for For You page filter pre-population
+  const [userPreferences, setUserPreferences] = useState(null);
+
+  // Fetch user preferences when on For You page (need routerLocation to be defined first)
+  // This effect is defined after routerLocation is declared below
+
   const handleLogout = () => {
     // Clear all auth-related localStorage items
     localStorage.removeItem('authToken');
@@ -133,8 +139,50 @@ const GreenNavbar = () => {
   // Router location for path detection
   const routerLocation = useRouterLocation();
 
+  // Check if currently on For You page
+  const isForYouPage = routerLocation.pathname === '/for-you';
+
+  // Fetch user preferences when on For You page and pre-populate filters
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('authToken');
+
+    if (isForYouPage && userId && token) {
+      const fetchPreferences = async () => {
+        try {
+          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+          const res = await fetch(`${baseUrl}/api/profile/preferences?userId=${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUserPreferences(data);
+            console.log('[Navbar] Loaded user preferences for For You page:', data);
+            // Pre-populate filters with user preferences
+            if (data) {
+              setFilters(f => ({
+                ...f,
+                location: data.location || '',
+                minPrice: data.minPrice !== undefined && data.minPrice !== null ? String(data.minPrice) : '',
+                maxPrice: data.maxPrice !== undefined && data.maxPrice !== null ? String(data.maxPrice) : '',
+                // Set category from preferences if available
+                category: ''
+              }));
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch user preferences:', err);
+        }
+      };
+      fetchPreferences();
+    } else if (!isForYouPage) {
+      // Clear preferences when leaving For You page
+      setUserPreferences(null);
+    }
+  }, [isForYouPage, setFilters]);
+
   // Show full navbar for home (all-posts), my-posts, and my-recommendations
-  const showFullNavbar = routerLocation.pathname === '/all-posts' || routerLocation.pathname === '/my-posts' || routerLocation.pathname === '/' || routerLocation.pathname === '/my-recommendations';
+  const showFullNavbar = routerLocation.pathname === '/all-posts' || routerLocation.pathname === '/my-posts' || routerLocation.pathname === '/' || routerLocation.pathname === '/my-recommendations' || routerLocation.pathname === '/for-you';
 
   // Helper for ARIA and touch target
   const navButtonProps = (label) => ({
@@ -193,14 +241,42 @@ const GreenNavbar = () => {
 
 
             {/* Search Button - Compact icon that opens Search Page */}
-            <button
-              onClick={() => navigate('/search')}
-              className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg hover:bg-gray-50 transition-colors cursor-pointer max-w-xs sm:max-w-md"
+            {/* Search Button / Bar */}
+            <div
+              onClick={() => {
+                const context = routerLocation.pathname === '/for-you' ? 'for-you' : 'all-posts';
+                navigate(`/search?context=${context}`);
+              }}
+              className="relative flex items-center gap-2 px-4 py-2 bg-white rounded-lg hover:bg-gray-50 transition-colors cursor-pointer max-w-xs sm:max-w-md group"
+              role="button"
+              tabIndex={0}
               aria-label={t('search') || "Search"}
             >
               <FiSearch className="w-5 h-5 text-gray-400" />
-              <span className="text-gray-400 text-sm truncate hidden sm:block">{t('search_placeholder') || 'Search for products, brands...'}</span>
-            </button>
+              <span className={`text-sm truncate hidden sm:block flex-1 ${filters.search ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}`}>
+                {filters.search || t('search_placeholder') || 'Search for products, brands...'}
+              </span>
+
+              {/* Clear Search Button */}
+              {filters.search && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Remove 'search' from URL
+                    const newParams = new URLSearchParams(routerLocation.search);
+                    newParams.delete('search');
+                    navigate({ pathname: routerLocation.pathname, search: newParams.toString() });
+                    // Also clear context immediately
+                    setFilters(prev => ({ ...prev, search: '' }));
+                  }}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              )}
+            </div>
 
             {/* Filter Button */}
             <div className="relative">
@@ -216,8 +292,20 @@ const GreenNavbar = () => {
                     </button>
                     <h4 className="font-semibold text-blue-600 dark:text-yellow-300 mb-2">{t('filter_products') || "Filter Products"}</h4>
                     <div className="mb-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('location')}</label>
-                      <input type="text" placeholder={t('enter_location') || "Enter location"} className="w-full border rounded px-2 py-1" onChange={e => setFilters(f => ({ ...f, location: e.target.value, page: 1 }))} />
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('location')}</label>
+                      <select
+                        className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                        value={filters.location || ''}
+                        onChange={e => setFilters(f => ({ ...f, location: e.target.value, page: 1 }))}
+                      >
+                        <option value="">{t('any_location') || 'Any Location'}</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                      </select>
                     </div>
                     <div className="mb-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('price_range') || "Price Range"}</label>
@@ -326,11 +414,27 @@ const GreenNavbar = () => {
                     </div>
                     <div className="mb-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
-                      <select className="w-full border rounded px-2 py-1" value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value, page: 1 }))}>
-                        <option value="">{t('all')}</option>
+                      {/* Show saved category badges when on For You page */}
+                      {isForYouPage && userPreferences?.categories && userPreferences.categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          <span className="text-xs text-gray-500">{t('your_preferences') || 'Your preferences'}:</span>
+                          {userPreferences.categories.map((cat, i) => (
+                            <span key={i} className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <select
+                        className="w-full border rounded px-2 py-1"
+                        value={filters.category || ''}
+                        onChange={e => setFilters(f => ({ ...f, category: e.target.value, page: 1 }))}
+                      >
+                        {/* Single clear "All Categories" option */}
+                        <option value="">All Categories</option>
                         {categories.map(cat => (
                           <option key={cat.category_id || cat.name} value={cat.name}>
-                            {t(cat.name.toLowerCase().replace(' ', '_')) || cat.name}
+                            {cat.name}
                           </option>
                         ))}
                       </select>
@@ -348,11 +452,63 @@ const GreenNavbar = () => {
                     <div className="flex gap-2 mt-2">
                       <button
                         className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-                        onClick={() => setShowFilter(false)}
+                        onClick={() => {
+                          setShowFilter(false);
+
+                          // Sync preferences to DB if on For You page and logged in
+                          const isLoggedIn = localStorage.getItem('authToken');
+                          const userId = localStorage.getItem('userId');
+
+                          if (routerLocation.pathname === '/for-you' && isLoggedIn && userId) {
+                            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+                            // Determine categories payload:
+                            // - If specific category selected, save [category]
+                            // - If "All Categories" selected (empty), save [] to Profile
+                            const categoriesPayload = filters.category ? [filters.category] : [];
+
+                            fetch(`${baseUrl}/api/profile/preferences/update`, {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                              },
+                              body: JSON.stringify({
+                                userId,
+                                location: filters.location,
+                                minPrice: filters.minPrice,
+                                maxPrice: filters.maxPrice,
+                                categories: categoriesPayload
+                              })
+                            }).then(res => {
+                              if (res.ok) {
+                                toast({ title: t('preferences_updated') || 'Preferences Updated', description: t('for_you_synced') || 'Your For You feed preferences have been saved.' });
+                              }
+                            }).catch(err => console.error("Failed to sync preferences", err));
+                          }
+
+                          // If on For You page, navigate with filters as URL params
+                          if (routerLocation.pathname === '/for-you') {
+                            const params = new URLSearchParams();
+                            if (filters.category) params.set('category', filters.category);
+                            if (filters.minPrice) params.set('minPrice', filters.minPrice);
+                            if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+                            if (filters.location) params.set('location', filters.location);
+                            const queryString = params.toString();
+                            navigate(`/for-you${queryString ? '?' + queryString : ''}`);
+                          }
+                        }}
                       >{t('apply') || "Apply"}</button>
                       <button
                         className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition"
-                        onClick={() => { setFilters(f => ({ ...f, location: '', priceRange: '', startDate: '', endDate: '', category: '', sortBy: '', page: 1 })); setShowFilter(false); }}
+                        onClick={() => {
+                          setFilters(f => ({ ...f, location: '', minPrice: '', maxPrice: '', priceRange: '', startDate: '', endDate: '', category: '', sortBy: '', page: 1 }));
+                          setShowFilter(false);
+                          // Clear URL params if on For You page
+                          if (routerLocation.pathname === '/for-you') {
+                            navigate('/for-you');
+                          }
+                        }}
                       >{t('reset') || "Clear"}</button>
                     </div>
                   </div>

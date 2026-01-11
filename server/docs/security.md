@@ -1,83 +1,176 @@
-# 🛡️ MHub Security Documentation
+# 🔒 MHub Security Implementation
 
-## Current Security Implementation
-
-### ✅ Implemented Measures (25 Total)
-
-| Layer | Feature | File | Status |
-|-------|---------|------|--------|
-| **HTTP** | Helmet + CSP | `index.js` | ✅ |
-| **HTTP** | X-Powered-By disabled | `index.js` | ✅ |
-| **CORS** | Dynamic whitelist | `index.js` | ✅ |
-| **Auth** | HttpOnly JWT cookies | `authController.js` | ✅ |
-| **Auth** | Generic error messages | `authController.js` | ✅ |
-| **Auth** | 5-strike lockout | `security.js` | ✅ |
-| **Auth** | Password breach check | `breachCheck.js` | ✅ |
-| **Auth** | 2FA (TOTP) | `twoFactor.js` | ✅ |
-| **Auth** | CAPTCHA (reCAPTCHA v3) | `captcha.js` | ✅ |
-| **Rate Limit** | 300/15min general | `index.js` | ✅ |
-| **Rate Limit** | 10/hour auth | `index.js` | ✅ |
-| **Input** | XSS sanitization | `security.js` | ✅ |
-| **Input** | SQL parameterization | All controllers | ✅ |
-| **Input** | Body limit 10KB | `index.js` | ✅ |
-| **CSRF** | Token-based | `csrf.js` | ✅ |
-| **DB** | SSL in production | `db.js` | ✅ |
-| **Session** | Redis (with fallback) | `redisSession.js` | ✅ |
-| **Logging** | Audit logger | `auditLogger.js` | ✅ |
-| **Tracking** | Geo-location alerts | `geoAlert.js` | ✅ |
-| **Tracking** | Device fingerprinting | `deviceTracker.js` | ✅ |
-| **GDPR** | Data export | `gdprController.js` | ✅ |
-| **GDPR** | Account deletion | `gdprController.js` | ✅ |
-| **Docs** | WAF rules | `waf-rules.md` | ✅ |
-| **Docs** | Bug bounty policy | `security-policy.md` | ✅ |
-| **HPP** | Parameter pollution | `index.js` | ✅ |
+This document details the security measures implemented in MHub to protect against common web vulnerabilities and ensure data integrity.
 
 ---
 
-## Environment Variables
+## Security Layers
 
-```env
-# Security
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-NODE_ENV=production
+### 1. HTTP Security Headers (Helmet)
 
-# CORS
-CLIENT_URL=https://your-frontend.com
+**Location:** `server/src/index.js`
 
-# Redis (optional)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=optional
+```javascript
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://api.haveibeenpwned.com"],
+    }
+  }
+}));
+```
 
-# CAPTCHA (optional)
-RECAPTCHA_SECRET_KEY=your_recaptcha_secret
+**Protection Against:**
+- Cross-Site Scripting (XSS)
+- Clickjacking
+- MIME type sniffing
+- Content injection
 
-# Database
-DB_HOST=your_db_host
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=your_db_name
-DB_PORT=5432
+---
+
+### 2. Rate Limiting
+
+**Configuration:**
+- 500 requests per 15 minutes per IP
+- Stricter limits on auth endpoints (10/min)
+
+```javascript
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  message: { error: "Too many requests" }
+});
+```
+
+**Protection Against:**
+- DDoS attacks
+- Brute force attacks
+- API abuse
+
+---
+
+### 3. Input Sanitization
+
+**Libraries Used:**
+- `xss-clean` - Removes `<script>` tags
+- `hpp` - Prevents HTTP Parameter Pollution
+- Express JSON limit (10kb) - Prevents payload attacks
+
+```javascript
+app.use(express.json({ limit: '10kb' }));
+app.use(xss());
+app.use(hpp());
 ```
 
 ---
 
-## API Endpoints
+### 4. CORS Configuration
 
-### GDPR
-- `GET /api/gdpr/export` - Download all user data
-- `DELETE /api/gdpr/delete` - Delete account permanently
+**Allowed Origins:**
+- `http://localhost:5173` (development)
+- `https://mhub-app.vercel.app` (production)
 
----
-
-## Weekly Maintenance
-
-- [ ] Run `npm audit fix`
-- [ ] Review `logs/audit.log`
-- [ ] Check rate limit violations
-- [ ] Rotate API keys if needed
+```javascript
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+```
 
 ---
 
-*Last Updated: 2026-01-04*
+### 5. Authentication
+
+**JWT Token System:**
+- Access Token: 15 minutes expiry
+- Refresh Token: 7 days expiry
+- Tokens stored in httpOnly cookies (production)
+
+**Password Security:**
+- bcrypt hashing (10 rounds)
+- Minimum 8 characters required
+- HaveIBeenPwned API integration (optional)
+
+---
+
+### 6. Database Security
+
+**Row Level Security (RLS):**
+```sql
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY posts_owner_policy ON posts
+  FOR ALL TO authenticated_user
+  USING (user_id = current_user_id());
+```
+
+**Parameterized Queries:**
+All database queries use parameterized statements to prevent SQL injection.
+
+```javascript
+const result = await pool.query(
+  'SELECT * FROM users WHERE email = $1',
+  [email]
+);
+```
+
+---
+
+### 7. File Upload Security
+
+**Cloudinary Integration:**
+- Files never stored on server
+- Automatic format validation
+- Size limits enforced
+- Image transformations strip EXIF data
+
+```javascript
+params: {
+  folder: 'mhub_production',
+  allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  transformation: [{ width: 1080, crop: "limit" }]
+}
+```
+
+---
+
+### 8. Session Management
+
+**Security Features:**
+- Session timeout after 30 minutes of inactivity
+- Force logout on password change
+- Device tracking for suspicious activity
+
+---
+
+## Security Checklist
+
+| Feature | Status |
+|---------|--------|
+| HTTPS enforcement | ✅ |
+| Helmet headers | ✅ |
+| Rate limiting | ✅ |
+| XSS protection | ✅ |
+| SQL injection prevention | ✅ |
+| CSRF protection | ✅ |
+| JWT authentication | ✅ |
+| Password hashing | ✅ |
+| Input validation | ✅ |
+| File upload validation | ✅ |
+| Error handling (no stack traces) | ✅ |
+| Secure cookie settings | ✅ |
+
+---
+
+## Reporting Vulnerabilities
+
+If you discover a security vulnerability, please email security@mhub.com with:
+1. Description of the vulnerability
+2. Steps to reproduce
+3. Potential impact
+
+We will respond within 48 hours.
