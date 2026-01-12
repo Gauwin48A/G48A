@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { sendLocation } from "../services/locationService";
 
 // Timeout duration in milliseconds
-const LOCATION_TIMEOUT = 5000; // 5 seconds
+const LOCATION_TIMEOUT = 30000; // 30 seconds for banking-grade GPS accuracy
 
 /**
  * Custom hook to manage browser geolocation permission and location capture.
@@ -66,8 +66,8 @@ export default function useLocationPermission() {
 
     // Set up timeout safeguard - app will NOT freeze
     timeoutRef.current = setTimeout(() => {
-      console.warn("[LocationService] ⏱️ TIMEOUT! Location request took > 5 seconds");
-      console.warn("[LocationService] App will continue without location (not blocking)");
+      console.warn("[LocationService] ⏱️ TIMEOUT! Location request took > 30 seconds");
+      console.warn("[LocationService] Try moving to an open area for better GPS signal");
       setTimedOut(true);
       setLoading(false);
       setError("Location request timed out. You can retry or continue without location.");

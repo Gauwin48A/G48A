@@ -5,7 +5,7 @@ exports.getAllCategories = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT c.category_id, c.name, c.icon_url,
-        (SELECT COUNT(*) FROM posts p WHERE p.category_id = c.category_id) AS product_count
+        (SELECT COUNT(*) FROM posts p WHERE p.category_id::text = c.category_id::text) AS product_count
       FROM categories c
       ORDER BY c.name ASC
     `);

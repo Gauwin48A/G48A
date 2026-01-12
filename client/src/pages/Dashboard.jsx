@@ -10,7 +10,7 @@ import {
   Trophy,
   Calendar
 } from "lucide-react";
-import Navbar from '../components/Navbar';
+import GreenNavbar from '../components/GreenNavbar';
 import { translateText } from '../utils/translateContent';
 
 const Dashboard = () => {
@@ -126,7 +126,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <Navbar />
+      <GreenNavbar />
 
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Welcome Header */}

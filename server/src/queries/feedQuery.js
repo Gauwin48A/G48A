@@ -22,7 +22,7 @@
 const STRATIFIED_FEED_QUERY = `
 WITH config AS (
     SELECT 
-        $1::int AS uid,
+        $1::text AS uid,
         EXTRACT(EPOCH FROM NOW())::bigint / 30 AS time_seed
 ),
 -- Get ALL active posts with random scoring
@@ -60,7 +60,7 @@ all_active_posts AS (
         ABS(HASHTEXT(
             p.post_id::text || 
             (SELECT time_seed FROM config)::text || 
-            (SELECT uid FROM config)::text
+            COALESCE((SELECT uid FROM config), '')::text
         )) % 10000 AS random_score,
         -- ENGAGEMENT BOOST for proven posts
         CASE 
@@ -79,7 +79,7 @@ all_active_posts AS (
     WHERE p.status = 'active'
       AND p.created_at > NOW() - INTERVAL '30 days'  -- Include older posts as fallback
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
-      AND ((SELECT uid FROM config) = 0 OR p.user_id != (SELECT uid FROM config))  -- Exclude own posts
+      AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))  -- Exclude own posts
 ),
 -- Apply diversity constraints
 ranked_posts AS (
@@ -88,9 +88,9 @@ ranked_posts AS (
         -- Total score = tier_boost + random + engagement + freshness
         (a.tier_boost + a.random_score + a.engagement_boost + a.freshness_boost) AS total_score,
         -- Author diversity: Only 1 post per author
-        ROW_NUMBER() OVER (PARTITION BY a.author_id ORDER BY a.tier_boost DESC, a.freshness_boost DESC, a.random_score DESC) AS author_rank,
+        ROW_NUMBER() OVER (PARTITION BY a.author_id::text ORDER BY a.tier_boost DESC, a.freshness_boost DESC, a.random_score DESC) AS author_rank,
         -- Category diversity: Priority within category
-        ROW_NUMBER() OVER (PARTITION BY a.category_id ORDER BY a.tier_boost DESC, a.freshness_boost DESC, a.random_score DESC) AS category_rank
+        ROW_NUMBER() OVER (PARTITION BY a.category_id::text ORDER BY a.tier_boost DESC, a.freshness_boost DESC, a.random_score DESC) AS category_rank
     FROM all_active_posts a
 )
 SELECT 
@@ -110,7 +110,7 @@ SELECT
     c.name AS category_name,
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM ranked_posts r
-LEFT JOIN profiles pr ON r.author_id = pr.user_id
+LEFT JOIN profiles pr ON r.author_id::text = pr.user_id::text
 LEFT JOIN categories c ON r.category_id = c.category_id
 WHERE r.author_rank = 1        -- Max 1 post per author
   AND r.category_rank <= 4     -- Max 4 posts per category
@@ -148,7 +148,7 @@ SELECT
     c.name AS category_name,
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM posts p
-LEFT JOIN profiles pr ON p.user_id = pr.user_id
+LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
 LEFT JOIN categories c ON p.category_id = c.category_id
 WHERE p.status = 'active'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())
@@ -169,10 +169,10 @@ SELECT
     p.price,
     p.images,
     COALESCE(p.tier_priority, 1) AS tier_priority,
-    COALESCE(p.views_count, 0) + (COALESCE(p.likes, 0) * 10) + (COALESCE(p.tier_priority, 1) * 1000) AS engagement_score,
+    COALESCE(p.views_count, 0)::bigint + (COALESCE(p.likes, 0)::bigint * 10) + (COALESCE(p.tier_priority, 1)::bigint * 1000) AS engagement_score,
     c.name AS category_name
 FROM posts p
-LEFT JOIN categories c ON p.category_id = c.category_id
+LEFT JOIN categories c ON p.category_id::text = c.category_id::text
 WHERE p.status = 'active'
   AND p.created_at > NOW() - INTERVAL '7 days'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())

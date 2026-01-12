@@ -6,6 +6,7 @@ import { useLocation } from '@/context/LocationContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from "@/hooks/use-toast";
 import LanguageSelector from './LanguageSelector';
+import LocationSelector from './LocationSelector';
 
 const GreenNavbar = () => {
   const { t } = useTranslation();
@@ -43,6 +44,7 @@ const GreenNavbar = () => {
   const { filters, setFilters } = useFilter();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false); // New state for location modal
   const [categories, setCategories] = useState([]);
   const [darkMode, setDarkMode] = useState(() => {
     const stored = localStorage.getItem('darkMode');
@@ -218,19 +220,19 @@ const GreenNavbar = () => {
                 <span className="text-white text-2xl font-bold hidden sm:block">{t('home')}</span>
               </Link>
 
-              {/* Location Display - Like Swiggy/Flipkart */}
+              {/* Location Display - Opens manual selector */}
               <button
-                onClick={retryLocation}
+                onClick={() => setShowLocationSelector(true)}
                 className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 rounded-lg transition-colors cursor-pointer"
                 title={displayName || city || t('location') || 'Click to detect location'}
               >
                 <FiMapPin className="text-white w-4 h-4" />
                 <span className="text-white text-sm font-medium max-w-[150px] truncate">
-                  {locationLoading ? 'Detecting...' : (city || t('location') || 'Location')}
+                  {locationLoading ? 'Detecting...' : (city || localStorage.getItem('mhub_user_city') || t('location') || 'Location')}
                 </span>
-                {accuracy && accuracy < 500 && (
-                  <span className="text-white/70 text-xs hidden sm:inline">
-                    ({Math.round(accuracy)}m)
+                {accuracy && accuracy < 100 && (
+                  <span className="text-white/70 text-xs hidden sm:inline ml-1" title="Banking-Grade Accuracy">
+                    (🎯 GPS)
                   </span>
                 )}
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -719,6 +721,11 @@ const GreenNavbar = () => {
           ))}
         </div>
       </nav>
+      {/* Location Selector Modal */}
+      <LocationSelector
+        isOpen={showLocationSelector}
+        onClose={() => setShowLocationSelector(false)}
+      />
     </>
   );
 };

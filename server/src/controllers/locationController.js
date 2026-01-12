@@ -56,22 +56,69 @@ exports.saveLocation = async (req, res) => {
     const finalCity = city || ipLocation?.city || 'Unknown';
     const finalCountry = country || ipLocation?.country || 'Unknown';
 
-    // Fixed: Only insert columns that exist in user_locations table
-    const query = `
-      INSERT INTO user_locations (user_id, latitude, longitude, accuracy, heading, permission_status, city, country)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id;
-    `;
-    const result = await pool.query(query, [user_id || null, latitude, longitude, accuracy || null, heading || null, permission_status || null, finalCity, finalCountry]);
+    // 1. Transactional Sync: Update User Profile AND Insert Log
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    res.status(201).json({
-      status: 'success',
-      id: result.rows[0].id,
-      location: { city: finalCity, country: finalCountry },
-      provider: provider || 'browser',
-      verified: locationVerified,
-      timezone: timezone || ipLocation?.timezone || null
-    });
+      // A. Insert History Log (The "Paper Trail")
+      const logQuery = `
+        INSERT INTO user_locations (user_id, latitude, longitude, accuracy, heading, permission_status, city, country, speed)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id;
+      `;
+      const logResult = await client.query(logQuery, [
+        user_id || null,
+        latitude,
+        longitude,
+        accuracy || null,
+        heading || null,
+        permission_status || null,
+        finalCity,
+        finalCountry,
+        req.body.device_speed || req.body.speed || null
+      ]);
+
+      // B. Update User Profile (Banking-Grade Discovery)
+      if (user_id) {
+        const userUpdateQuery = `
+          UPDATE users 
+          SET 
+            current_city = $1, 
+            current_state = $2, 
+            last_latitude = $3, 
+            last_longitude = $4,
+            device_speed = $5,
+            last_location_sync = NOW()
+          WHERE user_id = $6
+        `;
+        await client.query(userUpdateQuery, [
+          finalCity,
+          req.body.state || null,
+          latitude,
+          longitude,
+          req.body.device_speed || req.body.speed || null,
+          user_id
+        ]);
+      }
+
+      await client.query('COMMIT');
+
+      res.status(201).json({
+        status: 'success',
+        id: logResult.rows[0].id,
+        location: { city: finalCity, country: finalCountry },
+        provider: provider || 'browser',
+        verified: locationVerified,
+        timezone: timezone || ipLocation?.timezone || null
+      });
+
+    } catch (txError) {
+      await client.query('ROLLBACK');
+      throw txError;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('saveLocation error:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });

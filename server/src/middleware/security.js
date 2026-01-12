@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 // A. DDoS Protection: Limit repeated requests
 exports.apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 300, // Limit each IP to 300 requests per window (Adjusted for real usage)
+    max: 3000, // Limit each IP to 3000 requests per window (Relaxed for Dev)
     standardHeaders: true,
     legacyHeaders: false,
     message: {

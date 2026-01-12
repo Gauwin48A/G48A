@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import * as NativeGPS from '../services/nativeGpsService';
+import * as LocationService from '../services/locationService';
 
 const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + "/api/location";
-const LOCATION_TIMEOUT = 30000; // 30 seconds (increased from 10s)
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes - fresher location like banking apps
 const SKIP_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
@@ -38,6 +39,7 @@ async function getIPBasedLocation() {
 /**
  * Location Context - Global state for user location
  * Similar to Swiggy/Flipkart - detects and tracks user location
+ * Uses Capacitor Geolocation for native platforms (banking-app accuracy)
  */
 const LocationContext = createContext(null);
 
@@ -55,7 +57,6 @@ export function useLocation() {
  */
 async function reverseGeocode(lat, lng) {
     try {
-        // zoom=18 gives street-level detail, addressdetails=1 ensures all address components
         const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en&zoom=18&addressdetails=1`;
         const response = await fetch(url, {
             headers: {
@@ -73,7 +74,6 @@ async function reverseGeocode(lat, lng) {
         console.log('[LocationContext] Full address data:', address);
 
         // Get the most specific location name available
-        // Priority: village > suburb > neighbourhood > hamlet > town > city > county
         const specificLocation = address.village ||
             address.suburb ||
             address.neighbourhood ||
@@ -84,23 +84,15 @@ async function reverseGeocode(lat, lng) {
             address.county ||
             'Unknown';
 
-        // Get the broader area (for context)
         const district = address.county || address.state_district || '';
 
-        // Create a display name showing specific location first
-        const locationDisplay = specificLocation;
-
         return {
-            // Specific location (village/area name)
             city: specificLocation,
-            // District/county for reference
             district: district,
             state: address.state || address.region || '',
             country: address.country || 'Unknown',
-            // Full address for detailed view
             displayName: data.display_name || '',
             postcode: address.postcode || '',
-            // Raw address for debugging
             rawAddress: address
         };
     } catch (error) {
@@ -108,7 +100,6 @@ async function reverseGeocode(lat, lng) {
         return { city: 'Unknown', district: '', state: '', country: 'Unknown', displayName: '', postcode: '' };
     }
 }
-
 
 /**
  * Send location to backend for storage/analytics
@@ -141,7 +132,6 @@ function getCachedLocation() {
         const cached = localStorage.getItem('mhub_location');
         if (cached) {
             const data = JSON.parse(cached);
-            // Check if cache is still valid (30 min TTL)
             if (data.timestamp && Date.now() - data.timestamp < CACHE_TTL) {
                 console.log('[LocationContext] Using cached location:', data.city);
                 return data;
@@ -181,7 +171,6 @@ function hasSkippedLocation() {
                 console.log('[LocationContext] User previously skipped location');
                 return true;
             }
-            // Expired, remove it
             localStorage.removeItem('mhub_location_skipped');
         }
     } catch (e) {
@@ -212,9 +201,43 @@ function clearSkippedLocation() {
     localStorage.removeItem('mhub_location_skipped');
 }
 
+/**
+ * Save manual location preference
+ */
+function setCachedManualLocation(locationData) {
+    try {
+        const data = {
+            ...locationData,
+            isManual: true,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('mhub_manual_location', JSON.stringify(data));
+        console.log('[LocationContext] Manual location saved:', locationData.city);
+    } catch (e) {
+        console.error('[LocationContext] Failed to save manual location:', e);
+    }
+}
+
+/**
+ * Get manual location persistence
+ */
+function getCachedManualLocation() {
+    try {
+        const cached = localStorage.getItem('mhub_manual_location');
+        if (cached) {
+            return JSON.parse(cached);
+        }
+    } catch (e) {
+        console.warn('Failed to parse manual location');
+    }
+    return null;
+}
+
 export function LocationProvider({ children }) {
     // Read cache synchronously on mount to prevent flash
-    const initialCache = getCachedLocation();
+    const manualCache = getCachedManualLocation();
+    const autoCache = getCachedLocation();
+    const initialCache = manualCache || autoCache;
     const hasCache = !!initialCache;
 
     // Location state - Initialize from cache if available
@@ -225,128 +248,71 @@ export function LocationProvider({ children }) {
     const [state, setState] = useState(initialCache?.state || '');
     const [country, setCountry] = useState(initialCache?.country || '');
     const [displayName, setDisplayName] = useState(initialCache?.displayName || '');
-    const [loading, setLoading] = useState(!hasCache); // NOT loading if cache exists
+    const [loading, setLoading] = useState(!hasCache);
     const [error, setError] = useState(null);
-    const [permissionGranted, setPermissionGranted] = useState(hasCache); // Granted if cache exists
+    const [permissionGranted, setPermissionGranted] = useState(hasCache);
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [userSkipped, setUserSkipped] = useState(() => hasSkippedLocation());
 
-    const timeoutRef = useRef(null);
     const hasRequestedRef = useRef(false);
 
     /**
-     * Request fresh location from browser
+     * Request fresh location from browser or native GPS
+     * Uses Capacitor Geolocation on native platforms for banking-app accuracy
      */
     const requestLocation = useCallback(async () => {
         console.log('[LocationContext] ========================================');
-        console.log('[LocationContext] LOCATION CAPTURE STARTED');
+        console.log('[LocationContext] BANKING-GRADE CAPTURE STARTED');
         console.log('[LocationContext] Timestamp:', new Date().toISOString());
         console.log('[LocationContext] ========================================');
 
         setLoading(true);
         setError(null);
 
-        // Check if geolocation is supported
-        if (!navigator.geolocation) {
-            console.warn('[LocationContext] Geolocation not supported');
-            setError('Geolocation is not supported by your browser');
-            setLoading(false);
-            return;
-        }
-
-        // Set up timeout
-        const timeoutPromise = new Promise((_, reject) => {
-            timeoutRef.current = setTimeout(() => {
-                reject(new Error('Location request timed out'));
-            }, LOCATION_TIMEOUT);
-        });
-
-        // Request location
-        const locationPromise = new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-                (position) => resolve(position),
-                (err) => reject(err),
-                {
-                    enableHighAccuracy: true,
-                    timeout: LOCATION_TIMEOUT,
-                    maximumAge: 0
-                }
-            );
-        });
-
         try {
-            const position = await Promise.race([locationPromise, timeoutPromise]);
-
-            // Clear timeout
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
-
-            const { latitude, longitude, accuracy } = position.coords;
+            // Use Upgraded Banking-Grade Service
+            const locationData = await LocationService.getCurrentLocation();
 
             console.log('[LocationContext] ✅ LOCATION CAPTURED!');
-            console.log('[LocationContext] Lat:', latitude, 'Lng:', longitude);
-            console.log('[LocationContext] Accuracy:', accuracy, 'meters');
+            console.log('[LocationContext] City:', locationData.city);
+            console.log('[LocationContext] Accuracy:', locationData.accuracy, 'meters');
 
-            // Update coordinates
-            setCoords({ latitude, longitude, accuracy });
+            // Update state
+            setCoords({
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
+                accuracy: locationData.accuracy
+            });
+            setCity(locationData.city || '');
+            setState(locationData.state || '');
+            setCountry(locationData.country || '');
+            setDisplayName(locationData.displayName || '');
             setPermissionGranted(true);
             setPermissionDenied(false);
-
-            // Reverse geocode to get city name
-            console.log('[LocationContext] 🌍 Reverse geocoding...');
-            const geoData = await reverseGeocode(latitude, longitude);
-
-            console.log('[LocationContext] 📍 Location:', geoData.city, geoData.state, geoData.country);
-
-            setCity(geoData.city);
-            setState(geoData.state);
-            setCountry(geoData.country);
-            setDisplayName(geoData.displayName);
-
-            // Prepare full location data
-            const fullLocationData = {
-                latitude,
-                longitude,
-                accuracy,
-                city: geoData.city,
-                state: geoData.state,
-                country: geoData.country,
-                displayName: geoData.displayName,
-                postcode: geoData.postcode,
-                provider: 'browser',
-                permission_status: 'granted',
-                timestamp: Date.now()
-            };
-
-            // Cache locally
-            setCachedLocation(fullLocationData);
-
-            // Send to backend for analytics/tracking
-            console.log('[LocationContext] 📤 Sending to backend...');
-            const response = await sendLocationToBackend(fullLocationData);
-            if (response) {
-                console.log('[LocationContext] ✅ Backend saved! ID:', response.id);
-            }
-
             setLoading(false);
 
+            // Cache the location
+            setCachedLocation({
+                ...locationData,
+                timestamp: Date.now()
+            });
+
+            // Send to backend
+            sendLocationToBackend({
+                ...locationData,
+                permission_status: 'granted'
+            });
+
+            return locationData;
+
         } catch (err) {
-            // Clear timeout
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
+            console.warn('[LocationContext] ⚠️ Native GPS failed:', err.message);
 
-            console.warn('[LocationContext] ⚠️ Location error:', err.message);
-
-            // TRY IP-BASED FALLBACK immediately
+            // Try IP-based fallback
             console.log('[LocationContext] Trying IP-based fallback...');
             const ipLocation = await getIPBasedLocation();
 
             if (ipLocation) {
-                // SUCCESS! Use IP location as fallback
                 console.log('[LocationContext] ✅ Using IP-based location:', ipLocation.city);
 
                 setCoords({
@@ -358,57 +324,40 @@ export function LocationProvider({ children }) {
                 setState(ipLocation.state);
                 setCountry(ipLocation.country);
                 setDisplayName(ipLocation.displayName);
-                setPermissionGranted(true); // Allow app access with IP location
+                setPermissionGranted(true);
                 setPermissionDenied(false);
-                setError(null);
                 setLoading(false);
 
-                // Cache the IP location
                 setCachedLocation({
-                    latitude: ipLocation.latitude,
-                    longitude: ipLocation.longitude,
-                    accuracy: ipLocation.accuracy,
-                    city: ipLocation.city,
-                    state: ipLocation.state,
-                    country: ipLocation.country,
-                    displayName: ipLocation.displayName,
-                    provider: 'ip_fallback'
+                    ...ipLocation,
+                    timestamp: Date.now()
                 });
 
-                // Send to backend
                 sendLocationToBackend({
                     ...ipLocation,
                     permission_status: 'granted_via_ip'
                 });
 
-                return; // Success! Exit early
+                return ipLocation;
             }
 
-            // IP FALLBACK ALSO FAILED - Show error to user
+            // All methods failed
             let userMessage = 'Unable to get location';
-            let status = 'error';
-
-            if (err.code === 1) {
-                userMessage = 'Location permission denied. Please enable in browser settings.';
-                status = 'denied';
+            if (err.message.includes('denied')) {
+                userMessage = 'Location permission denied. Please enable in settings.';
                 setPermissionDenied(true);
-            } else if (err.code === 2) {
-                userMessage = 'Location unavailable. Check your device settings.';
-                status = 'unavailable';
-            } else if (err.code === 3 || err.message.includes('timeout')) {
+            } else if (err.message.includes('timeout')) {
                 userMessage = 'Location request timed out. Please try again.';
-                status = 'timeout';
             }
 
             setError(userMessage);
             setLoading(false);
 
-            // Send status to backend for analytics
             sendLocationToBackend({
                 latitude: 0,
                 longitude: 0,
-                permission_status: status,
-                provider: 'browser'
+                permission_status: 'error',
+                provider: 'none'
             });
         }
     }, []);
@@ -448,6 +397,33 @@ export function LocationProvider({ children }) {
     }, []);
 
     /**
+     * Set manual location (user override)
+     */
+    const setManualLocation = useCallback((locationData) => {
+        console.log('[LocationContext] Setting manual location:', locationData);
+
+        setCoords({
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            accuracy: 0
+        });
+        setCity(locationData.city || '');
+        setState(locationData.state || '');
+        setCountry(locationData.country || '');
+        setDisplayName(locationData.city || '');
+
+        setPermissionGranted(true);
+        setLoading(false);
+        setError(null);
+
+        setCachedManualLocation(locationData);
+        setCachedLocation({
+            ...locationData,
+            provider: 'manual'
+        });
+    }, []);
+
+    /**
      * Initialize: Check cache first, then request fresh location
      * IMPORTANT: Don't prompt if user has skipped within 24 hours
      */
@@ -465,8 +441,10 @@ export function LocationProvider({ children }) {
             return;
         }
 
-        // Check for cached location first
-        const cached = getCachedLocation();
+        // Check for cached location first (Manual OR Auto)
+        const manualLoc = getCachedManualLocation();
+        const cached = manualLoc || getCachedLocation();
+
         if (cached) {
             setCoords({ latitude: cached.latitude, longitude: cached.longitude, accuracy: cached.accuracy });
             setCity(cached.city || '');
@@ -480,17 +458,11 @@ export function LocationProvider({ children }) {
             console.log('[LocationContext] Using cache, but requesting fresh location in background...');
             setTimeout(() => {
                 requestLocation();
-            }, 5000); // Delay background refresh to 5 seconds
+            }, 5000);
         } else {
             // No cache, request immediately
             requestLocation();
         }
-
-        return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-        };
     }, [requestLocation]);
 
     const value = {
@@ -515,6 +487,7 @@ export function LocationProvider({ children }) {
         retry,
         skipForNow,
         clearLocation,
+        setManualLocation,
         enableLocation: () => {
             clearSkippedLocation();
             setUserSkipped(false);

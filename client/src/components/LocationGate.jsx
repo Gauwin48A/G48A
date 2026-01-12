@@ -26,6 +26,20 @@ export default function LocationGate({ children }) {
     const [deviceSent, setDeviceSent] = useState(false);
     const [ipLocation, setIpLocation] = useState(null);
     const [retrying, setRetrying] = useState(false);
+    const [autoBypass, setAutoBypass] = useState(false); // Auto-bypass after timeout
+
+    // Auto-bypass after 5 seconds to prevent infinite loading
+    // This allows the app to load while location continues in background
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (loading && !permissionGranted) {
+                console.log('[LocationGate] Auto-bypassing after 5 seconds - app will load while GPS continues in background');
+                setAutoBypass(true);
+            }
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, [loading, permissionGranted]);
 
     // Send device info to backend on first load
     useEffect(() => {
@@ -91,12 +105,13 @@ export default function LocationGate({ children }) {
         setRetrying(false);
     };
 
-    // If location is granted, render children
-    if (permissionGranted && !loading) {
+    // If location is granted OR auto-bypass timer expired, render children
+    // This ensures app loads even if GPS is slow (like banking apps)
+    if ((permissionGranted && !loading) || autoBypass) {
         return <>{children}</>;
     }
 
-    // If loading, show loading state
+    // If loading (and not yet bypassed), show loading state with countdown
     if (loading) {
         return (
             <div className="location-gate">
@@ -105,10 +120,11 @@ export default function LocationGate({ children }) {
                         <MapPin size={48} />
                     </div>
                     <h1>Detecting Your Location</h1>
-                    <p>Please allow location access for the best experience</p>
+                    <p>Using GPS for accurate location (up to 60 seconds)</p>
                     <div className="location-gate-loader">
                         <Loader2 className="spin" size={32} />
                     </div>
+                    <p className="location-gate-hint">App will load shortly even if detection takes time...</p>
                 </div>
                 <style>{gateStyles}</style>
             </div>
@@ -284,6 +300,13 @@ const gateStyles = `
     justify-content: center;
     margin-top: 20px;
     color: #22c55e;
+  }
+
+  .location-gate-hint {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 16px;
+    margin-bottom: 0;
   }
 
   .spin {

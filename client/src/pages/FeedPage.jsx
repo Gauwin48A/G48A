@@ -26,7 +26,6 @@ const FeedPage = () => {
   const [likeCounts, setLikeCounts] = useState({});
   const [viewCounts, setViewCounts] = useState({});
   const [shareToast, setShareToast] = useState("");
-  const [isShuffling, setIsShuffling] = useState(false); // Chaos Engine shuffle state
 
   // Guest user restrictions
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -40,93 +39,72 @@ const FeedPage = () => {
   }, []);
 
   // Fetch feed posts
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    const fetchPosts = async () => {
-      try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        // Add shuffle sort and cache buster to ensure fresh content on every refresh
-        const cacheBuster = Date.now();
-        const url = `${baseUrl}/api/posts?page=${currentPage}&limit=${postsPerPage}&sortBy=shuffle&_t=${cacheBuster}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch feed');
-        const data = await res.json();
-        let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
-
-        // Translate posts to current language
-        if (currentLang && currentLang !== 'en') {
-          loadedPosts = await translatePosts(loadedPosts, currentLang);
-        }
-
-        if (currentPage === 1) {
-          setPosts(loadedPosts);
-        } else {
-          setPosts(prev => [...prev, ...loadedPosts]);
-        }
-
-        const likes = {};
-        const views = {};
-        loadedPosts.forEach(post => {
-          const id = post.post_id || post.id;
-          likes[id] = post.likes || 0;
-          views[id] = post.views_count || post.views || 0;
-        });
-        setLikeCounts(prev => ({ ...prev, ...likes }));
-        setViewCounts(prev => ({ ...prev, ...views }));
-        setHasMore(loadedPosts.length === postsPerPage);
-      } catch (err) {
-        setError(err.message);
-        setPosts([]);
-        setHasMore(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
-  }, [currentPage, currentLang]);
-
-  // CHAOS ENGINE: Shuffle feed with high-performance random query
-  const handleShuffle = useCallback(async () => {
-    setIsShuffling(true);
-    setError(null);
+  const fetchFeed = useCallback(async (isRefresh = false) => {
     try {
+      setLoading(true);
+      setError(null);
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const cacheBuster = Date.now();
-      const res = await fetch(`${baseUrl}/api/feed/random?limit=20&_t=${cacheBuster}`);
-      if (!res.ok) throw new Error('Failed to shuffle');
-      const data = await res.json();
-      let shuffledPosts = Array.isArray(data.posts) ? data.posts : [];
 
-      // Translate if needed
-      if (currentLang && currentLang !== 'en') {
-        shuffledPosts = await translatePosts(shuffledPosts, currentLang);
+      // Use cache buster and shuffle sort for fresh content
+      const cacheBuster = Date.now();
+      const pageToFetch = isRefresh ? 1 : currentPage;
+      const url = `${baseUrl}/api/posts?page=${pageToFetch}&limit=${postsPerPage}&sortBy=shuffle&_t=${cacheBuster}`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch feed');
+      const data = await res.json();
+      let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
+
+      // Translate posts if needed
+      if (currentLang && currentLang !== 'en' && loadedPosts.length > 0) {
+        loadedPosts = await translatePosts(loadedPosts, currentLang);
       }
 
-      setPosts(shuffledPosts);
-      setCurrentPage(1);
-      setHasMore(shuffledPosts.length >= 10);
+      if (isRefresh || pageToFetch === 1) {
+        setPosts(loadedPosts);
+        setCurrentPage(1);
+      } else {
+        setPosts(prev => [...prev, ...loadedPosts]);
+      }
 
-      // Update counts
+      // Update counters
       const likes = {};
       const views = {};
-      shuffledPosts.forEach(post => {
+      loadedPosts.forEach(post => {
         const id = post.post_id || post.id;
-        likes[id] = post.likes_count || post.likes || 0;
+        likes[id] = post.likes || 0;
         views[id] = post.views_count || post.views || 0;
       });
-      setLikeCounts(likes);
-      setViewCounts(views);
 
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      console.log(`[Chaos Engine] Shuffled ${shuffledPosts.length} posts in ${data.queryTimeMs}ms (${data.engine})`);
+      setLikeCounts(prev => isRefresh ? likes : ({ ...prev, ...likes }));
+      setViewCounts(prev => isRefresh ? views : ({ ...prev, ...views }));
+      setHasMore(loadedPosts.length === postsPerPage);
     } catch (err) {
       setError(err.message);
+      if (isRefresh) setPosts([]);
+      setHasMore(false);
     } finally {
-      setIsShuffling(false);
+      setLoading(false);
     }
-  }, [currentLang]);
+  }, [currentPage, currentLang, postsPerPage]);
+
+  // Initial load or on language change
+  useEffect(() => {
+    fetchFeed(true);
+  }, [currentLang]); // Only trigger refresh on language change or mount
+
+  // Triggered when current page changes (for infinite scroll)
+  useEffect(() => {
+    if (currentPage > 1) {
+      fetchFeed(false);
+    }
+  }, [currentPage]);
+
+  const handleRefresh = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    fetchFeed(true);
+  };
+
 
   // Infinite scroll
   const loadMorePosts = useCallback(() => {
@@ -223,22 +201,9 @@ const FeedPage = () => {
               </p>
             </div>
 
-            {/* Action buttons - visible for all users */}
-            <div className="flex gap-3">
-              {/* CHAOS ENGINE: Shuffle Button */}
-              <Button
-                onClick={handleShuffle}
-                disabled={isShuffling}
-                variant="outline"
-                className="bg-transparent border-2 border-yellow-400/70 text-yellow-300 hover:bg-yellow-400/20 font-bold px-4 py-3 rounded-xl flex items-center gap-2"
-              >
-                {isShuffling ? (
-                  <><span className="animate-spin">🔄</span> Shuffling...</>
-                ) : (
-                  <>🎰 Shuffle</>
-                )}
-              </Button>
 
+
+            <div className="flex gap-3">
               <Button
                 onClick={() => navigate('/my-feed')}
                 variant="outline"
@@ -257,6 +222,23 @@ const FeedPage = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Refresh Banner */}
+      <div
+        className="sticky top-0 z-40 flex justify-center p-2 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border-b transition-all active:bg-white/80"
+      >
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 px-6 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/40 shadow-sm border border-indigo-100 dark:border-indigo-800 active:scale-95 transition-transform flex items-center gap-2"
+        >
+          {loading && currentPage === 1 ? (
+            <><span className="animate-spin inline-block">🔄</span> {t('refreshing') || 'Refreshing...'}</>
+          ) : (
+            <>✨ {t('tap_for_new') || 'Tap for new posts'} ↑</>
+          )}
+        </button>
       </div>
 
       {/* Content */}
@@ -418,18 +400,20 @@ const FeedPage = () => {
         </div>
       </div>
 
-      {shareToast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50">
-          {shareToast}
-        </div>
-      )}
+      {
+        shareToast && (
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50">
+            {shareToast}
+          </div>
+        )
+      }
 
       {/* Login Prompt Modal for Guest Users */}
       <LoginPromptModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
       />
-    </div>
+    </div >
   );
 };
 

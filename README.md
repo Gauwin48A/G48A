@@ -136,6 +136,7 @@ TABLE payments (
 - `GET /api/feed` - ?page=1&limit=20
 - `GET /api/feed/nearby` - ?lat=17.38&lng=78.48&radius=10
 - `GET /api/feed/search` - ?q=iphone
+- `GET /api/posts?sortBy=shuffle` - Randomized discovery feed (Node.js Memory Shuffle)
 
 ### Posts
 - `POST /api/posts` - { title, price, images[], lat, lng, category } (Protect: Auth)
@@ -206,6 +207,62 @@ server/
 - [ ] **AI Price Prediction:** Suggest price based on history.
 - [ ] **Video Listings:** 30s video uploads.
 - [ ] **Escrow Service:** Hold money until delivery.
+
+---
+
+## 8. Development Logs: The Great UUID Resolution
+**Issue:** Persistent `operator does not exist: uuid = integer` crashes and `tier_priority` missing column errors.
+
+### The Root Cause
+The database was in a "hybrid" state where some tables/columns (like `users.user_id`) were migrated to UUIDs, while others (like `profiles.user_id` or `posts.category_id`) remained as Integers. Additionally, an older version of the schema script (`MHUB_ULTIMATE.sql`) was missing critical fairness columns.
+
+### The Permanent Solution
+1. **Schema Remediation:** Ran [`schema_remediation.sql`](file:///c:/Users/laksh/GITHUB/AG/Mhub/server/database/migrations/schema_remediation.sql) to add missing columns (`tier_priority`, `sold_at`, `expires_at`) and unify table structures.
+2. **Global Type-Safety (SQL String Casting):** Modified all SQL queries in the backend to use `::text` casting for ID comparisons (e.g., `WHERE p.user_id::text = u.user_id::text`).
+   - This makes the code **"type-blind"**, allowing it to compare IDs regardless of whether they are UUIDs or legacy Integers.
+   - **Status:** Resolved & Verified on Port 8082.
+
+---
+
+## 10. Randomized Feed System: Discovery UX & Stability
+**Issue:** 500 "integer out of range" errors when using `Date.now()` timestamps in SQL queries and stagnant feed content.
+
+### Technical Implementation
+1. **BigInt Overflow Protection:**
+   - All timestamp-based parameters (e.g., `_t`, `refreshSeed`) are now cast as `::bigint` in SQL queries (`guaranteedReachQuery.js`, `feedQuery.js`).
+   - This prevents crashes when passing 13-digit JavaScript timestamps to PostgreSQL's 32-bit `integer` type.
+2. **Zero-Cost Memory Shuffle:**
+   - Modified `postController.js` to fetch the latest 200 posts and perform an in-memory shuffle using the Fisher-Yates algorithm in Node.js.
+   - This avoids the O(N) cost of `ORDER BY RANDOM()` while ensuring unique discovery for every user.
+3. **Sticky Discovery UX:**
+   - Implemented a "Tap to see new posts" banner in `FeedPage.jsx`.
+   - Uses `cacheBuster` to force fresh data fetches and automatically scrolls to top on refresh.
+
+---
+
+## 9. Native GPS Location Implementation Strategy
+To achieve banking-app quality GPS (high accuracy, non-blocking), the following strategy is implemented:
+- **Primary:** Capacitor Geolocation for native mobile access.
+- **Accuracy:** 3-10 meters with Wi-Fi/Cell triangulation.
+- **Fallback:** IP-based location for web/desktop.
+- **Integration:** Managed via `LocationContext.jsx` and `nativeGpsService.js`.
+
+---
+
+## 11. Velocity & Risk Defense System (The Architect's Protocol)
+**Issue:** Account takeover risks and fraudulent logins.
+
+### Technical Implementation
+1. **Strict GPS Mandate:**
+   - Logins are now impossible without active GPS permissions.
+   - Frontend `getCoordinates()` mandates sub-10m accuracy before permitting auth calls.
+2. **Velocity Risk Engine:**
+   - Calculates geographic displacement between current and last login.
+   - Blocks "Impossible Travel" (e.g., speed > 900 km/h) with a hard 403 verdict.
+   - Challenges new devices with compulsory OTP.
+3. **Zero-Maintenance Logs:**
+   - Auto-cleaning trigger (10% probability) manages `login_history` storage.
+   - Keeps only the last 30 days of data for performance parity.
 
 ---
 

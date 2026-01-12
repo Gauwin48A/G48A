@@ -9,7 +9,9 @@ import { FilterProvider } from './context/FilterContext.jsx';
 import { LocationProvider, useLocation } from './context/LocationContext.jsx';
 import LanguageSelector from './components/LanguageSelector';
 import { useTranslation } from 'react-i18next';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { App as CapacitorApp } from '@capacitor/app';
+// Redundant mobileLocation import removed
 
 
 // Lazy load pages
@@ -124,16 +126,50 @@ function AppContent() {
       // Security module not critical, continue
     });
 
-    // Smart location sync (only if user moved > 500m)
-    const token = localStorage.getItem('token');
-    if (token) {
+    // Smart location sync (Zero Maintenance)
+    const userId = localStorage.getItem('userId');
+    if (userId) {
       import('@/services/locationService').then(({ checkAndSyncLocation }) => {
-        checkAndSyncLocation();
+        checkAndSyncLocation(userId);
       }).catch(() => {
         // Location sync not critical
       });
     }
   }, []);
+
+  const { user } = useAuth();
+
+  // THE DEFENDER: Mobile Lifecycle Triggers
+  useEffect(() => {
+    const handleAppLaunch = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId) return;
+      console.log("[DEFENDER] App Active. Syncing Banking-Grade Location...");
+      import('@/services/locationService').then(({ syncLocationToBackend }) => {
+        syncLocationToBackend(userId);
+      });
+    };
+
+    // Trigger on Mount
+    handleAppLaunch();
+
+    // Trigger on Resume
+    const setupListener = async () => {
+      const listener = await CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          console.log("[DEFENDER] App Resumed. updating...");
+          handleAppLaunch();
+        }
+      });
+      return listener;
+    };
+
+    const listenerPromise = setupListener();
+
+    return () => {
+      listenerPromise.then(l => l.remove());
+    };
+  }, [user]);
 
   // Socket listener for notifications
   useEffect(() => {

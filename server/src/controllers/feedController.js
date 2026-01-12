@@ -168,10 +168,10 @@ exports.getDynamicFeed = async (req, res) => {
           c.name AS category_name,
           COALESCE(pr.full_name, 'Seller') AS author_name
         FROM posts p
-        LEFT JOIN profiles pr ON p.user_id = pr.user_id
+        LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         LEFT JOIN categories c ON p.category_id = c.category_id
         WHERE p.status = 'active'
-        ORDER BY (p.post_id * ${Math.floor(Date.now() / 10000) % 1000}) % 1000, p.created_at DESC
+        ORDER BY (ABS(HASHTEXT(p.post_id::text))::bigint * ${Math.floor(Date.now() / 10000) % 1000}) % 1000, p.created_at DESC
         LIMIT $1
       `, [20]);
 
@@ -289,8 +289,8 @@ exports.getRandomFeed = async (req, res) => {
         COALESCE(pr.full_name, u.username, 'Seller') AS author_name,
         u.username
       FROM posts p TABLESAMPLE BERNOULLI(5)
-      LEFT JOIN users u ON p.user_id = u.user_id
-      LEFT JOIN profiles pr ON p.user_id = pr.user_id
+      LEFT JOIN users u ON p.user_id::text = u.user_id::text
+      LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.status = 'active'
         AND (p.expires_at IS NULL OR p.expires_at > NOW())
@@ -327,8 +327,8 @@ exports.getRandomFeed = async (req, res) => {
           COALESCE(pr.full_name, u.username, 'Seller') AS author_name,
           u.username
         FROM posts p
-        LEFT JOIN users u ON p.user_id = u.user_id
-        LEFT JOIN profiles pr ON p.user_id = pr.user_id
+        LEFT JOIN users u ON p.user_id::text = u.user_id::text
+        LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         LEFT JOIN categories c ON p.category_id = c.category_id
         WHERE p.status = 'active'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
@@ -401,7 +401,7 @@ exports.getNearbyFeed = async (req, res) => {
                COALESCE(pr.full_name, 'Seller') as seller_name
         FROM posts p
         LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN profiles pr ON p.user_id = pr.user_id
+        LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         WHERE p.status = 'active'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
           AND p.sold_at IS NULL
@@ -478,7 +478,7 @@ exports.searchPosts = async (req, res) => {
           ts_rank(p.search_vector, plainto_tsquery('english', $1)) as rank
         FROM posts p
         LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN profiles pr ON p.user_id = pr.user_id
+        LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         WHERE p.status = 'active'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
           AND p.sold_at IS NULL
@@ -497,7 +497,7 @@ exports.searchPosts = async (req, res) => {
           COALESCE(pr.full_name, 'Seller') as seller_name
         FROM posts p
         LEFT JOIN categories c ON p.category_id = c.category_id
-        LEFT JOIN profiles pr ON p.user_id = pr.user_id
+        LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
         WHERE p.status = 'active'
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
           AND (p.title ILIKE $1 OR p.description ILIKE $1 OR p.location ILIKE $1)

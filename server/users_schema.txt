@@ -1,0 +1,27 @@
+user_id: integer
+username: character varying
+name: character varying
+email: character varying
+password_hash: character varying
+phone_number: character varying
+role: character varying
+referral_code: character varying
+referred_by: integer
+email_verified: boolean
+verification_token: text
+verification_token_expiry: timestamp without time zone
+reset_token: text
+reset_token_expiry: timestamp without time zone
+refresh_token: text
+last_login: timestamp without time zone
+phone_verified: boolean
+kyc_verified: boolean
+isaadhaarverified: boolean
+preferred_language: character varying
+rating: numeric
+trust_score: integer
+latitude: numeric
+longitude: numeric
+is_active: boolean
+created_at: timestamp without time zone
+updated_at: timestamp without time zone

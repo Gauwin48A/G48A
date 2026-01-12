@@ -17,10 +17,10 @@
 const GUARANTEED_REACH_QUERY = `
 WITH config AS (
     SELECT 
-        $1::int AS uid,
+        $1::text AS uid,
         -- Time seed changes every 5 seconds for faster rotation
         -- Combined with client refresh seed ($3) for instant variety on every refresh
-        EXTRACT(EPOCH FROM NOW())::bigint / 5 + COALESCE($3::int, 0) AS time_seed
+        EXTRACT(EPOCH FROM NOW())::bigint / 5 + COALESCE($3::bigint, 0) AS time_seed
 ),
 -- Get ALL active posts with guaranteed reach scoring
 all_posts_scored AS (
@@ -74,7 +74,7 @@ all_posts_scored AS (
         ABS(HASHTEXT(
             p.post_id::text || 
             (SELECT time_seed FROM config)::text || 
-            COALESCE((SELECT uid FROM config), 0)::text ||
+            COALESCE((SELECT uid FROM config), '')::text ||
             RANDOM()::text  -- Extra randomness for guaranteed variety
         )) % 50000 AS random_score,
         
@@ -91,8 +91,11 @@ all_posts_scored AS (
       AND p.created_at > NOW() - INTERVAL '30 days'  -- Include posts up to 30 days
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
       AND (
-          (SELECT uid FROM config) = 0 
-          OR p.user_id != (SELECT uid FROM config)  -- Don't show own posts
+          (SELECT uid FROM config) IS NULL 
+          OR (SELECT uid FROM config) = ''
+          OR (SELECT uid FROM config) = '0'
+          OR (SELECT uid FROM config) = 'null'
+          OR p.user_id::text != (SELECT uid FROM config)  -- Don't show own posts
       )
 ),
 -- Apply author diversity constraints
@@ -104,12 +107,12 @@ ranked_posts AS (
         (a.tier_boost + a.impression_boost + a.freshness_boost + a.random_score) AS total_score,
         -- Author diversity: Only 1 post per author per page
         ROW_NUMBER() OVER (
-            PARTITION BY a.author_id 
+            PARTITION BY a.author_id::text 
             ORDER BY a.tier_boost DESC, a.impression_boost DESC, a.freshness_boost DESC, a.random_score DESC
         ) AS author_rank,
         -- Category diversity: Max 3 posts per category
         ROW_NUMBER() OVER (
-            PARTITION BY a.category_id 
+            PARTITION BY a.category_id::text 
             ORDER BY a.tier_boost DESC, a.impression_boost DESC, a.freshness_boost DESC, a.random_score DESC
         ) AS category_rank
     FROM all_posts_scored a
@@ -132,7 +135,7 @@ SELECT
     c.name AS category_name,
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM ranked_posts r
-LEFT JOIN profiles pr ON r.author_id = pr.user_id
+LEFT JOIN profiles pr ON r.author_id::text = pr.user_id::text
 LEFT JOIN categories c ON r.category_id = c.category_id
 WHERE r.author_rank = 1        -- Max 1 post per author
   AND r.category_rank <= 3     -- Max 3 posts per category  
@@ -170,7 +173,7 @@ SELECT
     c.name AS category_name,
     COALESCE(pr.full_name, 'Seller') AS author_name
 FROM posts p
-LEFT JOIN profiles pr ON p.user_id = pr.user_id
+LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
 LEFT JOIN categories c ON p.category_id = c.category_id
 WHERE p.status = 'active'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())

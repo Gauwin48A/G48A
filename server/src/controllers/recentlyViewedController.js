@@ -20,7 +20,7 @@ const addRecentlyViewed = async (req, res) => {
         // Upsert - insert or update view count (with source)
         const result = await pool.query(`
             INSERT INTO recently_viewed (user_id, post_id, view_count, viewed_at, source)
-            VALUES ($1, $2, 1, NOW(), $3)
+            VALUES ($1::text, $2::text, 1, NOW(), $3)
             ON CONFLICT (user_id, post_id) 
             DO UPDATE SET 
                 view_count = recently_viewed.view_count + 1,
@@ -63,11 +63,11 @@ const getRecentlyViewed = async (req, res) => {
                 c.name as category_name,
                 COALESCE(pr.full_name, u.username) as seller_name
             FROM recently_viewed rv
-            JOIN posts p ON rv.post_id = p.post_id
-            LEFT JOIN users u ON p.user_id = u.user_id
-            LEFT JOIN profiles pr ON p.user_id = pr.user_id
-            LEFT JOIN categories c ON p.category_id = c.category_id
-            WHERE rv.user_id = $1
+            JOIN posts p ON rv.post_id::text = p.post_id::text
+            LEFT JOIN users u ON p.user_id::text = u.user_id::text
+            LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
+            LEFT JOIN categories c ON p.category_id::text = c.category_id::text
+            WHERE rv.user_id::text = $1
         `;
 
         const params = [userId];
@@ -101,7 +101,7 @@ const clearHistory = async (req, res) => {
     }
 
     try {
-        await pool.query('DELETE FROM recently_viewed WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM recently_viewed WHERE user_id::text = $1', [userId]);
         res.json({ message: 'History cleared' });
     } catch (error) {
         console.error('Clear history error:', error);
@@ -120,7 +120,7 @@ const removeFromHistory = async (req, res) => {
 
     try {
         await pool.query(
-            'DELETE FROM recently_viewed WHERE user_id = $1 AND post_id = $2',
+            'DELETE FROM recently_viewed WHERE user_id::text = $1 AND post_id::text = $2',
             [userId, postId]
         );
         res.json({ message: 'Removed from history' });

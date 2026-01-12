@@ -161,7 +161,7 @@ router.post('/batch-view', async (req, res) => {
   try {
     // Single query to update multiple rows
     const result = await pool.query(
-      `UPDATE posts SET views = COALESCE(views, 0) + 1 WHERE post_id = ANY($1::int[])`,
+      `UPDATE posts SET views = COALESCE(views, 0) + 1 WHERE post_id = ANY($1::uuid[])`,
       [postIds]
     );
 

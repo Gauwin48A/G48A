@@ -1,0 +1,24 @@
+post_id: integer
+user_id: integer
+category_id: integer
+tier_id: integer
+title: character varying
+description: text
+price: numeric
+discount_percentage: numeric
+location: character varying
+latitude: numeric
+longitude: numeric
+status: character varying
+post_type: character varying
+images: jsonb
+condition: character varying
+views_count: integer
+views: integer
+shares: integer
+likes: integer
+created_at: timestamp without time zone
+updated_at: timestamp without time zone
+tier_priority: integer
+sold_at: timestamp with time zone
+expires_at: timestamp with time zone

@@ -24,7 +24,7 @@ exports.getUserPosts = async (req, res) => {
     // Join with posts to get full post details where this user is the buyer
     const boughtPostsResult = await pool.query(
       `SELECT p.* FROM posts p
-       INNER JOIN transactions t ON p.post_id = t.post_id
+       INNER JOIN transactions t ON p.post_id::text = t.post_id::text
        WHERE t.buyer_id = $1 AND t.status = 'completed' AND p.user_id != $1
        ORDER BY t.completed_at DESC`,
       [userId]
@@ -95,14 +95,13 @@ exports.getAllPosts = async (req, res) => {
         u.rating as seller_rating,
         COALESCE(pr.full_name, u.username) as user_name,
         c.name as category_name,
-
-        
-        (SELECT is_verified FROM user_verifications WHERE user_id = p.user_id AND verification_type = 'aadhaar' LIMIT 1) as aadhaar_verified,
-        (SELECT is_verified FROM user_verifications WHERE user_id = p.user_id AND verification_type = 'pan' LIMIT 1) as pan_verified,
-        (SELECT verified_at FROM user_verifications WHERE user_id = p.user_id AND is_verified = true ORDER BY verified_at DESC LIMIT 1) as verification_date
+        -- Verification fields temporarily disabled due to UUID migration
+        NULL as aadhaar_verified,
+        NULL as pan_verified,
+        NULL as verification_date
       FROM posts p
-      LEFT JOIN users u ON p.user_id = u.user_id
-      LEFT JOIN profiles pr ON p.user_id = pr.user_id
+      LEFT JOIN users u ON p.user_id::text = u.user_id::text
+      LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
       LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.status = 'active'
         AND (p.expires_at IS NULL OR p.expires_at > NOW())
@@ -117,7 +116,7 @@ exports.getAllPosts = async (req, res) => {
       params.push(`%${search}%`);
     }
     if (category) {
-      query += ` AND p.category_id = $${params.length + 1}`;
+      query += ` AND p.category_id::text = $${params.length + 1}`;
       params.push(category);
     }
     if (location) {
@@ -125,7 +124,7 @@ exports.getAllPosts = async (req, res) => {
       params.push(`%${location}%`);
     }
     if (author) {
-      query += ` AND p.user_id = $${params.length + 1}`;
+      query += ` AND p.user_id::text = $${params.length + 1}`;
       params.push(author); // UUID is string
     }
     if (startDate) {
@@ -150,19 +149,52 @@ exports.getAllPosts = async (req, res) => {
     let sortClause;
 
     if (sortBy === 'shuffle' || sortBy === 'random') {
-      // Time-seeded random: changes every 30 seconds for fresh content
-      // Premium posts still get priority even in shuffle mode
-      const timeSeed = Math.floor(Date.now() / 30000); // Changes every 30 seconds
-      sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, (p.post_id * ${timeSeed % 1000}) % 1000, p.created_at DESC`;
-    } else if (sortBy === 'tier_priority' || sortBy === 'priority') {
-      // Explicit tier priority sorting (Protocol: Value Hierarchy)
-      sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, p.created_at DESC`;
-    } else {
-      // Default sorting - always include tier_priority as secondary sort
-      const safeSortBy = ['created_at', 'price', 'views_count'].includes(sortBy) ? `p.${sortBy}` : 'p.created_at';
-      const safeSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-      sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, ${safeSortBy} ${safeSortOrder}`;
+      // THE "INSTAGRAM ALGORITHM" (Pseudo-randomized feed)
+      // Instead of expensive SQL ORDER BY RANDOM(), we fetch the top 200 most recent items.
+      // We then shuffle them in Node.js (cheap) to ensure a fresh experience on every refresh.
+      // Filtering and other logic still apply.
+      const shuffleLimit = 200;
+      query += ` ORDER BY p.created_at DESC LIMIT ${shuffleLimit}`;
+
+      const result = await pool.query(query, params);
+
+      // Shuffle the results array
+      const shuffled = result.rows.sort(() => 0.5 - Math.random());
+
+      // Paginate the shuffled results manually
+      const paginatedRows = shuffled.slice(offset, offset + limit);
+
+      // Return early as we've already executed the query and sliced the results
+      const posts = paginatedRows.map(post => ({
+        ...post,
+        id: post.post_id,
+        tier_priority: post.tier_priority || 1,
+        category: post.category_name || 'General',
+        user: {
+          name: post.user_name || post.username || 'Unknown',
+          username: post.username,
+          email: post.email,
+          rating: parseFloat(post.seller_rating) || 0,
+          isVerified: post.aadhaar_verified || post.pan_verified,
+          aadhaarVerified: post.aadhaar_verified,
+          panVerified: post.pan_verified,
+          verificationDate: post.verification_date
+        },
+        image_url: post.images?.[0] || post.image_url || '/placeholder.svg'
+      }));
+
+      // For shuffle mode, we treat the 200 posts as the world for pagination
+      return res.json({
+        posts,
+        total: Math.min(result.rows.length, shuffleLimit),
+        shuffled: true
+      });
     }
+
+    // Default sorting logic for non-shuffle requests
+    const safeSortBy = ['created_at', 'price', 'views_count'].includes(sortBy) ? `p.${sortBy}` : 'p.created_at';
+    const safeSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, ${safeSortBy} ${safeSortOrder}`;
 
     query += ` ${sortClause} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
@@ -532,7 +564,7 @@ async function queryWithTimeout(query, params, timeoutMs = QUERY_TIMEOUT) {
  */
 exports.getGuaranteedReachPosts = async (req, res) => {
   try {
-    const userId = req.user?.userId || req.user?.id || req.query.userId || 0;
+    const userId = req.user?.userId || req.user?.id || req.query.userId || null;
     const limit = Math.min(parseInt(req.query.limit) || 20, 50);
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
@@ -796,7 +828,7 @@ exports.reactivatePost = async (req, res) => {
 
     const post = postCheck.rows[0];
 
-    if (post.user_id !== parseInt(userId)) {
+    if (post.user_id !== userId) {
       return res.status(403).json({ error: 'You can only reactivate your own posts' });
     }
 

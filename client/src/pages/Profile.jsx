@@ -17,6 +17,7 @@ import '../i18n';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
 import { createChannel, getChannelByUser } from '../lib/api';
+import { syncNativeContacts } from '../services/mobileContacts';
 
 const Profile = () => {
   const { toast } = useToast();
@@ -686,6 +687,29 @@ const Profile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Find Friends (Native Contacts Sync) */}
+                <div
+                  onClick={async () => {
+                    toast({ title: 'Syncing Contacts...', description: 'Please allow access if prompted.' });
+                    if (user?.user_id) {
+                      await syncNativeContacts(user.user_id);
+                      toast({ title: 'Sync Complete', description: 'Your contacts have been processed.' });
+                    }
+                  }}
+                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                      <User className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 dark:text-white">{t('find_friends') || 'Find Friends'}</p>
+                      <p className="text-sm text-gray-500">{t('sync_contacts_desc') || 'Sync contacts to connect with friends'}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </div>
+
                 {[
                   { icon: Shield, labelKey: 'security_settings', descKey: 'two_factor_auth', action: 'Setup', link: '/security' },
                   { icon: Bell, labelKey: 'notifications', descKey: 'manage_push_notifications', action: 'Configure' },

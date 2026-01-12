@@ -56,6 +56,29 @@ const Login = () => {
     }
   };
 
+  // --- THE STRICT LOCATION FETCHER (The Architect's Protocol) ---
+  const getCoordinates = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by this browser."));
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (error) => {
+            // This handles User Denial
+            reject(new Error(t('location_mandatory_error') || "Location permission is MANDATORY for security. Please allow GPS access."));
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      }
+    });
+  };
+
   // ------------------ EMAIL LOGIN ------------------ //
   const handleEmailLogin = async (e) => {
     e.preventDefault();
@@ -80,23 +103,18 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      // 1. Get Device Fingerprint
-      const deviceId = getDeviceId();
+      // 1. FORCE GPS: If this fails, code stops here. User cannot proceed.
+      const location = await getCoordinates();
 
-      // 2. Get Location (Best effort)
-      let location = { lat: null, lng: null };
-      try {
-        location = await getCurrentLocation();
-      } catch (err) {
-        console.warn("Location fetch failed for login:", err);
-      }
+      // 2. Get Device Fingerprint
+      const deviceId = getDeviceId();
 
       const payload = {
         email: emailLogin.email,
         password: emailLogin.password,
         deviceId: deviceId,
-        lat: location?.latitude || null,
-        lng: location?.longitude || null,
+        lat: location.lat,
+        lng: location.lng,
       };
 
       // Add OTP if in challenge mode
@@ -124,7 +142,6 @@ const Login = () => {
       console.error("Login Error:", err);
 
       // Handle 202 Challenge specifically (Risk Engine)
-      // Note: If using axios, err.response holds the server response
       if (err.response && err.response.status === 202 && err.response.data.requireOtp) {
         setShowOtpInput(true);
         toast({
@@ -134,9 +151,12 @@ const Login = () => {
         return; // Stop here, let user enter OTP
       }
 
-      const errorMessage = err.response?.data?.error || err.message || t('login_failed') || "Login failed";
+      // Handle GPS Errors specifically
+      const isGpsError = err.message && (err.message.includes('MANDATORY') || err.message.includes('Geolocation'));
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || t('login_failed') || "Login failed";
+
       toast({
-        title: "Error",
+        title: isGpsError ? "Security Block" : "Error",
         description: errorMessage,
         variant: "destructive",
       });

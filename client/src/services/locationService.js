@@ -1,32 +1,83 @@
-const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + "/api/location";
+import { Geolocation } from '@capacitor/geolocation';
 
-// Protocol: Native Hybrid - Smart Location
+// 1. BANKING-GRADE CONFIGURATION
+const GEO_OPTIONS = {
+  enableHighAccuracy: true, // Forces GPS/WiFi hardware usage
+  timeout: 15000,           // Wait max 15s for satellite lock
+  maximumAge: 300000        // Accept cached location if < 5 mins old (Saves Battery)
+};
+
 const MIN_MOVEMENT_THRESHOLD = 500; // meters
 
 /**
- * Get browser's timezone (for fraud detection triangulation)
- * @returns {string} Timezone e.g., "Asia/Kolkata"
+ * Helper: Convert Lat/Lng to Human Address (Reverse Geocoding)
+ * Uses OpenStreetMap (Free, No API Key required for moderate usage)
  */
-const getBrowserTimezone = () => {
+const resolveAddress = async (lat, lng) => {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch (e) {
-    console.warn('[LocationService] Could not get timezone:', e);
-    return null;
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&zoom=18&addressdetails=1`,
+      { headers: { 'User-Agent': 'MHub/1.0 (Banking-Grade Location Engine)' } }
+    );
+    const data = await response.json();
+
+    // Extract meaningful parts like "Whitefield, Bangalore"
+    const address = data.address || {};
+    const city = address.city || address.town || address.village || address.suburb || address.locality || 'Unknown';
+    const state = address.state || '';
+    const pincode = address.postcode || '';
+    const district = address.state_district || address.county || '';
+
+    return {
+      formatted: `${city}${state ? ', ' + state : ''}`,
+      city,
+      state,
+      pincode,
+      district
+    };
+  } catch (err) {
+    console.warn("[LocationService] Address resolution failed:", err);
+    return { formatted: "Unknown Location", city: "Unknown", state: "", pincode: "", district: "" };
   }
 };
 
 /**
- * Haversine formula to calculate distance in meters
+ * THE CORE LOCATION FUNCTION (Banking-Grade)
  */
-const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
-  const R = 6371e3; // Earth radius in meters
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+export const getCurrentLocation = async () => {
+  try {
+    // A. Check and Request Permissions
+    const permissionStatus = await Geolocation.checkPermissions();
+    if (permissionStatus.location !== 'granted') {
+      const requestStatus = await Geolocation.requestPermissions();
+      if (requestStatus.location !== 'granted') {
+        throw new Error("Location permission denied. Cannot capture high-accuracy logs.");
+      }
+    }
+
+    // B. Get Precise Coordinates (Hardware Lock)
+    const coordinates = await Geolocation.getCurrentPosition(GEO_OPTIONS);
+    const { latitude, longitude, speed, accuracy } = coordinates.coords;
+
+    // C. Get Human Address (The "Smart" Touch)
+    const addressData = await resolveAddress(latitude, longitude);
+
+    return {
+      latitude,
+      longitude,
+      lat: latitude, // Support both naming conventions for compatibility
+      lng: longitude,
+      accuracy,
+      speed: speed || 0,
+      address: addressData,
+      city: addressData.city,
+      state: addressData.state,
+      timestamp: Date.now()
+    };
+  } catch (error) {
+    console.error("[LocationService] Critical Location Error:", error);
+    throw error;
+  }
 };
 
 /**
@@ -39,6 +90,7 @@ export async function sendLocation(locationData) {
 
   let attempts = 0;
   let lastError = null;
+  const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + "/api/location";
 
   while (attempts < 3) {
     try {
@@ -70,88 +122,34 @@ export async function sendLocation(locationData) {
 }
 
 /**
- * Capture current location from browser and send to backend.
- * Use this for login/signup events to refresh location data.
- * @param {string} userId - Optional user ID to associate with location
- * @returns {Promise<Object>} - Location data with coords
+ * Capture and Sync Location (Phase 3: Fraud Fingerprint)
  */
-export function captureLocation(userId = null) {
-  return new Promise((resolve, reject) => {
-    console.log("[LocationService] captureLocation called for user:", userId || "anonymous");
+export async function captureLocation(userId = null) {
+  try {
+    const loc = await getCurrentLocation();
 
-    if (!navigator.geolocation) {
-      const error = new Error("Geolocation not supported");
-      console.error("[LocationService] ERROR:", error.message);
-      reject(error);
-      return;
-    }
+    // Send to backend (log history)
+    const response = await sendLocation({
+      user_id: userId,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      accuracy: loc.accuracy,
+      speed: loc.speed,
+      city: loc.city,
+      state: loc.state,
+      provider: "native_gps",
+      permission_status: "granted"
+    });
 
-    console.log("[LocationService] Requesting fresh location...");
+    // Cache the rich data
+    localStorage.setItem("user_location", JSON.stringify(loc));
+    localStorage.setItem("mhub_user_city", loc.city);
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        console.log("[LocationService] captureLocation SUCCESS:");
-        console.log("[LocationService] Latitude:", pos.coords.latitude);
-        console.log("[LocationService] Longitude:", pos.coords.longitude);
-
-        const coords = {
-          user_id: userId,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          altitude: pos.coords.altitude,
-          heading: pos.coords.heading,
-          speed: pos.coords.speed,
-          timestamp: pos.timestamp,
-          provider: "browser",
-          permission_status: "granted",
-          // Protocol: Reality Check - Send timezone for triangulation
-          timezone: getBrowserTimezone()
-        };
-
-        try {
-          const response = await sendLocation(coords);
-
-          // Update cached location
-          const locationData = {
-            ...coords,
-            city: response.location?.city || 'Unknown',
-            country: response.location?.country || 'Unknown'
-          };
-          localStorage.setItem("user_location", JSON.stringify(locationData));
-          console.log("[LocationService] Location cached and synced to backend");
-
-          resolve(locationData);
-        } catch (err) {
-          // Handle VPN/Spoofing block errors
-          if (err.message?.includes('403') || err.message?.includes('Security') || err.message?.includes('Location')) {
-            console.error("[LocationService] 🔴 Blocked by fraud detection:", err.message);
-            // Don't cache location if blocked for fraud
-            reject(new Error(err.message || 'Location verification failed'));
-            return;
-          }
-
-          console.error("[LocationService] Failed to sync location to backend:", err);
-          // Still resolve with coords since we have the location
-          localStorage.setItem("user_location", JSON.stringify(coords));
-          resolve(coords);
-        }
-      },
-      (err) => {
-        console.error("[LocationService] captureLocation ERROR:");
-        console.error("[LocationService] Code:", err.code, "Message:", err.message);
-
-        // Don't reject - just log and resolve with null
-        // This way login/signup can continue even if location fails
-        resolve(null);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  });
+    return { ...loc, backend: response };
+  } catch (error) {
+    console.warn("[LocationService] captureLocation failed:", error.message);
+    throw error;
+  }
 }
 
 /**
@@ -160,6 +158,7 @@ export function captureLocation(userId = null) {
 export function clearCachedLocation() {
   console.log("[LocationService] Clearing cached location");
   localStorage.removeItem("user_location");
+  localStorage.removeItem("mhub_user_city");
 }
 
 /**
@@ -179,83 +178,78 @@ export function getCachedLocation() {
 }
 
 /**
- * Smart Sync: Check if user moved significantly before syncing
- * Only sends to server if user moved > 500m
- * Reduces server load by 99.9% for stationary users
+ * BACKWARD COMPATIBILITY: Haversine distance
  */
-export function checkAndSyncLocation() {
-  if (!navigator.geolocation) {
-    console.log("[LocationService] Geolocation not supported");
-    return;
+const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+/**
+ * Smart Sync: Check if user moved significantly before syncing (Zero Maintenance)
+ */
+export async function checkAndSyncLocation(userId = null) {
+  try {
+    const loc = await getCurrentLocation();
+    const lastSaved = getCachedLocation();
+
+    if (lastSaved?.lat && lastSaved?.lng) {
+      const distance = getDistanceInMeters(lastSaved.lat, lastSaved.lng, loc.lat, loc.lng);
+      if (distance < MIN_MOVEMENT_THRESHOLD) {
+        console.log(`[LocationService] Movement ${Math.round(distance)}m < threshold. Skipping sync.`);
+        return loc;
+      }
+    }
+
+    return await syncLocationToBackend(userId || localStorage.getItem('userId'), loc);
+  } catch (error) {
+    console.warn("[LocationService] Smart sync failed:", error.message);
   }
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-
-      // Check cached location
-      const lastSaved = getCachedLocation();
-
-      if (lastSaved && lastSaved.latitude && lastSaved.longitude) {
-        const distance = getDistanceInMeters(
-          lastSaved.latitude,
-          lastSaved.longitude,
-          lat,
-          lng
-        );
-
-        // If user moved less than threshold, skip server update
-        if (distance < MIN_MOVEMENT_THRESHOLD) {
-          console.log(`[LocationService] User moved only ${Math.round(distance)}m. Skipping sync.`);
-          return;
-        }
-
-        console.log(`[LocationService] User moved ${Math.round(distance)}m. Syncing...`);
-      }
-
-      // Send to server (user moved significantly or first sync)
-      try {
-        const token = localStorage.getItem('token');
-
-        // Protocol: Reality Check - Include timezone for fraud detection
-        const timezone = getBrowserTimezone();
-
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token && { "Authorization": `Bearer ${token}` })
-          },
-          body: JSON.stringify({ latitude: lat, longitude: lng, timezone }),
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          // Update cache
-          localStorage.setItem("user_location", JSON.stringify({
-            latitude: lat,
-            longitude: lng,
-            timestamp: Date.now()
-          }));
-          console.log("[LocationService] 📍 Location synced silently");
-        } else if (response.status === 403) {
-          // VPN or GPS spoofing detected
-          const errorData = await response.json().catch(() => ({}));
-          console.warn("[LocationService] 🔴 Fraud detected:", errorData.message || 'Access denied');
-          // Show user-friendly alert
-          if (typeof window !== 'undefined' && errorData.message) {
-            alert(errorData.message);
-          }
-        }
-      } catch (error) {
-        console.error("[LocationService] Silent sync failed:", error.message);
-      }
-    },
-    (error) => {
-      console.warn("[LocationService] Location access denied or unavailable");
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
 }
 
+/**
+ * SYNC TO BACKEND (The "Paper Trail")
+ */
+export async function syncLocationToBackend(userId, locationData = null) {
+  if (!userId) return;
+
+  try {
+    const loc = locationData || await getCurrentLocation();
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const token = localStorage.getItem('authToken');
+
+    // Dual Sync: 1. Update Profile | 2. Add to logs
+    const response = await fetch(`${API_BASE}/api/users/${userId}/location`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        latitude: loc.lat,
+        longitude: loc.lng,
+        city: loc.address.city,
+        state: loc.address.state,
+        pincode: loc.address.pincode,
+        device_speed: loc.speed,
+        last_active_at: new Date().toISOString()
+      })
+    });
+
+    if (response.ok) {
+      localStorage.setItem('mhub_user_city', loc.address.city);
+      localStorage.setItem('user_location', JSON.stringify(loc));
+      console.log("[LocationService] Location Secured in Profile:", loc.address.city);
+    }
+
+    return loc;
+  } catch (err) {
+    console.error("[LocationService] Sync failed:", err);
+    return null;
+  }
+}
