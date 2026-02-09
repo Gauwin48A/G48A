@@ -51,14 +51,15 @@ export const loginUser = async (loginData) => {
   console.log('[loginUser] Attempting login for:', loginData.email);
 
   try {
-    const res = await api.post('/api/auth/login', loginData);
-    console.log('[loginUser] Success:', res.data);
-    return res.data;
+    // Note: api.js baseURL already includes /api, so use relative path
+    const res = await api.post('/auth/login', loginData);
+    console.log('[loginUser] Success:', res);
+    return res; // api.js interceptor already unwraps response.data
   } catch (err) {
-    console.error('[loginUser] Error:', err.response?.data || err.message);
+    console.error('[loginUser] Error:', err);
     // Re-throw with proper format for Login.jsx to handle
-    if (err.response?.data?.error) {
-      throw { error: err.response.data.error };
+    if (err.error) {
+      throw { error: err.error };
     }
     throw { errors: [err.message || 'Login failed'] };
   }
