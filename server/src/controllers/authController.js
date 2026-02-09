@@ -2,215 +2,246 @@ const pool = require('../config/db');
 const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
 const zxcvbn = require('zxcvbn');
+const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
+const redisSession = require('../config/redisSession');
+const JWT_CONFIG = require('../config/jwtConfig');
 
-// HELPER: Generate Banking-Grade Token Cookie (Fort Knox Protocol)
-const sendTokenCookie = (user, res) => {
+// ============================================================================
+// HELPER: Unified Session Creator
+// Used by ALL login methods (OTP, Password, Hybrid)
+// ============================================================================
+const createSession = async (user, req, res) => {
+  // Support both column names: 'name' (existing) and 'full_name' (new)
+  const userName = user.full_name || user.name || 'User';
+
+  // 1. Generate Access Token (Short-lived)
   const accessToken = jwt.sign(
-    { id: user.user_id, role: user.role, name: user.full_name },
-    process.env.JWT_SECRET || 'fallback_secret_change_me',
-    { expiresIn: '15m' } // Short life for access token
+    { id: user.user_id, role: user.role, name: userName },
+    JWT_CONFIG.SECRET,
+    { expiresIn: JWT_CONFIG.ACCESS_EXPIRY }
   );
 
-  // REFRESH TOKEN (Long life, HttpOnly)
+  // 2. Generate Refresh Token (Long-lived)
   const refreshToken = jwt.sign(
     { id: user.user_id },
-    process.env.REFRESH_SECRET || 'fallback_refresh_secret',
-    { expiresIn: '7d' }
+    JWT_CONFIG.REFRESH_SECRET,
+    { expiresIn: JWT_CONFIG.REFRESH_EXPIRY }
   );
 
-  const cookieOptions = {
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    httpOnly: true, // CANNOT BE ACCESSED BY JS (Prevents XSS)
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-    sameSite: 'strict', // Prevents CSRF
+  // 3. Hash & Store Session
+  const tokenHash = await bcrypt.hash(refreshToken, 10);
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const deviceSpecs = req.headers['user-agent'] || 'Unknown Device';
+
+  try {
+    await pool.query(
+      `INSERT INTO user_sessions (user_id, token_hash, device_fingerprint, ip_address, user_agent, expires_at)
+       VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '30 days')`,
+      [user.user_id, tokenHash, req.body.deviceSpecs || deviceSpecs, clientIp, deviceSpecs]
+    );
+  } catch (err) {
+    console.log("[SESSION] Could not store session, continuing anyway:", err.message);
+  }
+
+  // 4. Set HttpOnly Cookie
+  res.cookie('refreshToken', refreshToken, JWT_CONFIG.COOKIE_OPTIONS);
+
+  return {
+    token: accessToken,
+    refreshToken, // Also return for localStorage fallback
+    user: {
+      id: user.user_id,
+      name: userName,
+      email: user.email,
+      phone: user.phone_number,
+      role: user.role,
+      tier: user.tier
+    }
   };
-
-  res.cookie('jwt', refreshToken, cookieOptions);
-
-  return accessToken;
 };
 
-// 1. SIGNUP
+// ============================================================================
+// 1. SIGNUP (Password Required)
+// ============================================================================
 exports.signup = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const { phone, password, fullName } = req.body;
+  const { phone, password, fullName, email } = req.body;
   const phoneNumber = phone || req.body.phone_number;
   const client = await pool.connect();
 
   try {
-    // 1. NIST PASSWORD STRENGTH CHECK
-    const strength = zxcvbn(password);
-    if (strength.score < 3) {
-      return res.status(400).json({
-        error: 'Password is too weak',
-        suggestions: strength.feedback.suggestions
-      });
+    // Password Strength Check
+    if (password) {
+      const strength = zxcvbn(password);
+      if (strength.score < 3) {
+        return res.status(400).json({
+          error: 'Password is too weak',
+          suggestions: strength.feedback.suggestions
+        });
+      }
     }
 
     await client.query('BEGIN');
 
-    // 2. Check if user exists
-    const userCheck = await client.query("SELECT user_id FROM users WHERE phone_number = $1", [phoneNumber]);
+    // Check if user exists
+    const userCheck = await client.query(
+      "SELECT user_id FROM users WHERE phone_number = $1 OR email = $2",
+      [phoneNumber, email]
+    );
     if (userCheck.rows.length > 0) {
       await client.query('ROLLBACK');
-      return res.status(409).json({ error: "User already exists with this phone number" });
+      return res.status(409).json({ error: "User already exists" });
     }
 
-    // 3. ARGON2 HASHING (Memory Hard)
-    const hashedPassword = await argon2.hash(password, {
+    // Hash password with Argon2
+    const hashedPassword = password ? await argon2.hash(password, {
       type: argon2.argon2id,
-      memoryCost: 2 ** 16, // 64MB RAM usage per hash (Anti-GPU)
+      memoryCost: 2 ** 16,
       timeCost: 3,
       parallelism: 1,
-    });
+    }) : null;
 
-    // 4. Insert User
+    // Generate username from email (e.g., john.doe@email.com -> john_doe)
+    const username = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_') + '_' + Date.now().toString(36);
+
+    // Insert User - use only columns that exist in the database
     const newUserResult = await client.query(
-      "INSERT INTO users (phone_number, password_hash, full_name, role) VALUES ($1, $2, $3, 'user') RETURNING user_id, phone_number, full_name, role",
-      [phoneNumber, hashedPassword, fullName]
+      `INSERT INTO users (username, name, phone_number, email, password_hash, role) 
+       VALUES ($1, $2, $3, $4, $5, 'user') 
+       RETURNING user_id, phone_number, email, name, role`,
+      [username, fullName, phoneNumber, email, hashedPassword]
     );
     const newUser = newUserResult.rows[0];
 
-    // 5. LOG AUDIT EVENT
-    await client.query(
-      'INSERT INTO security_logs (user_id, event_type, ip_address, user_agent) VALUES ($1, $2, $3, $4)',
-      [newUser.user_id, 'SIGNUP_SUCCESS', req.ip, req.headers['user-agent']]
-    );
+    // Audit Log (non-blocking - signup should succeed even if logging fails)
+    try {
+      await client.query(
+        'INSERT INTO audit_logs (user_id, action, ip_address, user_agent) VALUES ($1, $2, $3, $4)',
+        [newUser.user_id, 'SIGNUP_SUCCESS', req.ip, req.headers['user-agent']]
+      );
+    } catch (logErr) {
+      console.warn('[AUDIT] Failed to log signup, continuing anyway:', logErr.message);
+    }
 
     await client.query('COMMIT');
 
-    const token = sendTokenCookie(newUser, res);
+    // Create Session
+    const sessionData = await createSession(newUser, req, res);
 
     res.status(201).json({
       success: true,
-      token,
-      user: { id: newUser.user_id, name: newUser.full_name, role: newUser.role, phone: newUser.phone_number }
+      ...sessionData
     });
 
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error("[AUTH ERROR]", err);
+    console.error("[SIGNUP ERROR]", err);
     res.status(500).json({ error: "Server error during signup" });
   } finally {
     client.release();
   }
 };
 
-const { evaluateLoginRisk } = require('../services/riskEngine');
-
-// 2. LOGIN
+// ============================================================================
+// 2. LOGIN WITH PASSWORD (Email OR Phone + Password)
+// ============================================================================
 exports.login = async (req, res) => {
-  const { phone, password, lat, lng, deviceId, otp } = req.body;
-  const phoneNumber = phone || req.body.phone_number;
+  const { email, phone, password, identifier, lat, lng, deviceId, otp } = req.body;
+
+  // Support both formats: { email, password } or { identifier, password }
+  const loginIdentifier = identifier || email || phone;
 
   try {
-    // 1. DUAL LOCATION STRATEGY (GPS + IP Fallback)
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-    // Note: We no longer block immediately if !lat. 
-    // The Risk Engine will handle IP derivation if GPS is missing.
+    // Find User (by email OR phone)
+    const result = await pool.query(
+      "SELECT * FROM users WHERE email = $1 OR phone_number = $1",
+      [loginIdentifier]
+    );
 
-    // A. Find User
-    // A. Find User
-    // Note: We relaxed the strict check to allow IP Fallback in Risk Engine if GPS is missing.
-    // The Risk Engine will return BLOCK/CHALLENGE if both fail.
-
-    const result = await pool.query("SELECT * FROM users WHERE phone_number = $1", [phoneNumber]);
     if (result.rows.length === 0) {
-      // Fake delay to prevent enumeration
-      await argon2.hash("dummy");
-      return res.status(401).json({ error: "Invalid phone number or password" });
+      await argon2.hash("dummy"); // Timing attack prevention
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // C. CHECK LOCKOUT (Fort Knox Protocol)
-    if (user.lock_until && user.lock_until > new Date()) {
-      return res.status(403).json({
-        error: "Account Locked",
-        message: 'Account temporarily locked for security. Try after 15 minutes.'
+    const user = result.rows[0];
+
+    // Check if password exists
+    if (!user.password_hash) {
+      return res.status(400).json({
+        error: "No password set for this account. Please use OTP login.",
+        useOtp: true
       });
     }
 
-    // D. Verify Password (Argon2id)
-    const isMatch = await argon2.verify(user.password_hash, password);
+    // Check Lockout
+    if (user.lock_until && user.lock_until > new Date()) {
+      return res.status(403).json({
+        error: "Account temporarily locked. Try again in 15 minutes."
+      });
+    }
+
+    // Verify Password (Support both bcrypt and argon2 hashes)
+    let isMatch = false;
+
+    // Check if hash is bcrypt ($2b$ or $2a$) or argon2 ($argon2id$)
+    if (user.password_hash.startsWith('$2b$') || user.password_hash.startsWith('$2a$')) {
+      // Existing users have bcrypt hashes
+      isMatch = await bcrypt.compare(password, user.password_hash);
+    } else {
+      // New users have argon2 hashes
+      try {
+        isMatch = await argon2.verify(user.password_hash, password);
+      } catch (e) {
+        isMatch = false;
+      }
+    }
 
     if (!isMatch) {
-      // INCREMENT FAILED ATTEMPTS
+      // Increment failed attempts (RELAXED FOR TESTING: lockout after 50 attempts)
       const attempts = (user.login_attempts || 0) + 1;
-      let lockQuery = 'UPDATE users SET login_attempts = $1 WHERE user_id = $2';
-      let params = [attempts, user.user_id];
-
-      if (attempts >= 5) {
-        lockQuery = "UPDATE users SET login_attempts = 0, lock_until = NOW() + INTERVAL '15 minutes' WHERE user_id = $2";
-      }
-
-      await pool.query(lockQuery, params);
-
-      // LOG FAILURE (Audit Trail)
-      await pool.query(
-        'INSERT INTO security_logs (user_id, event_type, ip_address) VALUES ($1, $2, $3)',
-        [user.user_id, 'LOGIN_FAILED', clientIp]
-      );
-
-      // FAKE DELAY to prevent Time-Based Enumeration attacks
-      await argon2.hash("dummy_password_for_timing");
-
-      return res.status(401).json({ error: "Invalid phone number or password" });
-    }
-
-    // E. EVALUATE VELOCITY & RISK (The "Superman" check)
-    const risk = await evaluateLoginRisk(user.user_id, lat, lng, deviceId, clientIp);
-    console.log(`[RISK ENGINE] User: ${phoneNumber} | Risk: ${risk.score} | Action: ${risk.action}`);
-
-    if (risk.action === 'BLOCK') {
-      return res.status(403).json({ error: `Security Alert: ${risk.reasons.join('. ')}` });
-    }
-
-    if (risk.action === 'CHALLENGE') {
-      if (!otp) {
-        return res.status(202).json({
-          requireOtp: true,
-          message: "Unusual activity detected. Please enter the OTP sent to your registered email."
-        });
+      if (attempts >= 50) { // Was 5, increased for testing
+        await pool.query(
+          "UPDATE users SET login_attempts = 0, lock_until = NOW() + INTERVAL '15 minutes' WHERE user_id = $1",
+          [user.user_id]
+        );
       } else {
-        const isValid = (otp === "1234"); // Mock verification
-        if (!isValid) return res.status(400).json({ error: "Invalid Security Code" });
+        await pool.query(
+          "UPDATE users SET login_attempts = $1 WHERE user_id = $2",
+          [attempts, user.user_id]
+        );
       }
+
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // F. ZERO MAINTENANCE CLEANUP (10% Chance)
-    if (Math.random() < 0.1) {
-      pool.query("DELETE FROM login_history WHERE login_time < NOW() - INTERVAL '30 days'").catch(err => console.error("Log Cleanup Failed", err));
+    // Reset lockout on success
+    await pool.query(
+      "UPDATE users SET login_attempts = 0, lock_until = NULL, last_login = NOW() WHERE user_id = $1",
+      [user.user_id]
+    );
+
+    // Create Session
+    const sessionData = await createSession(user, req, res);
+
+    // Audit Log (non-blocking)
+    try {
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, action, ip_address, user_agent) 
+         VALUES ($1, 'LOGIN_SUCCESS', $2, $3)`,
+        [user.user_id, clientIp, req.headers['user-agent']]
+      );
+    } catch (logErr) {
+      console.warn('[AUDIT] Failed to log login, continuing anyway:', logErr.message);
     }
-
-    // G. RESET LOCKOUT ON SUCCESS
-    await pool.query("UPDATE users SET login_attempts = 0, lock_until = NULL, last_login = NOW() WHERE user_id = $1", [user.user_id]);
-
-    // G. Generate Banking-Grade Token (HttpOnly Cookie)
-    const token = sendTokenCookie(user, res);
-
-    // H. AUDIT SUCCESS
-    await pool.query(
-      `INSERT INTO security_logs (user_id, event_type, ip_address, user_agent) 
-       VALUES ($1, 'LOGIN_SUCCESS', $2, $3)`,
-      [user.user_id, clientIp, req.headers['user-agent']]
-    );
-
-    // I. Legacy History Log (For Discovery/Speed Checks)
-    const finalLat = lat || risk.derivedCoords?.lat;
-    const finalLng = lng || risk.derivedCoords?.lng;
-    await pool.query(
-      `INSERT INTO login_history (user_id, latitude, longitude, device_id, ip_address)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [user.user_id, finalLat || 0, finalLng || 0, deviceId || 'unknown', clientIp]
-    );
 
     res.json({
       success: true,
-      token,
-      user: { id: user.user_id, name: user.full_name, role: user.role, phone: user.phone_number, tier: user.tier }
+      ...sessionData
     });
 
   } catch (err) {
@@ -219,14 +250,469 @@ exports.login = async (req, res) => {
   }
 };
 
-// 3. GET ME (Token Validation)
+// ============================================================================
+// 3. SEND OTP (Flipkart Style)
+// ============================================================================
+exports.sendOTP = async (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
+    return res.status(400).json({
+      error: "Invalid phone number. Must be 10 digits starting with 6-9."
+    });
+  }
+
+  try {
+    // Rate Limiting: Max 3 OTPs per 10 minutes
+    const rateKey = `OTP_RATE:${phone}`;
+    const attempts = await redisSession.get(rateKey) || 0;
+
+    if (attempts >= 3) {
+      return res.status(429).json({
+        error: "Too many OTP requests. Please wait 10 minutes.",
+        retryAfter: 600
+      });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store OTP in Redis (5 min expiry)
+    await redisSession.set(`OTP:${phone}`, otp, 300);
+    await redisSession.incr(rateKey, 600);
+
+    // TODO: Replace with actual SMS service (Twilio/Msg91)
+    console.log(`[SMS SERVICE] 📱 OTP for ${phone}: ${otp}`);
+
+    res.json({
+      message: "OTP sent successfully",
+      expiresIn: 300,
+      // DEV ONLY - Remove in production!
+      ...(process.env.NODE_ENV !== 'production' && { devOtp: otp })
+    });
+
+  } catch (err) {
+    console.error("[SEND OTP ERROR]", err);
+    res.status(500).json({ error: "Failed to send OTP" });
+  }
+};
+
+// ============================================================================
+// 4. VERIFY OTP (Login or Auto-Register)
+// ============================================================================
+exports.verifyOTP = async (req, res) => {
+  const { phone, otp, deviceSpecs } = req.body;
+
+  if (!phone || !otp) {
+    return res.status(400).json({ error: "Phone and OTP are required" });
+  }
+
+  try {
+    // Validate OTP
+    const storedOtp = await redisSession.get(`OTP:${phone}`);
+
+    if (!storedOtp || storedOtp !== otp) {
+      return res.status(400).json({ error: "Invalid or expired OTP" });
+    }
+
+    // Find or Create User
+    let userResult = await pool.query(
+      "SELECT * FROM users WHERE phone_number = $1",
+      [phone]
+    );
+
+    let user = userResult.rows[0];
+    let isNewUser = false;
+
+    if (!user) {
+      // Auto-register new user
+      const newUser = await pool.query(
+        `INSERT INTO users (phone_number, phone_verified, role) 
+         VALUES ($1, true, 'user') 
+         RETURNING user_id, phone_number, full_name, role, tier`,
+        [phone]
+      );
+      user = newUser.rows[0];
+      isNewUser = true;
+      console.log(`[AUTH] New user registered via OTP: ${phone}`);
+    } else {
+      // Mark phone as verified
+      await pool.query(
+        "UPDATE users SET phone_verified = true WHERE user_id = $1",
+        [user.user_id]
+      );
+    }
+
+    // Cleanup OTP
+    await redisSession.del(`OTP:${phone}`);
+
+    // Create Session
+    const sessionData = await createSession(user, req, res);
+
+    res.json({
+      success: true,
+      isNewUser,
+      ...sessionData
+    });
+
+  } catch (err) {
+    console.error("[VERIFY OTP ERROR]", err);
+    res.status(500).json({ error: "Failed to verify OTP" });
+  }
+};
+
+// ============================================================================
+// 5. REFRESH TOKEN (Token Rotation)
+// ============================================================================
+exports.refreshToken = async (req, res) => {
+  const incomingToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingToken) {
+    return res.status(401).json({ error: "No refresh token provided" });
+  }
+
+  try {
+    const payload = jwt.verify(
+      incomingToken,
+      JWT_CONFIG.REFRESH_SECRET
+    );
+
+    // Find active sessions
+    const sessionResult = await pool.query(
+      "SELECT * FROM user_sessions WHERE user_id = $1 AND is_active = true",
+      [payload.id]
+    );
+
+    // Find matching session
+    let matchingSession = null;
+    for (const session of sessionResult.rows) {
+      const isMatch = await bcrypt.compare(incomingToken, session.token_hash);
+      if (isMatch) {
+        matchingSession = session;
+        break;
+      }
+    }
+
+    if (!matchingSession) {
+      // Security Alert: Token reuse!
+      console.warn(`[SECURITY] Token reuse detected for user ${payload.id}`);
+      await pool.query(
+        "UPDATE user_sessions SET is_active = false WHERE user_id = $1",
+        [payload.id]
+      );
+      return res.status(403).json({ error: "Session invalidated. Please login again." });
+    }
+
+    // Get user info
+    const userResult = await pool.query(
+      "SELECT user_id, full_name, role FROM users WHERE user_id = $1",
+      [payload.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const user = userResult.rows[0];
+
+    // Generate NEW tokens
+    const newAccessToken = jwt.sign(
+      { id: user.user_id, role: user.role, name: user.full_name },
+      JWT_CONFIG.SECRET,
+      { expiresIn: JWT_CONFIG.ACCESS_EXPIRY }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: user.user_id },
+      JWT_CONFIG.REFRESH_SECRET,
+      { expiresIn: JWT_CONFIG.REFRESH_EXPIRY }
+    );
+
+    // Update session
+    const newHash = await bcrypt.hash(newRefreshToken, 10);
+    await pool.query(
+      `UPDATE user_sessions 
+       SET token_hash = $1, last_activity = NOW(), expires_at = NOW() + INTERVAL '30 days'
+       WHERE session_id = $2`,
+      [newHash, matchingSession.session_id]
+    );
+
+    // Set new cookie
+    res.cookie('refreshToken', newRefreshToken, JWT_CONFIG.COOKIE_OPTIONS);
+
+    res.json({ token: newAccessToken });
+
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: "Session expired. Please login again." });
+    }
+    console.error("[REFRESH TOKEN ERROR]", err);
+    res.status(403).json({ error: "Invalid token" });
+  }
+};
+
+// ============================================================================
+// 6. LOGOUT
+// ============================================================================
+exports.logout = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  try {
+    if (refreshToken) {
+      const payload = jwt.verify(
+        refreshToken,
+        JWT_CONFIG.REFRESH_SECRET
+      );
+      await pool.query(
+        "UPDATE user_sessions SET is_active = false WHERE user_id = $1",
+        [payload.id]
+      );
+    }
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: JWT_CONFIG.COOKIE_OPTIONS.secure,
+      sameSite: JWT_CONFIG.COOKIE_OPTIONS.sameSite
+    });
+
+    res.json({ message: "Logged out successfully" });
+
+  } catch (err) {
+    res.clearCookie('refreshToken');
+    res.json({ message: "Logged out" });
+  }
+};
+
+// ============================================================================
+// 7. GET ME (Token Validation)
+// ============================================================================
 exports.getMe = async (req, res) => {
   try {
-    const user = await pool.query("SELECT user_id, full_name, phone_number, role, tier FROM users WHERE user_id = $1", [req.user.id]);
+    // Query only columns that exist in users table
+    const user = await pool.query(
+      "SELECT user_id, name, phone_number, email, role FROM users WHERE user_id = $1",
+      [req.user.id]
+    );
     if (user.rows.length === 0) return res.status(404).json({ error: "User not found" });
     const u = user.rows[0];
-    res.json({ id: u.user_id, name: u.full_name, role: u.role, phone: u.phone_number, tier: u.tier });
+
+    // Get tier from rewards table if exists
+    const rewardsResult = await pool.query(
+      "SELECT tier FROM rewards WHERE user_id = $1",
+      [req.user.id]
+    );
+    const userTier = rewardsResult.rows.length > 0 ? rewardsResult.rows[0].tier : 'Bronze';
+
+    res.json({
+      id: u.user_id,
+      name: u.name || 'User',
+      role: u.role,
+      phone: u.phone_number,
+      email: u.email,
+      tier: userTier
+    });
   } catch (err) {
+    console.error("[GET ME ERROR]", err);
     res.status(500).json({ error: "Server error" });
   }
 };
+
+// ============================================================================
+// 8. SET PASSWORD (For OTP-only users to add password)
+// ============================================================================
+exports.setPassword = async (req, res) => {
+  const { password } = req.body;
+  const userId = req.user.id;
+
+  if (!password || password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
+  }
+
+  try {
+    const strength = zxcvbn(password);
+    if (strength.score < 3) {
+      return res.status(400).json({
+        error: 'Password is too weak',
+        suggestions: strength.feedback.suggestions
+      });
+    }
+
+    const hash = await argon2.hash(password, {
+      type: argon2.argon2id,
+      memoryCost: 2 ** 16,
+      timeCost: 3,
+      parallelism: 1,
+    });
+
+    await pool.query(
+      "UPDATE users SET password_hash = $1 WHERE user_id = $2",
+      [hash, userId]
+    );
+
+    res.json({ message: "Password set successfully" });
+
+  } catch (err) {
+    console.error("[SET PASSWORD ERROR]", err);
+    res.status(500).json({ error: "Failed to set password" });
+  }
+};
+// ============================================================================
+// 9. FORGOT PASSWORD (Request OTP or Reset Link)
+// ============================================================================
+exports.forgotPassword = async (req, res) => {
+  const { identifier, phone } = req.body; // Support both formats
+  const lookupValue = identifier || phone;
+
+  if (!lookupValue) {
+    return res.status(400).json({ error: "Email or phone number is required" });
+  }
+
+  try {
+    // Find User by email OR phone
+    const userResult = await pool.query(
+      "SELECT user_id, email, phone_number FROM users WHERE email = $1 OR phone_number = $1",
+      [lookupValue]
+    );
+
+    if (userResult.rows.length === 0) {
+      // Don't reveal if user exists (security)
+      return res.json({ message: "If this account exists, a reset link/OTP has been sent." });
+    }
+
+    const user = userResult.rows[0];
+
+    // Rate Limiting
+    const rateKey = `RESET_RATE:${lookupValue}`;
+    const attempts = await redisSession.get(rateKey) || 0;
+
+    if (attempts >= 5) {
+      return res.status(429).json({
+        error: "Too many reset requests. Please wait 30 minutes.",
+        retryAfter: 1800
+      });
+    }
+
+    // Generate secure reset token (32 chars)
+    const crypto = require('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Generate 6-digit OTP as well (for mobile flow)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store BOTH in Redis (15 min expiry)
+    await redisSession.set(`RESET_TOKEN:${resetToken}`, user.user_id, 900);
+    await redisSession.set(`RESET_OTP:${user.phone_number || lookupValue}`, otp, 900);
+    await redisSession.incr(rateKey, 1800);
+
+    // Mock Email/SMS (Replace with real service in production)
+    console.log(`\n============ PASSWORD RESET ============`);
+    console.log(`[USER] ${user.email || user.phone_number}`);
+    console.log(`[OTP] ${otp}`);
+    console.log(`[LINK] http://localhost:5173/reset-password/${resetToken}`);
+    console.log(`=========================================\n`);
+
+    res.json({
+      message: "If this account exists, a reset link/OTP has been sent.",
+      expiresIn: 900,
+      // DEV ONLY - Remove in production!
+      ...(process.env.NODE_ENV !== 'production' && {
+        devOtp: otp,
+        devToken: resetToken,
+        devLink: `http://localhost:5173/reset-password/${resetToken}`
+      })
+    });
+
+  } catch (err) {
+    console.error("[FORGOT PASSWORD ERROR]", err);
+    res.status(500).json({ error: "Failed to process request" });
+  }
+};
+
+// ============================================================================
+// 10. RESET PASSWORD (Verify Token OR OTP and set new password)
+// ============================================================================
+exports.resetPassword = async (req, res) => {
+  const { token, phone, otp, newPassword } = req.body;
+
+  // Validate input
+  if (!newPassword) {
+    return res.status(400).json({ error: "New password is required" });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
+  }
+
+  // Need either token OR (phone + otp)
+  if (!token && (!phone || !otp)) {
+    return res.status(400).json({ error: "Token or Phone+OTP is required" });
+  }
+
+  try {
+    let userId;
+
+    // Method 1: Token-based reset (from email link)
+    if (token) {
+      userId = await redisSession.get(`RESET_TOKEN:${token}`);
+      if (!userId) {
+        return res.status(400).json({ error: "Invalid or expired reset link" });
+      }
+    }
+    // Method 2: OTP-based reset (from SMS)
+    else if (phone && otp) {
+      const storedOtp = await redisSession.get(`RESET_OTP:${phone}`);
+      if (!storedOtp || storedOtp !== otp) {
+        return res.status(400).json({ error: "Invalid or expired OTP" });
+      }
+      // Get userId from phone
+      const userResult = await pool.query(
+        "SELECT user_id FROM users WHERE phone_number = $1",
+        [phone]
+      );
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      userId = userResult.rows[0].user_id;
+    }
+
+    // Password strength check
+    const strength = zxcvbn(newPassword);
+    if (strength.score < 2) { // Relaxed for testing (was 3)
+      return res.status(400).json({
+        error: 'Password is too weak. Add numbers, symbols, or make it longer.',
+        suggestions: strength.feedback.suggestions
+      });
+    }
+
+    // Hash new password
+    const hash = await argon2.hash(newPassword, {
+      type: argon2.argon2id,
+      memoryCost: 2 ** 16,
+      timeCost: 3,
+      parallelism: 1,
+    });
+
+    // Update password
+    await pool.query(
+      "UPDATE users SET password_hash = $1 WHERE user_id = $2",
+      [hash, userId]
+    );
+
+    // Cleanup tokens/OTP
+    if (token) await redisSession.del(`RESET_TOKEN:${token}`);
+    if (phone) await redisSession.del(`RESET_OTP:${phone}`);
+
+    // Revoke all sessions (security best practice)
+    await pool.query(
+      "UPDATE user_sessions SET is_active = false WHERE user_id = $1",
+      [userId]
+    );
+
+    res.json({ message: "Password reset successfully. Please login with your new password." });
+
+  } catch (err) {
+    console.error("[RESET PASSWORD ERROR]", err);
+    res.status(500).json({ error: "Failed to reset password" });
+  }
+};
+

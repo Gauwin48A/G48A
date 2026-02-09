@@ -126,8 +126,10 @@ const Login = () => {
 
       // Success Handling
       if (data && data.token) {
-        localStorage.setItem("token", data.token);
+        // CRITICAL: Use 'authToken' to match AuthContext and api.js
+        localStorage.setItem("authToken", data.token);
         if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+        if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
 
         await fetchAndStoreUserProfile(data.token);
 
@@ -216,7 +218,11 @@ const Login = () => {
         otp: phoneLogin.otp,
       });
 
-      localStorage.setItem("token", data.token);
+      // CRITICAL: Use 'authToken' to match AuthContext and api.js
+      localStorage.setItem("authToken", data.token);
+      if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+
       await fetchAndStoreUserProfile(data.token);
 
       // Capture fresh location after login

@@ -2,8 +2,9 @@ import axios from 'axios';
 import { getDeviceId } from '@/utils/device'; // Ensure this matches your alias
 
 // 1. Create Axios Instance
+// IMPORTANT: baseURL includes /api so routes like '/auth/login' become '/api/auth/login'
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
     headers: {
         'Content-Type': 'application/json',
     },

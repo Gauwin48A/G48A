@@ -784,6 +784,7 @@
   "order_id": "Order ID",
   "other": "Other",
   "other_issue": "Other Issue",
+  "otp_placeholder": "Enter 6-digit OTP",
   "otp_send_failed": "Failed to send OTP",
   "otp_sent": "OTP Sent",
   "otp_valid_desc": "Please enter a valid OTP (4-8 digits).",

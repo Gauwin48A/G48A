@@ -4,6 +4,7 @@
  */
 const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
+const JWT_CONFIG = require('../config/jwtConfig');
 
 let io;
 const userSocketMap = new Map(); // Maps UserId -> SocketId
@@ -35,9 +36,9 @@ const init = (server) => {
             return next(new Error("Authentication required"));
         }
 
-        jwt.verify(token, process.env.JWT_SECRET || 'dev_secret_key', (err, decoded) => {
+        jwt.verify(token, JWT_CONFIG.SECRET, (err, decoded) => {
             if (err) {
-                console.log('[DEFENDER] Socket rejected: Invalid token');
+                console.log('[DEFENDER] Socket rejected: Invalid token -', err.message);
                 return next(new Error("Invalid authentication"));
             }
             socket.user = decoded;

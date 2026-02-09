@@ -1,5 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
+const JWT_CONFIG = require('../config/jwtConfig');
 
 // A. DDoS Protection: Limit repeated requests
 exports.apiLimiter = rateLimit({
@@ -23,10 +24,16 @@ exports.authenticateToken = (req, res, next) => {
         token = req.cookies.accessToken;
     }
 
-    if (!token) return res.status(401).json({ error: "Access Denied. No Token." });
+    if (!token) {
+        console.log('[AUTH] No token for protected route:', req.path);
+        return res.status(401).json({ error: "Access Denied. No Token." });
+    }
 
-    jwt.verify(token, process.env.JWT_SECRET || 'dev_secret_key', (err, user) => {
-        if (err) return res.status(403).json({ error: "Invalid Token." });
+    jwt.verify(token, JWT_CONFIG.SECRET, (err, user) => {
+        if (err) {
+            console.error('[AUTH] Token verify failed:', err.message, '| Path:', req.path);
+            return res.status(403).json({ error: "Invalid Token." });
+        }
         req.user = user; // Attach user payload to request
         next();
     });

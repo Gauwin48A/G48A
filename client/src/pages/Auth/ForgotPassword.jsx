@@ -29,7 +29,7 @@ const ForgotPassword = () => {
       const res = await fetch(`${baseUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ identifier: email }) // Works for both email and phone
       });
 
       const data = await res.json();

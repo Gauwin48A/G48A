@@ -230,6 +230,7 @@ function AppContent() {
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
                 {/* Main app routes */}
                 <Route path="/" element={<Navigate to="/all-posts" replace />} />
                 <Route path="/all-posts" element={<AllPosts />} />

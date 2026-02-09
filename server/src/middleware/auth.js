@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const JWT_CONFIG = require('../config/jwtConfig');
 
 /**
  * Auth Middleware - Operation Polish
@@ -15,15 +16,16 @@ const protect = (req, res, next) => {
   }
 
   if (!token) {
+    console.log('[AUTH] No token provided for:', req.path);
     return res.status(401).json({ error: "No token provided, authorization denied" });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET?.trim());
+    const decoded = jwt.verify(token, JWT_CONFIG.SECRET);
     req.user = decoded;
     next();
   } catch (err) {
-    console.error("Token verification error:", err);
+    console.error("[AUTH] Token verification failed:", err.message, "| Path:", req.path);
     res.status(401).json({ error: "Invalid or expired token" });
   }
 };
@@ -48,7 +50,7 @@ const optionalAuth = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET?.trim());
+    const decoded = jwt.verify(token, JWT_CONFIG.SECRET);
     req.user = decoded;
   } catch (err) {
     req.user = null;

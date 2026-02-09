@@ -12,19 +12,31 @@ export const registerUser = async (userData) => {
   if (errors.length > 0) {
     throw { errors };
   }
-  // Prepare FormData for file uploads
-  const formData = new FormData();
-  Object.entries(userData).forEach(([key, value]) => {
-    if (value) formData.append(key, value);
-  });
-  // Files: aadhaar_xml, pan_card, profile_pic
-  if (userData.aadhaar_xml instanceof File) formData.append('aadhaar_xml', userData.aadhaar_xml);
-  if (userData.pan_card instanceof File) formData.append('pan_card', userData.pan_card);
-  if (userData.profile_pic instanceof File) formData.append('profile_pic', userData.profile_pic);
-  const res = await api.post('/api/auth/register', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
-  return res.data;
+
+  // Map frontend field names to backend expected names
+  const signupData = {
+    fullName: userData.name,           // Backend expects 'fullName'
+    phone: userData.phone,             // Backend expects 'phone'
+    email: userData.email,
+    password: userData.password,
+    referral_code: userData.referral_code
+  };
+
+  try {
+    // Use /auth/signup (baseURL already includes /api)
+    const res = await api.post('/auth/signup', signupData);
+    return res; // api.js interceptor already unwraps response.data
+  } catch (err) {
+    console.error('[registerUser] Error:', err);
+    // Re-throw with proper format
+    if (err.errors) {
+      throw { errors: err.errors.map(e => e.msg || e.message || e) };
+    }
+    if (err.error) {
+      throw { error: err.error };
+    }
+    throw { error: err.message || 'Signup failed' };
+  }
 };
 
 export const loginUser = async (loginData) => {

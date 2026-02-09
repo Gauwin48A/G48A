@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { Lock, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 
@@ -13,7 +13,9 @@ const ResetPassword = () => {
     const { toast } = useToast();
     const { t } = useTranslation();
     const [searchParams] = useSearchParams();
-    const token = searchParams.get('token');
+    const { token: pathToken } = useParams(); // Token from URL path
+    const queryToken = searchParams.get('token'); // Token from query params
+    const token = pathToken || queryToken; // Use either
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
