@@ -128,17 +128,33 @@ const SignUp = () => {
         referral_code: formData.referralCode || undefined
       };
 
-      await registerUser(userData);
+      const registerResponse = await registerUser(userData);
 
-      setShowSuccess(true);
+      // Auto-login logic
+      if (registerResponse && registerResponse.token) {
+        localStorage.setItem("authToken", registerResponse.token);
+        if (registerResponse.refreshToken) localStorage.setItem("refreshToken", registerResponse.refreshToken);
+        if (registerResponse.user) {
+          localStorage.setItem("user", JSON.stringify(registerResponse.user));
+          localStorage.setItem("userId", registerResponse.user.id); // Critical for protected routes
+        }
 
-      setTimeout(() => {
         toast({
           title: "Welcome to MHub! 🎉",
-          description: "Your account has been created successfully.",
+          description: "Account created and logged in successfully.",
         });
-        navigate("/login");
-      }, 2000);
+
+        // Small delay to ensure storage is set
+        setTimeout(() => {
+          navigate("/all-posts");
+        }, 1000);
+      } else {
+        // Fallback if no token returned (shouldn't happen with current backend)
+        setShowSuccess(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
 
     } catch (err) {
       toast({

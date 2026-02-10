@@ -6,7 +6,6 @@ import { FaHeart, FaRegHeart, FaShare, FaEye, FaHandHoldingHeart } from 'react-i
 import { useNavigate, useLocation } from 'react-router-dom';
 import CategoriesGrid from '@/components/CategoriesGrid';
 import { useFilter } from '@/context/FilterContext';
-import useLocationPermission from '@/hooks/useLocationPermission';
 import { useTranslation } from 'react-i18next';
 import BuyerInterestModal from '@/components/BuyerInterestModal';
 import LoginPromptModal from '@/components/LoginPromptModal';
@@ -81,8 +80,6 @@ const AllPosts = () => {
     navigate('/all-posts');
   };
 
-  // Location permission hook - Request location when component mounts
-  const { permissionGranted, isLoading: locationLoading, error: locationError } = useLocationPermission();
   const [expandedPost, setExpandedPost] = useState(null);
   const [likedPosts, setLikedPosts] = useState({});
   const [likeCounts, setLikeCounts] = useState({});

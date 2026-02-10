@@ -50,10 +50,11 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import api from '@/services/api'; // Import central API service
+
 const MyHome = () => {
-    // Filtering, sorting, pagination state
+    // ... (state remains same)
     const [activeTab, setActiveTab] = useState('active');
-    // Use correct backend column for sorting
     const [filters, setFilters] = useState({ status: 'active', sortBy: 'created_at', sortOrder: 'desc', page: 1, limit: 10 });
     const [selectedPosts, setSelectedPosts] = useState(new Set());
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -97,17 +98,11 @@ const MyHome = () => {
             setLoading(false);
             return;
         }
-        // Fetch ALL posts without status filter for accurate stats
-        fetch(`${baseUrl}/api/posts/mine?userId=${userId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            credentials: 'include'
-        })
-            .then(res => res.json())
+
+        // Use api.get instead of fetch
+        api.get(`/posts/mine?userId=${userId}`)
             .then(data => {
+                // api service unwraps response.data
                 if (Array.isArray(data.posts)) {
                     // Translate posts if not English
                     if (currentLang !== 'en' && data.posts.length > 0) {
@@ -129,29 +124,30 @@ const MyHome = () => {
                     }
                     setError(null);
                 } else {
-                    // Return empty array on error to show empty state gracefully
                     setPosts([]);
                     setError(null);
                 }
             })
             .catch(err => {
+                console.error("Fetch posts error:", err);
                 setPosts([]);
-                setError(null);
+                setError(null); // Silent fail for UI?
             })
             .finally(() => setLoading(false));
-    }, [currentLang]); // Re-fetch on language change
+    }, [currentLang]);
+
+    // ... (rest of effects remain same)
 
     useEffect(() => {
         setTotalPages(Math.max(1, Math.ceil(posts.length / pageSize)));
     }, [posts, pageSize]);
 
-    // Calculate stats from ALL posts
+    // ... (filters/pagination/handlers remain same until handleDeletePost)
     const allPosts = Array.isArray(posts) ? posts : [];
     const soldPosts = allPosts.filter(post => post.status === 'sold');
     const boughtPosts = allPosts.filter(post => post.status === 'bought');
     const activePosts = allPosts.filter(post => post.status === 'active');
 
-    // Filter posts for display based on activeTab
     const displayPosts = activeTab === 'all' ? allPosts :
         activeTab === 'active' ? activePosts :
             activeTab === 'sold' ? soldPosts :
@@ -169,10 +165,7 @@ const MyHome = () => {
         }
     });
 
-    // --- ALL LOGIC AND HELPERS ---
-    const handleSaleDone = () => {
-        navigate('/saledone');
-    };
+    const handleSaleDone = () => navigate('/saledone');
 
     const isEditAvailable = (postedTime) => {
         const now = new Date();
@@ -180,39 +173,23 @@ const MyHome = () => {
         return diffInMinutes <= 5;
     };
 
-    const handleViewPost = (post) => {
-        navigate(`/post/${post.postId || post.post_id || post.id}`);
-    };
+    const handleViewPost = (post) => navigate(`/post/${post.postId || post.post_id || post.id}`);
 
     const handleEditPost = (post) => {
         if (!isEditAvailable(post.created_at || post.postedTime)) {
-            toast({
-                title: "Edit Not Available",
-                description: "Posts can only be edited within 5 minutes of publishing",
-                variant: "destructive"
-            });
+            toast({ title: "Edit Not Available", description: "Posts can only be edited within 5 minutes of publishing", variant: "destructive" });
             return;
         }
-        toast({
-            title: "Edit Post",
-            description: `Opening editor for post`
-        });
+        toast({ title: "Edit Post", description: `Opening editor for post` });
         navigate(`/edit-post/${post.postId || post.post_id || post.id}`);
     };
 
     const handleSharePost = (post) => {
         const shareUrl = `${window.location.origin}/post/${post.postId || post.post_id || post.id}`;
         navigator.clipboard.writeText(shareUrl).then(() => {
-            toast({
-                title: "Link Copied",
-                description: "Post link copied to clipboard"
-            });
+            toast({ title: "Link Copied", description: "Post link copied to clipboard" });
         }).catch(() => {
-            toast({
-                title: "Share Failed",
-                description: "Unable to copy link",
-                variant: "destructive"
-            });
+            toast({ title: "Share Failed", description: "Unable to copy link", variant: "destructive" });
         });
     };
 
@@ -224,35 +201,14 @@ const MyHome = () => {
     const handleDeletePost = async () => {
         if (selectedPostForDelete) {
             try {
-                const token = localStorage.getItem('authToken');
-                const response = await fetch(`${baseUrl}/api/posts/${selectedPostForDelete}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    credentials: 'include'
-                });
+                // Use api.delete
+                await api.delete(`/posts/${selectedPostForDelete}`);
 
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to delete post');
-                }
-
-                // Only remove from local state after successful backend deletion
                 setPosts(posts => posts.filter(post => (post.postId || post.post_id || post.id) !== selectedPostForDelete));
-                toast({
-                    title: "Post Deleted",
-                    description: "Post has been deleted successfully"
-                });
+                toast({ title: "Post Deleted", description: "Post has been deleted successfully" });
             } catch (error) {
                 console.error('Delete error:', error);
-                toast({
-                    title: "Delete Failed",
-                    description: error.message || "Could not delete the post. Please try again.",
-                    variant: "destructive"
-                });
+                toast({ title: "Delete Failed", description: error.message || "Could not delete the post.", variant: "destructive" });
             } finally {
                 setSelectedPostForDelete(null);
                 setShowDeleteDialog(false);
@@ -262,11 +218,7 @@ const MyHome = () => {
 
     const confirmSaleUndone = () => {
         if (selectedPosts.size === 0) {
-            toast({
-                title: "No Posts Selected",
-                description: "Please select posts to mark as sale undone",
-                variant: "destructive"
-            });
+            toast({ title: "No Posts Selected", description: "Please select posts to mark as sale undone", variant: "destructive" });
             return;
         }
         setShowSaleUndoneDialog(true);
@@ -275,10 +227,7 @@ const MyHome = () => {
     const handleSaleUndone = () => {
         const newMovedPosts = new Set([...postsMovedToUndone, ...selectedPosts]);
         setPostsMovedToUndone(newMovedPosts);
-        toast({
-            title: "Posts Moved",
-            description: `${selectedPosts.size} posts moved to Sale Undone`
-        });
+        toast({ title: "Posts Moved", description: `${selectedPosts.size} posts moved to Sale Undone` });
         setSelectedPosts(new Set());
         setShowSaleUndoneDialog(false);
         navigate('/saleundone');
@@ -286,78 +235,46 @@ const MyHome = () => {
 
     const togglePostSelection = (postId) => {
         if (postsMovedToUndone.has(postId)) {
-            toast({
-                title: "Cannot Select",
-                description: "This post has already been moved to Sale Undone",
-                variant: "destructive"
-            });
+            toast({ title: "Cannot Select", description: "This post has already been moved to Sale Undone", variant: "destructive" });
             return;
         }
         const newSelected = new Set(selectedPosts);
-        if (newSelected.has(postId)) {
-            newSelected.delete(postId);
-        } else {
-            newSelected.add(postId);
-        }
+        if (newSelected.has(postId)) newSelected.delete(postId);
+        else newSelected.add(postId);
         setSelectedPosts(newSelected);
     };
 
-    // Toggle Select All
     const toggleSelectAll = () => {
         if (selectAll) {
             setSelectedPosts(new Set());
         } else {
-            const activePostIds = allPosts
-                .filter(p => p.status === 'active')
-                .map(p => p.postId || p.post_id || p.id);
+            const activePostIds = allPosts.filter(p => p.status === 'active').map(p => p.postId || p.post_id || p.id);
             setSelectedPosts(new Set(activePostIds));
         }
         setSelectAll(!selectAll);
     };
 
-    // Bulk Delete handler
     const handleBulkDelete = async () => {
         if (selectedPosts.size === 0) {
-            toast({
-                title: "No Posts Selected",
-                description: "Please select posts to delete",
-                variant: "destructive"
-            });
+            toast({ title: "No Posts Selected", description: "Please select posts to delete", variant: "destructive" });
             return;
         }
 
         try {
-            const token = localStorage.getItem('authToken');
             const deletePromises = Array.from(selectedPosts).map(postId =>
-                fetch(`${baseUrl}/api/posts/${postId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    credentials: 'include'
-                })
+                api.delete(`/posts/${postId}`)
             );
 
             await Promise.all(deletePromises);
 
-            setPosts(posts => posts.filter(post =>
-                !selectedPosts.has(post.postId || post.post_id || post.id)
-            ));
+            setPosts(posts => posts.filter(post => !selectedPosts.has(post.postId || post.post_id || post.id)));
             setSelectedPosts(new Set());
             setSelectAll(false);
             setShowBulkDeleteDialog(false);
-            toast({
-                title: "Posts Deleted",
-                description: `${selectedPosts.size} posts have been deleted`
-            });
+            toast({ title: "Posts Deleted", description: `${selectedPosts.size} posts have been deleted` });
         } catch (error) {
             console.error('Bulk delete error:', error);
-            toast({
-                title: "Delete Failed",
-                description: "Some posts could not be deleted",
-                variant: "destructive"
-            });
+            toast({ title: "Delete Failed", description: "Some posts could not be deleted", variant: "destructive" });
         }
     };
 

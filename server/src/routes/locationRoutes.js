@@ -6,11 +6,11 @@
 const express = require('express');
 const router = express.Router();
 const locationController = require('../controllers/locationController');
-const { detectVpnOrSpoof, enrichWithIpLocation } = require('../middleware/fraudCheck');
+const { detectVpnOrSpoof, logLocationRisk } = require('../middleware/fraudCheck');
 
-// Create a new location - Apply fraud detection BEFORE saving
-// This blocks VPN users and GPS spoofers
-router.post('/', detectVpnOrSpoof, locationController.saveLocation);
+// Create a new location - apply risk checks in log-only mode.
+// Location capture should remain non-blocking for legitimate users on carrier NAT/proxy IPs.
+router.post('/', logLocationRisk, locationController.saveLocation);
 
 // Get all locations
 router.get('/', locationController.getLocations);

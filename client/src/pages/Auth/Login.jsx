@@ -14,14 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Link } from "react-router-dom";
 import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
 import { getDeviceId } from '@/utils/device';
-import { captureLocation as getCurrentLocation } from '@/services/locationService';
+import { getBestAvailableLocation, captureLocation } from '@/services/locationService';
 import { useTranslation } from "react-i18next";
 import api from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { setUser } = useAuth(); // Get setUser from AuthContext
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -56,27 +58,19 @@ const Login = () => {
     }
   };
 
-  // --- THE STRICT LOCATION FETCHER (The Architect's Protocol) ---
-  const getCoordinates = () => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Geolocation is not supported by this browser."));
-      } else {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          (error) => {
-            // This handles User Denial
-            reject(new Error(t('location_mandatory_error') || "Location permission is MANDATORY for security. Please allow GPS access."));
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-      }
+  // Strict location fetcher built on shared web+mobile pipeline.
+  const getCoordinates = async () => {
+    const location = await getBestAvailableLocation({
+      allowCache: true,
+      allowIpFallback: true,
+      requiredAccuracy: 500,
     });
+    return {
+      lat: location.latitude ?? location.lat,
+      lng: location.longitude ?? location.lng,
+      accuracy: location.accuracy ?? null,
+      provider: location.provider || 'browser_gps',
+    };
   };
 
   // ------------------ EMAIL LOGIN ------------------ //
@@ -115,6 +109,8 @@ const Login = () => {
         deviceId: deviceId,
         lat: location.lat,
         lng: location.lng,
+        locationAccuracy: location.accuracy,
+        locationProvider: location.provider,
       };
 
       // Add OTP if in challenge mode
@@ -129,9 +125,16 @@ const Login = () => {
         // CRITICAL: Use 'authToken' to match AuthContext and api.js
         localStorage.setItem("authToken", data.token);
         if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
-        if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          // CRITICAL: Many pages check for userId separately
+          localStorage.setItem("userId", data.user.id);
+          // CRITICAL: Sync with AuthContext so protected routes work immediately
+          setUser(data.user);
+        }
 
         await fetchAndStoreUserProfile(data.token);
+        captureLocation(data.user?.id).catch(() => { });
 
         toast({
           title: t('login_successful') + " 🎉" || "Login Successful 🎉",
@@ -154,7 +157,8 @@ const Login = () => {
       }
 
       // Handle GPS Errors specifically
-      const isGpsError = err.message && (err.message.includes('MANDATORY') || err.message.includes('Geolocation'));
+      const normalizedMessage = (err?.message || '').toLowerCase();
+      const isGpsError = normalizedMessage.includes('location') || normalizedMessage.includes('geolocation') || normalizedMessage.includes('https');
       const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || t('login_failed') || "Login failed";
 
       toast({
@@ -221,12 +225,18 @@ const Login = () => {
       // CRITICAL: Use 'authToken' to match AuthContext and api.js
       localStorage.setItem("authToken", data.token);
       if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
-      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        // CRITICAL: Many pages check for userId separately
+        localStorage.setItem("userId", data.user.id);
+        // CRITICAL: Sync with AuthContext so protected routes work immediately
+        setUser(data.user);
+      }
 
       await fetchAndStoreUserProfile(data.token);
 
       // Capture fresh location after login
-      getCurrentLocation(data.userId).catch(() => { });
+      captureLocation(data.user?.id).catch(() => { });
 
       toast({
         title: t('login_successful') + " 🎉" || "Login Successful 🎉",

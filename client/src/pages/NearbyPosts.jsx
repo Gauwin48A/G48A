@@ -3,8 +3,7 @@ import { MapPin, Navigation, Sliders, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { getNearbyPosts } from '@/lib/api';
-
+import { getBestAvailableLocation } from '@/services/locationService';
 import { useTranslation } from 'react-i18next';
 
 const NearbyPosts = () => {
@@ -21,31 +20,36 @@ const NearbyPosts = () => {
     const radiusOptions = [1, 2, 5, 10, 25, 50, 100];
 
     // Request user's location
-    const requestLocation = useCallback(() => {
-        if (!navigator.geolocation) {
-            setError(t('geolocation_unsupported'));
-            setLocationPermission('denied');
-            return;
-        }
-
+    const requestLocation = useCallback(async () => {
         setLoading(true);
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setUserLocation({
-                    lat: position.coords.latitude,
-                    long: position.coords.longitude
-                });
-                setLocationPermission('granted');
-            },
-            (err) => {
-                console.error('Location error:', err);
+        setError(null);
+
+        try {
+            const loc = await getBestAvailableLocation({
+                allowCache: true,
+                allowIpFallback: true,
+                requiredAccuracy: 500,
+            });
+            setUserLocation({
+                lat: loc.latitude ?? loc.lat,
+                long: loc.longitude ?? loc.lng
+            });
+            setLocationPermission('granted');
+        } catch (err) {
+            console.error('Location error:', err);
+            const message = (err?.message || '').toLowerCase();
+            if (message.includes('https') || message.includes('secure')) {
+                setError('Web location requires HTTPS (or localhost in development).');
+            } else if (message.includes('denied')) {
                 setError(t('enable_location_access'));
-                setLocationPermission('denied');
-                setLoading(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-        );
-    }, []);
+            } else {
+                setError(t('failed_load_nearby_retry'));
+            }
+            setLocationPermission('denied');
+        } finally {
+            setLoading(false);
+        }
+    }, [t]);
 
     // Request location on mount
     useEffect(() => {
@@ -76,7 +80,7 @@ const NearbyPosts = () => {
         };
 
         fetchNearby();
-    }, [userLocation, radius]);
+    }, [userLocation, radius, t]);
 
     // Distance badge color based on km
     const getDistanceColor = (km) => {

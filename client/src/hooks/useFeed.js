@@ -7,8 +7,9 @@
  */
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import api from '../lib/api';
+import { getBestAvailableLocation } from '../services/locationService';
 
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 const PAGE_SIZE = 20;
@@ -144,23 +145,33 @@ export const useNearbyPosts = (options = {}) => {
 
     useEffect(() => {
         if (!enabled) return;
+        let active = true;
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    setLocation({
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude
-                    });
-                },
-                (err) => {
-                    console.warn('[Geolocation] Error:', err.message);
-                    // Fallback to default location (Hyderabad)
-                    setLocation({ lat: 17.385, lng: 78.4867 });
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        }
+        const detectLocation = async () => {
+            try {
+                const bestLoc = await getBestAvailableLocation({
+                    allowCache: true,
+                    allowIpFallback: true,
+                    requiredAccuracy: 500
+                });
+                if (!active) return;
+                setLocation({
+                    lat: bestLoc.latitude ?? bestLoc.lat,
+                    lng: bestLoc.longitude ?? bestLoc.lng
+                });
+            } catch (err) {
+                console.warn('[Geolocation] Error:', err?.message || err);
+                if (!active) return;
+                // Fallback to default location (Hyderabad)
+                setLocation({ lat: 17.385, lng: 78.4867 });
+            }
+        };
+
+        detectLocation();
+
+        return () => {
+            active = false;
+        };
     }, [enabled]);
 
     return useFeed({
@@ -172,8 +183,5 @@ export const useNearbyPosts = (options = {}) => {
         enabled: enabled && !!location
     });
 };
-
-// Required import for useNearbyPosts
-import { useState, useEffect } from 'react';
 
 export default useFeed;

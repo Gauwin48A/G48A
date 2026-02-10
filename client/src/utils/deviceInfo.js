@@ -108,6 +108,23 @@ export function getDeviceInfo() {
 }
 
 /**
+ * Wrapper to add timeout support to fetch
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+/**
  * Parse browser from user agent
  */
 function parseBrowser(ua) {
@@ -200,15 +217,19 @@ function generateFingerprint(data) {
  */
 export async function getIPBasedLocation() {
     try {
-        const response = await fetch('https://ipapi.co/json/', {
-            timeout: 5000
-        });
+        const response = await fetchWithTimeout('https://ipapi.co/json/');
 
         if (!response.ok) {
             throw new Error('IP lookup failed');
         }
 
         const data = await response.json();
+        const latitude = Number(data.latitude);
+        const longitude = Number(data.longitude);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            throw new Error('IP lookup returned invalid coordinates');
+        }
 
         return {
             ip: data.ip,
@@ -216,8 +237,8 @@ export async function getIPBasedLocation() {
             region: data.region,
             country: data.country_name,
             countryCode: data.country_code,
-            latitude: data.latitude,
-            longitude: data.longitude,
+            latitude,
+            longitude,
             timezone: data.timezone,
             isp: data.org,
             provider: 'ip_lookup'

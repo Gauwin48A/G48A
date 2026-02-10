@@ -34,10 +34,18 @@ exports.updateLocation = async (req, res) => {
 exports.saveLocation = async (req, res) => {
   try {
     const { user_id, latitude, longitude, accuracy, heading, permission_status, city, country, provider, timezone } = req.body;
+    const normalizedPermission = String(permission_status || '').toLowerCase();
+    const hasLatitude = latitude !== undefined && latitude !== null && latitude !== '';
+    const hasLongitude = longitude !== undefined && longitude !== null && longitude !== '';
+    const parsedLatitude = hasLatitude ? Number(latitude) : null;
+    const parsedLongitude = hasLongitude ? Number(longitude) : null;
 
-    // Allow 0,0 for denied/error status (for analytics), but require real coords for granted
-    if (permission_status === 'granted' && (!latitude || !longitude)) {
+    // Allow 0,0 for denied/error status (for analytics), but require coords for granted* statuses
+    if (normalizedPermission.startsWith('granted') && (!hasLatitude || !hasLongitude)) {
       return res.status(400).json({ error: 'Missing latitude or longitude' });
+    }
+    if ((hasLatitude && !Number.isFinite(parsedLatitude)) || (hasLongitude && !Number.isFinite(parsedLongitude))) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude' });
     }
 
     // Get IP-verified location from fraud check middleware (if available)
@@ -69,8 +77,8 @@ exports.saveLocation = async (req, res) => {
       `;
       const logResult = await client.query(logQuery, [
         user_id || null,
-        latitude,
-        longitude,
+        parsedLatitude,
+        parsedLongitude,
         accuracy || null,
         heading || null,
         permission_status || null,
@@ -95,8 +103,8 @@ exports.saveLocation = async (req, res) => {
         await client.query(userUpdateQuery, [
           finalCity,
           req.body.state || null,
-          latitude,
-          longitude,
+          parsedLatitude,
+          parsedLongitude,
           req.body.device_speed || req.body.speed || null,
           user_id
         ]);

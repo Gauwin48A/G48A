@@ -16,12 +16,12 @@ export const postWithRetry = (url, data, config) => api.post(url, data, config);
 // ============================================
 
 // Feed
-// Legacy: api.get('/feed') -> Now: api.get('/api/feed') (since BaseURL is root)
-// We assume legacy calls expected /api prefix to be handled by proxy or base. 
-// Given we set services/api BaseURL to root (localhost:5000), we must add /api here.
+// FIX: services/api.js baseURL is 'http://localhost:5000/api'
+// So we DON'T need to add /api prefix - it would cause double /api/api paths!
 
-const PF = '/api'; // Prefix
+const PF = ''; // Empty - baseURL already includes /api
 
+// Feed
 export const fetchFeed = (params) => api.get(`${PF}/feed`, { params });
 export const fetchMyFeed = (params) => api.get(`${PF}/feed/mine`, { params });
 
@@ -36,8 +36,7 @@ export const followChannel = (channelId) => api.post(`${PF}/channel/${channelId}
 // Posts
 export const addTextPost = (data) => api.post(`${PF}/feed/add`, data);
 
-// Nearby (Note: legacy URL was /api/nearby, so we keep it as is if it included /api)
-// Wait, legacy line 93: getWithRetry(`/api/nearby...`)
+// Nearby
 export const getNearbyPosts = (lat, long, radius = 10) =>
   api.get(`${PF}/nearby?lat=${lat}&long=${long}&radius=${radius}`);
 
@@ -45,5 +44,3 @@ export const getNearbyPosts = (lat, long, radius = 10) =>
 export const getFriendlyError = (error) => {
   return error.message || "An unexpected error occurred.";
 };
-
-

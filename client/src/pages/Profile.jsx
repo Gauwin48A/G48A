@@ -17,6 +17,7 @@ import '../i18n';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
 import { createChannel, getChannelByUser } from '../lib/api';
+import api from '@/services/api'; // Import central API service
 import { syncNativeContacts } from '../services/mobileContacts';
 
 const Profile = () => {
@@ -42,7 +43,8 @@ const Profile = () => {
       try { setUser(JSON.parse(cached)); } catch (e) { }
     }
     setLoading(true);
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+    // Auth check using localStorage (AuthContext backup)
     const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('userId');
     if (!userId || !token) {
@@ -50,13 +52,11 @@ const Profile = () => {
       setLoading(false);
       return;
     }
-    fetch(`${baseUrl}/api/profile?userId=${userId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      credentials: 'include'
-    })
-      .then(res => res.json())
+
+    // Use api.get (handles auto-refresh)
+    api.get(`/profile?userId=${userId}`)
       .then(data => {
+        // Axios interceptor returns data directly
         if (data && typeof data === 'object' && !data.error) {
           setUser(data);
           setEditData({
@@ -71,16 +71,17 @@ const Profile = () => {
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message);
+        console.error("Profile fetch error:", err);
+        // Interceptor handles 401 redirect, so just show error if it persists
+        setError(err.message || 'Failed to load profile');
         setLoading(false);
       });
   }, []);
 
   useEffect(() => {
     if (user?.user_id) {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      fetch(`${baseUrl}/api/profile/preferences?userId=${user.user_id}`)
-        .then(res => res.ok ? res.json() : null)
+      // Preferences
+      api.get(`/profile/preferences?userId=${user.user_id}`)
         .then(data => {
           if (data) setPreferences({
             location: data.location || '',
@@ -91,9 +92,8 @@ const Profile = () => {
         })
         .catch(() => { });
 
-      // Fetch available categories for preferences selection
-      fetch(`${baseUrl}/api/categories`)
-        .then(res => res.json())
+      // Fetch available categories
+      api.get('/categories')
         .then(data => setAvailableCategories(Array.isArray(data) ? data : []))
         .catch(() => setAvailableCategories([]));
 
@@ -101,12 +101,12 @@ const Profile = () => {
         .then(res => setChannel(res.data))
         .catch(() => setChannel(null));
 
-      // Fetch user's real stats (post count, rank, member days)
+      // Fetch user's real stats
       Promise.all([
-        fetch(`${baseUrl}/api/posts/mine?userId=${user.user_id}`).then(r => r.json()),
-        fetch(`${baseUrl}/api/rewards/user/${user.user_id}`).then(r => r.json()).catch(() => ({ tier: 'Bronze' }))
+        api.get(`/posts/mine?userId=${user.user_id}`).catch(() => ({ total: 0 })),
+        api.get(`/rewards/user/${user.user_id}`).catch(() => ({ tier: 'Bronze' }))
       ]).then(([postsData, rewardsData]) => {
-        const postCount = postsData?.total || postsData?.posts?.length || 0;
+        const postCount = postsData?.total || (Array.isArray(postsData?.posts) ? postsData.posts.length : 0);
         const rank = rewardsData?.tier || 'Bronze';
         const memberDays = user.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
         setUserStats({ postCount, rank, memberDays });
@@ -137,53 +137,33 @@ const Profile = () => {
     setEditErrors(errors);
     if (Object.keys(errors).length > 0) return;
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const token = localStorage.getItem('authToken');
-      const res = await fetch(`${baseUrl}/api/profile/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ userId: user.user_id, ...editData })
-      });
-      const updated = await res.json();
-      if (res.ok) {
-        setUser(prev => ({ ...prev, ...updated }));
-        setEditMode(false);
-        toast({ title: 'Profile updated successfully!' });
-      }
+      const updated = await api.post('/profile/update', { userId: user.user_id, ...editData });
+
+      setUser(prev => ({ ...prev, ...updated }));
+      setEditMode(false);
+      toast({ title: 'Profile updated successfully!' });
+
     } catch (err) {
-      setEditErrors({ form: err.message });
+      setEditErrors({ form: err.message || 'Update failed' });
     }
   };
 
   const handlePrefSubmit = async (e) => {
     e.preventDefault();
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const token = localStorage.getItem('authToken');
+      const data = await api.post('/profile/preferences/update', { userId: user.user_id, ...preferences });
 
-      const response = await fetch(`${baseUrl}/api/profile/preferences/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ userId: user.user_id, ...preferences })
+      // Update local state with the saved preferences from the response
+      setPreferences({
+        location: data.location || '',
+        minPrice: data.min_price || data.minPrice || '',
+        maxPrice: data.max_price || data.maxPrice || '',
+        categories: data.categories || []
       });
+      setEditPrefMode(false);
+      toast({ title: 'Preferences saved!', description: 'Your recommendations will now be personalized.' });
+      console.log('[Profile] Preferences saved successfully:', data);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Update local state with the saved preferences from the response
-        setPreferences({
-          location: data.location || '',
-          minPrice: data.min_price || data.minPrice || '',
-          maxPrice: data.max_price || data.maxPrice || '',
-          categories: data.categories || []
-        });
-        setEditPrefMode(false);
-        toast({ title: 'Preferences saved!', description: 'Your recommendations will now be personalized.' });
-        console.log('[Profile] Preferences saved successfully:', data);
-      } else {
-        toast({ title: 'Failed to save preferences', description: data.error || 'Please try again.', variant: 'destructive' });
-        console.error('[Profile] Error saving preferences:', data);
-      }
     } catch (err) {
       console.error('[Profile] Exception saving preferences:', err);
       toast({ title: 'Error saving preferences', description: err.message, variant: 'destructive' });
@@ -193,9 +173,11 @@ const Profile = () => {
   const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
 
   if (!isLoggedIn) {
+    // ... (Login prompt UI same as before)
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" style={{ paddingBottom: '120px' }}>
-        {/* Hero Section */}
+        {/* ... */}
+
         <div className="pt-16 pb-12 px-6 text-center">
           <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-2xl">
             <User className="w-12 h-12 text-white" />

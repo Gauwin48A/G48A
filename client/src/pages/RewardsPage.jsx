@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-
+import api from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
 
 const RewardsPage = () => {
     const { t } = useTranslation();
+    const { user, loading: authLoading } = useAuth(); // Use global auth state
     const [rewards, setRewards] = useState({ points: 0 });
     const [directReferrals, setDirectReferrals] = useState([]);
     const [indirectReferrals, setIndirectReferrals] = useState([]);
@@ -13,12 +15,16 @@ const RewardsPage = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        // Wait for AuthContext to finish checking session
+        if (authLoading) return;
+
         const fetchUserData = async () => {
             setLoading(true);
             setError(null);
 
             const token = localStorage.getItem('authToken');
-            const userId = localStorage.getItem('userId');
+            // Use userId from AuthContext if available, fallback to localStorage
+            const userId = user?.id || localStorage.getItem('userId');
 
             if (!token || !userId) {
                 setError('Please login to view rewards');
@@ -27,21 +33,8 @@ const RewardsPage = () => {
             }
 
             try {
-                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-                // FIX: Fetch rewards via Node API instead of Supabase direct call
-                const rewardsRes = await fetch(`${baseUrl}/api/rewards?userId=${userId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!rewardsRes.ok) {
-                    throw new Error('Failed to fetch rewards');
-                }
-
-                const rewardsData = await rewardsRes.json();
+                // Use the centralized API service (handles refresh tokens automatically)
+                const rewardsData = await api.get(`/rewards?userId=${userId}`);
 
                 // Handle both old format (array) and new format (object with user/referralChain)
                 if (rewardsData.user) {
@@ -60,18 +53,11 @@ const RewardsPage = () => {
 
                 // Fetch reward log if available
                 try {
-                    const logRes = await fetch(`${baseUrl}/api/rewards/log?userId=${userId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    if (logRes.ok) {
-                        const logData = await logRes.json();
-                        setRewardLog(Array.isArray(logData) ? logData : []);
-                    }
+                    const logData = await api.get(`/rewards/log?userId=${userId}`);
+                    setRewardLog(Array.isArray(logData) ? logData : []);
                 } catch (logErr) {
-                    // Log endpoint might not exist yet - continue without it
+                    // Log endpoint might not exist yet or empty - continue
+                    setRewardLog([]);
                 }
 
             } catch (err) {
@@ -83,7 +69,7 @@ const RewardsPage = () => {
         };
 
         fetchUserData();
-    }, []);
+    }, [authLoading, user]); // Re-run when auth loading finishes
 
     if (loading) {
         return (

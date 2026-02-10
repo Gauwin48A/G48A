@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation } from '../context/LocationContext';
-import { getDeviceInfo, getIPBasedLocation } from '../utils/deviceInfo';
+import { getDeviceInfo } from '../utils/deviceInfo';
 import { MapPin, Loader2, AlertTriangle, RefreshCw, Smartphone } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -19,12 +19,11 @@ export default function LocationGate({ children }) {
         permissionDenied,
         requestLocation,
         city,
-        latitude,
-        longitude
+        accuracy,
+        provider
     } = useLocation();
 
     const [deviceSent, setDeviceSent] = useState(false);
-    const [ipLocation, setIpLocation] = useState(null);
     const [retrying, setRetrying] = useState(false);
     const [autoBypass, setAutoBypass] = useState(false); // Auto-bypass after timeout
 
@@ -49,26 +48,6 @@ export default function LocationGate({ children }) {
         }
     }, [deviceSent]);
 
-    // Get IP-based location as fallback
-    useEffect(() => {
-        if (permissionDenied && !ipLocation) {
-            getIPBasedLocation().then(data => {
-                if (data) {
-                    setIpLocation(data);
-                    // Send IP location to backend
-                    sendLocationToBackend({
-                        latitude: data.latitude,
-                        longitude: data.longitude,
-                        city: data.city,
-                        country: data.country,
-                        provider: 'ip_fallback',
-                        permission_status: 'denied_using_ip'
-                    });
-                }
-            });
-        }
-    }, [permissionDenied, ipLocation]);
-
     const sendDeviceInfo = async () => {
         try {
             const deviceInfo = getDeviceInfo();
@@ -83,19 +62,6 @@ export default function LocationGate({ children }) {
             console.log('[LocationGate] Device info sent:', deviceInfo.fingerprint);
         } catch (err) {
             console.error('[LocationGate] Failed to send device info:', err);
-        }
-    };
-
-    const sendLocationToBackend = async (data) => {
-        try {
-            await fetch(`${API_BASE}/api/location`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(data)
-            });
-        } catch (err) {
-            console.error('[LocationGate] Failed to send location:', err);
         }
     };
 
@@ -152,10 +118,12 @@ export default function LocationGate({ children }) {
                         </ol>
                     </div>
 
-                    {ipLocation && (
+                    {city && (
                         <div className="location-gate-fallback">
-                            <p>📍 We detected you're near <strong>{ipLocation.city}, {ipLocation.country}</strong></p>
-                            <p className="muted">For more accurate results, please enable GPS location.</p>
+                            <p>Current location source: <strong>{provider || 'unknown'}</strong></p>
+                            <p className="muted">
+                                {accuracy ? `Last known accuracy: ±${Math.round(accuracy)}m` : 'Enable GPS for the most accurate location.'}
+                            </p>
                         </div>
                     )}
 

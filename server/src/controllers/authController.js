@@ -73,12 +73,12 @@ exports.signup = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    // Password Strength Check
+    // Password Strength Check (score 0-4: 0=terrible, 2=fair, 4=excellent)
     if (password) {
       const strength = zxcvbn(password);
-      if (strength.score < 3) {
+      if (strength.score < 2) {
         return res.status(400).json({
-          error: 'Password is too weak',
+          error: 'Password is too weak. Add numbers, symbols, or make it longer.',
           suggestions: strength.feedback.suggestions
         });
       }
@@ -530,9 +530,9 @@ exports.setPassword = async (req, res) => {
 
   try {
     const strength = zxcvbn(password);
-    if (strength.score < 3) {
+    if (strength.score < 2) {
       return res.status(400).json({
-        error: 'Password is too weak',
+        error: 'Password is too weak. Add numbers, symbols, or make it longer.',
         suggestions: strength.feedback.suggestions
       });
     }
