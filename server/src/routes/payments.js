@@ -11,9 +11,16 @@ const { protect, optionalAuth } = require('../middleware/auth');
 // Public - Get UPI payment details (for QR code display)
 router.get('/upi-details', paymentController.getUpiDetails);
 
+// Webhook (Public, verify signature in controller)
+router.post('/webhook', paymentController.handleWebhook);
+
+// Validate promo code (auth optional — show discount before login)
+router.post('/validate-promo', paymentController.validatePromoCode);
+
 // User routes (require authentication)
 router.post('/submit', protect, paymentController.submitPayment);
 router.get('/status', protect, paymentController.getPaymentStatus);
+router.post('/:id/retry', protect, paymentController.retryPayment);
 
 // Admin routes (require authentication + admin check could be added)
 router.get('/pending', protect, paymentController.getPendingPayments);

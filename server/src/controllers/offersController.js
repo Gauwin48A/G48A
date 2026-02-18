@@ -164,8 +164,106 @@ const respondToOffer = async (req, res) => {
     }
 };
 
+// Get full offer negotiation history for a post
+const getOfferHistory = async (req, res) => {
+    const { postId } = req.params;
+
+    try {
+        const result = await pool.query(`
+      SELECT o.*,
+             bu.full_name as buyer_name,
+             su.full_name as seller_name,
+             p.title as post_title,
+             p.price as post_price
+      FROM offers o
+      JOIN posts p ON p.post_id = o.post_id
+      JOIN users bu ON bu.user_id = o.buyer_id
+      JOIN users su ON su.user_id = o.seller_id
+      WHERE o.post_id = $1
+      ORDER BY o.created_at DESC
+    `, [postId]);
+
+        res.json({ history: result.rows });
+    } catch (error) {
+        console.error('Get offer history error:', error);
+        res.status(500).json({ error: 'Failed to fetch offer history' });
+    }
+};
+
+// Set auto-accept threshold for a seller
+const setAutoAcceptThreshold = async (req, res) => {
+    const sellerId = req.user?.userId || req.user?.id;
+    const { postId, minAcceptPrice } = req.body;
+
+    if (!sellerId) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (!postId || !minAcceptPrice || minAcceptPrice <= 0) {
+        return res.status(400).json({ error: 'postId and valid minAcceptPrice required' });
+    }
+
+    try {
+        // Verify ownership
+        const post = await pool.query('SELECT user_id FROM posts WHERE post_id = $1', [postId]);
+        if (post.rows.length === 0 || post.rows[0].user_id !== sellerId) {
+            return res.status(403).json({ error: 'Not your post' });
+        }
+
+        // Store auto-accept threshold (using a metadata field or separate table)
+        await pool.query(`
+      UPDATE posts SET auto_accept_price = $1, updated_at = NOW()
+      WHERE post_id = $2
+    `, [minAcceptPrice, postId]);
+
+        // Auto-accept any pending offers that meet the threshold
+        const autoAccepted = await pool.query(`
+      UPDATE offers SET status = 'accepted', updated_at = NOW()
+      WHERE post_id = $1 AND status = 'pending' AND offered_price >= $2
+      RETURNING *
+    `, [postId, minAcceptPrice]);
+
+        res.json({
+            message: `Auto-accept threshold set to ${minAcceptPrice}`,
+            autoAcceptedCount: autoAccepted.rows.length
+        });
+    } catch (error) {
+        console.error('Set auto-accept error:', error);
+        res.status(500).json({ error: 'Failed to set auto-accept threshold' });
+    }
+};
+
+// Expire offers older than 48 hours (called by cron)
+const expireOffers = async () => {
+    try {
+        const result = await pool.query(`
+      UPDATE offers SET status = 'expired', updated_at = NOW()
+      WHERE status = 'pending'
+        AND created_at < NOW() - INTERVAL '48 hours'
+      RETURNING offer_id, buyer_id, seller_id, post_id
+    `);
+
+        if (result.rows.length > 0) {
+            console.log(`[CRON] Expired ${result.rows.length} offers older than 48h`);
+            // Notify buyers their offers expired
+            for (const offer of result.rows) {
+                await pool.query(`
+          INSERT INTO notifications (user_id, title, message, type, created_at)
+          VALUES ($1, '⏰ Offer Expired', 'Your offer has expired because the seller did not respond in 48 hours.', 'offer_expired', NOW())
+        `, [offer.buyer_id]);
+            }
+        }
+        return result.rows.length;
+    } catch (error) {
+        console.error('[CRON] Offer expiry error:', error);
+        return 0;
+    }
+};
+
 module.exports = {
     createOffer,
     getOffers,
-    respondToOffer
+    respondToOffer,
+    getOfferHistory,
+    setAutoAcceptThreshold,
+    expireOffers
 };

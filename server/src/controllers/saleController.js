@@ -10,8 +10,9 @@
 
 const pool = require('../config/db');
 const crypto = require('crypto');
+const otpService = require('../services/otpService');
 
-// Generate 6-digit OTP
+// Generate 6-digit OTP (kept for backward compat, prefer otpService)
 const generateOTP = () => {
     return crypto.randomInt(100000, 999999).toString();
 };
@@ -67,19 +68,22 @@ const initiateSale = async (req, res) => {
             return res.status(400).json({ error: 'A sale is already in progress for this item' });
         }
 
-        // Generate secret OTP for buyer verification
+        // Generate secure OTP for buyer verification via otpService
         const secretOTP = generateOTP();
-        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+        const hashedOTP = crypto.createHash('sha256').update(secretOTP).digest('hex');
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours for full transaction
+        const otpExpiresAt = new Date(Date.now() + otpService.OTP_EXPIRY_MINUTES * 60 * 1000); // 10 min for OTP
 
-        // Create transaction record
+        // Create transaction record with hashed OTP
         const result = await pool.query(`
       INSERT INTO transactions (
         post_id, seller_id, buyer_id, agreed_price, 
-        secret_otp, status, expires_at, created_at
+        secret_otp, otp_hash, otp_expires_at, otp_attempts,
+        status, expires_at, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, 'pending_buyer_confirm', $6, NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 'pending_buyer_confirm', $8, NOW())
       RETURNING *
-    `, [postId, sellerId, buyerId, agreedPrice, secretOTP, expiresAt]);
+    `, [postId, sellerId, buyerId, agreedPrice, secretOTP, hashedOTP, otpExpiresAt, expiresAt]);
 
         // Update post status
         await pool.query(
@@ -98,15 +102,26 @@ const initiateSale = async (req, res) => {
             result.rows[0].transaction_id
         ]);
 
+        // Send OTP via email/SMS (currently mock)
+        try {
+            const buyerInfo = await pool.query('SELECT email, phone FROM users WHERE user_id = $1', [buyerId]);
+            if (buyerInfo.rows[0]?.email) {
+                await otpService.sendOTP('email', buyerInfo.rows[0].email, secretOTP);
+            }
+        } catch (notifyErr) {
+            console.warn('[Sale] OTP notification failed (non-blocking):', notifyErr.message);
+        }
+
         res.status(201).json({
             message: 'Sale initiated successfully',
             transaction: {
                 transactionId: result.rows[0].transaction_id,
                 status: 'pending_buyer_confirm',
-                secretOTP: secretOTP, // Show to seller to share with buyer
+                secretOTP: secretOTP, // Show to seller to share with buyer in-person
+                otpExpiresIn: `${otpService.OTP_EXPIRY_MINUTES} minutes`,
                 expiresAt: expiresAt
             },
-            instructions: 'Share this OTP with the buyer. They must enter it to confirm the sale.'
+            instructions: 'Share this OTP with the buyer in person. They must enter it to confirm the sale. OTP expires in 10 minutes.'
         });
 
     } catch (error) {
@@ -163,9 +178,32 @@ const confirmSale = async (req, res) => {
             return res.status(400).json({ error: 'Transaction has expired' });
         }
 
-        // Verify OTP
-        if (transaction.secret_otp !== otp) {
-            return res.status(400).json({ error: 'Invalid OTP code' });
+        // Check OTP expiry (10-min window)
+        const otpExpiry = transaction.otp_expires_at ? new Date(transaction.otp_expires_at) : null;
+        if (otpExpiry && new Date() > otpExpiry) {
+            return res.status(400).json({ error: 'OTP has expired. Ask the seller to initiate a new sale.' });
+        }
+
+        // Check attempt limit (max 3)
+        const attempts = transaction.otp_attempts || 0;
+        if (attempts >= otpService.MAX_ATTEMPTS) {
+            return res.status(400).json({ error: 'Too many failed OTP attempts. Ask the seller to initiate a new sale.' });
+        }
+
+        // Increment attempt count
+        await pool.query(
+            'UPDATE transactions SET otp_attempts = COALESCE(otp_attempts, 0) + 1 WHERE transaction_id = $1',
+            [transactionId]
+        );
+
+        // Verify OTP (support both hashed and plain comparison for backward compat)
+        const hashedInput = crypto.createHash('sha256').update(otp).digest('hex');
+        const otpValid = (transaction.otp_hash && transaction.otp_hash === hashedInput) ||
+            (transaction.secret_otp === otp);
+
+        if (!otpValid) {
+            const remaining = otpService.MAX_ATTEMPTS - attempts - 1;
+            return res.status(400).json({ error: `Invalid OTP code. ${remaining} attempt(s) remaining.` });
         }
 
         // Complete the sale

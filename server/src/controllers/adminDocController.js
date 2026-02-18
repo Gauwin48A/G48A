@@ -180,9 +180,50 @@ const reviewVerification = async (req, res) => {
     }
 };
 
+/**
+ * Auto-Validate Document (Stub: OCR Rules)
+ * POST /api/admin/verifications/:id/auto-validate
+ */
+const autoValidateDocument = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user?.userId;
+
+    if (!userId || !(await isAdmin(userId))) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    try {
+        console.log(`[Admin] Auto-validating document ${id}...`);
+
+        // Mock OCR delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Simulated OCR Result
+        const mockResult = {
+            confidence: 0.92,
+            extracted_data: {
+                id_type: 'AADHAAR',
+                id_number: '**** **** 4321',
+                name_match: true,
+                dob_match: true,
+                expiry_valid: true
+            },
+            issues: [],
+            recommendation: 'APPROVE'
+        };
+
+        res.json(mockResult);
+
+    } catch (error) {
+        console.error('[Admin] Auto-validate error:', error);
+        res.status(500).json({ error: 'Auto-validation failed' });
+    }
+};
+
 module.exports = {
     viewDocument,
     listVerifications,
     reviewVerification,
+    autoValidateDocument,
     PRIVATE_UPLOADS_DIR
 };

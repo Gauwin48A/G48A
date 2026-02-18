@@ -418,6 +418,28 @@ const Profile = () => {
               <p className="text-xs text-indigo-100 font-normal">{t('view_feed')}</p>
             </div>
           </Button>
+
+          <Button
+            onClick={() => navigate(`/reviews/${user?.user_id}`)}
+            className="h-auto py-4 bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white shadow-lg rounded-xl flex items-center justify-center gap-3 transition-transform hover:scale-[1.02]"
+          >
+            <Star className="w-6 h-6" />
+            <div className="text-left">
+              <p className="font-bold text-lg">My Reviews</p>
+              <p className="text-xs text-yellow-100 font-normal">View reputation</p>
+            </div>
+          </Button>
+
+          <Button
+            onClick={() => navigate('/offers')}
+            className="h-auto py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg rounded-xl flex items-center justify-center gap-3 transition-transform hover:scale-[1.02]"
+          >
+            <CreditCard className="w-6 h-6" />
+            <div className="text-left">
+              <p className="font-bold text-lg">My Offers</p>
+              <p className="text-xs text-green-100 font-normal">Manage deals</p>
+            </div>
+          </Button>
         </div>
       </div>
 

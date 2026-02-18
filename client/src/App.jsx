@@ -56,6 +56,8 @@ const SearchPage = lazy(() => import('./pages/SearchPage.jsx'));
 const SecuritySettings = lazy(() => import('./pages/SecuritySettings.jsx'));
 const KycVerification = lazy(() => import('./pages/KYC/KycVerification.jsx'));
 const PaymentPage = lazy(() => import('./pages/Payments/PaymentPage.jsx'));
+const Offers = lazy(() => import('./pages/Offers.jsx'));
+const Reviews = lazy(() => import('./pages/Reviews.jsx'));
 
 /**
  * Location Banner - Shows when location is not granted
@@ -273,6 +275,8 @@ function AppContent() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/kyc" element={<KycVerification />} />
                 <Route path="/payment" element={<PaymentPage />} />
+                <Route path="/offers" element={<Offers />} />
+                <Route path="/reviews/:userId" element={<Reviews />} />
                 <Route path="*" element={<Navigate to="/all-posts" replace />} />
               </Routes>
             </Suspense>

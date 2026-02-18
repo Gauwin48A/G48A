@@ -11,6 +11,7 @@
 
 const cron = require('node-cron');
 const pool = require('../config/db');
+const { expireOffers } = require('../controllers/offersController');
 
 // Configuration for warnings
 const POST_WARNING_DAYS = [5, 3, 1]; // Days before expiry to warn
@@ -198,35 +199,157 @@ const expireOldTransactions = async () => {
     }
 };
 
+// initCronJobs is defined after all job functions below
+
+/* ─────────────────────────────────────────────
+   New job: Daily Digest
+   Sends a summary notification to active users
+───────────────────────────────────────────── */
+const sendDailyDigest = async () => {
+    console.log('[CRON] Sending daily digest...');
+    try {
+        // Find users who have unread notifications from the last 24h
+        const result = await pool.query(`
+            SELECT DISTINCT n.user_id, COUNT(n.notification_id) as unread_count
+            FROM notifications n
+            WHERE n.created_at > NOW() - INTERVAL '24 hours'
+              AND n.is_read = false
+            GROUP BY n.user_id
+            HAVING COUNT(n.notification_id) >= 3
+            LIMIT 500
+        `);
+
+        let sent = 0;
+        for (const row of result.rows) {
+            await pool.query(`
+                INSERT INTO notifications (user_id, title, message, type, created_at)
+                VALUES ($1, '📬 Daily Summary', $2, 'digest', NOW())
+            `, [
+                row.user_id,
+                `You have ${row.unread_count} unread notifications. Check your dashboard for updates.`
+            ]);
+            sent++;
+        }
+
+        console.log(`[CRON] Daily digest sent to ${sent} users`);
+    } catch (error) {
+        console.error('[CRON] Daily digest error:', error);
+    }
+};
+
+/* ─────────────────────────────────────────────
+   New job: Fraud Batch Review
+   Flags high-risk accounts for manual review
+───────────────────────────────────────────── */
+const runFraudBatchReview = async () => {
+    console.log('[CRON] Running fraud batch review...');
+    try {
+        // Flag users with >5 failed login attempts in last 6h
+        const suspiciousLogins = await pool.query(`
+            SELECT user_id, COUNT(*) as fail_count
+            FROM login_audit
+            WHERE success = false AND created_at > NOW() - INTERVAL '6 hours'
+            GROUP BY user_id
+            HAVING COUNT(*) >= 5
+        `).catch(() => ({ rows: [] })); // Graceful if table missing
+
+        for (const row of suspiciousLogins.rows) {
+            await pool.query(`
+                INSERT INTO notifications (user_id, title, message, type, created_at)
+                VALUES ($1, '⚠️ Security Alert', 'Multiple failed login attempts detected on your account. If this was not you, please change your password immediately.', 'security_alert', NOW())
+                ON CONFLICT DO NOTHING
+            `, [row.user_id]).catch(() => { });
+        }
+
+        // Flag payments with duplicate amounts submitted within 10 minutes (potential double-submit)
+        const dupePayments = await pool.query(`
+            SELECT p1.id, p1.user_id, p1.amount, p1.plan_purchased
+            FROM payments p1
+            JOIN payments p2 ON p1.user_id = p2.user_id
+              AND p1.amount = p2.amount
+              AND p1.plan_purchased = p2.plan_purchased
+              AND p1.id != p2.id
+              AND ABS(EXTRACT(EPOCH FROM (p1.created_at - p2.created_at))) < 600
+            WHERE p1.status = 'pending'
+              AND p1.created_at > NOW() - INTERVAL '6 hours'
+        `).catch(() => ({ rows: [] }));
+
+        if (dupePayments.rows.length > 0) {
+            console.warn(`[CRON] Fraud batch: ${dupePayments.rows.length} potential duplicate payments flagged`);
+        }
+
+        console.log(`[CRON] Fraud batch complete: ${suspiciousLogins.rows.length} suspicious logins, ${dupePayments.rows.length} duplicate payments`);
+    } catch (error) {
+        console.error('[CRON] Fraud batch error:', error);
+    }
+};
+
+/* ─────────────────────────────────────────────
+   New job: Complaint Auto-Resolution
+   Auto-closes complaints open > 7 days with no activity
+───────────────────────────────────────────── */
+const autoResolveStaleComplaints = async () => {
+    console.log('[CRON] Running complaint auto-resolution...');
+    try {
+        const result = await pool.query(`
+            UPDATE complaints
+            SET status = 'auto_closed',
+                admin_response = COALESCE(admin_response, 'This complaint was automatically closed after 7 days of inactivity.'),
+                updated_at = NOW()
+            WHERE status IN ('open', 'triage')
+              AND updated_at < NOW() - INTERVAL '7 days'
+            RETURNING complaint_id, buyer_id
+        `).catch(() => ({ rows: [] }));
+
+        for (const complaint of result.rows) {
+            if (complaint.buyer_id) {
+                await pool.query(`
+                    INSERT INTO notifications (user_id, title, message, type, created_at)
+                    VALUES ($1, '📋 Complaint Closed', 'Your complaint has been automatically closed after 7 days of inactivity. If you still need help, please submit a new complaint.', 'complaint_closed', NOW())
+                `, [complaint.buyer_id]).catch(() => { });
+            }
+        }
+
+        console.log(`[CRON] Auto-resolved ${result.rows.length} stale complaints`);
+    } catch (error) {
+        console.error('[CRON] Complaint auto-resolution error:', error);
+    }
+};
+
 /**
  * Initialize all CRON jobs
+ * Defined here (after all job functions) so const references resolve correctly
  */
 const initCronJobs = () => {
     console.log('⏰ Initializing CRON jobs...');
 
-    // Post expiry check - Daily at midnight (uses tier-based expires_at)
-    cron.schedule('0 0 * * *', expireOldPosts, {
-        timezone: 'Asia/Kolkata'
-    });
+    cron.schedule('0 0 * * *', expireOldPosts, { timezone: 'Asia/Kolkata' });
     console.log('  ├─ Post expiry (tier-based): Daily at 00:00 IST');
 
-    // Expiry warnings - Daily at 9 AM
-    cron.schedule('0 9 * * *', sendExpiryWarnings, {
-        timezone: 'Asia/Kolkata'
-    });
+    cron.schedule('0 9 * * *', sendExpiryWarnings, { timezone: 'Asia/Kolkata' });
     console.log('  ├─ Expiry warnings: Daily at 09:00 IST');
 
-    // Subscription expiry check - Daily at 10 AM
-    cron.schedule('0 10 * * *', checkSubscriptionExpiry, {
-        timezone: 'Asia/Kolkata'
-    });
+    cron.schedule('0 10 * * *', checkSubscriptionExpiry, { timezone: 'Asia/Kolkata' });
     console.log('  ├─ Subscription expiry: Daily at 10:00 IST');
 
-    // Transaction expiry - Every hour
-    cron.schedule('0 * * * *', expireOldTransactions, {
-        timezone: 'Asia/Kolkata'
-    });
-    console.log('  └─ Transaction expiry: Hourly');
+    cron.schedule('0 * * * *', expireOldTransactions, { timezone: 'Asia/Kolkata' });
+    console.log('  ├─ Transaction expiry: Hourly');
+
+    cron.schedule('30 * * * *', async () => {
+        console.log('[CRON] Running offer expiry check...');
+        const count = await expireOffers();
+        console.log(`[CRON] Offer expiry complete: ${count} expired`);
+    }, { timezone: 'Asia/Kolkata' });
+    console.log('  ├─ Offer expiry (48h): Hourly at :30');
+
+    cron.schedule('30 9 * * *', sendDailyDigest, { timezone: 'Asia/Kolkata' });
+    console.log('  ├─ Daily digest: Daily at 09:30 IST');
+
+    cron.schedule('0 */6 * * *', runFraudBatchReview, { timezone: 'Asia/Kolkata' });
+    console.log('  ├─ Fraud batch review: Every 6 hours');
+
+    cron.schedule('0 2 * * *', autoResolveStaleComplaints, { timezone: 'Asia/Kolkata' });
+    console.log('  └─ Complaint auto-resolution: Daily at 02:00 IST');
 
     console.log('⏰ CRON jobs initialized');
 };
@@ -237,6 +360,8 @@ module.exports = {
     expireOldPosts,
     sendExpiryWarnings,
     checkSubscriptionExpiry,
-    expireOldTransactions
+    expireOldTransactions,
+    sendDailyDigest,
+    runFraudBatchReview,
+    autoResolveStaleComplaints
 };
-

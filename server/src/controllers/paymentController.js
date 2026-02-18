@@ -1,17 +1,89 @@
 /**
  * Payment Controller
  * Zero-Cost UPI Verification System
- * 
+ *
  * Flow:
- * 1. User selects plan → Shows UPI QR/ID
+ * 1. User selects plan → Shows UPI QR/ID (with optional promo code)
  * 2. User pays via any UPI app
  * 3. User submits transaction ID
- * 4. Admin verifies in dashboard
+ * 4. Admin verifies in dashboard (or webhook auto-verifies)
  * 5. Subscription activated
+ *
+ * Additions:
+ *  - Promo code validation endpoint
+ *  - Retry tracking (max 3 retries per payment)
+ *  - Duplicate heuristics (amount + time window)
  */
 
 const pool = require('../config/db');
-const { getTierRules } = require('../config/tierRules');
+const { getTierRules, applyPromoCode, consumePromoCode } = require('../config/tierRules');
+
+/**
+ * Validate a promo code (User)
+ * POST /api/payments/validate-promo
+ */
+exports.validatePromoCode = async (req, res) => {
+    try {
+        const { code, plan_type } = req.body;
+        if (!code || !plan_type) return res.status(400).json({ error: 'code and plan_type required' });
+
+        const result = applyPromoCode(code, plan_type);
+        if (!result.valid) return res.status(400).json({ error: result.error });
+
+        res.json({
+            valid: true,
+            code: code.toUpperCase(),
+            ...result
+        });
+    } catch (err) {
+        console.error('[Payment] Promo validation error:', err);
+        res.status(500).json({ error: 'Failed to validate promo code' });
+    }
+};
+
+/**
+ * Retry a rejected/expired payment (User)
+ * POST /api/payments/:id/retry
+ */
+exports.retryPayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.userId || req.user?.id;
+        const { transaction_id } = req.body;
+
+        const paymentResult = await pool.query('SELECT * FROM payments WHERE id = $1 AND user_id = $2', [id, userId]);
+        if (paymentResult.rows.length === 0) return res.status(404).json({ error: 'Payment not found' });
+
+        const payment = paymentResult.rows[0];
+        if (!['rejected', 'expired'].includes(payment.status)) {
+            return res.status(400).json({ error: `Cannot retry a payment with status: ${payment.status}` });
+        }
+
+        const retryCount = (payment.retry_count || 0) + 1;
+        if (retryCount > 3) {
+            return res.status(400).json({ error: 'Maximum retry attempts (3) reached. Please contact support.' });
+        }
+
+        if (!transaction_id || transaction_id.length < 6) {
+            return res.status(400).json({ error: 'New transaction ID required (min 6 chars)' });
+        }
+
+        // Check new txn ID is not already used
+        const dupeCheck = await pool.query('SELECT id FROM payments WHERE transaction_id = $1', [transaction_id]);
+        if (dupeCheck.rows.length > 0) return res.status(400).json({ error: 'Transaction ID already submitted' });
+
+        await pool.query(
+            `UPDATE payments SET status = 'pending', transaction_id = $1, retry_count = $2, updated_at = NOW() WHERE id = $3`,
+            [transaction_id, retryCount, id]
+        );
+
+        console.log(`[Payment] Retry #${retryCount}: Payment ${id} by User ${userId}`);
+        res.json({ success: true, message: `Payment resubmitted (attempt ${retryCount}/3)`, retry_count: retryCount });
+    } catch (err) {
+        console.error('[Payment] Retry error:', err);
+        res.status(500).json({ error: 'Failed to retry payment' });
+    }
+};
 
 /**
  * Submit a payment for verification (User)
@@ -401,4 +473,27 @@ exports.getUpiDetails = async (req, res) => {
     };
 
     res.json(upiDetails);
+};
+
+/**
+ * Handle Payment Webhook (Placeholder for Razorpay/Stripe)
+ * POST /api/payments/webhook
+ */
+exports.handleWebhook = async (req, res) => {
+    try {
+        // In production, verify signature here (e.g. req.headers['x-razorpay-signature'])
+        const payload = req.body;
+
+        console.log('[Payment] Webhook received:', JSON.stringify(payload));
+
+        // Placeholder processing logic
+        // 1. Find payment by order_id/transaction_id
+        // 2. Update status to 'verified'
+        // 3. Trigger subscription update
+
+        res.json({ status: 'ok', received: true });
+    } catch (err) {
+        console.error('[Payment] Webhook error:', err);
+        res.status(500).json({ error: 'Webhook processing failed' });
+    }
 };

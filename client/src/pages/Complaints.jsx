@@ -25,30 +25,7 @@ const Complaints = () => {
     description: ''
   });
 
-  const myComplaints = [
-    {
-      id: 'COMP001',
-      type: t('transaction_issue'),
-      postId: 'POST001',
-      sellerId: 'USER123',
-      buyerId: 'USER456',
-      status: t('under_review'),
-      submittedDate: '2024-01-20',
-      description: t('seller_not_responding'),
-      adminResponse: null
-    },
-    {
-      id: 'COMP002',
-      type: t('product_quality'),
-      postId: 'POST002',
-      sellerId: 'USER789',
-      buyerId: 'USER456',
-      status: t('resolved'),
-      submittedDate: '2024-01-15',
-      description: t('phone_condition_not_described'),
-      adminResponse: t('issue_resolved_refund')
-    }
-  ];
+  // Real complaints are fetched from API below
 
   const [complaints, setComplaints] = useState([]);
   const [error, setError] = useState(null);
@@ -67,13 +44,19 @@ const Complaints = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  useEffect(() => {
+  const fetchMyComplaints = () => {
     setLoading(true);
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    fetch(`${baseUrl}/api/complaints`)
+    const token = localStorage.getItem('authToken');
+    fetch(`${baseUrl}/api/complaints/my`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    })
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
+        if (data.complaints && Array.isArray(data.complaints)) {
+          setComplaints(data.complaints);
+          setError(null);
+        } else if (Array.isArray(data)) {
           setComplaints(data);
           setError(null);
         } else {
@@ -85,6 +68,10 @@ const Complaints = () => {
         setError(err.message || 'Failed to fetch complaints');
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchMyComplaints();
   }, []);
 
   const handleInputChange = (e) => {
@@ -109,22 +96,58 @@ const Complaints = () => {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "✅ Complaint Submitted",
-        description: "We'll review your complaint within 24-48 hours"
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${baseUrl}/api/complaints`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          seller_id: complaintForm.sellerId || undefined,
+          buyer_id: complaintForm.buyerId || undefined,
+          post_id: complaintForm.postId,
+          complaint_type: complaintForm.complaintType,
+          description: complaintForm.description,
+          secret_code: complaintForm.secretCode || undefined
+        })
       });
 
-      setComplaintForm({
-        sellerId: '',
-        buyerId: '',
-        postId: '',
-        secretCode: '',
-        complaintType: 'transaction',
-        description: ''
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "✅ Complaint Submitted",
+          description: data.message || "We'll review your complaint within 24-48 hours"
+        });
+        setComplaintForm({
+          sellerId: '',
+          buyerId: '',
+          postId: '',
+          secretCode: '',
+          complaintType: 'transaction',
+          description: ''
+        });
+        // Refresh complaints list
+        fetchMyComplaints();
+      } else {
+        toast({
+          title: "❌ Submission Failed",
+          description: data.error || 'Failed to submit complaint',
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "❌ Network Error",
+        description: err.message || 'Could not connect to server',
+        variant: "destructive"
       });
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -151,7 +174,7 @@ const Complaints = () => {
     }
   };
 
-  const displayedComplaints = complaints.length > 0 ? complaints : myComplaints;
+  const displayedComplaints = complaints;
 
   // Check login status
   const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');

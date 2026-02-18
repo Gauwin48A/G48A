@@ -41,6 +41,7 @@ const tiersRoutes = require("./routes/tiers.js");
 const brandsRoutes = require("./routes/brands.js");
 const pushNotificationsRoutes = require("./routes/pushNotifications.js");
 const nearbyRoutes = require("./routes/nearby.js");
+const reviewsRoutes = require("./routes/reviews.js");
 
 const http = require('http');
 const { Server } = require("socket.io");
@@ -195,6 +196,7 @@ app.use('/api/tiers', tiersRoutes);
 app.use('/api/brands', brandsRoutes);
 app.use('/api/push', pushNotificationsRoutes);
 app.use('/api/nearby', nearbyRoutes);
+app.use('/api/reviews', reviewsRoutes);
 // Blue Team Gap 1: Dual-Handshake Sale Logic
 const saleRoutes = require('./routes/sale.js');
 app.use('/api/sale', saleRoutes);
