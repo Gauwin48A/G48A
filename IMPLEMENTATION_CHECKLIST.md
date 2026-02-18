@@ -1,480 +1,402 @@
-# MHub - Quick Implementation Checklist & Priority Guide
+# MHub Unified Implementation Checklist and Delivery Playbook
 
-## 🔥 CRITICAL PATH (Next 30 Days)
-
-### Must-Do Features (Blocking Revenue)
-```
-[1] Payment Auto-Verification
-    └─ Est: 30 hours | Difficulty: HIGH | Revenue Impact: 💰💰💰
-    └─ Start: ASAP | Owner: Backend Lead
-    └─ Blockers: RazorPay API setup
-    └─ Done When: 95% payments auto-verified
-
-[2] OTP Delivery System  
-    └─ Est: 18 hours | Difficulty: MEDIUM | UX Impact: ⭐⭐⭐
-    └─ Start: Week 1 | Owner: Backend Dev
-    └─ Blockers: Twilio setup
-    └─ Done When: SMS + Email OTP working
-
-[3] KYC Document Validation
-    └─ Est: 25 hours | Difficulty: HIGH | Safety Impact: 🛡️🛡️🛡️
-    └─ Start: Week 2 | Owner: Backend Lead
-    └─ Blockers: Google Vision API, pattern rules
-    └─ Done When: Auto-validation 80% accurate
-
-[4] Tier Feature Enforcement
-    └─ Est: 20 hours | Difficulty: MEDIUM | Revenue Impact: 💰💰
-    └─ Start: Week 1 | Owner: Full-stack
-    └─ Blockers: Feature matrix definition
-    └─ Done When: Quotas enforced per tier
-```
+Date: 2026-02-18
+Version: Consolidated v2
+Source Merge:
+1. Legacy quick priority checklist (effort, dependencies, execution order).
+2. Verified code-anchored gap checklist (actual implementation status by file).
 
 ---
 
-## 📊 HIGH-VALUE FEATURES (Next 30-60 Days)
+## 1) Executive Summary
 
-```
-[5] Offer Counter-Offer Logic
-    └─ Est: 22 hours | Difficulty: MEDIUM | UX Impact: ⭐⭐⭐
-    └─ Dependency: [1,2] ← Payment/OTP first
-    └─ Owner: Backend + Frontend
+MHub is functional, but monetization, trust, and moderation workflows still have manual bottlenecks. The highest-leverage path is:
+1. Payment automation.
+2. OTP delivery reliability.
+3. KYC automation.
+4. Complaints persistence and SLA workflow.
+5. Reviews wiring end-to-end.
+6. Admin dashboard contract alignment.
 
-[6] Review & Rating System
-    └─ Est: 18 hours | Difficulty: MEDIUM | Trust Impact: 🛡️🛡️
-    └─ Dependency: None
-    └─ Owner: Full-stack
-
-[7] Advanced Cron Jobs
-    └─ Est: 28 hours | Difficulty: HIGH | Ops Impact: 🔧🔧
-    └─ Dependency: [3] ← KYC first
-    └─ Owner: Backend Lead
-
-[8] Admin Moderation Dashboard
-    └─ Est: 26 hours | Difficulty: MEDIUM | Ops Impact: 📊📊
-    └─ Dependency: [1,3,7]
-    └─ Owner: Frontend + Backend
-```
+These six items reduce manual ops load, unlock revenue, and tighten trust controls.
 
 ---
 
-## 🎯 STRATEGIC FEATURES (60+ Days)
+## 2) Consolidated Priority Matrix (What To Build First)
 
-```
-[9] Fraud Detection & Risk Engine
-    └─ Est: 35 hours | Difficulty: VERY HIGH | Safety Impact: 🛡️🛡️🛡️
-    └─ Dependency: [7] ← Cron infrastructure first
-    └─ Owner: Senior Backend
-    └─ Note: Requires ML expertise or third-party
-
-[10] Referral Leaderboard & Analytics
-     └─ Est: 22 hours | Difficulty: MEDIUM | Engagement Impact: 🎮
-     └─ Dependency: None
-     └─ Owner: Backend + Frontend
-
-[11] Seller Store Pages
-     └─ Est: 25 hours | Difficulty: MEDIUM | Retention Impact: ⭐⭐
-     └─ Dependency: [6] ← Ratings/reviews first
-     └─ Owner: Frontend Lead
-
-[12] Live Auction System
-     └─ Est: 40 hours | Difficulty: HIGH | Revenue Impact: 💰💰💰
-     └─ Dependency: [1,2] ← Payments/OTP
-     └─ Owner: Full-stack Lead
-```
+| Priority | Initiative | Current Status | Impact | Estimated Effort | Why First |
+|---|---|---|---|---|---|
+| P0 | Payment auto-verification + retry + refunds | ~70% | Revenue critical | 30-40h | Removes admin bottleneck and failed upgrade leakage |
+| P0 | OTP real delivery for auth + sale | ~80% | Conversion critical | 18-26h | OTP exists but delivery is placeholder/manual |
+| P0 | KYC OCR + auto-validation + review routing | ~60% | Trust and compliance critical | 30-45h | Current flow is submit + manual review only |
+| P1 | Complaints persistent workflow + SLA engine | ~50% | Safety/ops critical | 20-30h | Frontend submit is mocked, backend list-only |
+| P1 | Reviews and ratings full wiring | ~40% | Trust and retention | 18-28h | Controller exists, route/UI integration incomplete |
+| P1 | Admin moderation pro features | ~70% | Ops scale critical | 24-36h | Dashboard and frontend contract mismatch |
+| P2 | Offer negotiation depth | ~70% | Deal closure uplift | 20-30h | Counter exists, but no lifecycle depth |
+| P2 | Inquiry management enhancements | ~60% | Seller productivity | 14-22h | Needs templates, routing, anti-spam |
+| P2 | Tier monetization completion | ~75% | ARPU growth | 20-30h | Pricing static and upgrade flow not production-grade |
+| P2 | Referral/rewards expansion | ~65% | Growth loop | 20-30h | Minimal referral API, no leaderboard/redemption |
+| P3 | Cron/background maturity | ~50-60% | Platform hygiene | 24-36h | Missing digest/fraud batch/auto-resolution jobs |
+| P3 | Fraud/risk engine maturity | ~60% | Loss prevention | 35-55h | Rule-based today, no review queue/model pipeline |
 
 ---
 
-## 📅 TEAM ALLOCATION MATRIX
+## 3) Verified Current State (Code-Anchored)
 
-### For 2-Developer Team (Recommended Pace)
-```
-Week 1-2: 
-  Dev 1: Payment verification (Backend)
-  Dev 2: OTP UI + integration (Frontend)
+### 3.1 Payment verification workflow (~70%)
+Evidence:
+1. `server/src/controllers/paymentController.js:9`
+2. `server/src/controllers/paymentController.js:178`
+3. `client/src/pages/Payments/PaymentPage.jsx:28`
 
-Week 3-4:
-  Dev 1: KYC validation + OCR (Backend)
-  Dev 2: Offer counter logic + review UI (Frontend)
+Missing:
+1. Bank/gateway webhook verification.
+2. Duplicate fingerprinting and reconciliation.
+3. Retry and timeout pipeline.
+4. Refund workflow and status accounting.
+5. Screenshot OCR extraction pipeline.
 
-Week 5-6:
-  Dev 1: Cron jobs + background processing (Backend)
-  Dev 2: Admin dashboard (Frontend)
+### 3.2 Sale handshake OTP delivery (~80%)
+Evidence:
+1. `server/src/controllers/saleController.js:71`
+2. `server/src/controllers/saleController.js:106`
+3. `server/src/controllers/authController.js:284`
 
-Week 7-8:
-  Dev 1: Fraud detection baseline (Backend)
-  Dev 2: Review analytics + seller improvements (Frontend)
-```
+Missing:
+1. Real SMS provider and email fallback.
+2. Delivery callback tracking.
+3. Resend controls and abuse throttling.
+4. OTP secrecy hardening (no OTP leakage in response payload).
 
-### For 3-Developer Team (Aggressive Pace)
-```
-Week 1-4:
-  Dev 1: Payment verification + OTP (Backend Lead)
-  Dev 2: KYC OCR integration (Backend)
-  Dev 3: UI for all above (Frontend)
+### 3.3 KYC automation (~60%)
+Evidence:
+1. `server/src/controllers/userController.js:273`
+2. `server/src/controllers/userController.js:309`
+3. `server/src/controllers/adminDocController.js:122`
+4. `client/src/pages/KYC/KycVerification.jsx:45`
 
-Week 5-8:
-  Dev 1: Fraud detection + advanced cron (Backend Lead)
-  Dev 2: Admin dashboard implementation (Backend)
-  Dev 3: Advanced UX features (Frontend)
-```
+Missing:
+1. OCR extraction and field parser.
+2. Validation engine (PAN/Aadhaar consistency checks).
+3. Expiry detection and reminders.
+4. Confidence-based auto-decision + review queue.
+5. Optional face match for high-risk cases.
 
----
+### 3.4 Tier monetization completion (~75%)
+Evidence:
+1. `server/src/config/tierRules.js:16`
+2. `server/src/config/tierRules.js:53`
+3. `client/src/pages/TierSelection.jsx:32`
 
-## 🔄 DEPENDENCY CHAIN
+Missing:
+1. Dynamic pricing and promo controls.
+2. Trial and downgrade lifecycle.
+3. Upsell trigger automation.
+4. Billing state machine and reconciliation.
 
-```
-Phase 1 (Weeks 1-2) - Foundation
-├─ Payment Auto-Verify [1]
-└─ OTP Delivery [2]
+### 3.5 Offer negotiation depth (~70%)
+Evidence:
+1. `server/src/controllers/offersController.js:112`
+2. `server/src/controllers/offersController.js:143`
+3. `client/src/pages/Offers.jsx:44`
 
-Phase 2 (Weeks 3-4) - Safety & Trust
-├─ KYC Validation [3]
-├─ Tier Features [4]
-└─ Review System [6]
+Missing:
+1. Offer expiry and multi-round history.
+2. Auto-accept thresholds.
+3. Negotiation analytics and alerts.
 
-Phase 3 (Weeks 5-6) - Operations
-├─ Cron Jobs [7]
-├─ Admin Dashboard [8]
-└─ Fraud Detection [9] ← partially
+### 3.6 Inquiry management enhancements (~60%)
+Evidence:
+1. `server/src/controllers/inquiryController.js:4`
+2. `server/src/controllers/inquiryController.js:137`
 
-Phase 4 (Weeks 7-8) - Enhancement
-├─ Offer Counter [5]
-├─ Referral System [10]
-└─ Fraud Detection [9] ← completion
+Missing:
+1. Templates and quick replies.
+2. Spam and duplicate controls.
+3. Routing and conversion analytics.
 
-Phase 5 (Future) - Advanced
-├─ Seller Stores [11]
-├─ Live Auctions [12]
-└─ Social Features
-```
+### 3.7 Reviews and ratings end-to-end (~40%)
+Evidence:
+1. `server/src/controllers/reviewsController.js:77`
+2. Reviews routes not mounted in `server/src/index.js`
+3. Missing `client/src/pages/Reviews.jsx`
 
----
+Missing:
+1. Route mount and API wiring.
+2. Review UI and seller response UI.
+3. Moderation workflow and abuse controls.
 
-## 💡 IMPLEMENTATION TIPS
+### 3.8 Referral/rewards expansion (~65%)
+Evidence:
+1. `server/src/routes/referral.js:6`
+2. `server/src/controllers/referralController.js:3`
+3. `server/src/controllers/rewardsController.js:82`
 
-### For Payment Verification [1]
-```javascript
-// Quick wins:
-1. Use RazorPay's UPI transaction API
-2. Match transaction ID + amount
-3. Auto-approve if match within 1 minute
-4. Flag for manual review if match unclear
-5. Reject if no match after 24 hours
+Missing:
+1. Referral write/action APIs beyond read-only.
+2. Leaderboard and redemption mechanics.
+3. Affiliate dashboard views.
 
-// Integration effort: 2-3 hours
-// Testing effort: 3-4 hours
-// Deployment: 1 hour
-```
+### 3.9 Complaints workflow (~50%)
+Evidence:
+1. `server/src/routes/complaints.js:4`
+2. `server/src/controllers/complaintsController.js:6`
+3. Mocked submit behavior in `client/src/pages/Complaints.jsx:112`
 
-### For OTP Delivery [2]
-```javascript
-// Quick wins:
-1. Setup Twilio SMS first (fastest)
-2. Add email OTP as fallback
-3. 10-minute expiry timer
-4. Max 3 attempts per OTP
-5. Cooldown period between new OTP requests
+Missing:
+1. Persistent create/update endpoints.
+2. Lifecycle states and SLA timers.
+3. Evidence upload and resolution audit.
 
-// Integration effort: 2-3 hours per provider
-// Testing effort: 2-3 hours
-// Deployment: 1 hour
-```
+### 3.10 Cron/background jobs (~50-60%)
+Evidence:
+1. `server/src/jobs/cronJobs.js:23`
+2. `server/src/jobs/cronJobs.js:91`
+3. `server/src/jobs/cronJobs.js:168`
 
-### For KYC Validation [3]
-```javascript
-// Quick wins:
-1. Start with regex patterns (Aadhaar: 4-4-4, PAN: XXXXX####X)
-2. Add Google Vision OCR
-3. Facial recognition as optional 2nd step
-4. Flag for manual review if confidence < 80%
-5. Store extracted text for audit
+Missing:
+1. Daily digest.
+2. Fraud batch scoring.
+3. Cache invalidation jobs.
+4. Report auto-resolution jobs.
 
-// Integration effort: 4-5 hours
-// Testing effort: 4-5 hours
-// Deployment: 2 hours
-```
+### 3.11 Fraud/risk engine maturity (~60%)
+Evidence:
+1. `server/src/services/riskEngine.js:19`
+2. `server/src/middleware/fraudCheck.js:74`
 
-### For Tier Features [4]
-```javascript
-// Quick wins:
-1. Define feature matrix (see below)
-2. Add post quota enforcement
-3. Add feed priority boost
-4. Add feature flags in UI
-5. Create tier comparison page
+Missing:
+1. Model-assisted anomaly scoring.
+2. Image risk and behavior signals.
+3. Manual review queue and risk reason normalization.
 
-Feature Matrix Example:
-┌─────────────────┬──────────┬─────────┬────────┐
-│ Feature         │ Basic    │ Silver  │Premium │
-├─────────────────┼──────────┼─────────┼────────┤
-│ Daily Posts     │ 1        │ 10      │ 100    │
-│ Bold Listing    │ No       │ 5/month │ 30/mo  │
-│ Featured Spot   │ No       │ 1/month │ 10/mo  │
-│ Full Analytics  │ No       │ Yes     │ Yes    │
-│ Customer Support│ Email    │ Email   │ Chat+  │
-└─────────────────┴──────────┴─────────┴────────┘
+### 3.12 Admin moderation dashboard depth (~70%)
+Evidence:
+1. `server/src/routes/adminDashboard.js:12`
+2. `server/src/routes/adminDashboard.js:41`
+3. `client/src/pages/AdminPanel.jsx:22`
 
-// Integration effort: 2-3 hours
-// Testing effort: 2-3 hours
-// Deployment: 1 hour
-```
-
----
-
-## 🚨 RISK FACTORS
-
-### High Risk
-```
-[1] Payment verification with wrong API ← Can cause revenue loss
-    └─ Mitigation: Use sandbox first, test 100+ transactions
-
-[3] KYC OCR false negatives ← Can reject valid users
-    └─ Mitigation: Always include manual review option
-
-[9] Fraud detection false positives ← Can block legitimate sellers
-    └─ Mitigation: Start with low confidence threshold, monitor
-```
-
-### Medium Risk
-```
-[2] OTP delivery delays ← Can frustrate users
-    └─ Mitigation: Implement fallback SMS → Email
-
-[7] Cron job failures ← Can accumulate stale data
-    └─ Mitigation: Add monitoring + alerting
-```
-
-### Low Risk
-```
-[4] Tier feature bugs ← Can be fixed quickly
-    └─ Mitigation: Feature flags for kill switches
-
-[5,6,10,11] UX features ← Can be iterated
-    └─ Mitigation: A/B test before full rollout
-```
+Missing:
+1. Bulk actions.
+2. Advanced filter/sort.
+3. CSV exports.
+4. Role-specific dashboard variants.
 
 ---
 
-## ✅ ACCEPTANCE CRITERIA EXAMPLES
+## 4) Extra Gaps Confirmed
 
-### Payment Verification [1] - DONE When:
-```
-□ RazorPay API connected (test mode)
-□ 100+ test transactions verified
-□ Auto-approval rate > 90%
-□ Manual review queue < 5%
-□ Rejection handling implemented
-□ Refund process documented
-□ Admin dashboard shows all statuses
-□ Email confirmations sent automatically
-□ SLA monitoring in place
-□ Load testing at 100 TPS passed
-```
-
-### OTP Delivery [2] - DONE When:
-```
-□ SMS delivery in < 10 seconds
-□ Email delivery in < 30 seconds
-□ 99.5% delivery rate (test)
-□ Fallback logic tested
-□ Expiry enforcement working
-□ Retry limits enforced
-□ Rate limiting in place
-□ Audit logs captured
-□ SMS + Email tested together
-□ User receives within time window
-```
-
-### KYC Validation [3] - DONE When:
-```
-□ Document upload succeeds
-□ OCR extracts text accurately
-□ Validation rules reject invalid docs
-□ Facial recognition tested (optional)
-□ Auto-approved 80%+ of valid docs
-□ Manual review queue setup
-□ Document masking working
-□ Notifications to users
-□ Admin approval workflow smooth
-□ Audit trail complete
-```
+1. `server/src/controllers/rewardController.js` is empty.
+2. `server/src/routes/admin.js:14` still has placeholder `/users`.
+3. Push path is placeholder in `server/src/services/fcm.js:32`.
+4. Offers page exists but not mounted in `client/src/App.jsx`.
+5. Docs mention `riskEngineService.js`, but actual file is `server/src/services/riskEngine.js`.
 
 ---
 
-## 📈 SUCCESS METRICS TO TRACK
+## 5) Detailed Implementation Blueprint for the Top 6
 
-### Week 1-2 Metrics
-```
-Metric                      Target    Current
-─────────────────────────────────────────────
-Payment Auto-Verify Rate    >90%      0%
-OTP Delivery Success        >99%      N/A
-Signup Completion Rate      >70%      ~60%
-Backend Test Coverage       >40%      <20%
-```
+## 5.1 Payment Automation (P0)
 
-### Week 3-6 Metrics
-```
-Metric                      Target    Current
-─────────────────────────────────────────────
-KYC Processing Time         <5 min    2-3 hours
-Offer Success Rate          >60%      ~40%
-Review Collection Rate      >50%      ~20%
-Admin Manual Work           <2 hrs/d  ~5 hrs/d
-```
+Build:
+1. Add `POST /api/payments/webhook` with provider signature verification.
+2. Introduce payment state machine:
+`created -> submitted -> processing -> verified | failed | refunded`.
+3. Add idempotency key on payment submit and webhook events.
+4. Add duplicate fingerprint:
+`hash(transaction_id, amount, payer_handle, timestamp_bucket)`.
+5. Queue OCR extraction for screenshots (async worker).
+6. Add retry policy with exponential backoff and dead-letter queue.
+7. Add refund table + reconciliation job + admin actions.
 
-### Week 7+ Metrics
-```
-Metric                      Target    Current
-─────────────────────────────────────────────
-Fraud Detection Accuracy    >85%      Rule-based
-Cron Job Success Rate       >99.9%    ~95%
-Dashboard Load Time         <1 sec    1.5 sec
-User Trust Score            >4.5/5    3.5/5
-```
+Definition of done:
+1. >95% payments auto-verified.
+2. <5% routed to manual queue.
+3. Reconciliation mismatch rate <0.2%.
 
----
+## 5.2 OTP Delivery Hardening (P0)
 
-## 🛠️ SETUP CHECKLIST FOR TEAM
+Build:
+1. Create `OtpProvider` abstraction:
+`sendSms`, `sendEmailFallback`, `getDeliveryStatus`.
+2. Replace OTP console logs and payload leakage.
+3. Store hashed OTP and expiry only.
+4. Add resend limit, phone/device/IP rate controls.
+5. Add delivery callback ingestion and provider health metrics.
+6. Use same service for auth and sale confirmation flows.
 
-Before starting, ensure:
+Definition of done:
+1. Delivery success >99.5% within 30 seconds.
+2. Abuse-triggered OTP sends reduced via throttling.
 
-### Environment Setup
-```
-□ RazorPay test account created + API keys
-□ Twilio account setup + SID/Token
-□ Google Cloud Vision API enabled + credentials
-□ Postman collection updated with new endpoints
-□ Database migration scripts tested
-□ Feature flags system implemented
-□ Monitoring dashboards created
-□ Slack notifications for errors
-□ Staging environment mirrored to production
-```
+## 5.3 KYC Automation (P0)
 
-### Code Quality Setup
-```
-□ ESLint configured for frontend
-□ Jest tests setup for backend
-□ Pre-commit hooks running linters
-□ SonarQube or CodeClimate integrated
-□ GitHub Actions for CI/CD
-□ Automated test runs on PR
-□ Code coverage reports generated
-□ Performance benchmarks baseline
-```
+Build:
+1. OCR queue worker extracts doc fields.
+2. Rule engine validates format + cross-field consistency.
+3. Confidence score outputs:
+`auto_approve`, `manual_review`, `auto_reject`.
+4. Add expiry extraction and reminder notifications.
+5. Add optional face match on high-risk or random sample.
+6. Build reviewer queue sorted by risk and SLA.
 
-### Documentation Setup
-```
-□ API documentation updated
-□ Deployment guide created
-□ Rollback procedures documented
-□ Team wiki with decision logs
-□ Architecture diagrams updated
-□ Test case coverage documented
-□ Known issues list maintained
-□ Runbook for on-call engineer
-```
+Definition of done:
+1. Auto decision rate >70% with bounded error.
+2. Median review decision time <5 minutes for auto-approved cases.
 
----
+## 5.4 Complaints Workflow Completion (P1)
 
-## 🎓 TEAM TRAINING NEEDS
+Build:
+1. Add `POST /api/complaints` with evidence attachment metadata.
+2. Add lifecycle:
+`open -> triage -> investigating -> resolved | rejected -> closed`.
+3. Add `PATCH /api/complaints/:id/status` with audit logs.
+4. Implement SLA job:
+escalate unresolved high-severity complaints.
+5. Replace mocked frontend timeout with real API integration.
 
-```
-Payment Systems (for [1])
-  - Recommended: 2-hour RazorPay API training
-  - Resources: RazorPay docs + video tutorials
+Definition of done:
+1. 100% complaint submissions persisted.
+2. SLA breach alerts active.
 
-OCR & Document Recognition (for [3])
-  - Recommended: 4-hour Google Vision API training
-  - Resources: Google Cloud documentation
+## 5.5 Reviews End-to-End Wiring (P1)
 
-Fraud Detection (for [9])
-  - Recommended: 8-hour ML fundamentals + anomaly detection
-  - Resources: Coursera ML course + scikit-learn docs
+Build:
+1. Add reviews routes and mount in `server/src/index.js`.
+2. Create `client/src/pages/Reviews.jsx` and review form/list views.
+3. Add seller response endpoint + moderation flag endpoint.
+4. Keep verified-purchase guard for posting.
+5. Add anti-spam protections and cooldown windows.
 
-Real-Time Systems (for [2,5])
-  - Recommended: 3-hour WebSocket + Socket.IO deep dive
-  - Resources: Socket.IO documentation + tutorials
+Definition of done:
+1. Users can submit, view, and moderate reviews through UI.
+2. Seller response and helpful-vote paths functional.
 
-Database Optimization (for [7])
-  - Recommended: 3-hour PostgreSQL indexing + cron optimization
-  - Resources: PostgreSQL documentation + blog posts
-```
+## 5.6 Admin Dashboard Alignment (P1)
+
+Build:
+1. Align backend payload shape with `AdminPanel.jsx` expectations.
+2. Add server-side filter/sort/pagination.
+3. Add bulk actions and CSV export as async jobs.
+4. Add role-based views: moderator, risk, ops, superadmin.
+5. Replace placeholder admin `/users` route with real API.
+
+Definition of done:
+1. Dashboard supports high-volume moderation workflows.
+2. Export and bulk actions complete with audit logs.
 
 ---
 
-## 📞 ESCALATION PLAN
+## 6) Best Way to Implement for 1M and 10M Users
 
-### If Payment Integration Fails
-```
-Escalate to: Founder/CTO
-Timeline: Within 2 hours
-Backup plan: Use Stripe Connect instead of RazorPay
-Time to revert: 4-6 hours
-```
+## 6.1 Architecture Strategy
 
-### If KYC OCR Accuracy < 70%
-```
-Escalate to: Product Lead
-Timeline: Within 1 day
-Options: 
-  1. Reduce confidence threshold
-  2. Switch to different OCR provider
-  3. Increase manual review percentage
-```
+At 1M:
+1. Modular monolith + async workers is enough.
+2. Redis queue (BullMQ) for OCR, OTP, webhooks, digests.
+3. PostgreSQL primary + read replicas + Redis cache.
 
-### If Fraud Detection Creates False Positives
-```
-Escalate to: Safety/Security Lead
-Timeline: Immediately
-Action: Disable rule, review parameters, retrain
-```
+At 10M:
+1. Keep core transactional APIs on Postgres but move heavy async to Kafka/RabbitMQ.
+2. Partition high-write tables monthly (`transactions`, `notifications`, `audit_logs`, `complaints`).
+3. Move analytical queries to OLAP store (ClickHouse/BigQuery).
+4. Separate moderation, risk, and notification workers by queue partition.
 
----
+## 6.2 Reliability Controls (Both Scales)
 
-## 🎯 FINAL CHECKLIST
+1. Idempotency for all write APIs.
+2. Outbox pattern for notifications/webhooks/messages.
+3. Distributed locks for cron jobs to avoid duplicate execution.
+4. Dead-letter queues + replay tooling.
+5. Feature flags and canary rollout for risky flows.
 
-Before marking any feature as "DONE":
+## 6.3 Performance Targets
 
-```
-Code Quality
-  □ Test coverage > 80%
-  □ All eslint warnings fixed
-  □ Code review approved by 2 people
-  □ No console.logs in production code
-  □ Error handling for all edge cases
-
-Performance
-  □ API response time < 200ms
-  □ Database queries optimized
-  □ No N+1 queries
-  □ Memory leaks tested
-  □ Load testing passed
-
-Security
-  □ Input validation on all endpoints
-  □ XSS prevention implemented
-  □ CSRF tokens in place
-  □ Rate limiting enforced
-  □ Secrets not in code
-
-Documentation
-  □ API docs updated
-  □ Code comments added
-  □ Test cases documented
-  □ Deployment steps clear
-  □ Rollback procedure known
-
-Deployment
-  □ Staging environment tested
-  □ Database migrations tested
-  □ Monitoring alerts configured
-  □ Rollback tested
-  □ Post-deployment checklist executed
-```
+1. P95 read latency <300 ms.
+2. P95 write latency <500 ms.
+3. Worker success rate >99.9%.
+4. OTP callback visibility >99%.
 
 ---
 
-**Last Updated:** 2026-02-17  
-**Next Review:** 2026-03-10
+## 7) 12-Week Consolidated Roadmap
+
+### Phase 0 (Week 1): Platform hardening
+1. Idempotency middleware.
+2. Outbox events.
+3. Queue infra and dead-letter setup.
+4. Observability and alert baselines.
+
+### Phase 1 (Weeks 2-4): Revenue and trust core
+1. Payment webhook + auto-verification + retry/refund.
+2. OTP provider integration and hardening.
+3. KYC OCR + validation + reviewer queue.
+
+### Phase 2 (Weeks 5-8): Safety and trust UX
+1. Complaints real workflow.
+2. Reviews end-to-end wiring.
+3. Admin dashboard alignment and bulk tooling.
+
+### Phase 3 (Weeks 9-12): Growth and scale optimization
+1. Offers/inquiry advanced depth.
+2. Referral leaderboard and redemption.
+3. Fraud batch + queue and cache invalidation jobs.
+
+---
+
+## 8) Immediate Action Tickets (Open Now)
+
+1. Add `POST /api/payments/webhook` and signature verification.
+2. Implement `OtpProvider` and remove OTP leakage/logging.
+3. Replace mocked complaint submit with persistent API.
+4. Add and mount reviews routes and UI page.
+5. Mount `Offers` route in `client/src/App.jsx`.
+6. Replace `admin.js` placeholder `/users` with paginated admin endpoint.
+7. Either implement or remove empty `rewardController.js`.
+8. Replace `fcm.js` placeholder with live provider integration.
+
+---
+
+## 9) Success Metrics and Acceptance
+
+### Product/Business
+1. Auto-verified payments >95%.
+2. OTP success >99.5% within 30s.
+3. KYC median turnaround <5 min for auto-approved.
+4. Complaint SLA compliance >95%.
+
+### Engineering/Ops
+1. Queue failure rate <0.1%.
+2. Cron duplicate execution = 0.
+3. Dashboard API P95 <500 ms.
+4. Regression test pass rate >99%.
+
+### Quality Bar (for each feature)
+1. API contract documented.
+2. Happy path and failure path tested.
+3. Idempotency and retries validated.
+4. Monitoring and alerts deployed.
+5. Feature-flag rollback path available.
+
+---
+
+## 10) Team Model (Recommended)
+
+If 2 developers:
+1. Dev A: backend-critical (payments, OTP, KYC).
+2. Dev B: frontend + admin + complaints + reviews integration.
+
+If 3 developers:
+1. Dev A: payments + otp + core infra.
+2. Dev B: kyc + fraud + cron/worker systems.
+3. Dev C: admin/reviews/complaints/offers UI and API alignment.
+
+---
+
+## 11) Final Notes
+
+1. This is now the single source of truth combining both checklists.
+2. Update this file at end of every sprint with:
+status delta, metric delta, and new blockers.
+3. Keep all references aligned with actual file names to avoid drift.
+
