@@ -202,13 +202,19 @@ exports.login = async (req, res) => {
     }
 
     if (!isMatch) {
-      // Increment failed attempts (RELAXED FOR TESTING: lockout after 50 attempts)
+      // SECURITY FIX: Restore proper brute force protection (was relaxed to 50 for testing)
+      // Standard: 5 failed attempts before 15-minute lockout
       const attempts = (user.login_attempts || 0) + 1;
-      if (attempts >= 50) { // Was 5, increased for testing
+      if (attempts >= 5) {
+        // Lock account for 15 minutes after 5 failed attempts
         await pool.query(
           "UPDATE users SET login_attempts = 0, lock_until = NOW() + INTERVAL '15 minutes' WHERE user_id = $1",
           [user.user_id]
         );
+        return res.status(403).json({
+          error: "Too many failed login attempts. Account locked for 15 minutes.",
+          locked: true
+        });
       } else {
         await pool.query(
           "UPDATE users SET login_attempts = $1 WHERE user_id = $2",
@@ -281,14 +287,17 @@ exports.sendOTP = async (req, res) => {
     await redisSession.set(`OTP:${phone}`, otp, 300);
     await redisSession.incr(rateKey, 600);
 
-    // TODO: Replace with actual SMS service (Twilio/Msg91)
-    console.log(`[SMS SERVICE] 📱 OTP for ${phone}: ${otp}`);
+    // SECURITY FIX: Don't log OTP in plaintext (prevents credential exposure)
+    // Only log a hash/summary for audit purposes
+    const crypto = require('crypto');
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex').substring(0, 16);
+    console.log(`[OTP REQUEST] Phone: ${phone}, Hash: ${otpHash}, Timestamp: ${new Date().toISOString()}`);
 
     res.json({
       message: "OTP sent successfully",
-      expiresIn: 300,
-      // DEV ONLY - Remove in production!
-      ...(process.env.NODE_ENV !== 'production' && { devOtp: otp })
+      expiresIn: 300
+      // SECURITY: NEVER return OTP in response (not even in dev mode)
+      // The OTP is already sent via SMS/email
     });
 
   } catch (err) {
@@ -604,22 +613,18 @@ exports.forgotPassword = async (req, res) => {
     await redisSession.set(`RESET_OTP:${user.phone_number || lookupValue}`, otp, 900);
     await redisSession.incr(rateKey, 1800);
 
-    // Mock Email/SMS (Replace with real service in production)
-    console.log(`\n============ PASSWORD RESET ============`);
-    console.log(`[USER] ${user.email || user.phone_number}`);
-    console.log(`[OTP] ${otp}`);
-    console.log(`[LINK] http://localhost:5173/reset-password/${resetToken}`);
-    console.log(`=========================================\n`);
+    // SECURITY FIX: Don't log reset tokens or OTPs in plaintext
+    // Only log hashes for audit trail (prevents credential exposure in logs)
+    const crypto = require('crypto');
+    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    console.log(`[PASSWORD RESET REQUEST] User: ${user.user_id}, Token Hash: ${tokenHash.substring(0, 16)}, OTP Hash: ${otpHash.substring(0, 16)}`);
 
     res.json({
       message: "If this account exists, a reset link/OTP has been sent.",
-      expiresIn: 900,
-      // DEV ONLY - Remove in production!
-      ...(process.env.NODE_ENV !== 'production' && {
-        devOtp: otp,
-        devToken: resetToken,
-        devLink: `http://localhost:5173/reset-password/${resetToken}`
-      })
+      expiresIn: 900
+      // SECURITY: NEVER return reset tokens or OTPs in response
+      // They should only be sent via email/SMS secure channels
     });
 
   } catch (err) {

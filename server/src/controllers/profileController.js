@@ -21,10 +21,23 @@ exports.getProfile = async (req, res) => {
 };
 
 // Update profile endpoint
+// SECURITY FIX: Added authorization check to prevent IDOR vulnerability
 exports.updateProfile = async (req, res) => {
   try {
+    const authenticatedUserId = req.user?.userId || req.user?.id;
     const { userId } = req.body;
     const { full_name, phone, address, avatar_url, bio } = req.body;
+
+    // CRITICAL SECURITY: Verify authenticated user owns this profile
+    // Prevent Insecure Direct Object Reference (IDOR) vulnerability
+    if (parseInt(userId) !== parseInt(authenticatedUserId)) {
+      logger.warn(`SECURITY: IDOR attempt - User ${authenticatedUserId} tried to modify profile ${userId}`);
+      return res.status(403).json({
+        error: 'You cannot modify another user\'s profile',
+        code: 'FORBIDDEN'
+      });
+    }
+
     // Use correct column name based on schema (user_id or id)
     const result = await pool.query(
       `UPDATE profiles SET full_name = $1, phone = $2, address = $3, avatar_url = $4, bio = $5
@@ -43,13 +56,27 @@ exports.updateProfile = async (req, res) => {
 };
 
 // GET /api/profile/preferences?userId=1
+// SECURITY FIX: Added authorization check to prevent IDOR vulnerability
 exports.getPreferences = async (req, res) => {
   try {
+    const authenticatedUserId = req.user?.userId || req.user?.id;
     const { userId } = req.query;
+
     if (!userId) {
       logger.warn('Preferences request missing userId');
       return res.status(400).json({ code: 400, message: 'userId required', fallback: null });
     }
+
+    // CRITICAL SECURITY: Verify authenticated user owns these preferences
+    // Prevent IDOR - users should only access their own preferences
+    if (parseInt(userId) !== parseInt(authenticatedUserId)) {
+      logger.warn(`SECURITY: IDOR attempt - User ${authenticatedUserId} tried to access preferences for ${userId}`);
+      return res.status(403).json({
+        error: 'You cannot access another user\'s preferences',
+        code: 'FORBIDDEN'
+      });
+    }
+
     const result = await pool.query('SELECT * FROM preferences WHERE user_id = $1', [userId]);
 
     if (!result.rows || result.rows.length === 0) {
@@ -83,12 +110,24 @@ exports.getPreferences = async (req, res) => {
 };
 
 // POST /api/profile/preferences/update
+// SECURITY FIX: Added authorization check to prevent IDOR vulnerability
 exports.updatePreferences = async (req, res) => {
   try {
+    const authenticatedUserId = req.user?.userId || req.user?.id;
     const { userId, location, minPrice, maxPrice, categories } = req.body;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
+    }
+
+    // CRITICAL SECURITY: Verify authenticated user owns these preferences
+    // Prevent IDOR - users should only update their own preferences
+    if (parseInt(userId) !== parseInt(authenticatedUserId)) {
+      logger.warn(`SECURITY: IDOR attempt - User ${authenticatedUserId} tried to update preferences for ${userId}`);
+      return res.status(403).json({
+        error: 'You cannot modify another user\'s preferences',
+        code: 'FORBIDDEN'
+      });
     }
 
     // Ensure categories is properly formatted for PostgreSQL JSONB
@@ -101,7 +140,7 @@ exports.updatePreferences = async (req, res) => {
     const result = await pool.query(
       `INSERT INTO preferences (user_id, location, min_price, max_price, categories)
        VALUES ($1, $2, $3, $4, $5::jsonb)
-       ON CONFLICT (user_id) 
+       ON CONFLICT (user_id)
        DO UPDATE SET location = $2, min_price = $3, max_price = $4, categories = $5::jsonb
        RETURNING *`,
       [userId, location || '', parseFloat(minPrice) || 0, parseFloat(maxPrice) || 100000, categoriesJson]
