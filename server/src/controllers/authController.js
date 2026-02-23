@@ -615,7 +615,6 @@ exports.forgotPassword = async (req, res) => {
 
     // SECURITY FIX: Don't log reset tokens or OTPs in plaintext
     // Only log hashes for audit trail (prevents credential exposure in logs)
-    const crypto = require('crypto');
     const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
     console.log(`[PASSWORD RESET REQUEST] User: ${user.user_id}, Token Hash: ${tokenHash.substring(0, 16)}, OTP Hash: ${otpHash.substring(0, 16)}`);
