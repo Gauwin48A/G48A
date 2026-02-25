@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require('multer');
 const profileController = require('../controllers/profileController');
+const { protect } = require('../middleware/auth');
 
 // Multer setup for avatar uploads (store in memory for base64 conversion)
 const upload = multer({
@@ -17,7 +18,7 @@ const upload = multer({
 });
 
 // GET /api/profile?userId=1
-router.get('/', profileController.getProfile);
+router.get('/', protect, profileController.getProfile);
 
 // POST /api/profile/update
 const { body, validationResult } = require('express-validator');
@@ -35,15 +36,15 @@ const validateProfileUpdate = [
 ];
 
 // POST /api/profile/update
-router.post('/update', validateProfileUpdate, profileController.updateProfile);
+router.post('/update', protect, validateProfileUpdate, profileController.updateProfile);
 
 // POST /api/profile/upload-avatar
-router.post('/upload-avatar', upload.single('avatar'), profileController.uploadAvatar);
+router.post('/upload-avatar', protect, upload.single('avatar'), profileController.uploadAvatar);
 
 // GET /api/profile/preferences?userId=1
-router.get('/preferences', profileController.getPreferences);
+router.get('/preferences', protect, profileController.getPreferences);
 
 // POST /api/profile/preferences/update
-router.post('/preferences/update', profileController.updatePreferences);
+router.post('/preferences/update', protect, profileController.updatePreferences);
 
 module.exports = router;

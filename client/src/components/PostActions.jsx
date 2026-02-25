@@ -1,18 +1,12 @@
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Share2, BookmarkPlus, Flag, CheckCircle, AlertCircle } from "lucide-react";
+import { Heart, Share2, BookmarkPlus, Flag, CheckCircle } from "lucide-react";
 
 import { useTranslation } from 'react-i18next';
 
-interface PostActionsProps {
-  postId: string;
-  isLiked?: boolean;
-  isSaved?: boolean;
-}
-
-const PostActions = ({ postId, isLiked = false, isSaved = false }: PostActionsProps) => {
-  const { t } = useTranslation();
+const PostActions = ({ postId, isLiked = false, isSaved = false }) => {
+  const { t: _t } = useTranslation();
   const { toast } = useToast();
 
   const handleLike = () => {

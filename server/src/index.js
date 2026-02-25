@@ -1,13 +1,12 @@
+const dotenv = require("dotenv");
+dotenv.config();
+
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const compression = require("compression");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
-const rateLimit = require('express-rate-limit');
 const { apiLimiter, sanitizeInput, securityHeaders } = require('./middleware/security');
-
-dotenv.config();
 
 const pool = require("./config/db.js");
 
@@ -156,17 +155,8 @@ app.get('/health', (req, res) => {
 // GDPR Routes (Data Export & Deletion)
 const gdprRoutes = require("./routes/gdpr.js");
 
-// SECURITY: Fort Knox Auth Limiter
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: "Too many login attempts, please try again after 15 minutes" },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // MOUNT ROUTES
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/gdpr', gdprRoutes); // GDPR endpoints
 app.use('/api/referral', referralRoutes);
 app.use('/api/recommendations', recommendationsRoutes);

@@ -46,6 +46,21 @@ const initRedis = () => {
 
 // In-memory fallback storage
 const memoryStore = new Map();
+const memoryExpiryTimers = new Map();
+
+const scheduleMemoryExpiry = (key, ttlSeconds) => {
+    if (memoryExpiryTimers.has(key)) {
+        clearTimeout(memoryExpiryTimers.get(key));
+    }
+    const timer = setTimeout(() => {
+        memoryStore.delete(key);
+        memoryExpiryTimers.delete(key);
+    }, ttlSeconds * 1000);
+    if (typeof timer.unref === 'function') {
+        timer.unref();
+    }
+    memoryExpiryTimers.set(key, timer);
+};
 
 /**
  * Get value from Redis or memory
@@ -72,11 +87,11 @@ const set = async (key, value, ttlSeconds = 900) => {
             await redis.setex(key, ttlSeconds, serialized);
         } catch {
             memoryStore.set(key, value);
-            setTimeout(() => memoryStore.delete(key), ttlSeconds * 1000);
+            scheduleMemoryExpiry(key, ttlSeconds);
         }
     } else {
         memoryStore.set(key, value);
-        setTimeout(() => memoryStore.delete(key), ttlSeconds * 1000);
+        scheduleMemoryExpiry(key, ttlSeconds);
     }
 };
 
@@ -89,9 +104,17 @@ const del = async (key) => {
             await redis.del(key);
         } catch {
             memoryStore.delete(key);
+            if (memoryExpiryTimers.has(key)) {
+                clearTimeout(memoryExpiryTimers.get(key));
+                memoryExpiryTimers.delete(key);
+            }
         }
     } else {
         memoryStore.delete(key);
+        if (memoryExpiryTimers.has(key)) {
+            clearTimeout(memoryExpiryTimers.get(key));
+            memoryExpiryTimers.delete(key);
+        }
     }
 };
 
@@ -108,13 +131,17 @@ const incr = async (key, ttlSeconds = 900) => {
             return count;
         } catch {
             const current = memoryStore.get(key) || 0;
-            memoryStore.set(key, current + 1);
-            return current + 1;
+            const nextCount = current + 1;
+            memoryStore.set(key, nextCount);
+            scheduleMemoryExpiry(key, ttlSeconds);
+            return nextCount;
         }
     }
     const current = memoryStore.get(key) || 0;
-    memoryStore.set(key, current + 1);
-    return current + 1;
+    const nextCount = current + 1;
+    memoryStore.set(key, nextCount);
+    scheduleMemoryExpiry(key, ttlSeconds);
+    return nextCount;
 };
 
 // Initialize on module load

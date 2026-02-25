@@ -216,7 +216,7 @@ exports.getAllPosts = async (req, res) => {
 
 
     // Get total count for pagination (must join categories to search by category name)
-    let countQuery = `SELECT COUNT(*) FROM posts p LEFT JOIN categories c ON p.category_id = c.category_id WHERE p.status = 'active'`;
+    let countQuery = `SELECT COUNT(*) FROM posts p LEFT JOIN categories c ON p.category_id = c.category_id WHERE p.status = 'active' AND (p.expires_at IS NULL OR p.expires_at > NOW())`;
     const countParams = [];
     if (search) { countQuery += ` AND (p.title ILIKE $${countParams.length + 1} OR p.description ILIKE $${countParams.length + 1} OR p.location ILIKE $${countParams.length + 1} OR c.name ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
     if (category) { countQuery += ` AND p.category_id = $${countParams.length + 1}`; countParams.push(category); }
@@ -490,8 +490,9 @@ function getCacheKey(userId, limit, refreshSeed, filters) {
   // IMPORTANT: Use the FULL refresh seed for unique results on every refresh
   // This ensures users get new posts when they refresh the page
   // Only cache identical requests (same exact seed = same user revisiting quickly)
+  const scopedUserId = userId ? String(userId) : 'anonymous';
   const filterKey = filters ? JSON.stringify(filters) : '';
-  return `feed:${refreshSeed}:${limit}:${filterKey}`;
+  return `feed:${scopedUserId}:${refreshSeed}:${limit}:${filterKey}`;
 }
 
 // Async cache operations using Redis
@@ -592,8 +593,19 @@ exports.getGuaranteedReachPosts = async (req, res) => {
       } catch (queryErr) {
         // Fallback on timeout
         logInfo(`[GuaranteedReach] Timeout, using fallback query`);
-        const fallback = await pool.query(GUARANTEED_REACH_FALLBACK, [queryLimit]);
+        const fallback = await pool.query(GUARANTEED_REACH_FALLBACK, [queryLimit, userId]);
         rows = fallback.rows;
+      }
+    }
+
+    // Guaranteed availability: if fairness query yields no rows, fallback to active posts feed.
+    if (!Array.isArray(rows) || rows.length === 0) {
+      logInfo('[GuaranteedReach] Empty fair-feed result, using fallback feed query');
+      const fallback = await pool.query(GUARANTEED_REACH_FALLBACK, [queryLimit, userId]);
+      rows = fallback.rows;
+      fromCache = false;
+      if (rows.length > 0) {
+        await setCache(cacheKey, rows);
       }
     }
 

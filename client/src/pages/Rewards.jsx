@@ -32,12 +32,10 @@ const Rewards = () => {
     const fetchRewards = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/api/rewards?userId=${userId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.status === 200 && res.data) {
-          setUser(res.data.user || null);
-          setReferralChain(res.data.referralChain || []);
+        const data = await api.get(`/rewards?userId=${userId}`);
+        if (data) {
+          setUser(data.user || null);
+          setReferralChain(data.referralChain || []);
         }
       } catch (err) {
         setError(err.message || 'Failed to fetch rewards');

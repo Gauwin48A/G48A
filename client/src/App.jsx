@@ -264,6 +264,7 @@ function AppContent() {
                 <Route path="/feed" element={<FeedPage />} />
                 <Route path="/feed/:id" element={<FeedPostDetail />} />
                 <Route path="/my-feed" element={<MyFeedPage />} />
+                <Route path="/my-posts" element={<MyFeedPage />} />
                 <Route path="/post_add" element={<PostAdd />} />
                 <Route path="/feed/feedpostadd" element={<PostAdd noImageUpload={true} />} />
                 <Route path="/wishlist" element={<Wishlist />} />

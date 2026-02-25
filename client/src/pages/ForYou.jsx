@@ -63,16 +63,16 @@ const ForYou = () => {
             const userId = localStorage.getItem('userId');
             if (!userId) return;
             try {
-                const res = await api.get(`/api/profile/preferences?userId=${userId}`);
-                if (res.data) {
-                    const userCategories = res.data.categories || [];
+                const data = await api.get(`/profile/preferences?userId=${userId}`);
+                if (data) {
+                    const userCategories = data.categories || [];
                     setPreferences({
-                        location: res.data.location || '',
-                        minPrice: res.data.minPrice || '',
-                        maxPrice: res.data.maxPrice || '',
+                        location: data.location || '',
+                        minPrice: data.minPrice || '',
+                        maxPrice: data.maxPrice || '',
                         categories: userCategories
                     });
-                    console.log('[ForYou] Loaded preferences:', res.data);
+                    console.log('[ForYou] Loaded preferences:', data);
                 }
             } catch (err) {
                 console.log('[ForYou] No preferences found:', err.message);
@@ -135,8 +135,8 @@ const ForYou = () => {
                 });
 
                 console.log('[ForYou] Fetching with params:', params);
-                const res = await api.get('/api/recommendations', { params });
-                const newPosts = Array.isArray(res.data?.posts) ? res.data.posts : [];
+                const data = await api.get('/recommendations', { params });
+                const newPosts = Array.isArray(data?.posts) ? data.posts : [];
 
                 if (page === 1) {
                     setPosts(newPosts);

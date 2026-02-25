@@ -10,20 +10,33 @@ export const AuthProvider = ({ children }) => {
     // Check auth with server
     const checkAuth = useCallback(async () => {
         try {
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                // Verify with server (The Defender way)
-                const userData = await api.get('/auth/me');
-                setUser(userData);
+            let token = localStorage.getItem('authToken');
 
-                // SELF-HEALING: Restore userId if missing
-                if (userData.id && !localStorage.getItem('userId')) {
-                    localStorage.setItem('userId', userData.id);
+            // Recover access token from refresh cookie when available.
+            if (!token) {
+                try {
+                    const refreshed = await api.post('/auth/refresh-token', {});
+                    if (refreshed?.token) {
+                        token = refreshed.token;
+                        localStorage.setItem('authToken', token);
+                    }
+                } catch {
+                    // No active refresh session.
                 }
-
-                return true;
             }
-            return false;
+
+            if (!token) return false;
+
+            // Verify with server.
+            const userData = await api.get('/auth/me');
+            setUser(userData);
+
+            // Self-heal local userId cache.
+            if (userData.id && !localStorage.getItem('userId')) {
+                localStorage.setItem('userId', userData.id);
+            }
+
+            return true;
         } catch (err) {
             // Token invalid or expired
             console.log('Session restoration failed:', err);
@@ -70,13 +83,19 @@ export const AuthProvider = ({ children }) => {
     }
 
     // 4. Logout Action (Secure Destruction)
-    const logout = () => {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userId');
-        setUser(null);
-        window.location.href = '/login'; // Force redirect
+    const logout = async () => {
+        try {
+            await api.post('/auth/logout', {});
+        } catch {
+            // Ignore network/logout API errors and clear client state anyway.
+        } finally {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userId');
+            setUser(null);
+            window.location.href = '/login';
+        }
     };
 
     // 5. Refresh Auth (re-check with server without page reload)

@@ -300,15 +300,10 @@ const Profile = () => {
                   formData.append('avatar', file);
                   formData.append('userId', user.user_id);
                   try {
-                    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-                    const token = localStorage.getItem('authToken');
-                    const res = await fetch(`${baseUrl}/api/profile/upload-avatar`, {
-                      method: 'POST',
-                      headers: { 'Authorization': `Bearer ${token}` },
-                      body: formData
+                    const data = await api.post('/profile/upload-avatar', formData, {
+                      headers: { 'Content-Type': 'multipart/form-data' }
                     });
-                    const data = await res.json();
-                    if (res.ok && data.avatar_url) {
+                    if (data?.avatar_url) {
                       setUser(prev => ({ ...prev, avatar_url: data.avatar_url }));
                       toast({ title: 'Profile picture updated!' });
                     } else {

@@ -3,56 +3,131 @@
  * =============================================================================
  * All auth middleware and controllers MUST import from here.
  * This ensures consistent secret usage across the entire application.
- * 
- * CRITICAL: Never hardcode secrets elsewhere - always use this module.
  */
 
 const crypto = require('crypto');
 
-// Generate a random fallback for development only (changes per restart)
-const generateDevSecret = () => {
+const isProduction = process.env.NODE_ENV === 'production';
+const MIN_SECRET_LENGTH = 32;
+
+const WEAK_SECRET_PATTERNS = [
+    /^changeme$/i,
+    /^change_me$/i,
+    /^secret$/i,
+    /^password$/i,
+    /^default$/i,
+    /^test$/i,
+    /^your[_-]/i,
+    /^example/i
+];
+
+// Generate random fallbacks for development only.
+const generateDevSecret = (label) => {
     const secret = crypto.randomBytes(32).toString('hex');
-    console.warn('[JWT] ⚠️ Generated temporary secret - set JWT_SECRET in .env for persistence!');
+    console.warn(`[JWT] Generated temporary ${label} secret - set env vars for persistence.`);
     return secret;
 };
 
-// Cache the generated secret so it doesn't change during runtime
-let cachedDevSecret = null;
-const getDevSecret = () => {
-    if (!cachedDevSecret) {
-        cachedDevSecret = generateDevSecret();
+// Cache generated secrets so they do not rotate during runtime.
+const cachedDevSecrets = new Map();
+const getDevSecret = (label) => {
+    if (!cachedDevSecrets.has(label)) {
+        cachedDevSecrets.set(label, generateDevSecret(label));
     }
-    return cachedDevSecret;
+    return cachedDevSecrets.get(label);
 };
+
+const refreshSecretFromEnv =
+    process.env.REFRESH_SECRET?.trim() ||
+    process.env.JWT_REFRESH_SECRET?.trim();
+
+const resolveAccessSecret = () => {
+    const envAccessSecret = process.env.JWT_SECRET?.trim();
+    if (envAccessSecret) return envAccessSecret;
+
+    if (isProduction) {
+        throw new Error('[JWT] JWT_SECRET is required in production.');
+    }
+
+    return getDevSecret('access');
+};
+
+const resolveRefreshSecret = () => {
+    if (refreshSecretFromEnv) {
+        return refreshSecretFromEnv;
+    }
+
+    if (isProduction) {
+        throw new Error('[JWT] REFRESH_SECRET (or JWT_REFRESH_SECRET) is required in production.');
+    }
+
+    if (process.env.JWT_SECRET?.trim()) {
+        console.warn('[JWT] REFRESH_SECRET missing in development, deriving from JWT_SECRET.');
+        return `${process.env.JWT_SECRET.trim()}_refresh`;
+    }
+
+    return getDevSecret('refresh');
+};
+
+const isWeakSecret = (secret) => {
+    if (!secret || secret.length < MIN_SECRET_LENGTH) return true;
+    if (WEAK_SECRET_PATTERNS.some((pattern) => pattern.test(secret))) return true;
+    const uniqueChars = new Set(secret).size;
+    if (uniqueChars < 10) return true;
+    return false;
+};
+
+const validateProdSecret = (name, secret) => {
+    if (!isProduction) return;
+    if (isWeakSecret(secret)) {
+        throw new Error(`[JWT] ${name} is weak. Use a random secret with at least ${MIN_SECRET_LENGTH} characters.`);
+    }
+};
+
+const accessSecret = resolveAccessSecret();
+const refreshSecret = resolveRefreshSecret();
+
+validateProdSecret('JWT_SECRET', accessSecret);
+validateProdSecret('REFRESH_SECRET', refreshSecret);
+if (isProduction && accessSecret === refreshSecret) {
+    throw new Error('[JWT] JWT_SECRET and REFRESH_SECRET must be different in production.');
+}
 
 const JWT_CONFIG = {
     // Primary secret for access tokens
-    SECRET: process.env.JWT_SECRET?.trim() || getDevSecret(),
+    SECRET: accessSecret,
 
-    // Separate secret for refresh tokens (added security)
-    REFRESH_SECRET: process.env.REFRESH_SECRET?.trim() || (process.env.JWT_SECRET?.trim() + '_refresh') || getDevSecret(),
+    // Separate secret for refresh tokens
+    REFRESH_SECRET: refreshSecret,
 
     // Token lifetimes
-    ACCESS_EXPIRY: '1h',        // Extended from 15m for better UX
-    REFRESH_EXPIRY: '30d',      // Long-lived refresh token
+    ACCESS_EXPIRY: process.env.JWT_ACCESS_EXPIRY || '15m',
+    REFRESH_EXPIRY: process.env.JWT_REFRESH_EXPIRY || '30d',
 
-    // Cookie settings
+    // Refresh cookie settings
     COOKIE_OPTIONS: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000  // 30 days
-    }
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: '/api/auth'
+    },
+
+    // Access cookie settings (optional; header auth remains supported)
+    ACCESS_COOKIE_OPTIONS: {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        maxAge: 15 * 60 * 1000,
+        path: '/'
+    },
+
+    // Whether to return refresh tokens in JSON response body.
+    RETURN_REFRESH_TOKEN_IN_BODY: process.env.RETURN_REFRESH_TOKEN_IN_BODY === 'true'
 };
 
-// Production warning
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-    console.error('[JWT] 🚨 CRITICAL: JWT_SECRET not set in production! This is a security risk!');
-}
-
-// Development info
-if (process.env.NODE_ENV !== 'production') {
-    console.log('[JWT] ✅ Config loaded. Access token expiry:', JWT_CONFIG.ACCESS_EXPIRY);
+if (!isProduction) {
+    console.log('[JWT] Config loaded. Access token expiry:', JWT_CONFIG.ACCESS_EXPIRY);
 }
 
 module.exports = JWT_CONFIG;

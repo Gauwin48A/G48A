@@ -58,6 +58,7 @@ const RecentlyViewed = () => {
                 loadedItems = await translatePosts(loadedItems, currentLang);
             }
             setItems(loadedItems);
+        } catch (err) {
             console.error('Failed to fetch history:', err);
             if (err.response?.status === 401) {
                 // Determine if we should show a login prompt or just an error

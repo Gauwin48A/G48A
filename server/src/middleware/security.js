@@ -26,13 +26,13 @@ exports.authenticateToken = (req, res, next) => {
 
     if (!token) {
         console.log('[AUTH] No token for protected route:', req.path);
-        return res.status(401).json({ error: "Access Denied. No Token." });
+        return res.status(401).json({ error: "Access denied. No token." });
     }
 
     jwt.verify(token, JWT_CONFIG.SECRET, (err, user) => {
         if (err) {
             console.error('[AUTH] Token verify failed:', err.message, '| Path:', req.path);
-            return res.status(403).json({ error: "Invalid Token." });
+            return res.status(401).json({ error: "Invalid or expired token." });
         }
         req.user = user; // Attach user payload to request
         next();
@@ -79,9 +79,13 @@ exports.checkAccountLockout = async (req, res, next) => {
     if (!email) return next();
 
     try {
-        const result = await pool.query('SELECT locked_until FROM users WHERE LOWER(email) = LOWER($1)', [email.trim()]);
-        if (result.rows.length > 0 && result.rows[0].locked_until) {
-            const lockedUntil = new Date(result.rows[0].locked_until);
+        const result = await pool.query(
+            'SELECT lock_until, locked_until FROM users WHERE LOWER(email) = LOWER($1)',
+            [email.trim()]
+        );
+        const lockUntil = result.rows[0]?.lock_until || result.rows[0]?.locked_until;
+        if (lockUntil) {
+            const lockedUntil = new Date(lockUntil);
             if (lockedUntil > new Date()) {
                 return res.status(403).json({
                     error: "Account Locked",

@@ -1,19 +1,101 @@
 const pool = require('../config/db');
 const logger = require('../utils/logger');
 
+const toInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const getAuthenticatedUserId = (req) => toInt(req.user?.userId ?? req.user?.id);
+
+const requireSameUser = (requestedUserId, authenticatedUserId, res) => {
+  if (!authenticatedUserId) {
+    res.status(401).json({ error: 'Authentication required' });
+    return false;
+  }
+
+  if (requestedUserId !== authenticatedUserId) {
+    logger.warn(
+      `SECURITY: IDOR attempt - User ${authenticatedUserId} tried to access/modify user ${requestedUserId}`
+    );
+    res.status(403).json({
+      error: 'You cannot access another user\'s data',
+      code: 'FORBIDDEN'
+    });
+    return false;
+  }
+
+  return true;
+};
+
 exports.getProfile = async (req, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId) {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    const requestedUserId = toInt(req.query.userId ?? authenticatedUserId);
+
+    if (!requestedUserId) {
       logger.warn('Profile request missing userId');
       return res.status(400).json({ code: 400, message: 'userId required', fallback: null });
     }
-    const result = await pool.query('SELECT * FROM profiles WHERE user_id = $1', [userId]);
-    if (!result.rows || result.rows.length === 0) {
-      logger.error('Profile not found for user:', userId);
-      return res.status(404).json({ code: 404, message: 'Profile not found', fallback: null });
+
+    if (!requireSameUser(requestedUserId, authenticatedUserId, res)) {
+      return;
     }
-    res.json(result.rows[0]);
+
+    const result = await pool.query(
+      `SELECT
+         u.user_id,
+         u.name AS user_name,
+         u.username,
+         u.email,
+         u.role,
+         u.created_at,
+         p.profile_id,
+         p.full_name,
+         p.phone,
+         p.address,
+         p.avatar_url,
+         p.bio,
+         COALESCE(p.verified, false) AS verified
+       FROM users u
+       LEFT JOIN profiles p ON p.user_id = u.user_id
+       WHERE u.user_id = $1
+       LIMIT 1`,
+      [requestedUserId]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      logger.error('User not found for profile request:', requestedUserId);
+      return res.status(404).json({ code: 404, message: 'User not found', fallback: null });
+    }
+
+    const row = result.rows[0];
+
+    // Self-heal: ensure profile row exists for accounts created before profile upsert.
+    if (!row.profile_id) {
+      await pool.query(
+        `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, verified)
+         VALUES ($1, $2, $3, $4, $5, $6, false)
+         ON CONFLICT (user_id) DO NOTHING`,
+        [requestedUserId, row.user_name || row.username || 'User', null, null, null, null]
+      );
+    }
+
+    const displayName = row.full_name || row.user_name || row.username || 'User';
+
+    res.json({
+      user_id: row.user_id,
+      full_name: displayName,
+      name: displayName,
+      phone: row.phone || '',
+      address: row.address || '',
+      avatar_url: row.avatar_url || '',
+      bio: row.bio || '',
+      verified: Boolean(row.verified),
+      email: row.email || '',
+      role: row.role || 'user',
+      created_at: row.created_at
+    });
   } catch (err) {
     logger.error('Error fetching profile:', err);
     res.status(500).json({ code: 500, message: 'Failed to fetch profile', details: err.message, fallback: null });
@@ -24,30 +106,43 @@ exports.getProfile = async (req, res) => {
 // SECURITY FIX: Added authorization check to prevent IDOR vulnerability
 exports.updateProfile = async (req, res) => {
   try {
-    const authenticatedUserId = req.user?.userId || req.user?.id;
-    const { userId } = req.body;
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    const requestedUserId = toInt(req.body.userId ?? authenticatedUserId);
     const { full_name, phone, address, avatar_url, bio } = req.body;
 
-    // CRITICAL SECURITY: Verify authenticated user owns this profile
-    // Prevent Insecure Direct Object Reference (IDOR) vulnerability
-    if (parseInt(userId) !== parseInt(authenticatedUserId)) {
-      logger.warn(`SECURITY: IDOR attempt - User ${authenticatedUserId} tried to modify profile ${userId}`);
-      return res.status(403).json({
-        error: 'You cannot modify another user\'s profile',
-        code: 'FORBIDDEN'
-      });
+    if (!requestedUserId) {
+      return res.status(400).json({ error: 'userId is required' });
     }
 
-    // Use correct column name based on schema (user_id or id)
-    const result = await pool.query(
-      `UPDATE profiles SET full_name = $1, phone = $2, address = $3, avatar_url = $4, bio = $5
-       WHERE user_id = $6 RETURNING *`,
-      [full_name, phone, address, avatar_url, bio, userId]
-    );
-    if (!result.rows || result.rows.length === 0) {
-      logger.error('Profile not found for update:', userId);
-      return res.status(404).json({ error: 'Profile not found', fallback: null });
+    if (!requireSameUser(requestedUserId, authenticatedUserId, res)) {
+      return;
     }
+
+    const result = await pool.query(
+      `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (user_id) DO UPDATE
+       SET full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
+           phone = COALESCE(EXCLUDED.phone, profiles.phone),
+           address = COALESCE(EXCLUDED.address, profiles.address),
+           avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
+           bio = COALESCE(EXCLUDED.bio, profiles.bio)
+       RETURNING *`,
+      [
+        requestedUserId,
+        full_name || null,
+        phone || null,
+        address || null,
+        avatar_url || null,
+        bio || null
+      ]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      logger.error('Profile upsert returned no rows for user:', requestedUserId);
+      return res.status(500).json({ error: 'Failed to update profile', fallback: null });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error updating profile:', err);
@@ -59,31 +154,25 @@ exports.updateProfile = async (req, res) => {
 // SECURITY FIX: Added authorization check to prevent IDOR vulnerability
 exports.getPreferences = async (req, res) => {
   try {
-    const authenticatedUserId = req.user?.userId || req.user?.id;
-    const { userId } = req.query;
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    const requestedUserId = toInt(req.query.userId ?? authenticatedUserId);
 
-    if (!userId) {
+    if (!requestedUserId) {
       logger.warn('Preferences request missing userId');
       return res.status(400).json({ code: 400, message: 'userId required', fallback: null });
     }
 
-    // CRITICAL SECURITY: Verify authenticated user owns these preferences
-    // Prevent IDOR - users should only access their own preferences
-    if (parseInt(userId) !== parseInt(authenticatedUserId)) {
-      logger.warn(`SECURITY: IDOR attempt - User ${authenticatedUserId} tried to access preferences for ${userId}`);
-      return res.status(403).json({
-        error: 'You cannot access another user\'s preferences',
-        code: 'FORBIDDEN'
-      });
+    if (!requireSameUser(requestedUserId, authenticatedUserId, res)) {
+      return;
     }
 
-    const result = await pool.query('SELECT * FROM preferences WHERE user_id = $1', [userId]);
+    const result = await pool.query('SELECT * FROM preferences WHERE user_id = $1', [requestedUserId]);
 
     if (!result.rows || result.rows.length === 0) {
       // Return empty defaults instead of 404 to prevent frontend error
-      logger.info('No preferences found for user, returning defaults:', userId);
+      logger.info('No preferences found for user, returning defaults:', requestedUserId);
       return res.json({
-        userId: parseInt(userId),
+        userId: requestedUserId,
         location: '',
         minPrice: 0,
         maxPrice: 100000,
@@ -113,27 +202,22 @@ exports.getPreferences = async (req, res) => {
 // SECURITY FIX: Added authorization check to prevent IDOR vulnerability
 exports.updatePreferences = async (req, res) => {
   try {
-    const authenticatedUserId = req.user?.userId || req.user?.id;
-    const { userId, location, minPrice, maxPrice, categories } = req.body;
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    const requestedUserId = toInt(req.body.userId ?? authenticatedUserId);
+    const { location, minPrice, maxPrice, categories } = req.body;
 
-    if (!userId) {
+    if (!requestedUserId) {
       return res.status(400).json({ error: 'userId is required' });
     }
 
-    // CRITICAL SECURITY: Verify authenticated user owns these preferences
-    // Prevent IDOR - users should only update their own preferences
-    if (parseInt(userId) !== parseInt(authenticatedUserId)) {
-      logger.warn(`SECURITY: IDOR attempt - User ${authenticatedUserId} tried to update preferences for ${userId}`);
-      return res.status(403).json({
-        error: 'You cannot modify another user\'s preferences',
-        code: 'FORBIDDEN'
-      });
+    if (!requireSameUser(requestedUserId, authenticatedUserId, res)) {
+      return;
     }
 
     // Ensure categories is properly formatted for PostgreSQL JSONB
     const categoriesJson = JSON.stringify(Array.isArray(categories) ? categories : []);
 
-    logger.info('Saving preferences for user:', userId, { location, minPrice, maxPrice, categories: categoriesJson });
+    logger.info('Saving preferences for user:', requestedUserId, { location, minPrice, maxPrice, categories: categoriesJson });
 
     // Use UPSERT pattern - insert if not exists, update if exists
     // Note: preferences table has: user_id, location, min_price, max_price, categories, notification_enabled
@@ -143,14 +227,14 @@ exports.updatePreferences = async (req, res) => {
        ON CONFLICT (user_id)
        DO UPDATE SET location = $2, min_price = $3, max_price = $4, categories = $5::jsonb
        RETURNING *`,
-      [userId, location || '', parseFloat(minPrice) || 0, parseFloat(maxPrice) || 100000, categoriesJson]
+      [requestedUserId, location || '', parseFloat(minPrice) || 0, parseFloat(maxPrice) || 100000, categoriesJson]
     );
 
     if (!result.rows || result.rows.length === 0) {
       return res.status(404).json({ error: 'Failed to save preferences' });
     }
 
-    logger.info('Preferences saved successfully for user:', userId);
+    logger.info('Preferences saved successfully for user:', requestedUserId);
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error updating preferences:', err);
@@ -163,9 +247,15 @@ exports.updatePreferences = async (req, res) => {
 // POST /api/profile/upload-avatar - Handle profile picture upload
 exports.uploadAvatar = async (req, res) => {
   try {
-    const userId = req.body.userId || req.user?.id;
-    if (!userId) {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    const requestedUserId = toInt(req.body.userId ?? authenticatedUserId);
+
+    if (!requestedUserId) {
       return res.status(400).json({ error: 'userId required' });
+    }
+
+    if (!requireSameUser(requestedUserId, authenticatedUserId, res)) {
+      return;
     }
 
     if (!req.file) {
@@ -177,17 +267,20 @@ exports.uploadAvatar = async (req, res) => {
     const mimeType = req.file.mimetype;
     const avatar_url = `data:${mimeType};base64,${base64}`;
 
-    // Update profile with new avatar URL
     const result = await pool.query(
-      'UPDATE profiles SET avatar_url = $1 WHERE user_id = $2 RETURNING avatar_url',
-      [avatar_url, userId]
+      `INSERT INTO profiles (user_id, full_name, avatar_url)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id) DO UPDATE
+       SET avatar_url = EXCLUDED.avatar_url
+       RETURNING avatar_url`,
+      [requestedUserId, 'User', avatar_url]
     );
 
     if (!result.rows || result.rows.length === 0) {
-      return res.status(404).json({ error: 'Profile not found' });
+      return res.status(500).json({ error: 'Failed to update avatar' });
     }
 
-    logger.info('Avatar updated for user:', userId);
+    logger.info('Avatar updated for user:', requestedUserId);
     res.json({ avatar_url: result.rows[0].avatar_url });
   } catch (err) {
     logger.error('Error uploading avatar:', err);

@@ -60,13 +60,13 @@ const MyRecommendations = () => {
 			const userId = localStorage.getItem('userId');
 			if (!userId) return;
 			try {
-				const res = await api.get(`/api/profile/preferences?userId=${userId}`);
-				if (res.data) {
+				const data = await api.get(`/profile/preferences?userId=${userId}`);
+				if (data) {
 					setPreferences({
-						location: res.data.location || '',
-						minPrice: res.data.minPrice || '',
-						maxPrice: res.data.maxPrice || '',
-						date: res.data.date || ''
+						location: data.location || '',
+						minPrice: data.minPrice || '',
+						maxPrice: data.maxPrice || '',
+						date: data.date || ''
 					});
 				}
 			} catch (err) {
@@ -105,8 +105,8 @@ const MyRecommendations = () => {
 				};
 				Object.keys(params).forEach(key => !params[key] && delete params[key]);
 
-				const res = await api.get('/api/recommendations', { params });
-				const newPosts = Array.isArray(res.data?.posts) ? res.data.posts : [];
+				const data = await api.get('/recommendations', { params });
+				const newPosts = Array.isArray(data?.posts) ? data.posts : [];
 
 				if (page === 1) {
 					setPosts(newPosts);
@@ -131,7 +131,7 @@ const MyRecommendations = () => {
 	// Handlers
 	const handleLike = async (postId) => {
 		setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
-		try { await api.post(`/api/posts/${postId}/like`); } catch (err) { }
+		try { await api.post(`/posts/${postId}/like`); } catch (err) { }
 	};
 
 	const handleShare = async (postId) => {

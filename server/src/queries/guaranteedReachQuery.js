@@ -177,6 +177,13 @@ LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
 LEFT JOIN categories c ON p.category_id = c.category_id
 WHERE p.status = 'active'
   AND (p.expires_at IS NULL OR p.expires_at > NOW())
+  AND (
+      $2::text IS NULL
+      OR $2::text = ''
+      OR $2::text = '0'
+      OR $2::text = 'null'
+      OR p.user_id::text != $2::text
+  )
 ORDER BY 
     -- Protocol: Value Hierarchy - Premium posts FIRST
     COALESCE(p.tier_priority, 1) DESC,

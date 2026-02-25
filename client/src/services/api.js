@@ -42,29 +42,35 @@ api.interceptors.response.use(
     },
     async (error) => {
         const originalRequest = error.config;
+        const status = error.response?.status;
+        const backendError = error.response?.data?.error || error.response?.data?.message || '';
+        const authErrorFromApi = typeof backendError === 'string'
+            && (backendError.toLowerCase().includes('token') || backendError.toLowerCase().includes('session'));
+        const isRefreshEndpoint = originalRequest?.url?.includes('/auth/refresh-token');
+        const isAuthEndpoint = originalRequest?.url?.includes('/auth/');
 
-        // A. Handle Token Expiry (401) - Auto Refresh
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // A. Handle token expiry/invalidation with one refresh retry.
+        if ((status === 401 || (status === 403 && authErrorFromApi)) && !originalRequest._retry && !isRefreshEndpoint && !isAuthEndpoint) {
             originalRequest._retry = true;
 
             try {
-                // Attempt refresh
-                const refreshToken = localStorage.getItem('refreshToken') // Or cookie
-                // Note: With HttpOnly cookies, the /refresh-token endpoint usually reads the cookie automatically
-
                 const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/auth/refresh-token`, {}, { withCredentials: true });
 
                 if (res.status === 200) {
-                    // If using localStorage token
                     if (res.data.token) localStorage.setItem('authToken', res.data.token);
 
                     // Retry original request
-                    originalRequest.headers['Authorization'] = `Bearer ${res.data.token}`;
+                    if (res.data.token) {
+                        originalRequest.headers['Authorization'] = `Bearer ${res.data.token}`;
+                    }
                     return api(originalRequest);
                 }
             } catch (refreshError) {
                 // Refresh failed - Force Logout
-                localStorage.clear();
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userId');
                 window.location.href = '/login?expired=true';
                 return Promise.reject(refreshError);
             }
@@ -80,6 +86,8 @@ api.interceptors.response.use(
         const customError = {
             message: error.response?.data?.error || error.response?.data?.message || 'Something went wrong',
             status: error.response?.status,
+            response: error.response,
+            data: error.response?.data,
             original: error
         };
 
