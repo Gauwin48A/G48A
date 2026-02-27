@@ -1,82 +1,64 @@
-# MHub Security Policy & Bug Bounty Program
+# Security Policy and Response Governance
+
+Last updated: 2026-02-27
+Owners: Security Lead, Platform Engineering
+
+## Purpose
+Define security disclosure process, enforcement controls, and incident governance for MHub.
+
+## Linked Operational Docs
+- Incident response runbook: `docs/INCIDENT_RESPONSE.md`
+- Monitoring and alert ownership: `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
+- WAF enforcement checklist: `server/docs/waf-rules.md`
+- Test validation evidence: `server/docs/TEST_VALIDATION.md`
 
 ## Responsible Disclosure
+- Contact: `security@mhub.com`
+- Include: vulnerability description, reproduction steps, impact, optional remediation suggestion.
 
-We take the security of MHub seriously. If you discover a security vulnerability, please report it responsibly.
+### Response targets
+- Acknowledge reports within 48 hours.
+- Critical issues: target remediation within 7 days.
+- High/medium issues: target remediation within 30 days.
 
-### How to Report
+## Security Enforcement Baseline (Implemented)
+- WAF request filtering and evidence headers in API runtime.
+- Strict login rate limits and auth endpoint abuse controls.
+- Helmet, request sanitization, HPP, and API rate limiting middleware.
+- OTP delivery callback and metrics pipeline.
+- Payment webhook signature verification and idempotency checks.
 
-**Email:** security@mhub.com (replace with actual email)
+## Incident Severity Mapping
+- P1: outage, breach, data-loss risk. Ack target: 5 minutes.
+- P2: major degradation. Ack target: 15 minutes.
+- P3: limited regression. Ack target: 60 minutes.
 
-**Include:**
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Your suggested fix (optional)
+Use the incident runbook for triage, containment, communication, and postmortem handling.
 
-### What We Promise
-
-1. **Acknowledgment**: We will acknowledge your report within 48 hours
-2. **Investigation**: We will investigate and keep you updated
-3. **Fix Timeline**: Critical issues fixed within 7 days, others within 30 days
-4. **Credit**: You will be credited in our security hall of fame (if desired)
-
----
-
-## Scope
-
-### In Scope
-- MHub web application (*.mhub.com)
-- MHub API (api.mhub.com)
-- Authentication & authorization
-- Data exposure vulnerabilities
-- SQL injection, XSS, CSRF
-- Remote code execution
+## Bug Bounty Scope
+In scope:
+- `*.mhub.com`, `api.mhub.com`
+- AuthN/AuthZ weaknesses
+- Data exposure
+- SQLi, XSS, CSRF
 - Privilege escalation
 
-### Out of Scope
-- Social engineering attacks
+Out of scope:
+- Social engineering
 - Physical attacks
-- Denial of service (DoS/DDoS)
-- Third-party services
-- Issues already reported
-- Non-exploitable issues
+- Volumetric DoS testing without prior approval
+- Third-party providers outside MHub control
 
----
+## Reward Bands (Guideline)
+| Severity | Reward |
+|---|---|
+| Critical | $500 - $1000 |
+| High | $200 - $500 |
+| Medium | $50 - $200 |
+| Low | Recognition |
 
-## Bug Bounty Rewards
+## Policy Compliance Rule
+Security policy updates must remain synchronized with incident response and monitoring ownership docs.
 
-| Severity | Example | Reward |
-|----------|---------|--------|
-| Critical | RCE, SQL injection, auth bypass | $500 - $1000 |
-| High | XSS, CSRF, data exposure | $200 - $500 |
-| Medium | Information disclosure | $50 - $200 |
-| Low | Minor security issues | Recognition |
-
-*Rewards are at our discretion and depend on impact and quality of report.*
-
----
-
-## Rules
-
-1. Do not access data that doesn't belong to you
-2. Do not disrupt or degrade service
-3. Do not exploit issues beyond proof of concept
-4. Wait for fix before public disclosure (minimum 90 days)
-5. One report per vulnerability
-
----
-
-## Security Hall of Fame
-
-We thank the following researchers for responsibly disclosing vulnerabilities:
-
-*(To be updated as reports come in)*
-
----
-
-## Contact
-
-For security inquiries: security@mhub.com
-
-*Last Updated: 2026-01-04*
+## Completion Decision
+- Security policy reconciliation with incident and ownership docs: COMPLETE.

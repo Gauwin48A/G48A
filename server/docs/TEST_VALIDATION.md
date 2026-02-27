@@ -1,42 +1,30 @@
-# MHub Client Demo Validation
+# Test Validation Evidence
 
-## Prerequisites
-- [ ] Run `seed_demo_data.sql` in PostgreSQL
-- [ ] Restart server: `cd server && npm start`
+Date: 2026-02-27
+Owner: Engineering
+Scope: server + client validation for completed optimization and checklist phases.
 
----
+## Status Legend
+- PASS: command completed successfully.
+- WARN: command passed, but has non-blocking warning.
+- FAIL: command failed and blocks completion.
 
-## 1. Login & Dashboard (Critical)
-- [ ] Login with: `client_demo@mhub.com` / `password123`
-- [ ] **Result:** Dashboard loads. No "white screen".
+## Commands Executed
 
-## 2. My Home (Functionality)
-- [ ] Navigate to "My Home"
-- [ ] **Result:**
-  - "Active" tab shows: *Apple MacBook Pro M2*
-  - "Sold" tab shows: *Vintage Leather Sofa*
-  - "Bought" tab shows: *Sony Noise Cancelling Headphones*
+| Date | Area | Command | Result | Notes |
+|---|---|---|---|---|
+| 2026-02-27 | Server syntax | `node --check server/src/routes/recommendations.js` and other touched server files | PASS | All touched server JS files parsed successfully. |
+| 2026-02-27 | Server tests | `npm test -- tests/server.test.js tests/auth.test.js tests/cacheService.test.js tests/critical_paths.integration.test.js tests/integration.test.js` | PASS | Core and critical integration paths passed. |
+| 2026-02-27 | Server tests | `npm run test:waf` | PASS | WAF enforcement test suite passed. |
+| 2026-02-27 | Server tests | `npm run test:critical-paths` | PASS | Auth, post, payment, chat critical paths passed. |
+| 2026-02-27 | Server tests | `npm run test:e2e:journeys` | PASS | Top 10 user journeys suite passed. |
+| 2026-02-27 | Client tests | `npm test` | PASS | Client unit/integration tests passed. |
+| 2026-02-27 | Client build | `npm run build` | PASS | Production build succeeded. |
 
-## 3. Rewards & Referrals
-- [ ] Navigate to "Rewards"
-- [ ] **Result:**
-  - Rank is **GOLD**
-  - Points: **1200**
-  - Referral Tree shows: *Rahul_Ref* and *Priya_Ref*
+## Additional Observations
+- WARN: Jest reported an open-handle worker warning after completion in some runs.
+- Impact: Non-blocking for correctness; should be addressed to improve CI cleanliness.
 
-## 4. Language & Search
-- [ ] Change language to **Hindi**. Refresh Page.
-  - **Result:** Text remains Hindi.
-- [ ] Type "MacBook" in Navbar Search -> Enter
-  - **Result:** Redirects to `/allposts` and shows MacBook.
-
-## 5. Profile Page
-- [ ] Navigate to "Profile"
-- [ ] **Result:** Shows user info with:
-  - Name: MHub Super User
-  - Verified: TRUE
-  - Location: Hyderabad, India
-
-## 6. Location Capture
-- [ ] Allow location permission when prompted
-- [ ] **Result:** Location persisted in `user_locations` table
+## Completion Decision
+- Test-validation checklist is complete for current phases.
+- Evidence-backed status: COMPLETE.

@@ -1,105 +1,55 @@
-# Edge Caching Setup Guide (Cloudflare CDN)
+# Edge Caching Setup (Runtime-Aligned)
 
-## Why Edge Caching?
-- Static assets (JS, CSS, images) served from 300+ global edge locations
-- Reduces origin server load by 90%+
-- Sub-50ms load times even in remote areas
-- **Free tier** includes unlimited bandwidth
+Last updated: 2026-02-27
 
----
+This document is aligned with the current server runtime configuration in `server/src/index.js`.
 
-## Step 1: Add Domain to Cloudflare
+## Runtime Cache Configuration (Current)
 
-1. Go to [dash.cloudflare.com](https://dash.cloudflare.com)
-2. Add your domain (e.g., `mhub.com`)
-3. Update nameservers at your registrar
-4. Wait for propagation (5-15 min)
+### Static assets
+- Route: `/static`
+- Source path: `server/public`
+- Cache behavior:
+  - `maxAge: 30d`
+  - `immutable: true`
+  - `etag: true`
 
----
+### Upload assets
+- Route: `/uploads`
+- Source path: `server/uploads`
+- Cache behavior:
+  - `maxAge: 7d`
+  - `etag: true`
 
-## Step 2: Configure Caching Rules
+### Optimized upload assets
+- Route: `/uploads/optimized`
+- Source path: `server/uploads/optimized`
+- Cache behavior:
+  - `maxAge: 30d`
+  - `immutable: true`
 
-### Page Rules (Free Tier)
+## API Caching Guidance
+- Keep authenticated and dynamic API routes uncached at edge by default.
+- Continue using route-level cache headers for special cases.
+- Example: feed controller sends `Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate` where required.
 
-**Rule 1: Cache Static Assets**
-```
-URL: *mhub.com/static/*
-Setting: Cache Level = Cache Everything
-Edge TTL: 1 month
-```
+## CDN Alignment (Cloudflare/AWS CDN)
 
-**Rule 2: Cache Images**
-```
-URL: *mhub.com/uploads/*
-Setting: Cache Level = Cache Everything
-Edge TTL: 1 week
-```
+### Recommended edge rules
+1. Cache `/static/*` for 30 days.
+2. Cache `/uploads/optimized/*` for 30 days.
+3. Cache `/uploads/*` for 7 days.
+4. Bypass cache for `/api/*` unless explicitly marked safe for caching.
 
-**Rule 3: Bypass Cache for API**
-```
-URL: *mhub.com/api/*
-Setting: Cache Level = Bypass
-```
+## Verification Steps
+1. Request a static asset header:
+   - `curl -I https://<domain>/static/<asset>.js`
+2. Request an optimized upload header:
+   - `curl -I https://<domain>/uploads/optimized/<image>.jpg`
+3. Request an API endpoint header:
+   - `curl -I https://<domain>/api/feed`
+4. Confirm expected cache directives and CDN cache status (`HIT`/`MISS`) behavior.
 
----
-
-## Step 3: Browser Cache Headers
-
-Add to `server/src/index.js`:
-
-```javascript
-// Static file caching
-app.use('/static', express.static('public', {
-  maxAge: '30d', // 30 days
-  immutable: true
-}));
-
-app.use('/uploads', express.static('uploads', {
-  maxAge: '7d', // 7 days
-  etag: true
-}));
-```
-
----
-
-## Step 4: Enable Compression
-
-In Cloudflare Dashboard:
-1. Speed > Optimization
-2. Enable: Auto Minify (JS, CSS, HTML)
-3. Enable: Brotli Compression
-
----
-
-## Step 5: Security Settings
-
-1. SSL/TLS > Full (Strict)
-2. Enable: Always Use HTTPS
-3. Enable: Automatic HTTPS Rewrites
-
----
-
-## Verification
-
-Run: `curl -I https://your-domain.com/static/app.js`
-
-Look for:
-```
-cf-cache-status: HIT
-age: 12345
-```
-
----
-
-## Expected Results
-
-| Metric | Before | After |
-|--------|--------|-------|
-| TTFB | 200-500ms | 20-50ms |
-| Static Load | 1-2s | 100-200ms |
-| Origin Requests | 100% | 10-20% |
-| Bandwidth Cost | $XX | Near $0 |
-
----
-
-*Last Updated: 2026-01-04*
+## Completion Decision
+- Edge caching documentation is reconciled with deployed runtime behavior.
+- Evidence-backed status: COMPLETE.
