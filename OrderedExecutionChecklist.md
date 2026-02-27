@@ -2,8 +2,7 @@
 
 Canonical checklist file: `ORDERED_EXECUTION_CHECKLIST.md`
 
-This alias file exists for teams/tools that reference `OrderedExecutionChecklist.md`.
-Use the canonical file for live status updates.
+This alias file exists for tools or references that use `OrderedExecutionChecklist.md`.
 
 Current status (2026-02-27):
 - Phase 0: Completed
