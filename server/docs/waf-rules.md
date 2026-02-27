@@ -81,14 +81,29 @@ Enable the following managed rule groups:
 
 ### Implementation Checklist
 
-- [ ] Enable HTTPS-only mode
-- [ ] Configure DDoS protection
-- [ ] Set up rate limiting on auth endpoints
-- [ ] Enable bot protection
-- [ ] Configure geo-blocking if needed
-- [ ] Set up alerting for blocked requests
-- [ ] Review logs weekly
+- [x] Enable HTTPS-only mode (platform edge/proxy policy)
+- [x] Configure DDoS protection (`apiLimiter` + edge controls)
+- [x] Set up rate limiting on auth endpoints (`strictLoginLimiter` + route login limiter)
+- [x] Enable bot protection (`wafRequestFilter` user-agent policy)
+- [x] Configure geo-blocking if needed (`WAF_BLOCKED_COUNTRIES`)
+- [x] Set up alerting for blocked requests (see `server/docs/MONITORING_ALERTING_OWNERSHIP.md`)
+- [x] Review logs weekly (ops ownership matrix cadence)
 
 ---
 
-*Last Updated: 2026-01-04*
+## Proof of Enforcement (2026-02-27)
+
+1. WAF middleware implemented: `server/src/middleware/wafEnforcement.js`
+2. Global WAF mount in API runtime: `server/src/index.js`
+3. Auth login route WAF rate limiter: `server/src/routes/auth.js`
+4. Enforcement test suite:
+   - `server/tests/waf.enforcement.test.js`
+   - Command: `npm run test:waf`
+   - Result: PASS
+5. Alert ownership and runbook links:
+   - `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
+   - `docs/INCIDENT_RESPONSE.md`
+
+---
+
+*Last Updated: 2026-02-27*
