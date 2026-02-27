@@ -1,40 +1,27 @@
-# MHUB Backend
+# MHub Server
 
-This is the backend (Node.js/Express) for the MHUB multilingual production-ready app. All backend code, migrations, middleware, services, worker, and routes should reside here.
+Last updated: 2026-02-27
 
-## Structure
-- /database: DB schema and migration scripts
-- /middleware: Express middleware
-- /migrations: SQL migration scripts
-- /routes: API endpoints
-- /services: Translation, cache, etc.
-- /worker: Translation worker
-- /src: Main server code
-- /tests: Backend tests
+## Stack
+- Node.js + Express
+- PostgreSQL
 
-## Location Permission Feature
-- `/routes/location.js`: API endpoint for saving user location
-- `/migrations/003_create_user_locations.sql`: Migration for user_locations table
-- Frontend blocks app until location is granted and sends data to backend
+## Scripts
+- `npm run dev`
+- `npm test`
+- `npm run test:waf`
+- `npm run test:critical-paths`
+- `npm run test:e2e:journeys`
 
-## Usage
-See main README in project root for setup and deployment instructions.
+## Operational Modules
+- Auth/session/OTP/2FA
+- Posts/feed/recommendations
+- Payments/reconciliation
+- KYC/complaints/reviews/moderation
+- WAF/security middleware
 
-## Features
-- User authentication (JWT)
-- Aadhaar/PAN verification
-- Post management
-- Sale confirmation workflow
-- Rewards and notifications
-- Admin panel
-
-## API Endpoints
-- `/api/auth` — Authentication
-- `/api/users` — User management
-- `/api/posts` — Post CRUD
-- `/api/transactions` — Sale confirmation
-- `/api/rewards` — Rewards system
-- `/api/notifications` — Notifications
-- `/api/admin` — Admin actions
-
----
+## Supporting Docs
+- `docs/TEST_VALIDATION.md`
+- `docs/waf-rules.md`
+- `docs/security-policy.md`
+- `docs/MONITORING_ALERTING_OWNERSHIP.md`

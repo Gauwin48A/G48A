@@ -1,32 +1,15 @@
-# MHUB Database Scripts
+# Database Guide
 
-## Quick Start
+Last updated: 2026-02-27
 
-**Run ONLY this file to set up the complete database:**
+## Setup
+- Use migration scripts under `server/database/migrations`.
+- Avoid committing real credentials in any markdown or env template.
 
-```sql
-\i 'C:/Users/laksh/GITHUB/AG/Mhub/server/database/MHUB_ULTIMATE.sql'
-```
+## Notes
+- Hot-path index migration added: `add_query_path_indexes_20260227.sql`.
+- Apply migrations in staging before production rollout.
 
-## Login Credentials
-
-| User | Email | Password |
-|------|-------|----------|
-| **User** | `rahul.sharma@mhub.com` | `Password123!` |
-| **Admin** | `rajesh.verma@mhub.com` | `Password123!` |
-
-> **Note**: All 50 users have the same password: `Password123!`
-
-## What's Included
-
-- **50 Users** with complete profiles
-- **120+ Posts** across 10 categories
-- **10 Categories** (Electronics, Mobiles, Fashion, etc.)
-- **4 Tiers** (Free, Standard, Premium, Featured)
-- **25+ Tables** with all relationships
-- **75+ Performance Indexes**
-- **Functions & Triggers** for data integrity
-
-## Version
-
-**v6.0** - Production Ready (January 2026)
+## Validation
+- Run relevant server tests after migration application.
+- Verify read/write behavior on feed, payment, inquiry, and channel paths.
