@@ -2,26 +2,14 @@
 
 Date: 2026-02-27
 
-## Historical Execution Status
-- Week 1-5 scope from ordered phases: COMPLETED.
-- Week 6-10 planned as enhancement scale-up.
+## Completed Baseline Sprints
+- [x] Stabilization and foundation
+- [x] Revenue/trust core workflows
+- [x] Complaints/reviews/admin completion
+- [x] Reliability, test, and ops/security controls
 
-## Completed
-- [x] Stabilization and foundation fixes.
-- [x] Payment/OTP/KYC core workflows.
-- [x] Complaints/reviews/admin moderation alignment.
-- [x] Reliability + test suites + runbook ownership.
-- [x] Ops/security controls and docs evidence.
-
-## Planned Next Sprints
-### Sprint A
-- [ ] Test teardown cleanup and CI noise reduction.
-- [ ] Staging live load runs with artifact updates.
-
-### Sprint B
-- [ ] Fraud scoring model spike behind feature flag.
-- [ ] Multi-region failover preparation.
-
-### Sprint C
-- [ ] Feature-flag progressive rollout framework.
-- [ ] Advanced seller analytics and moderation assist features.
+## Upcoming Enhancement Sprints
+- [ ] Fraud ML scoring pilot
+- [ ] Multi-region failover readiness
+- [ ] Progressive feature-flag rollout framework
+- [ ] Expanded UI regression automation
