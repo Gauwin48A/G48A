@@ -12,3 +12,4 @@ Current status (2026-02-27):
 - Phase 3: Completed
 - Phase 4: Completed
 - Phase 5: Completed
+- Markdown implementation pass: Completed
