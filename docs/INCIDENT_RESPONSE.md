@@ -34,6 +34,7 @@ Escalation owner: Engineering Manager (if unresolved beyond SLA)
 4. Check health endpoints:
    - `GET /health`
    - `GET /api/health`
+   - `GET /api/ready`
 5. Stabilize first:
    - Roll back recent deploy if blast radius is high.
    - Toggle off risky feature flags if available.
@@ -44,6 +45,7 @@ Escalation owner: Engineering Manager (if unresolved beyond SLA)
 1. Check process health and restart loops.
 2. Check error logs for spikes (5xx, auth failures, DB timeouts).
 3. Verify JWT and refresh-token related errors.
+4. Trace requests via `x-correlation-id` for impacted flows.
 
 ### Database
 1. Check connection pool saturation.

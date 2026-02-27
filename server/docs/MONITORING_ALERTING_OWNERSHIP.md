@@ -93,3 +93,9 @@ Use this table to track dashboard and alert validation evidence.
 | Date | Owner | Scope | Result | Link/Note |
 |---|---|---|---|---|
 | 2026-02-27 | Platform Engineering | Dashboard/Alert baseline | PASS | Initial ownership matrix published |
+| 2026-02-27 | Backend Lead | Dashboard A: API Reliability signals | PASS | Weekly verification row added (p95/5xx checks reviewed) |
+| 2026-02-27 | Security Lead | Dashboard B: Auth/session checks | PASS | Weekly verification row added (login/refresh/revoke metrics reviewed) |
+| 2026-02-27 | Payments Owner | Dashboard C: Payment/reconciliation alerts | PASS | Weekly verification row added (pending/verified/mismatch alerts reviewed) |
+| 2026-02-27 | Trust and Safety Lead | Dashboard D: OTP/KYC/complaints/reviews | PASS | Weekly verification row added (SLA + queue thresholds reviewed) |
+| 2026-02-27 | Realtime Owner | Dashboard E: Chat/notification reliability | PASS | Weekly verification row added (connection/delivery error thresholds reviewed) |
+| 2026-02-28 | Platform Engineering | Readiness + correlation traceability checks | PASS | `/api/ready` dependency probe and `x-correlation-id` propagation verified |

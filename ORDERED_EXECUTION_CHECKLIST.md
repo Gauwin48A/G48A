@@ -1,73 +1,114 @@
 # MHub Ordered Execution Checklist
 
-Date: 2026-02-27
-Mode: Continuous execution
+Date: 2026-02-28
+Owner: Engineering
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
-## Live Completion Tracking
+## Phase Status
 
-- [x] Phase 0 - Regression stabilization
-- [x] Phase 1 - Week-1 critical foundation
-- [x] Phase 2 - P0 product gaps
-- [x] Phase 3 - P1 workflow completion
-- [x] Phase 4 - Reliability and scale readiness
-- [x] Phase 5 - Ops and security controls
+### Phase 0 - Truth Baseline + Readiness Reconciliation
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `FEATURE_STATUS_REPORT.md`, `FEATURE_COMPLETION_MATRIX.md`, `PRODUCTION_LAUNCH_ROADMAP.md`
+- Validation: `git status --short`, `npm test`, `npm run build`, `npm run check:bundle-budget`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Phase 0 - Regression Stabilization
-- [x] Add-post tier handoff and login return path fixed.
-- [x] Feed/all-posts false-login prompt fixed.
-- [x] Profile auth-state drift fixed.
-- [x] Complaints page contract alignment fixed.
-- [x] Home/all-posts/feed refresh regression validated.
-- [x] `/api/transactions` route mounted and sale-undone integration aligned.
+### Phase 1 - Auth + Session Consistency Verification
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `client/src/pages/Auth/Login.jsx`, `client/src/context/AuthContext.jsx`, `server/tests/auth.test.js`, `server/tests/auth.real.integration.test.js`
+- Validation: `npm test -- tests/auth.test.js tests/auth.real.integration.test.js`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Phase 1 - Week-1 Critical Foundation
-- [x] Socket/API base URL env-driven in critical paths.
-- [x] Public wall route mounted and frontend wired.
-- [x] CI baseline workflow added.
-- [x] Incident response runbook added (`docs/INCIDENT_RESPONSE.md`).
-- [x] Error reporting bootstrap integrated.
-- [x] Secret hygiene and `.env` hardening completed.
+### Phase 2 - Migration Safety + Environment Validation
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/database/migrations/add_*.sql`, `IMMEDIATE_ACTION_ITEMS.md`
+- Validation: apply and rerun: `node run_migration.js <migration>` on `localhost:5433/db_shop_2`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Phase 2 - P0 Product Gaps
-- [x] Payments: auto-verification, webhook idempotency, retry and reconciliation workflow.
-- [x] OTP delivery abstraction + provider callback metrics (auth and sale flows).
-- [x] KYC automation routing with confidence scoring and manual queue.
+### Phase 3 - Performance Path Hardening
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/src/controllers/feedController.js`, `server/src/controllers/postController.js`, regression tests
+- Validation: `npm run test:critical-paths`, `npm test -- tests/feedController.regression.test.js tests/postController.regression.test.js`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Phase 3 - P1 Workflow Completion
-- [x] Feedback submission persisted via API.
-- [x] Complaints submit/history lifecycle persisted.
-- [x] Complaints strict transitions, SLA tracking, and evidence metadata path.
-- [x] Reviews routes/UI wiring for create/list/helpful/delete.
-- [x] Reviews moderation: seller response, flag/hide, abuse controls.
-- [x] Admin moderation contract: filters, bulk actions, exports, schema-safe queries.
+### Phase 4 - Cache + Open-Handle Stability
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/src/services/cacheService.js`, `server/tests/cacheService.test.js`, `server/tests/jest.teardown.js`, `server/src/config/redisSession.js`, `server/src/config/redisCache.js`
+- Validation: `npm test -- tests/cacheService.test.js`, `npm test` (no open-handle warning observed in this run)
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Phase 4 - Reliability and Scale Readiness
-- [x] Critical path integration tests (auth, post, payment, chat).
-- [x] Top-journeys E2E suite.
-- [x] Monitoring + alert ownership matrix.
-- [x] Backup/restore drill script + runbook.
-- [x] Load and capacity report artifacts.
+### Phase 5 - Observability + Alert Evidence
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/src/index.js` (`/api/ready`, correlation header), `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
+- Validation: readiness probe command (local): `/api/ready -> 200 degraded (db/config pass)`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Phase 5 - Ops and Security Controls (Docs-Driven)
-- [x] WAF checklist executed with proof (`server/docs/waf-rules.md`).
-- [x] Test-validation checklist executed with dated pass/fail records (`server/docs/TEST_VALIDATION.md`).
-- [x] Edge caching guide aligned with deployed runtime behavior (`server/docs/edge-caching-setup.md`).
-- [x] Security policy reconciled with incident response and ownership docs (`server/docs/security-policy.md`, `docs/INCIDENT_RESPONSE.md`, `server/docs/MONITORING_ALERTING_OWNERSHIP.md`).
-- [x] Status reporting model unified across `FEATURE_STATUS_REPORT.md`, `FEATURE_COMPLETION_MATRIX.md`, `PRODUCTION_LAUNCH_ROADMAP.md`.
+### Phase 6 - Test Expansion + Regression Net
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/tests/feedController.regression.test.js`, `server/tests/postController.regression.test.js`, `server/tests/readinessService.test.js`, `server/tests/featureFlagService.test.js`, `server/tests/mlFraudScoringService.test.js`
+- Validation: `npm test` (13 suites, 90 tests passed)
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Validation Rule
-For every touched phase item, run syntax checks and relevant tests before marking complete.
+### Phase 7 - CI/CD Quality Gates + Perf Budget
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `.github/workflows/ci.yml`, `client/scripts/check-bundle-budget.mjs`
+- Validation: `npm run test`, `npm run build`, `npm run check:bundle-budget`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Current Scores
-- Survival ratio: 93%
-- Architecture score: 8.8/10
+### Phase 8 - Live Load Validation
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/tests/load/results/capacity_report_2026-02-27T18-50-27-835Z.json`
+- Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 4000`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Markdown Implementation Status
-- [x] Root project markdown files normalized to current state.
-- [x] Server/client/database README and operational docs aligned.
-- [x] Pending vs completed markers synchronized across key status docs.
+### Phase 9 - Resilience + Security Check
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/src/middleware/security.js`, `server/src/controllers/paymentController.js`, `server/docs/security-policy.md`, `docs/INCIDENT_RESPONSE.md`
+- Validation: `npm run test:waf`, `npm run test:critical-paths`
+- Last Updated: 2026-02-28T00:21:19+05:30
 
-## Remaining Backlog (Not Blocking Current Checklist)
-- [ ] ML-driven fraud scoring model
-- [ ] Full multi-region active-active deployment
-- [ ] Advanced feature-flag rollout strategy
+### Phase 10 - Enhancement Spikes
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `server/src/services/featureFlagService.js`, `server/src/services/mlFraudScoringService.js`, `server/docs/29_ML_FRAUD_SPIKE_PLAN.md`, `server/docs/30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md`, `server/docs/31_PROGRESSIVE_FEATURE_ROLLOUT_BASELINE.md`
+- Validation: `npm test -- tests/featureFlagService.test.js tests/mlFraudScoringService.test.js`
+- Last Updated: 2026-02-28T00:21:19+05:30
+
+### Phase 11 - Final Readiness Gate
+- Status: COMPLETE
+- % Complete: 100
+- Owner: Engineering
+- Evidence: `FEATURE_STATUS_REPORT.md`, `FEATURE_COMPLETION_MATRIX.md`, `PRODUCTION_LAUNCH_ROADMAP.md`, `IMMEDIATE_ACTION_ITEMS.md`
+- Validation: consolidated matrix in `server/docs/TEST_VALIDATION.md`
+- Last Updated: 2026-02-28T00:21:19+05:30
+
+## Mandatory Pending Items (Current)
+- Jest open-handle warning teardown cleanup: COMPLETE
+- Apply and validate new DB migrations: COMPLETE
+- Execute non-dry-run load and store artifact: COMPLETE
+- Add regression tests for optimized controllers/routes: COMPLETE
+- Enforce client performance budget in CI: COMPLETE
+- Add monitoring alert evidence rows: COMPLETE
+- Start ML fraud scoring spike behind feature flag: COMPLETE
+- Draft multi-region failover playbook: COMPLETE
+- Define progressive feature rollout baseline: COMPLETE

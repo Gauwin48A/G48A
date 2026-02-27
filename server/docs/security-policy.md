@@ -27,6 +27,9 @@ Define security disclosure process, enforcement controls, and incident governanc
 - Helmet, request sanitization, HPP, and API rate limiting middleware.
 - OTP delivery callback and metrics pipeline.
 - Payment webhook signature verification and idempotency checks.
+- Readiness endpoint with dependency/config checks (`/api/ready`).
+- Correlation ID propagation via `x-correlation-id` response header.
+- Feature-flag gated ML fraud spike in shadow mode by default.
 
 ## Incident Severity Mapping
 - P1: outage, breach, data-loss risk. Ack target: 5 minutes.
@@ -62,3 +65,4 @@ Security policy updates must remain synchronized with incident response and moni
 
 ## Completion Decision
 - Security policy reconciliation with incident and ownership docs: COMPLETE.
+- Last validation: 2026-02-28 (`npm run test:waf`, `npm run test:critical-paths`, `/api/ready` probe).

@@ -7,6 +7,12 @@ const crypto = require('crypto');
 const { validationResult } = require('express-validator');
 const redisSession = require('../config/redisSession');
 const JWT_CONFIG = require('../config/jwtConfig');
+const logger = require('../utils/logger');
+const otpService = require('../services/otpService');
+const otpDeliveryService = require('../services/otpDeliveryService');
+const mlFraudScoringService = require('../services/mlFraudScoringService');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 
 const PASSWORD_HASH_OPTIONS = {
   type: argon2.argon2id,
@@ -18,6 +24,13 @@ const PASSWORD_HASH_OPTIONS = {
 const DUMMY_ARGON_HASH =
   '$argon2id$v=19$m=65536,t=3,p=1$9eLY+7rUQEB+HZa217oMNQ$6HQEI495JcdVXPUdDHibTnZECqFl+K+ffBXzMB+4dKM';
 
+const runQuery = (text, values = []) =>
+  pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+
 let sessionSchemaCheckPromise = null;
 
 const hashSha256 = (value) =>
@@ -28,6 +41,77 @@ const safeTextEqual = (a, b) => {
   const right = Buffer.from(String(b), 'utf8');
   if (left.length !== right.length) return false;
   return crypto.timingSafeEqual(left, right);
+};
+
+const parsePositiveInt = (value, fallback, max = Number.MAX_SAFE_INTEGER) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+};
+
+const hasAdminAccess = (req) => {
+  const role = String(req.user?.role || '').toLowerCase();
+  return role === 'admin' || role === 'superadmin';
+};
+
+const parseOtpCallbackEvents = (provider, req) => {
+  const payload = req.body;
+  const query = req.query || {};
+
+  const normalizeSingle = (raw) => {
+    const body = raw && typeof raw === 'object' ? raw : {};
+    const providerMessageId =
+      body.MessageSid ||
+      body.SmsSid ||
+      body.messageSid ||
+      body.message_sid ||
+      body.sid ||
+      body.request_id ||
+      body.requestId ||
+      body.message_id ||
+      body.sg_message_id ||
+      body.provider_message_id ||
+      query.message_id ||
+      null;
+
+    const callbackStatus = String(
+      body.MessageStatus ||
+      body.SmsStatus ||
+      body.status ||
+      body.delivery_status ||
+      body.event ||
+      body.type ||
+      'unknown'
+    ).toLowerCase();
+
+    const callbackEvent = String(
+      body.EventType ||
+      body.event ||
+      body.type ||
+      callbackStatus
+    ).toLowerCase();
+
+    const deliveryId =
+      body.delivery_id ||
+      body.deliveryId ||
+      query.delivery_id ||
+      null;
+
+    return {
+      provider,
+      providerMessageId: providerMessageId ? String(providerMessageId) : null,
+      callbackStatus,
+      callbackEvent,
+      deliveryId: deliveryId ? String(deliveryId) : null,
+      payload: body
+    };
+  };
+
+  if (Array.isArray(payload)) {
+    return payload.map((entry) => normalizeSingle(entry));
+  }
+
+  return [normalizeSingle(payload)];
 };
 
 const compareStoredToken = async (incomingToken, storedToken) => {
@@ -52,10 +136,10 @@ const ensureUserSessionsSchema = async () => {
   if (!sessionSchemaCheckPromise) {
     sessionSchemaCheckPromise = (async () => {
       const [usersTypeResult, sessionsTypeResult] = await Promise.all([
-        pool.query(
+        runQuery(
           "SELECT data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'user_id' LIMIT 1"
         ),
-        pool.query(
+        runQuery(
           "SELECT data_type FROM information_schema.columns WHERE table_name = 'user_sessions' AND column_name = 'user_id' LIMIT 1"
         )
       ]);
@@ -123,7 +207,7 @@ const storeRefreshSession = async (userId, refreshToken, req) => {
   const userAgent = req.headers['user-agent'] || 'Unknown Device';
   const deviceFingerprint = req.body?.deviceSpecs || userAgent;
 
-  const insertResult = await pool.query(
+  const insertResult = await runQuery(
     `INSERT INTO user_sessions (user_id, token_hash, device_fingerprint, ip_address, user_agent, expires_at)
      VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '30 days')
      RETURNING session_id`,
@@ -134,7 +218,7 @@ const storeRefreshSession = async (userId, refreshToken, req) => {
 
 const findMatchingRefreshSession = async (userId, incomingToken) => {
   await ensureUserSessionsSchema();
-  const sessions = await pool.query(
+  const sessions = await runQuery(
     `SELECT session_id, token_hash
      FROM user_sessions
      WHERE user_id = $1
@@ -157,7 +241,7 @@ const findMatchingRefreshSession = async (userId, incomingToken) => {
 const rotateRefreshSession = async (userId, newRefreshToken, sessionRef) => {
   await ensureUserSessionsSchema();
   const tokenHash = await bcrypt.hash(newRefreshToken, 10);
-  await pool.query(
+  await runQuery(
     `UPDATE user_sessions
      SET token_hash = $1, last_activity = NOW(), expires_at = NOW() + INTERVAL '30 days'
      WHERE session_id = $2 AND user_id = $3`,
@@ -168,7 +252,7 @@ const rotateRefreshSession = async (userId, newRefreshToken, sessionRef) => {
 const revokeAllRefreshSessions = async (userId) => {
   if (!userId) return;
   await ensureUserSessionsSchema();
-  await pool.query('UPDATE user_sessions SET is_active = false WHERE user_id = $1', [userId]);
+  await runQuery('UPDATE user_sessions SET is_active = false WHERE user_id = $1', [userId]);
 };
 
 const toSafeUserResponse = (user) => {
@@ -261,12 +345,12 @@ exports.signup = async (req, res) => {
     const sessionData = await createSession(newUser, req, res);
 
     try {
-      await pool.query(
+      await runQuery(
         'INSERT INTO audit_logs (user_id, action, ip_address, user_agent) VALUES ($1, $2, $3, $4)',
         [newUser.user_id, 'SIGNUP_SUCCESS', req.ip, req.headers['user-agent']]
       );
     } catch (logErr) {
-      console.warn('[AUDIT] Failed to log signup, continuing anyway:', logErr.message);
+      logger.warn('[AUDIT] Failed to log signup, continuing anyway:', logErr.message);
     }
 
     res.status(201).json({
@@ -275,7 +359,7 @@ exports.signup = async (req, res) => {
     });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('[SIGNUP ERROR]', err);
+    logger.error('[SIGNUP ERROR]', err);
     res.status(500).json({ error: 'Server error during signup' });
   } finally {
     client.release();
@@ -289,8 +373,22 @@ exports.login = async (req, res) => {
   try {
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
 
-    const result = await pool.query(
-      'SELECT * FROM users WHERE LOWER(email) = LOWER($1) OR phone_number = $1 LIMIT 1',
+    const result = await runQuery(
+      `SELECT
+         u.user_id,
+         u.name,
+         u.email,
+         u.phone_number,
+         u.role,
+         u.tier,
+         u.password_hash,
+         u.is_active,
+         u.lock_until,
+         NULLIF(to_jsonb(u)->>'locked_until', '') AS locked_until_legacy,
+         u.login_attempts
+       FROM users u
+       WHERE LOWER(u.email) = LOWER($1) OR u.phone_number = $1
+       LIMIT 1`,
       [loginIdentifier]
     );
 
@@ -309,7 +407,7 @@ exports.login = async (req, res) => {
       return res.status(403).json({ error: 'Account is deactivated. Contact support.' });
     }
 
-    const lockUntil = user.lock_until || user.locked_until || null;
+    const lockUntil = user.lock_until || user.locked_until_legacy || null;
     if (lockUntil && new Date(lockUntil) > new Date()) {
       return res.status(403).json({
         error: 'Account temporarily locked. Try again in 15 minutes.'
@@ -337,7 +435,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       const attempts = (user.login_attempts || 0) + 1;
       if (attempts >= 5) {
-        await pool.query(
+        await runQuery(
           "UPDATE users SET login_attempts = 0, lock_until = NOW() + INTERVAL '15 minutes' WHERE user_id = $1",
           [user.user_id]
         );
@@ -347,11 +445,34 @@ exports.login = async (req, res) => {
         });
       }
 
-      await pool.query('UPDATE users SET login_attempts = $1 WHERE user_id = $2', [attempts, user.user_id]);
+      await runQuery('UPDATE users SET login_attempts = $1 WHERE user_id = $2', [attempts, user.user_id]);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    await pool.query(
+    const fraudAssessment = await mlFraudScoringService.scoreLoginAttempt({
+      userId: user.user_id,
+      ipAddress: clientIp,
+      deviceId: req.headers['x-device-id'] || req.headers['user-agent'] || 'unknown-device',
+      signals: {
+        recentFailedLogins: user.login_attempts || 0,
+        newDevice: false
+      }
+    });
+
+    if (fraudAssessment.enabled) {
+      logger.info(
+        `[LOGIN RISK] user=${user.user_id} score=${fraudAssessment.score} action=${fraudAssessment.recommendedAction} enforce=${fraudAssessment.shouldEnforce}`
+      );
+    }
+
+    if (fraudAssessment.shouldEnforce) {
+      return res.status(403).json({
+        error: 'Login blocked by risk policy. Please contact support if this is unexpected.',
+        code: 'RISK_BLOCKED'
+      });
+    }
+
+    await runQuery(
       `UPDATE users
        SET login_attempts = 0,
            lock_until = NULL,
@@ -364,13 +485,13 @@ exports.login = async (req, res) => {
     const sessionData = await createSession(user, req, res);
 
     try {
-      await pool.query(
+      await runQuery(
         `INSERT INTO audit_logs (user_id, action, ip_address, user_agent)
          VALUES ($1, 'LOGIN_SUCCESS', $2, $3)`,
         [user.user_id, clientIp, req.headers['user-agent']]
       );
     } catch (logErr) {
-      console.warn('[AUDIT] Failed to log login, continuing anyway:', logErr.message);
+      logger.warn('[AUDIT] Failed to log login, continuing anyway:', logErr.message);
     }
 
     res.json({
@@ -378,7 +499,7 @@ exports.login = async (req, res) => {
       ...sessionData
     });
   } catch (err) {
-    console.error('[LOGIN ERROR]', err);
+    logger.error('[LOGIN ERROR]', err);
     res.status(500).json({ error: 'Server error during login' });
   }
 };
@@ -406,19 +527,110 @@ exports.sendOTP = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = hashSha256(otp);
 
-    await redisSession.set(`OTP:${phone}`, otpHash, 300);
-    await redisSession.del(`OTP_VERIFY_ATTEMPTS:${phone}`);
-    await redisSession.incr(rateKey, 600);
+    await Promise.all([
+      redisSession.set(`OTP:${phone}`, otpHash, 300),
+      redisSession.del(`OTP_VERIFY_ATTEMPTS:${phone}`),
+      redisSession.incr(rateKey, 600)
+    ]);
 
-    console.log(`[OTP REQUEST] Phone: ${phone}, OTP Hash: ${otpHash.substring(0, 16)}, Timestamp: ${new Date().toISOString()}`);
+    const destination = `+91${phone}`;
+    const deliveryResult = await otpService.sendOTP('sms', destination, otp, {
+      flow: 'auth',
+      purpose: 'login_otp',
+      metadata: {
+        phone_last4: phone.slice(-4)
+      }
+    });
+
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(
+        `[OTP REQUEST] Phone: ${phone}, OTP Hash: ${otpHash.substring(0, 16)}, Delivery: ${deliveryResult.provider || (deliveryResult.mock ? 'mock' : 'unknown')}, DeliveryID: ${deliveryResult.deliveryId || 'n/a'}, Timestamp: ${new Date().toISOString()}`
+      );
+    }
 
     res.json({
       message: 'OTP sent successfully',
-      expiresIn: 300
+      expiresIn: 300,
+      deliveryId: deliveryResult.deliveryId || null
     });
   } catch (err) {
-    console.error('[SEND OTP ERROR]', err);
+    logger.error('[SEND OTP ERROR]', err);
     res.status(500).json({ error: 'Failed to send OTP' });
+  }
+};
+
+exports.handleOtpDeliveryCallback = async (req, res) => {
+  const provider = String(req.params.provider || '').trim().toLowerCase();
+
+  if (!provider) {
+    return res.status(400).json({ error: 'Provider is required' });
+  }
+
+  try {
+    const callbackSecret = process.env.OTP_CALLBACK_SECRET;
+    if (callbackSecret) {
+      const providedSecret =
+        req.headers['x-otp-callback-secret'] ||
+        req.query.secret ||
+        req.body?.secret;
+
+      if (!providedSecret || String(providedSecret) !== String(callbackSecret)) {
+        return res.status(403).json({ error: 'Invalid OTP callback secret' });
+      }
+    }
+
+    const events = parseOtpCallbackEvents(provider, req);
+    const outcomes = await Promise.all(
+      events.map(async (event) => {
+        const outcome = await otpDeliveryService.recordProviderCallback(event);
+        return {
+          provider_message_id: event.providerMessageId,
+          delivery_id: event.deliveryId,
+          callback_status: event.callbackStatus,
+          matched: outcome.matched,
+          reason: outcome.reason || null
+        };
+      })
+    );
+
+    const matchedCount = outcomes.filter((entry) => entry.matched).length;
+    return res.json({
+      success: true,
+      provider,
+      processed: outcomes.length,
+      matched: matchedCount,
+      unmatched: outcomes.length - matchedCount,
+      outcomes
+    });
+  } catch (err) {
+    logger.error('[OTP CALLBACK ERROR]', err);
+    return res.status(500).json({ error: 'Failed to process OTP callback' });
+  }
+};
+
+exports.getOtpDeliveryMetrics = async (req, res) => {
+  try {
+    if (!req.user?.id || !hasAdminAccess(req)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const lookbackHours = parsePositiveInt(req.query.lookback_hours, 24, 24 * 30);
+    const flow = req.query.flow ? String(req.query.flow).trim() : null;
+    const purpose = req.query.purpose ? String(req.query.purpose).trim() : null;
+
+    const metrics = await otpDeliveryService.getDeliveryMetrics({
+      lookbackHours,
+      flow,
+      purpose
+    });
+
+    return res.json({
+      success: true,
+      metrics
+    });
+  } catch (err) {
+    logger.error('[OTP METRICS ERROR]', err);
+    return res.status(500).json({ error: 'Failed to fetch OTP delivery metrics' });
   }
 };
 
@@ -450,33 +662,43 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    let userResult = await pool.query('SELECT * FROM users WHERE phone_number = $1', [phone]);
+    let userResult = await runQuery(
+      `SELECT user_id, phone_number, name, email, role, tier
+       FROM users
+       WHERE phone_number = $1
+       LIMIT 1`,
+      [phone]
+    );
     let user = userResult.rows[0];
     let isNewUser = false;
 
     if (!user) {
       const autoUsername = `phone_${phone}_${crypto.randomBytes(3).toString('hex')}`;
-      const newUser = await pool.query(
+      const newUser = await runQuery(
         `INSERT INTO users (username, name, phone_number, phone_verified, role)
          VALUES ($1, $2, $3, true, 'user')
          RETURNING user_id, phone_number, name, email, role`,
         [autoUsername, 'User', phone]
       );
       user = newUser.rows[0];
-      await pool.query(
+      await runQuery(
         `INSERT INTO profiles (user_id, full_name, phone)
          VALUES ($1, $2, $3)
          ON CONFLICT (user_id) DO NOTHING`,
         [user.user_id, user.name || 'User', phone]
       );
       isNewUser = true;
-      console.log(`[AUTH] New user registered via OTP: ${phone}`);
+      if (process.env.NODE_ENV !== 'production') {
+        logger.info(`[AUTH] New user registered via OTP: ${phone}`);
+      }
     } else {
-      await pool.query('UPDATE users SET phone_verified = true WHERE user_id = $1', [user.user_id]);
+      await runQuery('UPDATE users SET phone_verified = true WHERE user_id = $1', [user.user_id]);
     }
 
-    await redisSession.del(`OTP:${phone}`);
-    await redisSession.del(verifyAttemptsKey);
+    await Promise.all([
+      redisSession.del(`OTP:${phone}`),
+      redisSession.del(verifyAttemptsKey)
+    ]);
 
     const sessionData = await createSession(user, req, res);
 
@@ -486,7 +708,7 @@ exports.verifyOTP = async (req, res) => {
       ...sessionData
     });
   } catch (err) {
-    console.error('[VERIFY OTP ERROR]', err);
+    logger.error('[VERIFY OTP ERROR]', err);
     res.status(500).json({ error: 'Failed to verify OTP' });
   }
 };
@@ -503,13 +725,13 @@ exports.refreshToken = async (req, res) => {
 
     const matchingSession = await findMatchingRefreshSession(payload.id, incomingToken);
     if (!matchingSession) {
-      console.warn(`[SECURITY] Refresh token mismatch/reuse detected for user ${payload.id}`);
+      logger.warn(`[SECURITY] Refresh token mismatch/reuse detected for user ${payload.id}`);
       await revokeAllRefreshSessions(payload.id);
       clearAuthCookies(res);
       return res.status(403).json({ error: 'Session invalidated. Please login again.' });
     }
 
-    const userResult = await pool.query(
+    const userResult = await runQuery(
       'SELECT user_id, name, role, email, phone_number FROM users WHERE user_id = $1',
       [payload.id]
     );
@@ -542,7 +764,7 @@ exports.refreshToken = async (req, res) => {
       clearAuthCookies(res);
       return res.status(401).json({ error: 'Session expired. Please login again.' });
     }
-    console.error('[REFRESH TOKEN ERROR]', err);
+    logger.error('[REFRESH TOKEN ERROR]', err);
     clearAuthCookies(res);
     res.status(403).json({ error: 'Invalid token' });
   }
@@ -567,7 +789,7 @@ exports.logout = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await pool.query(
+    const user = await runQuery(
       'SELECT user_id, name, phone_number, email, role FROM users WHERE user_id = $1',
       [req.user.id]
     );
@@ -576,7 +798,7 @@ exports.getMe = async (req, res) => {
 
     let userTier = 'Bronze';
     try {
-      const rewardsResult = await pool.query('SELECT tier FROM rewards WHERE user_id = $1', [req.user.id]);
+      const rewardsResult = await runQuery('SELECT tier FROM rewards WHERE user_id = $1', [req.user.id]);
       if (rewardsResult.rows.length > 0) {
         userTier = rewardsResult.rows[0].tier;
       }
@@ -593,7 +815,7 @@ exports.getMe = async (req, res) => {
       tier: userTier
     });
   } catch (err) {
-    console.error('[GET ME ERROR]', err);
+    logger.error('[GET ME ERROR]', err);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -617,7 +839,7 @@ exports.setPassword = async (req, res) => {
 
     const hash = await argon2.hash(password, PASSWORD_HASH_OPTIONS);
 
-    await pool.query(
+    await runQuery(
       'UPDATE users SET password_hash = $1, password_changed_at = NOW() WHERE user_id = $2',
       [hash, userId]
     );
@@ -627,7 +849,7 @@ exports.setPassword = async (req, res) => {
 
     res.json({ message: 'Password set successfully. Please login again.' });
   } catch (err) {
-    console.error('[SET PASSWORD ERROR]', err);
+    logger.error('[SET PASSWORD ERROR]', err);
     res.status(500).json({ error: 'Failed to set password' });
   }
 };
@@ -641,7 +863,7 @@ exports.forgotPassword = async (req, res) => {
   }
 
   try {
-    const userResult = await pool.query(
+    const userResult = await runQuery(
       'SELECT user_id, email, phone_number FROM users WHERE LOWER(email) = LOWER($1) OR phone_number = $1',
       [lookupValue]
     );
@@ -668,13 +890,17 @@ exports.forgotPassword = async (req, res) => {
     const otpHash = hashSha256(otp);
     const resetOtpKey = user.phone_number || lookupValue;
 
-    await redisSession.set(`RESET_TOKEN:${resetTokenHash}`, user.user_id, 900);
-    await redisSession.set(`RESET_OTP:${resetOtpKey}`, otpHash, 900);
-    await redisSession.incr(rateKey, 1800);
+    await Promise.all([
+      redisSession.set(`RESET_TOKEN:${resetTokenHash}`, user.user_id, 900),
+      redisSession.set(`RESET_OTP:${resetOtpKey}`, otpHash, 900),
+      redisSession.incr(rateKey, 1800)
+    ]);
 
-    console.log(
-      `[PASSWORD RESET REQUEST] User: ${user.user_id}, Token Hash: ${resetTokenHash.substring(0, 16)}, OTP Hash: ${otpHash.substring(0, 16)}`
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(
+        `[PASSWORD RESET REQUEST] User: ${user.user_id}, Token Hash: ${resetTokenHash.substring(0, 16)}, OTP Hash: ${otpHash.substring(0, 16)}`
+      );
+    }
 
     const responsePayload = {
       message: 'If this account exists, a reset link/OTP has been sent.',
@@ -689,7 +915,7 @@ exports.forgotPassword = async (req, res) => {
 
     res.json(responsePayload);
   } catch (err) {
-    console.error('[FORGOT PASSWORD ERROR]', err);
+    logger.error('[FORGOT PASSWORD ERROR]', err);
     res.status(500).json({ error: 'Failed to process request' });
   }
 };
@@ -729,7 +955,7 @@ exports.resetPassword = async (req, res) => {
         return res.status(400).json({ error: 'Invalid or expired OTP' });
       }
 
-      const userResult = await pool.query('SELECT user_id FROM users WHERE phone_number = $1', [phone]);
+      const userResult = await runQuery('SELECT user_id FROM users WHERE phone_number = $1', [phone]);
       if (userResult.rows.length === 0) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -746,7 +972,7 @@ exports.resetPassword = async (req, res) => {
 
     const hash = await argon2.hash(newPassword, PASSWORD_HASH_OPTIONS);
 
-    await pool.query(
+    await runQuery(
       `UPDATE users
        SET password_hash = $1,
            login_attempts = 0,
@@ -756,19 +982,21 @@ exports.resetPassword = async (req, res) => {
       [hash, userId]
     );
 
+    const cleanupOps = [];
     if (token) {
       const tokenHash = hashSha256(token);
-      await redisSession.del(`RESET_TOKEN:${tokenHash}`);
-      await redisSession.del(`RESET_TOKEN:${token}`);
+      cleanupOps.push(redisSession.del(`RESET_TOKEN:${tokenHash}`));
+      cleanupOps.push(redisSession.del(`RESET_TOKEN:${token}`));
     }
-    if (phone) await redisSession.del(`RESET_OTP:${phone}`);
+    if (phone) cleanupOps.push(redisSession.del(`RESET_OTP:${phone}`));
+    if (cleanupOps.length) await Promise.all(cleanupOps);
 
     await revokeAllRefreshSessions(userId);
     clearAuthCookies(res);
 
     res.json({ message: 'Password reset successfully. Please login with your new password.' });
   } catch (err) {
-    console.error('[RESET PASSWORD ERROR]', err);
+    logger.error('[RESET PASSWORD ERROR]', err);
     res.status(500).json({ error: 'Failed to reset password' });
   }
 };

@@ -1,5 +1,8 @@
 const dotenv = require("dotenv");
 dotenv.config();
+const { initErrorReporter } = require('./services/errorReporter');
+initErrorReporter();
+const crypto = require('crypto');
 
 const express = require("express");
 const cors = require("cors");
@@ -7,6 +10,10 @@ const compression = require("compression");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
 const { apiLimiter, sanitizeInput, securityHeaders } = require('./middleware/security');
+const { wafEvidenceHeaders, wafRequestFilter } = require('./middleware/wafEnforcement');
+const cacheLayer = require('./config/redisCache');
+const sessionStore = require('./config/redisSession');
+const { runReadinessChecks } = require('./services/readinessService');
 
 const pool = require("./config/db.js");
 
@@ -41,11 +48,23 @@ const brandsRoutes = require("./routes/brands.js");
 const pushNotificationsRoutes = require("./routes/pushNotifications.js");
 const nearbyRoutes = require("./routes/nearby.js");
 const reviewsRoutes = require("./routes/reviews.js");
+const publicWallRoutes = require("./routes/publicWall.js");
+const transactionsRoutes = require("./routes/transactions.js");
 
 const http = require('http');
 const { Server } = require("socket.io");
 
 const app = express();
+app.set('db', pool);
+
+// Attach correlation IDs for traceability across requests and incident triage.
+app.use((req, res, next) => {
+  const incomingCorrelationId = req.headers['x-correlation-id'] || req.headers['x-request-id'];
+  const correlationId = incomingCorrelationId ? String(incomingCorrelationId) : crypto.randomUUID();
+  req.correlationId = correlationId;
+  res.setHeader('x-correlation-id', correlationId);
+  next();
+});
 
 // Enable extended query string parsing for array parameters (e.g., ?category[]=X&category[]=Y)
 app.set('query parser', 'extended');
@@ -59,13 +78,19 @@ const io = new Server(server, {
   }
 });
 
+const socketDebugEnabled = process.env.NODE_ENV !== 'production';
+
 // Socket.io connection handler
 io.on('connection', (socket) => {
-  console.log(`User Connected: ${socket.id}`);
+  if (socketDebugEnabled) {
+    console.log(`User Connected: ${socket.id}`);
+  }
 
   socket.on('join_room', (data) => {
     socket.join(data);
-    console.log(`User with ID: ${socket.id} joined room: ${data}`);
+    if (socketDebugEnabled) {
+      console.log(`User with ID: ${socket.id} joined room: ${data}`);
+    }
   });
 
   socket.on('send_message', (data) => {
@@ -73,7 +98,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User Disconnected', socket.id);
+    if (socketDebugEnabled) {
+      console.log('User Disconnected', socket.id);
+    }
   });
 });
 
@@ -102,12 +129,13 @@ const corsWhitelist = [
   "http://localhost:8082",
   "http://localhost:3000"
 ].filter(Boolean);
+const allowedCorsOrigins = new Set(corsWhitelist);
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl)
     if (!origin) return callback(null, true);
-    if (corsWhitelist.includes(origin)) {
+    if (allowedCorsOrigins.has(origin)) {
       return callback(null, true);
     }
     console.warn(`🚫 CORS blocked: ${origin}`);
@@ -130,11 +158,12 @@ app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 // 7. HPP - Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// 8. Custom Input Sanitization (Defense in depth - includes XSS prevention)
+// 8. Custom WAF rules (SQLi/XSS/bot/geo) with enforcement evidence header
+app.use(wafEvidenceHeaders);
+app.use(wafRequestFilter);
+
+// 8.1 Input sanitization (defense in depth after explicit WAF blocking)
 app.use(sanitizeInput);
-
-console.log('🛡️ Operation Polish: Security & Performance middleware loaded');
-
 
 console.log('🛡️ Operation Polish: Security & Performance middleware loaded');
 
@@ -187,9 +216,12 @@ app.use('/api/brands', brandsRoutes);
 app.use('/api/push', pushNotificationsRoutes);
 app.use('/api/nearby', nearbyRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/publicwall', publicWallRoutes);
+app.use('/api/public-wall', publicWallRoutes);
 // Blue Team Gap 1: Dual-Handshake Sale Logic
 const saleRoutes = require('./routes/sale.js');
 app.use('/api/sale', saleRoutes);
+app.use('/api/transactions', transactionsRoutes);
 
 // Blue Team Gap 3: Initialize CRON Jobs
 const { initCronJobs } = require('./jobs/cronJobs.js');
@@ -256,6 +288,24 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.get('/api/ready', async (req, res) => {
+  try {
+    const readiness = await runReadinessChecks({
+      pool,
+      cacheService: cacheLayer,
+      sessionStore
+    });
+    const statusCode = readiness.status === 'not_ready' ? 503 : 200;
+    return res.status(statusCode).json(readiness);
+  } catch (err) {
+    return res.status(503).json({
+      status: 'not_ready',
+      checkedAt: new Date().toISOString(),
+      error: err.message
+    });
+  }
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.send('Backend running successfully.');
@@ -274,10 +324,8 @@ app.post('/api/test-notification', (req, res) => {
   res.json({ status: 'sent', message });
 });
 
-// 404 handler
-app.use((req, res) => res.status(404).json({ error: 'Not Found' }));
-
 const logger = require('./config/logger');
+const { ensureUserTierColumns } = require('./services/schemaGuard');
 
 // ============================================
 // GLOBAL ERROR HANDLING (The Safety Net)
@@ -298,6 +346,9 @@ app.use(errorHandler);
 // SERVER STARTUP
 // ============================================
 const PORT = process.env.PORT || 5000;
+ensureUserTierColumns()
+  .then(() => logger.info('Tier schema check complete'))
+  .catch((schemaErr) => logger.warn(`Tier schema check failed: ${schemaErr.message}`));
 const serverInstance = server.listen(PORT, () => {
   logger.info(`✅ Server running on port ${PORT}`);
   logger.info(`🚀 System Online: Enforced Architecture`);
@@ -329,9 +380,14 @@ const serverInstance = server.listen(PORT, () => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received. Closing DB pool and shutting down gracefully...');
   serverInstance.close(() => {
-    pool.end(() => {
-      logger.info('Database pool closed. Exiting.');
-      process.exit(0);
+    Promise.allSettled([
+      cacheLayer.close?.(),
+      sessionStore.close?.()
+    ]).finally(() => {
+      pool.end(() => {
+        logger.info('Database pool closed. Exiting.');
+        process.exit(0);
+      });
     });
   });
 });
@@ -339,9 +395,14 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   logger.info('SIGINT received. Shutting down...');
   serverInstance.close(() => {
-    pool.end(() => {
-      logger.info('Database pool closed. Exiting.');
-      process.exit(0);
+    Promise.allSettled([
+      cacheLayer.close?.(),
+      sessionStore.close?.()
+    ]).finally(() => {
+      pool.end(() => {
+        logger.info('Database pool closed. Exiting.');
+        process.exit(0);
+      });
     });
   });
 });
