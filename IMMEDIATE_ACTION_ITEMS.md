@@ -30,7 +30,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Validation: `node tests/load/simple_load_runner.js --scenario both`
 - [x] Authenticated read/write load closure.
   - Status: COMPLETE
-  - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-18-29-402Z.json`
+  - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-25-44-508Z.json`
   - Validation: `node tests/load/simple_load_runner.js --scenario full`
 - [x] Load benchmark command reliability hardening.
   - Status: COMPLETE
