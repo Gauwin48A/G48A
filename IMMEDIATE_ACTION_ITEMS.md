@@ -26,15 +26,15 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Priority 2 (Performance + Readiness)
 - [x] Legit vs abuse profile rerun with tuned limiter behavior.
   - Status: COMPLETE
-  - Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-45-36-850Z.json` (managed-server validated target)
+  - Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T07-04-49-736Z.json` (managed-server validated target, stricter `/api/ready` shape probe)
   - Validation: `node tests/load/simple_load_runner.js --scenario both`
 - [x] Authenticated read/write load closure.
   - Status: COMPLETE
-  - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-47-18-177Z.json`
+  - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T07-05-48-844Z.json`
   - Validation: `node tests/load/simple_load_runner.js --scenario full`
 - [x] Load benchmark command reliability hardening.
   - Status: COMPLETE
-  - Evidence: `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-44-43-232Z.json` (dry-run), `server/tests/load/results/capacity_report_2026-02-28T06-45-36-850Z.json` (live managed-server run)
+  - Evidence: `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T07-03-50-862Z.json` (dry-run), `server/tests/load/results/capacity_report_2026-02-28T07-04-49-736Z.json` (live managed-server run)
   - Validation: `node tests/load/simple_load_runner.js --dry-run=true --scenario=full --timeout-ms=7000`
 - [x] Readiness matrix refresh for `ready/degraded/not_ready` paths.
   - Status: COMPLETE
