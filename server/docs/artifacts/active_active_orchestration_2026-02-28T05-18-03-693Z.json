@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-02-28T05:18:03.693Z",
+  "runId": "aa-1772255853212",
+  "config": {
+    "regionA": "http://127.0.0.1:5055",
+    "regionB": "http://127.0.0.1:6055",
+    "healthPath": "/api/ready",
+    "timeoutMs": 5000,
+    "settleMs": 250,
+    "mode": "execute",
+    "rollbackOnFailure": true,
+    "syntheticProbe": true,
+    "shiftSteps": [
+      {
+        "weightA": 90,
+        "weightB": 10
+      },
+      {
+        "weightA": 75,
+        "weightB": 25
+      },
+      {
+        "weightA": 50,
+        "weightB": 50
+      },
+      {
+        "weightA": 25,
+        "weightB": 75
+      },
+      {
+        "weightA": 0,
+        "weightB": 100
+      }
+    ]
+  },
+  "report": {
+    "finalStatus": "blocked_preflight",
+    "startedAt": "2026-02-28T05:18:03.692Z",
+    "finishedAt": "2026-02-28T05:18:03.692Z",
+    "durationMs": 0,
+    "timeline": [
+      {
+        "phase": "preflight",
+        "timestamp": "2026-02-28T05:18:03.692Z",
+        "mode": "execute",
+        "preflight": {
+          "status": "BLOCKED",
+          "eligible": false,
+          "issues": [
+            "safety_gate_blocked"
+          ]
+        },
+        "safetyAudit": {
+          "source": "script",
+          "status": "BLOCKED",
+          "path": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\active_active_dependency_gate_2026-02-28T05-18-03-656Z.json",
+          "reason": null
+        }
+      }
+    ],
+    "failures": [
+      "safety_gate_blocked"
+    ]
+  }
+}
