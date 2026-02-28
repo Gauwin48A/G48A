@@ -24,6 +24,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | DB/queue failover safety audit | `npm run failover:db-queue-audit` | PASS | `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json` (status `BLOCKED` due missing replica infra, expected) |
 | 2026-02-28 | Failover tabletop simulation | `npm run failover:tabletop` | PASS | `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json` |
 | 2026-02-28 | Flag rollout simulation | `npm run flags:simulate-rollout` | PASS | `server/docs/artifacts/flag_rollout_simulation_2026-02-28T04-40-00-831Z.json` |
+| 2026-02-28 | Active-active default command | `npm run failover:active-active` | PASS | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-40-06-363Z.json` (`blocked_initial_unhealthy_region_a` expected without live region endpoints) |
 | 2026-02-28 | Active-active execute proof (synthetic probes) | execute-mode env command with traffic template | PASS | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json` |
 | 2026-02-28 | Active-active safety-gated proof | execute-mode with safety gate enabled | PASS | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-59-205Z.json` (`blocked_preflight` by design) |
 | 2026-02-28 | Fraud telemetry export path | `node scripts/export_risk_telemetry.js --lookback-minutes 1440 --limit 500 --batch-size 100` | PASS | `server/docs/artifacts/risk_telemetry_export_2026-02-28T04-35-51-718Z.json` |
