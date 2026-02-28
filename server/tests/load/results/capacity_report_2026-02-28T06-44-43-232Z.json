@@ -1,0 +1,103 @@
+{
+  "mode": "dry-run",
+  "generatedAt": "2026-02-28T06:44:43.231Z",
+  "baseUrl": "http://127.0.0.1:5000",
+  "timeoutMs": 8000,
+  "scenarios": [
+    "normal",
+    "abuse",
+    "authenticated"
+  ],
+  "profiles": {
+    "normal": {
+      "1k": {
+        "simulatedUsers": 1000,
+        "concurrentWorkers": 10,
+        "totalRequests": 200
+      },
+      "10k": {
+        "simulatedUsers": 10000,
+        "concurrentWorkers": 30,
+        "totalRequests": 800
+      },
+      "50k": {
+        "simulatedUsers": 50000,
+        "concurrentWorkers": 80,
+        "totalRequests": 2400
+      }
+    },
+    "abuse": {
+      "1k": {
+        "simulatedUsers": 1,
+        "concurrentWorkers": 10,
+        "totalRequests": 200
+      },
+      "10k": {
+        "simulatedUsers": 1,
+        "concurrentWorkers": 30,
+        "totalRequests": 800
+      },
+      "50k": {
+        "simulatedUsers": 1,
+        "concurrentWorkers": 80,
+        "totalRequests": 2400
+      }
+    },
+    "authenticated": {
+      "1k": {
+        "simulatedUsers": 500,
+        "concurrentWorkers": 8,
+        "totalRequests": 240
+      },
+      "10k": {
+        "simulatedUsers": 5000,
+        "concurrentWorkers": 20,
+        "totalRequests": 800
+      },
+      "50k": {
+        "simulatedUsers": 10000,
+        "concurrentWorkers": 40,
+        "totalRequests": 1800
+      }
+    }
+  },
+  "endpoints": {
+    "read": [
+      {
+        "key": "health",
+        "method": "GET",
+        "path": "/health"
+      },
+      {
+        "key": "posts",
+        "method": "GET",
+        "path": "/api/posts"
+      },
+      {
+        "key": "publicWall",
+        "method": "GET",
+        "path": "/api/public-wall"
+      }
+    ],
+    "authenticated": [
+      {
+        "key": "authMe",
+        "method": "GET",
+        "path": "/api/auth/me",
+        "requiresAuth": true
+      },
+      {
+        "key": "authValidate",
+        "method": "GET",
+        "path": "/api/auth/validate",
+        "requiresAuth": true
+      },
+      {
+        "key": "batchViewWrite",
+        "method": "POST",
+        "path": "/api/posts/batch-view",
+        "requiresAuth": false
+      }
+    ]
+  }
+}
