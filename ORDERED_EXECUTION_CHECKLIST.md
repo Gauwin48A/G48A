@@ -33,7 +33,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 4 - Limiter and Load Tuning
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/src/middleware/security.js`, `server/src/controllers/authController.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-09-25-345Z.json`, `server/tests/load/results/capacity_report_2026-02-28T06-13-28-531Z.json`
+- Evidence: `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/src/controllers/authController.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-09-25-345Z.json`, `server/tests/load/results/capacity_report_2026-02-28T06-18-29-402Z.json`
 - Validation: `node tests/load/simple_load_runner.js --scenario both` and `--scenario full`
 
 ### Phase 5 - Readiness Hardening

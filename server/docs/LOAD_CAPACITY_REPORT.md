@@ -13,41 +13,41 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - Baseline pre-limiter-fix (full): `server/tests/load/results/capacity_report_2026-02-28T05-48-31-110Z.json`
 - Intermediate post-limiter-fix (full): `server/tests/load/results/capacity_report_2026-02-28T05-55-55-973Z.json`
 - Final post-auth-optimization (both): `server/tests/load/results/capacity_report_2026-02-28T06-09-25-345Z.json`
-- Final post-auth-optimization (full): `server/tests/load/results/capacity_report_2026-02-28T06-13-28-531Z.json`
+- Final post-auth-optimization (full): `server/tests/load/results/capacity_report_2026-02-28T06-18-29-402Z.json`
 
 ## Baseline vs Final Deltas (50k profile aggregate, full scenario)
 
 Method: averages of `p50/p95/p99` across 50k endpoints per scenario; `RPS` is endpoint-summed throughput; `429/5xx` are summed counts.
 
-Comparison set: `05-55-55-973Z` -> `06-13-28-531Z`.
+Comparison set: `05-55-55-973Z` -> `06-18-29-402Z`.
 
 ### Normal traffic
 | Metric | Baseline | Final | Delta |
 |---|---:|---:|---:|
-| p50 (ms) | 191.12 | 195.32 | +4.20 |
-| p95 (ms) | 241.15 | 240.78 | -0.37 |
-| p99 (ms) | 262.01 | 257.76 | -4.24 |
-| RPS (total across endpoints) | 1503.16 | 1506.43 | +3.27 |
+| p50 (ms) | 191.12 | 184.21 | -6.91 |
+| p95 (ms) | 241.15 | 244.57 | +3.42 |
+| p99 (ms) | 262.01 | 262.76 | +0.76 |
+| RPS (total across endpoints) | 1503.16 | 1516.81 | +13.65 |
 | 429 count | 0 | 0 | 0 |
 | 5xx count | 0 | 0 | 0 |
 
 ### Abuse traffic
 | Metric | Baseline | Final | Delta |
 |---|---:|---:|---:|
-| p50 (ms) | 138.17 | 132.07 | -6.11 |
-| p95 (ms) | 236.51 | 221.41 | -15.10 |
-| p99 (ms) | 266.54 | 310.01 | +43.47 |
-| RPS (total across endpoints) | 1845.97 | 1956.01 | +110.04 |
+| p50 (ms) | 138.17 | 140.45 | +2.28 |
+| p95 (ms) | 236.51 | 222.34 | -14.16 |
+| p99 (ms) | 266.54 | 284.45 | +17.91 |
+| RPS (total across endpoints) | 1845.97 | 1855.80 | +9.83 |
 | 429 count | 1800 | 1800 | 0 |
 | 5xx count | 0 | 0 | 0 |
 
 ### Authenticated read/write traffic
 | Metric | Baseline | Final | Delta |
 |---|---:|---:|---:|
-| p50 (ms) | 136.24 | 81.72 | -54.51 |
-| p95 (ms) | 177.52 | 116.34 | -61.18 |
-| p99 (ms) | 195.19 | 132.02 | -63.18 |
-| RPS (total across endpoints) | 1010.98 | 1459.81 | +448.83 |
+| p50 (ms) | 136.24 | 63.04 | -73.20 |
+| p95 (ms) | 177.52 | 82.34 | -95.18 |
+| p99 (ms) | 195.19 | 96.32 | -98.87 |
+| RPS (total across endpoints) | 1010.98 | 1907.18 | +896.20 |
 | 429 count | 0 | 0 | 0 |
 | 5xx count | 0 | 0 | 0 |
 
