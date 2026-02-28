@@ -55,6 +55,7 @@ function buildConfig(args = {}, env = process.env) {
         primaryDbUrl: String(args['primary-db-url'] || env.FAILOVER_PRIMARY_DB_URL || '').trim(),
         replicaDbUrl: String(args['replica-db-url'] || env.FAILOVER_REPLICA_DB_URL || '').trim(),
         skipProbe: parseBoolean(args['skip-probe'] || env.ACTIVE_ACTIVE_DEPENDENCY_SKIP_PROBE, false),
+        forceDbQueueAudit: parseBoolean(args['force-db-queue-audit'] || env.ACTIVE_ACTIVE_DEPENDENCY_FORCE_DB_QUEUE_AUDIT, false),
         outputDir: path.resolve(process.cwd(), args['output-dir'] || env.ACTIVE_ACTIVE_OUTPUT_DIR || 'docs/artifacts'),
         dbQueueAuditScript: path.resolve(
             process.cwd(),
@@ -258,7 +259,21 @@ async function main() {
     const probeRegionB = config.skipProbe
         ? { ok: true, healthStatus: 'skipped' }
         : await probeRegion(config.regionB, config.healthPath, config.timeoutMs);
-    const dbQueueAudit = runDbQueueAudit(config);
+    const shouldRunDbQueueAudit = Boolean(config.primaryDbUrl && config.replicaDbUrl) || config.forceDbQueueAudit;
+    const dbQueueAudit = shouldRunDbQueueAudit
+        ? runDbQueueAudit(config)
+        : {
+            status: 'BLOCKED',
+            reportPath: null,
+            report: {
+                gate: {
+                    status: 'BLOCKED',
+                    reasons: ['missing_primary_or_replica_connection']
+                }
+            },
+            skipped: true,
+            reason: 'db_queue_audit_skipped_missing_replica_inputs'
+        };
     const gate = evaluateDependencies({
         config,
         probeRegionA,
@@ -289,4 +304,3 @@ module.exports = {
     buildConfig,
     evaluateDependencies
 };
-

@@ -214,6 +214,12 @@ function evaluatePreflight(config, safetyAudit) {
             issues.push('missing_safety_gate_report');
         } else if (String(safetyAudit.report.gate.status || '').toUpperCase() !== 'COMPLETE') {
             issues.push(`safety_gate_${String(safetyAudit.report.gate.status || 'unknown').toLowerCase()}`);
+            const gateReasons = Array.isArray(safetyAudit.report.gate.reasons)
+                ? safetyAudit.report.gate.reasons
+                : [];
+            for (const reason of gateReasons) {
+                issues.push(`safety_gate_reason_${String(reason).toLowerCase()}`);
+            }
         }
     }
 
