@@ -1,6 +1,7 @@
 const {
     parseShiftSteps,
     renderTrafficCommand,
+    buildSafetyAuditArgs,
     evaluatePreflight,
     runOrchestration
 } = require('../scripts/run_active_active_orchestration');
@@ -26,6 +27,26 @@ describe('run_active_active_orchestration', () => {
         expect(cmd).toContain('--b 75');
         expect(cmd).toContain('--ra ra');
         expect(cmd).toContain('--rb rb');
+    });
+
+    it('builds safety-audit args from orchestration config', () => {
+        const args = buildSafetyAuditArgs({
+            regionA: 'https://region-a.example.com',
+            regionB: 'https://region-b.example.com',
+            healthPath: '/api/ready',
+            timeoutMs: 4500,
+            trafficCommandTemplate: 'shift --a {WEIGHT_A} --b {WEIGHT_B}',
+            mode: 'execute'
+        });
+
+        expect(args).toEqual(expect.arrayContaining([
+            '--region-a-url', 'https://region-a.example.com',
+            '--region-b-url', 'https://region-b.example.com',
+            '--health-path', '/api/ready',
+            '--timeout-ms', '4500',
+            '--traffic-command', 'shift --a {WEIGHT_A} --b {WEIGHT_B}',
+            '--force-db-queue-audit', 'true'
+        ]));
     });
 
     it('completes orchestration when probes stay healthy', async () => {

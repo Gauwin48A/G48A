@@ -47,8 +47,8 @@ function createDependency({ key, owner, status, dependency, impact, fallback, de
 function buildConfig(args = {}, env = process.env) {
     return {
         runId: args['run-id'] || env.ACTIVE_ACTIVE_DEPENDENCY_RUN_ID || `aadg-${Date.now()}`,
-        regionA: normalizeUrl(args['region-a-url'] || env.REGION_A_BASE_URL || ''),
-        regionB: normalizeUrl(args['region-b-url'] || env.REGION_B_BASE_URL || ''),
+        regionA: normalizeUrl(args['region-a-url'] || env.REGION_A_BASE_URL || 'http://127.0.0.1:5055'),
+        regionB: normalizeUrl(args['region-b-url'] || env.REGION_B_BASE_URL || 'http://127.0.0.1:6055'),
         healthPath: args['health-path'] || env.ACTIVE_ACTIVE_HEALTH_PATH || '/api/ready',
         timeoutMs: parseIntSafe(args['timeout-ms'] || env.ACTIVE_ACTIVE_TIMEOUT_MS, 5000),
         trafficCommand: String(args['traffic-command'] || env.ACTIVE_ACTIVE_TRAFFIC_COMMAND || '').trim(),

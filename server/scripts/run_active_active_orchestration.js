@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 const axios = require('axios');
 
 function parseBoolean(value, fallback = false) {
@@ -109,6 +109,22 @@ function buildConfig(args = {}, env = process.env) {
     };
 }
 
+function buildSafetyAuditArgs(config) {
+    const args = [
+        '--region-a-url', String(config.regionA || ''),
+        '--region-b-url', String(config.regionB || ''),
+        '--health-path', String(config.healthPath || '/api/ready'),
+        '--timeout-ms', String(config.timeoutMs || 5000),
+        '--traffic-command', String(config.trafficCommandTemplate || '')
+    ];
+
+    if (config.mode === 'execute') {
+        args.push('--force-db-queue-audit', 'true');
+    }
+
+    return args;
+}
+
 function loadJson(filePath) {
     const raw = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(raw);
@@ -163,11 +179,10 @@ function resolveSafetyAudit(config) {
     }
 
     try {
-        const stdout = execSync(`node "${config.safetyAuditScript}"`, {
+        const stdout = execFileSync('node', [config.safetyAuditScript, ...buildSafetyAuditArgs(config)], {
             encoding: 'utf8',
             stdio: ['ignore', 'pipe', 'pipe'],
-            timeout: 90000,
-            shell: true
+            timeout: 90000
         });
         const reportPath = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_AUDIT')
             || parseOutputValue(stdout, 'ACTIVE_ACTIVE_DEPENDENCY_REPORT');
@@ -502,6 +517,7 @@ module.exports = {
     parseShiftSteps,
     renderTrafficCommand,
     buildConfig,
+    buildSafetyAuditArgs,
     evaluatePreflight,
     resolveSafetyAudit,
     runOrchestration

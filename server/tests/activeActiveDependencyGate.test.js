@@ -1,6 +1,12 @@
-const { evaluateDependencies } = require('../scripts/run_active_active_dependency_gate');
+const { buildConfig, evaluateDependencies } = require('../scripts/run_active_active_dependency_gate');
 
 describe('run_active_active_dependency_gate', () => {
+    it('defaults region urls to orchestration-compatible localhost values', () => {
+        const config = buildConfig({}, {});
+        expect(config.regionA).toBe('http://127.0.0.1:5055');
+        expect(config.regionB).toBe('http://127.0.0.1:6055');
+    });
+
     it('returns BLOCKED when core live dependencies are missing', () => {
         const result = evaluateDependencies({
             config: {
@@ -63,4 +69,3 @@ describe('run_active_active_dependency_gate', () => {
         expect(result.blockedCount).toBe(0);
     });
 });
-
