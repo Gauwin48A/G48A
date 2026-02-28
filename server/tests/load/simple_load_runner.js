@@ -23,6 +23,8 @@ const baseUrl = argMap.get('base-url') || process.env.LOAD_TEST_BASE_URL || 'htt
 const outDir = argMap.get('out-dir') || path.join(__dirname, 'results');
 const timeoutMs = Number.parseInt(argMap.get('timeout-ms') || process.env.LOAD_TEST_TIMEOUT_MS || '8000', 10);
 const scenarioArg = (argMap.get('scenario') || process.env.LOAD_TEST_SCENARIO || 'both').toLowerCase();
+const bootstrapRetries = Number.parseInt(argMap.get('bootstrap-retries') || process.env.LOAD_TEST_BOOTSTRAP_RETRIES || '3', 10);
+const bootstrapRetryDelayMs = Number.parseInt(argMap.get('bootstrap-retry-delay-ms') || process.env.LOAD_TEST_BOOTSTRAP_RETRY_DELAY_MS || '250', 10);
 
 const profiles = {
   normal: {
@@ -182,6 +184,31 @@ async function parseResponseJson(response) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, options = {}, { retries = 3, retryDelayMs = 250 } = {}) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status >= 500 && attempt < retries) {
+        await sleep(retryDelayMs * attempt);
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= retries) break;
+      await sleep(retryDelayMs * attempt);
+    }
+  }
+
+  throw lastError || new Error(`fetch_with_retry_failed url=${url}`);
+}
+
 async function bootstrapAuthSession() {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-9);
   const signupPayload = {
@@ -191,10 +218,13 @@ async function bootstrapAuthSession() {
     password: 'StrongPass123!A'
   };
 
-  const signupRes = await fetch(`${baseUrl}/api/auth/signup`, {
+  const signupRes = await fetchWithRetry(`${baseUrl}/api/auth/signup`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(signupPayload)
+  }, {
+    retries: bootstrapRetries,
+    retryDelayMs: bootstrapRetryDelayMs
   });
   const signupJson = await parseResponseJson(signupRes);
 
@@ -210,7 +240,10 @@ async function bootstrapAuthSession() {
 
 async function bootstrapLoadContext() {
   const auth = await bootstrapAuthSession();
-  const postsRes = await fetch(`${baseUrl}/api/posts`);
+  const postsRes = await fetchWithRetry(`${baseUrl}/api/posts`, {}, {
+    retries: bootstrapRetries,
+    retryDelayMs: bootstrapRetryDelayMs
+  });
   const postsJson = await parseResponseJson(postsRes);
   const rawPosts = Array.isArray(postsJson)
     ? postsJson
