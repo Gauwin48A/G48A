@@ -5,7 +5,7 @@ Owner: Engineering
 Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Current Position
-Production baseline plus remaining half-pending closure items are complete with fresh evidence.
+Backend remaining + half-pending closure items are COMPLETE with fresh evidence. One strategic dependency remains BLOCKED outside repository control.
 
 ## Completed Phases
 1. Baseline reconciliation and single truth model - COMPLETE
@@ -18,6 +18,7 @@ Production baseline plus remaining half-pending closure items are complete with 
 8. CI quality and client perf budget gates - COMPLETE
 9. Non-dry-run load validation and artifacting - COMPLETE
 10. Enhancement closure pack (ML challenge, failover drill, flag audit) - COMPLETE
+11. Active-active preflight and DB/queue safety gate hardening - COMPLETE
 
 ## Evidence Pack
 - Validation matrix: `server/docs/TEST_VALIDATION.md`
@@ -25,19 +26,18 @@ Production baseline plus remaining half-pending closure items are complete with 
 - Monitoring ownership evidence: `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
 - Failover drill evidence: `server/docs/32_FAILOVER_DRILL_EVIDENCE.md`
 - Flag rollout operational audit: `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md`
+- Active-active orchestration evidence:
+  - complete synthetic execute path: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
+  - safety-gated blocked path: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-59-205Z.json`
 
 ## Remaining Roadmap
 ### Phase A (next)
 - Multi-region active-active deployment automation
 - Status: BLOCKED
 - Execution backlog: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
-- Completed prerequisite: orchestration command set (`npm run failover:active-active`) with synthetic artifact `server/docs/artifacts/active_active_orchestration_2026-02-28T04-03-13-550Z.json`
-
-### Phase B (next)
-- ML hard-block policy decisioning with staged safeguards
-- Status: PENDING
+- Current external dependency: staging traffic-manager credentials + secondary region provisioning
 
 ## Launch Gate
 - Baseline scope: GO
-- Enhancement scope: CONDITIONAL GO
-- Known hard blocker: none for baseline paths
+- Backend enhancement scope: CONDITIONAL GO
+- Known hard blocker for full multi-region launch: live infra dependency

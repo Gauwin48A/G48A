@@ -2,72 +2,57 @@
 
 Date: 2026-02-28
 Owner: Engineering
-Scope: remaining + half-pending closure
+Scope: backend remaining + half-pending closure
 Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
-## Priority 1
-- [x] Eliminate Jest open-handle warning in server teardown.
+## Priority 1 (Execution-Verified)
+- [x] Active-active orchestration preflight hardening (traffic command + safety gate + dual-region health checks).
   - Status: COMPLETE
-  - Evidence: `server/tests/jest.teardown.js`
-  - Validation: `npm test` (15 suites, 98 tests passed; no open-handle warning in summary)
-- [x] Apply and rerun migrations in target DB environment.
+  - Evidence: `server/scripts/run_active_active_orchestration.js`, `server/tests/runActiveActiveOrchestration.test.js`, `server/tests/failoverSafetyService.test.js`
+  - Validation: `npm test -- tests/runActiveActiveOrchestration.test.js tests/failoverSafetyService.test.js`
+- [x] DB/queue failover eligibility audit with guardrail thresholds.
   - Status: COMPLETE
-  - Evidence: `server/docs/artifacts/migration_apply_rerun_20260228_083255.log`
-  - Validation: `node run_migration.js <migration>` apply+rereun for six new migrations on `localhost:5433/db_shop_2`
-- [x] Execute non-dry-run load and store artifact.
+  - Evidence: `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json`
+  - Validation: `npm run failover:db-queue-audit`
+- [x] Active-active staged shift execution proof under synthetic probes.
   - Status: COMPLETE
-  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json`
-  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both`
+  - Evidence: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
+  - Validation: `$env:ACTIVE_ACTIVE_SYNTHETIC_PROBE='true'; $env:MULTI_REGION_EXEC_MODE='execute'; $env:ACTIVE_ACTIVE_REQUIRE_SAFETY_GATE='false'; $env:ACTIVE_ACTIVE_TRAFFIC_COMMAND='echo SHIFT_A={WEIGHT_A} SHIFT_B={WEIGHT_B}'; npm run failover:active-active`
 
-## Priority 2
-- [x] Expand regression net for optimized backend routes/services.
+## Priority 2 (Performance + Readiness)
+- [x] Legit vs abuse profile rerun with tuned limiter behavior.
   - Status: COMPLETE
-  - Evidence: `server/tests/feedController.regression.test.js`, `server/tests/postController.regression.test.js`, `server/tests/featureFlagService.test.js`, `server/tests/mlFraudScoringService.test.js`, `server/tests/flagAuditService.test.js`, `server/tests/riskTelemetryService.test.js`
-  - Validation: targeted test command and full `npm test`
-- [x] Keep client perf budget gate enforced in CI.
-  - Status: OPERATIONAL
-  - Evidence: `.github/workflows/ci.yml`, `client/scripts/check-bundle-budget.mjs`
-  - Validation: `npm run test`, `npm run build`, `npm run check:bundle-budget`
-- [x] Add weekly monitoring verification rows with concrete artifacts.
+  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T04-39-36-639Z.json`
+  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both`
+- [x] Authenticated read/write load closure.
+  - Status: COMPLETE
+  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T04-39-15-952Z.json`
+  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full`
+- [x] Readiness matrix refresh for `ready/degraded/not_ready` paths.
+  - Status: COMPLETE
+  - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T04-39-50-002Z.json`
+  - Validation: `npm run readiness:probe-matrix`
+
+## Priority 3 (Trust/Ops Evidence)
+- [x] Fraud telemetry export sink path run (`risk_decision_events`).
+  - Status: COMPLETE
+  - Evidence: `server/scripts/export_risk_telemetry.js`, `server/docs/artifacts/risk_telemetry_export_2026-02-28T04-35-51-718Z.json`
+  - Validation: `node scripts/export_risk_telemetry.js --lookback-minutes 1440 --limit 500 --batch-size 100`
+- [x] Weekly ops evidence rows refreshed with exact artifacts.
   - Status: COMPLETE
   - Evidence: `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
-  - Validation: dated rows include artifact links and runbook mapping
-
-## Priority 3
-- [x] ML fraud scoring productionization (challenge-only cohort, telemetry, kill switch proof).
-  - Status: COMPLETE
-  - Evidence: `server/src/services/mlFraudScoringService.js`, `server/src/services/riskTelemetryService.js`, `server/docs/29_ML_FRAUD_SPIKE_PLAN.md`
-  - Validation: tests + rollout simulation artifact
-- [x] Multi-region failover validation (tabletop drill evidence).
-  - Status: COMPLETE
-  - Evidence: `server/docs/32_FAILOVER_DRILL_EVIDENCE.md`, `server/docs/artifacts/failover_tabletop_2026-02-28T03-07-34-846Z.json`
-  - Validation: `npm run failover:tabletop`
-- [x] Progressive rollout operationalization (lifecycle/audit/abort simulation).
-  - Status: COMPLETE
-  - Evidence: `server/src/services/flagAuditService.js`, `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md`, `server/docs/artifacts/flag_rollout_simulation_2026-02-28T03-07-35-168Z.json`
-  - Validation: `npm run flags:simulate-rollout`
+  - Validation: dated rows + runbook step mapping present
 
 ## Remaining Blockers
-- [ ] Multi-region active-active deployment automation.
+- [ ] Live multi-region active-active weighted shift in staging cloud.
   - Status: BLOCKED
-  - Dependency: infrastructure provisioning and traffic manager credentials in staging cloud
-  - Impact: live active-active validation remains unavailable from current environment
+  - Dependency: secondary region stack + traffic manager credentials + replica endpoints
+  - Impact: production-like live failover cutover still unavailable from this environment
+  - Owner: Platform Engineering
+  - Fallback path: keep synthetic orchestration + tabletop + DB/queue safety audit gates active until infra is provisioned
 
-## Next-Step Execution (Current Run)
-- [x] Add persistent fraud decision telemetry path.
-  - Status: COMPLETE
-  - Evidence: `server/database/migrations/add_risk_decision_events.sql`, `server/src/services/riskTelemetryService.js`
-  - Validation: migration apply+rereun + `npm test -- tests/riskTelemetryService.test.js`
-- [x] Expand load validation to authenticated read/write profile.
-  - Status: COMPLETE
-  - Evidence: `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json`
-  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full`
-- [x] Convert multi-region next actions into execution ticket backlog.
-  - Status: COMPLETE
-  - Evidence: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
-  - Validation: backlog includes owner, target date, dependency, and success criteria rows
-- [x] Add active-active orchestration command and synthetic validation artifact.
-  - Status: COMPLETE
-  - Evidence: `server/scripts/run_active_active_orchestration.js`, `server/tests/runActiveActiveOrchestration.test.js`, `server/docs/artifacts/active_active_orchestration_2026-02-28T04-03-13-550Z.json`
-  - Validation: `npm test -- tests/runActiveActiveOrchestration.test.js` and `$env:ACTIVE_ACTIVE_SYNTHETIC_PROBE='true'; npm run failover:active-active`
-
+## Current Gate Snapshot
+- Backend tests: COMPLETE (`18/18 suites`, `111/111 tests`)
+- Client quality gates: COMPLETE (`test`, `build`, `check:bundle-budget`)
+- Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_20260228_100712.log`)
+- Scope status: OPERATIONAL for baseline, COMPLETE for closure items, BLOCKED only for external infra dependency

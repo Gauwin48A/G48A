@@ -10,16 +10,17 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - Week 9-10 strategic enhancements: BLOCKED (depends on external multi-region infra)
 
 ## Completed in Current Closure Cycle
-- [x] ML fraud challenge-only cohort path with decision telemetry and kill switch proof.
-- [x] Multi-region failover tabletop drill with RTO/RPO evidence artifact.
-- [x] Progressive flag lifecycle metadata and audit simulation.
-- [x] Split load scenarios (legit vs abuse) with limiter tuning and new artifact.
-- [x] Readiness scenario matrix (`ready`, `degraded`, `not_ready`) with probe artifact.
-- [x] Ops evidence rows refreshed with dated runbook-linked entries.
-- [x] Active-active orchestration command set and synthetic validation artifact.
+- [x] ML fraud challenge-only cohort path with telemetry export path and kill-switch proof.
+- [x] Multi-region failover tabletop drill with timestamped RTO/RPO evidence.
+- [x] Progressive flag lifecycle metadata + audit simulation + abort proof.
+- [x] Split load scenarios (legit vs abuse) rerun with tuned limiter behavior.
+- [x] Readiness matrix (`ready`, `degraded`, `not_ready`) refreshed with staging-like snapshot config.
+- [x] Ops evidence rows refreshed with dated runbook-linked references.
+- [x] Active-active orchestration hardening (preflight gate, command enforcement, dual-region health checks).
+- [x] DB/queue failover safety gate and idempotency audit command path.
 
-## Next 72 Hours (Strict Order)
-1. Start execution of MR-001 and MR-002 from `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`.
-2. Obtain staging traffic-manager credentials and connect `ACTIVE_ACTIVE_TRAFFIC_COMMAND` for live shift execution.
-3. Add external export sink for persisted risk telemetry events (`risk_decision_events` -> analytics pipeline).
-4. Tune authenticated write-path p95 under 50k profile (current `/api/posts/batch-view` tail latency is high).
+## Next 72 Hours (Strict Backend Sequence)
+1. Provision secondary region stack and inject traffic-manager credentials (owner: Platform Engineering).
+2. Configure `FAILOVER_PRIMARY_DB_URL` + `FAILOVER_REPLICA_DB_URL`, then rerun `npm run failover:db-queue-audit` until gate becomes `COMPLETE`.
+3. Execute live weighted shift using real `ACTIVE_ACTIVE_TRAFFIC_COMMAND` with `MULTI_REGION_EXEC_MODE=execute` and safety gate enabled.
+4. Re-run full validation matrix and publish live multi-region artifact replacing synthetic evidence.
