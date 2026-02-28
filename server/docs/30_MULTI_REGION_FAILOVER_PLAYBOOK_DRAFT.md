@@ -3,16 +3,22 @@
 Date: 2026-02-28
 Owner: Platform Engineering
 Status: COMPLETE
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Trigger Conditions
-1. API 5xx > 5% for 10 minutes with provider-side confirmation.
+1. API `5xx` > 5% for 10 minutes with provider-side confirmation.
 2. Primary DB unavailable > 3 minutes.
 3. Regional network isolation confirmed by synthetic probes.
 
+## Pre-Failover Safety Gate
+1. Run `npm run failover:db-queue-audit`.
+2. Confirm `gate.status == COMPLETE` for live execute mode.
+3. If gate is `BLOCKED` or `PENDING`, halt live shift and continue on synthetic/tabletop path.
+
 ## Failover Sequence
 1. Declare SEV-1 and freeze deploys/schema changes.
-2. Shift edge/load-balancer traffic to standby region.
-3. Validate `health`, `api/health`, `api/ready`.
+2. Shift edge/load-balancer traffic to standby region (weighted steps).
+3. Validate `health`, `api/health`, `api/ready` in both regions.
 4. Validate critical paths (auth/feed/post/payment webhook).
 5. Announce stabilization state.
 
@@ -22,8 +28,11 @@ Status: COMPLETE
 3. Re-validate critical paths and queue drain.
 4. Close incident after sustained stability window.
 
-## Drill Evidence
-- Tabletop artifact: `server/docs/artifacts/failover_tabletop_2026-02-28T03-07-34-846Z.json`
+## Drill and Orchestration Evidence
+- Tabletop artifact: `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`
+- Execute-mode synthetic weighted shift: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
+- Safety-gated blocked execute proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-59-205Z.json`
+- DB/queue safety audit artifact: `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json`
 - Evidence summary: `server/docs/32_FAILOVER_DRILL_EVIDENCE.md`
 
 ## Measured/Estimated Targets from Drill
@@ -31,6 +40,8 @@ Status: COMPLETE
 - Estimated RPO: 4 minutes
 
 ## Remaining Dependencies
-- Active-active failover automation is still pending.
-- Queue replay consistency under real failover load is not yet proven.
-- Automatic conflict resolution for cross-region writes remains pending.
+- Live active-active execution remains BLOCKED by missing secondary-region infra and traffic-manager credentials.
+- Cross-region write conflict automation is still manual.
+
+## Exit Status
+Playbook is COMPLETE for automation + drill readiness, with one explicit external BLOCKED dependency for live infra execution.
