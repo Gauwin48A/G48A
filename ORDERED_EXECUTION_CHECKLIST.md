@@ -21,7 +21,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 2 - Failover Drill + Active-Active Hardening
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-32-20-280Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T05-32-30-475Z.json`
+- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-39-10-441Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T05-39-10-475Z.json`
 - Validation: `npm run failover:tabletop`, `npm run failover:active-active:dependency-gate`, `npm run failover:db-queue-audit`, `npm run failover:active-active` + synthetic execute command
 
 ### Phase 3 - Progressive Rollout Operationalization
@@ -65,10 +65,11 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Active-Active Live Path
 - Staged synthetic execute path: COMPLETE (`active_active_orchestration_2026-02-28T04-34-16-803Z.json`)
-- Safety gate enforced path: BLOCKED (`active_active_orchestration_2026-02-28T05-32-30-475Z.json`, reason `safety_gate_blocked` with explicit dependency reasons)
-- Dependency gate evidence path: BLOCKED (`active_active_dependency_gate_2026-02-28T05-32-20-280Z.json`)
+- Safety gate enforced path: BLOCKED (`active_active_orchestration_2026-02-28T05-39-10-475Z.json`, reason `safety_gate_blocked` with explicit dependency reasons)
+- Dependency gate evidence path: BLOCKED (`active_active_dependency_gate_2026-02-28T05-39-10-441Z.json`)
 - Live infra execution: BLOCKED (external credentials and secondary region provisioning)
 
 ## Final Checklist Status
 - Pending items in scoped backend closure: 0
 - Blocked items in scoped backend closure: 1 (external infra only)
+

@@ -23,7 +23,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | Fraud ML challenge rollout + telemetry + kill switch | COMPLETE | `server/src/services/mlFraudScoringService.js`, `server/src/services/riskTelemetryService.js`, `server/scripts/export_risk_telemetry.js`, `server/docs/29_ML_FRAUD_SPIKE_PLAN.md` | `npm test -- tests/mlFraudScoringService.test.js tests/riskTelemetryService.test.js` + telemetry export command |
 | Progressive feature flag governance + audit trail | COMPLETE | `server/src/services/featureFlagService.js`, `server/src/services/flagAuditService.js`, `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md` | `npm run flags:simulate-rollout` |
 | Multi-region failover validation (tabletop) | COMPLETE | `server/docs/30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md`, `server/docs/32_FAILOVER_DRILL_EVIDENCE.md` | `npm run failover:tabletop` |
-| Multi-region active-active orchestration command set | COMPLETE | `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/tests/runActiveActiveOrchestration.test.js`, `server/tests/activeActiveDependencyGate.test.js`, `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-32-20-280Z.json` | synthetic execute command with traffic template + `npm run failover:active-active:dependency-gate` |
+| Multi-region active-active orchestration command set | COMPLETE | `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/tests/runActiveActiveOrchestration.test.js`, `server/tests/activeActiveDependencyGate.test.js`, `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-39-10-441Z.json` | synthetic execute command with traffic template + `npm run failover:active-active:dependency-gate` |
 | Multi-region DB/queue safety gate and idempotency audit | COMPLETE | `server/scripts/run_failover_db_queue_audit.js`, `server/src/services/failoverSafetyService.js`, `server/tests/failoverSafetyService.test.js` | `npm run failover:db-queue-audit` |
 | Limiter/load maturity (legit vs abuse profiles) | COMPLETE | `server/src/middleware/security.js`, `server/tests/load/results/capacity_report_2026-02-28T04-39-36-639Z.json` | non-dry load command in `server/docs/LOAD_CAPACITY_REPORT.md` |
 | Authenticated read/write load coverage | COMPLETE | `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T04-39-15-952Z.json` | `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full` |
@@ -32,7 +32,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | Migration safety and idempotency | COMPLETE | `server/docs/artifacts/migration_apply_rerun_20260228_100712.log` | apply+rereun migration loop |
 
 ## Validation Snapshot
-- Server full suite: PASS (`npm test` -> 19/19 suites, 113/113 tests, no open-handle warning).
+- Server full suite: PASS (`npm test` -> 19/19 suites, 115/115 tests, no open-handle warning).
 - Server focused suites: PASS (`npm run test:critical-paths`, `npm run test:waf`, `npm run test:e2e:journeys`).
 - Client quality gates: PASS (`npm run test`, `npm run build`, `npm run check:bundle-budget`).
 - Readiness matrix: PASS (`ready`, `degraded`, `not_ready` scenarios proven).
@@ -50,3 +50,4 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Gate Decision
 - Launch recommendation for current backend scope: CONDITIONAL GO
 - Enhancement roadmap recommendation: CONDITIONAL GO
+
