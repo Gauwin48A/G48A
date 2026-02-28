@@ -18,7 +18,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - [x] Ops evidence rows refreshed with dated runbook-linked entries.
 
 ## Next 72 Hours (Strict Order)
-1. Multi-region automation backlog breakdown into infra tickets and owners.
-2. Add persistent risk telemetry export sink (current in-memory is intentionally lightweight).
-3. Add load test profiles for authenticated heavy read routes and write bursts.
-4. Add canary rollback dashboard widget tied to flag audit log.
+1. Start execution of MR-001 and MR-002 from `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`.
+2. Add external export sink for persisted risk telemetry events (`risk_decision_events` -> analytics pipeline).
+3. Tune authenticated write-path p95 under 50k profile (current `/api/posts/batch-view` tail latency is high).
+4. Add canary rollback dashboard widget tied to feature-flag audit events.

@@ -9,10 +9,13 @@ Scope: read-heavy baseline (`/health`, `/api/posts`, `/api/public-wall`)
   - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 4000`
 - Tuned split-profile command:
   - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both`
+- Extended auth + write-burst command:
+  - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full`
 
 ## Artifacts
 - Baseline: `server/tests/load/results/capacity_report_2026-02-27T18-50-27-835Z.json`
-- Final tuned run: `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json`
+- Final tuned run (`both`): `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json`
+- Extended run (`full`): `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json`
 
 ## Headline Outcomes
 1. Normal traffic profile after limiter tuning:
@@ -24,6 +27,10 @@ Scope: read-heavy baseline (`/health`, `/api/posts`, `/api/public-wall`)
 - 5xx: `0`
 - Failure rate: `59.31%`
 3. Protection objective preserved: abusive concentration is throttled while legitimate distribution is served.
+4. Authenticated read/write scenario:
+- `/api/auth/me`: 0 failures across profiles.
+- `/api/auth/validate`: 0 failures across profiles.
+- `/api/posts/batch-view` (write burst): 0 failures across profiles, with expected higher p95 at 50k profile.
 
 ## Baseline vs Final Deltas
 - Baseline (single profile) had 7200 throttled requests (all 429) and 0 5xx.

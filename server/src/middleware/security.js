@@ -15,7 +15,7 @@ exports.apiLimiter = rateLimit({
     windowMs: API_LIMIT_WINDOW_MS,
     max: (req) => {
         const scenario = String(req.headers['x-load-test-scenario'] || '').toLowerCase();
-        if (RATE_LIMIT_ALLOW_SIMULATED_IDS && scenario === 'normal') {
+        if (RATE_LIMIT_ALLOW_SIMULATED_IDS && ['normal', 'authenticated'].includes(scenario)) {
             return API_RATE_LIMIT_NORMAL_SCENARIO_MAX;
         }
         return API_RATE_LIMIT_MAX;

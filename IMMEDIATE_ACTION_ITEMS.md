@@ -53,3 +53,17 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Dependency: infrastructure provisioning and traffic manager orchestration
   - Impact: failover remains drill-validated, not fully automated
 
+## Next-Step Execution (Current Run)
+- [x] Add persistent fraud decision telemetry path.
+  - Status: COMPLETE
+  - Evidence: `server/database/migrations/add_risk_decision_events.sql`, `server/src/services/riskTelemetryService.js`
+  - Validation: migration apply+rereun + `npm test -- tests/riskTelemetryService.test.js`
+- [x] Expand load validation to authenticated read/write profile.
+  - Status: COMPLETE
+  - Evidence: `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json`
+  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full`
+- [x] Convert multi-region next actions into execution ticket backlog.
+  - Status: COMPLETE
+  - Evidence: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
+  - Validation: backlog includes owner, target date, dependency, and success criteria rows
+

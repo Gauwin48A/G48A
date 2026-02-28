@@ -18,8 +18,10 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | Client build | `npm run build` | PASS | Vite build succeeded |
 | 2026-02-28 | Client bundle budget | `npm run check:bundle-budget` | PASS | JS/CSS raw+gzip budgets passed |
 | 2026-02-28 | Migration apply+rereun | `node run_migration.js <migration>` loop (6 files x2) | PASS | `server/docs/artifacts/migration_apply_rerun_20260228_083255.log` |
+| 2026-02-28 | Risk telemetry migration | `node run_migration.js database/migrations/add_risk_decision_events.sql` (apply + rerun) | PASS | terminal output captured in session run |
 | 2026-02-28 | Readiness probe matrix | `npm run readiness:probe-matrix` | PASS | `server/docs/artifacts/readiness_probe_matrix_2026-02-28T03-21-08-731Z.json` |
 | 2026-02-28 | Load test (live) | `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both` | PASS | `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json` |
+| 2026-02-28 | Load test (auth/read-write) | `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full` | PASS | `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json` |
 | 2026-02-28 | Flag rollout simulation | `npm run flags:simulate-rollout` | PASS | `server/docs/artifacts/flag_rollout_simulation_2026-02-28T03-07-35-168Z.json` |
 | 2026-02-28 | Failover tabletop simulation | `npm run failover:tabletop` | PASS | `server/docs/artifacts/failover_tabletop_2026-02-28T03-07-34-846Z.json` |
 

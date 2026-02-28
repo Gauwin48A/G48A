@@ -25,15 +25,17 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | Ops | Readiness endpoint dependency checks | OPERATIONAL |
 | Ops | Migration safety/idempotency evidence | COMPLETE |
 | Scale | Split load profile (legit vs abuse) + tuned limiter policy | COMPLETE |
+| Scale | Authenticated read/write load profile coverage | COMPLETE |
 | Enhancement | ML fraud challenge cohort rollout with telemetry | COMPLETE |
+| Enhancement | Fraud telemetry persistence schema path | COMPLETE |
 | Enhancement | Progressive flag lifecycle + audit + rollback simulation | COMPLETE |
 | Enhancement | Multi-region tabletop drill (trigger->failover->rollback) | COMPLETE |
 | Future | Multi-region active-active deployment automation | PENDING |
 
 ## Rollup
 - OPERATIONAL: 15
-- COMPLETE: 5
+- COMPLETE: 7
 - PENDING: 1
 - BLOCKED: 0
 
-Current baseline survival ratio: 95% (20/21)
+Current baseline survival ratio: 95.45% (21/22)

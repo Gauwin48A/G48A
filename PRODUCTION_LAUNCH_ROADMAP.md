@@ -30,6 +30,7 @@ Production baseline plus remaining half-pending closure items are complete with 
 ### Phase A (next)
 - Multi-region active-active deployment automation
 - Status: PENDING
+- Execution backlog: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
 
 ### Phase B (next)
 - ML hard-block policy decisioning with staged safeguards

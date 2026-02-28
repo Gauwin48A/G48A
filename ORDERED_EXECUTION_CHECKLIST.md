@@ -78,3 +78,14 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - Readiness Endpoint Hardening (ready/degraded/not_ready matrix): COMPLETE
 - Ops Evidence Completion: COMPLETE
 
+## Next-Step Extension (Current Run)
+- Persistent fraud telemetry schema path: COMPLETE
+  - Evidence: `server/database/migrations/add_risk_decision_events.sql`
+  - Validation: apply+rereun migration command
+- Authenticated read/write load profile: COMPLETE
+  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json`
+  - Validation: load runner `--scenario full`
+- Multi-region active-active execution backlog: COMPLETE
+  - Evidence: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
+  - Validation: owner/date/dependency/success-criteria checklist populated
+

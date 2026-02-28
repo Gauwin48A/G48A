@@ -673,7 +673,7 @@ exports.getRiskDecisionMetrics = async (req, res) => {
     }
 
     const lookbackMinutes = parsePositiveInt(req.query.lookback_minutes, 60, 24 * 60);
-    const metrics = riskTelemetryService.getMetrics({ lookbackMinutes });
+    const metrics = await riskTelemetryService.getMetrics({ lookbackMinutes });
 
     return res.json({
       success: true,

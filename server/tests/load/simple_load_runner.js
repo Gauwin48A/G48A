@@ -34,13 +34,33 @@ const profiles = {
     '1k': { simulatedUsers: 1, concurrentWorkers: 10, totalRequests: 200 },
     '10k': { simulatedUsers: 1, concurrentWorkers: 30, totalRequests: 800 },
     '50k': { simulatedUsers: 1, concurrentWorkers: 80, totalRequests: 2400 }
+  },
+  authenticated: {
+    '1k': { simulatedUsers: 500, concurrentWorkers: 8, totalRequests: 240 },
+    '10k': { simulatedUsers: 5000, concurrentWorkers: 20, totalRequests: 800 },
+    '50k': { simulatedUsers: 10000, concurrentWorkers: 40, totalRequests: 1800 }
   }
 };
 
-const endpoints = [
+const readEndpoints = [
   { key: 'health', method: 'GET', path: '/health' },
   { key: 'posts', method: 'GET', path: '/api/posts' },
   { key: 'publicWall', method: 'GET', path: '/api/public-wall' }
+];
+
+const authenticatedEndpoints = [
+  { key: 'authMe', method: 'GET', path: '/api/auth/me', requiresAuth: true },
+  { key: 'authValidate', method: 'GET', path: '/api/auth/validate', requiresAuth: true },
+  {
+    key: 'batchViewWrite',
+    method: 'POST',
+    path: '/api/posts/batch-view',
+    requiresAuth: false,
+    bodyFactory: (requestNumber, scenario, profileName, context = {}) => ({
+      postIds: Array.isArray(context.samplePostIds) ? context.samplePostIds.slice(0, 5) : [],
+      metadata: `${scenario}/${profileName}/${requestNumber}`
+    })
+  }
 ];
 
 function percentile(sorted, p) {
@@ -64,7 +84,13 @@ async function runSingleRequest(url, method, headers) {
   const timeoutRef = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(url, { method, headers, signal: controller.signal });
+    const options = { method, headers, signal: controller.signal };
+    if (method !== 'GET' && method !== 'HEAD' && headers?.__body !== undefined) {
+      options.body = headers.__body;
+      delete headers.__body;
+    }
+
+    const response = await fetch(url, options);
     const latencyMs = performance.now() - start;
     return {
       ok: response.ok,
@@ -83,7 +109,7 @@ async function runSingleRequest(url, method, headers) {
   }
 }
 
-async function runEndpointLoad(profileName, profileConfig, endpoint, scenario) {
+async function runEndpointLoad(profileName, profileConfig, endpoint, scenario, context = {}) {
   const target = `${baseUrl}${endpoint.path}`;
   const latencies = [];
   let success = 0;
@@ -100,6 +126,13 @@ async function runEndpointLoad(profileName, profileConfig, endpoint, scenario) {
         launched,
         profileConfig.simulatedUsers
       );
+      if (endpoint.requiresAuth && endpoint.authToken) {
+        headers.authorization = `Bearer ${endpoint.authToken}`;
+      }
+      if (typeof endpoint.bodyFactory === 'function') {
+        headers['content-type'] = 'application/json';
+        headers.__body = JSON.stringify(endpoint.bodyFactory(launched, scenario, profileName, context));
+      }
       const result = await runSingleRequest(target, endpoint.method, headers);
       latencies.push(result.latencyMs);
       if (result.ok) {
@@ -139,6 +172,75 @@ async function runEndpointLoad(profileName, profileConfig, endpoint, scenario) {
   };
 }
 
+async function parseResponseJson(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
+
+async function bootstrapAuthSession() {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-9);
+  const signupPayload = {
+    fullName: 'Load Test User',
+    email: `load.${Date.now()}@example.com`,
+    phone: `9${suffix}`,
+    password: 'StrongPass123!A'
+  };
+
+  const signupRes = await fetch(`${baseUrl}/api/auth/signup`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(signupPayload)
+  });
+  const signupJson = await parseResponseJson(signupRes);
+
+  if (!signupRes.ok || !signupJson?.token) {
+    throw new Error(`Auth bootstrap failed: status=${signupRes.status} body=${JSON.stringify(signupJson)}`);
+  }
+
+  return {
+    token: signupJson.token,
+    userId: signupJson.user?.id || null
+  };
+}
+
+async function bootstrapLoadContext() {
+  const auth = await bootstrapAuthSession();
+  const postsRes = await fetch(`${baseUrl}/api/posts`);
+  const postsJson = await parseResponseJson(postsRes);
+  const rawPosts = Array.isArray(postsJson)
+    ? postsJson
+    : Array.isArray(postsJson?.posts)
+      ? postsJson.posts
+      : [];
+  const samplePostIds = rawPosts
+    .map((post) => post?.post_id || post?.id)
+    .filter(Boolean)
+    .slice(0, 20);
+
+  return {
+    auth,
+    samplePostIds
+  };
+}
+
+function resolveScenarios(value) {
+  if (value === 'both') return ['normal', 'abuse'];
+  if (value === 'full' || value === 'all') return ['normal', 'abuse', 'authenticated'];
+  if (value === 'authenticated' || value === 'auth') return ['authenticated'];
+  if (value === 'normal' || value === 'abuse') return [value];
+  return [];
+}
+
+function endpointsForScenario(scenario) {
+  if (scenario === 'authenticated') return authenticatedEndpoints;
+  return readEndpoints;
+}
+
 function writeReport(report) {
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
@@ -150,12 +252,10 @@ function writeReport(report) {
 }
 
 async function main() {
-  const scenarios = scenarioArg === 'both'
-    ? ['normal', 'abuse']
-    : [scenarioArg].filter((value) => value === 'normal' || value === 'abuse');
+  const scenarios = resolveScenarios(scenarioArg);
 
   if (!scenarios.length) {
-    throw new Error(`Invalid scenario "${scenarioArg}". Use normal, abuse, or both.`);
+    throw new Error(`Invalid scenario "${scenarioArg}". Use normal, abuse, both, authenticated, or full.`);
   }
 
   if (dryRun) {
@@ -166,7 +266,10 @@ async function main() {
       timeoutMs,
       scenarios,
       profiles,
-      endpoints
+      endpoints: {
+        read: readEndpoints,
+        authenticated: authenticatedEndpoints
+      }
     };
     const outputPath = writeReport(report);
     console.log(`[LOAD] Dry-run plan written: ${outputPath}`);
@@ -174,12 +277,19 @@ async function main() {
   }
 
   const summary = [];
+  const loadContext = scenarios.includes('authenticated')
+    ? await bootstrapLoadContext()
+    : { auth: null, samplePostIds: [] };
   for (const scenario of scenarios) {
     const profileSet = profiles[scenario];
+    const scenarioEndpoints = endpointsForScenario(scenario).map((endpoint) => ({
+      ...endpoint,
+      authToken: endpoint.requiresAuth ? loadContext.auth?.token : null
+    }));
     for (const [profileName, profileConfig] of Object.entries(profileSet)) {
-      for (const endpoint of endpoints) {
+      for (const endpoint of scenarioEndpoints) {
         // eslint-disable-next-line no-await-in-loop
-        const result = await runEndpointLoad(profileName, profileConfig, endpoint, scenario);
+        const result = await runEndpointLoad(profileName, profileConfig, endpoint, scenario, loadContext);
         summary.push(result);
         console.log(
           `[LOAD] ${scenario} ${profileName} ${endpoint.path} -> p95=${result.latency.p95}ms errors=${result.totals.failures}`
