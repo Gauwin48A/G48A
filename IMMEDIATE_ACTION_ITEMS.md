@@ -62,6 +62,6 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Current Gate Snapshot
 - Backend tests: COMPLETE (`23/23 suites`, `130/130 tests`)
 - Client quality gates: COMPLETE (`test`, `build`, `check:bundle-budget`)
-- Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_20260228_121027.log`)
+- Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_2026-02-28T06-59-30-334Z.json`)
 - Scope status: OPERATIONAL for baseline, COMPLETE for closure items, BLOCKED only for external infra dependency
 

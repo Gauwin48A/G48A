@@ -29,7 +29,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | Authenticated read/write load coverage | COMPLETE | `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-47-18-177Z.json` | `node tests/load/simple_load_runner.js --scenario full` |
 | Readiness endpoint hardening matrix | COMPLETE | `server/src/services/readinessService.js`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-41-25-786Z.json` | `npm run readiness:probe-matrix` |
 | Ops evidence and runbook linkage | OPERATIONAL | `server/docs/MONITORING_ALERTING_OWNERSHIP.md`, `docs/INCIDENT_RESPONSE.md`, `server/docs/security-policy.md` | weekly evidence rows + mapped runbook steps |
-| Migration safety and idempotency | COMPLETE | `server/docs/artifacts/migration_apply_rerun_20260228_121027.log` | apply+rereun migration loop |
+| Migration safety and idempotency | COMPLETE | `server/docs/artifacts/migration_apply_rerun_2026-02-28T06-59-30-334Z.json` | `node scripts/run_migration_apply_rerun.js` |
 
 ## Validation Snapshot
 - Server full suite: PASS (`npm test` -> 23/23 suites, 130/130 tests, no open-handle warning).

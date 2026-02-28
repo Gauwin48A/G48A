@@ -18,7 +18,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | Client tests | `npm run test` | PASS | vitest: 1/1 test passed |
 | 2026-02-28 | Client build | `npm run build` | PASS | Vite production build succeeded |
 | 2026-02-28 | Client bundle budget | `npm run check:bundle-budget` | PASS | JS/CSS raw+gzip budgets passed |
-| 2026-02-28 | Migration apply+rereun | migration loop (6 files x2) | PASS | `server/docs/artifacts/migration_apply_rerun_20260228_121027.log` |
+| 2026-02-28 | Migration apply+rereun | `node scripts/run_migration_apply_rerun.js` | PASS | `server/docs/artifacts/migration_apply_rerun_2026-02-28T06-59-30-334Z.json` (`status=COMPLETE`, 6 files x2 runs) |
 | 2026-02-28 | Readiness probe matrix | `npm run readiness:probe-matrix` | PASS | `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-41-25-786Z.json` |
 | 2026-02-28 | Load test (legit+abuse) | `node tests/load/simple_load_runner.js --scenario both` | PASS | `server/tests/load/results/capacity_report_2026-02-28T06-45-36-850Z.json` (`targetSource=managed_server`) |
 | 2026-02-28 | Load test (full incl auth/write) | `node tests/load/simple_load_runner.js --scenario full` | PASS | `server/tests/load/results/capacity_report_2026-02-28T06-47-18-177Z.json` (`targetSource=managed_server`) |
