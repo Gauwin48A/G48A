@@ -841,21 +841,22 @@ exports.logout = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await runQuery(
-      'SELECT user_id, name, phone_number, email, role FROM users WHERE user_id = $1',
+      `
+        SELECT
+          u.user_id,
+          u.name,
+          u.phone_number,
+          u.email,
+          u.role,
+          COALESCE(r.tier, 'Bronze') AS tier
+        FROM users u
+        LEFT JOIN rewards r ON r.user_id = u.user_id
+        WHERE u.user_id = $1
+      `,
       [req.user.id]
     );
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const u = user.rows[0];
-
-    let userTier = 'Bronze';
-    try {
-      const rewardsResult = await runQuery('SELECT tier FROM rewards WHERE user_id = $1', [req.user.id]);
-      if (rewardsResult.rows.length > 0) {
-        userTier = rewardsResult.rows[0].tier;
-      }
-    } catch {
-      // rewards table is optional for auth identity response
-    }
 
     res.json({
       id: u.user_id,
@@ -863,7 +864,7 @@ exports.getMe = async (req, res) => {
       role: u.role,
       phone: u.phone_number,
       email: u.email,
-      tier: userTier
+      tier: u.tier || 'Bronze'
     });
   } catch (err) {
     logger.error('[GET ME ERROR]', err);
