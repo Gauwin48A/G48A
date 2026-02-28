@@ -33,6 +33,7 @@ for (let i = 0; i < args.length; i += 1) {
 const dryRun = argMap.get('dry-run') === 'true' || argMap.get('dry-run') === '1';
 const baseUrl = argMap.get('base-url') || process.env.LOAD_TEST_BASE_URL || 'http://127.0.0.1:5000';
 let activeBaseUrl = baseUrl;
+const baseUrlExplicit = argMap.has('base-url') || Boolean(process.env.LOAD_TEST_BASE_URL);
 const outDir = argMap.get('out-dir') || path.join(__dirname, 'results');
 const timeoutMs = Number.parseInt(argMap.get('timeout-ms') || process.env.LOAD_TEST_TIMEOUT_MS || '8000', 10);
 const scenarioArg = (argMap.get('scenario') || process.env.LOAD_TEST_SCENARIO || 'both').toLowerCase();
@@ -45,6 +46,7 @@ const bootstrapServerPort = Number.parseInt(
   argMap.get('bootstrap-port') || process.env.LOAD_TEST_BOOTSTRAP_PORT || '5099',
   10
 );
+const preferManagedTarget = autoBootstrapServer && !baseUrlExplicit;
 
 const profiles = {
   normal: {
@@ -235,11 +237,30 @@ async function probeTarget(url) {
     if (!healthRes.ok) {
       return { ok: false, reason: `health_status_${healthRes.status}` };
     }
+
+    const readyRes = await fetch(`${url}/api/ready`, { method: 'GET' });
+    if (!readyRes.ok) {
+      return { ok: false, reason: `ready_status_${readyRes.status}` };
+    }
+    const readyJson = await parseResponseJson(readyRes);
+    const hasExpectedReadyShape =
+      readyJson &&
+      typeof readyJson === 'object' &&
+      typeof readyJson.status === 'string' &&
+      readyJson.checks &&
+      typeof readyJson.checks === 'object' &&
+      !Array.isArray(readyJson.checks) &&
+      readyJson.checks.db &&
+      readyJson.checks.requiredConfig;
+    if (!hasExpectedReadyShape) {
+      return { ok: false, reason: 'ready_shape_mismatch' };
+    }
+
     const postsRes = await fetch(`${url}/api/posts`, { method: 'GET' });
     if (postsRes.status === 404) {
       return { ok: false, reason: 'posts_route_missing' };
     }
-    return { ok: true, reason: 'healthy' };
+    return { ok: true, reason: 'healthy_and_ready_shape_valid' };
   } catch (error) {
     return { ok: false, reason: error.message || 'probe_failed' };
   }
@@ -251,6 +272,26 @@ async function waitForHealthyTarget(url, timeout = 45000, intervalMs = 500) {
     // eslint-disable-next-line no-await-in-loop
     const probe = await probeTarget(url);
     if (probe.ok) return true;
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(intervalMs);
+  }
+  return false;
+}
+
+async function waitForStableTarget(url, timeout = 60000, intervalMs = 500, requiredConsecutivePasses = 3) {
+  const startedAt = Date.now();
+  let consecutivePasses = 0;
+  while (Date.now() - startedAt < timeout) {
+    // eslint-disable-next-line no-await-in-loop
+    const probe = await probeTarget(url);
+    if (probe.ok) {
+      consecutivePasses += 1;
+      if (consecutivePasses >= requiredConsecutivePasses) {
+        return true;
+      }
+    } else {
+      consecutivePasses = 0;
+    }
     // eslint-disable-next-line no-await-in-loop
     await sleep(intervalMs);
   }
@@ -300,6 +341,22 @@ function terminateManagedServer(proc, timeoutMs = 5000) {
 }
 
 async function resolveLoadTarget() {
+  if (preferManagedTarget) {
+    const managed = startManagedServer(bootstrapServerPort);
+    const managedBaseUrl = `http://127.0.0.1:${bootstrapServerPort}`;
+    const healthy = await waitForStableTarget(managedBaseUrl, 60000, 500, 3);
+    if (!healthy) {
+      await terminateManagedServer(managed);
+      throw new Error(`Managed target not stable on ${managedBaseUrl}`);
+    }
+    return {
+      usedBaseUrl: managedBaseUrl,
+      requestedBaseUrl: baseUrl,
+      managedServer: managed,
+      probeReason: 'managed_target_preferred'
+    };
+  }
+
   const initialProbe = await probeTarget(baseUrl);
   if (initialProbe.ok) {
     return {
@@ -329,7 +386,7 @@ async function resolveLoadTarget() {
   });
 
   const managedBaseUrl = `http://127.0.0.1:${bootstrapServerPort}`;
-  const healthy = await waitForHealthyTarget(managedBaseUrl, 45000, 500);
+  const healthy = await waitForStableTarget(managedBaseUrl, 60000, 500, 3);
   if (!healthy) {
     const tail = [...managedStdOut.slice(-5), ...managedStdErr.slice(-5)].join(' | ');
     await terminateManagedServer(managed);
