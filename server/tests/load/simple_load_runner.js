@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const { performance } = require('perf_hooks');
+const { spawn } = require('child_process');
 
 const args = process.argv.slice(2);
 const argMap = new Map();
@@ -31,11 +32,19 @@ for (let i = 0; i < args.length; i += 1) {
 
 const dryRun = argMap.get('dry-run') === 'true' || argMap.get('dry-run') === '1';
 const baseUrl = argMap.get('base-url') || process.env.LOAD_TEST_BASE_URL || 'http://127.0.0.1:5000';
+let activeBaseUrl = baseUrl;
 const outDir = argMap.get('out-dir') || path.join(__dirname, 'results');
 const timeoutMs = Number.parseInt(argMap.get('timeout-ms') || process.env.LOAD_TEST_TIMEOUT_MS || '8000', 10);
 const scenarioArg = (argMap.get('scenario') || process.env.LOAD_TEST_SCENARIO || 'both').toLowerCase();
 const bootstrapRetries = Number.parseInt(argMap.get('bootstrap-retries') || process.env.LOAD_TEST_BOOTSTRAP_RETRIES || '3', 10);
 const bootstrapRetryDelayMs = Number.parseInt(argMap.get('bootstrap-retry-delay-ms') || process.env.LOAD_TEST_BOOTSTRAP_RETRY_DELAY_MS || '250', 10);
+const autoBootstrapServer = !['0', 'false', 'no', 'off'].includes(
+  String(argMap.get('auto-bootstrap-server') || process.env.LOAD_TEST_AUTO_BOOTSTRAP_SERVER || 'true').toLowerCase()
+);
+const bootstrapServerPort = Number.parseInt(
+  argMap.get('bootstrap-port') || process.env.LOAD_TEST_BOOTSTRAP_PORT || '5099',
+  10
+);
 
 const profiles = {
   normal: {
@@ -123,7 +132,7 @@ async function runSingleRequest(url, method, headers) {
 }
 
 async function runEndpointLoad(profileName, profileConfig, endpoint, scenario, context = {}) {
-  const target = `${baseUrl}${endpoint.path}`;
+  const target = `${activeBaseUrl}${endpoint.path}`;
   const latencies = [];
   let success = 0;
   let failures = 0;
@@ -220,38 +229,187 @@ async function fetchWithRetry(url, options = {}, { retries = 3, retryDelayMs = 2
   throw lastError || new Error(`fetch_with_retry_failed url=${url}`);
 }
 
-async function bootstrapAuthSession() {
-  const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-9);
-  const signupPayload = {
-    fullName: 'Load Test User',
-    email: `load.${Date.now()}@example.com`,
-    phone: `9${suffix}`,
-    password: 'StrongPass123!A'
-  };
+async function probeTarget(url) {
+  try {
+    const healthRes = await fetch(`${url}/health`, { method: 'GET' });
+    if (!healthRes.ok) {
+      return { ok: false, reason: `health_status_${healthRes.status}` };
+    }
+    const postsRes = await fetch(`${url}/api/posts`, { method: 'GET' });
+    if (postsRes.status === 404) {
+      return { ok: false, reason: 'posts_route_missing' };
+    }
+    return { ok: true, reason: 'healthy' };
+  } catch (error) {
+    return { ok: false, reason: error.message || 'probe_failed' };
+  }
+}
 
-  const signupRes = await fetchWithRetry(`${baseUrl}/api/auth/signup`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(signupPayload)
-  }, {
-    retries: bootstrapRetries,
-    retryDelayMs: bootstrapRetryDelayMs
+async function waitForHealthyTarget(url, timeout = 45000, intervalMs = 500) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeout) {
+    // eslint-disable-next-line no-await-in-loop
+    const probe = await probeTarget(url);
+    if (probe.ok) return true;
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(intervalMs);
+  }
+  return false;
+}
+
+function startManagedServer(port) {
+  const serverRoot = path.resolve(__dirname, '..', '..');
+  return spawn(process.execPath, ['src/index.js'], {
+    cwd: serverRoot,
+    env: {
+      ...process.env,
+      PORT: String(port)
+    },
+    stdio: ['ignore', 'pipe', 'pipe']
   });
-  const signupJson = await parseResponseJson(signupRes);
+}
 
-  if (!signupRes.ok || !signupJson?.token) {
-    throw new Error(`Auth bootstrap failed: status=${signupRes.status} body=${JSON.stringify(signupJson)}`);
+function terminateManagedServer(proc, timeoutMs = 5000) {
+  return new Promise((resolve) => {
+    if (!proc || proc.killed || proc.exitCode !== null) {
+      resolve();
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      try {
+        proc.kill('SIGKILL');
+      } catch {
+        // Ignore force-kill failure during teardown.
+      }
+      resolve();
+    }, timeoutMs);
+
+    proc.once('exit', () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+
+    try {
+      proc.kill('SIGTERM');
+    } catch {
+      clearTimeout(timeout);
+      resolve();
+    }
+  });
+}
+
+async function resolveLoadTarget() {
+  const initialProbe = await probeTarget(baseUrl);
+  if (initialProbe.ok) {
+    return {
+      usedBaseUrl: baseUrl,
+      requestedBaseUrl: baseUrl,
+      managedServer: null,
+      probeReason: initialProbe.reason
+    };
+  }
+
+  if (!autoBootstrapServer) {
+    throw new Error(`Load target probe failed for ${baseUrl}: ${initialProbe.reason}`);
+  }
+
+  const managed = startManagedServer(bootstrapServerPort);
+  const managedStdErr = [];
+  managed.stderr.on('data', (chunk) => {
+    const line = String(chunk || '').trim();
+    if (!line) return;
+    if (managedStdErr.length < 20) managedStdErr.push(line);
+  });
+  const managedStdOut = [];
+  managed.stdout.on('data', (chunk) => {
+    const line = String(chunk || '').trim();
+    if (!line) return;
+    if (managedStdOut.length < 20) managedStdOut.push(line);
+  });
+
+  const managedBaseUrl = `http://127.0.0.1:${bootstrapServerPort}`;
+  const healthy = await waitForHealthyTarget(managedBaseUrl, 45000, 500);
+  if (!healthy) {
+    const tail = [...managedStdOut.slice(-5), ...managedStdErr.slice(-5)].join(' | ');
+    await terminateManagedServer(managed);
+    throw new Error(`Managed load target failed health check on ${managedBaseUrl}; logs=${tail || 'none'}`);
   }
 
   return {
-    token: signupJson.token,
-    userId: signupJson.user?.id || null
+    usedBaseUrl: managedBaseUrl,
+    requestedBaseUrl: baseUrl,
+    managedServer: managed,
+    probeReason: initialProbe.reason
   };
+}
+
+async function bootstrapAuthSession() {
+  const entropy = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const suffix9 = entropy.slice(-9).padStart(9, '7');
+  const email = `load.${Date.now()}@example.com`;
+  const password = 'StrongPass123!A';
+
+  const signupPayloads = [
+    {
+      name: 'Load Test User',
+      fullName: 'Load Test User',
+      email,
+      phone: `9${suffix9}`,
+      password
+    },
+    {
+      name: 'Load Test User',
+      email,
+      password
+    }
+  ];
+
+  const extractToken = (payload) =>
+    payload?.token || payload?.accessToken || payload?.data?.token || payload?.data?.accessToken || null;
+
+  const extractUserId = (payload) =>
+    payload?.user?.id || payload?.user?.user_id || payload?.data?.user?.id || payload?.data?.user?.user_id || null;
+
+  let lastFailure = null;
+  for (let attemptIndex = 0; attemptIndex < signupPayloads.length; attemptIndex += 1) {
+    const signupPayload = signupPayloads[attemptIndex];
+    const signupRes = await fetchWithRetry(`${activeBaseUrl}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(signupPayload)
+    }, {
+      retries: bootstrapRetries,
+      retryDelayMs: bootstrapRetryDelayMs
+    });
+    const signupJson = await parseResponseJson(signupRes);
+    const token = extractToken(signupJson);
+
+    if (signupRes.ok && token) {
+      return {
+        token,
+        userId: extractUserId(signupJson)
+      };
+    }
+
+    lastFailure = `status=${signupRes.status} body=${JSON.stringify(signupJson)}`;
+
+    // Only try legacy payload shape when response indicates legacy contract.
+    if (attemptIndex === 0) {
+      const normalizedError = JSON.stringify(signupJson || {}).toLowerCase();
+      const legacyContractHint = normalizedError.includes('name, email, and password');
+      if (!legacyContractHint) {
+        break;
+      }
+    }
+  }
+
+  throw new Error(`Auth bootstrap failed: ${lastFailure || 'unknown_signup_failure'}`);
 }
 
 async function bootstrapLoadContext() {
   const auth = await bootstrapAuthSession();
-  const postsRes = await fetchWithRetry(`${baseUrl}/api/posts`, {}, {
+  const postsRes = await fetchWithRetry(`${activeBaseUrl}/api/posts`, {}, {
     retries: bootstrapRetries,
     retryDelayMs: bootstrapRetryDelayMs
   });
@@ -320,38 +478,54 @@ async function main() {
     return;
   }
 
-  const summary = [];
-  const loadContext = scenarios.includes('authenticated')
-    ? await bootstrapLoadContext()
-    : { auth: null, samplePostIds: [] };
-  for (const scenario of scenarios) {
-    const profileSet = profiles[scenario];
-    const scenarioEndpoints = endpointsForScenario(scenario).map((endpoint) => ({
-      ...endpoint,
-      authToken: endpoint.requiresAuth ? loadContext.auth?.token : null
-    }));
-    for (const [profileName, profileConfig] of Object.entries(profileSet)) {
-      for (const endpoint of scenarioEndpoints) {
-        // eslint-disable-next-line no-await-in-loop
-        const result = await runEndpointLoad(profileName, profileConfig, endpoint, scenario, loadContext);
-        summary.push(result);
-        console.log(
-          `[LOAD] ${scenario} ${profileName} ${endpoint.path} -> p95=${result.latency.p95}ms errors=${result.totals.failures}`
-        );
+  const target = await resolveLoadTarget();
+  activeBaseUrl = target.usedBaseUrl;
+  let managedServerStopped = false;
+  const stopManagedServer = async () => {
+    if (managedServerStopped) return;
+    managedServerStopped = true;
+    await terminateManagedServer(target.managedServer);
+  };
+
+  try {
+    const summary = [];
+    const loadContext = scenarios.includes('authenticated')
+      ? await bootstrapLoadContext()
+      : { auth: null, samplePostIds: [] };
+    for (const scenario of scenarios) {
+      const profileSet = profiles[scenario];
+      const scenarioEndpoints = endpointsForScenario(scenario).map((endpoint) => ({
+        ...endpoint,
+        authToken: endpoint.requiresAuth ? loadContext.auth?.token : null
+      }));
+      for (const [profileName, profileConfig] of Object.entries(profileSet)) {
+        for (const endpoint of scenarioEndpoints) {
+          // eslint-disable-next-line no-await-in-loop
+          const result = await runEndpointLoad(profileName, profileConfig, endpoint, scenario, loadContext);
+          summary.push(result);
+          console.log(
+            `[LOAD] ${scenario} ${profileName} ${endpoint.path} -> p95=${result.latency.p95}ms errors=${result.totals.failures}`
+          );
+        }
       }
     }
-  }
 
-  const report = {
-    mode: 'live',
-    generatedAt: new Date().toISOString(),
-    baseUrl,
-    timeoutMs,
-    scenarios,
-    results: summary
-  };
-  const outputPath = writeReport(report);
-  console.log(`[LOAD] Capacity report written: ${outputPath}`);
+    const report = {
+      mode: 'live',
+      generatedAt: new Date().toISOString(),
+      baseUrl: activeBaseUrl,
+      requestedBaseUrl: target.requestedBaseUrl,
+      targetSource: target.managedServer ? 'managed_server' : 'external_target',
+      targetProbeReason: target.probeReason,
+      timeoutMs,
+      scenarios,
+      results: summary
+    };
+    const outputPath = writeReport(report);
+    console.log(`[LOAD] Capacity report written: ${outputPath}`);
+  } finally {
+    await stopManagedServer();
+  }
 }
 
 main().catch((err) => {

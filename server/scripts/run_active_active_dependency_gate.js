@@ -169,6 +169,10 @@ function evaluateDependencies({
     dbQueueAudit = null
 } = {}) {
     const dependencies = [];
+    const regionAProbeStatus = String(probeRegionA?.healthStatus || '').toLowerCase();
+    const regionBProbeStatus = String(probeRegionB?.healthStatus || '').toLowerCase();
+    const regionAProbeSkipped = regionAProbeStatus === 'skipped' || regionAProbeStatus === 'probe_skipped';
+    const regionBProbeSkipped = regionBProbeStatus === 'skipped' || regionBProbeStatus === 'probe_skipped';
 
     dependencies.push(
         createDependency({
@@ -188,12 +192,15 @@ function evaluateDependencies({
         createDependency({
             key: 'region_a_endpoint',
             owner: 'Platform Engineering',
-            status: config.regionA ? (probeRegionA?.ok ? 'COMPLETE' : 'BLOCKED') : 'BLOCKED',
+            status: config.regionA
+                ? (probeRegionA?.ok && !regionAProbeSkipped ? 'COMPLETE' : 'BLOCKED')
+                : 'BLOCKED',
             dependency: 'REGION_A_BASE_URL reachable readiness endpoint',
             impact: 'Cannot verify source region health before failover',
             fallback: 'Keep tabletop and synthetic probes active',
             details: {
                 regionA: config.regionA || null,
+                probeSkipped: regionAProbeSkipped,
                 probe: probeRegionA || null
             }
         })
@@ -203,12 +210,15 @@ function evaluateDependencies({
         createDependency({
             key: 'region_b_endpoint',
             owner: 'Platform Engineering',
-            status: config.regionB ? (probeRegionB?.ok ? 'COMPLETE' : 'BLOCKED') : 'BLOCKED',
+            status: config.regionB
+                ? (probeRegionB?.ok && !regionBProbeSkipped ? 'COMPLETE' : 'BLOCKED')
+                : 'BLOCKED',
             dependency: 'REGION_B_BASE_URL reachable readiness endpoint',
             impact: 'Cannot verify destination region health before failover',
             fallback: 'Block live shift and keep simulation coverage',
             details: {
                 regionB: config.regionB || null,
+                probeSkipped: regionBProbeSkipped,
                 probe: probeRegionB || null
             }
         })
@@ -262,11 +272,9 @@ function evaluateDependencies({
     };
 }
 
-function writeArtifact(config, report) {
-    fs.mkdirSync(config.outputDir, { recursive: true });
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const outputPath = path.join(config.outputDir, `active_active_dependency_gate_${stamp}.json`);
-    const payload = {
+function buildArtifactPayload(config, report) {
+    const gate = report?.gate || {};
+    return {
         generatedAt: new Date().toISOString(),
         runId: config.runId,
         config: {
@@ -276,8 +284,20 @@ function writeArtifact(config, report) {
             timeoutMs: config.timeoutMs,
             skipProbe: config.skipProbe
         },
+        status: gate.status || 'BLOCKED',
+        eligible: Boolean(gate.eligible),
+        blockedCount: Number.isFinite(gate.blockedCount) ? gate.blockedCount : 0,
+        reasons: Array.isArray(gate.reasons) ? gate.reasons : [],
+        dependencies: Array.isArray(gate.dependencies) ? gate.dependencies : [],
         report
     };
+}
+
+function writeArtifact(config, report) {
+    fs.mkdirSync(config.outputDir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const outputPath = path.join(config.outputDir, `active_active_dependency_gate_${stamp}.json`);
+    const payload = buildArtifactPayload(config, report);
     fs.writeFileSync(outputPath, JSON.stringify(payload, null, 2), 'utf8');
     return outputPath;
 }
@@ -289,8 +309,8 @@ async function main() {
     let probeRegionA;
     let probeRegionB;
     if (config.skipProbe) {
-        probeRegionA = { ok: true, healthStatus: 'skipped' };
-        probeRegionB = { ok: true, healthStatus: 'skipped' };
+        probeRegionA = { ok: false, healthStatus: 'probe_skipped' };
+        probeRegionB = { ok: false, healthStatus: 'probe_skipped' };
     } else {
         [probeRegionA, probeRegionB] = await Promise.all([
             probeRegion(config.regionA, config.healthPath, config.timeoutMs),
@@ -341,5 +361,6 @@ module.exports = {
     parseArgs,
     buildConfig,
     buildDbQueueAuditArgs,
-    evaluateDependencies
+    evaluateDependencies,
+    buildArtifactPayload
 };

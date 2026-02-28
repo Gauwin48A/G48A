@@ -2,7 +2,8 @@ const {
     parseArgs,
     buildConfig,
     buildDbQueueAuditArgs,
-    evaluateDependencies
+    evaluateDependencies,
+    buildArtifactPayload
 } = require('../scripts/run_active_active_dependency_gate');
 
 describe('run_active_active_dependency_gate', () => {
@@ -104,5 +105,65 @@ describe('run_active_active_dependency_gate', () => {
         expect(result.status).toBe('COMPLETE');
         expect(result.eligible).toBe(true);
         expect(result.blockedCount).toBe(0);
+    });
+
+    it('keeps region dependencies BLOCKED when probes are explicitly skipped', () => {
+        const result = evaluateDependencies({
+            config: {
+                trafficCommand: 'shift --a {WEIGHT_A} --b {WEIGHT_B}',
+                regionA: 'https://region-a.example.com',
+                regionB: 'https://region-b.example.com',
+                primaryDbUrl: 'postgres://primary',
+                replicaDbUrl: 'postgres://replica'
+            },
+            probeRegionA: { ok: false, healthStatus: 'probe_skipped' },
+            probeRegionB: { ok: false, healthStatus: 'probe_skipped' },
+            dbQueueAudit: {
+                status: 'COMPLETE',
+                report: {
+                    gate: {
+                        status: 'COMPLETE',
+                        reasons: []
+                    }
+                }
+            }
+        });
+
+        expect(result.status).toBe('BLOCKED');
+        expect(result.reasons).toEqual(expect.arrayContaining(['region_a_endpoint', 'region_b_endpoint']));
+        const regionA = result.dependencies.find((item) => item.key === 'region_a_endpoint');
+        const regionB = result.dependencies.find((item) => item.key === 'region_b_endpoint');
+        expect(regionA?.details?.probeSkipped).toBe(true);
+        expect(regionB?.details?.probeSkipped).toBe(true);
+    });
+
+    it('mirrors gate summary at top-level artifact payload for automation consumers', () => {
+        const report = {
+            gate: {
+                status: 'BLOCKED',
+                eligible: false,
+                blockedCount: 2,
+                reasons: ['region_a_endpoint', 'region_b_endpoint'],
+                dependencies: [{ key: 'region_a_endpoint' }, { key: 'region_b_endpoint' }]
+            },
+            probeRegionA: { ok: false, healthStatus: 'probe_error' },
+            probeRegionB: { ok: false, healthStatus: 'probe_error' }
+        };
+
+        const payload = buildArtifactPayload({
+            runId: 'aadg-test',
+            regionA: 'https://region-a.example.com',
+            regionB: 'https://region-b.example.com',
+            healthPath: '/api/ready',
+            timeoutMs: 5000,
+            skipProbe: false
+        }, report);
+
+        expect(payload.status).toBe('BLOCKED');
+        expect(payload.eligible).toBe(false);
+        expect(payload.blockedCount).toBe(2);
+        expect(payload.reasons).toEqual(['region_a_endpoint', 'region_b_endpoint']);
+        expect(payload.dependencies).toHaveLength(2);
+        expect(payload.report).toEqual(report);
     });
 });
