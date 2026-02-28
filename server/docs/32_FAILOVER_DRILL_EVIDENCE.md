@@ -12,7 +12,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Artifacts
 - Tabletop: `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`
 - Active-active synthetic execute: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
-- Active-active safety-gate blocked proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-59-205Z.json`
+- Active-active safety-gate blocked proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json`
+- Active-active dependency gate proof: `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json`
 - DB/queue safety gate snapshot: `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json`
 
 ## Timeline Summary (T+)

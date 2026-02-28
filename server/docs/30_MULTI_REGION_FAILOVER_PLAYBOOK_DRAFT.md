@@ -11,9 +11,11 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 3. Regional network isolation confirmed by synthetic probes.
 
 ## Pre-Failover Safety Gate
-1. Run `npm run failover:db-queue-audit`.
-2. Confirm `gate.status == COMPLETE` for live execute mode.
-3. If gate is `BLOCKED` or `PENDING`, halt live shift and continue on synthetic/tabletop path.
+1. Run `npm run failover:active-active:dependency-gate`.
+2. Confirm dependency gate `status == COMPLETE` and all prerequisite rows are `COMPLETE`.
+3. Run `npm run failover:db-queue-audit`.
+4. Confirm DB/queue `gate.status == COMPLETE` for live execute mode.
+5. If any gate is `BLOCKED` or `PENDING`, halt live shift and continue on synthetic/tabletop path.
 
 ## Failover Sequence
 1. Declare SEV-1 and freeze deploys/schema changes.
@@ -31,7 +33,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Drill and Orchestration Evidence
 - Tabletop artifact: `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`
 - Execute-mode synthetic weighted shift: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
-- Safety-gated blocked execute proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-59-205Z.json`
+- Safety-gated blocked execute proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json`
+- Dependency gate artifact: `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json`
 - DB/queue safety audit artifact: `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json`
 - Evidence summary: `server/docs/32_FAILOVER_DRILL_EVIDENCE.md`
 

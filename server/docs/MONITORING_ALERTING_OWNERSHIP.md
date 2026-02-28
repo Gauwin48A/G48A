@@ -13,7 +13,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | Auth security | login failure ratio | >20% for 15m | Security Lead | `docs/INCIDENT_RESPONSE.md` section 4 "Token/session failures" steps 1-3 |
 | Fraud rollout | challenge dropoff | >15% window | Trust Engineering | `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md` abort path, then `docs/INCIDENT_RESPONSE.md` section 2 step 5 toggle off flag |
 | Active-active failover | region health divergence | sustained 3m | Platform Engineering | `server/docs/30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md` failover sequence steps 1-5 and rollback sequence steps 1-4 |
-| Failover safety gate | `gate.status != COMPLETE` | any execute attempt | Platform Engineering + DB Engineering | run `npm run failover:db-queue-audit`; resolve dependencies in `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md` MR-001/MR-002 |
+| Failover safety gate | dependency gate or DB/queue gate != `COMPLETE` | any execute attempt | Platform Engineering + DB Engineering | run `npm run failover:active-active:dependency-gate` and `npm run failover:db-queue-audit`; resolve dependencies in `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md` MR-001/MR-002 |
 | Payments | reconciliation mismatch | >0.5% daily | Payments Owner | `docs/INCIDENT_RESPONSE.md` section 3 "Database" steps 1-3 + payments owner escalation |
 | Readiness | `/api/ready` reports `not_ready` | sustained 5m | Platform Engineering | `docs/INCIDENT_RESPONSE.md` section 2 step 4 checks + readiness matrix command rerun |
 
@@ -27,7 +27,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | Trust Engineering | Fraud telemetry export verification | COMPLETE | `server/docs/artifacts/risk_telemetry_export_2026-02-28T04-35-51-718Z.json` |
 | 2026-02-28 | Platform Engineering | Failover tabletop drill evidence | COMPLETE | `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json` |
 | 2026-02-28 | Platform Engineering | Active-active staged execute simulation | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json` |
-| 2026-02-28 | Platform Engineering | Active-active safety-gate enforcement proof | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-59-205Z.json` |
+| 2026-02-28 | Platform Engineering | Active-active dependency-gate output verification | COMPLETE | `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json` |
+| 2026-02-28 | Platform Engineering | Active-active safety-gate enforcement proof | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json` |
 | 2026-02-28 | Platform Engineering | DB/queue failover eligibility audit | COMPLETE | `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json` |
 | 2026-02-28 | Engineering | Validation matrix refresh | COMPLETE | `server/docs/TEST_VALIDATION.md` |
 
