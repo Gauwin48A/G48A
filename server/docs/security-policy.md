@@ -35,7 +35,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - `npm run failover:active-active:dependency-gate`: PASS (`BLOCKED` expected with explicit dependency rows until infra is provisioned)
 - `npm run failover:db-queue-audit`: PASS (gate result currently `BLOCKED` by external infra dependency)
 - execute-mode active-active proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
-- safety-gate enforcement proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json`
+- safety-gate enforcement proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-32-30-475Z.json`
 
 ## Policy Sync Rule
 Any security control update must be reflected in:

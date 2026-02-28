@@ -15,8 +15,8 @@ Move from drill-validated failover to infrastructure-validated active-active rea
   - `npm test -- tests/runActiveActiveOrchestration.test.js tests/activeActiveDependencyGate.test.js tests/failoverSafetyService.test.js`
   - `npm run failover:active-active:dependency-gate`
   - execute proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
-  - safety-gated block proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json`
-  - dependency-gate block proof: `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json`
+  - safety-gated block proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-32-30-475Z.json`
+  - dependency-gate block proof: `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-32-20-280Z.json`
   - DB/queue safety audit: `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json`
 
 ## Ticket Backlog (Execution-Ready)

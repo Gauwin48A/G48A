@@ -27,8 +27,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | Trust Engineering | Fraud telemetry export verification | COMPLETE | `server/docs/artifacts/risk_telemetry_export_2026-02-28T04-35-51-718Z.json` |
 | 2026-02-28 | Platform Engineering | Failover tabletop drill evidence | COMPLETE | `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json` |
 | 2026-02-28 | Platform Engineering | Active-active staged execute simulation | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json` |
-| 2026-02-28 | Platform Engineering | Active-active dependency-gate output verification | COMPLETE | `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json` |
-| 2026-02-28 | Platform Engineering | Active-active safety-gate enforcement proof | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json` |
+| 2026-02-28 | Platform Engineering | Active-active dependency-gate output verification | COMPLETE | `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-32-20-280Z.json` |
+| 2026-02-28 | Platform Engineering | Active-active safety-gate enforcement proof | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T05-32-30-475Z.json` |
 | 2026-02-28 | Platform Engineering | DB/queue failover eligibility audit | COMPLETE | `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json` |
 | 2026-02-28 | Engineering | Validation matrix refresh | COMPLETE | `server/docs/TEST_VALIDATION.md` |
 

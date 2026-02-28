@@ -22,12 +22,12 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | Load test (legit+abuse) | `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both` | PASS | `server/tests/load/results/capacity_report_2026-02-28T04-39-36-639Z.json` |
 | 2026-02-28 | Load test (full incl auth/write) | `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full` | PASS | `server/tests/load/results/capacity_report_2026-02-28T04-39-15-952Z.json` |
 | 2026-02-28 | DB/queue failover safety audit | `npm run failover:db-queue-audit` | PASS | `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json` (status `BLOCKED` due missing replica infra, expected) |
-| 2026-02-28 | Active-active dependency gate | `npm run failover:active-active:dependency-gate` | PASS | `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json` (`BLOCKED` with explicit owner/dependency/impact/fallback rows, expected) |
+| 2026-02-28 | Active-active dependency gate | `npm run failover:active-active:dependency-gate` | PASS | `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-32-20-280Z.json` (`BLOCKED` with explicit owner/dependency/impact/fallback rows, expected; runtime optimized to sub-second path when replica inputs are missing) |
 | 2026-02-28 | Failover tabletop simulation | `npm run failover:tabletop` | PASS | `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json` |
 | 2026-02-28 | Flag rollout simulation | `npm run flags:simulate-rollout` | PASS | `server/docs/artifacts/flag_rollout_simulation_2026-02-28T04-40-00-831Z.json` |
 | 2026-02-28 | Active-active default command | `npm run failover:active-active` | PASS | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-40-06-363Z.json` (`blocked_initial_unhealthy_region_a` expected without live region endpoints) |
 | 2026-02-28 | Active-active execute proof (synthetic probes) | execute-mode env command with traffic template | PASS | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json` |
-| 2026-02-28 | Active-active safety-gated proof | execute-mode with safety gate enabled | PASS | `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json` (`blocked_preflight` by design; issue `safety_gate_blocked`) |
+| 2026-02-28 | Active-active safety-gated proof | execute-mode with safety gate enabled | PASS | `server/docs/artifacts/active_active_orchestration_2026-02-28T05-32-30-475Z.json` (`blocked_preflight` by design; issues include `safety_gate_blocked` + specific dependency reasons) |
 | 2026-02-28 | Fraud telemetry export path | `node scripts/export_risk_telemetry.js --lookback-minutes 1440 --limit 500 --batch-size 100` | PASS | `server/docs/artifacts/risk_telemetry_export_2026-02-28T04-35-51-718Z.json` |
 
 ## Completion Decision
