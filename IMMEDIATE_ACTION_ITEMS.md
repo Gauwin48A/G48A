@@ -49,9 +49,9 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Remaining Blockers
 - [ ] Multi-region active-active deployment automation.
-  - Status: PENDING
-  - Dependency: infrastructure provisioning and traffic manager orchestration
-  - Impact: failover remains drill-validated, not fully automated
+  - Status: BLOCKED
+  - Dependency: infrastructure provisioning and traffic manager credentials in staging cloud
+  - Impact: live active-active validation remains unavailable from current environment
 
 ## Next-Step Execution (Current Run)
 - [x] Add persistent fraud decision telemetry path.
@@ -66,4 +66,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Status: COMPLETE
   - Evidence: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
   - Validation: backlog includes owner, target date, dependency, and success criteria rows
+- [x] Add active-active orchestration command and synthetic validation artifact.
+  - Status: COMPLETE
+  - Evidence: `server/scripts/run_active_active_orchestration.js`, `server/tests/runActiveActiveOrchestration.test.js`, `server/docs/artifacts/active_active_orchestration_2026-02-28T04-03-13-550Z.json`
+  - Validation: `npm test -- tests/runActiveActiveOrchestration.test.js` and `$env:ACTIVE_ACTIVE_SYNTHETIC_PROBE='true'; npm run failover:active-active`
 

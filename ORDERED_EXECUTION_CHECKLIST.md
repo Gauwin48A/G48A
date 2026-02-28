@@ -88,4 +88,10 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - Multi-region active-active execution backlog: COMPLETE
   - Evidence: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
   - Validation: owner/date/dependency/success-criteria checklist populated
+- Multi-region active-active orchestration command set: COMPLETE
+  - Evidence: `server/scripts/run_active_active_orchestration.js`, `server/tests/runActiveActiveOrchestration.test.js`, `server/docs/artifacts/active_active_orchestration_2026-02-28T04-03-13-550Z.json`
+  - Validation: `npm test -- tests/runActiveActiveOrchestration.test.js` + `$env:ACTIVE_ACTIVE_SYNTHETIC_PROBE='true'; npm run failover:active-active`
+- Live multi-region execution: BLOCKED
+  - Dependency: staging traffic-manager credentials + secondary region stack provisioning
+  - Impact: scripted orchestration exists, but live weighted shift is pending external infrastructure
 

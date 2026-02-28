@@ -12,6 +12,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | API latency | `p95_ms` | >1200ms for 15m | Backend Lead | `docs/INCIDENT_RESPONSE.md` -> latency triage and rollback |
 | Auth security | login failure ratio | >20% for 15m | Security Lead | `docs/INCIDENT_RESPONSE.md` -> auth abuse path |
 | Fraud rollout | challenge dropoff | >15% window | Trust Engineering | `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md` abort rules |
+| Active-active failover | region health divergence | any sustained 3m | Platform Engineering | `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md` live failover steps |
 | Payments | reconciliation mismatch | >0.5% daily | Payments Owner | payment incident section in runbook |
 | Readiness | `/api/ready` not_ready | any sustained 5m | Platform Engineering | readiness dependency checklist |
 
@@ -24,6 +25,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | Backend Lead | Authenticated read/write load verification | COMPLETE | `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json` |
 | 2026-02-28 | Trust Engineering | Fraud challenge telemetry + kill switch simulation | COMPLETE | `server/docs/artifacts/flag_rollout_simulation_2026-02-28T03-07-35-168Z.json` |
 | 2026-02-28 | Platform Engineering | Failover tabletop drill evidence | COMPLETE | `server/docs/artifacts/failover_tabletop_2026-02-28T03-07-34-846Z.json` |
+| 2026-02-28 | Platform Engineering | Active-active orchestration simulation | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T04-03-13-550Z.json` |
 | 2026-02-28 | Engineering | Validation matrix refresh | COMPLETE | `server/docs/TEST_VALIDATION.md` |
 
 ## Operational Rule

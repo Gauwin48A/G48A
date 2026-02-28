@@ -1,0 +1,202 @@
+{
+  "generatedAt": "2026-02-28T04:03:13.550Z",
+  "runId": "aa-1772251392252",
+  "config": {
+    "regionA": "http://127.0.0.1:5055",
+    "regionB": "http://127.0.0.1:6055",
+    "healthPath": "/api/ready",
+    "timeoutMs": 5000,
+    "settleMs": 250,
+    "mode": "simulate",
+    "rollbackOnFailure": true,
+    "syntheticProbe": true,
+    "shiftSteps": [
+      {
+        "weightA": 90,
+        "weightB": 10
+      },
+      {
+        "weightA": 75,
+        "weightB": 25
+      },
+      {
+        "weightA": 50,
+        "weightB": 50
+      },
+      {
+        "weightA": 25,
+        "weightB": 75
+      },
+      {
+        "weightA": 0,
+        "weightB": 100
+      }
+    ]
+  },
+  "report": {
+    "finalStatus": "completed",
+    "startedAt": "2026-02-28T04:03:12.253Z",
+    "finishedAt": "2026-02-28T04:03:13.549Z",
+    "durationMs": 1296,
+    "timeline": [
+      {
+        "phase": "initial_probe",
+        "timestamp": "2026-02-28T04:03:12.253Z",
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        }
+      },
+      {
+        "step": 1,
+        "timestamp": "2026-02-28T04:03:12.518Z",
+        "weights": {
+          "weightA": 90,
+          "weightB": 10
+        },
+        "command": {
+          "mode": "simulate",
+          "command": "SIMULATED_SHIFT regionA=90 regionB=10"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 2,
+        "timestamp": "2026-02-28T04:03:12.771Z",
+        "weights": {
+          "weightA": 75,
+          "weightB": 25
+        },
+        "command": {
+          "mode": "simulate",
+          "command": "SIMULATED_SHIFT regionA=75 regionB=25"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 3,
+        "timestamp": "2026-02-28T04:03:13.036Z",
+        "weights": {
+          "weightA": 50,
+          "weightB": 50
+        },
+        "command": {
+          "mode": "simulate",
+          "command": "SIMULATED_SHIFT regionA=50 regionB=50"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 4,
+        "timestamp": "2026-02-28T04:03:13.297Z",
+        "weights": {
+          "weightA": 25,
+          "weightB": 75
+        },
+        "command": {
+          "mode": "simulate",
+          "command": "SIMULATED_SHIFT regionA=25 regionB=75"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 5,
+        "timestamp": "2026-02-28T04:03:13.549Z",
+        "weights": {
+          "weightA": 0,
+          "weightB": 100
+        },
+        "command": {
+          "mode": "simulate",
+          "command": "SIMULATED_SHIFT regionA=0 regionB=100"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      }
+    ],
+    "failures": [],
+    "metrics": {
+      "rtoEstimateMs": 1296,
+      "rollbackEnabled": true
+    }
+  }
+}

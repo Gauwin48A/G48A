@@ -29,8 +29,9 @@ Production baseline plus remaining half-pending closure items are complete with 
 ## Remaining Roadmap
 ### Phase A (next)
 - Multi-region active-active deployment automation
-- Status: PENDING
+- Status: BLOCKED
 - Execution backlog: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`
+- Completed prerequisite: orchestration command set (`npm run failover:active-active`) with synthetic artifact `server/docs/artifacts/active_active_orchestration_2026-02-28T04-03-13-550Z.json`
 
 ### Phase B (next)
 - ML hard-block policy decisioning with staged safeguards

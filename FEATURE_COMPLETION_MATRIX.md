@@ -30,12 +30,13 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | Enhancement | Fraud telemetry persistence schema path | COMPLETE |
 | Enhancement | Progressive flag lifecycle + audit + rollback simulation | COMPLETE |
 | Enhancement | Multi-region tabletop drill (trigger->failover->rollback) | COMPLETE |
-| Future | Multi-region active-active deployment automation | PENDING |
+| Enhancement | Multi-region active-active orchestration command set | COMPLETE |
+| Future | Multi-region active-active deployment automation (live infra execution) | BLOCKED |
 
 ## Rollup
 - OPERATIONAL: 15
-- COMPLETE: 7
-- PENDING: 1
-- BLOCKED: 0
+- COMPLETE: 8
+- PENDING: 0
+- BLOCKED: 1
 
-Current baseline survival ratio: 95.45% (21/22)
+Current baseline survival ratio: 95.83% (23/24)
