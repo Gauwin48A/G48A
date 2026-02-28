@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +12,7 @@ const CreateChannelPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/channels', { name, description });
+      await api.post('/channels', { name, description });
       setMessage('Channel created successfully!');
       setName('');
       setDescription('');

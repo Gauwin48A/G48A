@@ -1,7 +1,7 @@
 /**
  * CRON Jobs - Automated Background Tasks
  * Protocol: Value Hierarchy - Tier-Based Expiry & Notifications
- * 
+ *
  * Schedule:
  * - Post expiry check: Daily at 00:00 (uses tier-based expires_at)
  * - Expiry warnings: Daily at 09:00 (3 days before posts expire)
@@ -12,9 +12,36 @@
 const cron = require('node-cron');
 const pool = require('../config/db');
 const { expireOffers } = require('../controllers/offersController');
+const { executePaymentReconciliation } = require('../services/paymentReconciliationService');
 
-// Configuration for warnings
-const POST_WARNING_DAYS = [5, 3, 1]; // Days before expiry to warn
+const POST_WARNING_DAYS = [5, 3, 1];
+const NOTIFICATION_BATCH_SIZE = Number.parseInt(process.env.CRON_NOTIFICATION_BATCH_SIZE, 10) || 250;
+
+async function insertNotifications(notifications) {
+    if (!Array.isArray(notifications) || notifications.length === 0) {
+        return 0;
+    }
+
+    let inserted = 0;
+    for (let i = 0; i < notifications.length; i += NOTIFICATION_BATCH_SIZE) {
+        const batch = notifications.slice(i, i + NOTIFICATION_BATCH_SIZE);
+        const result = await pool.query(
+            `INSERT INTO notifications (user_id, title, message, type, reference_id, created_at)
+             SELECT n.user_id, n.title, n.message, n.type, n.reference_id, NOW()
+             FROM jsonb_to_recordset($1::jsonb) AS n(
+                user_id bigint,
+                title text,
+                message text,
+                type text,
+                reference_id bigint
+             )`,
+            [JSON.stringify(batch)]
+        );
+        inserted += result.rowCount || 0;
+    }
+
+    return inserted;
+}
 
 /**
  * Mark expired posts as expired (based on tier-specific expires_at)
@@ -25,59 +52,52 @@ const expireOldPosts = async () => {
     console.log('[CRON] Running tier-based post expiry check...');
 
     try {
-        // Use the expires_at field set during post creation based on tier
-        const result = await pool.query(`
-            UPDATE posts 
-            SET status = 'expired', updated_at = NOW()
-            WHERE status = 'active'
-              AND expires_at IS NOT NULL
-              AND expires_at < NOW()
-            RETURNING post_id, user_id, title, expires_at,
-                      (SELECT tier FROM users WHERE users.user_id = posts.user_id) as user_tier
-        `);
+        const result = await pool.query(
+            `UPDATE posts
+             SET status = 'expired', updated_at = NOW()
+             WHERE status = 'active'
+               AND expires_at IS NOT NULL
+               AND expires_at < NOW()
+             RETURNING post_id, user_id, title, expires_at,
+                       (SELECT tier FROM users WHERE users.user_id = posts.user_id) AS user_tier`
+        );
 
         if (result.rows.length > 0) {
             console.log(`[CRON] Expired ${result.rows.length} posts (tier-based expiry)`);
-
-            // Create tier-specific notifications for each expired post
-            for (const post of result.rows) {
+            const notifications = result.rows.map((post) => {
                 const tierName = (post.user_tier || 'basic').toUpperCase();
-                await pool.query(`
-                    INSERT INTO notifications (user_id, title, message, type, reference_id, created_at)
-                    VALUES ($1, $2, $3, 'post_expired', $4, NOW())
-                `, [
-                    post.user_id,
-                    '📋 Post Expired',
-                    `Your post "${post.title || 'Untitled'}" has expired based on your ${tierName} tier visibility. Upgrade your tier for longer visibility or repost to make it active again.`,
-                    post.post_id
-                ]);
-            }
+                return {
+                    user_id: post.user_id,
+                    title: 'Post Expired',
+                    message: `Your post "${post.title || 'Untitled'}" has expired based on your ${tierName} tier visibility. Upgrade your tier for longer visibility or repost to make it active again.`,
+                    type: 'post_expired',
+                    reference_id: post.post_id
+                };
+            });
+            await insertNotifications(notifications);
         } else {
             console.log('[CRON] No posts to expire');
         }
 
-        // Also expire posts using legacy logic (for posts without expires_at)
-        const legacyResult = await pool.query(`
-            UPDATE posts 
-            SET status = 'expired', updated_at = NOW()
-            WHERE status = 'active'
-              AND expires_at IS NULL
-              AND created_at < NOW() - INTERVAL '30 days'
-            RETURNING post_id, user_id, title
-        `);
+        const legacyResult = await pool.query(
+            `UPDATE posts
+             SET status = 'expired', updated_at = NOW()
+             WHERE status = 'active'
+               AND expires_at IS NULL
+               AND created_at < NOW() - INTERVAL '30 days'
+             RETURNING post_id, user_id, title`
+        );
 
         if (legacyResult.rows.length > 0) {
             console.log(`[CRON] Expired ${legacyResult.rows.length} legacy posts (30-day default)`);
-            for (const post of legacyResult.rows) {
-                await pool.query(`
-                    INSERT INTO notifications (user_id, title, message, type, reference_id, created_at)
-                    VALUES ($1, 'Post Expired', $2, 'post_expired', $3, NOW())
-                `, [
-                    post.user_id,
-                    `Your post "${post.title || 'Untitled'}" has expired after 30 days. Upgrade to Premium for 45-day visibility!`,
-                    post.post_id
-                ]);
-            }
+            const legacyNotifications = legacyResult.rows.map((post) => ({
+                user_id: post.user_id,
+                title: 'Post Expired',
+                message: `Your post "${post.title || 'Untitled'}" has expired after 30 days. Upgrade to Premium for 45-day visibility!`,
+                type: 'post_expired',
+                reference_id: post.post_id
+            }));
+            await insertNotifications(legacyNotifications);
         }
     } catch (error) {
         console.error('[CRON] Post expiry error:', error);
@@ -94,48 +114,41 @@ const sendExpiryWarnings = async () => {
 
     try {
         for (const daysBeforeExpiry of POST_WARNING_DAYS) {
-            const result = await pool.query(`
-                SELECT 
-                    p.post_id, 
-                    p.user_id, 
-                    p.title, 
+            const result = await pool.query(
+                `SELECT
+                    p.post_id,
+                    p.user_id,
+                    p.title,
                     p.expires_at,
                     u.tier,
-                    EXTRACT(DAY FROM (p.expires_at - NOW())) as days_left
-                FROM posts p
-                JOIN users u ON p.user_id = u.user_id
-                LEFT JOIN notifications n ON n.reference_id = p.post_id 
-                    AND n.type = 'expiry_warning' 
+                    EXTRACT(DAY FROM (p.expires_at - NOW())) AS days_left
+                 FROM posts p
+                 JOIN users u ON p.user_id = u.user_id
+                 LEFT JOIN notifications n ON n.reference_id = p.post_id
+                    AND n.type = 'expiry_warning'
                     AND n.created_at > NOW() - INTERVAL '20 hours'
-                WHERE p.status = 'active'
-                  AND p.expires_at IS NOT NULL
-                  AND p.expires_at > NOW()
-                  AND p.expires_at < NOW() + INTERVAL '${daysBeforeExpiry + 1} days'
-                  AND p.expires_at > NOW() + INTERVAL '${daysBeforeExpiry - 1} days'
-                  AND n.notification_id IS NULL
-            `);
+                 WHERE p.status = 'active'
+                   AND p.expires_at IS NOT NULL
+                   AND p.expires_at > NOW()
+                   AND p.expires_at < NOW() + INTERVAL '${daysBeforeExpiry + 1} days'
+                   AND p.expires_at > NOW() + INTERVAL '${daysBeforeExpiry - 1} days'
+                   AND n.notification_id IS NULL`
+            );
 
             if (result.rows.length > 0) {
                 console.log(`[CRON] Sending ${result.rows.length} expiry warnings (${daysBeforeExpiry} days before)`);
-
-                for (const post of result.rows) {
+                const warningNotifications = result.rows.map((post) => {
                     const daysLeft = Math.ceil(post.days_left);
                     const tierName = (post.tier || 'basic').toUpperCase();
-
-                    let emoji = '🟡';
-                    if (daysLeft <= 1) emoji = '🔴';
-                    else if (daysLeft <= 3) emoji = '🟠';
-
-                    await pool.query(`
-                        INSERT INTO notifications (user_id, title, message, type, reference_id, created_at)
-                        VALUES ($1, $2, $3, 'expiry_warning', $4, NOW())
-                    `, [
-                        post.user_id,
-                        `${emoji} Post Expiring Soon`,
-                        `Your post "${post.title || 'Untitled'}" expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''} (${tierName} tier). Renew or upgrade for extended visibility!`,
-                        post.post_id
-                    ]);
-                }
+                    return {
+                        user_id: post.user_id,
+                        title: 'Post Expiring Soon',
+                        message: `Your post "${post.title || 'Untitled'}" expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''} (${tierName} tier). Renew or upgrade for extended visibility!`,
+                        type: 'expiry_warning',
+                        reference_id: post.post_id
+                    };
+                });
+                await insertNotifications(warningNotifications);
             }
         }
 
@@ -170,109 +183,109 @@ const expireOldTransactions = async () => {
     console.log('[CRON] Checking for expired transactions...');
 
     try {
-        const result = await pool.query(`
-            UPDATE transactions 
-            SET status = 'expired'
-            WHERE status = 'pending_buyer_confirm'
-              AND expires_at < NOW()
-            RETURNING transaction_id, seller_id, post_id
-        `);
+        const result = await pool.query(
+            `UPDATE transactions
+             SET status = 'expired'
+             WHERE status = 'pending_buyer_confirm'
+               AND expires_at < NOW()
+             RETURNING transaction_id, seller_id, post_id`
+        );
 
         if (result.rows.length > 0) {
             console.log(`[CRON] Expired ${result.rows.length} transactions`);
 
-            // Restore posts to active status
-            for (const tx of result.rows) {
-                await pool.query(
-                    `UPDATE posts SET status = 'active' WHERE post_id = $1`,
-                    [tx.post_id]
-                );
-
-                await pool.query(`
-                    INSERT INTO notifications (user_id, title, message, type, created_at)
-                    VALUES ($1, '🔄 Sale Expired', 'The pending sale has expired. Your item is back on the market.', 'sale_expired', NOW())
-                `, [tx.seller_id]);
+            const postIds = [...new Set(result.rows.map((tx) => tx.post_id).filter(Boolean))];
+            if (postIds.length > 0) {
+                await pool.query(`UPDATE posts SET status = 'active' WHERE post_id = ANY($1::bigint[])`, [postIds]);
             }
+
+            const notifications = result.rows
+                .filter((tx) => tx.seller_id)
+                .map((tx) => ({
+                    user_id: tx.seller_id,
+                    title: 'Sale Expired',
+                    message: 'The pending sale has expired. Your item is back on the market.',
+                    type: 'sale_expired',
+                    reference_id: null
+                }));
+            await insertNotifications(notifications);
         }
     } catch (error) {
         console.error('[CRON] Transaction expiry error:', error);
     }
 };
 
-// initCronJobs is defined after all job functions below
-
-/* ─────────────────────────────────────────────
-   New job: Daily Digest
-   Sends a summary notification to active users
-───────────────────────────────────────────── */
+/**
+ * New job: Daily Digest
+ * Sends a summary notification to active users
+ */
 const sendDailyDigest = async () => {
     console.log('[CRON] Sending daily digest...');
     try {
-        // Find users who have unread notifications from the last 24h
-        const result = await pool.query(`
-            SELECT DISTINCT n.user_id, COUNT(n.notification_id) as unread_count
-            FROM notifications n
-            WHERE n.created_at > NOW() - INTERVAL '24 hours'
-              AND n.is_read = false
-            GROUP BY n.user_id
-            HAVING COUNT(n.notification_id) >= 3
-            LIMIT 500
-        `);
+        const result = await pool.query(
+            `WITH digest_targets AS (
+                SELECT n.user_id, COUNT(n.notification_id) AS unread_count
+                FROM notifications n
+                WHERE n.created_at > NOW() - INTERVAL '24 hours'
+                  AND n.is_read = false
+                GROUP BY n.user_id
+                HAVING COUNT(n.notification_id) >= 3
+                LIMIT 500
+            )
+            INSERT INTO notifications (user_id, title, message, type, created_at)
+            SELECT
+                dt.user_id,
+                'Daily Summary',
+                'You have ' || dt.unread_count || ' unread notifications. Check your dashboard for updates.',
+                'digest',
+                NOW()
+            FROM digest_targets dt`
+        );
 
-        let sent = 0;
-        for (const row of result.rows) {
-            await pool.query(`
-                INSERT INTO notifications (user_id, title, message, type, created_at)
-                VALUES ($1, '📬 Daily Summary', $2, 'digest', NOW())
-            `, [
-                row.user_id,
-                `You have ${row.unread_count} unread notifications. Check your dashboard for updates.`
-            ]);
-            sent++;
-        }
-
+        const sent = result.rowCount || 0;
         console.log(`[CRON] Daily digest sent to ${sent} users`);
     } catch (error) {
         console.error('[CRON] Daily digest error:', error);
     }
 };
 
-/* ─────────────────────────────────────────────
-   New job: Fraud Batch Review
-   Flags high-risk accounts for manual review
-───────────────────────────────────────────── */
+/**
+ * New job: Fraud Batch Review
+ * Flags high-risk accounts for manual review
+ */
 const runFraudBatchReview = async () => {
     console.log('[CRON] Running fraud batch review...');
     try {
-        // Flag users with >5 failed login attempts in last 6h
-        const suspiciousLogins = await pool.query(`
-            SELECT user_id, COUNT(*) as fail_count
-            FROM login_audit
-            WHERE success = false AND created_at > NOW() - INTERVAL '6 hours'
-            GROUP BY user_id
-            HAVING COUNT(*) >= 5
-        `).catch(() => ({ rows: [] })); // Graceful if table missing
+        const suspiciousLogins = await pool.query(
+            `SELECT user_id, COUNT(*) AS fail_count
+             FROM login_audit
+             WHERE success = false AND created_at > NOW() - INTERVAL '6 hours'
+             GROUP BY user_id
+             HAVING COUNT(*) >= 5`
+        ).catch(() => ({ rows: [] }));
 
-        for (const row of suspiciousLogins.rows) {
-            await pool.query(`
-                INSERT INTO notifications (user_id, title, message, type, created_at)
-                VALUES ($1, '⚠️ Security Alert', 'Multiple failed login attempts detected on your account. If this was not you, please change your password immediately.', 'security_alert', NOW())
-                ON CONFLICT DO NOTHING
-            `, [row.user_id]).catch(() => { });
+        const suspiciousUserIds = suspiciousLogins.rows.map((row) => row.user_id).filter(Boolean);
+        if (suspiciousUserIds.length > 0) {
+            await pool.query(
+                `INSERT INTO notifications (user_id, title, message, type, created_at)
+                 SELECT DISTINCT t.user_id, 'Security Alert', 'Multiple failed login attempts detected on your account. If this was not you, please change your password immediately.', 'security_alert', NOW()
+                 FROM unnest($1::bigint[]) AS t(user_id)
+                 ON CONFLICT DO NOTHING`,
+                [suspiciousUserIds]
+            ).catch(() => {});
         }
 
-        // Flag payments with duplicate amounts submitted within 10 minutes (potential double-submit)
-        const dupePayments = await pool.query(`
-            SELECT p1.id, p1.user_id, p1.amount, p1.plan_purchased
-            FROM payments p1
-            JOIN payments p2 ON p1.user_id = p2.user_id
-              AND p1.amount = p2.amount
-              AND p1.plan_purchased = p2.plan_purchased
-              AND p1.id != p2.id
-              AND ABS(EXTRACT(EPOCH FROM (p1.created_at - p2.created_at))) < 600
-            WHERE p1.status = 'pending'
-              AND p1.created_at > NOW() - INTERVAL '6 hours'
-        `).catch(() => ({ rows: [] }));
+        const dupePayments = await pool.query(
+            `SELECT p1.id, p1.user_id, p1.amount, p1.plan_purchased
+             FROM payments p1
+             JOIN payments p2 ON p1.user_id = p2.user_id
+               AND p1.amount = p2.amount
+               AND p1.plan_purchased = p2.plan_purchased
+               AND p1.id != p2.id
+               AND ABS(EXTRACT(EPOCH FROM (p1.created_at - p2.created_at))) < 600
+             WHERE p1.status = 'pending'
+               AND p1.created_at > NOW() - INTERVAL '6 hours'`
+        ).catch(() => ({ rows: [] }));
 
         if (dupePayments.rows.length > 0) {
             console.warn(`[CRON] Fraud batch: ${dupePayments.rows.length} potential duplicate payments flagged`);
@@ -284,30 +297,31 @@ const runFraudBatchReview = async () => {
     }
 };
 
-/* ─────────────────────────────────────────────
-   New job: Complaint Auto-Resolution
-   Auto-closes complaints open > 7 days with no activity
-───────────────────────────────────────────── */
+/**
+ * New job: Complaint Auto-Resolution
+ * Auto-closes complaints open > 7 days with no activity
+ */
 const autoResolveStaleComplaints = async () => {
     console.log('[CRON] Running complaint auto-resolution...');
     try {
-        const result = await pool.query(`
-            UPDATE complaints
-            SET status = 'auto_closed',
-                admin_response = COALESCE(admin_response, 'This complaint was automatically closed after 7 days of inactivity.'),
-                updated_at = NOW()
-            WHERE status IN ('open', 'triage')
-              AND updated_at < NOW() - INTERVAL '7 days'
-            RETURNING complaint_id, buyer_id
-        `).catch(() => ({ rows: [] }));
+        const result = await pool.query(
+            `UPDATE complaints
+             SET status = 'auto_closed',
+                 admin_response = COALESCE(admin_response, 'This complaint was automatically closed after 7 days of inactivity.'),
+                 updated_at = NOW()
+             WHERE status IN ('open', 'triage')
+               AND updated_at < NOW() - INTERVAL '7 days'
+             RETURNING complaint_id, buyer_id`
+        ).catch(() => ({ rows: [] }));
 
-        for (const complaint of result.rows) {
-            if (complaint.buyer_id) {
-                await pool.query(`
-                    INSERT INTO notifications (user_id, title, message, type, created_at)
-                    VALUES ($1, '📋 Complaint Closed', 'Your complaint has been automatically closed after 7 days of inactivity. If you still need help, please submit a new complaint.', 'complaint_closed', NOW())
-                `, [complaint.buyer_id]).catch(() => { });
-            }
+        const buyerIds = result.rows.map((complaint) => complaint.buyer_id).filter(Boolean);
+        if (buyerIds.length > 0) {
+            await pool.query(
+                `INSERT INTO notifications (user_id, title, message, type, created_at)
+                 SELECT DISTINCT t.user_id, 'Complaint Closed', 'Your complaint has been automatically closed after 7 days of inactivity. If you still need help, please submit a new complaint.', 'complaint_closed', NOW()
+                 FROM unnest($1::bigint[]) AS t(user_id)`,
+                [buyerIds]
+            ).catch(() => {});
         }
 
         console.log(`[CRON] Auto-resolved ${result.rows.length} stale complaints`);
@@ -317,50 +331,74 @@ const autoResolveStaleComplaints = async () => {
 };
 
 /**
+ * Run payment reconciliation workflow.
+ * This keeps pending payments clean and flags records needing admin review.
+ */
+const runPaymentReconciliation = async () => {
+    console.log('[CRON] Running payment reconciliation...');
+    try {
+        const reconEnabled = String(process.env.PAYMENT_RECON_ENABLED || 'true').trim().toLowerCase();
+        if (['0', 'false', 'no', 'off'].includes(reconEnabled)) {
+            console.log('[CRON] Payment reconciliation skipped (PAYMENT_RECON_ENABLED=false)');
+            return;
+        }
+
+        const result = await executePaymentReconciliation({ actor: 'cron' });
+        console.log(
+            `[CRON] Payment reconciliation complete: expired=${result.actions.auto_expired_count}, amount_flags=${result.actions.amount_mismatch_flagged_count}, duplicate_flags=${result.actions.duplicate_flagged_count}`
+        );
+    } catch (error) {
+        console.error('[CRON] Payment reconciliation error:', error);
+    }
+};
+
+/**
  * Initialize all CRON jobs
- * Defined here (after all job functions) so const references resolve correctly
  */
 const initCronJobs = () => {
-    console.log('⏰ Initializing CRON jobs...');
+    console.log('[CRON] Initializing CRON jobs...');
 
     cron.schedule('0 0 * * *', expireOldPosts, { timezone: 'Asia/Kolkata' });
-    console.log('  ├─ Post expiry (tier-based): Daily at 00:00 IST');
+    console.log('  - Post expiry (tier-based): Daily at 00:00 IST');
 
     cron.schedule('0 9 * * *', sendExpiryWarnings, { timezone: 'Asia/Kolkata' });
-    console.log('  ├─ Expiry warnings: Daily at 09:00 IST');
+    console.log('  - Expiry warnings: Daily at 09:00 IST');
 
     cron.schedule('0 10 * * *', checkSubscriptionExpiry, { timezone: 'Asia/Kolkata' });
-    console.log('  ├─ Subscription expiry: Daily at 10:00 IST');
+    console.log('  - Subscription expiry: Daily at 10:00 IST');
 
     cron.schedule('0 * * * *', expireOldTransactions, { timezone: 'Asia/Kolkata' });
-    console.log('  ├─ Transaction expiry: Hourly');
+    console.log('  - Transaction expiry: Hourly');
+
+    cron.schedule('20 */2 * * *', runPaymentReconciliation, { timezone: 'Asia/Kolkata' });
+    console.log('  - Payment reconciliation: Every 2 hours at :20');
 
     cron.schedule('30 * * * *', async () => {
         console.log('[CRON] Running offer expiry check...');
         const count = await expireOffers();
         console.log(`[CRON] Offer expiry complete: ${count} expired`);
     }, { timezone: 'Asia/Kolkata' });
-    console.log('  ├─ Offer expiry (48h): Hourly at :30');
+    console.log('  - Offer expiry (48h): Hourly at :30');
 
     cron.schedule('30 9 * * *', sendDailyDigest, { timezone: 'Asia/Kolkata' });
-    console.log('  ├─ Daily digest: Daily at 09:30 IST');
+    console.log('  - Daily digest: Daily at 09:30 IST');
 
     cron.schedule('0 */6 * * *', runFraudBatchReview, { timezone: 'Asia/Kolkata' });
-    console.log('  ├─ Fraud batch review: Every 6 hours');
+    console.log('  - Fraud batch review: Every 6 hours');
 
     cron.schedule('0 2 * * *', autoResolveStaleComplaints, { timezone: 'Asia/Kolkata' });
-    console.log('  └─ Complaint auto-resolution: Daily at 02:00 IST');
+    console.log('  - Complaint auto-resolution: Daily at 02:00 IST');
 
-    console.log('⏰ CRON jobs initialized');
+    console.log('[CRON] CRON jobs initialized');
 };
 
-// Export for testing
 module.exports = {
     initCronJobs,
     expireOldPosts,
     sendExpiryWarnings,
     checkSubscriptionExpiry,
     expireOldTransactions,
+    runPaymentReconciliation,
     sendDailyDigest,
     runFraudBatchReview,
     autoResolveStaleComplaints

@@ -1,4 +1,6 @@
 
+import { buildApiPath } from '@/lib/networkConfig';
+
 // Fraud Prevention Utilities
 export const generatePostId = () => {
   const timestamp = Date.now();
@@ -38,7 +40,8 @@ export const checkPostExpiry = (postedDate, validityDays = 25) => {
 
 export const flagSuspiciousActivity = (userId, activity) => {
   // Store flag in backend
-  fetch(`http://localhost:5000/api/users/${userId}/flags`, {
+  const encodedUserId = encodeURIComponent(userId);
+  fetch(buildApiPath(`/users/${encodedUserId}/flags`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -48,7 +51,7 @@ export const flagSuspiciousActivity = (userId, activity) => {
     })
   }).then(() => {
     // Check if user should be restricted
-    fetch(`http://localhost:5000/api/users/${userId}/flags?severity=high`)
+    fetch(`${buildApiPath(`/users/${encodedUserId}/flags`)}?severity=high`)
       .then(res => res.json())
       .then(flags => {
         if (Array.isArray(flags) && flags.length >= 3) {
@@ -75,7 +78,8 @@ const restrictUser = (userId) => {
     canBuy: false,
     reason: 'Suspicious activity detected'
   };
-  fetch(`http://localhost:5000/api/users/${userId}/restrict`, {
+  const encodedUserId = encodeURIComponent(userId);
+  fetch(buildApiPath(`/users/${encodedUserId}/restrict`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(restrictions)
@@ -85,7 +89,8 @@ const restrictUser = (userId) => {
 
 export const getUserRestrictions = (userId) => {
   // Fetch restrictions from backend
-  return fetch(`http://localhost:5000/api/users/${userId}/restrictions`)
+  const encodedUserId = encodeURIComponent(userId);
+  return fetch(buildApiPath(`/users/${encodedUserId}/restrictions`))
     .then(res => res.json())
     .catch(() => null);
 };

@@ -1,130 +1,270 @@
 /**
  * Dynamic Content Translation Utility
- * Translates post titles, descriptions, and other dynamic content
- * Uses free Google Translate API with localStorage caching
+ * Translates post titles, descriptions, and other dynamic content.
+ * Uses Google Translate endpoint with in-memory + localStorage caching.
  */
 
-// Cache for storing translations to avoid repeated API calls
 const CACHE_KEY = 'mhub_translations_cache';
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_CACHE_ENTRIES = 3000;
+const CACHE_PERSIST_DEBOUNCE_MS = 750;
+const MAX_TRANSLATE_CONCURRENCY = 4;
 
-// Get cached translations
-function getCache() {
-    try {
-        const cache = localStorage.getItem(CACHE_KEY);
-        if (cache) {
-            const parsed = JSON.parse(cache);
-            // Clean expired entries
-            const now = Date.now();
-            Object.keys(parsed).forEach(key => {
-                if (parsed[key].timestamp && (now - parsed[key].timestamp) > CACHE_EXPIRY) {
-                    delete parsed[key];
-                }
-            });
-            return parsed;
-        }
-    } catch (e) { }
-    return {};
+let translationCache = {};
+let cacheLoaded = false;
+let cacheDirty = false;
+let persistTimer = null;
+const pendingTranslations = new Map();
+
+function canUseStorage() {
+    return typeof window !== 'undefined' && Boolean(window.localStorage);
 }
 
-// Save to cache
-function setCache(cache) {
-    try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-    } catch (e) { }
+function normalizeText(value) {
+    return typeof value === 'string' ? value : String(value ?? '');
 }
 
-// Generate cache key
+function hashText(text) {
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i += 1) {
+        hash ^= text.charCodeAt(i);
+        hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+    return (hash >>> 0).toString(36);
+}
+
 function getCacheKey(text, targetLang) {
-    return `${targetLang}:${text.substring(0, 100)}:${text.length}`;
+    const normalized = normalizeText(text).trim();
+    return `${targetLang}:${normalized.length}:${hashText(normalized)}`;
 }
 
-/**
- * Translate text using free Google Translate API
- * @param {string} text - Text to translate
- * @param {string} targetLang - Target language code (hi, te, ta, kn, mr, bn)
- * @returns {Promise<string>} - Translated text
- */
-export async function translateText(text, targetLang) {
-    // Don't translate if target is English or text is empty
-    if (!text || targetLang === 'en' || !text.trim()) {
-        return text;
+function pruneExpiredEntries(cache, now = Date.now()) {
+    Object.keys(cache).forEach((key) => {
+        const entry = cache[key];
+        if (!entry || !entry.timestamp || now - entry.timestamp > CACHE_EXPIRY) {
+            delete cache[key];
+        }
+    });
+}
+
+function enforceCacheLimit(cache) {
+    const keys = Object.keys(cache);
+    if (keys.length <= MAX_CACHE_ENTRIES) {
+        return;
     }
 
-    // Check cache first
-    const cache = getCache();
-    const cacheKey = getCacheKey(text, targetLang);
+    const keysByAge = keys.sort((left, right) => {
+        const leftTs = Number(cache[left]?.timestamp || 0);
+        const rightTs = Number(cache[right]?.timestamp || 0);
+        return leftTs - rightTs;
+    });
 
-    if (cache[cacheKey]) {
-        return cache[cacheKey].text;
+    const deleteCount = keysByAge.length - MAX_CACHE_ENTRIES;
+    for (let index = 0; index < deleteCount; index += 1) {
+        delete cache[keysByAge[index]];
+    }
+}
+
+function loadCache() {
+    if (cacheLoaded) {
+        return;
+    }
+
+    cacheLoaded = true;
+    translationCache = {};
+
+    if (!canUseStorage()) {
+        return;
     }
 
     try {
-        // Use Google Translate free API
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        // Extract translated text from response
-        let translated = '';
-        if (data && data[0]) {
-            data[0].forEach(item => {
-                if (item[0]) {
-                    translated += item[0];
-                }
-            });
+        const raw = window.localStorage.getItem(CACHE_KEY);
+        if (!raw) {
+            return;
         }
 
-        // If translation failed, return original
-        if (!translated) {
-            return text;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+            translationCache = parsed;
         }
-
-        // Save to cache
-        cache[cacheKey] = { text: translated, timestamp: Date.now() };
-        setCache(cache);
-
-        return translated;
-    } catch (error) {
-        console.warn('Translation failed, using original text:', error.message);
-        return text;
+    } catch {
+        translationCache = {};
     }
+
+    pruneExpiredEntries(translationCache);
+    enforceCacheLimit(translationCache);
 }
 
-/**
- * Translate multiple texts in batch (for efficiency)
- * @param {string[]} texts - Array of texts to translate
- * @param {string} targetLang - Target language code
- * @returns {Promise<string[]>} - Array of translated texts
- */
-export async function translateBatch(texts, targetLang) {
-    if (targetLang === 'en') {
-        return texts;
+function scheduleCachePersist() {
+    if (!canUseStorage() || persistTimer || !cacheDirty) {
+        return;
     }
 
-    const results = await Promise.all(
-        texts.map(text => translateText(text, targetLang))
+    persistTimer = window.setTimeout(() => {
+        persistTimer = null;
+        if (!cacheDirty) {
+            return;
+        }
+
+        try {
+            window.localStorage.setItem(CACHE_KEY, JSON.stringify(translationCache));
+            cacheDirty = false;
+        } catch {
+            // Ignore storage write errors (quota/private mode).
+        }
+    }, CACHE_PERSIST_DEBOUNCE_MS);
+}
+
+function markCacheDirty() {
+    cacheDirty = true;
+    scheduleCachePersist();
+}
+
+function getCachedTranslation(cacheKey) {
+    loadCache();
+    const entry = translationCache[cacheKey];
+    if (!entry) {
+        return null;
+    }
+
+    if (!entry.timestamp || Date.now() - entry.timestamp > CACHE_EXPIRY) {
+        delete translationCache[cacheKey];
+        markCacheDirty();
+        return null;
+    }
+
+    return entry.text;
+}
+
+function setCachedTranslation(cacheKey, text) {
+    loadCache();
+    translationCache[cacheKey] = {
+        text,
+        timestamp: Date.now()
+    };
+    pruneExpiredEntries(translationCache);
+    enforceCacheLimit(translationCache);
+    markCacheDirty();
+}
+
+async function requestTranslation(text, targetLang) {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    let translated = '';
+    if (Array.isArray(data?.[0])) {
+        data[0].forEach((item) => {
+            if (item?.[0]) {
+                translated += item[0];
+            }
+        });
+    }
+
+    return translated || text;
+}
+
+async function mapWithConcurrency(items, mapper, concurrency = MAX_TRANSLATE_CONCURRENCY) {
+    if (!Array.isArray(items) || items.length === 0) {
+        return [];
+    }
+
+    const results = new Array(items.length);
+    let nextIndex = 0;
+
+    const workers = Array.from(
+        { length: Math.min(concurrency, items.length) },
+        async () => {
+            while (nextIndex < items.length) {
+                const currentIndex = nextIndex;
+                nextIndex += 1;
+                results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+            }
+        }
     );
 
+    await Promise.all(workers);
     return results;
 }
 
 /**
- * Translate a post object (title and description)
- * @param {Object} post - Post object with title and description
- * @param {string} targetLang - Target language code
- * @returns {Promise<Object>} - Post with translated fields
+ * Translate text using Google Translate API.
+ * @param {string} text - Text to translate.
+ * @param {string} targetLang - Target language code.
+ * @returns {Promise<string>}
+ */
+export async function translateText(text, targetLang) {
+    const originalText = normalizeText(text);
+    const trimmedText = originalText.trim();
+
+    if (!trimmedText || targetLang === 'en') {
+        return originalText;
+    }
+
+    const cacheKey = getCacheKey(trimmedText, targetLang);
+    const cachedTranslation = getCachedTranslation(cacheKey);
+    if (cachedTranslation) {
+        return cachedTranslation;
+    }
+
+    if (pendingTranslations.has(cacheKey)) {
+        return pendingTranslations.get(cacheKey);
+    }
+
+    const translationTask = requestTranslation(trimmedText, targetLang)
+        .then((translatedText) => {
+            if (translatedText && translatedText !== trimmedText) {
+                setCachedTranslation(cacheKey, translatedText);
+            }
+            return translatedText || originalText;
+        })
+        .catch((error) => {
+            if (import.meta.env.DEV) {
+                console.warn('Translation failed, using original text:', error?.message || error);
+            }
+            return originalText;
+        })
+        .finally(() => {
+            pendingTranslations.delete(cacheKey);
+        });
+
+    pendingTranslations.set(cacheKey, translationTask);
+    return translationTask;
+}
+
+/**
+ * Translate multiple texts with limited concurrency.
+ * @param {string[]} texts
+ * @param {string} targetLang
+ * @returns {Promise<string[]>}
+ */
+export async function translateBatch(texts, targetLang) {
+    if (!Array.isArray(texts) || texts.length === 0) {
+        return [];
+    }
+
+    if (targetLang === 'en') {
+        return texts;
+    }
+
+    return mapWithConcurrency(texts, (value) => translateText(value, targetLang));
+}
+
+/**
+ * Translate a post object (title and description).
+ * @param {Object} post
+ * @param {string} targetLang
+ * @returns {Promise<Object>}
  */
 export async function translatePost(post, targetLang) {
     if (!post || targetLang === 'en') {
         return post;
     }
 
-    const [translatedTitle, translatedDescription] = await Promise.all([
-        translateText(post.title || '', targetLang),
-        translateText(post.description || '', targetLang)
-    ]);
+    const [translatedTitle, translatedDescription] = await translateBatch(
+        [post.title || '', post.description || ''],
+        targetLang
+    );
 
     return {
         ...post,
@@ -136,28 +276,47 @@ export async function translatePost(post, targetLang) {
 }
 
 /**
- * Translate an array of posts
- * @param {Object[]} posts - Array of post objects
- * @param {string} targetLang - Target language code
- * @returns {Promise<Object[]>} - Array of translated posts
+ * Translate an array of posts.
+ * @param {Object[]} posts
+ * @param {string} targetLang
+ * @returns {Promise<Object[]>}
  */
 export async function translatePosts(posts, targetLang) {
-    if (!posts?.length || targetLang === 'en') {
+    if (!Array.isArray(posts) || posts.length === 0 || targetLang === 'en') {
         return posts;
     }
 
-    const translatedPosts = await Promise.all(
-        posts.map(post => translatePost(post, targetLang))
-    );
+    const [translatedTitles, translatedDescriptions] = await Promise.all([
+        translateBatch(posts.map((post) => post?.title || ''), targetLang),
+        translateBatch(posts.map((post) => post?.description || ''), targetLang)
+    ]);
 
-    return translatedPosts;
+    return posts.map((post, index) => ({
+        ...post,
+        title: translatedTitles[index] ?? post?.title ?? '',
+        description: translatedDescriptions[index] ?? post?.description ?? '',
+        _originalTitle: post?.title,
+        _originalDescription: post?.description
+    }));
 }
 
 /**
- * Clear translation cache
+ * Clear translation cache.
  */
 export function clearTranslationCache() {
-    localStorage.removeItem(CACHE_KEY);
+    translationCache = {};
+    cacheLoaded = true;
+    cacheDirty = false;
+    pendingTranslations.clear();
+
+    if (persistTimer) {
+        clearTimeout(persistTimer);
+        persistTimer = null;
+    }
+
+    if (canUseStorage()) {
+        window.localStorage.removeItem(CACHE_KEY);
+    }
 }
 
 export default {

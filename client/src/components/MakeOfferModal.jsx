@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { X, DollarSign, Percent, Send, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getAccessToken } from '@/utils/authStorage';
 
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 /**
  * Make Offer Modal Component
@@ -54,8 +56,11 @@ const MakeOfferModal = ({ isOpen, onClose, post, onSubmit }) => {
         }
 
         try {
-            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-            const token = localStorage.getItem('authToken');
+            const baseUrl = getApiOriginBase();
+            const token = getAccessToken();
+            if (!token) {
+                throw new Error('Please login to submit an offer');
+            }
 
             const res = await fetch(`${baseUrl}/api/offers`, {
                 method: 'POST',
@@ -63,6 +68,7 @@ const MakeOfferModal = ({ isOpen, onClose, post, onSubmit }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     post_id: post.post_id || post.id,
                     offered_price: offer,
@@ -236,4 +242,5 @@ const MakeOfferModal = ({ isOpen, onClose, post, onSubmit }) => {
 };
 
 export default MakeOfferModal;
+
 

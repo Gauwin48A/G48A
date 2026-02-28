@@ -1,4 +1,5 @@
 const fs = require('fs');
+const fsp = fs.promises;
 const path = require('path');
 
 function parseBoolean(value, fallback = false) {
@@ -23,7 +24,7 @@ function evaluateRequiredConfig(env = process.env) {
     };
 }
 
-function evaluateSnapshot(env = process.env, now = new Date()) {
+async function evaluateSnapshot(env = process.env, now = new Date()) {
     const snapshotPathRaw = env.DIRECTORY_SNAPSHOT_PATH;
     if (!snapshotPathRaw) {
         return {
@@ -37,7 +38,11 @@ function evaluateSnapshot(env = process.env, now = new Date()) {
         ? snapshotPathRaw
         : path.resolve(process.cwd(), snapshotPathRaw);
 
-    if (!fs.existsSync(snapshotPath)) {
+    let stats;
+    try {
+        await fsp.access(snapshotPath, fs.constants.F_OK);
+        stats = await fsp.stat(snapshotPath);
+    } catch {
         return {
             status: 'fail',
             configured: true,
@@ -46,9 +51,11 @@ function evaluateSnapshot(env = process.env, now = new Date()) {
         };
     }
 
-    const stats = fs.statSync(snapshotPath);
     const ageHours = (now.getTime() - stats.mtime.getTime()) / (1000 * 60 * 60);
-    const maxAgeHours = Number.parseInt(env.DIRECTORY_SNAPSHOT_MAX_AGE_HOURS || '72', 10);
+    const parsedMaxAgeHours = Number.parseInt(env.DIRECTORY_SNAPSHOT_MAX_AGE_HOURS || '72', 10);
+    const maxAgeHours = Number.isFinite(parsedMaxAgeHours) && parsedMaxAgeHours >= 0
+        ? parsedMaxAgeHours
+        : 72;
     const fresh = Number.isFinite(ageHours) && ageHours <= maxAgeHours;
 
     return {
@@ -88,7 +95,11 @@ async function evaluateCache(cacheService) {
 
     try {
         const health = await cacheService.healthCheck();
-        const isPass = health?.status === 'healthy';
+        const normalizedStatus = String(health?.status || '').trim().toLowerCase();
+        const hasBooleanHealthy = typeof health?.healthy === 'boolean';
+        const isPass = hasBooleanHealthy
+            ? health.healthy
+            : (normalizedStatus === 'healthy' || normalizedStatus === 'pass');
         return {
             status: isPass ? 'pass' : 'warn',
             details: health
@@ -132,7 +143,7 @@ async function runReadinessChecks({ pool, cacheService, sessionStore, env = proc
         db: await evaluateDb(pool),
         cache: await evaluateCache(cacheService),
         sessionStore: evaluateSessionStore(sessionStore, env),
-        snapshot: evaluateSnapshot(env, now)
+        snapshot: await evaluateSnapshot(env, now)
     };
 
     const hasHardFailure = checks.requiredConfig.status === 'fail' || checks.db.status === 'fail';

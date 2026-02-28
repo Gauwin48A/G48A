@@ -1,9 +1,15 @@
 const logger = require('../utils/logger');
+const { captureException } = require('../services/errorReporter');
 
 const errorHandler = (err, req, res, next) => {
     // Log the raw error for debugging
     console.error('🔥 [Global Error Handler]', err);
     if (logger && logger.error) logger.error(err);
+    captureException(err, {
+        method: req.method,
+        path: req.originalUrl,
+        userId: req.user?.userId || req.user?.id || null
+    });
 
     // Default error defaults
     let statusCode = err.statusCode || 500;

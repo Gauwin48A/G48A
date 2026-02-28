@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,29 +18,44 @@ const Analytics = () => {
     const [postPerformance, setPostPerformance] = useState([]);
     const [categoryBreakdown, setCategoryBreakdown] = useState([]);
     const [loading, setLoading] = useState(true);
-    const token = localStorage.getItem('authToken');
+    const requestIdRef = useRef(0);
 
-    useEffect(() => {
-        fetchAllAnalytics();
-    }, []);
-
-    const fetchAllAnalytics = async () => {
+    const fetchAllAnalytics = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
         setLoading(true);
         try {
             const [overviewRes, postsRes, categoriesRes] = await Promise.all([
-                api.get('/api/analytics/seller', { headers: { Authorization: `Bearer ${token}` } }),
-                api.get('/api/analytics/posts', { headers: { Authorization: `Bearer ${token}` } }),
-                api.get('/api/analytics/categories', { headers: { Authorization: `Bearer ${token}` } })
+                api.get('/api/analytics/seller'),
+                api.get('/api/analytics/posts'),
+                api.get('/api/analytics/categories')
             ]);
-            setOverview(overviewRes.data.overview);
-            setPostPerformance(postsRes.data.posts || []);
-            setCategoryBreakdown(categoriesRes.data.breakdown || []);
+            if (requestId !== requestIdRef.current) {
+                return;
+            }
+
+            const overviewPayload = overviewRes?.data ?? overviewRes;
+            const postsPayload = postsRes?.data ?? postsRes;
+            const categoriesPayload = categoriesRes?.data ?? categoriesRes;
+
+            setOverview(overviewPayload?.overview || null);
+            setPostPerformance(Array.isArray(postsPayload?.posts) ? postsPayload.posts : []);
+            setCategoryBreakdown(Array.isArray(categoriesPayload?.breakdown) ? categoriesPayload.breakdown : []);
         } catch (error) {
-            console.error('Failed to fetch analytics:', error);
+            if (import.meta.env.DEV) {
+                console.error('Failed to fetch analytics:', error);
+            }
         } finally {
-            setLoading(false);
+            if (requestId === requestIdRef.current) {
+                setLoading(false);
+            }
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchAllAnalytics();
+    }, [fetchAllAnalytics]);
+
+    const topPosts = useMemo(() => postPerformance.slice(0, 5), [postPerformance]);
 
     const StatCard = ({ icon: Icon, label, value, change, color }) => (
         <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg">
@@ -87,7 +102,7 @@ const Analytics = () => {
                             </h1>
                             <p className="text-purple-100 mt-1">Track your performance and growth</p>
                         </div>
-                        <Button variant="secondary" size="sm" onClick={fetchAllAnalytics}>
+                        <Button variant="secondary" size="sm" onClick={fetchAllAnalytics} disabled={loading}>
                             <RefreshCw className="w-4 h-4 mr-2" /> Refresh
                         </Button>
                     </div>
@@ -164,7 +179,7 @@ const Analytics = () => {
                             <p className="text-gray-500 text-center py-8">{t('no_posts')}</p>
                         ) : (
                             <div className="space-y-4">
-                                {postPerformance.slice(0, 5).map((post) => (
+                                {topPosts.map((post) => (
                                     <div key={post.post_id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                                         <div className="flex-1">
                                             <h4 className="font-semibold text-gray-900 dark:text-white">{post.title}</h4>

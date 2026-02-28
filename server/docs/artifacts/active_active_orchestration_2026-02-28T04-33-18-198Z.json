@@ -1,0 +1,228 @@
+{
+  "generatedAt": "2026-02-28T04:33:18.199Z",
+  "runId": "aa-1772253176779",
+  "config": {
+    "regionA": "http://127.0.0.1:5055",
+    "regionB": "http://127.0.0.1:6055",
+    "healthPath": "/api/ready",
+    "timeoutMs": 5000,
+    "settleMs": 250,
+    "mode": "execute",
+    "rollbackOnFailure": true,
+    "syntheticProbe": true,
+    "shiftSteps": [
+      {
+        "weightA": 90,
+        "weightB": 10
+      },
+      {
+        "weightA": 75,
+        "weightB": 25
+      },
+      {
+        "weightA": 50,
+        "weightB": 50
+      },
+      {
+        "weightA": 25,
+        "weightB": 75
+      },
+      {
+        "weightA": 0,
+        "weightB": 100
+      }
+    ]
+  },
+  "report": {
+    "finalStatus": "completed",
+    "startedAt": "2026-02-28T04:33:16.795Z",
+    "finishedAt": "2026-02-28T04:33:18.198Z",
+    "durationMs": 1403,
+    "timeline": [
+      {
+        "phase": "preflight",
+        "timestamp": "2026-02-28T04:33:16.795Z",
+        "mode": "execute",
+        "preflight": {
+          "status": "COMPLETE",
+          "eligible": true,
+          "issues": []
+        },
+        "safetyAudit": {
+          "source": "script",
+          "status": "BLOCKED",
+          "path": null,
+          "reason": "safety_audit_execution_failed:spawnSync C:\\WINDOWS\\system32\\cmd.exe ETIMEDOUT"
+        }
+      },
+      {
+        "phase": "initial_probe",
+        "timestamp": "2026-02-28T04:33:16.796Z",
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        }
+      },
+      {
+        "step": 1,
+        "timestamp": "2026-02-28T04:33:17.071Z",
+        "weights": {
+          "weightA": 90,
+          "weightB": 10
+        },
+        "command": {
+          "mode": "execute",
+          "command": "echo SHIFT_A=90 SHIFT_B=10",
+          "durationMs": 18,
+          "stdout": "SHIFT_A=90 SHIFT_B=10"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 2,
+        "timestamp": "2026-02-28T04:33:17.350Z",
+        "weights": {
+          "weightA": 75,
+          "weightB": 25
+        },
+        "command": {
+          "mode": "execute",
+          "command": "echo SHIFT_A=75 SHIFT_B=25",
+          "durationMs": 20,
+          "stdout": "SHIFT_A=75 SHIFT_B=25"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 3,
+        "timestamp": "2026-02-28T04:33:17.635Z",
+        "weights": {
+          "weightA": 50,
+          "weightB": 50
+        },
+        "command": {
+          "mode": "execute",
+          "command": "echo SHIFT_A=50 SHIFT_B=50",
+          "durationMs": 19,
+          "stdout": "SHIFT_A=50 SHIFT_B=50"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 4,
+        "timestamp": "2026-02-28T04:33:17.918Z",
+        "weights": {
+          "weightA": 25,
+          "weightB": 75
+        },
+        "command": {
+          "mode": "execute",
+          "command": "echo SHIFT_A=25 SHIFT_B=75",
+          "durationMs": 17,
+          "stdout": "SHIFT_A=25 SHIFT_B=75"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      },
+      {
+        "step": 5,
+        "timestamp": "2026-02-28T04:33:18.198Z",
+        "weights": {
+          "weightA": 0,
+          "weightB": 100
+        },
+        "command": {
+          "mode": "execute",
+          "command": "echo SHIFT_A=0 SHIFT_B=100",
+          "durationMs": 20,
+          "stdout": "SHIFT_A=0 SHIFT_B=100"
+        },
+        "probes": {
+          "regionA": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          },
+          "regionB": {
+            "ok": true,
+            "statusCode": 200,
+            "healthStatus": "ready",
+            "durationMs": 1
+          }
+        },
+        "healthy": true
+      }
+    ],
+    "failures": [],
+    "metrics": {
+      "rtoEstimateMs": 1403,
+      "rollbackEnabled": true
+    }
+  }
+}

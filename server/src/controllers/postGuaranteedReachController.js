@@ -1,0 +1,398 @@
+const pool = require('../config/db');
+let logger;
+try {
+  logger = require('../utils/logger');
+} catch (e) {
+  logger = null;
+}
+const logError = (logger && logger.error) ? logger.error : console.error;
+const logInfo = (logger && logger.info) ? logger.info : console.log;
+
+const { GUARANTEED_REACH_QUERY, GUARANTEED_REACH_FALLBACK } = require('../queries/guaranteedReachQuery');
+const redisCache = require('../config/redisCache');
+
+const QUERY_TIMEOUT = 3000;
+const CACHE_TTL = 5; // seconds
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 50;
+const DEFAULT_PAGE = 1;
+const REFRESH_SEED_BUCKET_MS = 10 * 1000;
+const MAX_FEED_SEED = 2147483646;
+const MAX_FEED_SEED_BIGINT = BigInt(MAX_FEED_SEED);
+const MIN_FEED_POOL = 200;
+const MAX_FEED_POOL = 1000;
+
+function getScalarQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseOptionalString(value) {
+  const scalar = getScalarQueryValue(value);
+  if (scalar === undefined || scalar === null) return null;
+  const normalized = (typeof scalar === 'string' ? scalar : String(scalar)).trim();
+  return normalized.length ? normalized : null;
+}
+
+function getAuthenticatedUserId(req) {
+  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const normalized = parseOptionalString(value);
+  if (!normalized || !/^\d+$/.test(normalized)) return fallback;
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
+
+function parseOptionalNumber(value) {
+  const normalized = parseOptionalString(value);
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function hashSeedString(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) % MAX_FEED_SEED;
+  }
+  return hash || 1;
+}
+
+function parseRefreshSeed(value) {
+  const fallbackSeed = Math.floor(Date.now() / REFRESH_SEED_BUCKET_MS);
+  const normalized = parseOptionalString(value);
+  if (!normalized) {
+    return fallbackSeed;
+  }
+
+  if (/^-?\d+$/.test(normalized)) {
+    try {
+      const numericSeed = BigInt(normalized);
+      const positiveSeed = numericSeed < 0n ? -numericSeed : numericSeed;
+      const boundedSeed = positiveSeed % MAX_FEED_SEED_BIGINT;
+      return Number(boundedSeed || 1n);
+    } catch {
+      return fallbackSeed;
+    }
+  }
+
+  return hashSeedString(normalized);
+}
+
+function parseSortBy(value) {
+  const normalized = parseOptionalString(value)?.toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  if (normalized === 'recent' || normalized === 'newest' || normalized === 'date_desc') {
+    return 'created_at';
+  }
+  if (normalized === 'oldest' || normalized === 'date_asc') {
+    return 'created_at';
+  }
+  if (normalized === 'popular') {
+    return 'views_count';
+  }
+  if (normalized === 'random' || normalized === 'shuffle') {
+    return 'shuffle';
+  }
+
+  const allowed = new Set(['created_at', 'price', 'views_count', 'likes', 'likes_count', 'title']);
+  return allowed.has(normalized) ? normalized : null;
+}
+
+function parseSortOrder(value, sortBy, rawSortBy) {
+  const normalized = parseOptionalString(value)?.toLowerCase();
+  if (normalized === 'asc' || normalized === 'desc') {
+    return normalized;
+  }
+  const rawSortToken = parseOptionalString(rawSortBy)?.toLowerCase();
+  if (sortBy === 'created_at') {
+    if (rawSortToken === 'date_asc' || rawSortToken === 'oldest') {
+      return 'asc';
+    }
+    if (rawSortToken === 'recent' || rawSortToken === 'newest' || rawSortToken === 'date_desc') {
+      return 'desc';
+    }
+  }
+  return 'desc';
+}
+
+function createSeededRandom(seed) {
+  let state = seed % 2147483647;
+  if (state <= 0) {
+    state += 2147483646;
+  }
+  return () => {
+    state = (state * 16807) % 2147483647;
+    return (state - 1) / 2147483646;
+  };
+}
+
+function shuffleRowsWithSeed(rows, seed) {
+  const random = createSeededRandom(seed);
+  const shuffledRows = [...rows];
+  for (let i = shuffledRows.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffledRows[i], shuffledRows[j]] = [shuffledRows[j], shuffledRows[i]];
+  }
+  return shuffledRows;
+}
+
+function compareStrings(left, right, sortOrder) {
+  const a = String(left || '').toLowerCase();
+  const b = String(right || '').toLowerCase();
+  if (a === b) return 0;
+  return sortOrder === 'asc' ? (a < b ? -1 : 1) : (a > b ? -1 : 1);
+}
+
+function compareNumbers(left, right, sortOrder) {
+  const a = Number.isFinite(Number(left)) ? Number(left) : 0;
+  const b = Number.isFinite(Number(right)) ? Number(right) : 0;
+  if (a === b) return 0;
+  return sortOrder === 'asc' ? a - b : b - a;
+}
+
+function sortPosts(posts, sortBy, sortOrder, refreshSeed) {
+  if (!sortBy) {
+    return posts;
+  }
+  if (sortBy === 'shuffle') {
+    return shuffleRowsWithSeed(posts, refreshSeed);
+  }
+  if (sortBy === 'created_at') {
+    const datedPosts = posts.map((post) => {
+      const parsedDate = Date.parse(post.created_at);
+      return {
+        post,
+        sortValue: Number.isNaN(parsedDate) ? 0 : parsedDate
+      };
+    });
+    datedPosts.sort((a, b) => (sortOrder === 'asc' ? a.sortValue - b.sortValue : b.sortValue - a.sortValue));
+    return datedPosts.map((entry) => entry.post);
+  }
+
+  const sorted = [...posts];
+  sorted.sort((a, b) => {
+    if (sortBy === 'price') {
+      return compareNumbers(a.price, b.price, sortOrder);
+    }
+    if (sortBy === 'views_count') {
+      return compareNumbers(
+        a.views_count ?? a.views ?? 0,
+        b.views_count ?? b.views ?? 0,
+        sortOrder
+      );
+    }
+    if (sortBy === 'likes' || sortBy === 'likes_count') {
+      return compareNumbers(
+        a.likes_count ?? a.likes ?? 0,
+        b.likes_count ?? b.likes ?? 0,
+        sortOrder
+      );
+    }
+    if (sortBy === 'title') {
+      return compareStrings(a.title, b.title, sortOrder);
+    }
+    return 0;
+  });
+  return sorted;
+}
+
+function getCacheKey(userId, limit, refreshSeed, filters) {
+  const scopedUserId = userId ? String(userId) : 'anonymous';
+  const filterKey = filters ? JSON.stringify(filters) : '';
+  return `feed:${scopedUserId}:${refreshSeed}:${limit}:${filterKey}`;
+}
+
+async function getFromCache(key) {
+  try {
+    const data = await redisCache.get(key);
+    if (data !== null && data !== undefined) {
+      const isRedis = typeof redisCache.isRedisAvailable === 'function'
+        ? redisCache.isRedisAvailable()
+        : false;
+      redisCache.recordHit(isRedis);
+      return data;
+    }
+    redisCache.recordMiss();
+    return null;
+  } catch (err) {
+    logInfo('[GuaranteedReach] Cache get error, continuing without cache');
+    return null;
+  }
+}
+
+async function setCache(key, data) {
+  try {
+    await redisCache.set(key, data, CACHE_TTL);
+  } catch (err) {
+    logInfo('[GuaranteedReach] Cache set error:', err.message);
+  }
+}
+
+async function queryWithTimeout(query, params, timeoutMs = QUERY_TIMEOUT) {
+  return pool.query({
+    text: query,
+    values: params,
+    query_timeout: timeoutMs
+  });
+}
+
+exports.getCacheStats = async (req, res) => {
+  try {
+    const stats = redisCache.getStats();
+    const health = await redisCache.healthCheck();
+    res.json({
+      ...stats,
+      health,
+      message: stats.isRedisAvailable
+        ? `Redis distributed cache active - ${stats.hitRate} hit rate`
+        : `In-memory fallback active - ${stats.hitRate} hit rate`
+    });
+  } catch (err) {
+    res.json({
+      error: err.message,
+      fallback: 'Using in-memory cache'
+    });
+  }
+};
+
+exports.getGuaranteedReachPosts = async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    const limit = parsePositiveInt(req.query.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+    const offset = (page - 1) * limit;
+    const sortBy = parseSortBy(req.query.sortBy);
+    const sortOrder = parseSortOrder(req.query.sortOrder, sortBy, req.query.sortBy);
+
+    // Deterministic seed per short time bucket keeps feed fresh while preserving cache hits.
+    const refreshSeed = parseRefreshSeed(
+      req.query.refresh || req.query.seed || req.query.shuffleSeed
+    );
+
+    const category = parseOptionalString(req.query.category);
+    const search = parseOptionalString(req.query.search);
+    const location = parseOptionalString(req.query.location);
+    const minPriceValue = parseOptionalNumber(req.query.minPrice);
+    const maxPriceValue = parseOptionalNumber(req.query.maxPrice);
+    const hasFilters = Boolean(
+      search ||
+      location ||
+      minPriceValue !== null ||
+      maxPriceValue !== null ||
+      (category && category.toLowerCase() !== 'all')
+    );
+    const targetPool = hasFilters
+      ? Math.max(MIN_FEED_POOL * 2, limit * 20, limit + offset)
+      : Math.max(MIN_FEED_POOL, limit * 12, limit + offset);
+    const queryLimit = Math.min(MAX_FEED_POOL, targetPool);
+
+    const cacheKey = getCacheKey(userId, queryLimit, refreshSeed, {
+      category,
+      search,
+      minPrice: minPriceValue,
+      maxPrice: maxPriceValue,
+      location
+    });
+    let rows = await getFromCache(cacheKey);
+    let fromCache = false;
+
+    const startTime = Date.now();
+    if (rows) {
+      fromCache = true;
+      logInfo(`[GuaranteedReach] REDIS CACHE HIT - ${cacheKey.substring(0, 30)}...`);
+    } else {
+      try {
+        const result = await queryWithTimeout(GUARANTEED_REACH_QUERY, [userId, queryLimit, refreshSeed]);
+        rows = result.rows;
+        await setCache(cacheKey, rows);
+        logInfo(`[GuaranteedReach] CACHE MISS - Query: ${Date.now() - startTime}ms, ${rows.length} posts`);
+      } catch (queryErr) {
+        logInfo('[GuaranteedReach] Timeout, using fallback query');
+        const fallback = await queryWithTimeout(GUARANTEED_REACH_FALLBACK, [queryLimit, userId]);
+        rows = fallback.rows;
+      }
+    }
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      logInfo('[GuaranteedReach] Empty fair-feed result, using fallback feed query');
+      const fallback = await queryWithTimeout(GUARANTEED_REACH_FALLBACK, [queryLimit, userId]);
+      rows = fallback.rows;
+      fromCache = false;
+      if (rows.length > 0) {
+        await setCache(cacheKey, rows);
+      }
+    }
+
+    const queryTime = Date.now() - startTime;
+    let posts = rows;
+
+    if (category && category.toLowerCase() !== 'all') {
+      const normalizedCategory = category.toLowerCase();
+      posts = posts.filter((p) =>
+        String(p.category_id) === category ||
+        p.category_name?.toLowerCase() === normalizedCategory
+      );
+    }
+    if (search) {
+      const searchLower = search.toLowerCase();
+      posts = posts.filter((p) =>
+        p.title?.toLowerCase().includes(searchLower) ||
+        p.description?.toLowerCase().includes(searchLower) ||
+        p.location?.toLowerCase().includes(searchLower) ||
+        p.author_name?.toLowerCase().includes(searchLower) ||
+        p.category_name?.toLowerCase().includes(searchLower)
+      );
+    }
+    if (minPriceValue !== null) {
+      posts = posts.filter((p) => Number(p.price) >= minPriceValue);
+    }
+    if (maxPriceValue !== null) {
+      posts = posts.filter((p) => Number(p.price) <= maxPriceValue);
+    }
+    if (location) {
+      posts = posts.filter((p) => p.location?.toLowerCase().includes(location.toLowerCase()));
+    }
+    posts = sortPosts(posts, sortBy, sortOrder, refreshSeed);
+
+    const paginatedPosts = posts.slice(offset, offset + limit);
+    const feedMeta = {
+      lowReachCount: 0,
+      freshCount: 0,
+      rotatingCount: 0
+    };
+    for (const post of paginatedPosts) {
+      if (post.feed_phase === 'low_reach') feedMeta.lowReachCount += 1;
+      if (post.feed_phase === 'fresh') feedMeta.freshCount += 1;
+      if (post.feed_phase === 'rotating') feedMeta.rotatingCount += 1;
+    }
+
+    const transformedPosts = paginatedPosts.map((post) => ({
+      ...post,
+      id: post.post_id,
+      category: post.category_name || 'General',
+      user: {
+        name: post.author_name || 'Seller',
+        id: post.author_id
+      },
+      image_url: post.images?.[0] || '/placeholder.svg'
+    }));
+
+    res.json({
+      posts: transformedPosts,
+      total: posts.length,
+      page,
+      limit,
+      cached: fromCache,
+      queryTimeMs: queryTime,
+      feedMeta
+    });
+  } catch (err) {
+    logError('[GuaranteedReach] Error:', err.message);
+    res.status(500).json({ error: err.message, posts: [] });
+  }
+};

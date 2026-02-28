@@ -8,19 +8,37 @@ const Redis = require('ioredis');
 let redis = null;
 let isRedisAvailable = false;
 
+function parseIntegerEnv(value, fallback, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
+        return fallback;
+    }
+    return parsed;
+}
+
 // Try to connect to Redis
 const initRedis = () => {
     if (process.env.REDIS_URL || process.env.REDIS_HOST) {
         try {
-            redis = new Redis({
-                host: process.env.REDIS_HOST || 'localhost',
-                port: process.env.REDIS_PORT || 6379,
-                password: process.env.REDIS_PASSWORD || undefined,
-                db: process.env.REDIS_DB || 0,
+            const connectionOptions = {
                 retryDelayOnFailover: 100,
                 maxRetriesPerRequest: 1,
                 lazyConnect: true
-            });
+            };
+
+            const redisUrl = String(process.env.REDIS_URL || '').trim();
+
+            if (redisUrl) {
+                redis = new Redis(redisUrl, connectionOptions);
+            } else {
+                redis = new Redis({
+                    host: String(process.env.REDIS_HOST || 'localhost').trim() || 'localhost',
+                    port: parseIntegerEnv(process.env.REDIS_PORT, 6379, { min: 1, max: 65535 }),
+                    password: process.env.REDIS_PASSWORD || undefined,
+                    db: parseIntegerEnv(process.env.REDIS_DB, 0, { min: 0, max: 1024 }),
+                    ...connectionOptions
+                });
+            }
 
             redis.on('connect', () => {
                 isRedisAvailable = true;
@@ -144,7 +162,30 @@ const incr = async (key, ttlSeconds = 900) => {
     return nextCount;
 };
 
+const close = async () => {
+    for (const [key, timer] of memoryExpiryTimers.entries()) {
+        clearTimeout(timer);
+        memoryExpiryTimers.delete(key);
+    }
+    memoryStore.clear();
+
+    if (redis) {
+        try {
+            await redis.quit();
+        } catch {
+            try {
+                redis.disconnect();
+            } catch {
+                // noop
+            }
+        }
+    }
+
+    redis = null;
+    isRedisAvailable = false;
+};
+
 // Initialize on module load
 initRedis();
 
-module.exports = { get, set, del, incr, isRedisAvailable: () => isRedisAvailable };
+module.exports = { get, set, del, incr, close, isRedisAvailable: () => isRedisAvailable };

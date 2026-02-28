@@ -1,15 +1,4 @@
-import axios from "axios";
+import api from './services/api';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/",
-});
-
-api.interceptors.request.use((config) => {
-  const lang = localStorage.getItem("lang") || "en";
-  config.headers["Accept-Language"] = lang;
-  const token = localStorage.getItem("authToken");
-  if (token) config.headers["Authorization"] = `Bearer ${token}`;
-  return config;
-});
-
+// Legacy import shim. Keep this file so older imports resolve to the centralized API client.
 export default api;

@@ -1,0 +1,162 @@
+{
+  "generatedAt": "2026-02-28T05:15:25.221Z",
+  "runId": "aadg-1772255694933",
+  "config": {
+    "regionA": null,
+    "regionB": null,
+    "healthPath": "/api/ready",
+    "timeoutMs": 5000,
+    "skipProbe": false
+  },
+  "report": {
+    "gate": {
+      "status": "BLOCKED",
+      "eligible": false,
+      "blockedCount": 5,
+      "reasons": [
+        "traffic_manager_command",
+        "region_a_endpoint",
+        "region_b_endpoint",
+        "replica_connection_inputs",
+        "db_queue_safety_gate"
+      ],
+      "dependencies": [
+        {
+          "key": "traffic_manager_command",
+          "owner": "Platform Engineering",
+          "status": "BLOCKED",
+          "dependency": "ACTIVE_ACTIVE_TRAFFIC_COMMAND with live provider credentials",
+          "impact": "Cannot execute weighted traffic shift in live mode",
+          "fallback": "Run synthetic execute proof with echo/template command until credential path is provisioned",
+          "details": {
+            "configured": false
+          }
+        },
+        {
+          "key": "region_a_endpoint",
+          "owner": "Platform Engineering",
+          "status": "BLOCKED",
+          "dependency": "REGION_A_BASE_URL reachable readiness endpoint",
+          "impact": "Cannot verify source region health before failover",
+          "fallback": "Keep tabletop and synthetic probes active",
+          "details": {
+            "regionA": null,
+            "probe": {
+              "ok": false,
+              "statusCode": null,
+              "healthStatus": "missing_url",
+              "durationMs": 0
+            }
+          }
+        },
+        {
+          "key": "region_b_endpoint",
+          "owner": "Platform Engineering",
+          "status": "BLOCKED",
+          "dependency": "REGION_B_BASE_URL reachable readiness endpoint",
+          "impact": "Cannot verify destination region health before failover",
+          "fallback": "Block live shift and keep simulation coverage",
+          "details": {
+            "regionB": null,
+            "probe": {
+              "ok": false,
+              "statusCode": null,
+              "healthStatus": "missing_url",
+              "durationMs": 0
+            }
+          }
+        },
+        {
+          "key": "replica_connection_inputs",
+          "owner": "DB Engineering",
+          "status": "BLOCKED",
+          "dependency": "FAILOVER_PRIMARY_DB_URL + FAILOVER_REPLICA_DB_URL",
+          "impact": "Cannot compute replica lag or failover eligibility from live replica state",
+          "fallback": "Continue with queue duplicate audit and keep gate in BLOCKED state",
+          "details": {
+            "primaryConfigured": false,
+            "replicaConfigured": false
+          }
+        },
+        {
+          "key": "db_queue_safety_gate",
+          "owner": "DB Engineering + Backend Lead",
+          "status": "BLOCKED",
+          "dependency": "failover db/queue audit gate reports COMPLETE",
+          "impact": "Execute mode must remain blocked by safety policy",
+          "fallback": "Use synthetic execute mode with safety gate disabled only for rehearsal",
+          "details": {
+            "auditStatus": "BLOCKED",
+            "gateStatus": "BLOCKED",
+            "reportPath": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\failover_db_queue_audit_2026-02-28T05-14-55-193Z.json",
+            "reasons": [
+              "missing_primary_or_replica_connection"
+            ],
+            "error": null
+          }
+        }
+      ]
+    },
+    "probeRegionA": {
+      "ok": false,
+      "statusCode": null,
+      "healthStatus": "missing_url",
+      "durationMs": 0
+    },
+    "probeRegionB": {
+      "ok": false,
+      "statusCode": null,
+      "healthStatus": "missing_url",
+      "durationMs": 0
+    },
+    "dbQueueAudit": {
+      "status": "BLOCKED",
+      "reportPath": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\failover_db_queue_audit_2026-02-28T05-14-55-193Z.json",
+      "report": {
+        "generatedAt": "2026-02-28T05:14:55.195Z",
+        "gate": {
+          "status": "BLOCKED",
+          "eligible": false,
+          "reasons": [
+            "missing_primary_or_replica_connection"
+          ],
+          "thresholds": {
+            "maxReplicaLagBytes": 16777216,
+            "maxReplicaReplayDelaySeconds": 60,
+            "maxQueueDuplicateGroups": 0,
+            "maxQueueDuplicateRows": 0,
+            "maxTranslationDuplicateGroups": 0
+          }
+        },
+        "thresholds": {
+          "maxReplicaLagBytes": 16777216,
+          "maxReplicaReplayDelaySeconds": 60,
+          "maxQueueDuplicateGroups": 0,
+          "maxQueueDuplicateRows": 0,
+          "maxTranslationDuplicateGroups": 0
+        },
+        "replicaLagAudit": {
+          "status": "BLOCKED",
+          "reason": "missing_primary_or_replica_connection"
+        },
+        "queueReplayAudit": {
+          "status": "COMPLETE",
+          "lookbackHours": 24,
+          "payments": {
+            "duplicateGroupCount": 0,
+            "duplicateRowCount": 0
+          },
+          "translationQueue": {
+            "duplicateGroupCount": 0
+          },
+          "warnings": []
+        },
+        "dependencies": {
+          "primaryUrlConfigured": false,
+          "replicaUrlConfigured": false
+        }
+      },
+      "rawOutput": "[dotenv@17.2.3] injecting env (13) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`\n✅ Database connected successfully\nFAILOVER_DB_QUEUE_AUDIT=C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\failover_db_queue_audit_2026-02-28T05-14-55-193Z.json\nFAILOVER_DB_QUEUE_STATUS=BLOCKED"
+    }
+  }
+}

@@ -10,8 +10,9 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { MessageCircle, Zap, Check, BadgePercent, HandCoins } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE = getApiOriginBase();
 
 const BargainActions = ({ post, currentUser, onChatClick }) => {
     const [offerSent, setOfferSent] = useState(false);
@@ -33,11 +34,12 @@ const BargainActions = ({ post, currentUser, onChatClick }) => {
         setLoading(true);
 
         try {
+            const authToken = localStorage.getItem('authToken') || localStorage.getItem('token');
             const response = await fetch(`${API_BASE}/api/offers`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
                 },
                 credentials: 'include',
                 body: JSON.stringify({
@@ -163,3 +165,4 @@ const BargainActions = ({ post, currentUser, onChatClick }) => {
 };
 
 export default BargainActions;
+

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const SecuritySettings = () => {
     const { toast } = useToast();
@@ -30,7 +31,7 @@ const SecuritySettings = () => {
     const [showBackupCodes, setShowBackupCodes] = useState(false);
     const [verificationCode, setVerificationCode] = useState('');
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const baseUrl = getApiOriginBase();
     const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('userId');
 
@@ -427,3 +428,4 @@ const SecuritySettings = () => {
 };
 
 export default SecuritySettings;
+

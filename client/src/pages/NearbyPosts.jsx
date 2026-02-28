@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { getBestAvailableLocation } from '@/services/locationService';
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const NearbyPosts = () => {
     const { t } = useTranslation();
@@ -64,7 +65,7 @@ const NearbyPosts = () => {
             setLoading(true);
             setError(null);
             try {
-                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                const baseUrl = getApiOriginBase();
                 const res = await fetch(`${baseUrl}/api/nearby?lat=${userLocation.lat}&long=${userLocation.long}&radius=${radius}`);
                 const data = await res.json();
                 if (data.success) {
@@ -253,3 +254,4 @@ const NearbyPosts = () => {
 };
 
 export default NearbyPosts;
+

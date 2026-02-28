@@ -7,6 +7,7 @@
  * 3. Copy the firebaseConfig object from there and paste below
  * 4. Get the VAPID key from Cloud Messaging settings
  */
+import { buildApiPath } from '@/lib/networkConfig';
 
 // TODO: Replace with your Firebase config
 const firebaseConfig = {
@@ -88,7 +89,7 @@ export async function requestNotificationPermission() {
  */
 export async function registerTokenWithBackend(token, userId) {
     try {
-        const response = await fetch('/api/push/register', {
+        const response = await fetch(buildApiPath('/push/register'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

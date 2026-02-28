@@ -1,5 +1,6 @@
 const JWT_CONFIG = require('../config/jwtConfig');
 const { verifyToken } = require('../services/tokenVerificationCache');
+const { getAccessTokenFromRequest } = require('../utils/requestAuth');
 const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
 
 /**
@@ -7,14 +8,7 @@ const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
  * Reads JWT from HttpOnly cookie first (secure), then falls back to Authorization header
  */
 const protect = (req, res, next) => {
-  // Priority 1: HttpOnly cookie (most secure - XSS-proof)
-  let token = req.cookies?.accessToken;
-
-  // Priority 2: Authorization header (backward compatibility)
-  if (!token) {
-    const authHeader = req.headers["authorization"];
-    token = authHeader?.split(" ")[1];
-  }
+  const token = getAccessTokenFromRequest(req, { preferCookie: true });
 
   if (!token) {
     if (authDebugEnabled) {
@@ -38,14 +32,7 @@ const protect = (req, res, next) => {
  * Also checks HttpOnly cookie first
  */
 const optionalAuth = (req, res, next) => {
-  // Priority 1: HttpOnly cookie
-  let token = req.cookies?.accessToken;
-
-  // Priority 2: Authorization header
-  if (!token) {
-    const authHeader = req.headers["authorization"];
-    token = authHeader?.split(" ")[1];
-  }
+  const token = getAccessTokenFromRequest(req, { preferCookie: true });
 
   if (!token) {
     req.user = null;

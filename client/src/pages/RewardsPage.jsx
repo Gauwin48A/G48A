@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
-import { useTranslation } from 'react-i18next';
+import { getAccessToken, getUserId } from '@/utils/authStorage';
 
 const RewardsPage = () => {
-    const { t } = useTranslation();
     const { user, loading: authLoading } = useAuth(); // Use global auth state
     const [rewards, setRewards] = useState({ points: 0 });
     const [directReferrals, setDirectReferrals] = useState([]);
@@ -13,18 +13,19 @@ const RewardsPage = () => {
     const [referralCode, setReferralCode] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const requestIdRef = useRef(0);
 
     useEffect(() => {
         // Wait for AuthContext to finish checking session
         if (authLoading) return;
 
         const fetchUserData = async () => {
+            const requestId = ++requestIdRef.current;
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('authToken');
-            // Use userId from AuthContext if available, fallback to localStorage
-            const userId = user?.id || localStorage.getItem('userId');
+            const token = getAccessToken();
+            const userId = getUserId(user);
 
             if (!token || !userId) {
                 setError('Please login to view rewards');
@@ -34,7 +35,13 @@ const RewardsPage = () => {
 
             try {
                 // Use the centralized API service (handles refresh tokens automatically)
-                const rewardsData = await api.get(`/rewards?userId=${userId}`);
+                const rewardsResponse = await api.get('/rewards', {
+                    params: { userId }
+                });
+                if (requestId !== requestIdRef.current) {
+                    return;
+                }
+                const rewardsData = rewardsResponse?.data ?? rewardsResponse;
 
                 // Handle both old format (array) and new format (object with user/referralChain)
                 if (rewardsData.user) {
@@ -53,7 +60,13 @@ const RewardsPage = () => {
 
                 // Fetch reward log if available
                 try {
-                    const logData = await api.get(`/rewards/log?userId=${userId}`);
+                    const logResponse = await api.get('/rewards/log', {
+                        params: { userId }
+                    });
+                    if (requestId !== requestIdRef.current) {
+                        return;
+                    }
+                    const logData = logResponse?.data ?? logResponse;
                     setRewardLog(Array.isArray(logData) ? logData : []);
                 } catch (logErr) {
                     // Log endpoint might not exist yet or empty - continue
@@ -61,10 +74,14 @@ const RewardsPage = () => {
                 }
 
             } catch (err) {
-                console.error('Error fetching rewards:', err);
+                if (import.meta.env.DEV) {
+                    console.error('Error fetching rewards:', err);
+                }
                 setError(err.message || 'Failed to load rewards');
             } finally {
-                setLoading(false);
+                if (requestId === requestIdRef.current) {
+                    setLoading(false);
+                }
             }
         };
 
@@ -84,9 +101,9 @@ const RewardsPage = () => {
             <div className="container mx-auto p-4">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
                     <p className="text-red-600">{error}</p>
-                    <a href="/login" className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    <Link to="/login" className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
                         Login
-                    </a>
+                    </Link>
                 </div>
             </div>
         );

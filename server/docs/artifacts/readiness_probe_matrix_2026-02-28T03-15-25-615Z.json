@@ -1,0 +1,195 @@
+{
+  "generatedAt": "2026-02-28T03:15:25.615Z",
+  "scenarios": [
+    {
+      "scenario": "ready",
+      "baseUrl": "http://127.0.0.1:5061",
+      "error": "Server did not become healthy at http://127.0.0.1:5061 within 180000ms",
+      "startupLogs": {
+        "stdout": [
+          "[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild",
+          "[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }",
+          "[INFO] [ErrorReporter] Sentry disabled (SENTRY_DSN not set).",
+          "[JWT] Config loaded. Access token expiry: 15m",
+          "ℹ️ Redis not configured, using in-memory storage",
+          "[CacheService] In-memory cache initialized with stampede protection",
+          "📁 Upload: Local disk storage (development mode)",
+          "[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com",
+          "⚠️ Pusher: Not configured (will use Socket.io fallback)",
+          "🛡️ Operation Polish: Security & Performance middleware loaded",
+          "[CRON] Initializing CRON jobs...",
+          "- Post expiry (tier-based): Daily at 00:00 IST",
+          "- Expiry warnings: Daily at 09:00 IST",
+          "- Subscription expiry: Daily at 10:00 IST",
+          "- Transaction expiry: Hourly",
+          "- Payment reconciliation: Every 2 hours at :20",
+          "- Offer expiry (48h): Hourly at :30",
+          "- Daily digest: Daily at 09:30 IST",
+          "- Fraud batch review: Every 6 hours",
+          "- Complaint auto-resolution: Daily at 02:00 IST\n[CRON] CRON jobs initialized",
+          "📁 Static file caching configured",
+          "✅ Database connected successfully",
+          "[INFO] [SchemaGuard] User tier columns verified",
+          "[2026-02-28 08:42:22.437 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m✅ Server running on port 5061\u001b[39m",
+          "[2026-02-28 08:42:22.437 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🚀 System Online: Enforced Architecture\u001b[39m\n[2026-02-28 08:42:22.559 +0530] \u001b[32mINFO\u001b[39m: \u001b[36mTier schema check complete\u001b[39m",
+          "[Subscription] Checking for expiring subscriptions...",
+          "[Subscription] Found 0 users with expiring subscriptions\n[Subscription] Expiry check complete",
+          "[2026-02-28 08:42:27.448 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🔔 Checking expiring subscriptions...\u001b[39m",
+          "[2026-02-28 08:42:27.453 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🔔 Subscription check complete\u001b[39m"
+        ],
+        "stderr": [
+          "ValidationError: Custom keyGenerator appears to use request IP without calling the ipKeyGenerator helper function for IPv6 addresses. This could allow IPv6 users to bypass limits. See https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/ for more information.\n    at Object.keyGeneratorIpFallback (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:637:13)\n    at wrappedValidations.<computed> [as keyGeneratorIpFallback] (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:680:22)\n    at parseOptions (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:750:16)\n    at rateLimit (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:831:18)\n    at Object.<anonymous> (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\src\\middleware\\security.js:14:22)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {\n  code: 'ERR_ERL_KEY_GEN_IPV6',\n  help: 'https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/'\n}"
+        ]
+      }
+    },
+    {
+      "scenario": "degraded_snapshot_stale",
+      "baseUrl": "http://127.0.0.1:5062",
+      "statusCode": 200,
+      "readinessStatus": "degraded",
+      "checks": {
+        "requiredConfig": {
+          "status": "pass",
+          "required": [
+            "JWT_SECRET",
+            "REFRESH_SECRET",
+            "DB_HOST",
+            "DB_PORT",
+            "DB_NAME",
+            "DB_USER"
+          ],
+          "missing": []
+        },
+        "db": {
+          "status": "pass",
+          "latencyMs": 1
+        },
+        "cache": {
+          "status": "pass",
+          "details": {
+            "status": "healthy",
+            "type": "memory",
+            "size": 0,
+            "message": "Using in-memory fallback cache"
+          }
+        },
+        "sessionStore": {
+          "status": "pass",
+          "mode": "memory-fallback",
+          "reason": "memory fallback explicitly allowed for readiness scenario"
+        },
+        "snapshot": {
+          "status": "warn",
+          "configured": true,
+          "path": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\directory_snapshot_stale.json",
+          "lastModified": "2026-02-18T03:12:20.340Z",
+          "ageHours": 240.05,
+          "maxAgeHours": 1
+        }
+      },
+      "startupLogs": {
+        "stdout": [
+          "[CRON] Initializing CRON jobs...",
+          "- Post expiry (tier-based): Daily at 00:00 IST",
+          "- Expiry warnings: Daily at 09:00 IST",
+          "- Subscription expiry: Daily at 10:00 IST",
+          "- Transaction expiry: Hourly",
+          "- Payment reconciliation: Every 2 hours at :20",
+          "- Offer expiry (48h): Hourly at :30",
+          "- Daily digest: Daily at 09:30 IST",
+          "- Fraud batch review: Every 6 hours",
+          "- Complaint auto-resolution: Daily at 02:00 IST\n[CRON] CRON jobs initialized",
+          "📁 Static file caching configured",
+          "✅ Database connected successfully",
+          "[INFO] [SchemaGuard] User tier columns verified",
+          "[2026-02-28 08:45:22.224 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m✅ Server running on port 5062\u001b[39m",
+          "[2026-02-28 08:45:22.225 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🚀 System Online: Enforced Architecture\u001b[39m\n[2026-02-28 08:45:22.315 +0530] \u001b[32mINFO\u001b[39m: \u001b[36mTier schema check complete\u001b[39m",
+          "[Redis] Connection error:",
+          "[Redis] Connection closed",
+          "[Redis] Connection error:",
+          "[Redis] Connection closed",
+          "[Redis] Not available, using in-memory fallback: Reached the max retries per request limit (which is 1). Refer to \"maxRetriesPerRequest\" option for details."
+        ],
+        "stderr": [
+          "ValidationError: Custom keyGenerator appears to use request IP without calling the ipKeyGenerator helper function for IPv6 addresses. This could allow IPv6 users to bypass limits. See https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/ for more information.\n    at Object.keyGeneratorIpFallback (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:637:13)\n    at wrappedValidations.<computed> [as keyGeneratorIpFallback] (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:680:22)\n    at parseOptions (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:750:16)\n    at rateLimit (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:831:18)\n    at Object.<anonymous> (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\src\\middleware\\security.js:14:22)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {\n  code: 'ERR_ERL_KEY_GEN_IPV6',\n  help: 'https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/'\n}"
+        ]
+      }
+    },
+    {
+      "scenario": "not_ready_missing_config",
+      "baseUrl": "http://127.0.0.1:5063",
+      "statusCode": 503,
+      "readinessStatus": "not_ready",
+      "checks": {
+        "requiredConfig": {
+          "status": "fail",
+          "required": [
+            "JWT_SECRET",
+            "REFRESH_SECRET",
+            "DB_HOST",
+            "DB_PORT",
+            "DB_NAME",
+            "DB_USER"
+          ],
+          "missing": [
+            "JWT_SECRET"
+          ]
+        },
+        "db": {
+          "status": "pass",
+          "latencyMs": 2
+        },
+        "cache": {
+          "status": "pass",
+          "details": {
+            "status": "healthy",
+            "type": "memory",
+            "size": 0,
+            "message": "Using in-memory fallback cache"
+          }
+        },
+        "sessionStore": {
+          "status": "pass",
+          "mode": "memory-fallback",
+          "reason": "memory fallback explicitly allowed for readiness scenario"
+        },
+        "snapshot": {
+          "status": "pass",
+          "configured": true,
+          "path": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\directory_snapshot_fresh.json",
+          "lastModified": "2026-02-28T03:12:20.340Z",
+          "ageHours": 0.05,
+          "maxAgeHours": 72
+        }
+      },
+      "startupLogs": {
+        "stdout": [
+          "🛡️ Operation Polish: Security & Performance middleware loaded",
+          "[CRON] Initializing CRON jobs...",
+          "- Post expiry (tier-based): Daily at 00:00 IST",
+          "- Expiry warnings: Daily at 09:00 IST",
+          "- Subscription expiry: Daily at 10:00 IST",
+          "- Transaction expiry: Hourly",
+          "- Payment reconciliation: Every 2 hours at :20",
+          "- Offer expiry (48h): Hourly at :30",
+          "- Daily digest: Daily at 09:30 IST",
+          "- Fraud batch review: Every 6 hours",
+          "- Complaint auto-resolution: Daily at 02:00 IST\n[CRON] CRON jobs initialized",
+          "📁 Static file caching configured",
+          "✅ Database connected successfully",
+          "[INFO] [SchemaGuard] User tier columns verified",
+          "[2026-02-28 08:45:24.533 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m✅ Server running on port 5063\u001b[39m",
+          "[2026-02-28 08:45:24.533 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🚀 System Online: Enforced Architecture\u001b[39m\n[2026-02-28 08:45:24.616 +0530] \u001b[32mINFO\u001b[39m: \u001b[36mTier schema check complete\u001b[39m",
+          "[Redis] Connection error:",
+          "[Redis] Connection closed",
+          "[Redis] Connection error:",
+          "[Redis] Connection closed\n[Redis] Not available, using in-memory fallback: Reached the max retries per request limit (which is 1). Refer to \"maxRetriesPerRequest\" option for details."
+        ],
+        "stderr": [
+          "[JWT] Generated temporary access secret - set env vars for persistence.",
+          "ValidationError: Custom keyGenerator appears to use request IP without calling the ipKeyGenerator helper function for IPv6 addresses. This could allow IPv6 users to bypass limits. See https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/ for more information.\n    at Object.keyGeneratorIpFallback (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:637:13)\n    at wrappedValidations.<computed> [as keyGeneratorIpFallback] (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:680:22)\n    at parseOptions (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:750:16)\n    at rateLimit (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\node_modules\\express-rate-limit\\dist\\index.cjs:831:18)\n    at Object.<anonymous> (C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\src\\middleware\\security.js:14:22)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14)\n    at Object..js (node:internal/modules/cjs/loader:1895:10)\n    at Module.load (node:internal/modules/cjs/loader:1465:32)\n    at Function._load (node:internal/modules/cjs/loader:1282:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {\n  code: 'ERR_ERL_KEY_GEN_IPV6',\n  help: 'https://express-rate-limit.github.io/ERR_ERL_KEY_GEN_IPV6/'\n}"
+        ]
+      }
+    }
+  ]
+}

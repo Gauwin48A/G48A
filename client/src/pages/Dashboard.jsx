@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,11 @@ import {
 } from "lucide-react";
 import GreenNavbar from '../components/GreenNavbar';
 import { translateText } from '../utils/translateContent';
+import { useAuth } from '@/context/AuthContext';
+import { getApiOriginBase } from '@/lib/networkConfig';
+
+const dashboardBaseUrl = String(getApiOriginBase()).replace(/\/+$/, '');
+const DASHBOARD_API_URL = dashboardBaseUrl.endsWith('/api') ? dashboardBaseUrl : `${dashboardBaseUrl}/api`;
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -21,29 +27,44 @@ const Dashboard = () => {
   const [topSellers, setTopSellers] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const { user: authUser } = useAuth();
 
-  const currentLang = i18n.language || localStorage.getItem('mhub_language') || 'en';
+  const currentLang = useMemo(
+    () => i18n.language || localStorage.getItem('mhub_language') || 'en',
+    [i18n.language]
+  );
 
   useEffect(() => {
-    setLoading(true);
+    const abortController = new AbortController();
+    let isActive = true;
+
     const fetchDashboard = async () => {
+      setLoading(true);
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        const token = localStorage.getItem('authToken');
-        const userId = localStorage.getItem('userId') || 1;
-        const res = await fetch(`${baseUrl}/api/dashboard?userId=${userId}`, {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        if (token && !localStorage.getItem('authToken')) {
+          localStorage.setItem('authToken', token);
+        }
+        const userId = localStorage.getItem('userId') || '1';
+        const res = await fetch(`${DASHBOARD_API_URL}/dashboard?userId=${encodeURIComponent(userId)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
-          credentials: 'include'
+          credentials: 'include',
+          signal: abortController.signal
         });
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
           throw new Error(errorData.error || 'Failed to fetch dashboard');
         }
         const data = await res.json();
+        if (!isActive) {
+          return;
+        }
+
         setUser(data.user || null);
         setQuickStats(data.quickStats || []);
         setTopSellers(data.topSellers || []);
@@ -62,25 +83,45 @@ const Dashboard = () => {
                 };
               })
             );
-            setRecentActivity(translatedActivities);
+            if (isActive) {
+              setRecentActivity(translatedActivities);
+            }
           } catch (e) {
-            console.warn('Translation failed:', e);
-            setRecentActivity(activities);
+            if (import.meta.env.DEV) {
+              console.warn('Translation failed:', e);
+            }
+            if (isActive) {
+              setRecentActivity(activities);
+            }
           }
         } else {
-          setRecentActivity(activities);
+          if (isActive) {
+            setRecentActivity(activities);
+          }
         }
       } catch (err) {
-        setError(err.message || 'Failed to fetch dashboard');
+        if (err?.name !== 'AbortError' && isActive) {
+          setError(err.message || 'Failed to fetch dashboard');
+        }
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     };
     fetchDashboard();
-  }, [currentLang]);
+
+    return () => {
+      isActive = false;
+      abortController.abort();
+    };
+  }, [currentLang, retryNonce]);
 
   // Check if user is logged in
-  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+  const isLoggedIn = useMemo(
+    () => Boolean(authUser || localStorage.getItem('authToken') || localStorage.getItem('token')),
+    [authUser]
+  );
 
   if (!isLoggedIn) {
     return (
@@ -90,12 +131,12 @@ const Dashboard = () => {
           <h2 className="text-3xl font-extrabold text-blue-700 dark:text-blue-400 mb-4">{t('your_dashboard')}</h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">{t('dashboard_login_msg')}</p>
           <div className="flex flex-col gap-3">
-            <a href="/login" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold text-center">
+            <Link to="/login" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 rounded-xl font-bold text-center">
               {t('login_to_continue')}
-            </a>
-            <a href="/signup" className="border border-blue-300 dark:border-blue-500 text-blue-600 dark:text-blue-400 text-lg px-8 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 dark:hover:bg-gray-700">
+            </Link>
+            <Link to="/signup" className="border border-blue-300 dark:border-blue-500 text-blue-600 dark:text-blue-400 text-lg px-8 py-4 rounded-xl font-semibold text-center hover:bg-blue-50 dark:hover:bg-gray-700">
               {t('create_account')}
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -112,7 +153,7 @@ const Dashboard = () => {
         <p className="text-red-500">{error}</p>
         <button
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => window.location.reload()}
+          onClick={() => setRetryNonce((value) => value + 1)}
         >
           {t('retry')}
         </button>
@@ -165,19 +206,21 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {quickStats.map((stat, index) => {
             const IconComponent = stat.icon;
+            const labelKey = stat.labelKey || String(stat.label || '').toLowerCase().replace(/ /g, '_');
+            const trendKey = stat.trendKey || (stat.trend === '+Active' ? 'trend_active' : stat.trend === '+Sold' ? 'trend_sold' : stat.trend === '+Views' ? 'trend_views' : stat.trend === '+Coins' ? 'trend_coins' : 'trend_active');
             return (
-              <Card key={index} className="shadow-lg border-0 rounded-xl hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800">
+              <Card key={`${labelKey || 'stat'}-${index}`} className="shadow-lg border-0 rounded-xl hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800">
                 <CardContent className="p-4 lg:p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`p-2 lg:p-3 rounded-xl ${stat.bg} dark:bg-opacity-20`}>
                       {IconComponent && <IconComponent className={`w-5 h-5 lg:w-6 lg:h-6 ${stat.color}`} />}
                     </div>
                     <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs">
-                      {t(stat.trendKey || (stat.trend === '+Active' ? 'trend_active' : stat.trend === '+Sold' ? 'trend_sold' : stat.trend === '+Views' ? 'trend_views' : stat.trend === '+Coins' ? 'trend_coins' : 'trend_active')) || stat.trend}
+                      {t(trendKey) || stat.trend}
                     </Badge>
                   </div>
                   <div className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white mb-1">{stat.value}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t(stat.labelKey || stat.label.toLowerCase().replace(/ /g, '_'))}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{t(labelKey)}</div>
                 </CardContent>
               </Card>
             );
@@ -265,3 +308,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

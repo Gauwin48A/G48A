@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const ForgotPassword = () => {
   const { toast } = useToast();
@@ -25,7 +26,7 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const baseUrl = getApiOriginBase();
       const res = await fetch(`${baseUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -123,3 +124,4 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
+

@@ -3,18 +3,130 @@
  * Manages reward points, redemption, and point history
  */
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+let rewardLogIdColumnAvailablePromise = null;
+let usersLegacyIdColumnAvailablePromise = null;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+async function hasRewardLogIdColumn() {
+    if (!rewardLogIdColumnAvailablePromise) {
+        rewardLogIdColumnAvailablePromise = runQuery(
+            `
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'reward_log'
+                      AND column_name = 'id'
+                ) AS available
+            `
+        )
+            .then((result) => Boolean(result?.rows?.[0]?.available))
+            .catch((err) => {
+                logger.warn('[Rewards] Failed to inspect reward_log.id column, using log_id fallback', {
+                    message: err.message
+                });
+                return false;
+            });
+    }
+
+    return rewardLogIdColumnAvailablePromise;
+}
+
+function getRewardLogIdSelectExpression(hasIdColumn, tableAlias = '') {
+    const prefix = tableAlias ? `${tableAlias}.` : '';
+    return hasIdColumn ? `${prefix}id` : `${prefix}log_id AS id`;
+}
+
+function parsePositiveInt(value, fallback) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isSafeInteger(parsed) || parsed < 1) {
+        return fallback;
+    }
+    return parsed;
+}
+
+function getAuthenticatedUserId(req) {
+    return req.user?.userId || req.user?.id || req.user?.user_id || null;
+}
+
+async function hasUsersLegacyIdColumn() {
+    if (!usersLegacyIdColumnAvailablePromise) {
+        usersLegacyIdColumnAvailablePromise = runQuery(
+            `
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'users'
+                      AND column_name = 'id'
+                ) AS available
+            `
+        )
+            .then((result) => Boolean(result?.rows?.[0]?.available))
+            .catch(() => false);
+    }
+
+    return usersLegacyIdColumnAvailablePromise;
+}
+
+async function resolveCanonicalUserId(rawUserId) {
+    const normalizedRawUserId = String(rawUserId || '').trim();
+    if (!normalizedRawUserId) return null;
+
+    try {
+        const usersHasLegacyId = await hasUsersLegacyIdColumn();
+        const lookup = await runQuery(
+            usersHasLegacyId
+                ? `
+                    SELECT user_id::text AS user_id
+                    FROM users
+                    WHERE user_id::text = $1 OR id::text = $1
+                    LIMIT 1
+                `
+                : `
+                    SELECT user_id::text AS user_id
+                    FROM users
+                    WHERE user_id::text = $1
+                    LIMIT 1
+                `,
+            [normalizedRawUserId]
+        );
+
+        return lookup.rows[0]?.user_id || normalizedRawUserId;
+    } catch (err) {
+        logger.warn('[Rewards] Failed to resolve canonical user ID, using raw identifier', {
+            message: err.message
+        });
+        return normalizedRawUserId;
+    }
+}
 
 // GET /api/reward/my — Get my rewards summary
 exports.getMyRewards = async (req, res) => {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     try {
+        const hasRewardLogId = await hasRewardLogIdColumn();
+        const normalizedUserId = await resolveCanonicalUserId(userId);
         const [rewardsRes, logRes] = await Promise.all([
-            pool.query('SELECT * FROM rewards WHERE user_id = $1', [userId]),
-            pool.query(
-                'SELECT * FROM reward_log WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20',
-                [userId]
+            runQuery('SELECT points, tier FROM rewards WHERE user_id::text = $1', [normalizedUserId]),
+            runQuery(
+                `SELECT ${getRewardLogIdSelectExpression(hasRewardLogId)}, action, points, description, created_at
+                 FROM reward_log
+                 WHERE user_id::text = $1
+                 ORDER BY created_at DESC
+                 LIMIT 20`,
+                [normalizedUserId]
             )
         ]);
 
@@ -27,58 +139,84 @@ exports.getMyRewards = async (req, res) => {
             history
         });
     } catch (err) {
-        console.error('Get rewards error:', err);
+        logger.error('Get rewards error:', err);
         res.status(500).json({ error: 'Failed to fetch rewards' });
     }
 };
 
 // POST /api/reward/redeem — Redeem points for credits
 exports.redeemRewards = async (req, res) => {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
-    const { points } = req.body;
-    if (!points || points <= 0) {
+    const requestedPoints = parsePositiveInt(req.body?.points, 0);
+    if (!requestedPoints) {
         return res.status(400).json({ error: 'Valid points amount required' });
     }
 
     try {
-        // Check available balance
-        const current = await pool.query('SELECT points FROM rewards WHERE user_id = $1', [userId]);
-        const available = current.rows[0]?.points || 0;
+        const normalizedUserId = await resolveCanonicalUserId(userId);
+        const credits = Math.floor(requestedPoints / 100);
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
 
-        if (available < points) {
-            return res.status(400).json({ error: `Insufficient points. Available: ${available}` });
+            const debitResult = await client.query({
+                text: `
+          UPDATE rewards
+          SET points = points - $1
+          WHERE user_id::text = $2
+            AND points >= $1
+          RETURNING points
+        `,
+                values: [requestedPoints, normalizedUserId],
+                query_timeout: DB_QUERY_TIMEOUT_MS
+            });
+
+            if (debitResult.rowCount === 0) {
+                const balanceResult = await client.query({
+                    text: 'SELECT points FROM rewards WHERE user_id::text = $1',
+                    values: [normalizedUserId],
+                    query_timeout: DB_QUERY_TIMEOUT_MS
+                });
+                const available = balanceResult.rows[0]?.points || 0;
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: `Insufficient points. Available: ${available}` });
+            }
+
+            await client.query({
+                text: `
+          INSERT INTO reward_log (user_id, action, points, description, created_at)
+          VALUES ($1, 'redemption', $2, 'Points redeemed for credits', NOW())
+        `,
+                values: [normalizedUserId, -requestedPoints],
+                query_timeout: DB_QUERY_TIMEOUT_MS
+            });
+
+            if (credits > 0) {
+                await client.query({
+                    text: 'UPDATE users SET post_credits = post_credits + $1 WHERE user_id::text = $2',
+                    values: [credits, normalizedUserId],
+                    query_timeout: DB_QUERY_TIMEOUT_MS
+                });
+            }
+
+            await client.query('COMMIT');
+            const remainingPoints = debitResult.rows[0]?.points || 0;
+
+            res.json({
+                message: `Redeemed ${requestedPoints} points for ${credits} post credits`,
+                creditsGranted: credits,
+                remainingPoints
+            });
+        } catch (txErr) {
+            await client.query('ROLLBACK');
+            throw txErr;
+        } finally {
+            client.release();
         }
-
-        // Deduct points
-        await pool.query(
-            'UPDATE rewards SET points = points - $1 WHERE user_id = $2',
-            [points, userId]
-        );
-
-        // Log redemption
-        await pool.query(`
-      INSERT INTO reward_log (user_id, action, points, description, created_at)
-      VALUES ($1, 'redemption', $2, 'Points redeemed for credits', NOW())
-    `, [userId, -points]);
-
-        // Add post credits (1 credit per 100 points)
-        const credits = Math.floor(points / 100);
-        if (credits > 0) {
-            await pool.query(
-                'UPDATE users SET post_credits = post_credits + $1 WHERE user_id = $2',
-                [credits, userId]
-            );
-        }
-
-        res.json({
-            message: `Redeemed ${points} points for ${credits} post credits`,
-            creditsGranted: credits,
-            remainingPoints: available - points
-        });
     } catch (err) {
-        console.error('Redeem error:', err);
+        logger.error('Redeem error:', err);
         res.status(500).json({ error: 'Failed to redeem rewards' });
     }
 };

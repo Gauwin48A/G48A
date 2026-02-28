@@ -9,6 +9,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Phone, MapPin, MessageCircle, Send, User, CheckCircle } from 'lucide-react';
+import { getAccessToken } from '@/utils/authStorage';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 export default function BuyerInterestModal({ isOpen, onClose, postId, postTitle }) {
     const { t } = useTranslation();
@@ -46,8 +48,8 @@ export default function BuyerInterestModal({ isOpen, onClose, postId, postTitle 
         }
 
         try {
-            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-            const token = localStorage.getItem('authToken');
+            const baseUrl = getApiOriginBase();
+            const token = getAccessToken();
 
             const response = await fetch(`${baseUrl}/api/inquiries`, {
                 method: 'POST',
@@ -55,6 +57,7 @@ export default function BuyerInterestModal({ isOpen, onClose, postId, postTitle 
                     'Content-Type': 'application/json',
                     ...(token && { 'Authorization': `Bearer ${token}` })
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     postId,
                     buyerName: formData.buyerName.trim(),
@@ -223,3 +226,4 @@ export default function BuyerInterestModal({ isOpen, onClose, postId, postTitle 
         </Dialog>
     );
 }
+

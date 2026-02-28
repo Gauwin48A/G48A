@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const GreenHeroBanner = () => {
   const { t } = useTranslation();
@@ -8,7 +9,7 @@ const GreenHeroBanner = () => {
   useEffect(() => {
     const fetchBanner = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const baseUrl = getApiOriginBase();
         const res = await fetch(`${baseUrl}/api/banner`);
         const data = await res.json();
         setBanner({
@@ -38,3 +39,4 @@ const GreenHeroBanner = () => {
 };
 
 export default GreenHeroBanner;
+

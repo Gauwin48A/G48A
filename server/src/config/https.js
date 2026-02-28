@@ -12,6 +12,22 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+const SERVER_ROOT = path.resolve(__dirname, '../..');
+
+function resolveServerPath(targetPath) {
+    if (!targetPath) return null;
+    if (path.isAbsolute(targetPath)) return targetPath;
+    return path.resolve(SERVER_ROOT, targetPath);
+}
+
+function parsePort(value, fallback) {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 65535) {
+        return fallback;
+    }
+    return parsed;
+}
+
 /**
  * HTTPS Configuration Options
  */
@@ -22,8 +38,8 @@ const httpsConfig = {
     caPath: process.env.SSL_CA_PATH || './certs/chain.pem',
 
     // Ports
-    httpPort: parseInt(process.env.HTTP_PORT) || 80,
-    httpsPort: parseInt(process.env.HTTPS_PORT) || 443,
+    httpPort: parsePort(process.env.HTTP_PORT, 80),
+    httpsPort: parsePort(process.env.HTTPS_PORT, 443),
 
     // Force HTTPS redirect
     forceHttps: process.env.FORCE_HTTPS === 'true' || process.env.NODE_ENV === 'production'
@@ -35,8 +51,8 @@ const httpsConfig = {
  */
 function loadCertificates() {
     try {
-        const certDir = path.resolve(__dirname, '../../..', httpsConfig.certPath);
-        const keyDir = path.resolve(__dirname, '../../..', httpsConfig.keyPath);
+        const certDir = resolveServerPath(httpsConfig.certPath);
+        const keyDir = resolveServerPath(httpsConfig.keyPath);
 
         // Check if certificates exist
         if (!fs.existsSync(certDir) || !fs.existsSync(keyDir)) {
@@ -53,7 +69,7 @@ function loadCertificates() {
         };
 
         // Add CA certificate if exists
-        const caPath = path.resolve(__dirname, '../../..', httpsConfig.caPath);
+        const caPath = resolveServerPath(httpsConfig.caPath);
         if (fs.existsSync(caPath)) {
             sslOptions.ca = fs.readFileSync(caPath);
         }
@@ -104,7 +120,7 @@ function createSecureServer(app) {
         const httpServer = http.createServer(app);
         return {
             server: httpServer,
-            port: parseInt(process.env.PORT) || 5000,
+            port: parsePort(process.env.PORT, 5000),
             protocol: 'http'
         };
     }

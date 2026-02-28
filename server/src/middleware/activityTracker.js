@@ -7,6 +7,20 @@
  */
 
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const CACHE_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+const CACHE_CLEANUP_THRESHOLD_MS = 60 * 60 * 1000;
+const TRACK_ACTIVITY_THRESHOLD_MS = 5 * 60 * 1000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
 
 // IN-MEMORY CACHE
 // Stores userId -> lastUpdatedTimestamp
@@ -14,21 +28,24 @@ const pool = require('../config/db');
 const activityCache = new Map();
 
 // CLEANUP: Clear old entries every hour to prevent memory leaks
-setInterval(() => {
+const activityCleanupTimer = setInterval(() => {
     const now = Date.now();
-    const CLEANUP_THRESHOLD = 60 * 60 * 1000; // 1 hour
 
     for (const [userId, lastUpdate] of activityCache) {
-        if (now - lastUpdate > CLEANUP_THRESHOLD) {
+        if (now - lastUpdate > CACHE_CLEANUP_THRESHOLD_MS) {
             activityCache.delete(userId);
         }
     }
-}, 60 * 60 * 1000);
+}, CACHE_CLEANUP_INTERVAL_MS);
+
+if (typeof activityCleanupTimer.unref === 'function') {
+    activityCleanupTimer.unref();
+}
 
 /**
  * Track user activity with 5-minute throttle
  */
-const trackActivity = async (req, res, next) => {
+const trackActivity = (req, res, next) => {
     // Skip if user not authenticated
     if (!req.user) return next();
 
@@ -37,10 +54,9 @@ const trackActivity = async (req, res, next) => {
 
     const now = Date.now();
     const lastUpdate = activityCache.get(userId);
-    const THRESHOLD = 5 * 60 * 1000; // 5 minutes
 
     // THE FIREWALL: Only update DB if > 5 minutes have passed
-    if (lastUpdate && (now - lastUpdate) < THRESHOLD) {
+    if (lastUpdate && (now - lastUpdate) < TRACK_ACTIVITY_THRESHOLD_MS) {
         return next(); // Skip DB write, proceed to API
     }
 
@@ -48,12 +64,12 @@ const trackActivity = async (req, res, next) => {
     activityCache.set(userId, now);
 
     // FIRE AND FORGET - Don't await, don't slow down the request
-    pool.query(
+    runQuery(
         'UPDATE users SET last_active_at = NOW() WHERE user_id = $1',
         [userId]
     ).catch(err => {
         // Silently fail on tracking errors
-        console.error('[Activity Tracker] Error:', err.message);
+        logger.error('[Activity Tracker] Error:', err.message);
     });
 
     next();
@@ -64,14 +80,14 @@ const trackActivity = async (req, res, next) => {
  */
 const getOnlineCount = async () => {
     try {
-        const result = await pool.query(`
+        const result = await runQuery(`
       SELECT COUNT(*) as online_count 
       FROM users 
       WHERE last_active_at > NOW() - INTERVAL '5 minutes'
     `);
         return parseInt(result.rows[0]?.online_count) || 0;
     } catch (err) {
-        console.error('[Activity Tracker] Count error:', err.message);
+        logger.error('[Activity Tracker] Count error:', err.message);
         return 0;
     }
 };

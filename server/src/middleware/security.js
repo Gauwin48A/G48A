@@ -2,6 +2,7 @@ const rateLimit = require('express-rate-limit');
 const JWT_CONFIG = require('../config/jwtConfig');
 const logger = require('../utils/logger');
 const { verifyToken } = require('../services/tokenVerificationCache');
+const { getAccessTokenFromRequest } = require('../utils/requestAuth');
 const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
 const LOAD_TEST_SCENARIOS = new Set(['normal', 'abuse', 'authenticated']);
 
@@ -50,13 +51,8 @@ exports.apiLimiter = rateLimit({
 
 // B. JWT Authentication (Zero Trust)
 exports.authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    // Allow Bearer token OR Cookie
-    let token = authHeader && authHeader.split(' ')[1];
-
-    if (!token && req.cookies && req.cookies.accessToken) {
-        token = req.cookies.accessToken;
-    }
+    // Allow Bearer token OR HttpOnly cookie
+    const token = getAccessTokenFromRequest(req);
 
     if (!token) {
         if (authDebugEnabled) {

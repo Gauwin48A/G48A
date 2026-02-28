@@ -4,7 +4,7 @@ const { protect } = require('../middleware/auth');
 const complaintsController = require('../controllers/complaintsController');
 
 // Public/admin: List all complaints (with filters)
-router.get('/', complaintsController.getComplaints);
+router.get('/', protect, complaintsController.getComplaints);
 
 // Protected: Submit a new complaint
 router.post('/', protect, complaintsController.createComplaint);
@@ -14,5 +14,6 @@ router.get('/my', protect, complaintsController.getMyComplaints);
 
 // Protected: Admin update complaint status
 router.patch('/:id/status', protect, complaintsController.updateComplaintStatus);
+router.patch('/:id/evidence', protect, complaintsController.addComplaintEvidence);
 
 module.exports = router;

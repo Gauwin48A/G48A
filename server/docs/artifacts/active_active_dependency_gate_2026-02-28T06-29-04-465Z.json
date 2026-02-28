@@ -1,0 +1,121 @@
+{
+  "generatedAt": "2026-02-28T06:29:04.467Z",
+  "runId": "aadg-1772260144464",
+  "config": {
+    "regionA": "http://127.0.0.1:5055",
+    "regionB": "http://127.0.0.1:6055",
+    "healthPath": "/api/ready",
+    "timeoutMs": 5000,
+    "skipProbe": true
+  },
+  "report": {
+    "gate": {
+      "status": "BLOCKED",
+      "eligible": false,
+      "blockedCount": 5,
+      "reasons": [
+        "traffic_manager_command",
+        "region_a_endpoint",
+        "region_b_endpoint",
+        "replica_connection_inputs",
+        "db_queue_safety_gate"
+      ],
+      "dependencies": [
+        {
+          "key": "traffic_manager_command",
+          "owner": "Platform Engineering",
+          "status": "BLOCKED",
+          "dependency": "ACTIVE_ACTIVE_TRAFFIC_COMMAND with live provider credentials",
+          "impact": "Cannot execute weighted traffic shift in live mode",
+          "fallback": "Run synthetic execute proof with echo/template command until credential path is provisioned",
+          "details": {
+            "configured": false
+          }
+        },
+        {
+          "key": "region_a_endpoint",
+          "owner": "Platform Engineering",
+          "status": "BLOCKED",
+          "dependency": "REGION_A_BASE_URL reachable readiness endpoint",
+          "impact": "Cannot verify source region health before failover",
+          "fallback": "Keep tabletop and synthetic probes active",
+          "details": {
+            "regionA": "http://127.0.0.1:5055",
+            "probeSkipped": true,
+            "probe": {
+              "ok": false,
+              "healthStatus": "probe_skipped"
+            }
+          }
+        },
+        {
+          "key": "region_b_endpoint",
+          "owner": "Platform Engineering",
+          "status": "BLOCKED",
+          "dependency": "REGION_B_BASE_URL reachable readiness endpoint",
+          "impact": "Cannot verify destination region health before failover",
+          "fallback": "Block live shift and keep simulation coverage",
+          "details": {
+            "regionB": "http://127.0.0.1:6055",
+            "probeSkipped": true,
+            "probe": {
+              "ok": false,
+              "healthStatus": "probe_skipped"
+            }
+          }
+        },
+        {
+          "key": "replica_connection_inputs",
+          "owner": "DB Engineering",
+          "status": "BLOCKED",
+          "dependency": "FAILOVER_PRIMARY_DB_URL + FAILOVER_REPLICA_DB_URL",
+          "impact": "Cannot compute replica lag or failover eligibility from live replica state",
+          "fallback": "Continue with queue duplicate audit and keep gate in BLOCKED state",
+          "details": {
+            "primaryConfigured": false,
+            "replicaConfigured": false
+          }
+        },
+        {
+          "key": "db_queue_safety_gate",
+          "owner": "DB Engineering + Backend Lead",
+          "status": "BLOCKED",
+          "dependency": "failover db/queue audit gate reports COMPLETE",
+          "impact": "Execute mode must remain blocked by safety policy",
+          "fallback": "Use synthetic execute mode with safety gate disabled only for rehearsal",
+          "details": {
+            "auditStatus": "BLOCKED",
+            "gateStatus": "BLOCKED",
+            "reportPath": null,
+            "reasons": [
+              "missing_primary_or_replica_connection"
+            ],
+            "error": null
+          }
+        }
+      ]
+    },
+    "probeRegionA": {
+      "ok": false,
+      "healthStatus": "probe_skipped"
+    },
+    "probeRegionB": {
+      "ok": false,
+      "healthStatus": "probe_skipped"
+    },
+    "dbQueueAudit": {
+      "status": "BLOCKED",
+      "reportPath": null,
+      "report": {
+        "gate": {
+          "status": "BLOCKED",
+          "reasons": [
+            "missing_primary_or_replica_connection"
+          ]
+        }
+      },
+      "skipped": true,
+      "reason": "db_queue_audit_skipped_missing_replica_inputs"
+    }
+  }
+}

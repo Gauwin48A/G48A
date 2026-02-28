@@ -6,6 +6,14 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const priceAlertsController = require('../controllers/priceAlertsController');
 
+function requireAdminRole(req, res, next) {
+  const role = String(req.user?.role || '').toLowerCase();
+  if (role !== 'admin' && role !== 'superadmin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  return next();
+}
+
 // Subscribe to price alert
 router.post('/subscribe', protect, priceAlertsController.subscribeAlert);
 
@@ -19,6 +27,6 @@ router.put('/unsubscribe/:postId', protect, priceAlertsController.unsubscribeAle
 router.delete('/:postId', protect, priceAlertsController.deleteAlert);
 
 // Check for price drops (admin/cron job)
-router.get('/check-drops', priceAlertsController.checkPriceDrops);
+router.get('/check-drops', protect, requireAdminRole, priceAlertsController.checkPriceDrops);
 
 module.exports = router;

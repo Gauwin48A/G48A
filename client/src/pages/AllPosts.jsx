@@ -1,23 +1,50 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FaHeart, FaRegHeart, FaShare, FaEye, FaHandHoldingHeart } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
-import CategoriesGrid from '@/components/CategoriesGrid';
 import { useFilter } from '@/context/FilterContext';
 import { useTranslation } from 'react-i18next';
 import BuyerInterestModal from '@/components/BuyerInterestModal';
 import LoginPromptModal from '@/components/LoginPromptModal';
 import { translatePosts } from '@/utils/translateContent';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
+import { getUserId, isAuthenticated } from '@/utils/authStorage';
+import { fetchCategoriesCached } from '@/services/categoriesService';
 
-const NAVBAR_HEIGHT = 80;
 const GUEST_POST_LIMIT = 5; // Limit posts for non-logged-in users
+
+const getPostKey = (post) => post?.post_id ?? post?.id ?? null;
+const normalizePostId = (value) => {
+  if (value === undefined || value === null) return '';
+  const normalized = String(value).trim();
+  return normalized.length ? normalized : '';
+};
+
+const mergeUniquePosts = (existingPosts, incomingPosts) => {
+  const mergedMap = new Map();
+  existingPosts.forEach((post) => {
+    const key = getPostKey(post);
+    if (key !== null) {
+      mergedMap.set(String(key), post);
+    }
+  });
+  incomingPosts.forEach((post) => {
+    const key = getPostKey(post);
+    if (key !== null) {
+      mergedMap.set(String(key), post);
+    }
+  });
+  return Array.from(mergedMap.values());
+};
 
 const AllPosts = () => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
   const { filters, setFilters } = useFilter();
+  const { user } = useAuth();
   const location = useLocation();
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState(null);
@@ -27,6 +54,9 @@ const AllPosts = () => {
   const postsPerPage = 6;
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
+  const refreshSeedRef = useRef(Date.now());
+  const activeRequestIdRef = useRef(0);
+  const fetchAbortControllerRef = useRef(null);
 
   // Read category from URL params and update filter
   // Wait for categories to load before setting filter to properly match ID -> name
@@ -85,22 +115,16 @@ const AllPosts = () => {
   const [likeCounts, setLikeCounts] = useState({});
   const [viewCounts, setViewCounts] = useState({});
   const [shareToast, setShareToast] = useState("");
-  const [debugUrl, setDebugUrl] = useState("");
   const [showInterestModal, setShowInterestModal] = useState(false);
 
   // Low-view posts boost feature - rotates every 30 seconds
   const [boostLowViews, setBoostLowViews] = useState(true);
-  const [rotationKey, setRotationKey] = useState(0);
   const [selectedPost, setSelectedPost] = useState(null);
   // const [viewedPosts, setViewedPosts] = useState(new Set()); // Replaced with ref for batching logic
   const postRefs = useRef({}); // Refs for each post card
 
-  // Guest user restrictions - initialize immediately from localStorage
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId');
-    return !!(token && userId);
-  });
+  // Guest user restrictions
+  const isLoggedIn = useMemo(() => isAuthenticated(user), [user]);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Restore scroll position when returning from post details
@@ -117,18 +141,25 @@ const AllPosts = () => {
 
   // Fetch categories from API on mount
   useEffect(() => {
+    let active = true;
+
     const fetchCategories = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        const res = await fetch(`${baseUrl}/api/categories`);
-        const data = await res.json();
+        const data = await fetchCategoriesCached();
+        if (!active) return;
         setCategories(Array.isArray(data) ? data : []);
       } catch (err) {
+        if (!active) return;
         console.error('Failed to fetch categories:', err);
         setCategories([]);
       }
     };
+
     fetchCategories();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Emoji mapping for categories
@@ -140,13 +171,16 @@ const AllPosts = () => {
   };
 
   // Create categoryMap from fetched categories (name -> category_id)
-  const categoryMap = categories.reduce((map, cat) => {
-    map[cat.name] = cat.category_id || cat.name;
-    return map;
-  }, {});
+  const categoryMap = useMemo(
+    () => categories.reduce((map, cat) => {
+      map[cat.name] = cat.category_id || cat.name;
+      return map;
+    }, {}),
+    [categories]
+  );
 
   // Helper to build filter params
-  const buildParams = () => {
+  const buildParams = useCallback(() => {
     const params = new URLSearchParams();
 
     // Determine effective category and search term
@@ -208,41 +242,73 @@ const AllPosts = () => {
     params.append('page', currentPage);
     params.append('limit', postsPerPage);
     return params;
-  };
+  }, [
+    categories,
+    categoryMap,
+    currentPage,
+    filters.category,
+    filters.endDate,
+    filters.location,
+    filters.maxPrice,
+    filters.minPrice,
+    filters.priceRange,
+    filters.search,
+    filters.sortBy,
+    filters.startDate,
+    postsPerPage
+  ]);
 
 
   // Fetch posts with Guaranteed Reach algorithm
   useEffect(() => {
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    fetchAbortControllerRef.current = abortController;
+
     setLoading(true);
     setError(null);
+
     const fetchPosts = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
         const params = buildParams();
-        // Add refresh seed for instant new posts on every page load
-        params.append('refresh', Math.floor(Math.random() * 100000));
-        // Use /api/posts/for-you for Guaranteed Reach algorithm
-        // This ensures all sellers get fair visibility to all buyers
-        const url = `${baseUrl}/api/posts/for-you?${params.toString()}`;
-        setDebugUrl(url);
-        const res = await fetch(url);
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to fetch posts');
+        // Keep a stable seed for pagination; rotate when page 1 reloads.
+        if (currentPage === 1) {
+          refreshSeedRef.current = Date.now();
         }
-        const data = await res.json();
+        params.append('refresh', String(refreshSeedRef.current));
+        let data;
+        try {
+          data = await api.get(`/posts/for-you?${params.toString()}`, {
+            signal: abortController.signal
+          });
+        } catch (forYouError) {
+          // Fallback keeps All Posts usable even when the personalized feed endpoint is degraded.
+          if (forYouError?.name === 'AbortError') {
+            return;
+          }
+          data = await api.get(`/posts?${params.toString()}`, {
+            signal: abortController.signal
+          });
+        }
+        if (requestId !== activeRequestIdRef.current) return;
         let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
 
         // Translate posts to current language
         if (currentLang && currentLang !== 'en') {
           loadedPosts = await translatePosts(loadedPosts, currentLang);
         }
+        if (requestId !== activeRequestIdRef.current) return;
 
         // FIX: Append posts on page 2+, replace on page 1 (filter change)
         if (currentPage === 1) {
           setPosts(loadedPosts);
         } else {
-          setPosts(prev => [...prev, ...loadedPosts]);
+          setPosts(prev => mergeUniquePosts(prev, loadedPosts));
         }
         setError(null);
         // Set like/view counts from backend if available
@@ -256,15 +322,30 @@ const AllPosts = () => {
         setViewCounts(prev => ({ ...prev, ...views }));
         setHasMore(loadedPosts.length === postsPerPage);
       } catch (err) {
+        if (err?.name === 'AbortError') return;
+        if (requestId !== activeRequestIdRef.current) return;
         setError(err.message || 'Failed to fetch posts');
         setPosts([]);
         setHasMore(false);
       } finally {
-        setLoading(false);
+        if (fetchAbortControllerRef.current === abortController) {
+          fetchAbortControllerRef.current = null;
+        }
+        if (requestId === activeRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
+
     fetchPosts();
-  }, [filters.search, filters.location, filters.category, filters.priceRange, filters.minPrice, filters.maxPrice, filters.startDate, filters.endDate, filters.sortBy, currentPage, currentLang, categories]);
+
+    return () => {
+      abortController.abort();
+      if (fetchAbortControllerRef.current === abortController) {
+        fetchAbortControllerRef.current = null;
+      }
+    };
+  }, [buildParams, currentLang, currentPage]);
 
 
   // Reset page on filter change
@@ -293,14 +374,13 @@ const AllPosts = () => {
         loadMorePosts();
       }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMorePosts, isLoggedIn]);
 
   // Rotation interval - rotate low-view priority every 30 seconds
   useEffect(() => {
     const rotationInterval = setInterval(() => {
-      setRotationKey(prev => prev + 1);
       setBoostLowViews(prev => !prev);
     }, 30000); // 30 seconds
 
@@ -309,7 +389,7 @@ const AllPosts = () => {
 
   // Display posts with smart sorting - low-view posts get priority periodically
   // For guests, limit to GUEST_POST_LIMIT posts
-  const displayPosts = React.useMemo(() => {
+  const displayPosts = useMemo(() => {
     if (!posts || posts.length === 0) return [];
 
     // Create a copy to sort
@@ -331,7 +411,7 @@ const AllPosts = () => {
     }
 
     return sortedPosts;
-  }, [posts, viewCounts, boostLowViews, rotationKey, isLoggedIn]);
+  }, [posts, viewCounts, boostLowViews, isLoggedIn]);
 
   // Batch View Tracking Refs
   const viewQueue = useRef(new Set());
@@ -345,13 +425,8 @@ const AllPosts = () => {
         const batchIds = Array.from(viewQueue.current);
         viewQueue.current.clear();
 
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        fetch(`${baseUrl}/api/posts/batch-view`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ postIds: batchIds }),
-          credentials: 'include'
-        }).catch(err => console.error("Batch view error:", err));
+        api.post('/posts/batch-view', { postIds: batchIds })
+          .catch(err => console.error("Batch view error:", err));
       }
     }, 5000);
 
@@ -367,7 +442,7 @@ const AllPosts = () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const postId = parseInt(entry.target.dataset.postId);
+            const postId = normalizePostId(entry.target.dataset.postId);
             if (postId && !viewedPostsRef.current.has(postId)) {
               // Mark as viewed locally (ref based, no re-render)
               viewedPostsRef.current.add(postId);
@@ -399,9 +474,9 @@ const AllPosts = () => {
   const handleLike = async (postId) => {
     const alreadyLiked = likedPosts[postId];
     setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
-    setLikeCounts(prev => ({ ...prev, [postId]: prev[postId] + (alreadyLiked ? -1 : 1) }));
+    setLikeCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + (alreadyLiked ? -1 : 1) }));
     try {
-      await fetch(`/api/posts/${postId}/like`, { method: 'POST', credentials: 'include' });
+      await api.post(`/posts/${postId}/like`);
     } catch { }
   };
 
@@ -410,7 +485,7 @@ const AllPosts = () => {
   const handleView = async (postId) => {
     setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
     try {
-      await fetch(`/api/posts/${postId}/view`, { method: 'POST', credentials: 'include' });
+      await api.post(`/posts/${postId}/view`);
     } catch { }
   };
 
@@ -422,7 +497,7 @@ const AllPosts = () => {
       await navigator.clipboard.writeText(url);
       setShareToast('Link copied!');
       setTimeout(() => setShareToast(''), 2000);
-      await fetch(`/api/posts/${postId}/share`, { method: 'POST', credentials: 'include' });
+      await api.post(`/posts/${postId}/share`);
     } catch {
       setShareToast('Failed to copy link');
       setTimeout(() => setShareToast(''), 2000);
@@ -432,34 +507,35 @@ const AllPosts = () => {
 
   // View Details - also tracks view and recently viewed
   const handleViewDetails = async (postId) => {
+    const normalizedPostId = normalizePostId(postId);
+    if (!normalizedPostId) return;
+
     // Save scroll position before navigating
     sessionStorage.setItem('allPostsScrollPosition', window.scrollY.toString());
 
     // Find post object by id
-    const postObj = posts.find(p => p.id === postId || p.post_id === postId);
+    const postObj = posts.find((p) => normalizePostId(p.id) === normalizedPostId || normalizePostId(p.post_id) === normalizedPostId);
 
     // Track view count (fire and forget)
-    fetch(`/api/posts/${postId}/view`, { method: 'POST', credentials: 'include' }).catch(() => { });
+    api.post(`/posts/${normalizedPostId}/view`).catch(() => { });
 
     // Track recently viewed (fire and forget)
-    const userId = localStorage.getItem('userId');
+    const userId = getUserId(user);
     if (userId) {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      fetch(`${baseUrl}/api/recently-viewed/track`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ postId: postId, userId: userId, source: 'allposts' })
+      api.post('/recently-viewed/track', {
+        postId: normalizedPostId,
+        userId,
+        source: 'allposts'
       }).catch(() => { });
     }
 
     // Update local view count
-    setViewCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + 1 }));
+    setViewCounts(prev => ({ ...prev, [normalizedPostId]: (prev[normalizedPostId] || 0) + 1 }));
 
     if (postObj) {
-      navigate(`/post/${postId}`, { state: { post: postObj } });
+      navigate(`/post/${normalizedPostId}`, { state: { post: postObj } });
     } else {
-      navigate(`/post/${postId}`);
+      navigate(`/post/${normalizedPostId}`);
     }
   };
 
@@ -550,7 +626,7 @@ const AllPosts = () => {
                 <div className="font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2">{post.title}</div>
                 <div className="text-yellow-500 text-xs mb-1">★★★★★</div>
                 <div className="text-blue-900 dark:text-blue-300 text-base md:text-lg font-bold mb-1">₹{post.price}</div>
-                <Button className="bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2" onClick={() => navigate(`/post/${post.id}`)}>{t('view') || 'View'}</Button>
+                <Button className="bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2" onClick={() => navigate(`/post/${post.post_id || post.id}`)}>{t('view') || 'View'}</Button>
               </Card>
             ))
           )}

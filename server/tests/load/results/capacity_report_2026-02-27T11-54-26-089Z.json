@@ -1,0 +1,40 @@
+{
+  "mode": "dry-run",
+  "generatedAt": "2026-02-27T11:54:26.088Z",
+  "baseUrl": "http://127.0.0.1:5000",
+  "timeoutMs": 8000,
+  "profiles": {
+    "1k": {
+      "simulatedUsers": 1000,
+      "concurrentWorkers": 10,
+      "totalRequests": 200
+    },
+    "10k": {
+      "simulatedUsers": 10000,
+      "concurrentWorkers": 30,
+      "totalRequests": 800
+    },
+    "50k": {
+      "simulatedUsers": 50000,
+      "concurrentWorkers": 80,
+      "totalRequests": 2400
+    }
+  },
+  "endpoints": [
+    {
+      "key": "health",
+      "method": "GET",
+      "path": "/health"
+    },
+    {
+      "key": "posts",
+      "method": "GET",
+      "path": "/api/posts"
+    },
+    {
+      "key": "publicWall",
+      "method": "GET",
+      "path": "/api/public-wall"
+    }
+  ]
+}

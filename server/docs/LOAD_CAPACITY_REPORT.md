@@ -11,45 +11,45 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Artifacts
 - Target-mismatch detection baseline (external target, invalid for MHub routing): `server/tests/load/results/capacity_report_2026-02-28T06-41-29-977Z.json`
-- Managed-server validated baseline (both): `server/tests/load/results/capacity_report_2026-02-28T07-04-49-736Z.json`
-- Managed-server validated final (full): `server/tests/load/results/capacity_report_2026-02-28T07-05-48-844Z.json`
+- Managed-server validated baseline (both): `server/tests/load/results/capacity_report_2026-02-28T07-15-05-255Z.json`
+- Managed-server validated final (full): `server/tests/load/results/capacity_report_2026-02-28T07-15-17-147Z.json`
 
 ## Measurement Guardrail
-Load runner now defaults to managed local MHub target (unless explicit base URL is provided) and validates target shape via `/health`, `/api/ready` (object `checks` with `db` + `requiredConfig`), and `/api/posts`. This prevents cross-service false artifacts when another app is bound to `127.0.0.1:5000`.
+Load runner now defaults to managed local MHub target (unless explicit base URL is provided), validates target shape via `/health`, `/api/ready` (object `checks` with `db` + `requiredConfig`), and `/api/posts`, and supports managed-port fallback (`bootstrap-port` + range) for occupied/unstable ports.
 
 ## Baseline vs Final Deltas (50k profile aggregate, managed-server only)
 
 Method: averages of `p50/p95/p99` across 50k endpoints per scenario; `RPS` is endpoint-summed throughput; `429/5xx` are summed counts.
 
-Comparison set: `07-04-49-736Z` -> `07-05-48-844Z`.
+Comparison set: `07-15-05-255Z` -> `07-15-17-147Z`.
 
 ### Normal traffic
 | Metric | Baseline | Final | Delta |
 |---|---:|---:|---:|
-| p50 (ms) | 212.64 | 102.54 | -110.10 |
-| p95 (ms) | 272.10 | 145.02 | -127.08 |
-| p99 (ms) | 296.03 | 172.80 | -123.23 |
-| RPS (total across endpoints) | 1337.91 | 2313.23 | +975.32 |
+| p50 (ms) | 161.48 | 154.62 | -6.86 |
+| p95 (ms) | 229.68 | 224.22 | -5.46 |
+| p99 (ms) | 252.01 | 252.91 | +0.90 |
+| RPS (total across endpoints) | 1678.88 | 1708.17 | +29.29 |
 | 429 count | 0 | 0 | 0 |
 | 5xx count | 0 | 0 | 0 |
 
 ### Abuse traffic
 | Metric | Baseline | Final | Delta |
 |---|---:|---:|---:|
-| p50 (ms) | 133.79 | 122.03 | -11.77 |
-| p95 (ms) | 221.66 | 250.08 | +28.41 |
-| p99 (ms) | 287.06 | 314.21 | +27.15 |
-| RPS (total across endpoints) | 1880.98 | 3970.38 | +2089.40 |
+| p50 (ms) | 135.58 | 142.42 | +6.83 |
+| p95 (ms) | 258.58 | 264.81 | +6.22 |
+| p99 (ms) | 365.00 | 308.62 | -56.38 |
+| RPS (total across endpoints) | 1997.05 | 2056.83 | +59.78 |
 | 429 count | 1800 | 1800 | 0 |
 | 5xx count | 0 | 0 | 0 |
 
 ### Authenticated read/write traffic (final snapshot)
 | Metric | Final |
 |---|---:|
-| p50 (ms) | 72.03 |
-| p95 (ms) | 91.50 |
-| p99 (ms) | 113.50 |
-| RPS (total across endpoints) | 1645.67 |
+| p50 (ms) | 36.92 |
+| p95 (ms) | 62.66 |
+| p99 (ms) | 74.17 |
+| RPS (total across endpoints) | 3136.19 |
 | 429 count | 0 |
 | 5xx count | 0 |
 

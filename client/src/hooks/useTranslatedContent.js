@@ -19,15 +19,21 @@ export function useTranslatedPosts(posts) {
     const currentLang = i18n.language;
 
     useEffect(() => {
+        let cancelled = false;
+
         if (!posts?.length) {
             setTranslatedPosts([]);
-            return;
+            return () => {
+                cancelled = true;
+            };
         }
 
         // If English, no translation needed
         if (currentLang === 'en') {
             setTranslatedPosts(posts);
-            return;
+            return () => {
+                cancelled = true;
+            };
         }
 
         // Translate posts
@@ -35,16 +41,28 @@ export function useTranslatedPosts(posts) {
             setIsTranslating(true);
             try {
                 const translated = await translatePosts(posts, currentLang);
-                setTranslatedPosts(translated);
+                if (!cancelled) {
+                    setTranslatedPosts(translated);
+                }
             } catch (error) {
-                console.warn('Translation error:', error);
-                setTranslatedPosts(posts);
+                if (import.meta.env.DEV) {
+                    console.warn('Translation error:', error);
+                }
+                if (!cancelled) {
+                    setTranslatedPosts(posts);
+                }
             } finally {
-                setIsTranslating(false);
+                if (!cancelled) {
+                    setIsTranslating(false);
+                }
             }
         };
 
         doTranslate();
+
+        return () => {
+            cancelled = true;
+        };
     }, [posts, currentLang]);
 
     return { translatedPosts, isTranslating };
@@ -62,29 +80,45 @@ export function useTranslatedText(text) {
     const currentLang = i18n.language;
 
     useEffect(() => {
+        let cancelled = false;
+
         if (!text) {
             setTranslatedText('');
-            return;
+            return () => {
+                cancelled = true;
+            };
         }
 
         if (currentLang === 'en') {
             setTranslatedText(text);
-            return;
+            return () => {
+                cancelled = true;
+            };
         }
 
         const doTranslate = async () => {
             setIsTranslating(true);
             try {
                 const translated = await translateText(text, currentLang);
-                setTranslatedText(translated);
-            } catch (error) {
-                setTranslatedText(text);
+                if (!cancelled) {
+                    setTranslatedText(translated);
+                }
+            } catch {
+                if (!cancelled) {
+                    setTranslatedText(text);
+                }
             } finally {
-                setIsTranslating(false);
+                if (!cancelled) {
+                    setIsTranslating(false);
+                }
             }
         };
 
         doTranslate();
+
+        return () => {
+            cancelled = true;
+        };
     }, [text, currentLang]);
 
     return { translatedText, isTranslating };

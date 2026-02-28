@@ -20,6 +20,8 @@ router.post('/validate-promo', paymentController.validatePromoCode);
 // User routes (require authentication)
 router.post('/submit', protect, paymentController.submitPayment);
 router.get('/status', protect, paymentController.getPaymentStatus);
+router.get('/reconciliation/report', protect, paymentController.getReconciliationReport);
+router.post('/reconciliation/run', protect, paymentController.runReconciliation);
 router.post('/:id/retry', protect, paymentController.retryPayment);
 
 // Admin routes (require authentication + admin check could be added)

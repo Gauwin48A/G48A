@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FaHeart, FaRegHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaTrash, FaEdit } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/context/AuthContext';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const MyFeedPage = () => {
   const { t } = useTranslation();
@@ -15,6 +17,7 @@ const MyFeedPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const postsPerPage = 10;
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
 
   const [expandedPosts, setExpandedPosts] = useState({});
   const [likeCounts, setLikeCounts] = useState({});
@@ -23,8 +26,9 @@ const MyFeedPage = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Get userId from multiple possible keys
-  const userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
-  const isLoggedIn = !!(userId || localStorage.getItem('authToken') || localStorage.getItem('token'));
+  const userId = authUser?.id || authUser?.user_id || localStorage.getItem('userId') || localStorage.getItem('user_id');
+  const authToken = localStorage.getItem('authToken') || localStorage.getItem('token');
+  const isLoggedIn = !!(userId && authToken);
 
   // Fetch user's own feed posts
   useEffect(() => {
@@ -34,7 +38,7 @@ const MyFeedPage = () => {
     setError(null);
     const fetchPosts = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const baseUrl = getApiOriginBase();
         const url = `${baseUrl}/api/posts?author=${userId}&page=${currentPage}&limit=${postsPerPage}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch your posts');
@@ -105,7 +109,7 @@ const MyFeedPage = () => {
   // Delete post
   const handleDelete = async (postId) => {
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const baseUrl = getApiOriginBase();
       const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const res = await fetch(`${baseUrl}/api/posts/${postId}`, {
         method: 'DELETE',
@@ -157,8 +161,8 @@ const MyFeedPage = () => {
           <h2 className="text-3xl font-bold text-white mb-4">{t('my_feed') || 'My Feed'}</h2>
           <p className="text-white/80 text-lg mb-8">{t('view_manage_posts') || 'View and manage your posts'}</p>
           <div className="flex flex-col gap-3">
-            <a href="/login" className="bg-white text-emerald-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">{t('login_to_continue') || 'Login to Continue'}</a>
-            <a href="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">{t('create_account') || 'Create Account'}</a>
+            <Link to="/login" className="bg-white text-emerald-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">{t('login_to_continue') || 'Login to Continue'}</Link>
+            <Link to="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">{t('create_account') || 'Create Account'}</Link>
           </div>
         </div>
       </div>
@@ -398,3 +402,4 @@ const MyFeedPage = () => {
 };
 
 export default MyFeedPage;
+

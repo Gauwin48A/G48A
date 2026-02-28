@@ -1,0 +1,180 @@
+{
+  "mode": "live",
+  "generatedAt": "2026-02-27T18:16:28.892Z",
+  "baseUrl": "http://127.0.0.1:5000",
+  "timeoutMs": 8000,
+  "results": [
+    {
+      "profile": "1k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 5.757800000000003,
+        "p95": 13.759,
+        "p99": 31.8129,
+        "max": 47.22110000000001
+      },
+      "throughputRps": 1404.09
+    },
+    {
+      "profile": "1k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 20.439999999999998,
+        "p95": 30.648300000000006,
+        "p99": 175.39149999999998,
+        "max": 210.3949
+      },
+      "throughputRps": 379.78
+    },
+    {
+      "profile": "1k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 0,
+        "failures": 200
+      },
+      "errorBreakdown": {
+        "404": 200
+      },
+      "latency": {
+        "p50": 21.095599999999877,
+        "p95": 29.471799999999803,
+        "p99": 32.945100000000025,
+        "max": 36.66949999999997
+      },
+      "throughputRps": 449.17
+    },
+    {
+      "profile": "10k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 20.606199999999944,
+        "p95": 26.30600000000004,
+        "p99": 27.455099999999902,
+        "max": 44.54549999999995
+      },
+      "throughputRps": 1417.8
+    },
+    {
+      "profile": "10k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 56.02419999999984,
+        "p95": 76.5347999999999,
+        "p99": 300.23440000000005,
+        "max": 339.90449999999987
+      },
+      "throughputRps": 497.4
+    },
+    {
+      "profile": "10k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 0,
+        "failures": 800
+      },
+      "errorBreakdown": {
+        "404": 800
+      },
+      "latency": {
+        "p50": 53.520300000000134,
+        "p95": 80.11099999999988,
+        "p99": 92.91879999999992,
+        "max": 100.63740000000007
+      },
+      "throughputRps": 524.81
+    },
+    {
+      "profile": "50k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 37.633200000000215,
+        "p95": 47.07409999999982,
+        "p99": 61.4396999999999,
+        "max": 70.54689999999937
+      },
+      "throughputRps": 2068.31
+    },
+    {
+      "profile": "50k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 32.076500000000124,
+        "p95": 36.1221000000005,
+        "p99": 38.014500000000226,
+        "max": 40.20679999999993
+      },
+      "throughputRps": 2483.53
+    },
+    {
+      "profile": "50k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 31.335399999999936,
+        "p95": 43.78639999999996,
+        "p99": 51.68049999999948,
+        "max": 57.78299999999945
+      },
+      "throughputRps": 2519.84
+    }
+  ]
+}

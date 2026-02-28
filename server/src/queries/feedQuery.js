@@ -23,7 +23,8 @@ const STRATIFIED_FEED_QUERY = `
 WITH config AS (
     SELECT 
         $1::text AS uid,
-        EXTRACT(EPOCH FROM NOW())::bigint / 30 AS time_seed
+        EXTRACT(EPOCH FROM NOW())::bigint / 30
+          + COALESCE(($3::bigint % 2147483646), 0) AS time_seed
 ),
 -- Get ALL active posts with random scoring
 all_active_posts AS (
@@ -77,7 +78,6 @@ all_active_posts AS (
         END AS freshness_boost
     FROM posts p
     WHERE p.status = 'active'
-      AND p.created_at > NOW() - INTERVAL '30 days'  -- Include older posts as fallback
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
       AND ((SELECT uid FROM config) IS NULL OR (SELECT uid FROM config) = '' OR p.user_id::text != (SELECT uid FROM config))  -- Exclude own posts
 ),

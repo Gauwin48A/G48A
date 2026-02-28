@@ -507,7 +507,7 @@ describe('Sale OTP Hardening', () => {
 
         app.post('/api/sale/initiate', mockAuth, (req, res) => {
             const { postId, buyerId, agreedPrice } = req.body;
-            const otp = crypto.randomInt(100000, 999999).toString();
+            const otp = crypto.randomInt(100000, 1000000).toString();
             const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
             const txId = 'tx-' + Date.now();
 

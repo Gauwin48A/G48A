@@ -8,11 +8,26 @@
 
 import api from '../lib/api';
 
+const CONTACT_BATCH_SIZE = 100;
+const CONTACT_SYNC_CONCURRENCY = 3;
+
 // Check if running in Capacitor native environment
 const isNative = () => {
     return typeof window !== 'undefined' &&
         window.Capacitor &&
         window.Capacitor.isNativePlatform();
+};
+
+const logDev = (...args) => {
+    if (import.meta.env.DEV) {
+        console.log(...args);
+    }
+};
+
+const logError = (...args) => {
+    if (import.meta.env.DEV) {
+        console.error(...args);
+    }
 };
 
 /**
@@ -21,7 +36,7 @@ const isNative = () => {
  */
 export const requestContactsPermission = async () => {
     if (!isNative()) {
-        console.log('[Contacts] Not on native platform, skipping permission request');
+        logDev('[Contacts] Not on native platform, skipping permission request');
         return 'unavailable';
     }
 
@@ -31,7 +46,7 @@ export const requestContactsPermission = async () => {
         const result = await Contacts.requestPermissions();
         return result.contacts;
     } catch (error) {
-        console.error('[Contacts] Permission request failed:', error);
+        logError('[Contacts] Permission request failed:', error);
         return 'denied';
     }
 };
@@ -42,7 +57,7 @@ export const requestContactsPermission = async () => {
  */
 export const getDeviceContacts = async () => {
     if (!isNative()) {
-        console.log('[Contacts] Not on native platform');
+        logDev('[Contacts] Not on native platform');
         return [];
     }
 
@@ -58,7 +73,7 @@ export const getDeviceContacts = async () => {
 
         return result.contacts || [];
     } catch (error) {
-        console.error('[Contacts] Failed to get contacts:', error);
+        logError('[Contacts] Failed to get contacts:', error);
         return [];
     }
 };
@@ -71,19 +86,26 @@ export const syncContactsToServer = async () => {
     const contacts = await getDeviceContacts();
 
     if (contacts.length === 0) {
-        console.log('[Contacts] No contacts to sync');
+        logDev('[Contacts] No contacts to sync');
         return { synced: 0 };
     }
 
-    // Clean and format contacts
+    // Clean, dedupe and format contacts
+    const seenPhones = new Set();
     const cleanedContacts = contacts
-        .filter(c => c.phones && c.phones.length > 0)
-        .map(c => ({
-            name: c.name?.display || 'Unknown',
-            // Clean phone number: remove non-digits, keep last 10
-            phone: c.phones[0].number.replace(/[^0-9]/g, '').slice(-10)
+        .filter((contact) => Array.isArray(contact.phones) && contact.phones.length > 0)
+        .map((contact) => ({
+            name: contact.name?.display || 'Unknown',
+            phone: String(contact.phones[0].number || '').replace(/[^0-9]/g, '').slice(-10)
         }))
-        .filter(c => c.phone.length === 10); // Only valid 10-digit numbers
+        .filter((contact) => contact.phone.length === 10)
+        .filter((contact) => {
+            if (seenPhones.has(contact.phone)) {
+                return false;
+            }
+            seenPhones.add(contact.phone);
+            return true;
+        });
 
     if (cleanedContacts.length === 0) {
         return { synced: 0 };
@@ -95,27 +117,32 @@ export const syncContactsToServer = async () => {
     }
 
     try {
-        // Batch upload (100 at a time)
-        const BATCH_SIZE = 100;
+        // Batch upload
         let totalSynced = 0;
-
-        for (let i = 0; i < cleanedContacts.length; i += BATCH_SIZE) {
-            const batch = cleanedContacts.slice(i, i + BATCH_SIZE);
-
-            await api.post('/api/contacts/sync', { contacts: batch }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            totalSynced += batch.length;
-            console.log(`[Contacts] Synced batch ${Math.ceil(i / BATCH_SIZE) + 1}`);
+        const batches = [];
+        for (let i = 0; i < cleanedContacts.length; i += CONTACT_BATCH_SIZE) {
+            batches.push(cleanedContacts.slice(i, i + CONTACT_BATCH_SIZE));
         }
 
-        console.log(`[Contacts] Total synced: ${totalSynced}`);
+        for (let i = 0; i < batches.length; i += CONTACT_SYNC_CONCURRENCY) {
+            const windowBatches = batches.slice(i, i + CONTACT_SYNC_CONCURRENCY);
+            const responses = await Promise.all(
+                windowBatches.map((batch) => api.post('/api/contacts/sync', { contacts: batch }))
+            );
+
+            for (let j = 0; j < responses.length; j += 1) {
+                const syncedCount = Number(responses[j]?.data?.synced);
+                totalSynced += Number.isFinite(syncedCount) ? syncedCount : windowBatches[j].length;
+            }
+            logDev(`[Contacts] Synced batches ${i + 1}-${i + windowBatches.length} of ${batches.length}`);
+        }
+
+        logDev(`[Contacts] Total synced: ${totalSynced}`);
         return { synced: totalSynced };
 
     } catch (error) {
-        console.error('[Contacts] Sync failed:', error);
-        return { error: error.message };
+        logError('[Contacts] Sync failed:', error);
+        return { error: error.message || 'Failed to sync contacts' };
     }
 };
 
@@ -127,12 +154,11 @@ export const findFriendsOnPlatform = async () => {
     if (!token) return [];
 
     try {
-        const response = await api.get('/api/contacts/friends', {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data.friends || [];
+        const response = await api.get('/api/contacts/friends');
+        const payload = response?.data ?? response;
+        return Array.isArray(payload?.friends) ? payload.friends : [];
     } catch (error) {
-        console.error('[Contacts] Find friends failed:', error);
+        logError('[Contacts] Find friends failed:', error);
         return [];
     }
 };

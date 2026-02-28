@@ -1,30 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as LocationService from '../services/locationService';
 
-const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + "/api/location";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes - fresher location like banking apps
 const SKIP_TTL = 24 * 60 * 60 * 1000; // 24 hours
-const NETWORK_TIMEOUT_MS = 5000;
 const STRICT_REQUIRED_ACCURACY_METERS = 500;
 const AUTO_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+const LOCATION_DEBUG = import.meta.env.DEV;
 
-/**
- * Wrapper to add timeout support to fetch
- */
-async function fetchWithTimeout(url, options = {}, timeoutMs = NETWORK_TIMEOUT_MS) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-        const response = await fetch(url, {
-            ...options,
-            signal: controller.signal
-        });
-        return response;
-    } finally {
-        clearTimeout(timeout);
+const debugLocation = (...args) => {
+    if (LOCATION_DEBUG) {
+        console.log(...args);
     }
-}
+};
 
 /**
  * Location Context - Global state for user location
@@ -46,33 +33,14 @@ export function useLocation() {
  */
 async function sendLocationToBackend(locationData) {
     try {
-        const token = localStorage.getItem('authToken');
         const userId = localStorage.getItem('userId');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
-        }
-
         const payload = {
             ...locationData,
             user_id: locationData.user_id || userId || null,
             timezone: locationData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
             last_active_at: locationData.last_active_at || new Date().toISOString()
         };
-
-        const response = await fetchWithTimeout(API_URL, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Server returned ${response.status}: ${errText}`);
-        }
-
-        return await response.json();
+        return await LocationService.sendLocation(payload);
     } catch (error) {
         console.error('[LocationContext] Failed to send location to backend:', error);
         return null;
@@ -88,7 +56,7 @@ function getCachedLocation() {
         if (cached) {
             const data = JSON.parse(cached);
             if (data.timestamp && Date.now() - data.timestamp < CACHE_TTL) {
-                console.log('[LocationContext] Using cached location:', data.city);
+                debugLocation('[LocationContext] Using cached location:', data.city);
                 return data;
             }
         }
@@ -108,7 +76,7 @@ function setCachedLocation(locationData) {
             timestamp: Date.now()
         };
         localStorage.setItem('mhub_location', JSON.stringify(cacheData));
-        console.log('[LocationContext] Location cached:', locationData.city);
+        debugLocation('[LocationContext] Location cached:', locationData.city);
     } catch (e) {
         console.error('[LocationContext] Failed to cache location:', e);
     }
@@ -123,7 +91,7 @@ function hasSkippedLocation() {
         if (skipped) {
             const data = JSON.parse(skipped);
             if (data.timestamp && Date.now() - data.timestamp < SKIP_TTL) {
-                console.log('[LocationContext] User previously skipped location');
+                debugLocation('[LocationContext] User previously skipped location');
                 return true;
             }
             localStorage.removeItem('mhub_location_skipped');
@@ -143,7 +111,7 @@ function setSkippedLocation() {
             skipped: true,
             timestamp: Date.now()
         }));
-        console.log('[LocationContext] Skip preference saved for 24 hours');
+        debugLocation('[LocationContext] Skip preference saved for 24 hours');
     } catch (e) {
         console.error('[LocationContext] Failed to save skip preference:', e);
     }
@@ -174,7 +142,7 @@ function setCachedManualLocation(locationData) {
             timestamp: Date.now()
         };
         localStorage.setItem('mhub_manual_location', JSON.stringify(data));
-        console.log('[LocationContext] Manual location saved:', locationData.city);
+        debugLocation('[LocationContext] Manual location saved:', locationData.city);
     } catch (e) {
         console.error('[LocationContext] Failed to save manual location:', e);
     }
@@ -227,13 +195,13 @@ export function LocationProvider({ children }) {
     const requestLocation = useCallback(async (options = {}) => {
         const silent = options?.silent === true;
 
-        console.log('[LocationContext] ========================================');
-        console.log('[LocationContext] BANKING-GRADE CAPTURE STARTED');
+        debugLocation('[LocationContext] ========================================');
+        debugLocation('[LocationContext] BANKING-GRADE CAPTURE STARTED');
         if (silent) {
-            console.log('[LocationContext] Silent refresh mode enabled');
+            debugLocation('[LocationContext] Silent refresh mode enabled');
         }
-        console.log('[LocationContext] Timestamp:', new Date().toISOString());
-        console.log('[LocationContext] ========================================');
+        debugLocation('[LocationContext] Timestamp:', new Date().toISOString());
+        debugLocation('[LocationContext] ========================================');
 
         if (!silent) {
             setLoading(true);
@@ -257,9 +225,9 @@ export function LocationProvider({ children }) {
                         : 'granted';
             const timestamp = Date.now();
 
-            console.log('[LocationContext] ✅ LOCATION CAPTURED!');
-            console.log('[LocationContext] City:', locationData.city);
-            console.log('[LocationContext] Accuracy:', locationData.accuracy, 'meters');
+            debugLocation('[LocationContext] ✅ LOCATION CAPTURED!');
+            debugLocation('[LocationContext] City:', locationData.city);
+            debugLocation('[LocationContext] Accuracy:', locationData.accuracy, 'meters');
 
             // Update state
             setCoords({
@@ -335,7 +303,7 @@ export function LocationProvider({ children }) {
      * Retry location request (user-initiated)
      */
     const retry = useCallback(() => {
-        console.log('[LocationContext] User initiated retry...');
+        debugLocation('[LocationContext] User initiated retry...');
         hasRequestedRef.current = false;
         requestLocation();
     }, [requestLocation]);
@@ -344,7 +312,7 @@ export function LocationProvider({ children }) {
      * Skip location for now - persists for 24 hours
      */
     const skipForNow = useCallback(() => {
-        console.log('[LocationContext] User skipped location (saved for 24 hours)');
+        debugLocation('[LocationContext] User skipped location (saved for 24 hours)');
         setLoading(false);
         setError(null);
         setUserSkipped(true);
@@ -355,7 +323,7 @@ export function LocationProvider({ children }) {
      * Clear location data
      */
     const clearLocation = useCallback(() => {
-        console.log('[LocationContext] Clearing location data');
+        debugLocation('[LocationContext] Clearing location data');
         setCoords(null);
         setCity('');
         setState('');
@@ -372,7 +340,7 @@ export function LocationProvider({ children }) {
      * Set manual location (user override)
      */
     const setManualLocation = useCallback((locationData) => {
-        console.log('[LocationContext] Setting manual location:', locationData);
+        debugLocation('[LocationContext] Setting manual location:', locationData);
 
         setCoords({
             latitude: locationData.latitude,
@@ -405,11 +373,11 @@ export function LocationProvider({ children }) {
         if (hasRequestedRef.current) return;
         hasRequestedRef.current = true;
 
-        console.log('[LocationContext] Initializing...');
+        debugLocation('[LocationContext] Initializing...');
 
         // Check if user previously skipped (within 24 hours)
         if (hasSkippedLocation()) {
-            console.log('[LocationContext] User skipped location within 24 hours, not prompting again');
+            debugLocation('[LocationContext] User skipped location within 24 hours, not prompting again');
             setLoading(false);
             setUserSkipped(true);
             return;
@@ -432,10 +400,10 @@ export function LocationProvider({ children }) {
 
             if (manualLoc) {
                 // Respect explicit manual selection until user asks to auto-detect again.
-                console.log('[LocationContext] Manual location cache found, skipping background refresh.');
+                debugLocation('[LocationContext] Manual location cache found, skipping background refresh.');
             } else {
                 // Still request fresh location in background (silent update)
-                console.log('[LocationContext] Using cache, but requesting fresh location in background...');
+                debugLocation('[LocationContext] Using cache, but requesting fresh location in background...');
                 setTimeout(() => {
                     requestLocation({ silent: true });
                 }, 5000);

@@ -11,7 +11,7 @@ const { spawn, exec } = require('child_process');
 const net = require('net');
 const os = require('os');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Function to check if port is in use
 const checkPort = (port) => {
@@ -97,7 +97,10 @@ const startServer = async () => {
         // Start the actual server
         const server = spawn('node', ['src/index.js'], {
             stdio: 'inherit',
-            env: process.env,
+            env: {
+                ...process.env,
+                PORT: String(PORT)
+            },
             cwd: process.cwd()
         });
 

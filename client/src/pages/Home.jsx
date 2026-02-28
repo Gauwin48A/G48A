@@ -1,18 +1,44 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   RefreshCw, TrendingUp, Sparkles, Clock, Eye, Heart,
-  MapPin, ChevronRight, Zap, ShoppingBag, Star, AlertTriangle
+  MapPin, ChevronRight, Zap, ShoppingBag, AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api'; // Centralized Axios Service
+import { fetchCategoriesCached } from '@/services/categoriesService';
+
+const FEED_REFRESH_COOLDOWN_MS = 3000;
+const FEED_PAGE_SIZE = 20;
+const FALLBACK_IMAGE_URL = 'https://via.placeholder.com/300x200?text=No+Image';
+
+const createSeededRandom = (seed) => {
+  let state = seed % 2147483647;
+  if (state <= 0) {
+    state += 2147483646;
+  }
+  return () => {
+    state = (state * 16807) % 2147483647;
+    return (state - 1) / 2147483646;
+  };
+};
+
+const shufflePostsWithSeed = (posts, seed) => {
+  const random = createSeededRandom(seed);
+  const shuffled = [...posts];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 const Home = () => {
-  const { t } = useTranslation();
+  useTranslation();
   const navigate = useNavigate();
   const [feedPosts, setFeedPosts] = useState([]);
   const [trendingPosts, setTrendingPosts] = useState([]);
@@ -23,64 +49,94 @@ const Home = () => {
   const [feedMeta, setFeedMeta] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
   const refreshCooldown = useRef(false);
+  const refreshCooldownTimeoutRef = useRef(null);
+  const latestRequestIdRef = useRef(0);
+  const currencyFormatter = useMemo(
+    () => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
+    []
+  );
+
+  const devLog = useCallback((message, error) => {
+    if (import.meta.env.DEV) {
+      console.error(message, error);
+    }
+  }, []);
 
   // Fetch dynamic feed
   const fetchDynamicFeed = useCallback(async (forceRefresh = false) => {
     if (refreshCooldown.current && !forceRefresh) return;
+    const requestId = ++latestRequestIdRef.current;
     setError(null);
 
     try {
       if (forceRefresh) {
         setRefreshing(true);
         refreshCooldown.current = true;
-        setTimeout(() => { refreshCooldown.current = false; }, 3000); // 3s cooldown
+        if (refreshCooldownTimeoutRef.current) {
+          clearTimeout(refreshCooldownTimeoutRef.current);
+        }
+        refreshCooldownTimeoutRef.current = setTimeout(() => {
+          refreshCooldown.current = false;
+          refreshCooldownTimeoutRef.current = null;
+        }, FEED_REFRESH_COOLDOWN_MS);
       }
 
       // Always fetch fresh data with cache buster
       const cacheBuster = Date.now();
-      const response = await api.get('/api/feed/dynamic', {
-        params: { refresh: 'true', limit: 20, _t: cacheBuster }
+      const response = await api.get('/feed/dynamic', {
+        params: { refresh: 'true', limit: FEED_PAGE_SIZE, seed: cacheBuster, _t: cacheBuster }
       });
+      if (requestId !== latestRequestIdRef.current) {
+        return;
+      }
 
-      setFeedPosts(response.posts || []);
-      setFeedMeta(response.feedMeta);
+      const payload = response?.data ?? response;
+      const posts = Array.isArray(payload?.posts) ? payload.posts : [];
+      const randomizedPosts = shufflePostsWithSeed(posts, cacheBuster);
+
+      setFeedPosts(randomizedPosts);
+      setFeedMeta(payload?.feedMeta || null);
       setLastRefresh(new Date());
 
       // Track impressions for exploration analytics
-      if (response.posts?.length > 0) {
-        const postIds = response.posts.map(p => p.post_id);
-        api.post('/api/feed/impression', { postIds }).catch(() => { });
+      if (randomizedPosts.length > 0) {
+        const postIds = randomizedPosts.map((post) => post.post_id).filter(Boolean);
+        api.post('/feed/impression', { postIds }).catch(() => { });
       }
     } catch (err) {
-      console.error('Feed fetch error:', err);
-      setError('Failed to load your feed. Please try again.');
+      devLog('Feed fetch error:', err);
+      if (requestId === latestRequestIdRef.current) {
+        setError('Failed to load your feed. Please try again.');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (requestId === latestRequestIdRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, []);
+  }, [devLog]);
 
   // Fetch trending
   const fetchTrending = useCallback(async () => {
     try {
-      const response = await api.get('/api/feed/trending');
-      setTrendingPosts(response.posts || []);
+      const response = await api.get('/feed/trending');
+      const payload = response?.data ?? response;
+      setTrendingPosts(Array.isArray(payload?.posts) ? payload.posts : []);
     } catch (err) {
-      console.error('Trending fetch error:', err);
+      devLog('Trending fetch error:', err);
       // Non-critical, don't set global error
     }
-  }, []);
+  }, [devLog]);
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
-      // Replaced raw fetch with centralized api
-      const data = await api.get('/api/categories');
-      setCategories(Array.isArray(data) ? data.slice(0, 8) : []);
+      const list = await fetchCategoriesCached();
+      setCategories(Array.isArray(list) ? list.slice(0, 8) : []);
     } catch (err) {
-      console.error('Categories fetch error:', err);
+      devLog('Categories fetch error:', err);
     }
-  }, []);
+  }, [devLog]);
 
   // Initial load
   useEffect(() => {
@@ -88,6 +144,14 @@ const Home = () => {
     fetchDynamicFeed();
     fetchTrending();
     fetchCategories();
+
+    return () => {
+      latestRequestIdRef.current += 1;
+      if (refreshCooldownTimeoutRef.current) {
+        clearTimeout(refreshCooldownTimeoutRef.current);
+        refreshCooldownTimeoutRef.current = null;
+      }
+    };
   }, [fetchDynamicFeed, fetchTrending, fetchCategories]);
 
   // Pull to refresh (simulated with button)
@@ -97,7 +161,7 @@ const Home = () => {
     }
   };
 
-  const formatPrice = (price) => {
+  const legacyFormatPrice = (price) => {
     if (!price) return '₹ --';
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -106,20 +170,7 @@ const Home = () => {
     }).format(price);
   };
 
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 60) return `${minutes}m`;
-    if (hours < 24) return `${hours}h`;
-    return `${days}d`;
-  };
-
-  const getImageUrl = (images) => {
+  const legacyGetImageUrl = (images) => {
     if (!images) return 'https://via.placeholder.com/300x200?text=No+Image';
     if (Array.isArray(images) && images.length > 0) return images[0];
     if (typeof images === 'string') {
@@ -131,6 +182,36 @@ const Home = () => {
       }
     }
     return 'https://via.placeholder.com/300x200?text=No+Image';
+  };
+
+  const formatPrice = (price) => {
+    const numericPrice = Number(price);
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      return legacyFormatPrice(price);
+    }
+    return currencyFormatter.format(numericPrice);
+  };
+
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const now = new Date();
+    const diff = Math.max(0, now - date);
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return `${days}d`;
+  };
+
+  const getImageUrl = (images) => {
+    if (!images) return FALLBACK_IMAGE_URL;
+    const resolvedImage = legacyGetImageUrl(images);
+    return resolvedImage || FALLBACK_IMAGE_URL;
   };
 
   const getPhaseBadge = (phase) => {
@@ -150,7 +231,7 @@ const Home = () => {
         <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
         <p className="text-gray-500 mb-6 text-center">{error}</p>
-        <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
           Reload Page
         </Button>
       </div>
@@ -289,7 +370,7 @@ const Home = () => {
                     src={getImageUrl(post.images)}
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/300x200?text=No+Image'; }}
+                    onError={(e) => { e.target.src = FALLBACK_IMAGE_URL; }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
 

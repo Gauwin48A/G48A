@@ -8,8 +8,9 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from '../context/LocationContext';
 import { getDeviceInfo } from '../utils/deviceInfo';
 import { MapPin, Loader2, AlertTriangle, RefreshCw, Smartphone } from 'lucide-react';
+import { buildApiPath } from '@/lib/networkConfig';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const DEVICE_INFO_SENT_SESSION_KEY = 'mhub_device_info_sent';
 
 export default function LocationGate({ children }) {
     const {
@@ -42,6 +43,11 @@ export default function LocationGate({ children }) {
 
     // Send device info to backend on first load
     useEffect(() => {
+        if (sessionStorage.getItem(DEVICE_INFO_SENT_SESSION_KEY) === '1') {
+            setDeviceSent(true);
+            return;
+        }
+
         if (!deviceSent) {
             sendDeviceInfo();
             setDeviceSent(true);
@@ -52,12 +58,13 @@ export default function LocationGate({ children }) {
         try {
             const deviceInfo = getDeviceInfo();
 
-            await fetch(`${API_BASE}/api/analytics/device`, {
+            await fetch(buildApiPath('/analytics/device'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify(deviceInfo)
             });
+            sessionStorage.setItem(DEVICE_INFO_SENT_SESSION_KEY, '1');
 
             console.log('[LocationGate] Device info sent:', deviceInfo.fingerprint);
         } catch (err) {

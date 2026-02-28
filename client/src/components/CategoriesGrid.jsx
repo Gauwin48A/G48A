@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Smartphone, Shirt, Monitor, Sofa, LayoutGrid, Car, Book, Home, Dumbbell, Palette, Baby } from 'lucide-react';
-import api from '../lib/api';
 import { useFilter } from '../context/FilterContext';
+import { fetchCategoriesCached } from '@/services/categoriesService';
 
 const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
   const { filters, updateFilter } = useFilter();
@@ -37,22 +37,34 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
   }, [filters.category, activeCategory]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchCategories = async () => {
       try {
-        const response = await api.get('/api/categories');
-        const categoriesData = Array.isArray(response.data) ? response.data : [];
+        const categoriesData = await fetchCategoriesCached();
+        if (cancelled) return;
         const allCategory = { id: 'all', name: 'All', icon: 'All' };
-        const uniqueCats = [allCategory, ...categoriesData.filter(c => c.name !== 'All')];
+        const safeCategories = Array.isArray(categoriesData) ? categoriesData : [];
+        const uniqueCats = [allCategory, ...safeCategories.filter((category) => category.name !== 'All')];
         setCategories(uniqueCats);
-        setLoading(false);
       } catch (err) {
-        console.error('Failed to fetch categories:', err);
+        if (cancelled) return;
+        if (import.meta.env.DEV) {
+          console.error('Failed to fetch categories:', err);
+        }
         setError('Failed to load categories');
-        setLoading(false);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchCategories();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleCategoryClick = (categoryName) => {
@@ -68,14 +80,14 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
     navigate('/');
   };
 
-  const effectiveSelectedCategory = (() => {
+  const effectiveSelectedCategory = useMemo(() => {
     if (activeCategory !== undefined) return activeCategory || 'All';
     if (filters?.search) {
-      const match = categories.find(c => c.name.toLowerCase() === filters.search.trim().toLowerCase());
+      const match = categories.find((category) => category.name.toLowerCase() === filters.search.trim().toLowerCase());
       if (match) return match.name;
     }
     return selectedCategory || 'All';
-  })();
+  }, [activeCategory, categories, filters?.search, selectedCategory]);
 
   if (loading) return <div className="h-20 animate-pulse bg-gray-100 rounded-xl mb-6"></div>;
   if (error) return null;

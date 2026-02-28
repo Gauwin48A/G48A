@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const PostDetailView = () => {
   const { t } = useTranslation();
@@ -18,7 +19,7 @@ const PostDetailView = () => {
     const fetchPost = async () => {
       setLoading(true);
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const baseUrl = getApiOriginBase();
         const res = await fetch(`${baseUrl}/api/posts/${postId}`);
         if (!res.ok) throw new Error('Failed to fetch post details');
         const data = await res.json();
@@ -93,3 +94,4 @@ const PostDetailView = () => {
 };
 
 export default PostDetailView;
+

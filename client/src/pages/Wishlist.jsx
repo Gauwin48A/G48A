@@ -1,68 +1,87 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-    Heart, Trash2, MapPin, ShoppingBag, Sparkles,
-    ArrowLeft, Share2, ExternalLink
+    Heart, Trash2, MapPin, ShoppingBag, ExternalLink
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { translatePosts } from '@/utils/translateContent';
+import { useAuth } from '@/context/AuthContext';
+import { getUserId, isAuthenticated } from '@/utils/authStorage';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const Wishlist = () => {
     const { t, i18n } = useTranslation();
     const currentLang = i18n.language || 'en';
     const navigate = useNavigate();
+    const { user: authUser, loading: authLoading } = useAuth();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const fetchRequestIdRef = useRef(0);
+    const isLoggedIn = isAuthenticated(authUser);
+    const userId = getUserId(authUser);
 
-    // Check auth
-    useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        const userId = localStorage.getItem('userId');
-        setIsAuthenticated(!!(token && userId));
-    }, []);
+    const fetchWishlist = useCallback(async () => {
+        const requestId = ++fetchRequestIdRef.current;
+        setLoading(true);
+        try {
+            const response = await api.get('/wishlist', {
+                params: { userId }
+            });
+            if (requestId !== fetchRequestIdRef.current) {
+                return;
+            }
+
+            const payload = response?.data ?? response;
+            let loadedItems = Array.isArray(payload?.items) ? payload.items : [];
+
+            // Translate post content if not English
+            if (currentLang !== 'en' && loadedItems.length > 0) {
+                loadedItems = await translatePosts(loadedItems, currentLang);
+            }
+
+            setItems(loadedItems);
+            setError(null);
+        } catch (err) {
+            if (import.meta.env.DEV) {
+                console.error('Failed to fetch wishlist:', err);
+            }
+            if (requestId === fetchRequestIdRef.current) {
+                setError(t('failed_load_wishlist'));
+                setItems([]);
+            }
+        } finally {
+            if (requestId === fetchRequestIdRef.current) {
+                setLoading(false);
+            }
+        }
+    }, [currentLang, t, userId]);
 
     // Fetch wishlist
     useEffect(() => {
-        if (!isAuthenticated) return;
-
-        const fetchWishlist = async () => {
-            setLoading(true);
-            try {
-                const userId = localStorage.getItem('userId');
-                const res = await api.get(`/api/wishlist?userId=${userId}`);
-                let loadedItems = res.data?.items || [];
-                // Translate post content if not English
-                if (currentLang !== 'en' && loadedItems.length > 0) {
-                    loadedItems = await translatePosts(loadedItems, currentLang);
-                }
-                setItems(loadedItems);
-                setError(null);
-            } catch (err) {
-                console.error('Failed to fetch wishlist:', err);
-                setError(t('failed_load_wishlist'));
-                setItems([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (authLoading || !isLoggedIn || !userId) {
+            setLoading(false);
+            return;
+        }
         fetchWishlist();
-    }, [isAuthenticated, currentLang]);
+    }, [authLoading, fetchWishlist, isLoggedIn, userId]);
 
     // Remove from wishlist
     const handleRemove = async (postId) => {
         try {
-            const userId = localStorage.getItem('userId');
-            await api.delete(`/api/wishlist/${postId}?userId=${userId}`);
+            await api.delete(`/wishlist/${postId}`, {
+                params: { userId }
+            });
             setItems(prev => prev.filter(item => item.post_id !== postId));
         } catch (err) {
-            console.error('Failed to remove:', err);
+            if (import.meta.env.DEV) {
+                console.error('Failed to remove:', err);
+            }
         }
     };
 
@@ -70,11 +89,19 @@ const Wishlist = () => {
         const img = item.images?.[0] || item.image_url;
         if (!img) return '/placeholder.svg';
         if (img.startsWith('http')) return img;
-        return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${img}`;
+        return `${getApiOriginBase()}${img}`;
     };
 
     // Not authenticated
-    if (!isAuthenticated) {
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <p className="text-gray-500">{t('loading') || 'Loading...'}</p>
+            </div>
+        );
+    }
+
+    if (!isLoggedIn || !userId) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
                 <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center">
@@ -82,7 +109,7 @@ const Wishlist = () => {
                     <h1 className="text-2xl font-bold text-white mb-3">{t('sign_in_to_view_wishlist') || 'Sign in to view Wishlist'}</h1>
                     <p className="text-gray-300 mb-6">{t('save_favorites') || 'Save your favorite items for later'}</p>
                     <Button
-                        onClick={() => navigate('/login')}
+                        onClick={() => navigate('/login', { state: { returnTo: '/wishlist' } })}
                         className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-6 text-lg rounded-xl"
                     >
                         {t('sign_in') || 'Sign In'}
@@ -194,3 +221,4 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
+

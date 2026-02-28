@@ -4,21 +4,87 @@
  */
 
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+function getScalarQueryValue(value) {
+    return Array.isArray(value) ? value[0] : value;
+}
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+    const scalar = getScalarQueryValue(value);
+    if (scalar === undefined || scalar === null) return fallback;
+    const normalized = (typeof scalar === 'string' ? scalar : String(scalar)).trim();
+    if (!/^\d+$/.test(normalized)) return fallback;
+    const parsed = Number(normalized);
+    if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+    return Math.min(parsed, max);
+}
+
+function normalizeSource(value, fallback = null) {
+    const scalar = getScalarQueryValue(value);
+    if (scalar === undefined || scalar === null) return fallback;
+    const normalized = String(scalar).trim().toLowerCase();
+    return normalized || fallback;
+}
+
+function parseOptionalString(value) {
+    const scalar = getScalarQueryValue(value);
+    if (scalar === undefined || scalar === null) return null;
+    const normalized = String(scalar).trim();
+    return normalized || null;
+}
+
+function getAuthenticatedUserId(req) {
+    return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
+
+function enforceUserAccess(req, res, { allowBodyOverride = false, allowQueryOverride = false } = {}) {
+    const authenticatedUserId = getAuthenticatedUserId(req);
+    if (!authenticatedUserId) {
+        res.status(401).json({ error: 'Authentication required' });
+        return null;
+    }
+
+    const requestedBodyUserId = allowBodyOverride ? parseOptionalString(req.body?.userId || req.body?.user_id) : null;
+    const requestedQueryUserId = allowQueryOverride ? parseOptionalString(req.query?.userId || req.query?.user_id) : null;
+
+    if ((requestedBodyUserId && requestedBodyUserId !== authenticatedUserId) ||
+        (requestedQueryUserId && requestedQueryUserId !== authenticatedUserId)) {
+        res.status(403).json({ error: 'Cannot access another user history' });
+        return null;
+    }
+
+    return authenticatedUserId;
+}
 
 // Add/Update recently viewed
 const addRecentlyViewed = async (req, res) => {
     // Support both naming conventions
-    const userId = req.user?.userId || req.body.userId || req.body.user_id;
+    const userId = enforceUserAccess(req, res, { allowBodyOverride: true });
     const postId = req.body.postId || req.body.post_id;
-    const source = req.body.source || 'allposts'; // Default to 'allposts'
+    const source = normalizeSource(req.body.source, 'allposts');
 
-    if (!userId || !postId) {
-        return res.status(400).json({ error: 'userId and postId required' });
+    if (!userId) return;
+    if (!postId) {
+        return res.status(400).json({ error: 'postId required' });
     }
 
     try {
+        const normalizedUserId = String(userId);
+        const normalizedPostId = String(postId);
         // Upsert - insert or update view count (with source)
-        const result = await pool.query(`
+        const result = await runQuery(`
             INSERT INTO recently_viewed (user_id, post_id, view_count, viewed_at, source)
             VALUES ($1::text, $2::text, 1, NOW(), $3)
             ON CONFLICT (user_id, post_id) 
@@ -26,27 +92,26 @@ const addRecentlyViewed = async (req, res) => {
                 view_count = recently_viewed.view_count + 1,
                 viewed_at = NOW(),
                 source = EXCLUDED.source
-            RETURNING *
-        `, [userId, postId, source]);
+            RETURNING id, user_id, post_id, view_count, viewed_at, source
+        `, [normalizedUserId, normalizedPostId, source]);
 
         res.json({ success: true, item: result.rows[0] });
     } catch (error) {
-        console.error('Add recently viewed error:', error);
+        logger.error('Add recently viewed error:', error);
         res.status(500).json({ error: 'Failed to track view' });
     }
 };
 
 // Get recently viewed posts
 const getRecentlyViewed = async (req, res) => {
-    const userId = req.user?.userId || req.query.userId;
-    const limit = parseInt(req.query.limit) || 20;
-    const source = req.query.source; // Optional: 'allposts', 'feed', or undefined for all
+    const userId = enforceUserAccess(req, res, { allowQueryOverride: true });
+    const limit = parsePositiveInt(req.query.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    const source = normalizeSource(req.query.source); // Optional: 'allposts', 'feed', or undefined for all
 
-    if (!userId) {
-        return res.status(400).json({ error: 'userId required' });
-    }
+    if (!userId) return;
 
     try {
+        const normalizedUserId = String(userId);
         let query = `
             SELECT 
                 rv.id,
@@ -70,7 +135,7 @@ const getRecentlyViewed = async (req, res) => {
             WHERE rv.user_id::text = $1
         `;
 
-        const params = [userId];
+        const params = [normalizedUserId];
 
         if (source) {
             query += ` AND rv.source = $2`;
@@ -80,52 +145,47 @@ const getRecentlyViewed = async (req, res) => {
         query += ` ORDER BY rv.viewed_at DESC LIMIT $${params.length + 1}`;
         params.push(limit);
 
-        const result = await pool.query(query, params);
+        const result = await runQuery(query, params);
 
         res.json({
             items: result.rows,
             total: result.rows.length
         });
     } catch (error) {
-        console.error('Get recently viewed error:', error);
+        logger.error('Get recently viewed error:', error);
         res.status(500).json({ error: 'Failed to get history' });
     }
 };
 
 // Clear recently viewed history
 const clearHistory = async (req, res) => {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
+    const userId = enforceUserAccess(req, res, { allowQueryOverride: true, allowBodyOverride: true });
+    if (!userId) return;
 
     try {
-        await pool.query('DELETE FROM recently_viewed WHERE user_id::text = $1', [userId]);
+        await runQuery('DELETE FROM recently_viewed WHERE user_id::text = $1', [String(userId)]);
         res.json({ message: 'History cleared' });
     } catch (error) {
-        console.error('Clear history error:', error);
+        logger.error('Clear history error:', error);
         res.status(500).json({ error: 'Failed to clear history' });
     }
 };
 
 // Remove single item from history
 const removeFromHistory = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = enforceUserAccess(req, res, { allowQueryOverride: true, allowBodyOverride: true });
     const { postId } = req.params;
 
-    if (!userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
+    if (!userId) return;
 
     try {
-        await pool.query(
+        await runQuery(
             'DELETE FROM recently_viewed WHERE user_id::text = $1 AND post_id::text = $2',
-            [userId, postId]
+            [String(userId), String(postId)]
         );
         res.json({ message: 'Removed from history' });
     } catch (error) {
-        console.error('Remove from history error:', error);
+        logger.error('Remove from history error:', error);
         res.status(500).json({ error: 'Failed to remove' });
     }
 };

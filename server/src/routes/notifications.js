@@ -6,28 +6,23 @@
 const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notificationController');
-
-// Optional auth middleware - notifications can be fetched by userId in query
-const optionalAuth = (req, res, next) => {
-    // Allow requests with userId in query or authenticated requests
-    next();
-};
+const { protect } = require('../middleware/auth');
 
 // Get notifications for a user
-router.get('/', optionalAuth, notificationController.getNotifications);
+router.get('/', protect, notificationController.getNotifications);
 
 // Get unread count only (lightweight)
-router.get('/unread-count', optionalAuth, notificationController.getUnreadCount);
+router.get('/unread-count', protect, notificationController.getUnreadCount);
 
 // Mark a single notification as read
-router.put('/:notificationId/read', optionalAuth, notificationController.markAsRead);
+router.put('/:notificationId/read', protect, notificationController.markAsRead);
 
 // Mark all notifications as read
-router.put('/mark-all-read', optionalAuth, notificationController.markAllAsRead);
-router.post('/mark-all-read', optionalAuth, notificationController.markAllAsRead); // Also allow POST
+router.put('/mark-all-read', protect, notificationController.markAllAsRead);
+router.post('/mark-all-read', protect, notificationController.markAllAsRead); // Also allow POST
 
 // Delete a notification
-router.delete('/:notificationId', optionalAuth, notificationController.deleteNotification);
+router.delete('/:notificationId', protect, notificationController.deleteNotification);
 
 module.exports = router;
 

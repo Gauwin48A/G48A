@@ -22,6 +22,15 @@ function toLookbackMinutes(value, fallback = 60) {
     return Math.min(parsed, 24 * 60);
 }
 
+function getEventTimestampMs(event) {
+    if (event && Number.isFinite(event.timestampMs)) {
+        return event.timestampMs;
+    }
+
+    const parsed = Date.parse(event?.timestamp);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 async function persistEvent(event) {
     if (!persistenceEnabled) return;
 
@@ -68,8 +77,10 @@ async function persistEvent(event) {
 }
 
 function recordDecision(payload = {}) {
+    const timestampMs = Date.now();
     const event = {
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(timestampMs).toISOString(),
+        timestampMs,
         userId: payload.userId || null,
         flow: payload.flow || 'auth_login',
         enabled: Boolean(payload.enabled),
@@ -160,8 +171,71 @@ async function getMetrics({ lookbackMinutes = 60, source = 'auto' } = {}) {
     }
 
     const cutoff = Date.now() - lookback * 60 * 1000;
-    const filtered = events.filter((event) => new Date(event.timestamp).getTime() >= cutoff);
+    const filtered = [];
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+        const event = events[i];
+        if (getEventTimestampMs(event) < cutoff) {
+            break;
+        }
+        filtered.push(event);
+    }
     return aggregateMetrics(filtered, lookback, 'memory');
+}
+
+async function getRecentEvents({ lookbackMinutes = 60, limit = 1000, source = 'auto' } = {}) {
+    const lookback = toLookbackMinutes(lookbackMinutes, 60);
+    const normalizedLimit = Number.isFinite(Number(limit))
+        ? Math.min(Math.max(Number.parseInt(limit, 10), 1), 5000)
+        : 1000;
+
+    if (source !== 'memory' && persistenceEnabled) {
+        try {
+            const result = await runQuery(
+                `SELECT
+                    event_timestamp,
+                    user_id,
+                    flow,
+                    enabled,
+                    score,
+                    recommended_action,
+                    should_challenge,
+                    should_enforce,
+                    shadow_mode,
+                    flag_reason,
+                    model_version,
+                    explainability_count
+                 FROM risk_decision_events
+                 WHERE event_timestamp >= NOW() - ($1::text || ' minutes')::interval
+                 ORDER BY event_timestamp DESC
+                 LIMIT $2`,
+                [String(lookback), normalizedLimit]
+            );
+
+            return {
+                source: 'database',
+                lookbackMinutes: lookback,
+                events: result.rows
+            };
+        } catch (err) {
+            logger.warn(`[RISK_TELEMETRY] Failed reading DB events, falling back to memory: ${err.message}`);
+        }
+    }
+
+    const cutoff = Date.now() - lookback * 60 * 1000;
+    const filtered = [];
+    for (let i = events.length - 1; i >= 0 && filtered.length < normalizedLimit; i -= 1) {
+        const event = events[i];
+        if (getEventTimestampMs(event) < cutoff) {
+            break;
+        }
+        filtered.push(event);
+    }
+
+    return {
+        source: 'memory',
+        lookbackMinutes: lookback,
+        events: filtered
+    };
 }
 
 function reset() {
@@ -175,6 +249,7 @@ function setPersistenceEnabled(enabled) {
 module.exports = {
     recordDecision,
     getMetrics,
+    getRecentEvents,
     reset,
     setPersistenceEnabled
 };

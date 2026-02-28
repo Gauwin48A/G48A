@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
+    "check:no-hardcoded-localhost": "node scripts/check-no-hardcoded-localhost.mjs",
+    "check:network-contract": "node scripts/check-network-contract.mjs",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run"

@@ -22,8 +22,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | Date | Owner | Scope | Status | Artifact |
 |---|---|---|---|---|
 | 2026-02-28 | Platform Engineering | Readiness matrix verification | COMPLETE | `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-41-25-786Z.json` |
-| 2026-02-28 | Backend Lead | Load/limiter profile verification | COMPLETE | `server/tests/load/results/capacity_report_2026-02-28T07-04-49-736Z.json` |
-| 2026-02-28 | Backend Lead | Authenticated read/write load verification | COMPLETE | `server/tests/load/results/capacity_report_2026-02-28T07-05-48-844Z.json` |
+| 2026-02-28 | Backend Lead | Load/limiter profile verification | COMPLETE | `server/tests/load/results/capacity_report_2026-02-28T07-15-05-255Z.json` |
+| 2026-02-28 | Backend Lead | Authenticated read/write load verification | COMPLETE | `server/tests/load/results/capacity_report_2026-02-28T07-15-17-147Z.json` |
 | 2026-02-28 | Trust Engineering | Fraud telemetry export verification | COMPLETE | `server/docs/artifacts/risk_telemetry_export_2026-02-28T04-35-51-718Z.json` |
 | 2026-02-28 | Platform Engineering | Failover tabletop drill evidence | COMPLETE | `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json` |
 | 2026-02-28 | Platform Engineering | Active-active staged execute simulation | COMPLETE | `server/docs/artifacts/active_active_orchestration_2026-02-28T06-41-41-340Z.json` |

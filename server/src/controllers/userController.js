@@ -1,164 +1,99 @@
 const pool = require('../config/db');
+const logger = require('../utils/logger');
 const { getTierRules, getSubscriptionExpiry } = require('../config/tierRules');
+const { getImageUrl } = require('../middleware/upload');
+const { ensureUserTierColumns } = require('../services/schemaGuard');
+const { processKycSubmission } = require('../services/kycAutomationService');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+let profileColumnAvailabilityPromise = null;
 
-// Get user profile
-exports.getProfile = async (req, res) => {
-  try {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: 'userId required' });
-    const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [userId]);
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+const SUPPORTED_TIERS = new Set(['basic', 'silver', 'premium']);
+
+function runQuery(text, values = []) {
+  return pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
+
+function parseOptionalString(value) {
+  if (value === undefined || value === null) return null;
+  const normalized = String(value).trim();
+  return normalized.length ? normalized : null;
+}
+
+function getAuthenticatedUserId(req) {
+  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
+
+function enforceUserAccess(req, res, { allowQueryOverride = false } = {}) {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  if (!authenticatedUserId) {
+    res.status(401).json({ error: 'Authentication required' });
+    return null;
   }
-};
 
-/**
- * PROTOCOL: VALUE HIERARCHY - Tier Upgrade
- * POST /api/users/upgrade-tier
- * 
- * In production: This would be called AFTER successful payment via Razorpay/Stripe webhook
- * For MVP: Simulates instant activation
- */
-exports.upgradeTier = async (req, res) => {
-  try {
-    const userId = req.user?.userId || req.user?.id;
-    const { tier } = req.body;
+  const requestedQueryUserId = allowQueryOverride
+    ? parseOptionalString(req.query?.userId || req.query?.user_id)
+    : null;
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    if (!tier || !['basic', 'silver', 'premium'].includes(tier)) {
-      return res.status(400).json({ error: 'Invalid tier. Must be: basic, silver, or premium' });
-    }
-
-    const rules = getTierRules(tier);
-
-    let updateData = {};
-
-    if (tier === 'premium') {
-      // Premium: 1 year subscription
-      const expiry = new Date();
-      expiry.setFullYear(expiry.getFullYear() + 1);
-      updateData = {
-        tier: 'premium',
-        subscription_expiry: expiry.toISOString()
-      };
-    } else if (tier === 'silver') {
-      // Silver: 6 months subscription
-      const expiry = new Date();
-      expiry.setMonth(expiry.getMonth() + 6);
-      updateData = {
-        tier: 'silver',
-        subscription_expiry: expiry.toISOString()
-      };
-    } else {
-      // Basic: Add 1 post credit
-      const currentCredits = await pool.query(
-        'SELECT post_credits FROM users WHERE user_id = $1',
-        [userId]
-      );
-      const credits = (currentCredits.rows[0]?.post_credits || 0) + 1;
-      updateData = {
-        tier: 'basic',
-        post_credits: credits
-      };
-    }
-
-    // Update user tier
-    const result = await pool.query(
-      `UPDATE users SET tier = $1, subscription_expiry = $2, post_credits = COALESCE($3, post_credits)
-       WHERE user_id = $4
-       RETURNING user_id, tier, subscription_expiry, post_credits`,
-      [
-        updateData.tier,
-        updateData.subscription_expiry || null,
-        updateData.post_credits || null,
-        userId
-      ]
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    console.log(`[Tier] User ${userId} upgraded to ${tier.toUpperCase()}`);
-
-    // Send upgrade notification
-    try {
-      const { sendUpgradeNotification, sendRenewalSuccessNotification } = require('../services/subscriptionNotifications');
-      if (tier !== 'basic') {
-        await sendRenewalSuccessNotification(userId, tier, updateData.subscription_expiry);
-      }
-    } catch (notifErr) {
-      console.error('[Tier] Notification error (non-fatal):', notifErr.message);
-    }
-
-    res.json({
-      success: true,
-      message: `Successfully activated ${tier.toUpperCase()} plan!`,
-      user: result.rows[0],
-      tier: tier,
-      features: rules.features,
-      expiresAt: updateData.subscription_expiry || null
-    });
-
-  } catch (err) {
-    console.error('[Tier] Upgrade error:', err);
-    res.status(500).json({ error: 'Failed to upgrade tier' });
+  if (requestedQueryUserId && requestedQueryUserId !== authenticatedUserId) {
+    res.status(403).json({ error: 'Cannot access another user profile' });
+    return null;
   }
-};
 
-/**
- * Get user's current tier status
- * GET /api/users/tier-status
- */
-exports.getTierStatus = async (req, res) => {
-  try {
-    const userId = req.user?.userId || req.user?.id || req.query.userId;
+  return authenticatedUserId;
+}
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    const result = await pool.query(
-      `SELECT tier, subscription_expiry, post_credits FROM users WHERE user_id = $1`,
-      [userId]
-    );
-
-    if (!result.rows.length) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const user = result.rows[0];
-    const tier = user.tier || 'basic';
-    const rules = getTierRules(tier);
-
-    // Check if subscription is expired
-    let isActive = true;
-    if (tier !== 'basic' && user.subscription_expiry) {
-      isActive = new Date(user.subscription_expiry) > new Date();
-    }
-
-    res.json({
-      tier: tier,
-      tierName: rules.name,
-      isActive: isActive,
-      subscriptionExpiry: user.subscription_expiry,
-      postCredits: user.post_credits || 0,
-      features: rules.features,
-      visibilityDays: rules.visibilityDays,
-      dailyLimit: rules.dailyLimit,
-      priority: rules.priority
-    });
-
-  } catch (err) {
-    console.error('[Tier] Status error:', err);
-    res.status(500).json({ error: 'Failed to get tier status' });
+async function getProfilesColumnAvailability() {
+  if (!profileColumnAvailabilityPromise) {
+    profileColumnAvailabilityPromise = runQuery(
+      `
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'profiles'
+          AND column_name IN ('location', 'address', 'updated_at')
+      `
+    )
+      .then((result) => {
+        const names = new Set((result?.rows || []).map((row) => row.column_name));
+        return {
+          hasLocationColumn: names.has('location'),
+          hasAddressColumn: names.has('address'),
+          hasUpdatedAtColumn: names.has('updated_at')
+        };
+      })
+      .catch((err) => {
+        logger.warn('[Profile] Failed to inspect profiles columns, using safe defaults', { message: err.message });
+        return {
+          hasLocationColumn: false,
+          hasAddressColumn: true,
+          hasUpdatedAtColumn: false
+        };
+      });
   }
-};
+
+  return profileColumnAvailabilityPromise;
+}
+
+function getProfilesLocationSelectExpression(columnAvailability, tableAlias = '') {
+  const prefix = tableAlias ? `${tableAlias}.` : '';
+  if (columnAvailability.hasLocationColumn) {
+    return `${prefix}location AS location`;
+  }
+  if (columnAvailability.hasAddressColumn) {
+    return `${prefix}address AS location`;
+  }
+  return 'NULL::text AS location';
+}
+
+function getProfilesLocationColumnName(columnAvailability) {
+  if (columnAvailability.hasLocationColumn) return 'location';
+  if (columnAvailability.hasAddressColumn) return 'address';
+  return null;
+}
 
 // ============================================
 // PROFILE MANAGEMENT
@@ -170,34 +105,44 @@ exports.getTierStatus = async (req, res) => {
  */
 exports.getProfile = async (req, res) => {
   try {
-    const userId = req.user?.userId || req.user?.id || req.query.userId;
+    const userId = enforceUserAccess(req, res, { allowQueryOverride: true });
+    if (!userId) return;
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    await ensureUserTierColumns();
+    const profileColumnAvailability = await getProfilesColumnAvailability();
 
-    const result = await pool.query(`
-      SELECT 
-        u.user_id, u.email, u.tier, u.subscription_expiry, u.post_credits,
-        p.full_name, p.bio, p.avatar_url, p.phone, p.location, p.created_at,
-        (SELECT COUNT(*) FROM posts WHERE user_id = u.user_id AND status = 'active') as active_posts,
-        (SELECT COUNT(*) FROM posts WHERE user_id = u.user_id AND status = 'sold') as sold_posts
-      FROM users u
-      LEFT JOIN profiles p ON u.user_id = p.user_id
-      WHERE u.user_id = $1
-    `, [userId]);
+    const result = await runQuery(
+      `
+        SELECT
+          u.user_id, u.email, u.tier, u.subscription_expiry, u.post_credits,
+          p.full_name, p.bio, p.avatar_url, p.phone, ${getProfilesLocationSelectExpression(profileColumnAvailability, 'p')}, p.created_at,
+          COALESCE(ps.active_posts, 0) AS active_posts,
+          COALESCE(ps.sold_posts, 0) AS sold_posts
+        FROM users u
+        LEFT JOIN profiles p ON p.user_id::text = u.user_id::text
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*) FILTER (WHERE status = 'active')::int AS active_posts,
+            COUNT(*) FILTER (WHERE status = 'sold')::int AS sold_posts
+          FROM posts
+          WHERE user_id::text = u.user_id::text
+        ) ps ON true
+        WHERE u.user_id::text = $1
+        LIMIT 1
+      `,
+      [userId]
+    );
 
-    if (result.rows.length === 0) {
+    if (!result.rows.length) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({
+    return res.json({
       profile: result.rows[0]
     });
-
   } catch (err) {
-    console.error('[Profile] Get error:', err);
-    res.status(500).json({ error: 'Failed to get profile' });
+    logger.error('[Profile] Get error:', err);
+    return res.status(500).json({ error: 'Failed to get profile' });
   }
 };
 
@@ -207,149 +152,337 @@ exports.getProfile = async (req, res) => {
  */
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
+    const profileColumnAvailability = await getProfilesColumnAvailability();
+    const userId = getAuthenticatedUserId(req);
     const { full_name, bio, avatar_url, phone, location } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Check if profile exists
-    const existingProfile = await pool.query(
-      'SELECT user_id FROM profiles WHERE user_id = $1',
-      [userId]
-    );
+    const locationColumn = getProfilesLocationColumnName(profileColumnAvailability);
+    const locationValue = parseOptionalString(location);
+    const insertColumns = ['user_id', 'full_name', 'bio', 'avatar_url', 'phone', 'created_at'];
+    const insertValues = ['$1', '$2', '$3', '$4', '$5', 'NOW()'];
+    const params = [
+      userId,
+      parseOptionalString(full_name) || 'User',
+      parseOptionalString(bio),
+      parseOptionalString(avatar_url),
+      parseOptionalString(phone)
+    ];
 
-    if (existingProfile.rows.length === 0) {
-      // Create profile if doesn't exist
-      await pool.query(
-        `INSERT INTO profiles (user_id, full_name, bio, avatar_url, phone, location, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`,
-        [userId, full_name || 'User', bio || null, avatar_url || null, phone || null, location || null]
-      );
-    } else {
-      // Update existing profile
-      await pool.query(
-        `UPDATE profiles SET 
-           full_name = COALESCE($1, full_name),
-           bio = COALESCE($2, bio),
-           avatar_url = COALESCE($3, avatar_url),
-           phone = COALESCE($4, phone),
-           location = COALESCE($5, location),
-           updated_at = NOW()
-         WHERE user_id = $6`,
-        [full_name, bio, avatar_url, phone, location, userId]
-      );
+    if (locationColumn) {
+      params.push(locationValue);
+      insertColumns.push(locationColumn);
+      insertValues.push(`$${params.length}`);
     }
 
-    // Fetch updated profile
-    const result = await pool.query(
-      'SELECT * FROM profiles WHERE user_id = $1',
-      [userId]
+    if (profileColumnAvailability.hasUpdatedAtColumn) {
+      insertColumns.push('updated_at');
+      insertValues.push('NOW()');
+    }
+
+    const updateAssignments = [
+      'full_name = COALESCE(EXCLUDED.full_name, profiles.full_name)',
+      'bio = COALESCE(EXCLUDED.bio, profiles.bio)',
+      'avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url)',
+      'phone = COALESCE(EXCLUDED.phone, profiles.phone)'
+    ];
+
+    if (locationColumn) {
+      updateAssignments.push(`${locationColumn} = COALESCE(EXCLUDED.${locationColumn}, profiles.${locationColumn})`);
+    }
+
+    if (profileColumnAvailability.hasUpdatedAtColumn) {
+      updateAssignments.push('updated_at = NOW()');
+    }
+
+    const returningFields = [
+      'profile_id',
+      'user_id',
+      'full_name',
+      'bio',
+      'avatar_url',
+      'phone',
+      getProfilesLocationSelectExpression(profileColumnAvailability),
+      'created_at'
+    ];
+
+    if (profileColumnAvailability.hasUpdatedAtColumn) {
+      returningFields.push('updated_at');
+    }
+
+    const result = await runQuery(
+      `
+        INSERT INTO profiles (${insertColumns.join(', ')})
+        VALUES (${insertValues.join(', ')})
+        ON CONFLICT (user_id)
+        DO UPDATE SET
+          ${updateAssignments.join(', ')}
+        RETURNING ${returningFields.join(', ')}
+      `,
+      params
     );
 
-    console.log(`[Profile] Updated for user ${userId}`);
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(`[Profile] Updated for user ${userId}`);
+    }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Profile updated',
       profile: result.rows[0]
     });
-
   } catch (err) {
-    console.error('[Profile] Update error:', err);
-    res.status(500).json({ error: 'Failed to update profile' });
+    logger.error('[Profile] Update error:', err);
+    return res.status(500).json({ error: 'Failed to update profile' });
   }
 };
 
-// ... (existing functions)
+/**
+ * PROTOCOL: VALUE HIERARCHY - Tier Upgrade
+ * POST /api/users/upgrade-tier
+ *
+ * In production: called after successful payment webhook
+ * For MVP: simulates instant activation
+ */
+exports.upgradeTier = async (req, res) => {
+  try {
+    await ensureUserTierColumns();
+    const userId = getAuthenticatedUserId(req);
+    const tier = parseOptionalString(req.body.tier)?.toLowerCase();
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (!tier || !SUPPORTED_TIERS.has(tier)) {
+      return res.status(400).json({ error: 'Invalid tier. Must be: basic, silver, or premium' });
+    }
+
+    const rules = getTierRules(tier);
+    let expiresAt = null;
+    let result;
+
+    if (tier === 'basic') {
+      result = await runQuery(
+        `
+          UPDATE users
+          SET tier = 'basic',
+              subscription_expiry = NULL,
+              post_credits = COALESCE(post_credits, 0) + 1
+          WHERE user_id::text = $1
+          RETURNING user_id, tier, subscription_expiry, post_credits
+        `,
+        [userId]
+      );
+    } else {
+      expiresAt = getSubscriptionExpiry(tier) || null;
+      result = await runQuery(
+        `
+          UPDATE users
+          SET tier = $1,
+              subscription_expiry = $2
+          WHERE user_id::text = $3
+          RETURNING user_id, tier, subscription_expiry, post_credits
+        `,
+        [tier, expiresAt, userId]
+      );
+    }
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(`[Tier] User ${userId} upgraded to ${tier.toUpperCase()}`);
+    }
+
+    try {
+      const { sendRenewalSuccessNotification } = require('../services/subscriptionNotifications');
+      if (tier !== 'basic') {
+        await sendRenewalSuccessNotification(userId, tier, expiresAt);
+      }
+    } catch (notifErr) {
+      logger.error('[Tier] Notification error (non-fatal):', notifErr.message);
+    }
+
+    return res.json({
+      success: true,
+      message: `Successfully activated ${tier.toUpperCase()} plan!`,
+      user: result.rows[0],
+      tier,
+      features: rules.features,
+      expiresAt
+    });
+  } catch (err) {
+    logger.error('[Tier] Upgrade error:', err);
+    return res.status(500).json({ error: 'Failed to upgrade tier' });
+  }
+};
+
+/**
+ * Get user's current tier status
+ * GET /api/users/tier-status
+ */
+exports.getTierStatus = async (req, res) => {
+  try {
+    const userId = enforceUserAccess(req, res, { allowQueryOverride: true });
+    if (!userId) return;
+
+    await ensureUserTierColumns();
+
+    const result = await runQuery(
+      `SELECT tier, subscription_expiry, post_credits FROM users WHERE user_id::text = $1`,
+      [userId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    const tier = user.tier || 'basic';
+    const rules = getTierRules(tier);
+
+    let isActive = true;
+    if (tier !== 'basic' && user.subscription_expiry) {
+      isActive = new Date(user.subscription_expiry) > new Date();
+    }
+
+    return res.json({
+      tier,
+      tierName: rules.name,
+      isActive,
+      subscriptionExpiry: user.subscription_expiry,
+      postCredits: user.post_credits || 0,
+      features: rules.features,
+      visibilityDays: rules.visibilityDays,
+      dailyLimit: rules.dailyLimit,
+      priority: rules.priority
+    });
+  } catch (err) {
+    logger.error('[Tier] Status error:', err);
+    return res.status(500).json({ error: 'Failed to get tier status' });
+  }
+};
 
 /**
  * SUBMIT KYC
  * Securely receive ID proofs and update status
  */
-const { getImageUrl } = require('../middleware/upload');
-
 exports.submitKYC = async (req, res) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
-    const { aadhaar_number, pan_number } = req.body;
+    const userId = getAuthenticatedUserId(req);
+    const aadhaarNumber = parseOptionalString(req.body.aadhaar_number);
+    const panNumber = parseOptionalString(req.body.pan_number);
 
-    // 1. Validation
-    if (!aadhaar_number || !pan_number) {
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (!aadhaarNumber || !panNumber) {
       return res.status(400).json({ error: 'Aadhaar and PAN numbers are required' });
     }
 
-    // 2. Process Files
-    // Uses 'kyc_docs' field from upload middleware
     const files = req.files || {};
     const kycDocuments = {};
 
-    // Handle Front Image
-    if (files['kyc_front'] && files['kyc_front'][0]) {
-      kycDocuments.front = getImageUrl(files['kyc_front'][0]);
+    if (files.kyc_front?.[0]) {
+      kycDocuments.front = getImageUrl(files.kyc_front[0]);
     }
 
-    // Handle Back Image
-    if (files['kyc_back'] && files['kyc_back'][0]) {
-      kycDocuments.back = getImageUrl(files['kyc_back'][0]);
+    if (files.kyc_back?.[0]) {
+      kycDocuments.back = getImageUrl(files.kyc_back[0]);
     }
 
     if (!kycDocuments.front) {
       return res.status(400).json({ error: 'Front ID image is required' });
     }
 
-    // 3. Update Database
-    // Set status to PENDING
-    const result = await pool.query(
-      `UPDATE users 
-       SET aadhaar_number = $1, 
-           pan_number = $2, 
-           kyc_documents = $3, 
-           aadhaar_status = 'PENDING',
-           rejection_reason = NULL 
-       WHERE user_id = $4 
-       RETURNING aadhaar_status, kyc_documents`,
-      [aadhaar_number, pan_number, JSON.stringify(kycDocuments), userId]
+    const result = await runQuery(
+      `
+        UPDATE users
+        SET aadhaar_number = $1,
+            pan_number = $2,
+            kyc_documents = $3,
+            aadhaar_status = 'PENDING',
+            rejection_reason = NULL
+        WHERE user_id::text = $4
+        RETURNING aadhaar_status, kyc_documents
+      `,
+      [aadhaarNumber, panNumber, JSON.stringify(kycDocuments), userId]
     );
 
-    res.json({
-      success: true,
-      message: 'KYC Submitted successfully. Verification pending.',
-      status: result.rows[0].aadhaar_status
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const routingResult = await processKycSubmission({
+      userId,
+      aadhaarNumber,
+      panNumber,
+      documents: kycDocuments
     });
 
+    return res.json({
+      success: true,
+      message:
+        routingResult.decision === 'auto_approved'
+          ? 'KYC submitted and auto-approved.'
+          : routingResult.decision === 'auto_rejected'
+            ? 'KYC submitted but auto-rejected. Please review issues and resubmit.'
+            : 'KYC submitted successfully. Added to manual review queue.',
+      status: routingResult.user_status || result.rows[0].aadhaar_status,
+      routing: {
+        queue_id: routingResult.queue_id,
+        decision: routingResult.decision,
+        decision_reason: routingResult.decision_reason,
+        confidence: routingResult.confidence,
+        risk_flags: routingResult.risk_flags,
+        validation_errors: routingResult.validation_errors
+      }
+    });
   } catch (err) {
-    console.error('[KYC] Submission failed:', err);
-    res.status(500).json({ error: 'KYC Submission failed', details: err.message });
+    logger.error('[KYC] Submission failed:', err);
+    return res.status(500).json({ error: 'KYC Submission failed', details: err.message });
   }
 };
 
 exports.getKYCStatus = async (req, res) => {
   try {
-    const userId = req.user?.userId || req.user?.id;
-    const result = await pool.query(
-      `SELECT aadhaar_status, rejection_reason, aadhaar_number, pan_number, kyc_documents 
-       FROM users WHERE user_id = $1`,
+    const userId = getAuthenticatedUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const result = await runQuery(
+      `SELECT aadhaar_status, rejection_reason, aadhaar_number, pan_number, kyc_documents
+       FROM users WHERE user_id::text = $1`,
       [userId]
     );
 
-    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-    // Mask sensitive numbers for display
     const data = result.rows[0];
-    const maskedAadhaar = data.aadhaar_number ? 'XXXX-XXXX-' + data.aadhaar_number.slice(-4) : null;
-    const maskedPan = data.pan_number ? 'XXXXX' + data.pan_number.slice(-4) : null;
+    const aadhaar = parseOptionalString(data.aadhaar_number);
+    const pan = parseOptionalString(data.pan_number);
+    const maskedAadhaar = aadhaar ? `XXXX-XXXX-${aadhaar.slice(-4)}` : null;
+    const maskedPan = pan ? `XXXXX${pan.slice(-4)}` : null;
 
-    res.json({
+    return res.json({
       status: data.aadhaar_status,
       rejection_reason: data.rejection_reason,
       aadhaar_number: maskedAadhaar,
       pan_number: maskedPan,
       documents: data.kyc_documents
     });
-
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch KYC status' });
+    logger.error('[KYC] Status fetch failed:', err);
+    return res.status(500).json({ error: 'Failed to fetch KYC status' });
   }
 };

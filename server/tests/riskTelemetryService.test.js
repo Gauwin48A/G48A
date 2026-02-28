@@ -40,4 +40,23 @@ describe('riskTelemetryService', () => {
         expect(metrics.avgScore).toBe(59);
         expect(metrics.source).toBe('memory');
     });
+
+    it('returns recent events snapshot for export workflow', async () => {
+        riskTelemetryService.recordDecision({
+            userId: 'u-export',
+            flow: 'auth_login',
+            enabled: true,
+            score: 64,
+            recommendedAction: 'CHALLENGE',
+            shouldChallenge: true,
+            shouldEnforce: false,
+            flagReason: 'rollout',
+            explainability: [{ feature: 'device_reputation' }]
+        });
+
+        const result = await riskTelemetryService.getRecentEvents({ lookbackMinutes: 30, limit: 10 });
+        expect(result.source).toBe('memory');
+        expect(result.events.length).toBe(1);
+        expect(result.events[0].recommendedAction || result.events[0].recommended_action).toBe('CHALLENGE');
+    });
 });

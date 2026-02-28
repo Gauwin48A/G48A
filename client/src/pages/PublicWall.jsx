@@ -5,6 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Star, Medal, Crown, Shield, TrendingUp } from "lucide-react";
 
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
+
+const normalizeUrl = (value) => String(value || '').replace(/\/+$/, '');
+const baseFromEnv = normalizeUrl(getApiOriginBase());
+const PUBLIC_WALL_API_URL = baseFromEnv.endsWith('/api')
+  ? `${baseFromEnv}/publicwall`
+  : `${baseFromEnv}/api/publicwall`;
 
 const PublicWall = () => {
   const { t } = useTranslation();
@@ -15,8 +22,14 @@ const PublicWall = () => {
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:5000/api/publicwall')
-      .then(res => res.json())
+    fetch(PUBLIC_WALL_API_URL)
+      .then(async (res) => {
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}));
+          throw new Error(payload.error || `Request failed with status ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         setTopSellers(data.topSellers || []);
         setTopBuyers(data.topBuyers || []);
@@ -220,3 +233,4 @@ const PublicWall = () => {
 };
 
 export default PublicWall;
+

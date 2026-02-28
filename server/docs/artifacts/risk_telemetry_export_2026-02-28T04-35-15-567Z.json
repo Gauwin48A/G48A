@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-02-28T04:35:15.567Z",
+  "runId": "risk-export-1772253315522",
+  "lookbackMinutes": 60,
+  "limit": 1000,
+  "source": "database",
+  "totalEvents": 0,
+  "sinkUrl": null,
+  "batchSize": 200,
+  "batchCount": 0,
+  "delivery": [],
+  "output": {
+    "ndjsonPath": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\risk_telemetry_export_2026-02-28T04-35-15-567Z.ndjson",
+    "summaryPath": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\risk_telemetry_export_2026-02-28T04-35-15-567Z.json"
+  }
+}

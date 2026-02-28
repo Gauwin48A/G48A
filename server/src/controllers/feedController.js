@@ -1,5 +1,7 @@
 const pool = require('../config/db');
 const { STRATIFIED_FEED_QUERY, FALLBACK_FEED_QUERY, TRENDING_POSTS_QUERY } = require('../queries/feedQuery');
+const cacheService = require('../services/cacheService');
+const logger = require('../utils/logger');
 
 // ============================================
 // In-Memory Cache for High-Performance Feed
@@ -7,53 +9,183 @@ const { STRATIFIED_FEED_QUERY, FALLBACK_FEED_QUERY, TRENDING_POSTS_QUERY } = req
 // Cache changes every 30 seconds for fresh content
 // ============================================
 const QUERY_TIMEOUT = 3000;
+const MAX_FEED_LIMIT = 50;
+const DEFAULT_FEED_LIMIT = 10;
+const TRENDING_CACHE_TTL_SECONDS = 5 * 60;
+const DEFAULT_MAX_IMPRESSION_POST_IDS = Number.parseInt(process.env.MAX_IMPRESSION_POST_IDS || '200', 10);
+const feedDebugEnabled = process.env.FEED_DEBUG === 'true';
+const FEED_SORT_FIELDS = new Set(['created_at', 'updated_at', 'price', 'views_count', 'likes', 'title']);
+const MAX_FEED_REFRESH_SEED = 2147483646;
+const MAX_FEED_REFRESH_SEED_BIGINT = BigInt(MAX_FEED_REFRESH_SEED);
+
+function getScalarQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseOptionalString(value) {
+  const scalar = getScalarQueryValue(value);
+  if (scalar === undefined || scalar === null) return null;
+  const normalized = (typeof scalar === 'string' ? scalar : String(scalar)).trim();
+  return normalized.length ? normalized : null;
+}
+
+function getAuthenticatedUserId(req) {
+  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const normalized = parseOptionalString(value);
+  if (!normalized || !/^\d+$/.test(normalized)) return fallback;
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
+
+function parsePositiveNumber(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const normalized = parseOptionalString(value);
+  if (!normalized) return fallback;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, max);
+}
+
+function parseFeedSortBy(value) {
+  const normalized = parseOptionalString(value)?.toLowerCase();
+  return FEED_SORT_FIELDS.has(normalized) ? normalized : 'created_at';
+}
+
+function parseFeedSortOrder(value) {
+  return parseOptionalString(value)?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+}
+
+function sanitizeImpressionPostIds(postIds, maxIds = DEFAULT_MAX_IMPRESSION_POST_IDS) {
+  if (!Array.isArray(postIds) || postIds.length === 0) return [];
+  const normalizedIds = [];
+  const seen = new Set();
+  const boundedMax = Number.isSafeInteger(maxIds) && maxIds > 0 ? maxIds : DEFAULT_MAX_IMPRESSION_POST_IDS;
+
+  for (const rawId of postIds) {
+    if (normalizedIds.length >= boundedMax) break;
+    const id = parseOptionalString(rawId);
+    if (!id || id.length > 128 || seen.has(id)) continue;
+    seen.add(id);
+    normalizedIds.push(id);
+  }
+
+  return normalizedIds;
+}
+
+function hashSeedString(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) % MAX_FEED_REFRESH_SEED;
+  }
+  return hash || 1;
+}
+
+function parseFeedRefreshSeed(value) {
+  const normalized = parseOptionalString(value);
+  if (!normalized) {
+    return 0;
+  }
+
+  if (/^-?\d+$/.test(normalized)) {
+    try {
+      const numericSeed = BigInt(normalized);
+      const positiveSeed = numericSeed < 0n ? -numericSeed : numericSeed;
+      const boundedSeed = positiveSeed % MAX_FEED_REFRESH_SEED_BIGINT;
+      return Number(boundedSeed || 1n);
+    } catch {
+      return 0;
+    }
+  }
+
+  return hashSeedString(normalized);
+}
+
+function normalizeFeedQueryParams(query) {
+  const page = parsePositiveInt(query.page, 1);
+  const limit = parsePositiveInt(query.limit, DEFAULT_FEED_LIMIT, MAX_FEED_LIMIT);
+  const sortBy = parseFeedSortBy(query.sortBy);
+  const sortOrder = parseFeedSortOrder(query.sortOrder);
+
+  return {
+    page,
+    limit,
+    offset: (page - 1) * limit,
+    sortBy,
+    sortOrder,
+    search: parseOptionalString(query.search),
+    category: parseOptionalString(query.category)
+  };
+}
+
+function buildTextFeedQuery({ userId = null, category = null, search = null, sortBy, sortOrder, offset, limit }) {
+  const params = [];
+  const conditions = [`p.post_type = 'text'`];
+
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+
+  if (userId) {
+    conditions.push(`p.user_id::text = ${addParam(String(userId))}`);
+  }
+  if (category) {
+    conditions.push(`p.category_id::text = ${addParam(category)}`);
+  }
+  if (search) {
+    const placeholder = addParam(`%${search}%`);
+    conditions.push(`(p.title ILIKE ${placeholder} OR p.description ILIKE ${placeholder} OR p.location ILIKE ${placeholder} OR c.name ILIKE ${placeholder})`);
+  }
+
+  const query = `
+    SELECT p.*, c.name as category_name 
+    FROM posts p 
+    LEFT JOIN categories c ON p.category_id = c.category_id 
+    WHERE ${conditions.join(' AND ')}
+    ORDER BY p.${sortBy} ${sortOrder}
+    OFFSET ${addParam(offset)} LIMIT ${addParam(limit)}
+  `;
+
+  return { query, params };
+}
+
+function countFeedPhases(rows) {
+  return rows.reduce(
+    (acc, row) => {
+      if (row.feed_phase === 'fresh') acc.freshCount += 1;
+      else if (row.feed_phase === 'exploration') acc.explorationCount += 1;
+      else if (row.feed_phase === 'exploitation') acc.exploitationCount += 1;
+      return acc;
+    },
+    { freshCount: 0, explorationCount: 0, exploitationCount: 0 }
+  );
+}
 
 // Query with timeout wrapper for high availability
 async function queryWithTimeout(query, params, timeoutMs = QUERY_TIMEOUT) {
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
-  );
-  const queryPromise = pool.query(query, params);
-  return Promise.race([queryPromise, timeoutPromise]);
+  return pool.query({
+    text: query,
+    values: params,
+    query_timeout: timeoutMs
+  });
 }
 
 // GET /api/feed - all users' text posts
 exports.getFeed = async (req, res) => {
   try {
-    const { category, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10, search = '' } = req.query;
-    const offset = (page - 1) * limit;
-
-    // Join with categories to enable category name search
-    let query = `
-      SELECT p.*, c.name as category_name 
-      FROM posts p 
-      LEFT JOIN categories c ON p.category_id = c.category_id 
-      WHERE p.post_type = 'text'
-    `;
-    let params = [];
-
-    if (category) {
-      query += ` AND p.category_id = $${params.length + 1}`;
-      params.push(category);
-    }
-
-    // Search across title, description, location, and category name
-    if (search) {
-      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`;
-      params.push(`%${search}%`);
-    }
-
-    query += ` ORDER BY p.${sortBy} ${sortOrder} OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
-    params.push(offset, limit);
-
-    const result = await pool.query(query, params);
+    const feedQuery = normalizeFeedQueryParams(req.query);
+    const { query, params } = buildTextFeedQuery(feedQuery);
+    const result = await queryWithTimeout(query, params);
     if (!result.rows.length) {
-      console.error('No text posts found for feed');
+      logger.error('No text posts found for feed');
       return res.status(404).json({ error: 'No text posts found', fallback: [] });
     }
     res.json(result.rows);
   } catch (err) {
-    console.error('Feed API error:', err);
+    logger.error('Feed API error:', err);
     res.status(500).json({ error: err.message, fallback: [] });
   }
 };
@@ -61,119 +193,101 @@ exports.getFeed = async (req, res) => {
 // GET /api/feed/mine - logged-in user's text posts
 exports.getMyFeed = async (req, res) => {
   try {
-    const userId = req.user?.id || req.query.userId;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
-      console.error('Unauthorized access to MyFeed');
+      logger.error('Unauthorized access to MyFeed');
       return res.status(401).json({ error: 'Unauthorized', fallback: [] });
     }
-    const { category, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10, search = '' } = req.query;
-    const offset = (page - 1) * limit;
-
-    // Join with categories to enable category name search
-    let query = `
-      SELECT p.*, c.name as category_name 
-      FROM posts p 
-      LEFT JOIN categories c ON p.category_id = c.category_id 
-      WHERE p.post_type = 'text' AND p.user_id = $1
-    `;
-    let params = [userId];
-
-    if (category) {
-      query += ` AND p.category_id = $${params.length + 1}`;
-      params.push(category);
-    }
-
-    // Search across title, description, location, and category name
-    if (search) {
-      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`;
-      params.push(`%${search}%`);
-    }
-
-    query += ` ORDER BY p.${sortBy} ${sortOrder} OFFSET $${params.length + 1} LIMIT $${params.length + 2}`;
-    params.push(offset, limit);
-
-    const result = await pool.query(query, params);
+    const feedQuery = normalizeFeedQueryParams(req.query);
+    const { query, params } = buildTextFeedQuery({ ...feedQuery, userId });
+    const result = await queryWithTimeout(query, params);
     if (!result.rows.length) {
-      console.error('No text posts found for user feed');
+      logger.error('No text posts found for user feed');
       return res.status(404).json({ error: 'No text posts found', fallback: [] });
     }
     res.json(result.rows);
   } catch (err) {
-    console.error('MyFeed API error:', err);
+    logger.error('MyFeed API error:', err);
     res.status(500).json({ error: err.message, fallback: [] });
   }
 };
-
-const cacheService = require('../services/cacheService');
-
-// ... (Rest of imports and Feed Queries)
 
 // ============================================
 // NEW: Stratified Dynamic Feed (Optimized)
 // ============================================
 exports.getDynamicFeed = async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+  const limit = parsePositiveInt(req.query.limit, 20, 50);
+  const forceRefresh = req.query.refresh === 'true';
+  const refreshSeed = parseFeedRefreshSeed(
+    req.query.seed || req.query._t || req.query.refreshSeed
+  );
+  const forceRefreshSeed = refreshSeed || Math.floor(Date.now() / 1000);
+
   try {
-    const userId = req.user?.userId || req.user?.id || req.query.userId || null;
-    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
-    const forceRefresh = req.query.refresh === 'true';
-
-    // Cache key uses 30-second intervals to match SQL time_seed
-    // But we use cacheService with 60s TTL
-    // Format: feed:dynamic:<userId>:<interval>
-    const intervalStamp = Math.floor(Date.now() / 10000); // 10s intervals
-    const cacheKey = `feed:dynamic:${userId || 'anon'}:${intervalStamp}`;
-
-    if (forceRefresh) {
-      cacheService.del(cacheKey);
-    }
-
+    // Prevent browser/proxy caching for dynamic feed snapshots.
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     const startTime = Date.now();
-
-    // The fetcher function
-    const fetchFeed = async () => {
-      console.log(`[Feed] DB Fetch for user ${userId}`);
-      const result = await queryWithTimeout(STRATIFIED_FEED_QUERY, [userId, limit]);
+    const fetchFeed = async (seed = 0) => {
+      if (feedDebugEnabled) {
+        logger.info(`[Feed] DB Fetch for user ${userId}`);
+      }
+      const result = await queryWithTimeout(STRATIFIED_FEED_QUERY, [userId, limit, seed]);
       return {
         posts: result.rows,
-        meta: {
-          freshCount: result.rows.filter(p => p.feed_phase === 'fresh').length,
-          explorationCount: result.rows.filter(p => p.feed_phase === 'exploration').length,
-          exploitationCount: result.rows.filter(p => p.feed_phase === 'exploitation').length
-        }
+        meta: countFeedPhases(result.rows)
       };
     };
 
-    // Use CacheService (Atomic Get or Set)
-    const feedData = await cacheService.getOrSet(cacheKey, fetchFeed, 30); // 30s TTL
+    // Explicit refresh requests bypass cache and can pass a one-shot seed.
+    if (forceRefresh) {
+      const freshFeed = await fetchFeed(forceRefreshSeed);
+      return res.json({
+        posts: freshFeed.posts,
+        cached: false,
+        queryTimeMs: Date.now() - startTime,
+        feedMeta: freshFeed.meta
+      });
+    }
+
+    // Cache key uses 30-second intervals to match SQL time_seed.
+    const intervalStamp = Math.floor(Date.now() / 30000);
+    const cacheKey = `feed:dynamic:${userId || 'anon'}:${limit}:${intervalStamp}`;
+
+    const cachedFeed = cacheService.get(cacheKey);
+    if (cachedFeed !== undefined) {
+      return res.json({
+        posts: cachedFeed.posts,
+        cached: true,
+        queryTimeMs: Date.now() - startTime,
+        feedMeta: cachedFeed.meta
+      });
+    }
+
+    // Use stampede-protected cache accessor.
+    const feedData = await cacheService.getOrSetWithStampedeProtection(
+      cacheKey,
+      () => fetchFeed(0),
+      30
+    );
 
     res.json({
       posts: feedData.posts,
-      cached: true, // We don't distinguish hit/miss in response to keep it simple, or we can check cacheService.get() first if needed
+      cached: false,
       queryTimeMs: Date.now() - startTime,
       feedMeta: feedData.meta
     });
 
   } catch (err) {
-    console.error('[Feed] Dynamic feed error:', err.message);
+    logger.error('[Feed] Dynamic feed error:', err.message);
     // ... Fallback logic continues below
     try {
-      console.log('[Feed] Using fallback query');
-      const fallbackResult = await pool.query(`
-        SELECT 
-          p.post_id, p.user_id AS author_id, p.category_id, p.title, p.description,
-          p.price, p.images, p.location, p.created_at,
-          COALESCE(p.views_count, 0) AS views_count,
-          COALESCE(p.likes, 0) AS likes_count,
-          'exploitation' AS feed_phase,
-          c.name AS category_name,
-          COALESCE(pr.full_name, 'Seller') AS author_name
-        FROM posts p
-        LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-        LEFT JOIN categories c ON p.category_id = c.category_id
-        WHERE p.status = 'active'
-        ORDER BY (ABS(HASHTEXT(p.post_id::text))::bigint * ${Math.floor(Date.now() / 10000) % 1000}) % 1000, p.created_at DESC
-        LIMIT $1
-      `, [20]);
+      if (feedDebugEnabled) {
+        logger.info('[Feed] Using fallback query');
+      }
+      const fallbackResult = await queryWithTimeout(FALLBACK_FEED_QUERY, [limit]);
 
       return res.json({
         posts: fallbackResult.rows,
@@ -182,7 +296,7 @@ exports.getDynamicFeed = async (req, res) => {
         feedMeta: { freshCount: 0, explorationCount: 0, exploitationCount: fallbackResult.rows.length }
       });
     } catch (fallbackErr) {
-      console.error('[Feed] Fallback also failed:', fallbackErr.message);
+      logger.error('[Feed] Fallback also failed:', fallbackErr.message);
       return res.status(500).json({ error: 'Failed to load feed', posts: [] });
     }
   }
@@ -194,25 +308,26 @@ exports.getDynamicFeed = async (req, res) => {
  */
 exports.getTrendingPosts = async (req, res) => {
   try {
-    const cacheKey = 'trending:global';
-    const cached = feedCache.get(cacheKey);
+    const cacheKey = 'feed:trending:global';
+    const cachedPosts = cacheService.get(cacheKey);
 
-    // Trending cache for 5 minutes (doesn't need to be as fresh)
-    if (cached && (Date.now() - cached.timestamp) < 300000) {
-      return res.json({ posts: cached.data, cached: true });
+    if (cachedPosts !== undefined) {
+      return res.json({ posts: cachedPosts, cached: true });
     }
 
-    const result = await pool.query(TRENDING_POSTS_QUERY);
+    const posts = await cacheService.getOrSetWithStampedeProtection(
+      cacheKey,
+      async () => {
+        const result = await queryWithTimeout(TRENDING_POSTS_QUERY, []);
+        return result.rows;
+      },
+      TRENDING_CACHE_TTL_SECONDS
+    );
 
-    feedCache.set(cacheKey, {
-      data: result.rows,
-      timestamp: Date.now()
-    });
-
-    res.json({ posts: result.rows, cached: false });
+    res.json({ posts, cached: false });
 
   } catch (err) {
-    console.error('[Feed] Trending error:', err);
+    logger.error('[Feed] Trending error:', err);
     res.status(500).json({ error: 'Failed to load trending' });
   }
 };
@@ -224,22 +339,26 @@ exports.getTrendingPosts = async (req, res) => {
 exports.trackImpression = async (req, res) => {
   try {
     const { postIds } = req.body;
-
-    if (!Array.isArray(postIds) || postIds.length === 0) {
+    const normalizedPostIds = sanitizeImpressionPostIds(postIds);
+    if (normalizedPostIds.length === 0) {
       return res.status(400).json({ error: 'postIds array required' });
     }
 
     // Batch update impressions (fire and forget)
-    pool.query(`
+    queryWithTimeout(`
             UPDATE post_metrics 
             SET impression_count = impression_count + 1, last_updated = NOW()
-            WHERE post_id = ANY($1)
-        `, [postIds]).catch(err => console.error('Impression tracking failed:', err));
+            WHERE post_id::text = ANY($1::text[])
+        `, [normalizedPostIds]).catch((err) => logger.error('Impression tracking failed:', err));
 
-    res.json({ success: true, tracked: postIds.length });
+    res.json({
+      success: true,
+      tracked: normalizedPostIds.length,
+      dropped: Math.max(0, (Array.isArray(postIds) ? postIds.length : 0) - normalizedPostIds.length)
+    });
 
   } catch (err) {
-    console.error('[Feed] Impression tracking error:', err);
+    logger.error('[Feed] Impression tracking error:', err);
     res.status(500).json({ error: 'Tracking failed' });
   }
 };
@@ -257,10 +376,12 @@ exports.trackImpression = async (req, res) => {
  */
 exports.getRandomFeed = async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const limit = parsePositiveInt(req.query.limit, 20, 50);
     const viralBias = req.query.bias === 'viral'; // Optional: boost viral posts
 
-    console.log('[Chaos Engine] Random feed requested, limit:', limit);
+    if (feedDebugEnabled) {
+      logger.info('[Chaos Engine] Random feed requested, limit:', limit);
+    }
     const startTime = Date.now();
 
     // PERFORMANCE: TABLESAMPLE scans only ~5% of data blocks
@@ -298,14 +419,18 @@ exports.getRandomFeed = async (req, res) => {
       LIMIT $1;
     `;
 
-    const result = await pool.query(query, [limit]);
+    const result = await queryWithTimeout(query, [limit]);
     const queryTime = Date.now() - startTime;
 
-    console.log(`[Chaos Engine] TABLESAMPLE returned ${result.rows.length} posts in ${queryTime}ms`);
+    if (feedDebugEnabled) {
+      logger.info(`[Chaos Engine] TABLESAMPLE returned ${result.rows.length} posts in ${queryTime}ms`);
+    }
 
     // FALLBACK: If TABLESAMPLE returns too few (small tables), use regular random
     if (result.rows.length < 5) {
-      console.log('[Chaos Engine] Small table detected, using fallback query');
+      if (feedDebugEnabled) {
+        logger.info('[Chaos Engine] Small table detected, using fallback query');
+      }
 
       const fallbackQuery = `
         SELECT 
@@ -336,7 +461,7 @@ exports.getRandomFeed = async (req, res) => {
         LIMIT $1;
       `;
 
-      const fallbackResult = await pool.query(fallbackQuery, [limit]);
+      const fallbackResult = await queryWithTimeout(fallbackQuery, [limit]);
       return res.json({
         posts: fallbackResult.rows,
         queryTimeMs: Date.now() - startTime,
@@ -353,7 +478,7 @@ exports.getRandomFeed = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[Chaos Engine] Error:', err);
+    logger.error('[Chaos Engine] Error:', err);
     res.status(500).json({ error: 'Failed to load random feed' });
   }
 };
@@ -380,23 +505,31 @@ exports.getNearbyFeed = async (req, res) => {
       });
     }
 
-    const latitude = parseFloat(lat);
-    const longitude = parseFloat(lng);
-    const radiusKm = Math.min(parseInt(radius), 100); // Max 100km
-    const postLimit = Math.min(parseInt(limit), 50); // Max 50 posts
+    const latitude = Number.parseFloat(lat);
+    const longitude = Number.parseFloat(lng);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return res.status(400).json({
+        error: 'Invalid location',
+        message: 'lat and lng must be valid numeric coordinates'
+      });
+    }
+    const radiusKm = parsePositiveNumber(radius, 10, 100); // Max 100km
+    const postLimit = parsePositiveInt(limit, 20, 50); // Max 50 posts
 
     // Use the optimized SQL function (works with Haversine or PostGIS)
-    const result = await pool.query(
+    const result = await queryWithTimeout(
       `SELECT * FROM get_posts_near_me($1, $2, $3, $4)`,
       [latitude, longitude, radiusKm, postLimit]
     );
 
     // If no results, try fallback
     if (result.rows.length === 0) {
-      console.log('[GeoFeed] No nearby posts found, using fallback');
+      if (feedDebugEnabled) {
+        logger.info('[GeoFeed] No nearby posts found, using fallback');
+      }
 
       // Fallback: Simple location text search (less accurate but works without PostGIS)
-      const fallback = await pool.query(`
+      const fallback = await queryWithTimeout(`
         SELECT p.*, c.name as category_name,
                COALESCE(pr.full_name, 'Seller') as seller_name
         FROM posts p
@@ -417,7 +550,9 @@ exports.getNearbyFeed = async (req, res) => {
       });
     }
 
-    console.log(`[GeoFeed] Found ${result.rows.length} posts within ${radiusKm}km of (${latitude}, ${longitude})`);
+    if (feedDebugEnabled) {
+      logger.info(`[GeoFeed] Found ${result.rows.length} posts within ${radiusKm}km of (${latitude}, ${longitude})`);
+    }
 
     res.json({
       posts: result.rows,
@@ -428,7 +563,7 @@ exports.getNearbyFeed = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[GeoFeed] Error:', err);
+    logger.error('[GeoFeed] Error:', err);
 
     // If function is missing, return a helpful error
     if (err.message?.includes('function get_posts_near_me') || err.message?.includes('does not exist')) {
@@ -456,21 +591,21 @@ exports.getNearbyFeed = async (req, res) => {
 exports.searchPosts = async (req, res) => {
   try {
     const { q, category, limit = 20 } = req.query;
+    const searchQuery = parseOptionalString(q);
+    const postLimit = parsePositiveInt(limit, 20, 50);
+    let usedFullText = true;
 
-    if (!q || q.length < 2) {
+    if (!searchQuery || searchQuery.length < 2) {
       return res.status(400).json({
         error: 'Search query required',
         message: 'Please provide at least 2 characters to search'
       });
     }
 
-    const searchQuery = q.trim();
-    const postLimit = Math.min(parseInt(limit), 50);
-
     // Try full-text search first
     let result;
     try {
-      result = await pool.query(`
+      result = await queryWithTimeout(`
         SELECT 
           p.*,
           c.name as category_name,
@@ -489,8 +624,11 @@ exports.searchPosts = async (req, res) => {
       `, category ? [searchQuery, postLimit, category] : [searchQuery, postLimit]);
     } catch (tsErr) {
       // If tsvector search fails, fall back to ILIKE
-      console.log('[Search] Falling back to ILIKE search');
-      result = await pool.query(`
+      if (feedDebugEnabled) {
+        logger.info('[Search] Falling back to ILIKE search');
+      }
+      usedFullText = false;
+      result = await queryWithTimeout(`
         SELECT 
           p.*,
           c.name as category_name,
@@ -511,11 +649,11 @@ exports.searchPosts = async (req, res) => {
       posts: result.rows,
       query: searchQuery,
       count: result.rows.length,
-      fulltext: true
+      fulltext: usedFullText
     });
 
   } catch (err) {
-    console.error('[Search] Error:', err);
+    logger.error('[Search] Error:', err);
     res.status(500).json({ error: 'Search failed' });
   }
 };

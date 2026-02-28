@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const SaleUndone = () => {
   const { t } = useTranslation();
@@ -26,7 +27,11 @@ const SaleUndone = () => {
   const [undonePosts, setUndonePosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const normalizeUrl = (value) => String(value || '').replace(/\/+$/, '');
+  const baseUrl = normalizeUrl(getApiOriginBase());
+  const transactionsUndoneUrl = baseUrl.endsWith('/api')
+    ? `${baseUrl}/transactions/undone`
+    : `${baseUrl}/api/transactions/undone`;
 
   // Scroll handler
   useEffect(() => {
@@ -45,14 +50,13 @@ const SaleUndone = () => {
   useEffect(() => {
     const fetchUndonePosts = async () => {
       try {
-        const userId = localStorage.getItem('userId');
         const token = localStorage.getItem('authToken');
-        if (!userId || !token) {
+        if (!token) {
           setLoadingPosts(false);
           return;
         }
 
-        const res = await fetch(`${baseUrl}/api/transactions/undone?userId=${userId}`, {
+        const res = await fetch(transactionsUndoneUrl, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -71,7 +75,7 @@ const SaleUndone = () => {
       }
     };
     fetchUndonePosts();
-  }, []);
+  }, [transactionsUndoneUrl]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -408,3 +412,4 @@ const SaleUndone = () => {
 };
 
 export default SaleUndone;
+

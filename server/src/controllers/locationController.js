@@ -1,11 +1,24 @@
 const pool = require('../config/db');
 const logger = require('../utils/logger');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+  return pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
 
 exports.updateLocation = async (req, res) => {
   const { userId, latitude, longitude, city, country } = req.body;
+  const hasLatitude = latitude !== undefined && latitude !== null && latitude !== '';
+  const hasLongitude = longitude !== undefined && longitude !== null && longitude !== '';
+  const parsedLatitude = hasLatitude ? Number(latitude) : null;
+  const parsedLongitude = hasLongitude ? Number(longitude) : null;
 
   // 1. Validation: Don't choke on bad data, just warn
-  if (!userId || !latitude || !longitude) {
+  if (!userId || !hasLatitude || !hasLongitude || !Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
     logger.warn(`Location update failed: Missing data for User ${userId}`);
     // Return 200 to keep the client happy, but with success: false
     return res.status(200).json({ success: false, message: 'Invalid coordinates' });
@@ -19,7 +32,7 @@ exports.updateLocation = async (req, res) => {
       RETURNING id
     `;
 
-    await pool.query(query, [userId, latitude, longitude, city || 'Unknown', country || 'Unknown']);
+    await runQuery(query, [String(userId), parsedLatitude, parsedLongitude, city || 'Unknown', country || 'Unknown']);
 
     res.json({ success: true, message: 'Location captured' });
   } catch (err) {
@@ -128,16 +141,21 @@ exports.saveLocation = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('saveLocation error:', error);
+    logger.error('saveLocation error:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 };
 
 exports.getLocations = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM user_locations ORDER BY created_at DESC');
+    const result = await runQuery(`
+      SELECT id, user_id, latitude, longitude, accuracy, heading, permission_status, city, country, speed, created_at
+      FROM user_locations
+      ORDER BY created_at DESC
+    `);
     res.json(result.rows);
   } catch (error) {
+    logger.error('getLocations error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -145,10 +163,16 @@ exports.getLocations = async (req, res) => {
 exports.getLocationById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM user_locations WHERE id = $1', [id]);
+    const result = await runQuery(
+      `SELECT id, user_id, latitude, longitude, accuracy, heading, permission_status, city, country, speed, created_at
+       FROM user_locations
+       WHERE id = $1`,
+      [id]
+    );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Location not found' });
     res.json(result.rows[0]);
   } catch (error) {
+    logger.error('getLocationById error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -156,10 +180,11 @@ exports.getLocationById = async (req, res) => {
 exports.deleteLocation = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM user_locations WHERE id = $1 RETURNING *', [id]);
+    const result = await runQuery('DELETE FROM user_locations WHERE id = $1 RETURNING id', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Location not found' });
     res.json({ status: 'deleted', id });
   } catch (error) {
+    logger.error('deleteLocation error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };

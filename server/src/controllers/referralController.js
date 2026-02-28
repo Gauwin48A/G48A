@@ -1,47 +1,131 @@
 const pool = require('../config/db');
+const crypto = require('crypto');
+const logger = require('../utils/logger');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const REFERRAL_CODE_MAX_ATTEMPTS = 5;
+
+function runQuery(text, values = []) {
+  return pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
+
+function runClientQuery(client, text, values = []) {
+  return client.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.min(parsed, max);
+}
+
+function parseOptionalString(value) {
+  if (value === undefined || value === null) return null;
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function getAuthenticatedUserId(req) {
+  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
+
+function isAdmin(req) {
+  const role = parseOptionalString(req.user?.role)?.toLowerCase();
+  return role === 'admin' || role === 'superadmin';
+}
+
+function generateReferralSuffix(length = 5) {
+  const max = 36 ** length;
+  return crypto.randomInt(0, max).toString(36).toUpperCase().padStart(length, '0');
+}
+
+function isUniqueViolation(error) {
+  return String(error?.code || '') === '23505';
+}
 
 // GET /api/referral — Get referral info for a user
 exports.getReferral = async (req, res) => {
-  const userId = req.query.userId || req.user?.userId;
-  if (!userId) return res.status(400).json({ error: 'userId required' });
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  if (!authenticatedUserId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const requestedUserId = parseOptionalString(req.query.userId) || authenticatedUserId;
+  if (requestedUserId !== authenticatedUserId && !isAdmin(req)) {
+    return res.status(403).json({ error: 'Cannot access another user referral info' });
+  }
 
   try {
-    const result = await pool.query(
+    const result = await runQuery(
       `SELECT u.user_id, u.referral_code, u.referred_by,
               (SELECT COUNT(*) FROM users WHERE referred_by = u.user_id) as referral_count
-       FROM users u WHERE u.user_id = $1`, [userId]
+       FROM users u WHERE u.user_id = $1`, [String(requestedUserId)]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Get referral error:', err);
+    logger.error('Get referral error:', err);
     res.status(500).json({ error: 'Failed to fetch referral info' });
   }
 };
 
 // POST /api/referral/create — Generate a referral code for the user
 exports.createReferral = async (req, res) => {
-  const userId = req.user?.userId || req.user?.id;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
   try {
-    // Check if user already has referral code
-    const existing = await pool.query('SELECT referral_code FROM users WHERE user_id = $1', [userId]);
-    if (existing.rows[0]?.referral_code) {
-      return res.json({ referralCode: existing.rows[0].referral_code, message: 'Referral code already exists' });
+    const normalizedUserId = String(userId);
+    const userResult = await runQuery(
+      'SELECT username, referral_code FROM users WHERE user_id = $1 LIMIT 1',
+      [normalizedUserId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Generate unique code
-    const username = (await pool.query('SELECT username FROM users WHERE user_id = $1', [userId])).rows[0]?.username || 'U';
+    const existingCode = userResult.rows[0]?.referral_code;
+    if (existingCode) {
+      return res.json({ referralCode: existingCode, message: 'Referral code already exists' });
+    }
+
+    const username = userResult.rows[0]?.username || 'U';
     const prefix = username.substring(0, 3).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const code = `${prefix}-${random}`;
+    for (let attempt = 0; attempt < REFERRAL_CODE_MAX_ATTEMPTS; attempt += 1) {
+      const code = `${prefix}-${generateReferralSuffix(5)}`;
+      try {
+        const updateResult = await runQuery(
+          'UPDATE users SET referral_code = $1 WHERE user_id = $2 AND referral_code IS NULL RETURNING referral_code',
+          [code, normalizedUserId]
+        );
+        if (updateResult.rows[0]?.referral_code) {
+          return res.status(201).json({ referralCode: updateResult.rows[0].referral_code, message: 'Referral code generated' });
+        }
 
-    await pool.query('UPDATE users SET referral_code = $1 WHERE user_id = $2', [code, userId]);
+        const latest = await runQuery('SELECT referral_code FROM users WHERE user_id = $1 LIMIT 1', [normalizedUserId]);
+        if (latest.rows[0]?.referral_code) {
+          return res.json({ referralCode: latest.rows[0].referral_code, message: 'Referral code already exists' });
+        }
+      } catch (err) {
+        if (isUniqueViolation(err)) {
+          continue;
+        }
+        throw err;
+      }
+    }
 
-    res.status(201).json({ referralCode: code, message: 'Referral code generated' });
+    return res.status(503).json({ error: 'Failed to allocate referral code, please retry' });
   } catch (err) {
-    console.error('Create referral error:', err);
+    logger.error('Create referral error:', err);
     res.status(500).json({ error: 'Failed to create referral code' });
   }
 };
@@ -55,38 +139,90 @@ exports.trackReferral = async (req, res) => {
   }
 
   try {
-    // Find referrer by code
-    const referrer = await pool.query('SELECT user_id FROM users WHERE referral_code = $1', [referralCode]);
-    if (referrer.rows.length === 0) {
-      return res.status(404).json({ error: 'Invalid referral code' });
+    const normalizedNewUserId = String(newUserId);
+    const normalizedReferralCode = String(referralCode).trim();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const referrer = await runClientQuery(
+        client,
+        'SELECT user_id FROM users WHERE referral_code = $1 LIMIT 1',
+        [normalizedReferralCode]
+      );
+      if (referrer.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Invalid referral code' });
+      }
+
+      const referrerId = String(referrer.rows[0].user_id);
+
+      // Prevent self-referral
+      if (referrerId === normalizedNewUserId) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Cannot refer yourself' });
+      }
+
+      const updateResult = await runClientQuery(
+        client,
+        'UPDATE users SET referred_by = $1 WHERE user_id = $2 AND referred_by IS NULL RETURNING user_id',
+        [referrerId, normalizedNewUserId]
+      );
+
+      if (updateResult.rowCount === 0) {
+        const existingResult = await runClientQuery(
+          client,
+          'SELECT referred_by FROM users WHERE user_id = $1 LIMIT 1',
+          [normalizedNewUserId]
+        );
+
+        await client.query('ROLLBACK');
+
+        if (existingResult.rows.length === 0) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        const existingReferrer = parseOptionalString(existingResult.rows[0]?.referred_by);
+        if (existingReferrer === referrerId) {
+          return res.json({ message: 'Referral already tracked', referrerId });
+        }
+
+        return res.status(409).json({ error: 'Referral already assigned for this user' });
+      }
+
+      await runClientQuery(
+        client,
+        `
+          INSERT INTO reward_log (user_id, action, points, description, created_at)
+          VALUES ($1, 'referral_bonus', 50, 'Direct referral bonus', NOW())
+        `,
+        [referrerId]
+      );
+
+      await runClientQuery(
+        client,
+        `
+          INSERT INTO rewards (user_id, points, tier)
+          VALUES ($1, 50, 'Bronze')
+          ON CONFLICT (user_id) DO UPDATE SET points = rewards.points + 50
+        `,
+        [referrerId]
+      );
+
+      await client.query('COMMIT');
+      return res.json({ message: 'Referral tracked successfully', referrerId });
+    } catch (innerErr) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // noop
+      }
+      throw innerErr;
+    } finally {
+      client.release();
     }
-
-    const referrerId = referrer.rows[0].user_id;
-
-    // Prevent self-referral
-    if (referrerId === newUserId) {
-      return res.status(400).json({ error: 'Cannot refer yourself' });
-    }
-
-    // Mark the new user as referred
-    await pool.query('UPDATE users SET referred_by = $1 WHERE user_id = $2', [referrerId, newUserId]);
-
-    // Award referral bonus to referrer
-    await pool.query(`
-      INSERT INTO reward_log (user_id, action, points, description, created_at)
-      VALUES ($1, 'referral_bonus', 50, 'Direct referral bonus', NOW())
-    `, [referrerId]);
-
-    // Try to update rewards table
-    await pool.query(`
-      INSERT INTO rewards (user_id, points, tier)
-      VALUES ($1, 50, 'Bronze')
-      ON CONFLICT (user_id) DO UPDATE SET points = rewards.points + 50
-    `, [referrerId]);
-
-    res.json({ message: 'Referral tracked successfully', referrerId });
   } catch (err) {
-    console.error('Track referral error:', err);
+    logger.error('Track referral error:', err);
     res.status(500).json({ error: 'Failed to track referral' });
   }
 };
@@ -96,11 +232,12 @@ exports.getLeaderboard = async (req, res) => {
   const { period = 'monthly', limit = 20 } = req.query;
 
   try {
+    const normalizedLimit = parsePositiveInt(limit, 20, 100);
     let interval = "INTERVAL '30 days'";
     if (period === 'weekly') interval = "INTERVAL '7 days'";
     else if (period === 'all') interval = "INTERVAL '100 years'";
 
-    const result = await pool.query(`
+    const result = await runQuery(`
       SELECT u.user_id, u.username, p.full_name, p.avatar_url,
              COUNT(ref.user_id) as referral_count,
              COALESCE(r.points, 0) as total_points
@@ -113,11 +250,11 @@ exports.getLeaderboard = async (req, res) => {
       HAVING COUNT(ref.user_id) > 0
       ORDER BY referral_count DESC
       LIMIT $1
-    `, [parseInt(limit)]);
+    `, [normalizedLimit]);
 
     res.json({ leaderboard: result.rows, period });
   } catch (err) {
-    console.error('Leaderboard error:', err);
+    logger.error('Leaderboard error:', err);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 };

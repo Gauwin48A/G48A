@@ -7,77 +7,382 @@ try {
 }
 const logError = (logger && logger.error) ? logger.error : console.error;
 const logInfo = (logger && logger.info) ? logger.info : console.log;
+const guaranteedReachController = require('./postGuaranteedReachController');
+const { ensureUserTierColumns } = require('../services/schemaGuard');
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_USER_POST_LIMIT = 100;
+const DEFAULT_ALL_POST_LIMIT = 10;
+const MAX_POST_LIMIT = 100;
+const SHUFFLE_POOL_LIMIT = 200;
+const SHUFFLE_SEED_BUCKET_MS = 5 * 60 * 1000;
+const MAX_SHUFFLE_SEED = 2147483647;
+const MAX_SHUFFLE_STATE = 2147483646;
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const POST_SORT_FIELDS = new Set(['created_at', 'price', 'views_count']);
+const USER_POST_SORT_FIELDS = new Set(['created_at', 'updated_at', 'price', 'title', 'status']);
+
+function runQuery(text, values = []) {
+  return pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
+
+function getScalarQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseOptionalString(value) {
+  const scalar = getScalarQueryValue(value);
+  if (scalar === undefined || scalar === null) {
+    return null;
+  }
+
+  const normalized = (typeof scalar === 'string' ? scalar : String(scalar)).trim();
+  return normalized.length ? normalized : null;
+}
+
+function getAuthenticatedUserId(req) {
+  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const normalized = parseOptionalString(value);
+  if (!normalized || !/^\d+$/.test(normalized)) {
+    return fallback;
+  }
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.min(parsed, max);
+}
+
+function parseOptionalNumber(value) {
+  const normalized = parseOptionalString(value);
+  if (normalized === null) {
+    return null;
+  }
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseOptionalDate(value) {
+  const normalized = parseOptionalString(value);
+  if (!normalized) {
+    return null;
+  }
+  const timestamp = Date.parse(normalized);
+  return Number.isNaN(timestamp) ? null : normalized;
+}
+
+function parseSortBy(value) {
+  const normalized = parseOptionalString(value)?.toLowerCase();
+  if (normalized === 'shuffle' || normalized === 'random') {
+    return 'shuffle';
+  }
+  return POST_SORT_FIELDS.has(normalized) ? normalized : 'created_at';
+}
+
+function parseSortOrder(value) {
+  return parseOptionalString(value)?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+}
+
+function parseUserPostSortBy(value) {
+  const normalized = parseOptionalString(value)?.toLowerCase();
+  return USER_POST_SORT_FIELDS.has(normalized) ? normalized : 'created_at';
+}
+
+function buildUserPostOrderClause(sortBy, sortOrder) {
+  const safeOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
+
+  if (sortBy === 'price') {
+    return `price ${safeOrder} NULLS LAST, created_at DESC`;
+  }
+  if (sortBy === 'title') {
+    return `title ${safeOrder}, created_at DESC`;
+  }
+  if (sortBy === 'status') {
+    return `status ${safeOrder}, created_at DESC`;
+  }
+  if (sortBy === 'updated_at') {
+    return `updated_at ${safeOrder} NULLS LAST, created_at DESC`;
+  }
+
+  return `created_at ${safeOrder}`;
+}
+
+function hashSeedString(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) % MAX_SHUFFLE_SEED;
+  }
+  return hash || 1;
+}
+
+function parseShuffleSeed(value) {
+  const normalized = parseOptionalString(value);
+  if (!normalized) {
+    return Math.floor(Date.now() / SHUFFLE_SEED_BUCKET_MS);
+  }
+  if (/^-?\d+$/.test(normalized)) {
+    const numericSeed = Math.abs(Number.parseInt(normalized, 10)) % MAX_SHUFFLE_SEED;
+    return numericSeed || 1;
+  }
+  return hashSeedString(normalized);
+}
+
+function createSeededRandom(seed) {
+  let state = seed % MAX_SHUFFLE_SEED;
+  if (state <= 0) {
+    state += MAX_SHUFFLE_STATE;
+  }
+  return () => {
+    state = (state * 16807) % MAX_SHUFFLE_SEED;
+    return (state - 1) / MAX_SHUFFLE_STATE;
+  };
+}
+
+function shuffleRowsWithSeed(rows, seed) {
+  const random = createSeededRandom(seed);
+  const shuffledRows = [...rows];
+  for (let i = shuffledRows.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffledRows[i], shuffledRows[j]] = [shuffledRows[j], shuffledRows[i]];
+  }
+  return shuffledRows;
+}
+
+function normalizePostListQuery(query) {
+  let minPrice = parseOptionalNumber(query.minPrice);
+  let maxPrice = parseOptionalNumber(query.maxPrice);
+  if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+    [minPrice, maxPrice] = [maxPrice, minPrice];
+  }
+
+  let startDate = parseOptionalDate(query.startDate);
+  let endDate = parseOptionalDate(query.endDate);
+  if (startDate && endDate && Date.parse(startDate) > Date.parse(endDate)) {
+    [startDate, endDate] = [endDate, startDate];
+  }
+
+  const category = parseOptionalString(query.category) || parseOptionalString(query.category_id);
+
+  return {
+    page: parsePositiveInt(query.page, DEFAULT_PAGE),
+    limit: parsePositiveInt(query.limit, DEFAULT_ALL_POST_LIMIT, MAX_POST_LIMIT),
+    sortBy: parseSortBy(query.sortBy),
+    sortOrder: parseSortOrder(query.sortOrder),
+    shuffleSeed: parseShuffleSeed(query.shuffleSeed || query.refresh || query.seed),
+    filters: {
+      search: parseOptionalString(query.search) || parseOptionalString(query.q),
+      category: category && category.toLowerCase() !== 'all' ? category : null,
+      location: parseOptionalString(query.location),
+      minPrice,
+      maxPrice,
+      author: parseOptionalString(query.author),
+      startDate,
+      endDate
+    }
+  };
+}
+
+function buildPostWhereClause(filters) {
+  const params = [];
+  const conditions = [
+    `p.status = 'active'`,
+    `(p.expires_at IS NULL OR p.expires_at > NOW())`
+  ];
+
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+
+  if (filters.search) {
+    const placeholder = addParam(`%${filters.search}%`);
+    conditions.push(`(p.title ILIKE ${placeholder} OR p.description ILIKE ${placeholder} OR p.location ILIKE ${placeholder} OR c.name ILIKE ${placeholder})`);
+  }
+  if (filters.category) {
+    conditions.push(`p.category_id::text = ${addParam(filters.category)}`);
+  }
+  if (filters.location) {
+    conditions.push(`p.location ILIKE ${addParam(`%${filters.location}%`)}`);
+  }
+  if (filters.author) {
+    conditions.push(`p.user_id::text = ${addParam(filters.author)}`);
+  }
+  if (filters.startDate) {
+    conditions.push(`p.created_at >= ${addParam(filters.startDate)}`);
+  }
+  if (filters.endDate) {
+    conditions.push(`p.created_at <= ${addParam(filters.endDate)}`);
+  }
+  if (filters.minPrice !== null) {
+    conditions.push(`p.price >= ${addParam(filters.minPrice)}`);
+  }
+  if (filters.maxPrice !== null) {
+    conditions.push(`p.price <= ${addParam(filters.maxPrice)}`);
+  }
+
+  return {
+    params,
+    clause: `WHERE ${conditions.join(' AND ')}`
+  };
+}
+
+function mapPostForResponse(post) {
+  return {
+    ...post,
+    id: post.post_id,
+    tier_priority: post.tier_priority || 1,
+    category: post.category_name || 'General',
+    user: {
+      name: post.user_name || post.username || 'Unknown',
+      username: post.username,
+      email: post.email,
+      rating: parseFloat(post.seller_rating) || 0,
+      isVerified: post.aadhaar_verified || post.pan_verified,
+      aadhaarVerified: post.aadhaar_verified,
+      panVerified: post.pan_verified,
+      verificationDate: post.verification_date
+    },
+    image_url: post.images?.[0] || post.image_url || '/placeholder.svg'
+  };
+}
 
 // Get posts for a specific user (includes own posts + posts bought by user)
 // PERFORMANCE FIX: Combined two queries into single UNION query (eliminates N+1 pattern)
 exports.getUserPosts = async (req, res) => {
   try {
-    const { userId, status, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 100 } = req.query;
+    const {
+      userId,
+      status,
+      page = DEFAULT_PAGE,
+      limit = DEFAULT_USER_POST_LIMIT
+    } = req.query;
     if (!userId) return res.status(400).json({ error: 'userId required' });
+    const pageNumber = parsePositiveInt(page, DEFAULT_PAGE);
+    const limitNumber = parsePositiveInt(limit, DEFAULT_USER_POST_LIMIT, MAX_POST_LIMIT);
+    const offset = (pageNumber - 1) * limitNumber;
+    const normalizedStatus = parseOptionalString(status);
+    const sortBy = parseUserPostSortBy(req.query.sortBy);
+    const sortOrder = parseSortOrder(req.query.sortOrder);
+    const orderClause = buildUserPostOrderClause(sortBy, sortOrder);
 
-    // OPTIMIZED: Single query using UNION instead of two separate queries + JS deduplication
-    // Performance impact: Eliminates 2 queries per request, database-level deduplication
-    const result = await pool.query(
-      `-- Get user's own posts
-       SELECT
-         p.post_id, p.user_id, p.title, p.description, p.price, p.category_id,
-         p.location, p.created_at, p.updated_at, p.status, p.tier_priority, p.images,
-         'own' as ownership
-       FROM posts p
-       WHERE p.user_id = $1
+    const result = await runQuery(
+      `
+      WITH user_posts AS (
+        -- User's own posts
+        SELECT
+          p.post_id,
+          p.user_id,
+          p.title,
+          p.description,
+          p.price,
+          p.category_id,
+          p.location,
+          p.created_at,
+          p.updated_at,
+          p.status,
+          p.tier_priority,
+          p.images,
+          'own' AS ownership
+        FROM posts p
+        WHERE p.user_id::text = $1::text
 
-       UNION ALL
+        UNION ALL
 
-       -- Get posts bought by this user (exclude duplicates where user is buyer AND owner)
-       SELECT
-         p.post_id, p.user_id, p.title, p.description, p.price, p.category_id,
-         p.location, p.created_at, p.updated_at, p.status, p.tier_priority, p.images,
-         'bought' as ownership
-       FROM posts p
-       INNER JOIN transactions t ON p.post_id::text = t.post_id::text
-       WHERE t.buyer_id = $1 AND t.status = 'completed' AND p.user_id != $1
-
-       ORDER BY created_at DESC`,
-      [userId]
+        -- Posts bought by this user (exclude posts owned by this same user)
+        SELECT
+          p.post_id,
+          p.user_id,
+          p.title,
+          p.description,
+          p.price,
+          p.category_id,
+          p.location,
+          p.created_at,
+          p.updated_at,
+          p.status,
+          p.tier_priority,
+          p.images,
+          'bought' AS ownership
+        FROM posts p
+        INNER JOIN transactions t ON p.post_id::text = t.post_id::text
+        WHERE t.buyer_id::text = $1::text
+          AND t.status = 'completed'
+          AND p.user_id::text != $1::text
+      ),
+      filtered_posts AS (
+        SELECT
+          post_id,
+          user_id,
+          title,
+          description,
+          price,
+          category_id,
+          location,
+          created_at,
+          updated_at,
+          status,
+          tier_priority,
+          images,
+          ownership
+        FROM user_posts
+        WHERE ($2::text IS NULL OR status = $2::text)
+      )
+      SELECT
+        fp.post_id,
+        fp.user_id,
+        fp.title,
+        fp.description,
+        fp.price,
+        fp.category_id,
+        fp.location,
+        fp.created_at,
+        fp.updated_at,
+        fp.status,
+        fp.tier_priority,
+        fp.images,
+        fp.ownership,
+        COUNT(*) OVER() AS total_count
+      FROM filtered_posts fp
+      ORDER BY ${orderClause}
+      LIMIT $3 OFFSET $4
+      `,
+      [String(userId), normalizedStatus, limitNumber, offset]
     );
 
-    let allPosts = result.rows;
+    const total = result.rows.length ? Number.parseInt(result.rows[0].total_count, 10) || 0 : 0;
+    const posts = result.rows.map(({ total_count, ...post }) => post);
 
-    // Filter by status if requested
-    if (status) {
-      allPosts = allPosts.filter(p => p.status === status);
-    }
-
-    // Sort (database already sorted by created_at, but support other sort fields)
-    if (sortBy !== 'created_at') {
-      allPosts.sort((a, b) => {
-        const aVal = a[sortBy] || a.created_at;
-        const bVal = b[sortBy] || b.created_at;
-        return sortOrder === 'desc' ? new Date(bVal) - new Date(aVal) : new Date(aVal) - new Date(bVal);
-      });
-    }
-
-    // Paginate
-    const offset = (parseInt(page) - 1) * parseInt(limit);
-    const paginatedPosts = allPosts.slice(offset, offset + parseInt(limit));
-
-    res.json({ posts: paginatedPosts, total: allPosts.length });
+    res.json({ posts, total, page: pageNumber, limit: limitNumber });
   } catch (err) {
-    console.error('[getUserPosts] Error:', err.message);
+    logError('[getUserPosts] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 };
 
 exports.getAllPosts = async (req, res) => {
   try {
-    const { search, category, location, minPrice, maxPrice, author, startDate, endDate, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 10 } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const {
+      page: pageNumber,
+      limit: limitNumber,
+      sortBy,
+      sortOrder,
+      shuffleSeed,
+      filters
+    } = normalizePostListQuery(req.query);
+    const offset = (pageNumber - 1) * limitNumber;
 
-    // Build dynamic query with JOINs for user info, category, and images
-    // Use subqueries for verification since user_verifications uses verification_type column
-    // PROTOCOL: VALUE HIERARCHY - Include tier_priority for Premium post prioritization
+    // Shared WHERE clause for both data and count queries keeps pagination totals consistent.
+    const { clause: whereClause, params: whereParams } = buildPostWhereClause(filters);
     let query = `
       SELECT 
+        ${sortBy === 'shuffle' ? '' : 'COUNT(*) OVER() AS total_count,'}
         p.*,
         COALESCE(p.tier_priority, 1) as tier_priority,
         COALESCE(p.views_count, p.views, 0) as views,
@@ -97,139 +402,56 @@ exports.getAllPosts = async (req, res) => {
       LEFT JOIN users u ON p.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
       LEFT JOIN categories c ON p.category_id = c.category_id
-      WHERE p.status = 'active'
-        AND (p.expires_at IS NULL OR p.expires_at > NOW())
+      ${whereClause}
     `;
+    const params = [...whereParams];
 
-
-    const params = [];
-
-    // Search across title, description, location, AND category name
-    if (search) {
-      query += ` AND (p.title ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR p.location ILIKE $${params.length + 1} OR c.name ILIKE $${params.length + 1})`;
-      params.push(`%${search}%`);
-    }
-    if (category) {
-      query += ` AND p.category_id::text = $${params.length + 1}`;
-      params.push(category);
-    }
-    if (location) {
-      query += ` AND p.location ILIKE $${params.length + 1}`;
-      params.push(`%${location}%`);
-    }
-    if (author) {
-      query += ` AND p.user_id::text = $${params.length + 1}`;
-      params.push(author); // UUID is string
-    }
-    if (startDate) {
-      query += ` AND p.created_at >= $${params.length + 1}`;
-      params.push(startDate);
-    }
-    if (endDate) {
-      query += ` AND p.created_at <= $${params.length + 1}`;
-      params.push(endDate);
-    }
-    if (minPrice) {
-      query += ` AND p.price >= $${params.length + 1}`;
-      params.push(minPrice);
-    }
-    if (maxPrice) {
-      query += ` AND p.price <= $${params.length + 1}`;
-      params.push(maxPrice);
-    }
-
-    // Dynamic sorting - includes shuffle option and TIER PRIORITY for Protocol: Value Hierarchy
-    const allowedSortFields = ['created_at', 'price', 'views_count', 'shuffle', 'tier_priority'];
     let sortClause;
 
-    if (sortBy === 'shuffle' || sortBy === 'random') {
+    if (sortBy === 'shuffle') {
       // THE "INSTAGRAM ALGORITHM" (Pseudo-randomized feed)
       // Instead of expensive SQL ORDER BY RANDOM(), we fetch the top 200 most recent items.
       // We then shuffle them in Node.js (cheap) to ensure a fresh experience on every refresh.
       // Filtering and other logic still apply.
-      const shuffleLimit = 200;
-      query += ` ORDER BY p.created_at DESC LIMIT ${shuffleLimit}`;
+      query += ` ORDER BY p.created_at DESC LIMIT ${SHUFFLE_POOL_LIMIT}`;
 
-      const result = await pool.query(query, params);
+      const result = await runQuery(query, params);
 
-      // Shuffle the results array
-      const shuffled = result.rows.sort(() => 0.5 - Math.random());
+      // Seeded shuffle gives stable pagination for the same seed.
+      const shuffled = shuffleRowsWithSeed(result.rows, shuffleSeed);
 
       // Paginate the shuffled results manually
-      const paginatedRows = shuffled.slice(offset, offset + limit);
+      const paginatedRows = shuffled.slice(offset, offset + limitNumber);
 
       // Return early as we've already executed the query and sliced the results
-      const posts = paginatedRows.map(post => ({
-        ...post,
-        id: post.post_id,
-        tier_priority: post.tier_priority || 1,
-        category: post.category_name || 'General',
-        user: {
-          name: post.user_name || post.username || 'Unknown',
-          username: post.username,
-          email: post.email,
-          rating: parseFloat(post.seller_rating) || 0,
-          isVerified: post.aadhaar_verified || post.pan_verified,
-          aadhaarVerified: post.aadhaar_verified,
-          panVerified: post.pan_verified,
-          verificationDate: post.verification_date
-        },
-        image_url: post.images?.[0] || post.image_url || '/placeholder.svg'
-      }));
+      const posts = paginatedRows.map(mapPostForResponse);
 
       // For shuffle mode, we treat the 200 posts as the world for pagination
       return res.json({
         posts,
-        total: Math.min(result.rows.length, shuffleLimit),
-        shuffled: true
+        total: result.rows.length,
+        page: pageNumber,
+        limit: limitNumber,
+        shuffled: true,
+        shuffleSeed
       });
     }
 
     // Default sorting logic for non-shuffle requests
-    const safeSortBy = ['created_at', 'price', 'views_count'].includes(sortBy) ? `p.${sortBy}` : 'p.created_at';
-    const safeSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const safeSortBy = `p.${sortBy}`;
+    const safeSortOrder = sortOrder === 'asc' ? 'ASC' : 'DESC';
     sortClause = `ORDER BY COALESCE(p.tier_priority, 1) DESC, ${safeSortBy} ${safeSortOrder}`;
 
     query += ` ${sortClause} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(limit, offset);
+    params.push(limitNumber, offset);
 
-    const result = await pool.query(query, params);
+    const result = await runQuery(query, params);
 
     // Transform results to include user object with verification status
-    const posts = result.rows.map(post => ({
-      ...post,
-      id: post.post_id,
-      tier_priority: post.tier_priority || 1,
-      category: post.category_name || 'General',
-      user: {
-        name: post.user_name || post.username || 'Unknown',
-        username: post.username,
-        email: post.email,
-        rating: parseFloat(post.seller_rating) || 0,
-        isVerified: post.aadhaar_verified || post.pan_verified,
-        aadhaarVerified: post.aadhaar_verified,
-        panVerified: post.pan_verified,
-        verificationDate: post.verification_date
-      },
-      image_url: post.images?.[0] || post.image_url || '/placeholder.svg'
-    }));
+    const posts = result.rows.map(({ total_count, ...post }) => mapPostForResponse(post));
+    const total = result.rows.length ? Number.parseInt(result.rows[0].total_count, 10) || 0 : 0;
 
-
-    // Get total count for pagination (must join categories to search by category name)
-    let countQuery = `SELECT COUNT(*) FROM posts p LEFT JOIN categories c ON p.category_id = c.category_id WHERE p.status = 'active' AND (p.expires_at IS NULL OR p.expires_at > NOW())`;
-    const countParams = [];
-    if (search) { countQuery += ` AND (p.title ILIKE $${countParams.length + 1} OR p.description ILIKE $${countParams.length + 1} OR p.location ILIKE $${countParams.length + 1} OR c.name ILIKE $${countParams.length + 1})`; countParams.push(`%${search}%`); }
-    if (category) { countQuery += ` AND p.category_id = $${countParams.length + 1}`; countParams.push(category); }
-    if (location) { countQuery += ` AND p.location ILIKE $${countParams.length + 1}`; countParams.push(`%${location}%`); }
-    if (author) { countQuery += ` AND p.user_id = $${countParams.length + 1}`; countParams.push(author); }
-    if (startDate) { countQuery += ` AND p.created_at >= $${countParams.length + 1}`; countParams.push(startDate); }
-    if (endDate) { countQuery += ` AND p.created_at <= $${countParams.length + 1}`; countParams.push(endDate); }
-    if (minPrice) { countQuery += ` AND p.price >= $${countParams.length + 1}`; countParams.push(minPrice); }
-    if (maxPrice) { countQuery += ` AND p.price <= $${countParams.length + 1}`; countParams.push(maxPrice); }
-    const countResult = await pool.query(countQuery, countParams);
-    const total = parseInt(countResult.rows[0].count);
-
-    res.json({ posts, total });
+    res.json({ posts, total, page: pageNumber, limit: limitNumber });
   } catch (err) {
     logError('Error fetching posts:', err);
     res.status(500).json({ error: err.message });
@@ -244,10 +466,11 @@ exports.createPost = async (req, res) => {
   const client = await pool.connect();
 
   try {
+    await ensureUserTierColumns();
     await client.query('BEGIN'); // START TRANSACTION
 
     // SECURITY FIX: Get user_id from authenticated token, NOT from request body
-    const user_id = req.user?.id || req.user?.userId || req.body.user_id;
+    const user_id = getAuthenticatedUserId(req) || parseOptionalString(req.body.user_id);
 
     // Use req.body directly but sanitize/validate
     const { category_id, title, description, price, type, location, is_flash_sale } = req.body;
@@ -363,7 +586,34 @@ exports.createPost = async (req, res) => {
     await client.query('COMMIT'); // COMMIT TRANSACTION
 
     // Fetch final post for response (Read committed)
-    const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [post_id]);
+    const postRes = await runQuery(
+      `
+        SELECT
+          post_id,
+          user_id,
+          category_id,
+          title,
+          description,
+          price,
+          location,
+          post_type,
+          images,
+          status,
+          views_count,
+          likes,
+          shares,
+          audio_url,
+          is_flash_sale,
+          expires_at,
+          tier_priority,
+          created_at,
+          updated_at
+        FROM posts
+        WHERE post_id = $1
+        LIMIT 1
+      `,
+      [post_id]
+    );
 
     logInfo('Post created successfully', { post_id, user_id, tier });
 
@@ -388,17 +638,63 @@ exports.createPost = async (req, res) => {
 exports.getPostById = async (req, res) => {
   try {
     const postId = req.params.postId || req.params.id;
-    // Fetch post details - use post_id column
-    const postRes = await pool.query('SELECT * FROM posts WHERE post_id = $1', [postId]);
+    const postRes = await runQuery(
+      `
+      WITH updated_post AS (
+        UPDATE posts
+        SET views_count = COALESCE(views_count, 0) + 1
+        WHERE post_id = $1
+        RETURNING
+          post_id,
+          user_id,
+          category_id,
+          title,
+          description,
+          price,
+          location,
+          post_type,
+          images,
+          status,
+          views_count,
+          likes,
+          shares,
+          audio_url,
+          is_flash_sale,
+          expires_at,
+          tier_priority,
+          created_at,
+          updated_at
+      )
+      SELECT
+        up.post_id,
+        up.user_id,
+        up.category_id,
+        up.title,
+        up.description,
+        up.price,
+        up.location,
+        up.post_type,
+        up.images,
+        up.status,
+        up.views_count,
+        up.likes,
+        up.shares,
+        up.audio_url,
+        up.is_flash_sale,
+        up.expires_at,
+        up.tier_priority,
+        up.created_at,
+        up.updated_at,
+        COALESCE(u.username, 'Unknown') AS author,
+        COALESCE(c.name, 'Unknown') AS category
+      FROM updated_post up
+      LEFT JOIN users u ON up.user_id::text = u.user_id::text
+      LEFT JOIN categories c ON up.category_id = c.category_id
+      `,
+      [postId]
+    );
     if (!postRes.rows.length) return res.status(404).json({ error: 'Post not found' });
     const post = postRes.rows[0];
-    // Increment view count when post is viewed
-    await pool.query('UPDATE posts SET views_count = views_count + 1 WHERE post_id = $1', [postId]);
-    // Fetch author and category - use user_id column for users table
-    const authorRes = await pool.query('SELECT username FROM users WHERE user_id = $1', [post.user_id]);
-    const categoryRes = await pool.query('SELECT name FROM categories WHERE category_id = $1', [post.category_id]);
-    post.author = authorRes.rows[0]?.username || 'Unknown';
-    post.category = categoryRes.rows[0]?.name || 'Unknown';
     post.views = post.views_count; // Alias for frontend compatibility
     // Return with post wrapper for consistency
     res.json({ post });
@@ -423,7 +719,7 @@ exports.getNearbyPosts = async (req, res) => {
     const searchRadius = parseFloat(radius);
 
     // Use the geo-spatial function from fortress schema
-    const result = await pool.query(
+    const result = await runQuery(
       'SELECT * FROM get_nearby_posts($1, $2, $3)',
       [latitude, longitude, searchRadius]
     );
@@ -450,7 +746,7 @@ exports.getUserTrustScore = async (req, res) => {
       return res.status(400).json({ error: 'User ID required' });
     }
 
-    const result = await pool.query(
+    const result = await runQuery(
       'SELECT * FROM view_user_trust_score WHERE user_id = $1',
       [userId]
     );
@@ -466,214 +762,9 @@ exports.getUserTrustScore = async (req, res) => {
   }
 };
 
-// ============================================
-// GUARANTEED REACH ALGORITHM
-// Ensures every seller's post reaches all users
-// ============================================
-const { GUARANTEED_REACH_QUERY, GUARANTEED_REACH_FALLBACK } = require('../queries/guaranteedReachQuery');
-
-// Query timeout for high availability
-const QUERY_TIMEOUT = 3000;
-
-// ===========================================
-// REDIS DISTRIBUTED CACHING FOR 10 LAKH+ USERS
-// Uses Redis when available, falls back to in-memory
-// ===========================================
-const redisCache = require('../config/redisCache');
-
-// Legacy in-memory fallback (used if Redis module fails to load)
-const feedCache = new Map();
-const CACHE_TTL = 5;  // 5 seconds (in seconds for Redis)
-const MAX_CACHE_ENTRIES = 1000;
-
-function getCacheKey(userId, limit, refreshSeed, filters) {
-  // IMPORTANT: Use the FULL refresh seed for unique results on every refresh
-  // This ensures users get new posts when they refresh the page
-  // Only cache identical requests (same exact seed = same user revisiting quickly)
-  const scopedUserId = userId ? String(userId) : 'anonymous';
-  const filterKey = filters ? JSON.stringify(filters) : '';
-  return `feed:${scopedUserId}:${refreshSeed}:${limit}:${filterKey}`;
-}
-
-// Async cache operations using Redis
-async function getFromCache(key) {
-  try {
-    const data = await redisCache.get(key);
-    if (data) {
-      redisCache.recordHit();
-      return data;
-    }
-    redisCache.recordMiss();
-    return null;
-  } catch (err) {
-    console.log('[PostController] Cache get error, continuing without cache');
-    return null;
-  }
-}
-
-async function setCache(key, data) {
-  try {
-    await redisCache.set(key, data, CACHE_TTL);
-  } catch (err) {
-    console.log('[PostController] Cache set error:', err.message);
-  }
-}
-
-// Performance stats endpoint - shows Redis status
-exports.getCacheStats = async (req, res) => {
-  try {
-    const stats = redisCache.getStats();
-    const health = await redisCache.healthCheck();
-    res.json({
-      ...stats,
-      health,
-      message: stats.isRedisAvailable
-        ? `Redis distributed cache active - ${stats.hitRate} hit rate`
-        : `In-memory fallback active - ${stats.hitRate} hit rate`
-    });
-  } catch (err) {
-    res.json({
-      error: err.message,
-      fallback: 'Using in-memory cache'
-    });
-  }
-};
-
-async function queryWithTimeout(query, params, timeoutMs = QUERY_TIMEOUT) {
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
-  );
-  const queryPromise = pool.query(query, params);
-  return Promise.race([queryPromise, timeoutPromise]);
-}
-
-/**
- * GET /api/posts/for-you
- * Returns posts with Guaranteed Reach algorithm
- * 
- * Features:
- * - Low-view posts get priority (seller fairness)
- * - Fresh posts (< 48 hours) get visibility boost
- * - Time-seeded randomization (different every 30s)
- * - Author diversity (max 1 post per seller)
- */
-exports.getGuaranteedReachPosts = async (req, res) => {
-  try {
-    const userId = req.user?.userId || req.user?.id || req.query.userId || null;
-    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
-    const page = parseInt(req.query.page) || 1;
-    const offset = (page - 1) * limit;
-
-    // Refresh seed - client sends random number on each refresh for instant variety
-    const refreshSeed = parseInt(req.query.refresh) || Math.floor(Math.random() * 10000);
-
-    // Category filter support
-    const { category, search, minPrice, maxPrice, location } = req.query;
-    const hasFilters = search || minPrice || maxPrice || location || (category && category !== 'All');
-    const queryLimit = hasFilters ? Math.max(200, limit * 10) : (limit + offset);
-
-    // === REDIS DISTRIBUTED CACHING ===
-    // For 10 lakh+ concurrent users, Redis cache prevents database overload
-    const cacheKey = getCacheKey(userId, queryLimit, refreshSeed, { category, search, minPrice, maxPrice, location });
-    let rows = await getFromCache(cacheKey);
-    let fromCache = false;
-
-    const startTime = Date.now();
-
-    if (rows) {
-      fromCache = true;
-      logInfo(`[GuaranteedReach] REDIS CACHE HIT - ${cacheKey.substring(0, 30)}...`);
-    } else {
-      // Cache miss - execute DB query
-      try {
-        const result = await queryWithTimeout(GUARANTEED_REACH_QUERY, [userId, queryLimit, refreshSeed]);
-        rows = result.rows;
-        await setCache(cacheKey, rows);
-        logInfo(`[GuaranteedReach] CACHE MISS - Query: ${Date.now() - startTime}ms, ${rows.length} posts`);
-      } catch (queryErr) {
-        // Fallback on timeout
-        logInfo(`[GuaranteedReach] Timeout, using fallback query`);
-        const fallback = await pool.query(GUARANTEED_REACH_FALLBACK, [queryLimit, userId]);
-        rows = fallback.rows;
-      }
-    }
-
-    // Guaranteed availability: if fairness query yields no rows, fallback to active posts feed.
-    if (!Array.isArray(rows) || rows.length === 0) {
-      logInfo('[GuaranteedReach] Empty fair-feed result, using fallback feed query');
-      const fallback = await pool.query(GUARANTEED_REACH_FALLBACK, [queryLimit, userId]);
-      rows = fallback.rows;
-      fromCache = false;
-      if (rows.length > 0) {
-        await setCache(cacheKey, rows);
-      }
-    }
-
-    const queryTime = Date.now() - startTime;
-
-    // Apply client-side filters if needed (category, search, price, location)
-    let posts = rows;
-
-    if (category && category !== 'All') {
-      posts = posts.filter(p =>
-        p.category_id == category ||
-        p.category_name?.toLowerCase() === category.toLowerCase()
-      );
-    }
-    if (search) {
-      const searchLower = search.toLowerCase();
-      posts = posts.filter(p =>
-        p.title?.toLowerCase().includes(searchLower) ||
-        p.description?.toLowerCase().includes(searchLower) ||
-        p.location?.toLowerCase().includes(searchLower) ||
-        p.author_name?.toLowerCase().includes(searchLower) ||  // Search by seller name
-        p.category_name?.toLowerCase().includes(searchLower)   // Search by category
-      );
-    }
-    if (minPrice) {
-      posts = posts.filter(p => p.price >= parseFloat(minPrice));
-    }
-    if (maxPrice) {
-      posts = posts.filter(p => p.price <= parseFloat(maxPrice));
-    }
-    if (location) {
-      posts = posts.filter(p => p.location?.toLowerCase().includes(location.toLowerCase()));
-    }
-
-    // Paginate the filtered results
-    const paginatedPosts = posts.slice(offset, offset + limit);
-
-    // Transform for frontend compatibility
-    const transformedPosts = paginatedPosts.map(post => ({
-      ...post,
-      id: post.post_id,
-      category: post.category_name || 'General',
-      user: {
-        name: post.author_name || 'Seller',
-        id: post.author_id
-      },
-      image_url: post.images?.[0] || '/placeholder.svg'
-    }));
-
-    res.json({
-      posts: transformedPosts,
-      total: posts.length,
-      page,
-      limit,
-      cached: fromCache,
-      queryTimeMs: queryTime,
-      feedMeta: {
-        lowReachCount: paginatedPosts.filter(p => p.feed_phase === 'low_reach').length,
-        freshCount: paginatedPosts.filter(p => p.feed_phase === 'fresh').length,
-        rotatingCount: paginatedPosts.filter(p => p.feed_phase === 'rotating').length
-      }
-    });
-
-  } catch (err) {
-    logError('[GuaranteedReach] Error:', err.message);
-    res.status(500).json({ error: err.message, posts: [] });
-  }
-};
+// Guaranteed Reach feed logic is split for maintainability.
+exports.getCacheStats = guaranteedReachController.getCacheStats;
+exports.getGuaranteedReachPosts = guaranteedReachController.getGuaranteedReachPosts;
 
 // ============================================
 // SIMILAR PRODUCTS ENGINE
@@ -682,14 +773,14 @@ exports.getGuaranteedReachPosts = async (req, res) => {
 exports.getSimilarPosts = async (req, res) => {
   try {
     const { postId } = req.params;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parsePositiveInt(req.query.limit, 5, 20);
 
     if (!postId) {
       return res.status(400).json({ error: 'Post ID required' });
     }
 
     // Get the reference post
-    const refPost = await pool.query(
+    const refPost = await runQuery(
       'SELECT category_id, price FROM posts WHERE post_id = $1',
       [postId]
     );
@@ -703,7 +794,7 @@ exports.getSimilarPosts = async (req, res) => {
     const priceMax = price * 1.2;  // +20%
 
     // Find similar posts
-    const result = await pool.query(`
+    const result = await runQuery(`
       SELECT 
         p.post_id, p.title, p.price, p.images, p.location, p.created_at,
         u.name as seller_name, u.avatar_url
@@ -745,7 +836,7 @@ exports.getSimilarPosts = async (req, res) => {
 exports.markAsSold = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getAuthenticatedUserId(req);
     const { buyer_id, sale_price } = req.body; // Optional: record buyer info
 
     if (!userId) {
@@ -753,8 +844,8 @@ exports.markAsSold = async (req, res) => {
     }
 
     // Verify ownership
-    const postCheck = await pool.query(
-      'SELECT post_id, user_id, title, status FROM posts WHERE post_id = $1',
+    const postCheck = await runQuery(
+      'SELECT post_id, user_id, title, status, price FROM posts WHERE post_id = $1',
       [id]
     );
 
@@ -764,7 +855,7 @@ exports.markAsSold = async (req, res) => {
 
     const post = postCheck.rows[0];
 
-    if (post.user_id !== userId) {
+    if (String(post.user_id) !== String(userId)) {
       return res.status(403).json({ error: 'You can only mark your own posts as sold' });
     }
 
@@ -773,7 +864,7 @@ exports.markAsSold = async (req, res) => {
     }
 
     // Update post status
-    await pool.query(
+    await runQuery(
       `UPDATE posts 
        SET status = 'sold', sold_at = NOW(), updated_at = NOW()
        WHERE post_id = $1`,
@@ -783,7 +874,7 @@ exports.markAsSold = async (req, res) => {
     // Optional: Create transaction record if buyer info provided
     if (buyer_id) {
       try {
-        await pool.query(
+        await runQuery(
           `INSERT INTO transactions (seller_id, buyer_id, post_id, amount, status, completed_at)
            VALUES ($1, $2, $3, $4, 'completed', NOW())`,
           [userId, buyer_id, id, sale_price || post.price || 0]
@@ -816,14 +907,14 @@ exports.markAsSold = async (req, res) => {
 exports.reactivatePost = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getAuthenticatedUserId(req);
 
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     // Verify ownership
-    const postCheck = await pool.query(
+    const postCheck = await runQuery(
       'SELECT post_id, user_id, status FROM posts WHERE post_id = $1',
       [id]
     );
@@ -834,7 +925,7 @@ exports.reactivatePost = async (req, res) => {
 
     const post = postCheck.rows[0];
 
-    if (post.user_id !== userId) {
+    if (String(post.user_id) !== String(userId)) {
       return res.status(403).json({ error: 'You can only reactivate your own posts' });
     }
 
@@ -844,7 +935,7 @@ exports.reactivatePost = async (req, res) => {
 
     // Check user's tier for new expiry calculation
     const { getTierRules } = require('../config/tierRules');
-    const userResult = await pool.query(
+    const userResult = await runQuery(
       'SELECT tier FROM users WHERE user_id = $1',
       [userId]
     );
@@ -853,7 +944,7 @@ exports.reactivatePost = async (req, res) => {
     const newExpiresAt = rules.getExpiry();
 
     // Reactivate post
-    await pool.query(
+    await runQuery(
       `UPDATE posts 
        SET status = 'active', sold_at = NULL, expires_at = $2, updated_at = NOW()
        WHERE post_id = $1`,
@@ -883,14 +974,14 @@ exports.reactivatePost = async (req, res) => {
 exports.deletePost = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getAuthenticatedUserId(req);
 
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     // Verify ownership
-    const postCheck = await pool.query(
+    const postCheck = await runQuery(
       'SELECT post_id, user_id FROM posts WHERE post_id = $1',
       [id]
     );
@@ -899,12 +990,12 @@ exports.deletePost = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    if (postCheck.rows[0].user_id !== userId) {
+    if (String(postCheck.rows[0].user_id) !== String(userId)) {
       return res.status(403).json({ error: 'You can only delete your own posts' });
     }
 
     // Soft delete
-    await pool.query(
+    await runQuery(
       `UPDATE posts SET status = 'deleted', updated_at = NOW() WHERE post_id = $1`,
       [id]
     );

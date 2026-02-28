@@ -52,6 +52,17 @@ const parsePositiveInt = (value, fallback, max = Number.MAX_SAFE_INTEGER) => {
   return Math.min(parsed, max);
 };
 
+const generateSixDigitOtp = () => crypto.randomInt(100000, 1000000).toString();
+
+const parseOptionalString = (value) => {
+  if (value === undefined || value === null) return null;
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const getAuthenticatedUserId = (req) =>
+  parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+
 const isUndefinedTableError = (error) =>
   String(error?.code || '').toUpperCase() === '42P01';
 
@@ -577,7 +588,7 @@ exports.sendOTP = async (req, res) => {
       });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateSixDigitOtp();
     const otpHash = hashSha256(otp);
 
     await Promise.all([
@@ -663,7 +674,8 @@ exports.handleOtpDeliveryCallback = async (req, res) => {
 
 exports.getOtpDeliveryMetrics = async (req, res) => {
   try {
-    if (!req.user?.id || !hasAdminAccess(req)) {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId || !hasAdminAccess(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -689,7 +701,8 @@ exports.getOtpDeliveryMetrics = async (req, res) => {
 
 exports.getRiskDecisionMetrics = async (req, res) => {
   try {
-    if (!req.user?.id || !hasAdminAccess(req)) {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId || !hasAdminAccess(req)) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -861,6 +874,11 @@ exports.logout = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const rewardsAvailable = await resolveRewardsTableAvailability();
     let user;
 
@@ -879,7 +897,7 @@ exports.getMe = async (req, res) => {
             LEFT JOIN rewards r ON r.user_id = u.user_id
             WHERE u.user_id = $1
           `,
-          [req.user.id]
+          [userId]
         );
       } catch (err) {
         if (!isUndefinedTableError(err)) {
@@ -890,7 +908,7 @@ exports.getMe = async (req, res) => {
           `SELECT user_id, name, phone_number, email, role, 'Bronze'::text AS tier
            FROM users
            WHERE user_id = $1`,
-          [req.user.id]
+          [userId]
         );
       }
     } else {
@@ -898,7 +916,7 @@ exports.getMe = async (req, res) => {
         `SELECT user_id, name, phone_number, email, role, 'Bronze'::text AS tier
          FROM users
          WHERE user_id = $1`,
-        [req.user.id]
+        [userId]
       );
     }
 
@@ -921,7 +939,11 @@ exports.getMe = async (req, res) => {
 
 exports.setPassword = async (req, res) => {
   const { password } = req.body;
-  const userId = req.user.id;
+  const userId = getAuthenticatedUserId(req);
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
   if (!password || password.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
@@ -985,7 +1007,7 @@ exports.forgotPassword = async (req, res) => {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenHash = hashSha256(resetToken);
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateSixDigitOtp();
     const otpHash = hashSha256(otp);
     const resetOtpKey = user.phone_number || lookupValue;
 

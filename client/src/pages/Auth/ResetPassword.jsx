@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { Lock, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const ResetPassword = () => {
     const navigate = useNavigate();
@@ -59,7 +60,7 @@ const ResetPassword = () => {
 
         setLoading(true);
         try {
-            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const baseUrl = getApiOriginBase();
             const res = await fetch(`${baseUrl}/api/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -194,3 +195,4 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+

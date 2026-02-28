@@ -8,6 +8,8 @@
 const crypto = require('crypto');
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
+const shouldLogDevWarnings = !isTest;
 const MIN_SECRET_LENGTH = 32;
 
 const WEAK_SECRET_PATTERNS = [
@@ -24,7 +26,9 @@ const WEAK_SECRET_PATTERNS = [
 // Generate random fallbacks for development only.
 const generateDevSecret = (label) => {
     const secret = crypto.randomBytes(32).toString('hex');
-    console.warn(`[JWT] Generated temporary ${label} secret - set env vars for persistence.`);
+    if (shouldLogDevWarnings) {
+        console.warn(`[JWT] Generated temporary ${label} secret - set env vars for persistence.`);
+    }
     return secret;
 };
 
@@ -62,7 +66,9 @@ const resolveRefreshSecret = () => {
     }
 
     if (process.env.JWT_SECRET?.trim()) {
-        console.warn('[JWT] REFRESH_SECRET missing in development, deriving from JWT_SECRET.');
+        if (shouldLogDevWarnings) {
+            console.warn('[JWT] REFRESH_SECRET missing in development, deriving from JWT_SECRET.');
+        }
         return `${process.env.JWT_SECRET.trim()}_refresh`;
     }
 
@@ -126,7 +132,7 @@ const JWT_CONFIG = {
     RETURN_REFRESH_TOKEN_IN_BODY: process.env.RETURN_REFRESH_TOKEN_IN_BODY === 'true'
 };
 
-if (!isProduction) {
+if (!isProduction && !isTest) {
     console.log('[JWT] Config loaded. Access token expiry:', JWT_CONFIG.ACCESS_EXPIRY);
 }
 

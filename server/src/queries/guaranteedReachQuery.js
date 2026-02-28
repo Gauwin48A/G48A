@@ -88,7 +88,6 @@ all_posts_scored AS (
         
     FROM posts p
     WHERE p.status = 'active'
-      AND p.created_at > NOW() - INTERVAL '30 days'  -- Include posts up to 30 days
       AND (p.expires_at IS NULL OR p.expires_at > NOW())  -- Filter expired posts
       AND (
           (SELECT uid FROM config) IS NULL 

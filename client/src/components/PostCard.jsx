@@ -6,6 +6,7 @@ import { Shield, MapPin, Clock, Phone } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
 
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 export default function PostCard({ post }) {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ export default function PostCard({ post }) {
   const daysLeft = Math.ceil((new Date(expiresAt) - new Date()) / (1000 * 60 * 60 * 24));
 
   // Helper to get full image URL
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const baseUrl = getApiOriginBase();
   const getImageUrl = (img) => {
     if (!img) return '/placeholder.svg';
     if (img.startsWith('/uploads/')) return baseUrl + img;
@@ -120,3 +121,4 @@ export default function PostCard({ post }) {
     </Card>
   );
 }
+

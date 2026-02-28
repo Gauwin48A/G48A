@@ -16,8 +16,8 @@ export const postWithRetry = (url, data, config) => api.post(url, data, config);
 // ============================================
 
 // Feed
-// FIX: services/api.js baseURL is 'http://localhost:5000/api'
-// So we DON'T need to add /api prefix - it would cause double /api/api paths!
+// services/api.js baseURL already includes the `/api` prefix.
+// Do not prepend `/api` again, or requests would become `/api/api/...`.
 
 const PF = ''; // Empty - baseURL already includes /api
 

@@ -46,6 +46,14 @@ const bootstrapServerPort = Number.parseInt(
   argMap.get('bootstrap-port') || process.env.LOAD_TEST_BOOTSTRAP_PORT || '5099',
   10
 );
+const bootstrapPortRange = Math.max(
+  1,
+  Number.parseInt(argMap.get('bootstrap-port-range') || process.env.LOAD_TEST_BOOTSTRAP_PORT_RANGE || '4', 10)
+);
+const managedTargetStartupTimeoutMs = Number.parseInt(
+  argMap.get('managed-startup-timeout-ms') || process.env.LOAD_TEST_MANAGED_STARTUP_TIMEOUT_MS || '60000',
+  10
+);
 const preferManagedTarget = autoBootstrapServer && !baseUrlExplicit;
 
 const profiles = {
@@ -266,36 +274,44 @@ async function probeTarget(url) {
   }
 }
 
-async function waitForHealthyTarget(url, timeout = 45000, intervalMs = 500) {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeout) {
-    // eslint-disable-next-line no-await-in-loop
-    const probe = await probeTarget(url);
-    if (probe.ok) return true;
-    // eslint-disable-next-line no-await-in-loop
-    await sleep(intervalMs);
-  }
-  return false;
-}
-
-async function waitForStableTarget(url, timeout = 60000, intervalMs = 500, requiredConsecutivePasses = 3) {
+async function waitForStableTarget(
+  url,
+  {
+    timeout = managedTargetStartupTimeoutMs,
+    intervalMs = 500,
+    requiredConsecutivePasses = 3,
+    managedProcess = null
+  } = {}
+) {
   const startedAt = Date.now();
   let consecutivePasses = 0;
+  let lastReason = 'probe_unavailable';
   while (Date.now() - startedAt < timeout) {
+    if (managedProcess && managedProcess.exitCode !== null) {
+      return {
+        ok: false,
+        reason: `managed_process_exited_${managedProcess.exitCode}`
+      };
+    }
+
     // eslint-disable-next-line no-await-in-loop
     const probe = await probeTarget(url);
     if (probe.ok) {
       consecutivePasses += 1;
       if (consecutivePasses >= requiredConsecutivePasses) {
-        return true;
+        return { ok: true, reason: probe.reason };
       }
     } else {
+      lastReason = probe.reason;
       consecutivePasses = 0;
     }
     // eslint-disable-next-line no-await-in-loop
     await sleep(intervalMs);
   }
-  return false;
+  return {
+    ok: false,
+    reason: `target_not_stable_${lastReason}`
+  };
 }
 
 function startManagedServer(port) {
@@ -340,21 +356,69 @@ function terminateManagedServer(proc, timeoutMs = 5000) {
   });
 }
 
+async function resolveManagedTarget(baseReason) {
+  const candidateErrors = [];
+  for (let offset = 0; offset < bootstrapPortRange; offset += 1) {
+    const candidatePort = bootstrapServerPort + offset;
+    const candidateUrl = `http://127.0.0.1:${candidatePort}`;
+
+    // Reuse healthy candidate if already running and matching expected API shape.
+    // eslint-disable-next-line no-await-in-loop
+    const existingProbe = await probeTarget(candidateUrl);
+    if (existingProbe.ok) {
+      return {
+        usedBaseUrl: candidateUrl,
+        requestedBaseUrl: baseUrl,
+        managedServer: null,
+        managedPort: candidatePort,
+        probeReason: baseReason || `existing_target_${existingProbe.reason}`
+      };
+    }
+
+    const managed = startManagedServer(candidatePort);
+    const managedStdErr = [];
+    managed.stderr.on('data', (chunk) => {
+      const line = String(chunk || '').trim();
+      if (!line) return;
+      if (managedStdErr.length < 20) managedStdErr.push(line);
+    });
+    const managedStdOut = [];
+    managed.stdout.on('data', (chunk) => {
+      const line = String(chunk || '').trim();
+      if (!line) return;
+      if (managedStdOut.length < 20) managedStdOut.push(line);
+    });
+
+    // eslint-disable-next-line no-await-in-loop
+    const stableResult = await waitForStableTarget(candidateUrl, {
+      timeout: managedTargetStartupTimeoutMs,
+      intervalMs: 500,
+      requiredConsecutivePasses: 3,
+      managedProcess: managed
+    });
+
+    if (stableResult.ok) {
+      return {
+        usedBaseUrl: candidateUrl,
+        requestedBaseUrl: baseUrl,
+        managedServer: managed,
+        managedPort: candidatePort,
+        probeReason: baseReason || stableResult.reason
+      };
+    }
+
+    const tail = [...managedStdOut.slice(-3), ...managedStdErr.slice(-3)].join(' | ');
+    candidateErrors.push(`port_${candidatePort}:${stableResult.reason}${tail ? `:${tail}` : ''}`);
+    // eslint-disable-next-line no-await-in-loop
+    await terminateManagedServer(managed);
+  }
+
+  throw new Error(`Managed target resolution failed: ${candidateErrors.join(' || ') || 'no_candidates'}`);
+}
+
 async function resolveLoadTarget() {
   if (preferManagedTarget) {
-    const managed = startManagedServer(bootstrapServerPort);
-    const managedBaseUrl = `http://127.0.0.1:${bootstrapServerPort}`;
-    const healthy = await waitForStableTarget(managedBaseUrl, 60000, 500, 3);
-    if (!healthy) {
-      await terminateManagedServer(managed);
-      throw new Error(`Managed target not stable on ${managedBaseUrl}`);
-    }
-    return {
-      usedBaseUrl: managedBaseUrl,
-      requestedBaseUrl: baseUrl,
-      managedServer: managed,
-      probeReason: 'managed_target_preferred'
-    };
+    return resolveManagedTarget('managed_target_preferred');
   }
 
   const initialProbe = await probeTarget(baseUrl);
@@ -371,34 +435,7 @@ async function resolveLoadTarget() {
     throw new Error(`Load target probe failed for ${baseUrl}: ${initialProbe.reason}`);
   }
 
-  const managed = startManagedServer(bootstrapServerPort);
-  const managedStdErr = [];
-  managed.stderr.on('data', (chunk) => {
-    const line = String(chunk || '').trim();
-    if (!line) return;
-    if (managedStdErr.length < 20) managedStdErr.push(line);
-  });
-  const managedStdOut = [];
-  managed.stdout.on('data', (chunk) => {
-    const line = String(chunk || '').trim();
-    if (!line) return;
-    if (managedStdOut.length < 20) managedStdOut.push(line);
-  });
-
-  const managedBaseUrl = `http://127.0.0.1:${bootstrapServerPort}`;
-  const healthy = await waitForStableTarget(managedBaseUrl, 60000, 500, 3);
-  if (!healthy) {
-    const tail = [...managedStdOut.slice(-5), ...managedStdErr.slice(-5)].join(' | ');
-    await terminateManagedServer(managed);
-    throw new Error(`Managed load target failed health check on ${managedBaseUrl}; logs=${tail || 'none'}`);
-  }
-
-  return {
-    usedBaseUrl: managedBaseUrl,
-    requestedBaseUrl: baseUrl,
-    managedServer: managed,
-    probeReason: initialProbe.reason
-  };
+  return resolveManagedTarget(initialProbe.reason);
 }
 
 async function bootstrapAuthSession() {
@@ -573,6 +610,7 @@ async function main() {
       baseUrl: activeBaseUrl,
       requestedBaseUrl: target.requestedBaseUrl,
       targetSource: target.managedServer ? 'managed_server' : 'external_target',
+      managedPort: target.managedPort || null,
       targetProbeReason: target.probeReason,
       timeoutMs,
       scenarios,

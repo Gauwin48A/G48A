@@ -1,0 +1,222 @@
+{
+  "generatedAt": "2026-02-28T05:46:29.179Z",
+  "scenarios": [
+    {
+      "scenario": "ready",
+      "baseUrl": "http://127.0.0.1:5071",
+      "statusCode": 200,
+      "readinessStatus": "ready",
+      "checks": {
+        "requiredConfig": {
+          "status": "pass",
+          "required": [
+            "JWT_SECRET",
+            "REFRESH_SECRET",
+            "DB_HOST",
+            "DB_PORT",
+            "DB_NAME",
+            "DB_USER"
+          ],
+          "missing": []
+        },
+        "db": {
+          "status": "pass",
+          "latencyMs": 3
+        },
+        "cache": {
+          "status": "pass",
+          "details": {
+            "status": "healthy",
+            "type": "redis",
+            "latency": 2,
+            "message": "Redis distributed cache active"
+          }
+        },
+        "sessionStore": {
+          "status": "pass",
+          "mode": "memory-fallback",
+          "reason": "memory fallback explicitly allowed for readiness scenario"
+        },
+        "snapshot": {
+          "status": "pass",
+          "configured": true,
+          "path": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\directory_snapshot_fresh.json",
+          "lastModified": "2026-02-28T05:46:19.539Z",
+          "ageHours": 0,
+          "maxAgeHours": 72
+        }
+      },
+      "startupLogs": {
+        "stdout": [
+          "[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops",
+          "⚠️ Pusher: Not configured (will use Socket.io fallback)",
+          "🛡️ Operation Polish: Security & Performance middleware loaded",
+          "[CRON] Initializing CRON jobs...",
+          "- Post expiry (tier-based): Daily at 00:00 IST",
+          "- Expiry warnings: Daily at 09:00 IST",
+          "- Subscription expiry: Daily at 10:00 IST",
+          "- Transaction expiry: Hourly",
+          "- Payment reconciliation: Every 2 hours at :20",
+          "- Offer expiry (48h): Hourly at :30",
+          "- Daily digest: Daily at 09:30 IST",
+          "- Fraud batch review: Every 6 hours",
+          "- Complaint auto-resolution: Daily at 02:00 IST\n[CRON] CRON jobs initialized",
+          "📁 Static file caching configured",
+          "✅ Database connected successfully",
+          "[INFO] [SchemaGuard] User tier columns verified",
+          "[2026-02-28 11:16:21.781 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m✅ Server running on port 5071\u001b[39m",
+          "[2026-02-28 11:16:21.781 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🚀 System Online: Enforced Architecture\u001b[39m\n[2026-02-28 11:16:21.885 +0530] \u001b[32mINFO\u001b[39m: \u001b[36mTier schema check complete\u001b[39m",
+          "[Redis] Connected successfully",
+          "[Redis] Ready for distributed caching"
+        ],
+        "stderr": []
+      }
+    },
+    {
+      "scenario": "degraded_snapshot_stale",
+      "baseUrl": "http://127.0.0.1:5062",
+      "statusCode": 200,
+      "readinessStatus": "degraded",
+      "checks": {
+        "requiredConfig": {
+          "status": "pass",
+          "required": [
+            "JWT_SECRET",
+            "REFRESH_SECRET",
+            "DB_HOST",
+            "DB_PORT",
+            "DB_NAME",
+            "DB_USER"
+          ],
+          "missing": []
+        },
+        "db": {
+          "status": "pass",
+          "latencyMs": 3
+        },
+        "cache": {
+          "status": "pass",
+          "details": {
+            "status": "healthy",
+            "type": "redis",
+            "latency": 3,
+            "message": "Redis distributed cache active"
+          }
+        },
+        "sessionStore": {
+          "status": "pass",
+          "mode": "memory-fallback",
+          "reason": "memory fallback explicitly allowed for readiness scenario"
+        },
+        "snapshot": {
+          "status": "warn",
+          "configured": true,
+          "path": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\directory_snapshot_stale.json",
+          "lastModified": "2026-02-18T05:46:19.542Z",
+          "ageHours": 240,
+          "maxAgeHours": 1
+        }
+      },
+      "startupLogs": {
+        "stdout": [
+          "[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }",
+          "⚠️ Pusher: Not configured (will use Socket.io fallback)",
+          "🛡️ Operation Polish: Security & Performance middleware loaded",
+          "[CRON] Initializing CRON jobs...",
+          "- Post expiry (tier-based): Daily at 00:00 IST",
+          "- Expiry warnings: Daily at 09:00 IST",
+          "- Subscription expiry: Daily at 10:00 IST",
+          "- Transaction expiry: Hourly",
+          "- Payment reconciliation: Every 2 hours at :20",
+          "- Offer expiry (48h): Hourly at :30",
+          "- Daily digest: Daily at 09:30 IST",
+          "- Fraud batch review: Every 6 hours",
+          "- Complaint auto-resolution: Daily at 02:00 IST\n[CRON] CRON jobs initialized",
+          "📁 Static file caching configured",
+          "✅ Database connected successfully",
+          "[INFO] [SchemaGuard] User tier columns verified",
+          "[2026-02-28 11:16:25.373 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m✅ Server running on port 5062\u001b[39m",
+          "[2026-02-28 11:16:25.374 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🚀 System Online: Enforced Architecture\u001b[39m\n[2026-02-28 11:16:25.483 +0530] \u001b[32mINFO\u001b[39m: \u001b[36mTier schema check complete\u001b[39m",
+          "[Redis] Connected successfully",
+          "[Redis] Ready for distributed caching"
+        ],
+        "stderr": []
+      }
+    },
+    {
+      "scenario": "not_ready_missing_config",
+      "baseUrl": "http://127.0.0.1:5063",
+      "statusCode": 503,
+      "readinessStatus": "not_ready",
+      "checks": {
+        "requiredConfig": {
+          "status": "fail",
+          "required": [
+            "JWT_SECRET",
+            "REFRESH_SECRET",
+            "DB_HOST",
+            "DB_PORT",
+            "DB_NAME",
+            "DB_USER"
+          ],
+          "missing": [
+            "JWT_SECRET"
+          ]
+        },
+        "db": {
+          "status": "pass",
+          "latencyMs": 5
+        },
+        "cache": {
+          "status": "pass",
+          "details": {
+            "status": "healthy",
+            "type": "redis",
+            "latency": 4,
+            "message": "Redis distributed cache active"
+          }
+        },
+        "sessionStore": {
+          "status": "pass",
+          "mode": "memory-fallback",
+          "reason": "memory fallback explicitly allowed for readiness scenario"
+        },
+        "snapshot": {
+          "status": "pass",
+          "configured": true,
+          "path": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\artifacts\\directory_snapshot_fresh.json",
+          "lastModified": "2026-02-28T05:46:19.539Z",
+          "ageHours": 0,
+          "maxAgeHours": 72
+        }
+      },
+      "startupLogs": {
+        "stdout": [
+          "[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops",
+          "⚠️ Pusher: Not configured (will use Socket.io fallback)",
+          "🛡️ Operation Polish: Security & Performance middleware loaded",
+          "[CRON] Initializing CRON jobs...",
+          "- Post expiry (tier-based): Daily at 00:00 IST",
+          "- Expiry warnings: Daily at 09:00 IST",
+          "- Subscription expiry: Daily at 10:00 IST",
+          "- Transaction expiry: Hourly",
+          "- Payment reconciliation: Every 2 hours at :20",
+          "- Offer expiry (48h): Hourly at :30",
+          "- Daily digest: Daily at 09:30 IST",
+          "- Fraud batch review: Every 6 hours",
+          "- Complaint auto-resolution: Daily at 02:00 IST\n[CRON] CRON jobs initialized",
+          "📁 Static file caching configured",
+          "✅ Database connected successfully",
+          "[INFO] [SchemaGuard] User tier columns verified",
+          "[2026-02-28 11:16:28.640 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m✅ Server running on port 5063\u001b[39m",
+          "[2026-02-28 11:16:28.640 +0530] \u001b[32mINFO\u001b[39m: \u001b[36m🚀 System Online: Enforced Architecture\u001b[39m\n[2026-02-28 11:16:28.796 +0530] \u001b[32mINFO\u001b[39m: \u001b[36mTier schema check complete\u001b[39m",
+          "[Redis] Connected successfully",
+          "[Redis] Ready for distributed caching"
+        ],
+        "stderr": [
+          "[JWT] Generated temporary access secret - set env vars for persistence."
+        ]
+      }
+    }
+  ]
+}

@@ -10,6 +10,8 @@
     "test:e2e:journeys": "jest --runInBand tests/e2e/top10_user_journeys.e2e.test.js",
     "test:auth:integration": "jest --runInBand --openHandlesTimeout=10000 tests/auth.real.integration.test.js",
     "test:waf": "jest --runInBand tests/waf.enforcement.test.js",
+    "check:route-contract": "node scripts/check-route-contract.js",
+    "check:runtime-contract": "node scripts/probe-runtime-contract.js",
     "load:test:dry-run": "node tests/load/simple_load_runner.js --dry-run true",
     "load:test": "node tests/load/simple_load_runner.js",
     "readiness:probe-matrix": "node scripts/probe_readiness_matrix.js",

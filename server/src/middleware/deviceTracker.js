@@ -5,6 +5,17 @@
 const crypto = require('crypto');
 const pool = require('../config/db');
 const { logSecurityEvent, EVENTS } = require('../config/auditLogger');
+const logger = require('../utils/logger');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
 
 /**
  * Generate device fingerprint from request headers
@@ -65,14 +76,25 @@ const checkDevice = async (userId, req) => {
 
     try {
         // Check if device exists
-        const result = await pool.query(`
-            SELECT * FROM user_devices 
+        const result = await runQuery(`
+            SELECT
+                id,
+                user_id,
+                fingerprint,
+                device_type,
+                os,
+                browser,
+                ip_address,
+                first_seen,
+                last_seen,
+                is_trusted
+            FROM user_devices
             WHERE user_id = $1 AND fingerprint = $2
         `, [userId, fingerprint]);
 
         if (result.rows.length === 0) {
             // New device - insert it
-            await pool.query(`
+            await runQuery(`
                 INSERT INTO user_devices (user_id, fingerprint, device_type, os, browser, ip_address)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (user_id, fingerprint) DO NOTHING
@@ -89,14 +111,14 @@ const checkDevice = async (userId, req) => {
         }
 
         // Update last seen
-        await pool.query(`
+        await runQuery(`
             UPDATE user_devices SET last_seen = NOW(), ip_address = $3
             WHERE user_id = $1 AND fingerprint = $2
         `, [userId, fingerprint, ip]);
 
         return { isNew: false, deviceInfo: result.rows[0] };
     } catch (err) {
-        console.error('[DeviceTracker] Error:', err.message);
+        logger.error('[DeviceTracker] Error:', err.message);
         return { isNew: false, deviceInfo: { fingerprint, ...deviceInfo } };
     }
 };

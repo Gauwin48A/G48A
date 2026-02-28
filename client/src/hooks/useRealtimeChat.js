@@ -6,13 +6,15 @@
  * Chat runs without loading the Node.js server
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Pusher from 'pusher-js';
 import api from '../lib/api';
 
 // Pusher config from environment
 const PUSHER_KEY = import.meta.env.VITE_PUSHER_KEY;
 const PUSHER_CLUSTER = import.meta.env.VITE_PUSHER_CLUSTER || 'ap2';
+const DEFAULT_PAGE = 1;
+const PAGE_SIZE = 50;
 
 /**
  * Realtime chat hook with optimistic UI
@@ -28,11 +30,24 @@ export const useRealtimeChat = (roomId, userId) => {
     const pusherRef = useRef(null);
     const channelRef = useRef(null);
     const pendingMessages = useRef(new Set());
+    const loadMoreInFlightRef = useRef(false);
+    const fetchRequestIdRef = useRef(0);
+    const markReadInFlightRef = useRef(false);
+    const userIdAsNumber = useMemo(() => {
+        const parsed = Number.parseInt(userId, 10);
+        return Number.isNaN(parsed) ? null : parsed;
+    }, [userId]);
+    const normalizedRoomId = useMemo(
+        () => (roomId === undefined || roomId === null ? '' : String(roomId).trim()),
+        [roomId]
+    );
 
     // Initialize Pusher connection
     useEffect(() => {
-        if (!roomId || !PUSHER_KEY) {
-            console.log('[Chat] Pusher not configured, using polling fallback');
+        if (!normalizedRoomId || !PUSHER_KEY) {
+            if (import.meta.env.DEV) {
+                console.log('[Chat] Pusher not configured, using polling fallback');
+            }
             return;
         }
 
@@ -42,108 +57,161 @@ export const useRealtimeChat = (roomId, userId) => {
                 forceTLS: true
             });
 
-            channelRef.current = pusherRef.current.subscribe(`chat-room-${roomId}`);
+            const channelName = `chat-room-${normalizedRoomId}`;
+            channelRef.current = pusherRef.current.subscribe(channelName);
 
             channelRef.current.bind('pusher:subscription_succeeded', () => {
-                console.log('[Chat] Connected to room:', roomId);
+                if (import.meta.env.DEV) {
+                    console.log('[Chat] Connected to room:', normalizedRoomId);
+                }
                 setIsConnected(true);
             });
 
             channelRef.current.bind('pusher:subscription_error', (err) => {
-                console.error('[Chat] Subscription error:', err);
+                if (import.meta.env.DEV) {
+                    console.error('[Chat] Subscription error:', err);
+                }
                 setError('Failed to connect to chat');
             });
 
             // Listen for new messages
             channelRef.current.bind('new-message', (data) => {
+                const incomingIdRaw = data?.id ?? data?.message_id;
+                const incomingId = incomingIdRaw === undefined || incomingIdRaw === null
+                    ? ''
+                    : String(incomingIdRaw);
                 // Skip if this is our own message (already added optimistically)
-                if (pendingMessages.current.has(data.id)) {
-                    pendingMessages.current.delete(data.id);
+                if (incomingId && pendingMessages.current.has(incomingId)) {
+                    pendingMessages.current.delete(incomingId);
                     return;
                 }
 
-                setMessages(prev => [...prev, {
-                    message_id: data.id,
-                    content: data.content,
-                    sender_id: data.senderId,
-                    created_at: data.createdAt,
-                    is_realtime: true
-                }]);
+                setMessages((prev) => {
+                    const normalizedIncomingId = incomingId || `${data?.senderId || ''}-${data?.createdAt || Date.now()}`;
+                    if (prev.some((msg) => String(msg.message_id || msg.id) === String(normalizedIncomingId))) {
+                        return prev;
+                    }
+
+                    return [...prev, {
+                        message_id: normalizedIncomingId,
+                        content: data?.content || '',
+                        sender_id: data?.senderId,
+                        created_at: data?.createdAt || new Date().toISOString(),
+                        is_realtime: true
+                    }];
+                });
             });
 
         } catch (err) {
-            console.error('[Chat] Pusher init error:', err);
+            if (import.meta.env.DEV) {
+                console.error('[Chat] Pusher init error:', err);
+            }
             setError('Failed to initialize chat');
         }
 
         return () => {
+            setIsConnected(false);
             if (channelRef.current) {
                 channelRef.current.unbind_all();
-                pusherRef.current?.unsubscribe(`chat-room-${roomId}`);
+                pusherRef.current?.unsubscribe(`chat-room-${normalizedRoomId}`);
             }
             if (pusherRef.current) {
                 pusherRef.current.disconnect();
             }
         };
-    }, [roomId]);
+    }, [normalizedRoomId]);
 
     // Fetch initial messages
     useEffect(() => {
-        if (!roomId) return;
+        if (!normalizedRoomId) {
+            setMessages([]);
+            setHasMore(true);
+            setPage(DEFAULT_PAGE);
+            setIsLoading(false);
+            return;
+        }
 
         const fetchMessages = async () => {
+            const requestId = ++fetchRequestIdRef.current;
             try {
                 setIsLoading(true);
-                const token = localStorage.getItem('authToken');
-                const res = await api.get(`/api/chat/conversations/${roomId}?page=1&limit=50`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                setError(null);
+                const response = await api.get(`/api/chat/conversations/${encodeURIComponent(normalizedRoomId)}`, {
+                    params: { page: DEFAULT_PAGE, limit: PAGE_SIZE }
                 });
+                if (requestId !== fetchRequestIdRef.current) {
+                    return;
+                }
 
-                setMessages(res.data.messages || []);
-                setHasMore((res.data.messages || []).length === 50);
+                const payload = response?.data ?? response;
+                const initialMessages = Array.isArray(payload?.messages) ? payload.messages : [];
+
+                setMessages(initialMessages);
+                setHasMore(initialMessages.length === PAGE_SIZE);
+                setPage(DEFAULT_PAGE);
             } catch (err) {
-                console.error('[Chat] Fetch error:', err);
+                if (import.meta.env.DEV) {
+                    console.error('[Chat] Fetch error:', err);
+                }
                 setError('Failed to load messages');
             } finally {
-                setIsLoading(false);
+                if (requestId === fetchRequestIdRef.current) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchMessages();
-    }, [roomId]);
+    }, [normalizedRoomId]);
 
     // Load older messages (infinite scroll upward)
     const loadMore = useCallback(async () => {
-        if (!hasMore || isLoading) return;
+        if (!normalizedRoomId || !hasMore || isLoading || loadMoreInFlightRef.current) return;
+        loadMoreInFlightRef.current = true;
 
         try {
             const nextPage = page + 1;
-            const token = localStorage.getItem('authToken');
-            const res = await api.get(`/api/chat/conversations/${roomId}?page=${nextPage}&limit=50`, {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await api.get(`/api/chat/conversations/${encodeURIComponent(normalizedRoomId)}`, {
+                params: { page: nextPage, limit: PAGE_SIZE }
             });
 
-            const olderMessages = res.data.messages || [];
+            const payload = response?.data ?? response;
+            const olderMessages = Array.isArray(payload?.messages) ? payload.messages : [];
             if (olderMessages.length > 0) {
-                setMessages(prev => [...olderMessages, ...prev]);
+                setMessages((prev) => {
+                    const knownIds = new Set(prev.map((msg) => String(msg.message_id || msg.id)));
+                    const dedupedOlder = olderMessages.filter((msg) => {
+                        const msgId = String(msg.message_id || msg.id);
+                        if (!msgId) return true;
+                        if (knownIds.has(msgId)) return false;
+                        knownIds.add(msgId);
+                        return true;
+                    });
+                    return [...dedupedOlder, ...prev];
+                });
                 setPage(nextPage);
             }
-            setHasMore(olderMessages.length === 50);
+            setHasMore(olderMessages.length === PAGE_SIZE);
         } catch (err) {
-            console.error('[Chat] Load more error:', err);
+            if (import.meta.env.DEV) {
+                console.error('[Chat] Load more error:', err);
+            }
+        } finally {
+            loadMoreInFlightRef.current = false;
         }
-    }, [roomId, page, hasMore, isLoading]);
+    }, [normalizedRoomId, page, hasMore, isLoading]);
 
     // Send message with optimistic update
     const sendMessage = useCallback(async (content, receiverId) => {
-        if (!content.trim()) return { success: false, error: 'Empty message' };
+        const normalizedContent = String(content || '').trim();
+        if (!normalizedContent) return { success: false, error: 'Empty message' };
 
         // Generate temporary ID for optimistic update
         const tempId = `temp-${Date.now()}`;
         const optimisticMessage = {
             message_id: tempId,
-            content,
-            sender_id: parseInt(userId),
+            content: normalizedContent,
+            sender_id: userIdAsNumber,
             created_at: new Date().toISOString(),
             is_pending: true
         };
@@ -153,27 +221,41 @@ export const useRealtimeChat = (roomId, userId) => {
         pendingMessages.current.add(tempId);
 
         try {
-            const token = localStorage.getItem('authToken');
-            const res = await api.post('/api/chat/send', {
+            const response = await api.post('/api/chat/send', {
                 receiverId,
-                content,
-                conversationId: roomId
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
+                content: normalizedContent,
+                conversationId: normalizedRoomId
             });
 
             // Update the optimistic message with real data
-            const realMessage = res.data.data;
+            const payload = response?.data ?? response;
+            const messagePayload = (payload && typeof payload === 'object')
+                ? (payload.data || (typeof payload.message === 'object' ? payload.message : null))
+                : null;
+            const normalizedMessageId = messagePayload?.message_id || messagePayload?.id;
+            const realMessage = messagePayload
+                ? { ...messagePayload, message_id: normalizedMessageId || messagePayload.message_id }
+                : null;
+
             pendingMessages.current.delete(tempId);
-            pendingMessages.current.add(realMessage.message_id);
+            if (realMessage?.message_id) {
+                const realId = String(realMessage.message_id);
+                pendingMessages.current.add(realId);
+                // Keep pending-tracking bounded if realtime echo never arrives.
+                setTimeout(() => pendingMessages.current.delete(realId), 30 * 1000);
+            }
+
+            if (pendingMessages.current.size > 500) {
+                pendingMessages.current = new Set(Array.from(pendingMessages.current).slice(-250));
+            }
 
             setMessages(prev => prev.map(msg =>
                 msg.message_id === tempId
-                    ? { ...realMessage, is_pending: false }
+                    ? { ...(realMessage || msg), is_pending: false }
                     : msg
             ));
 
-            return { success: true, message: realMessage };
+            return { success: true, message: realMessage || optimisticMessage };
 
         } catch (err) {
             // Mark message as failed
@@ -186,7 +268,7 @@ export const useRealtimeChat = (roomId, userId) => {
 
             return { success: false, error: err.message };
         }
-    }, [roomId, userId]);
+    }, [normalizedRoomId, userIdAsNumber]);
 
     // Retry failed message
     const retryMessage = useCallback(async (messageId, content, receiverId) => {
@@ -198,15 +280,22 @@ export const useRealtimeChat = (roomId, userId) => {
 
     // Mark messages as read
     const markAsRead = useCallback(async () => {
+        if (!normalizedRoomId || markReadInFlightRef.current) return;
+        markReadInFlightRef.current = true;
+
         try {
-            const token = localStorage.getItem('authToken');
-            await api.post(`/api/chat/read/${roomId}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
+            // Backend marks messages read when the conversation is fetched.
+            await api.get(`/api/chat/conversations/${encodeURIComponent(normalizedRoomId)}`, {
+                params: { page: 1, limit: 1 }
             });
         } catch (err) {
-            console.error('[Chat] Mark read error:', err);
+            if (import.meta.env.DEV) {
+                console.error('[Chat] Mark read error:', err);
+            }
+        } finally {
+            markReadInFlightRef.current = false;
         }
-    }, [roomId]);
+    }, [normalizedRoomId]);
 
     return {
         messages,

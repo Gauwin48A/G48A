@@ -9,8 +9,18 @@ const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const bcrypt = require('bcrypt');
 const pool = require('../config/db');
+const logger = require('../utils/logger');
 
 const APP_NAME = 'MHub';
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
 
 /**
  * Generate a new 2FA secret for a user
@@ -77,7 +87,7 @@ const setup2FA = async (req, res) => {
         }
 
         // Check if already enabled
-        const existingCheck = await pool.query(
+        const existingCheck = await runQuery(
             'SELECT two_factor_enabled FROM users WHERE user_id = $1',
             [userId]
         );
@@ -98,7 +108,7 @@ const setup2FA = async (req, res) => {
         );
 
         // Store secret temporarily (pending verification)
-        await pool.query(
+        await runQuery(
             `UPDATE users SET two_factor_secret = $1, backup_codes = $2 WHERE user_id = $3`,
             [secret, hashedBackupCodes, userId]
         );
@@ -112,7 +122,7 @@ const setup2FA = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[2FA] Setup error:', error);
+        logger.error('[2FA] Setup error:', error);
         res.status(500).json({ error: 'Failed to setup 2FA' });
     }
 };
@@ -131,7 +141,7 @@ const verify2FA = async (req, res) => {
         }
 
         // Get secret from database
-        const result = await pool.query(
+        const result = await runQuery(
             'SELECT two_factor_secret FROM users WHERE user_id = $1',
             [userId]
         );
@@ -145,13 +155,13 @@ const verify2FA = async (req, res) => {
 
         if (isValid) {
             // Mark 2FA as enabled in database
-            await pool.query(
+            await runQuery(
                 'UPDATE users SET two_factor_enabled = true WHERE user_id = $1',
                 [userId]
             );
 
             // Log the security event
-            console.log(`[2FA] Enabled for user ${userId}`);
+            logger.info(`[2FA] Enabled for user ${userId}`);
 
             res.json({
                 success: true,
@@ -165,7 +175,7 @@ const verify2FA = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('[2FA] Verification error:', error);
+        logger.error('[2FA] Verification error:', error);
         res.status(500).json({ error: 'Verification failed' });
     }
 };
@@ -184,7 +194,7 @@ const challenge2FA = async (req, res) => {
         }
 
         // Get secret and backup codes from database
-        const result = await pool.query(
+        const result = await runQuery(
             'SELECT two_factor_secret, two_factor_enabled, backup_codes FROM users WHERE user_id = $1',
             [userId]
         );
@@ -207,7 +217,7 @@ const challenge2FA = async (req, res) => {
                     // Remove used backup code
                     const updatedCodes = [...user.backup_codes];
                     updatedCodes.splice(i, 1);
-                    await pool.query(
+                    await runQuery(
                         'UPDATE users SET backup_codes = $1 WHERE user_id = $2',
                         [updatedCodes, userId]
                     );
@@ -223,7 +233,7 @@ const challenge2FA = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('[2FA] Challenge error:', error);
+        logger.error('[2FA] Challenge error:', error);
         res.status(500).json({ error: '2FA challenge failed' });
     }
 };
@@ -242,7 +252,7 @@ const disable2FA = async (req, res) => {
         }
 
         // Get and verify current 2FA secret
-        const result = await pool.query(
+        const result = await runQuery(
             'SELECT two_factor_secret, two_factor_enabled FROM users WHERE user_id = $1',
             [userId]
         );
@@ -257,12 +267,12 @@ const disable2FA = async (req, res) => {
         }
 
         // Disable 2FA
-        await pool.query(
+        await runQuery(
             'UPDATE users SET two_factor_enabled = false, two_factor_secret = null, backup_codes = null WHERE user_id = $1',
             [userId]
         );
 
-        console.log(`[2FA] Disabled for user ${userId}`);
+        logger.info(`[2FA] Disabled for user ${userId}`);
 
         res.json({
             success: true,
@@ -270,7 +280,7 @@ const disable2FA = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[2FA] Disable error:', error);
+        logger.error('[2FA] Disable error:', error);
         res.status(500).json({ error: 'Failed to disable 2FA' });
     }
 };
@@ -284,7 +294,7 @@ const require2FA = async (req, res, next) => {
         if (!userId) return next();
 
         // Check if 2FA is enabled for this user
-        const result = await pool.query(
+        const result = await runQuery(
             'SELECT two_factor_enabled FROM users WHERE user_id = $1',
             [userId]
         );
@@ -303,7 +313,7 @@ const require2FA = async (req, res, next) => {
             requiresTwoFactor: true
         });
     } catch (error) {
-        console.error('[2FA] Middleware error:', error);
+        logger.error('[2FA] Middleware error:', error);
         next(); // Fail open
     }
 };

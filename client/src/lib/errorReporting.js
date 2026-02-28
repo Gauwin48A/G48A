@@ -1,0 +1,77 @@
+import { buildApiPath } from '@/lib/networkConfig';
+const MAX_ERRORS_PER_SESSION = 20;
+let initialized = false;
+let sentCount = 0;
+
+function buildEndpointUrl() {
+  return buildApiPath('/analytics/client-error');
+}
+
+function isReportingEnabled() {
+  const explicitToggle = String(import.meta.env.VITE_ENABLE_ERROR_REPORTING || '').toLowerCase() === 'true';
+  const sentryDsnProvided = Boolean(String(import.meta.env.VITE_SENTRY_DSN || '').trim());
+  return explicitToggle || sentryDsnProvided;
+}
+
+function sendError(payload) {
+  if (!isReportingEnabled() || sentCount >= MAX_ERRORS_PER_SESSION) return;
+  sentCount += 1;
+
+  const endpoint = buildEndpointUrl();
+  const body = JSON.stringify(payload);
+
+  try {
+    if (navigator?.sendBeacon) {
+      const blob = new Blob([body], { type: 'application/json' });
+      const beaconSent = navigator.sendBeacon(endpoint, blob);
+      if (beaconSent) return;
+    }
+  } catch {
+    // Fall back to fetch.
+  }
+
+  const token = localStorage.getItem('authToken');
+  fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    credentials: 'include',
+    keepalive: true,
+    body
+  }).catch(() => {
+    // Avoid recursive error handling loops.
+  });
+}
+
+function createPayload(errorLike, source) {
+  const message = String(errorLike?.message || errorLike || 'Unknown client error');
+  const stack = String(errorLike?.stack || '');
+  return {
+    source,
+    message: message.slice(0, 500),
+    stack: stack.slice(0, 5000),
+    page: window.location.href,
+    userAgent: navigator.userAgent,
+    timestamp: new Date().toISOString()
+  };
+}
+
+export function reportRuntimeError(errorLike, source = 'runtime') {
+  sendError(createPayload(errorLike, source));
+}
+
+export function initErrorReporting() {
+  if (initialized || !isReportingEnabled()) return;
+  initialized = true;
+
+  window.addEventListener('error', (event) => {
+    reportRuntimeError(event.error || event.message, 'window.error');
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    reportRuntimeError(event.reason || 'Unhandled promise rejection', 'window.unhandledrejection');
+  });
+}
+

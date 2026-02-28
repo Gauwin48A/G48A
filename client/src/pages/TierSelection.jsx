@@ -7,12 +7,12 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Star, Shield, Zap, Crown, Clock, TrendingUp, Sparkles } from 'lucide-react';
+import { Check, Shield, Crown, Clock, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import api from '@/lib/api';
+import { getAccessToken, getUserId } from '@/utils/authStorage';
 
 const TierSelection = () => {
   const navigate = useNavigate();
@@ -20,11 +20,11 @@ const TierSelection = () => {
   const [success, setSuccess] = useState(null);
 
   const handleSelectTier = async (tier) => {
-    const userId = localStorage.getItem('userId');
-    const token = localStorage.getItem('authToken');
+    const userId = getUserId();
+    const token = getAccessToken();
 
     if (!userId || !token) {
-      navigate('/login', { state: { returnTo: '/tiers' } });
+      navigate('/login', { state: { returnTo: '/tier-selection' } });
       return;
     }
 
@@ -33,25 +33,11 @@ const TierSelection = () => {
     try {
       // In production, this would trigger Razorpay/Stripe payment
       // For MVP, we simulate success and update DB directly
-      const response = await fetch(`${API_BASE}/api/users/upgrade-tier`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include',
-        body: JSON.stringify({ tier })
-      });
-
-      if (response.ok) {
-        setSuccess(tier);
-        setTimeout(() => {
-          navigate('/add-post');
-        }, 1500);
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Failed to upgrade tier');
-      }
+      await api.post('/users/upgrade-tier', { tier });
+      setSuccess(tier);
+      setTimeout(() => {
+        navigate(`/add-post?tier=${encodeURIComponent(tier)}`);
+      }, 800);
     } catch (err) {
       console.error('Tier upgrade error:', err);
       alert('Failed to upgrade. Please try again.');

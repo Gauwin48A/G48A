@@ -1,5 +1,6 @@
 // postController.js
 const db = require('../db');
+const logger = require('../../utils/logger');
 
 // Get all posts for the main feed
 exports.getAllPosts = async (req, res) => {
@@ -38,7 +39,7 @@ exports.getAllPosts = async (req, res) => {
 
     res.json({ posts: formattedPosts, total: formattedPosts.length });
   } catch (err) {
-    console.error('Error fetching all posts:', err);
+    logger.error('Error fetching all posts:', err);
     res.status(500).json({ error: 'An internal server error occurred' });
   }
 };
@@ -145,7 +146,7 @@ exports.getPostById = async (req, res) => {
 
     res.json(formattedPost);
   } catch (err) {
-    console.error('Error fetching post by ID:', err);
+    logger.error('Error fetching post by ID:', err);
     res.status(500).json({ error: 'An internal server error occurred' });
   }
 };

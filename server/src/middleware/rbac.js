@@ -6,6 +6,21 @@
  */
 
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+function getRequestUserId(req) {
+    return String(req.user?.user_id || req.user?.userId || req.user?.id || '').trim() || null;
+}
 
 /**
  * Check if user has required role
@@ -15,18 +30,22 @@ const requireRole = (...allowedRoles) => {
     return async (req, res, next) => {
         try {
             // User must be authenticated first
-            if (!req.user || !req.user.user_id) {
+            const userId = getRequestUserId(req);
+            if (!req.user || !userId) {
                 return res.status(401).json({
                     error: 'Authentication required',
                     code: 'AUTH_REQUIRED'
                 });
             }
 
-            const userId = req.user.user_id;
-
             // Get user's role from database
-            const result = await pool.query(
-                'SELECT role FROM users WHERE user_id = $1',
+            const result = await runQuery(
+                `
+                    SELECT COALESCE(NULLIF(to_jsonb(u)->>'role', ''), 'user') AS role
+                    FROM users u
+                    WHERE u.user_id::text = $1
+                    LIMIT 1
+                `,
                 [userId]
             );
 
@@ -37,14 +56,14 @@ const requireRole = (...allowedRoles) => {
                 });
             }
 
-            const userRole = result.rows[0].role || 'user';
+            const userRole = String(result.rows[0].role || 'user').toLowerCase();
 
             // Flatten allowed roles array
-            const roles = allowedRoles.flat();
+            const roles = allowedRoles.flat().map((role) => String(role || '').toLowerCase()).filter(Boolean);
 
             // Check if user's role is in allowed roles
             if (!roles.includes(userRole)) {
-                console.log(`[RBAC] Access denied: User ${userId} with role '${userRole}' tried to access route requiring ${roles.join('/')}`);
+                logger.info(`[RBAC] Access denied: User ${userId} with role '${userRole}' tried to access route requiring ${roles.join('/')}`);
                 return res.status(403).json({
                     error: 'Access denied. Insufficient permissions.',
                     code: 'FORBIDDEN',
@@ -57,7 +76,7 @@ const requireRole = (...allowedRoles) => {
             req.userRole = userRole;
             next();
         } catch (error) {
-            console.error('[RBAC] Error checking role:', error);
+            logger.error('[RBAC] Error checking role:', error);
             return res.status(500).json({
                 error: 'Authorization check failed',
                 code: 'RBAC_ERROR'
@@ -81,13 +100,14 @@ const requireSeller = requireRole('seller', 'admin', 'superadmin');
  */
 const requireVerified = async (req, res, next) => {
     try {
-        if (!req.user?.user_id) {
+        const userId = getRequestUserId(req);
+        if (!userId) {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        const result = await pool.query(
-            'SELECT is_verified FROM users WHERE user_id = $1',
-            [req.user.user_id]
+        const result = await runQuery(
+            'SELECT is_verified FROM users WHERE user_id::text = $1',
+            [userId]
         );
 
         if (result.rows.length === 0 || !result.rows[0].is_verified) {
@@ -99,7 +119,7 @@ const requireVerified = async (req, res, next) => {
 
         next();
     } catch (error) {
-        console.error('[RBAC] Verification check error:', error);
+        logger.error('[RBAC] Verification check error:', error);
         return res.status(500).json({ error: 'Verification check failed' });
     }
 };

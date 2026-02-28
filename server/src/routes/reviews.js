@@ -16,6 +16,15 @@ router.post('/', protect, reviewsController.createReview);
 // Protected: Mark review as helpful
 router.patch('/:reviewId/helpful', protect, reviewsController.markReviewHelpful);
 
+// Protected: Seller response to review
+router.post('/:reviewId/respond', protect, reviewsController.respondToReview);
+
+// Protected: User flags review for abuse
+router.post('/:reviewId/flag', protect, reviewsController.flagReview);
+
+// Protected: Admin/moderator hide/unhide
+router.patch('/:reviewId/moderate', protect, reviewsController.moderateReviewVisibility);
+
 // Protected: Delete own review
 router.delete('/:reviewId', protect, reviewsController.deleteReview);
 

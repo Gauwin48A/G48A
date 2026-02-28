@@ -14,6 +14,8 @@ import { getBestAvailableLocation } from '../services/locationService';
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 const PAGE_SIZE = 20;
 
+const hasValue = (value) => value !== undefined && value !== null && value !== '';
+
 /**
  * Custom hook for efficient feed fetching with caching
  */
@@ -39,29 +41,36 @@ export const useFeed = (options = {}) => {
     ], [category, minPrice, maxPrice, sortBy, lat, lng, radius, searchQuery]);
 
     // Fetch function
-    const fetchPosts = async ({ pageParam = 1 }) => {
+    const fetchPosts = async ({ pageParam = 1, signal }) => {
         const params = new URLSearchParams({
             page: pageParam.toString(),
-            limit: PAGE_SIZE.toString(),
-            ...(category && { category }),
-            ...(minPrice && { minPrice: minPrice.toString() }),
-            ...(maxPrice && { maxPrice: maxPrice.toString() }),
-            ...(sortBy && { sortBy }),
-            ...(lat && { lat: lat.toString() }),
-            ...(lng && { lng: lng.toString() }),
-            ...(radius && { radius: radius.toString() }),
-            ...(searchQuery && { q: searchQuery })
+            limit: PAGE_SIZE.toString()
         });
 
-        const endpoint = lat && lng
+        if (hasValue(category)) params.set('category', String(category));
+        if (hasValue(minPrice)) params.set('minPrice', String(minPrice));
+        if (hasValue(maxPrice)) params.set('maxPrice', String(maxPrice));
+        if (hasValue(sortBy)) params.set('sortBy', String(sortBy));
+        if (hasValue(lat)) params.set('lat', String(lat));
+        if (hasValue(lng)) params.set('lng', String(lng));
+        if (hasValue(radius)) params.set('radius', String(radius));
+        if (hasValue(searchQuery)) params.set('search', String(searchQuery));
+
+        const hasCoordinates = hasValue(lat) && hasValue(lng);
+        const endpoint = hasCoordinates
             ? `/api/posts/nearby-v2?${params}`
             : `/api/posts?${params}`;
 
-        const response = await api.get(endpoint);
+        const response = await api.get(endpoint, { signal });
+        const payload = response?.data ?? response;
+        const feedPosts = Array.isArray(payload?.posts)
+            ? payload.posts
+            : (Array.isArray(payload) ? payload : []);
+
         return {
-            posts: response.data.posts || response.data || [],
+            posts: feedPosts,
             page: pageParam,
-            hasMore: (response.data.posts || response.data || []).length === PAGE_SIZE
+            hasMore: feedPosts.length === PAGE_SIZE
         };
     };
 
@@ -78,14 +87,16 @@ export const useFeed = (options = {}) => {
         isRefetching
     } = useInfiniteQuery({
         queryKey,
+        initialPageParam: 1,
         queryFn: fetchPosts,
         getNextPageParam: (lastPage) =>
             lastPage.hasMore ? lastPage.page + 1 : undefined,
-        staleTime: 0, // ALWAYS stale - ensures fresh data on every mount
-        gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
+        staleTime: STALE_TIME,
+        gcTime: STALE_TIME * 2,
         enabled,
-        refetchOnMount: 'always', // FORCE refetch on every page load
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
         retry: 2
     });
 
@@ -115,9 +126,8 @@ export const useFeed = (options = {}) => {
 
     // Invalidate cache and refetch
     const refresh = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['feed'] });
-        refetch();
-    }, [queryClient, refetch]);
+        return refetch();
+    }, [refetch]);
 
     return {
         posts,

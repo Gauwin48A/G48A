@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -7,8 +7,29 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LoginPromptModal from '@/components/LoginPromptModal';
 import { translatePosts } from '@/utils/translateContent';
+import { useAuth } from '@/context/AuthContext';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const GUEST_POST_LIMIT = 5; // Limit posts for non-logged-in users
+
+const getPostKey = (post) => post?.post_id ?? post?.id ?? null;
+
+const mergeUniquePosts = (existingPosts, incomingPosts) => {
+  const mergedMap = new Map();
+  existingPosts.forEach((post) => {
+    const key = getPostKey(post);
+    if (key !== null) {
+      mergedMap.set(String(key), post);
+    }
+  });
+  incomingPosts.forEach((post) => {
+    const key = getPostKey(post);
+    if (key !== null) {
+      mergedMap.set(String(key), post);
+    }
+  });
+  return Array.from(mergedMap.values());
+};
 
 const FeedPage = () => {
   const { t, i18n } = useTranslation();
@@ -19,7 +40,19 @@ const FeedPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const postsPerPage = 10;
+  const shuffleSeedRef = useRef(Date.now());
+  const activeRequestIdRef = useRef(0);
+  const fetchAbortControllerRef = useRef(null);
+  const scrollTickingRef = useRef(false);
+  const shareToastTimeoutRef = useRef(null);
+  const loadingGuardRef = useRef(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const baseUrl = useMemo(() => getApiOriginBase(), []);
+  const usernameInitial = useMemo(
+    () => localStorage.getItem('username')?.[0]?.toUpperCase() || 'U',
+    []
+  );
 
   const [expandedPosts, setExpandedPosts] = useState({});
   const [likedPosts, setLikedPosts] = useState({});
@@ -28,29 +61,46 @@ const FeedPage = () => {
   const [shareToast, setShareToast] = useState("");
 
   // Guest user restrictions
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isLoggedIn = useMemo(
+    () => Boolean(user || localStorage.getItem('authToken') || localStorage.getItem('token')),
+    [user]
+  );
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // Check login status on mount
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId');
-    setIsLoggedIn(!!(token && userId));
+  useEffect(() => () => {
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort();
+    }
+    if (shareToastTimeoutRef.current) {
+      clearTimeout(shareToastTimeoutRef.current);
+    }
   }, []);
 
   // Fetch feed posts
   const fetchFeed = useCallback(async (isRefresh = false) => {
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+    loadingGuardRef.current = true;
+
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    fetchAbortControllerRef.current = abortController;
+
     try {
       setLoading(true);
       setError(null);
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
-      // Use cache buster and shuffle sort for fresh content
-      const cacheBuster = Date.now();
+      // Keep one shuffle seed across pagination; rotate seed only on manual refresh.
+      const activeShuffleSeed = isRefresh ? Date.now() : shuffleSeedRef.current;
+      if (isRefresh) {
+        shuffleSeedRef.current = activeShuffleSeed;
+      }
       const pageToFetch = isRefresh ? 1 : currentPage;
-      const url = `${baseUrl}/api/posts?page=${pageToFetch}&limit=${postsPerPage}&sortBy=shuffle&_t=${cacheBuster}`;
+      const url = `${baseUrl}/api/posts?page=${pageToFetch}&limit=${postsPerPage}&sortBy=shuffle&shuffleSeed=${activeShuffleSeed}`;
 
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: abortController.signal });
       if (!res.ok) throw new Error('Failed to fetch feed');
       const data = await res.json();
       let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
@@ -60,11 +110,15 @@ const FeedPage = () => {
         loadedPosts = await translatePosts(loadedPosts, currentLang);
       }
 
+      if (requestId !== activeRequestIdRef.current) {
+        return;
+      }
+
       if (isRefresh || pageToFetch === 1) {
         setPosts(loadedPosts);
         setCurrentPage(1);
       } else {
-        setPosts(prev => [...prev, ...loadedPosts]);
+        setPosts(prev => mergeUniquePosts(prev, loadedPosts));
       }
 
       // Update counters
@@ -80,13 +134,25 @@ const FeedPage = () => {
       setViewCounts(prev => isRefresh ? views : ({ ...prev, ...views }));
       setHasMore(loadedPosts.length === postsPerPage);
     } catch (err) {
+      if (err?.name === 'AbortError') {
+        return;
+      }
+      if (requestId !== activeRequestIdRef.current) {
+        return;
+      }
       setError(err.message);
       if (isRefresh) setPosts([]);
       setHasMore(false);
     } finally {
-      setLoading(false);
+      if (fetchAbortControllerRef.current === abortController) {
+        fetchAbortControllerRef.current = null;
+      }
+      if (requestId === activeRequestIdRef.current) {
+        loadingGuardRef.current = false;
+        setLoading(false);
+      }
     }
-  }, [currentPage, currentLang, postsPerPage]);
+  }, [baseUrl, currentPage, currentLang, postsPerPage]);
 
   // Initial load or on language change
   useEffect(() => {
@@ -108,26 +174,54 @@ const FeedPage = () => {
 
   // Infinite scroll
   const loadMorePosts = useCallback(() => {
-    if (loading || !hasMore) return;
+    if (loadingGuardRef.current || !hasMore) return;
+    loadingGuardRef.current = true;
     setCurrentPage(prev => prev + 1);
-  }, [loading, hasMore]);
+  }, [hasMore]);
 
   useEffect(() => {
     const handleScroll = () => {
+      if (scrollTickingRef.current) return;
+      scrollTickingRef.current = true;
+
+      window.requestAnimationFrame(() => {
+        scrollTickingRef.current = false;
+        const scrollBottom = window.innerHeight + window.scrollY;
+        const pageBottom = document.documentElement.scrollHeight;
+
       // For guests, show login modal when scrolling past limit
-      if (!isLoggedIn) {
-        if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200) {
-          setShowLoginModal(true);
+        if (!isLoggedIn) {
+          if (scrollBottom >= pageBottom - 200) {
+            setShowLoginModal(prev => (prev ? prev : true));
+          }
+          return;
         }
-        return;
-      }
-      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-        loadMorePosts();
-      }
+
+        if (scrollBottom >= pageBottom - 1000) {
+          loadMorePosts();
+        }
+      });
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      scrollTickingRef.current = false;
+    };
   }, [loadMorePosts, isLoggedIn]);
+
+  const showShareToast = useCallback((message) => {
+    setShareToast(message);
+    if (shareToastTimeoutRef.current) {
+      clearTimeout(shareToastTimeoutRef.current);
+    }
+    shareToastTimeoutRef.current = setTimeout(() => {
+      setShareToast('');
+      shareToastTimeoutRef.current = null;
+    }, 2000);
+  }, []);
 
   // Toggle expand for long descriptions
   const toggleExpand = (postId) => {
@@ -140,7 +234,6 @@ const FeedPage = () => {
     setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
     setLikeCounts(prev => ({ ...prev, [postId]: (prev[postId] || 0) + (alreadyLiked ? -1 : 1) }));
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
       await fetch(`${baseUrl}/api/posts/${postId}/like`, { method: 'POST', credentials: 'include' });
     } catch { }
   };
@@ -150,17 +243,14 @@ const FeedPage = () => {
     const url = `${window.location.origin}/feed/${postId}`;
     try {
       await navigator.clipboard.writeText(url);
-      setShareToast('Link copied!');
-      setTimeout(() => setShareToast(''), 2000);
+      showShareToast('Link copied!');
     } catch {
-      setShareToast('Failed to copy');
-      setTimeout(() => setShareToast(''), 2000);
+      showShareToast('Failed to copy');
     }
   };
 
   // View full post
   const handleViewDetails = (postId) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     const postObj = posts.find(p => p.id === postId || p.post_id === postId);
     fetch(`${baseUrl}/api/posts/${postId}/view`, { method: 'POST', credentials: 'include' }).catch(() => { });
     navigate(`/feed/${postId}`, { state: { post: postObj } });
@@ -253,7 +343,7 @@ const FeedPage = () => {
             <div className="flex items-center gap-4">
               <Avatar className="w-11 h-11 bg-indigo-100 dark:bg-indigo-900">
                 <AvatarFallback className="text-indigo-600 dark:text-indigo-300 font-bold">
-                  {localStorage.getItem('username')?.[0]?.toUpperCase() || 'U'}
+                  {usernameInitial}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-5 py-3 text-gray-400">
@@ -418,3 +508,4 @@ const FeedPage = () => {
 };
 
 export default FeedPage;
+

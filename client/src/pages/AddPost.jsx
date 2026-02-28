@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,11 +7,48 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, Shield, Crown, Star, Eye } from "lucide-react";
+import { ArrowLeft, Upload, Eye } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import AudioRecorder from '@/components/AudioRecorder';
 
 import { useTranslation } from 'react-i18next';
+import { getAccessToken, getUserId } from '@/utils/authStorage';
+import { fetchCategoriesCached } from '@/services/categoriesService';
+import { buildApiPath } from '@/lib/networkConfig';
+
+const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const FALLBACK_TIERS = [
+  { key: 'basic', name: 'Basic', maxImages: 1, color: 'bg-gray-500' },
+  { key: 'silver', name: 'Silver', maxImages: 5, color: 'bg-blue-500' },
+  { key: 'premium', name: 'Premium', maxImages: 10, color: 'bg-yellow-500' }
+];
+
+const normalizeTierKey = (value) => {
+  if (!value) return 'basic';
+  const cleaned = String(value).trim().toLowerCase();
+  if (cleaned.includes('premium')) return 'premium';
+  if (cleaned.includes('silver')) return 'silver';
+  if (cleaned.includes('basic') || cleaned.includes('free')) return 'basic';
+  return cleaned;
+};
+
+const normalizeTierColor = (value) => {
+  if (!value) return 'bg-gray-500';
+  const color = String(value).trim();
+  return color.startsWith('bg-') ? color : `bg-${color}`;
+};
+
+const normalizeTier = (tier) => {
+  const key = normalizeTierKey(tier?.key || tier?.tier_key || tier?.slug || tier?.name);
+  return {
+    ...tier,
+    key,
+    name: tier?.name || key.charAt(0).toUpperCase() + key.slice(1),
+    maxImages: Number(tier?.maxImages ?? tier?.max_images ?? 1),
+    color: normalizeTierColor(tier?.color),
+    icon: typeof tier?.icon === 'function' ? tier.icon : null
+  };
+};
 
 const AddPost = () => {
   const { t } = useTranslation();
@@ -20,32 +57,43 @@ const AddPost = () => {
   const { toast } = useToast();
 
   // Get tier and category from URL params
-  const urlParams = new URLSearchParams(location.search);
-  const selectedTier = urlParams.get('tier') || 'basic';
-  const selectedCategory = urlParams.get('category');
+  const { selectedTier, selectedCategory } = useMemo(() => {
+    const urlParams = new URLSearchParams(location.search);
+    return {
+      selectedTier: normalizeTierKey(urlParams.get('tier') || 'basic'),
+      selectedCategory: urlParams.get('category')
+    };
+  }, [location.search]);
 
   // Dropdown options from backend
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
 
   useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    fetch(`${API_BASE}/api/categories`).then(res => res.json()).then(data => setCategories(Array.isArray(data) ? data : [])).catch(() => setCategories([]));
-  }, []);
+    let cancelled = false;
 
-  useEffect(() => {
-    const fetchBrands = async () => {
+    const fetchDropdownData = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        const res = await fetch(`${baseUrl}/api/brands`);
-        if (!res.ok) throw new Error('Failed to fetch brands');
-        const data = await res.json();
-        setBrands(Array.isArray(data) ? data : []);
-      } catch (err) {
+        const [categoriesData, brandsRes] = await Promise.all([
+          fetchCategoriesCached(),
+          fetch(buildApiPath('/brands'))
+        ]);
+        const brandsData = brandsRes.ok ? await brandsRes.json() : [];
+
+        if (cancelled) return;
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        setBrands(Array.isArray(brandsData) ? brandsData : []);
+      } catch {
+        if (cancelled) return;
+        setCategories([]);
         setBrands([]);
       }
     };
-    fetchBrands();
+
+    fetchDropdownData();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Add title to formData and pre-fill category
@@ -70,50 +118,74 @@ const AddPost = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const previewImageUrls = useMemo(
+    () => images.map((image) => URL.createObjectURL(image)),
+    [images]
+  );
+
+  useEffect(() => () => {
+    previewImageUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, [previewImageUrls]);
 
   // Fetch tiers from backend if needed, or define in DB
   const [tiers, setTiers] = useState([]);
-  const [currentTier, setCurrentTier] = useState(null);
   useEffect(() => {
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    fetch(`${API_BASE}/api/tiers`)
-      .then(async (res) => {
+    let cancelled = false;
+
+    const fetchTiers = async () => {
+      try {
+        const res = await fetch(buildApiPath('/tiers'));
         if (!res.ok) {
-          setTiers([]);
-          toast({
-            title: "Tier fetch error",
-            description: `Error ${res.status}`,
-            variant: "destructive"
-          });
-          return [];
+          if (!cancelled) {
+            setTiers([]);
+            toast({
+              title: "Tier fetch error",
+              description: `Error ${res.status}`,
+              variant: "destructive"
+            });
+          }
+          return;
         }
+
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
-          setTiers([]);
-          toast({
-            title: "Tier fetch error",
-            description: "Invalid response",
-            variant: "destructive"
-          });
-          return [];
+          if (!cancelled) {
+            setTiers([]);
+            toast({
+              title: "Tier fetch error",
+              description: "Invalid response",
+              variant: "destructive"
+            });
+          }
+          return;
         }
-        return res.json();
-      })
-      .then((data) => {
-        setTiers(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => {
-        setTiers([]);
+
+        const data = await res.json();
+        if (!cancelled) {
+          const normalized = Array.isArray(data) ? data.map(normalizeTier) : [];
+          setTiers(normalized.length > 0 ? normalized : FALLBACK_TIERS);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setTiers(FALLBACK_TIERS);
         toast({
           title: "Tier fetch error",
           description: err.message,
           variant: "destructive"
         });
-      });
-  }, []);
-  useEffect(() => {
-    setCurrentTier(tiers.find(t => t.key === selectedTier));
-  }, [tiers, selectedTier]);
+      }
+    };
+
+    fetchTiers();
+    return () => {
+      cancelled = true;
+    };
+  }, [toast]);
+
+  const currentTier = useMemo(
+    () => tiers.find((tier) => normalizeTierKey(tier.key) === selectedTier) || FALLBACK_TIERS.find((tier) => tier.key === selectedTier) || FALLBACK_TIERS[0],
+    [tiers, selectedTier]
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -139,7 +211,7 @@ const AddPost = () => {
         toast({ title: 'Invalid file type', description: 'Only JPG, PNG, WEBP allowed.', variant: 'destructive' });
         return;
       }
-      if (file.size > 2 * 1024 * 1024) {
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
         toast({ title: 'File too large', description: 'Each image must be <2MB.', variant: 'destructive' });
         return;
       }
@@ -153,12 +225,6 @@ const AddPost = () => {
 
   const removeImage = (index) => {
     setImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const generatePostId = () => {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 5).toUpperCase();
-    return `POST${timestamp.toString().slice(-6)}${random}`;
   };
 
   // Accessibility: focus on first error
@@ -183,18 +249,6 @@ const AddPost = () => {
     if (images.length === 0) errors.images = 'At least one image is required.';
     return errors;
   }, [formData, images]);
-
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.category) errors.category = 'Category is required';
-    if (!formData.brand) errors.brand = 'Brand is required';
-    if (!formData.model) errors.model = 'Model is required';
-    if (!formData.condition) errors.condition = 'Condition is required';
-    if (!formData.price) errors.price = 'Price is required';
-    if (!formData.description) errors.description = 'Description is required';
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   const handlePreview = () => {
     const errors = validateFields();
@@ -223,44 +277,26 @@ const AddPost = () => {
       setIsLoading(false);
       return;
     }
-    // Age validation before allowing post creation
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId') || 1;
-    const profileRes = await fetch(`${baseUrl}/api/users/profile?userId=${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
-      credentials: 'include'
-    });
-    const profile = await profileRes.json();
-    if (profile.age < 18 || profile.age > 60) {
+
+    const token = getAccessToken();
+    const userId = getUserId();
+    if (!token || !userId) {
       toast({
-        title: "Age Restriction",
-        description: "Only users aged 18–60 can create posts.",
+        title: "Login required",
+        description: "Please log in to publish a listing.",
         variant: "destructive"
       });
+      navigate('/login', { state: { returnTo: location.pathname + location.search } });
       setIsLoading(false);
       return;
     }
-    // Validation
-    if (!formData.category || !formData.brand || !formData.model || !formData.price || images.length === 0) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields and upload at least one image.",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-      return;
-    }
+
     try {
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (value) data.append(key, value);
       });
-      images.forEach((img, idx) => data.append('images', img));
+      images.forEach((img) => data.append('images', img));
 
       // Add voice description if recorded (Voice-First Commerce)
       if (audioBlob) {
@@ -268,11 +304,13 @@ const AddPost = () => {
       }
 
       // Add Flash Sale flag (24-hour urgent listing)
-      data.append('is_flash_sale', isFlashSale);
+      data.append('is_flash_sale', isFlashSale ? 'true' : 'false');
       // Send to backend
-      const res = await fetch('http://localhost:5000/api/posts', {
+      const res = await fetch(buildApiPath('/posts'), {
         method: 'POST',
-        body: data
+        body: data,
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        credentials: 'include'
       });
       const result = await res.json();
       if (res.ok) {
@@ -320,7 +358,7 @@ const AddPost = () => {
               <div className="w-80 h-64 relative bg-gray-100 dark:bg-gray-700 flex-shrink-0">
                 {images[0] ? (
                   <img
-                    src={URL.createObjectURL(images[0])}
+                    src={previewImageUrls[0]}
                     onError={e => { e.target.onerror = null; e.target.src = '/placeholder.svg'; }}
                     alt="Product"
                     className="w-full h-full object-cover"
@@ -340,7 +378,7 @@ const AddPost = () => {
                   {formData.brand} {formData.model}
                 </h3>
                 <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">
-                  ₹{parseInt(formData.price).toLocaleString()}
+                  ₹{(Number.parseInt(formData.price, 10) || 0).toLocaleString()}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300">
@@ -641,7 +679,7 @@ const AddPost = () => {
                               />
                             </label>
                             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                              PNG, JPG up to 10MB each • Max {currentTier?.maxImages || 1} images
+                              PNG, JPG up to 2MB each • Max {currentTier?.maxImages || 1} images
                             </p>
                           </div>
                         </div>
@@ -652,7 +690,7 @@ const AddPost = () => {
                           {images.map((image, index) => (
                             <div key={index} className="relative">
                               <img
-                                src={URL.createObjectURL(image)}
+                                src={previewImageUrls[index]}
                                 onError={e => { e.target.onerror = null; e.target.src = '/placeholder.svg'; }}
                                 alt={`Upload ${index + 1}`}
                                 className="h-24 w-full object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
@@ -761,3 +799,5 @@ const AddPost = () => {
 };
 
 export default AddPost;
+
+

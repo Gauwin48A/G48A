@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-    History, Trash2, MapPin, Clock, Eye, Heart,
-    ArrowLeft, XCircle, Sparkles, ShoppingBag, Newspaper,
+    History, Trash2, MapPin, Clock, Eye,
+    XCircle, Sparkles, ShoppingBag, Newspaper,
     Grid3X3, List, RefreshCw
 } from 'lucide-react';
 import { FaLock, FaSignInAlt } from 'react-icons/fa';
@@ -14,28 +14,50 @@ import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { translatePosts } from '@/utils/translateContent';
 import PageHeader from '../components/PageHeader';
+import { useAuth } from '@/context/AuthContext';
+import { getAccessToken, getUserId, isAuthenticated } from '@/utils/authStorage';
+
+const RECENTLY_VIEWED_LIMIT = 50;
+const TOAST_TIMEOUT_MS = 3000;
+const FALLBACK_IMAGE_URL = 'https://via.placeholder.com/300x200?text=No+Image';
 
 const RecentlyViewed = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
-    const currentLang = i18n.language || 'en';
+    const { user: authUser, loading: authLoading } = useAuth();
+    const currentLang = useMemo(() => i18n.language || 'en', [i18n.language]);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [toast, setToast] = useState(null);
     const [activeTab, setActiveTab] = useState('all');
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+    const activeRequestRef = useRef(0);
+    const toastTimeoutRef = useRef(null);
+    const resolvedUserId = useMemo(() => getUserId(authUser), [authUser]);
+    const isLoggedIn = useMemo(() => isAuthenticated(authUser), [authUser, resolvedUserId]);
 
-    useEffect(() => {
-        fetchHistory();
-    }, [activeTab, currentLang]);
+    const devLog = useCallback((message, error) => {
+        if (import.meta.env.DEV) {
+            console.error(message, error);
+        }
+    }, []);
 
-    const fetchHistory = async () => {
+    const getAuthSnapshot = useCallback(() => {
+        const userId = getUserId(authUser);
+        const token = getAccessToken();
+        return {
+            userId: userId ? String(userId) : '',
+            token: token ? String(token) : ''
+        };
+    }, [authUser]);
+
+    const fetchHistory = useCallback(async () => {
+        const requestId = ++activeRequestRef.current;
         try {
             setLoading(true);
             setError(null);
-            const userId = localStorage.getItem('userId');
-            const token = localStorage.getItem('authToken');
+            const { userId, token } = getAuthSnapshot();
 
             if (!userId || !token) {
                 setError(t('please_login_history'));
@@ -43,66 +65,91 @@ const RecentlyViewed = () => {
                 return;
             }
 
-            const params = { userId, limit: 50 };
+            const params = { userId, limit: RECENTLY_VIEWED_LIMIT };
             if (activeTab !== 'all') {
                 params.source = activeTab;
             }
 
-            const response = await api.get('/api/recently-viewed', {
-                headers: { Authorization: `Bearer ${token}` },
+            const response = await api.get('/recently-viewed', {
                 params
             });
-            let loadedItems = response.data.items || [];
+            if (requestId !== activeRequestRef.current) {
+                return;
+            }
+
+            const payload = response?.data ?? response;
+            let loadedItems = Array.isArray(payload?.items) ? payload.items : [];
             // Translate post content if not English
             if (currentLang !== 'en' && loadedItems.length > 0) {
                 loadedItems = await translatePosts(loadedItems, currentLang);
             }
-            setItems(loadedItems);
+            if (requestId === activeRequestRef.current) {
+                setItems(loadedItems);
+            }
         } catch (err) {
-            console.error('Failed to fetch history:', err);
-            if (err.response?.status === 401) {
+            devLog('Failed to fetch history:', err);
+            const status = err?.status || err?.response?.status;
+            if (status === 401) {
                 // Determine if we should show a login prompt or just an error
                 setError('session_expired');
             } else {
                 setError(t('failed_load_history'));
             }
         } finally {
-            setLoading(false);
+            if (requestId === activeRequestRef.current) {
+                setLoading(false);
+            }
         }
-    };
+    }, [activeTab, currentLang, devLog, getAuthSnapshot, t]);
 
-    const handleRemove = async (postId) => {
+    useEffect(() => {
+        if (!authLoading) {
+            fetchHistory();
+        }
+        return () => {
+            activeRequestRef.current += 1;
+        };
+    }, [authLoading, fetchHistory]);
+
+    const showToast = useCallback((message, type = 'success') => {
+        if (toastTimeoutRef.current) {
+            clearTimeout(toastTimeoutRef.current);
+        }
+        setToast({ message, type });
+        toastTimeoutRef.current = setTimeout(() => {
+            setToast(null);
+            toastTimeoutRef.current = null;
+        }, TOAST_TIMEOUT_MS);
+    }, []);
+
+    useEffect(() => () => {
+        if (toastTimeoutRef.current) {
+            clearTimeout(toastTimeoutRef.current);
+            toastTimeoutRef.current = null;
+        }
+    }, []);
+
+    const handleRemove = useCallback(async (postId) => {
         try {
-            const token = localStorage.getItem('authToken');
-            await api.delete(`/api/recently-viewed/${postId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setItems(items.filter(item => item.post_id !== postId));
+            await api.delete(`/recently-viewed/${postId}`);
+            setItems((prev) => prev.filter((item) => item.post_id !== postId));
             showToast(t('removed_from_history'));
-        } catch (err) {
+        } catch {
             showToast('Failed to remove', 'error');
         }
-    };
+    }, [showToast, t]);
 
-    const handleClearAll = async () => {
+    const handleClearAll = useCallback(async () => {
         if (!window.confirm(t('clear_browsing_history'))) return;
 
         try {
-            const token = localStorage.getItem('authToken');
-            await api.delete('/api/recently-viewed/clear', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete('/recently-viewed/clear');
             setItems([]);
             showToast(t('history_cleared'));
-        } catch (err) {
+        } catch {
             showToast('Failed to clear history', 'error');
         }
-    };
-
-    const showToast = (message, type = 'success') => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
-    };
+    }, [showToast, t]);
 
     const getImageUrl = (item) => {
         if (item.images) {
@@ -117,7 +164,7 @@ const RecentlyViewed = () => {
                 }
             }
         }
-        return 'https://via.placeholder.com/300x200?text=No+Image';
+        return FALLBACK_IMAGE_URL;
     };
 
     const formatTimeAgo = (dateString) => {
@@ -143,11 +190,11 @@ const RecentlyViewed = () => {
         }).format(price);
     };
 
-    const tabs = [
+    const tabs = useMemo(() => [
         { id: 'all', label: t('all') || 'All', icon: Sparkles, color: 'from-blue-500 to-indigo-600' },
         { id: 'allposts', label: t('all_posts') || 'All Posts', icon: ShoppingBag, color: 'from-emerald-500 to-teal-600' },
         { id: 'feed', label: t('feed') || 'Feed', icon: Newspaper, color: 'from-purple-500 to-pink-600' }
-    ];
+    ], [t]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900">
@@ -181,6 +228,7 @@ const RecentlyViewed = () => {
                             variant="ghost"
                             size="icon"
                             onClick={fetchHistory}
+                            disabled={loading}
                             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl"
                         >
                             <RefreshCw className="h-4 w-4" />
@@ -239,7 +287,7 @@ const RecentlyViewed = () => {
                     </div>
                 ) : error ? (
                     <div className="text-center py-16">
-                        {error === 'session_expired' ? (
+                        {error === 'session_expired' || !isLoggedIn ? (
                             <>
                                 <div className="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <FaLock className="h-10 w-10 text-orange-400" />
@@ -247,7 +295,7 @@ const RecentlyViewed = () => {
                                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('session_expired') || 'Session Expired'}</h3>
                                 <p className="text-gray-600 dark:text-gray-400 mb-6">{t('login_to_view_history') || 'Please login to view your browsing history.'}</p>
                                 <Button
-                                    onClick={() => navigate('/login')}
+                                    onClick={() => navigate('/login', { state: { returnTo: '/recently-viewed' } })}
                                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-8 py-2"
                                 >
                                     <FaSignInAlt className="h-4 w-4 mr-2" />
@@ -307,7 +355,7 @@ const RecentlyViewed = () => {
                                             src={getImageUrl(item)}
                                             alt={item.title}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/300x200?text=No+Image'; }}
+                                            onError={(e) => { e.target.src = FALLBACK_IMAGE_URL; }}
                                         />
                                         {/* Gradient Overlay */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
@@ -402,7 +450,7 @@ const RecentlyViewed = () => {
                                                 src={getImageUrl(item)}
                                                 alt={item.title}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=No+Image'; }}
+                                                onError={(e) => { e.target.src = FALLBACK_IMAGE_URL; }}
                                             />
                                             <Badge
                                                 className={`absolute top-1 right-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${item.status === 'active'

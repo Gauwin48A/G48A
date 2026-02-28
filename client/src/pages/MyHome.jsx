@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { translatePosts } from '@/utils/translateContent';
 import { Button } from "@/components/ui/button";
@@ -8,20 +9,15 @@ import { Switch } from "@/components/ui/switch";
 import {
     Eye,
     Heart,
-    MessageCircle,
     Edit,
     Trash2,
-    RefreshCw,
     Plus,
     ShoppingBag,
     Package,
     CheckCircle2,
-    Calendar,
-    User,
     MapPin,
     XCircle,
     MoreVertical,
-    AlertTriangle,
     Share2,
     ArrowLeft,
     Search,
@@ -31,8 +27,9 @@ import {
     ChevronRight,
     Copy,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/context/AuthContext';
+import { getAccessToken, getUserId } from '@/utils/authStorage';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -51,36 +48,37 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import api from '@/services/api'; // Import central API service
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const MyHome = () => {
     // ... (state remains same)
     const [activeTab, setActiveTab] = useState('active');
-    const [filters, setFilters] = useState({ status: 'active', sortBy: 'created_at', sortOrder: 'desc', page: 1, limit: 10 });
     const [selectedPosts, setSelectedPosts] = useState(new Set());
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSaleUndoneDialog, setShowSaleUndoneDialog] = useState(false);
     const [selectedPostForDelete, setSelectedPostForDelete] = useState(null);
     const [postsMovedToUndone, setPostsMovedToUndone] = useState(new Set());
     const [posts, setPosts] = useState([]);
-    const [error, setError] = useState(null);
+    const [, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
+    const pageSize = 10;
     const [searchTerm, setSearchTerm] = useState("");
-    const [sortKey, setSortKey] = useState("postedDate");
-    const [sortOrder, setSortOrder] = useState("desc");
-    const [showPostDetailDialog, setShowPostDetailDialog] = useState(false);
-    const [postDetailData, setPostDetailData] = useState(null);
+    const sortKey = "postedDate";
+    const sortOrder = "desc";
     const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
     const [selectAll, setSelectAll] = useState(false);
     const navigate = useNavigate();
     const { toast } = useToast();
     const { t, i18n } = useTranslation();
+    const { user: authUser } = useAuth();
     const currentLang = i18n.language || 'en';
+    const resolvedUserId = getUserId(authUser);
+    const authToken = getAccessToken();
+    const isLoggedIn = Boolean(resolvedUserId && authToken);
 
     // Helper to get full image URL
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const baseUrl = getApiOriginBase();
     const getImageUrl = (img) => {
         if (!img) return '/placeholder.svg';
         if (img.startsWith('/uploads/')) return baseUrl + img;
@@ -90,80 +88,121 @@ const MyHome = () => {
 
     // Fetch ALL posts for this user (no status filter) to get correct stats
     useEffect(() => {
-        setLoading(true);
-        const userId = localStorage.getItem('userId');
-        const token = localStorage.getItem('authToken');
-        if (!userId || !token) {
-            setError('You must be logged in to view your posts.');
-            setLoading(false);
-            return;
-        }
+        let cancelled = false;
 
-        // Use api.get instead of fetch
-        api.get(`/posts/mine?userId=${userId}`)
-            .then(data => {
-                // api service unwraps response.data
-                if (Array.isArray(data.posts)) {
-                    // Translate posts if not English
-                    if (currentLang !== 'en' && data.posts.length > 0) {
-                        translatePosts(data.posts, currentLang).then(translated => {
-                            setPosts(translated);
-                        });
-                    } else {
-                        setPosts(data.posts);
+        const fetchPosts = async () => {
+            setLoading(true);
+            const userId = resolvedUserId;
+            const token = authToken;
+            if (!userId || !token) {
+                if (!cancelled) {
+                    setError('You must be logged in to view your posts.');
+                    setLoading(false);
+                }
+                return;
+            }
+
+            try {
+                const data = await api.get(`/posts/mine?userId=${userId}`);
+                const rawPosts = Array.isArray(data?.posts) ? data.posts : Array.isArray(data) ? data : [];
+
+                let nextPosts = rawPosts;
+                if (currentLang !== 'en' && rawPosts.length > 0) {
+                    try {
+                        nextPosts = await translatePosts(rawPosts, currentLang);
+                    } catch {
+                        nextPosts = rawPosts;
                     }
-                    setError(null);
-                } else if (Array.isArray(data)) {
-                    // Translate posts if not English
-                    if (currentLang !== 'en' && data.length > 0) {
-                        translatePosts(data, currentLang).then(translated => {
-                            setPosts(translated);
-                        });
-                    } else {
-                        setPosts(data);
-                    }
-                    setError(null);
-                } else {
-                    setPosts([]);
+                }
+
+                if (!cancelled) {
+                    setPosts(nextPosts);
                     setError(null);
                 }
-            })
-            .catch(err => {
+            } catch (err) {
                 console.error("Fetch posts error:", err);
-                setPosts([]);
-                setError(null); // Silent fail for UI?
-            })
-            .finally(() => setLoading(false));
-    }, [currentLang]);
+                if (!cancelled) {
+                    setPosts([]);
+                    setError(null); // Silent fail for UI?
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
 
-    // ... (rest of effects remain same)
+        fetchPosts();
+        return () => {
+            cancelled = true;
+        };
+    }, [authToken, currentLang, resolvedUserId]);
+
+    const allPosts = useMemo(() => (Array.isArray(posts) ? posts : []), [posts]);
+    const boughtPosts = useMemo(
+        () => allPosts.filter((post) => String(post?.ownership || '').toLowerCase() === 'bought'),
+        [allPosts]
+    );
+    const ownPosts = useMemo(
+        () => allPosts.filter((post) => String(post?.ownership || 'own').toLowerCase() !== 'bought'),
+        [allPosts]
+    );
+    const soldPosts = useMemo(() => ownPosts.filter((post) => post.status === 'sold'), [ownPosts]);
+    const activePosts = useMemo(() => ownPosts.filter((post) => post.status === 'active'), [ownPosts]);
+
+    const visiblePosts = useMemo(() => {
+        const tabFilteredPosts = activeTab === 'all'
+            ? allPosts
+            : activeTab === 'active'
+                ? activePosts
+                : activeTab === 'sold'
+                    ? soldPosts
+                    : activeTab === 'bought'
+                        ? boughtPosts
+                        : allPosts;
+
+        const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+        const searchedPosts = normalizedSearchTerm
+            ? tabFilteredPosts.filter((post) =>
+                post.title?.toLowerCase().includes(normalizedSearchTerm) ||
+                post.location?.toLowerCase().includes(normalizedSearchTerm)
+            )
+            : tabFilteredPosts;
+
+        const getSortValue = (post) => {
+            if (sortKey === 'postedDate') {
+                return new Date(post.postedDate || post.created_at || 0).getTime();
+            }
+
+            const rawValue = post?.[sortKey] ?? post?.created_at ?? 0;
+            return typeof rawValue === 'string' ? rawValue.toLowerCase() : rawValue;
+        };
+
+        return [...searchedPosts].sort((a, b) => {
+            const aValue = getSortValue(a);
+            const bValue = getSortValue(b);
+
+            if (aValue === bValue) return 0;
+            if (sortOrder === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            }
+            return aValue < bValue ? 1 : -1;
+        });
+    }, [activeTab, activePosts, allPosts, boughtPosts, searchTerm, soldPosts, sortKey, sortOrder]);
+
+    const totalPages = useMemo(
+        () => Math.max(1, Math.ceil(visiblePosts.length / pageSize)),
+        [visiblePosts.length, pageSize]
+    );
 
     useEffect(() => {
-        setTotalPages(Math.max(1, Math.ceil(posts.length / pageSize)));
-    }, [posts, pageSize]);
+        setCurrentPage((prevPage) => Math.min(Math.max(prevPage, 1), totalPages));
+    }, [totalPages]);
 
-    // ... (filters/pagination/handlers remain same until handleDeletePost)
-    const allPosts = Array.isArray(posts) ? posts : [];
-    const soldPosts = allPosts.filter(post => post.status === 'sold');
-    const boughtPosts = allPosts.filter(post => post.status === 'bought');
-    const activePosts = allPosts.filter(post => post.status === 'active');
-
-    const displayPosts = activeTab === 'all' ? allPosts :
-        activeTab === 'active' ? activePosts :
-            activeTab === 'sold' ? soldPosts :
-                activeTab === 'bought' ? boughtPosts : allPosts;
-    const paginatedPosts = allPosts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-    const filteredPosts = paginatedPosts.filter(post =>
-        post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.location?.toLowerCase().includes(searchTerm.toLowerCase())
+    const paginatedPosts = useMemo(
+        () => visiblePosts.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+        [visiblePosts, currentPage, pageSize]
     );
-    const sortedPosts = [...filteredPosts].sort((a, b) => {
-        if (sortOrder === "asc") {
-            return a[sortKey] > b[sortKey] ? 1 : -1;
-        } else {
-            return a[sortKey] < b[sortKey] ? 1 : -1;
-        }
-    });
 
     const handleSaleDone = () => navigate('/saledone');
 
@@ -216,14 +255,6 @@ const MyHome = () => {
         }
     };
 
-    const confirmSaleUndone = () => {
-        if (selectedPosts.size === 0) {
-            toast({ title: "No Posts Selected", description: "Please select posts to mark as sale undone", variant: "destructive" });
-            return;
-        }
-        setShowSaleUndoneDialog(true);
-    };
-
     const handleSaleUndone = () => {
         const newMovedPosts = new Set([...postsMovedToUndone, ...selectedPosts]);
         setPostsMovedToUndone(newMovedPosts);
@@ -248,7 +279,7 @@ const MyHome = () => {
         if (selectAll) {
             setSelectedPosts(new Set());
         } else {
-            const activePostIds = allPosts.filter(p => p.status === 'active').map(p => p.postId || p.post_id || p.id);
+            const activePostIds = activePosts.map((post) => post.postId || post.post_id || post.id);
             setSelectedPosts(new Set(activePostIds));
         }
         setSelectAll(!selectAll);
@@ -261,17 +292,41 @@ const MyHome = () => {
         }
 
         try {
-            const deletePromises = Array.from(selectedPosts).map(postId =>
-                api.delete(`/posts/${postId}`)
+            const selectedIds = Array.from(selectedPosts);
+            const deleteResults = await Promise.allSettled(
+                selectedIds.map((postId) =>
+                    api.delete(`/posts/${postId}`).then(() => postId)
+                )
             );
 
-            await Promise.all(deletePromises);
+            const successfulIds = deleteResults
+                .filter((result) => result.status === 'fulfilled')
+                .map((result) => result.value);
+            const failedCount = deleteResults.length - successfulIds.length;
 
-            setPosts(posts => posts.filter(post => !selectedPosts.has(post.postId || post.post_id || post.id)));
-            setSelectedPosts(new Set());
-            setSelectAll(false);
-            setShowBulkDeleteDialog(false);
-            toast({ title: "Posts Deleted", description: `${selectedPosts.size} posts have been deleted` });
+            if (successfulIds.length > 0) {
+                const successfulSet = new Set(successfulIds);
+                setPosts((existingPosts) =>
+                    existingPosts.filter((post) => !successfulSet.has(post.postId || post.post_id || post.id))
+                );
+                setSelectedPosts((prevSelected) => {
+                    const nextSelected = new Set(prevSelected);
+                    successfulIds.forEach((id) => nextSelected.delete(id));
+                    return nextSelected;
+                });
+            }
+
+            if (failedCount === 0) {
+                setSelectAll(false);
+                setShowBulkDeleteDialog(false);
+                toast({ title: "Posts Deleted", description: `${successfulIds.length} posts have been deleted` });
+            } else {
+                toast({
+                    title: "Partial Delete",
+                    description: `${successfulIds.length} deleted, ${failedCount} failed.`,
+                    variant: "destructive"
+                });
+            }
         } catch (error) {
             console.error('Bulk delete error:', error);
             toast({ title: "Delete Failed", description: "Some posts could not be deleted", variant: "destructive" });
@@ -291,8 +346,6 @@ const MyHome = () => {
     }
 
     // --- MAIN RENDER ---
-    const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
-
     if (!isLoggedIn) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" style={{ paddingBottom: '120px' }}>
@@ -309,8 +362,8 @@ const MyHome = () => {
 
                 {/* Login/Signup Cards */}
                 <div className="max-w-lg mx-auto px-6 space-y-4">
-                    <a
-                        href="/login"
+                    <Link
+                        to="/login"
                         className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
                     >
                         <div className="flex items-center gap-4">
@@ -323,10 +376,10 @@ const MyHome = () => {
                             </div>
                             <ChevronRight className="w-6 h-6 text-gray-400" />
                         </div>
-                    </a>
+                    </Link>
 
-                    <a
-                        href="/signup"
+                    <Link
+                        to="/signup"
                         className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
                     >
                         <div className="flex items-center gap-4">
@@ -339,7 +392,7 @@ const MyHome = () => {
                             </div>
                             <ChevronRight className="w-6 h-6 text-white/60" />
                         </div>
-                    </a>
+                    </Link>
                 </div>
             </div>
         );
@@ -390,7 +443,7 @@ const MyHome = () => {
                                 <CheckCircle2 className="w-6 h-6 text-green-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-800 dark:text-white">{allPosts.filter(p => p.status === 'active').length}</p>
+                                <p className="text-2xl font-bold text-gray-800 dark:text-white">{activePosts.length}</p>
                                 <p className="text-sm text-gray-500">{t('active')}</p>
                             </div>
                         </div>
@@ -426,7 +479,7 @@ const MyHome = () => {
                 <div className="w-full flex justify-center gap-2 py-2 mb-4 overflow-x-auto">
                     {[
                         { label: t('all'), tab: 'all', color: 'bg-blue-600', count: allPosts.length },
-                        { label: t('active'), tab: 'active', color: 'bg-green-500', count: allPosts.filter(p => p.status === 'active').length },
+                        { label: t('active'), tab: 'active', color: 'bg-green-500', count: activePosts.length },
                         { label: t('sold'), tab: 'sold', color: 'bg-blue-500', count: soldPosts.length },
                         { label: t('bought'), tab: 'bought', color: 'bg-purple-500', count: boughtPosts.length }
                     ].map((item) => (
@@ -438,7 +491,7 @@ const MyHome = () => {
                                 }`}
                             onClick={() => {
                                 setActiveTab(item.tab);
-                                setFilters(f => ({ ...f, status: item.tab === 'all' ? '' : item.tab }));
+                                setCurrentPage(1);
                             }}
                         >
                             {item.label}
@@ -460,7 +513,7 @@ const MyHome = () => {
                 </div>
 
                 {/* Bulk Actions Bar - Only for Active posts (user can only manage their own active listings) */}
-                {activeTab === 'active' && allPosts.filter(p => p.status === 'active').length > 0 && (
+                {activeTab === 'active' && activePosts.length > 0 && (
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 mb-4 border border-blue-200 dark:border-blue-800">
                         <div className="flex items-center justify-between flex-wrap gap-3">
                             <div className="flex items-center gap-3">
@@ -473,7 +526,7 @@ const MyHome = () => {
                                     {selectAll ? t('deselect_all') : t('select_all')}
                                 </button>
                                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    {selectedPosts.size} {t('of')} {allPosts.filter(p => p.status === 'active').length} {t('selected')}
+                                    {selectedPosts.size} {t('of')} {activePosts.length} {t('selected')}
                                 </span>
                             </div>
                             {selectedPosts.size > 0 && (
@@ -508,7 +561,7 @@ const MyHome = () => {
 
                 {/* Posts List */}
                 <div className="w-full flex flex-col gap-6 pb-24 pt-20">
-                    {sortedPosts.length === 0 ? (
+                    {visiblePosts.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="text-6xl mb-4">📭</div>
                             <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">{t('no_posts')}</h3>
@@ -522,12 +575,10 @@ const MyHome = () => {
                             </Button>
                         </div>
                     ) : (
-                        sortedPosts.filter(post => {
-                            if (activeTab === 'active') return post.status === 'active';
-                            if (activeTab === 'sold') return post.status === 'sold';
-                            if (activeTab === 'bought') return post.status === 'bought';
-                            return true;
-                        }).map((post) => (
+                        paginatedPosts.map((post) => {
+                            const isBoughtPost = String(post?.ownership || '').toLowerCase() === 'bought';
+                            const displayStatus = isBoughtPost ? 'bought' : (post.status || 'active');
+                            return (
                             <Card key={post.postId || post.post_id || post.id} className="shadow-xl border-0 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800">
                                 <div className="flex flex-col">
                                     {/* Image Section */}
@@ -538,11 +589,11 @@ const MyHome = () => {
                                             alt={post.title}
                                             className="w-full h-40 md:h-48 object-cover"
                                         />
-                                        <Badge className={`absolute top-3 left-3 ${post.status === 'active' ? 'bg-green-500' :
-                                            post.status === 'sold' ? 'bg-blue-500' :
-                                                post.status === 'bought' ? 'bg-purple-500' : 'bg-gray-500'
+                                        <Badge className={`absolute top-3 left-3 ${displayStatus === 'active' ? 'bg-green-500' :
+                                            displayStatus === 'sold' ? 'bg-blue-500' :
+                                                displayStatus === 'bought' ? 'bg-purple-500' : 'bg-gray-500'
                                             } text-white font-bold px-3 py-1 text-sm capitalize`}>
-                                            {post.status || 'Active'}
+                                            {displayStatus}
                                         </Badge>
 
                                         {/* Dropdown Menu */}
@@ -566,7 +617,7 @@ const MyHome = () => {
                                                         <Share2 className="w-4 h-4 mr-2" />
                                                         {t('share_post')}
                                                     </DropdownMenuItem>
-                                                    {post.status !== 'bought' && (
+                                                    {!isBoughtPost && (
                                                         <DropdownMenuItem
                                                             onClick={() => confirmDeletePost(post.postId || post.post_id || post.id)}
                                                             className="text-red-600"
@@ -599,7 +650,7 @@ const MyHome = () => {
                                                     <Copy className="w-4 h-4" />
                                                 </button>
                                             </div>
-                                            {post.status === 'active' && (
+                                            {displayStatus === 'active' && (
                                                 <Switch
                                                     checked={selectedPosts.has(post.postId || post.post_id || post.id)}
                                                     onCheckedChange={() => togglePostSelection(post.postId || post.post_id || post.id)}
@@ -632,7 +683,7 @@ const MyHome = () => {
                                                 <Eye className="w-5 h-5" />
                                                 View Details
                                             </Button>
-                                            {post.status !== 'bought' && (
+                                            {!isBoughtPost && (
                                                 <Button
                                                     variant="outline"
                                                     className="border-2 border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold rounded-xl py-3 px-4"
@@ -645,13 +696,14 @@ const MyHome = () => {
                                     </CardContent>
                                 </div>
                             </Card>
-                        ))
+                            );
+                        })
                     )
                     }
                 </div>
 
                 {/* Pagination Controls */}
-                {sortedPosts.length > 0 && (
+                {visiblePosts.length > 0 && (
                     <div className="flex justify-center items-center gap-4 mt-4 mb-8">
                         <Button
                             disabled={currentPage === 1}
@@ -757,3 +809,4 @@ const MyHome = () => {
 };
 
 export default MyHome;
+

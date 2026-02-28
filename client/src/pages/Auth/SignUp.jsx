@@ -12,12 +12,22 @@ import {
 } from "lucide-react";
 import { registerUser } from "@/lib/auth";
 import { useTranslation } from 'react-i18next';
+import { useAuth } from "@/context/AuthContext";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { setUser } = useAuth();
+
+  const resolveUserId = (user) => {
+    const candidate = user?.id ?? user?.user_id ?? null;
+    if (candidate === null || candidate === undefined || candidate === '') {
+      return null;
+    }
+    return String(candidate);
+  };
 
   // Get referral code from URL if present
   const urlParams = new URLSearchParams(location.search);
@@ -133,10 +143,15 @@ const SignUp = () => {
       // Auto-login logic
       if (registerResponse && registerResponse.token) {
         localStorage.setItem("authToken", registerResponse.token);
+        localStorage.removeItem('token');
         if (registerResponse.refreshToken) localStorage.setItem("refreshToken", registerResponse.refreshToken);
         if (registerResponse.user) {
           localStorage.setItem("user", JSON.stringify(registerResponse.user));
-          localStorage.setItem("userId", registerResponse.user.id); // Critical for protected routes
+          const userId = resolveUserId(registerResponse.user);
+          if (userId) {
+            localStorage.setItem("userId", userId);
+          }
+          setUser(registerResponse.user);
         }
 
         toast({
@@ -144,15 +159,12 @@ const SignUp = () => {
           description: "Account created and logged in successfully.",
         });
 
-        // Small delay to ensure storage is set
-        setTimeout(() => {
-          navigate("/all-posts");
-        }, 1000);
+        navigate("/all-posts", { replace: true });
       } else {
         // Fallback if no token returned (shouldn't happen with current backend)
         setShowSuccess(true);
         setTimeout(() => {
-          navigate("/login");
+          navigate("/login", { replace: true });
         }, 2000);
       }
 

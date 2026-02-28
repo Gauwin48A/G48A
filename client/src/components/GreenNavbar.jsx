@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
 import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiHeart, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
@@ -7,6 +7,22 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from "@/hooks/use-toast";
 import LanguageSelector from './LanguageSelector';
 import LocationSelector from './LocationSelector';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/services/api';
+import { getAccessToken, getUserId, isAuthenticated } from '@/utils/authStorage';
+import { fetchCategoriesCached } from '@/services/categoriesService';
+
+const parseStoredBoolean = (rawValue, fallback = false) => {
+  if (rawValue === null || rawValue === undefined) return fallback;
+  if (rawValue === 'true') return true;
+  if (rawValue === 'false') return false;
+
+  try {
+    return Boolean(JSON.parse(rawValue));
+  } catch {
+    return fallback;
+  }
+};
 
 const GreenNavbar = () => {
   const { t } = useTranslation();
@@ -41,6 +57,7 @@ const GreenNavbar = () => {
     { key: 'more', path: '#', icon: <FiMenu /> },
   ];
   const { toast } = useToast();
+  const { user, logout } = useAuth();
   const { filters, setFilters } = useFilter();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
@@ -48,30 +65,38 @@ const GreenNavbar = () => {
   const [categories, setCategories] = useState([]);
   const [darkMode, setDarkMode] = useState(() => {
     const stored = localStorage.getItem('darkMode');
-    return stored ? JSON.parse(stored) : false;
+    return parseStoredBoolean(stored, false);
   });
 
   // Large font mode for accessibility
   const [largeFont, setLargeFont] = useState(() => {
     const stored = localStorage.getItem('largeFont');
-    return stored ? JSON.parse(stored) : false;
+    return parseStoredBoolean(stored, false);
   });
   const darkModeLabel = darkMode ? 'Disable Dark Mode' : 'Enable Dark Mode';
 
   // Fetch categories from API
   useEffect(() => {
+    let cancelled = false;
+
     const fetchCategories = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        const res = await fetch(`${baseUrl}/api/categories`);
-        const data = await res.json();
-        setCategories(Array.isArray(data) ? data : []);
+        const categoriesData = await fetchCategoriesCached();
+        if (cancelled) return;
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (err) {
-        console.error('Failed to fetch categories:', err);
+        if (cancelled) return;
+        if (import.meta.env.DEV) {
+          console.error('Failed to fetch categories:', err);
+        }
         setCategories([]);
       }
     };
     fetchCategories();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -96,14 +121,8 @@ const GreenNavbar = () => {
   }, [largeFont]);
 
   // Check if user is logged in
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isLoggedIn = useMemo(() => isAuthenticated(user), [user]);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId');
-    setIsLoggedIn(!!(token && userId));
-  }, [moreOpen]); // Re-check when menu opens
 
   // User preferences for For You page filter pre-population
   const [userPreferences, setUserPreferences] = useState(null);
@@ -111,15 +130,22 @@ const GreenNavbar = () => {
   // Fetch user preferences when on For You page (need routerLocation to be defined first)
   // This effect is defined after routerLocation is declared below
 
-  const handleLogout = () => {
-    // Clear all auth-related localStorage items
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userProfile');
-    localStorage.removeItem('token');
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
     setMoreOpen(false);
-    navigate('/login');
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch {
+      // Fallback if logout API fails unexpectedly.
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('token');
+      navigate('/login', { replace: true });
+    }
   };
 
   // Add animation for sliding pane via JS-in-CSS (React-safe)
@@ -128,7 +154,15 @@ const GreenNavbar = () => {
       if (!document.getElementById('slideInRightStyle')) {
         const style = document.createElement('style');
         style.id = 'slideInRightStyle';
-        style.textContent = `@keyframes slideInRight {from { transform: translateX(100 %); }to { transform: translateX(0); } } .animate - slideInRight { animation: slideInRight 0.3s cubic - bezier(0.4, 0, 0.2, 1); } `;
+        style.textContent = `
+          @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+          }
+          .animate-slideInRight {
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+        `;
         document.head.appendChild(style);
       }
     }
@@ -146,34 +180,35 @@ const GreenNavbar = () => {
 
   // Fetch user preferences when on For You page and pre-populate filters
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    const token = localStorage.getItem('authToken');
+    const userId = getUserId(user);
+    const token = getAccessToken();
 
     if (isForYouPage && userId && token) {
       const fetchPreferences = async () => {
         try {
-          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-          const res = await fetch(`${baseUrl}/api/profile/preferences?userId=${userId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+          const response = await api.get('/profile/preferences', {
+            params: { userId }
           });
-          if (res.ok) {
-            const data = await res.json();
-            setUserPreferences(data);
+          const data = response?.data ?? response;
+          setUserPreferences(data || null);
+          if (import.meta.env.DEV) {
             console.log('[Navbar] Loaded user preferences for For You page:', data);
-            // Pre-populate filters with user preferences
-            if (data) {
-              setFilters(f => ({
-                ...f,
-                location: data.location || '',
-                minPrice: data.minPrice !== undefined && data.minPrice !== null ? String(data.minPrice) : '',
-                maxPrice: data.maxPrice !== undefined && data.maxPrice !== null ? String(data.maxPrice) : '',
-                // Set category from preferences if available
-                category: ''
-              }));
-            }
+          }
+          // Pre-populate filters with user preferences
+          if (data) {
+            setFilters(f => ({
+              ...f,
+              location: data.location || '',
+              minPrice: data.minPrice !== undefined && data.minPrice !== null ? String(data.minPrice) : '',
+              maxPrice: data.maxPrice !== undefined && data.maxPrice !== null ? String(data.maxPrice) : '',
+              // Set category from preferences if available
+              category: ''
+            }));
           }
         } catch (err) {
-          console.error('Failed to fetch user preferences:', err);
+          if (import.meta.env.DEV) {
+            console.error('Failed to fetch user preferences:', err);
+          }
         }
       };
       fetchPreferences();
@@ -181,7 +216,7 @@ const GreenNavbar = () => {
       // Clear preferences when leaving For You page
       setUserPreferences(null);
     }
-  }, [isForYouPage, setFilters]);
+  }, [isForYouPage, setFilters, user]);
 
   // Show full navbar for home (all-posts), my-posts, and my-recommendations
   const showFullNavbar = routerLocation.pathname === '/all-posts' || routerLocation.pathname === '/my-posts' || routerLocation.pathname === '/' || routerLocation.pathname === '/my-recommendations' || routerLocation.pathname === '/for-you';
@@ -458,35 +493,30 @@ const GreenNavbar = () => {
                           setShowFilter(false);
 
                           // Sync preferences to DB if on For You page and logged in
-                          const isLoggedIn = localStorage.getItem('authToken');
-                          const userId = localStorage.getItem('userId');
+                          const loggedIn = isAuthenticated(user);
+                          const userId = getUserId(user);
 
-                          if (routerLocation.pathname === '/for-you' && isLoggedIn && userId) {
-                            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
+                          if (routerLocation.pathname === '/for-you' && loggedIn && userId) {
                             // Determine categories payload:
                             // - If specific category selected, save [category]
                             // - If "All Categories" selected (empty), save [] to Profile
                             const categoriesPayload = filters.category ? [filters.category] : [];
 
-                            fetch(`${baseUrl}/api/profile/preferences/update`, {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                              },
-                              body: JSON.stringify({
+                            api.post('/profile/preferences/update', {
                                 userId,
                                 location: filters.location,
                                 minPrice: filters.minPrice,
                                 maxPrice: filters.maxPrice,
                                 categories: categoriesPayload
                               })
-                            }).then(res => {
-                              if (res.ok) {
+                            .then(() => {
                                 toast({ title: t('preferences_updated') || 'Preferences Updated', description: t('for_you_synced') || 'Your For You feed preferences have been saved.' });
+                            })
+                            .catch(err => {
+                              if (import.meta.env.DEV) {
+                                console.error("Failed to sync preferences", err);
                               }
-                            }).catch(err => console.error("Failed to sync preferences", err));
+                            });
                           }
 
                           // If on For You page, navigate with filters as URL params
@@ -674,7 +704,7 @@ const GreenNavbar = () => {
               key={link.key}
               {...navButtonProps(t(link.key))}
               aria-current={routerLocation.pathname === link.path ? 'page' : undefined}
-              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen(true); } : () => window.location.assign(link.path)}
+              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen(true); } : () => navigate(link.path)}
               style={{ background: 'none', border: 'none', outline: 'none' }}
             >
               <span className={routerLocation.pathname === link.path ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-500 dark:text-gray-300'}>
@@ -693,7 +723,7 @@ const GreenNavbar = () => {
             <button
               aria-label={t('sell') || "Sell"}
               className="bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-4xl shadow-lg hover:bg-blue-700 transition-all -translate-y-4 border-4 border-white dark:border-gray-900"
-              onClick={() => window.location.assign('/tier-selection')}
+              onClick={() => navigate('/tier-selection')}
               style={{ zIndex: 100 }}
             >
               +
@@ -707,7 +737,7 @@ const GreenNavbar = () => {
               key={link.key}
               {...navButtonProps(t(link.key))}
               aria-current={routerLocation.pathname === link.path ? 'page' : undefined}
-              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen(true); } : () => window.location.assign(link.path)}
+              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen(true); } : () => navigate(link.path)}
               style={{ background: 'none', border: 'none', outline: 'none' }}
             >
               <span className={routerLocation.pathname === link.path ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-gray-500 dark:text-gray-300'}>

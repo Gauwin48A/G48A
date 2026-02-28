@@ -4,7 +4,7 @@ const { protect } = require('../middleware/auth');
 const referralController = require('../controllers/referralController');
 
 // GET /api/referral — Get referral info
-router.get('/', referralController.getReferral);
+router.get('/', protect, referralController.getReferral);
 
 // POST /api/referral/create — Generate a referral code
 router.post('/create', protect, referralController.createReferral);

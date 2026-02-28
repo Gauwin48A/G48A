@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2026-02-28T06:36:50.413Z",
+  "runId": "aa-1772260610395",
+  "config": {
+    "regionA": "http://127.0.0.1:5055",
+    "regionB": "http://127.0.0.1:6055",
+    "healthPath": "/api/ready",
+    "timeoutMs": 5000,
+    "settleMs": 250,
+    "mode": "simulate",
+    "rollbackOnFailure": true,
+    "syntheticProbe": false,
+    "shiftSteps": [
+      {
+        "weightA": 90,
+        "weightB": 10
+      },
+      {
+        "weightA": 75,
+        "weightB": 25
+      },
+      {
+        "weightA": 50,
+        "weightB": 50
+      },
+      {
+        "weightA": 25,
+        "weightB": 75
+      },
+      {
+        "weightA": 0,
+        "weightB": 100
+      }
+    ]
+  },
+  "report": {
+    "finalStatus": "blocked_initial_unhealthy_region_a",
+    "startedAt": "2026-02-28T06:36:50.396Z",
+    "finishedAt": "2026-02-28T06:36:50.413Z",
+    "durationMs": 17,
+    "timeline": [
+      {
+        "phase": "preflight",
+        "timestamp": "2026-02-28T06:36:50.396Z",
+        "mode": "simulate",
+        "preflight": {
+          "status": "COMPLETE",
+          "eligible": true,
+          "issues": []
+        },
+        "safetyAudit": {
+          "source": "disabled",
+          "status": "PENDING",
+          "path": null,
+          "reason": "safety_audit_not_requested"
+        }
+      },
+      {
+        "phase": "initial_probe",
+        "timestamp": "2026-02-28T06:36:50.413Z",
+        "probes": {
+          "regionA": {
+            "ok": false,
+            "statusCode": null,
+            "healthStatus": "probe_error",
+            "durationMs": 15,
+            "error": "connect ECONNREFUSED 127.0.0.1:5055"
+          },
+          "regionB": {
+            "ok": false,
+            "statusCode": null,
+            "healthStatus": "probe_error",
+            "durationMs": 5,
+            "error": "connect ECONNREFUSED 127.0.0.1:6055"
+          }
+        }
+      }
+    ],
+    "failures": [
+      "Region-A is unhealthy before orchestration start"
+    ]
+  }
+}

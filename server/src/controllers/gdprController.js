@@ -4,13 +4,33 @@
  */
 const pool = require('../config/db');
 const { logSecurityEvent, EVENTS } = require('../config/auditLogger');
+const logger = require('../utils/logger');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+function parseOptionalString(value) {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).trim();
+    return normalized.length > 0 ? normalized : null;
+}
+
+function getAuthenticatedUserId(req) {
+    return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
 
 /**
  * Export all user data (GDPR Right to Access)
  * GET /api/user/export
  */
 exports.exportUserData = async (req, res) => {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getAuthenticatedUserId(req);
 
     if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
@@ -21,51 +41,51 @@ exports.exportUserData = async (req, res) => {
         const userData = {};
 
         // User profile
-        const userResult = await pool.query(
+        const userResult = await runQuery(
             `SELECT user_id, username, email, name, phone_number, role, 
               preferred_language, rating, trust_score, created_at, last_login
        FROM users WHERE user_id = $1`,
-            [userId]
+            [String(userId)]
         );
         userData.profile = userResult.rows[0] || {};
 
         // Extended profile
-        const profileResult = await pool.query(
+        const profileResult = await runQuery(
             `SELECT full_name, phone, address, bio, created_at 
        FROM profiles WHERE user_id = $1`,
-            [userId]
+            [String(userId)]
         );
         userData.extendedProfile = profileResult.rows[0] || {};
 
         // User's posts
-        const postsResult = await pool.query(
+        const postsResult = await runQuery(
             `SELECT post_id, title, description, price, location, status, created_at 
        FROM posts WHERE user_id = $1 ORDER BY created_at DESC`,
-            [userId]
+            [String(userId)]
         );
         userData.posts = postsResult.rows;
 
         // User's transactions
-        const transactionsResult = await pool.query(
+        const transactionsResult = await runQuery(
             `SELECT transaction_id, post_id, amount, status, created_at 
        FROM transactions WHERE buyer_id = $1 OR seller_id = $1 
        ORDER BY created_at DESC`,
-            [userId]
+            [String(userId)]
         );
         userData.transactions = transactionsResult.rows;
 
         // User's wishlist
-        const wishlistResult = await pool.query(
+        const wishlistResult = await runQuery(
             `SELECT post_id, created_at FROM wishlists WHERE user_id = $1`,
-            [userId]
+            [String(userId)]
         );
         userData.wishlist = wishlistResult.rows;
 
         // User's notifications
-        const notificationsResult = await pool.query(
+        const notificationsResult = await runQuery(
             `SELECT notification_id, title, message, type, is_read, created_at 
        FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100`,
-            [userId]
+            [String(userId)]
         );
         userData.notifications = notificationsResult.rows;
 
@@ -86,7 +106,7 @@ exports.exportUserData = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('[GDPR] Export error:', err);
+        logger.error('[GDPR] Export error:', err);
         res.status(500).json({ error: 'Failed to export data' });
     }
 };
@@ -96,7 +116,7 @@ exports.exportUserData = async (req, res) => {
  * DELETE /api/user/delete
  */
 exports.deleteUserData = async (req, res) => {
-    const userId = req.user?.userId || req.user?.id;
+    const userId = getAuthenticatedUserId(req);
     const { password, confirmation } = req.body;
 
     if (!userId) {
@@ -112,9 +132,9 @@ exports.deleteUserData = async (req, res) => {
     try {
         // Verify password
         const bcrypt = require('bcryptjs');
-        const userResult = await pool.query(
+        const userResult = await runQuery(
             'SELECT password_hash FROM users WHERE user_id = $1',
-            [userId]
+            [String(userId)]
         );
 
         if (!userResult.rows[0]) {
@@ -127,12 +147,13 @@ exports.deleteUserData = async (req, res) => {
         }
 
         // Delete in order (respecting foreign keys)
-        await pool.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM wishlists WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM transactions WHERE buyer_id = $1 OR seller_id = $1', [userId]);
-        await pool.query('DELETE FROM posts WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM profiles WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM users WHERE user_id = $1', [userId]);
+        const normalizedUserId = String(userId);
+        await runQuery('DELETE FROM notifications WHERE user_id = $1', [normalizedUserId]);
+        await runQuery('DELETE FROM wishlists WHERE user_id = $1', [normalizedUserId]);
+        await runQuery('DELETE FROM transactions WHERE buyer_id = $1 OR seller_id = $1', [normalizedUserId]);
+        await runQuery('DELETE FROM posts WHERE user_id = $1', [normalizedUserId]);
+        await runQuery('DELETE FROM profiles WHERE user_id = $1', [normalizedUserId]);
+        await runQuery('DELETE FROM users WHERE user_id = $1', [normalizedUserId]);
 
         // Log the deletion
         logSecurityEvent(EVENTS.ACCOUNT_DELETED, {
@@ -151,7 +172,7 @@ exports.deleteUserData = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('[GDPR] Delete error:', err);
+        logger.error('[GDPR] Delete error:', err);
         res.status(500).json({ error: 'Failed to delete account' });
     }
 };

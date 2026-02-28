@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,33 +21,46 @@ const Offers = () => {
     const [loading, setLoading] = useState(true);
     const [role, setRole] = useState('seller'); // 'seller' or 'buyer'
     const [counterPrice, setCounterPrice] = useState({});
-    const token = localStorage.getItem('authToken');
+    const [actionOfferId, setActionOfferId] = useState(null);
+    const requestIdRef = useRef(0);
+
+    const fetchOffers = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
+        setLoading(true);
+        try {
+            const response = await api.get('/api/offers', {
+                params: { role }
+            });
+            if (requestId !== requestIdRef.current) {
+                return;
+            }
+            const payload = response?.data ?? response;
+            setOffers(Array.isArray(payload?.offers) ? payload.offers : []);
+        } catch (error) {
+            if (import.meta.env.DEV) {
+                console.error('Failed to fetch offers:', error);
+            }
+        } finally {
+            if (requestId === requestIdRef.current) {
+                setLoading(false);
+            }
+        }
+    }, [role]);
 
     useEffect(() => {
         fetchOffers();
-    }, [role]);
-
-    const fetchOffers = async () => {
-        setLoading(true);
-        try {
-            const res = await api.get(`/api/offers?role=${role}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setOffers(res.data.offers || []);
-        } catch (error) {
-            console.error('Failed to fetch offers:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        return () => {
+            requestIdRef.current += 1;
+        };
+    }, [fetchOffers]);
 
     const respondToOffer = async (offerId, action, price = null) => {
+        if (actionOfferId) return;
+        setActionOfferId(offerId);
         try {
             await api.patch(`/api/offers/${offerId}`, {
                 action,
                 counterPrice: price
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
             });
 
             toast({
@@ -57,11 +70,16 @@ const Offers = () => {
 
             fetchOffers();
         } catch (error) {
+            if (import.meta.env.DEV) {
+                console.error('Failed to process offer:', error);
+            }
             toast({
                 title: 'Error',
                 description: 'Failed to process offer',
                 variant: 'destructive'
             });
+        } finally {
+            setActionOfferId(null);
         }
     };
 
@@ -76,7 +94,12 @@ const Offers = () => {
     };
 
     const calculateDiscount = (offered, original) => {
-        return Math.round(((original - offered) / original) * 100);
+        const offeredValue = Number(offered);
+        const originalValue = Number(original);
+        if (!Number.isFinite(offeredValue) || !Number.isFinite(originalValue) || originalValue <= 0) {
+            return 0;
+        }
+        return Math.round(((originalValue - offeredValue) / originalValue) * 100);
     };
 
     return (
@@ -195,6 +218,7 @@ const Offers = () => {
                                                 <Button
                                                     size="sm"
                                                     className="bg-green-600 hover:bg-green-700"
+                                                    disabled={actionOfferId === offer.offer_id}
                                                     onClick={() => respondToOffer(offer.offer_id, 'accept')}
                                                 >
                                                     <Check className="w-4 h-4 mr-1" /> Accept
@@ -202,6 +226,7 @@ const Offers = () => {
                                                 <Button
                                                     size="sm"
                                                     variant="destructive"
+                                                    disabled={actionOfferId === offer.offer_id}
                                                     onClick={() => respondToOffer(offer.offer_id, 'reject')}
                                                 >
                                                     <X className="w-4 h-4 mr-1" /> Reject
@@ -217,8 +242,8 @@ const Offers = () => {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
+                                                        disabled={!counterPrice[offer.offer_id] || actionOfferId === offer.offer_id}
                                                         onClick={() => respondToOffer(offer.offer_id, 'counter', counterPrice[offer.offer_id])}
-                                                        disabled={!counterPrice[offer.offer_id]}
                                                     >
                                                         Send
                                                     </Button>

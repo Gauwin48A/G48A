@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-02-28T05:14:55.195Z",
+  "gate": {
+    "status": "BLOCKED",
+    "eligible": false,
+    "reasons": [
+      "missing_primary_or_replica_connection"
+    ],
+    "thresholds": {
+      "maxReplicaLagBytes": 16777216,
+      "maxReplicaReplayDelaySeconds": 60,
+      "maxQueueDuplicateGroups": 0,
+      "maxQueueDuplicateRows": 0,
+      "maxTranslationDuplicateGroups": 0
+    }
+  },
+  "thresholds": {
+    "maxReplicaLagBytes": 16777216,
+    "maxReplicaReplayDelaySeconds": 60,
+    "maxQueueDuplicateGroups": 0,
+    "maxQueueDuplicateRows": 0,
+    "maxTranslationDuplicateGroups": 0
+  },
+  "replicaLagAudit": {
+    "status": "BLOCKED",
+    "reason": "missing_primary_or_replica_connection"
+  },
+  "queueReplayAudit": {
+    "status": "COMPLETE",
+    "lookbackHours": 24,
+    "payments": {
+      "duplicateGroupCount": 0,
+      "duplicateRowCount": 0
+    },
+    "translationQueue": {
+      "duplicateGroupCount": 0
+    },
+    "warnings": []
+  },
+  "dependencies": {
+    "primaryUrlConfigured": false,
+    "replicaUrlConfigured": false
+  }
+}

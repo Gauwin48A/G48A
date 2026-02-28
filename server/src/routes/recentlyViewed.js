@@ -3,11 +3,11 @@
  */
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 const recentlyViewedController = require('../controllers/recentlyViewedController');
 
 // Track a view (requires auth optional for anonymous tracking)
-router.post('/track', recentlyViewedController.addRecentlyViewed);
+router.post('/track', optionalAuth, recentlyViewedController.addRecentlyViewed);
 
 // Get user's recently viewed (auth required)
 router.get('/', protect, recentlyViewedController.getRecentlyViewed);

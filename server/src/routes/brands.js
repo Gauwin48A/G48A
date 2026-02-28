@@ -1,6 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+const cacheService = require('../services/cacheService');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const BRAND_CACHE_TTL_SECONDS = Number.parseInt(process.env.BRAND_CACHE_TTL_SECONDS, 10) || 300;
+
+function runQuery(text, values = []) {
+  return pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
 
 // Default brands if table doesn't exist
 const defaultBrands = [
@@ -22,14 +35,24 @@ const defaultBrands = [
 // GET /api/brands
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM brands ORDER BY name');
-    if (result.rows && result.rows.length > 0) {
-      res.json(result.rows);
+    const brands = await cacheService.getOrSetWithStampedeProtection(
+      'brands:all',
+      async () => {
+        const result = await runQuery(
+          'SELECT brand_id, name FROM brands ORDER BY name'
+        );
+        return result.rows;
+      },
+      BRAND_CACHE_TTL_SECONDS
+    );
+
+    if (brands && brands.length > 0) {
+      res.json(brands);
     } else {
       res.json(defaultBrands);
     }
   } catch (err) {
-    console.error('[Brands] Error:', err.message);
+    logger.error('[Brands] Error:', err.message);
     // Return defaults if table doesn't exist
     res.json(defaultBrands);
   }

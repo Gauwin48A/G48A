@@ -10,6 +10,13 @@
  */
 
 const pool = require('../config/db');
+const MAX_AUDIT_LOG_LIMIT = 200;
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+    return Math.min(parsed, max);
+}
 
 // Action types for consistency
 const AUDIT_ACTIONS = {
@@ -134,13 +141,14 @@ const logSecurityEvent = async ({ eventType, userId = null, ip, severity = 'MEDI
  */
 const getUserAuditLogs = async (userId, limit = 50) => {
     try {
+        const safeLimit = parsePositiveInt(limit, 50, MAX_AUDIT_LOG_LIMIT);
         const result = await pool.query(
             `SELECT action, ip_address, user_agent, details, created_at 
        FROM audit_logs 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
        LIMIT $2`,
-            [userId, limit]
+            [userId, safeLimit]
         );
         return result.rows;
     } catch (err) {

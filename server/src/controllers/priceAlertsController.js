@@ -4,10 +4,35 @@
  */
 
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const DEFAULT_PERCENTAGE_THRESHOLD = 10;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+function toFiniteNumber(value, fallback = null) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function getUserId(req) {
+    return req.user?.userId || req.user?.id || req.user?.user_id || null;
+}
+
+function isAdmin(req) {
+    const role = String(req.user?.role || '').toLowerCase();
+    return role === 'admin' || role === 'superadmin';
+}
 
 // Subscribe to price drop alerts
 const subscribeAlert = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getUserId(req);
     const { postId, targetPrice, percentageThreshold } = req.body;
 
     if (!userId) {
@@ -19,8 +44,14 @@ const subscribeAlert = async (req, res) => {
     }
 
     try {
+        const normalizedUserId = String(userId);
+        const normalizedTargetPrice = targetPrice === undefined || targetPrice === null || targetPrice === ''
+            ? null
+            : toFiniteNumber(targetPrice, null);
+        const normalizedThreshold = toFiniteNumber(percentageThreshold, DEFAULT_PERCENTAGE_THRESHOLD);
+
         // Check if post exists
-        const postCheck = await pool.query(
+        const postCheck = await runQuery(
             'SELECT price FROM posts WHERE post_id = $1',
             [postId]
         );
@@ -29,7 +60,7 @@ const subscribeAlert = async (req, res) => {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        const result = await pool.query(`
+        const result = await runQuery(`
             INSERT INTO price_drop_alerts (user_id, post_id, target_price, percentage_threshold)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (user_id, post_id) 
@@ -37,22 +68,31 @@ const subscribeAlert = async (req, res) => {
                 target_price = EXCLUDED.target_price,
                 percentage_threshold = EXCLUDED.percentage_threshold,
                 is_active = true
-            RETURNING *
-        `, [userId, postId, targetPrice || null, percentageThreshold || 10.0]);
+            RETURNING
+                alert_id,
+                user_id,
+                post_id,
+                target_price,
+                percentage_threshold,
+                is_active,
+                last_notified_at,
+                created_at,
+                created_at AS updated_at
+        `, [normalizedUserId, postId, normalizedTargetPrice, normalizedThreshold]);
 
         res.status(201).json({
             message: 'Alert subscribed',
             alert: result.rows[0]
         });
     } catch (error) {
-        console.error('Subscribe alert error:', error);
+        logger.error('Subscribe alert error:', error);
         res.status(500).json({ error: 'Failed to subscribe' });
     }
 };
 
 // Get user's price alerts
 const getAlerts = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getUserId(req);
     const { active } = req.query;
 
     if (!userId) {
@@ -60,9 +100,19 @@ const getAlerts = async (req, res) => {
     }
 
     try {
+        const normalizedUserId = String(userId);
+        const activeOnly = String(active).toLowerCase() === 'true';
         let query = `
             SELECT 
-                pda.*,
+                pda.alert_id,
+                pda.user_id,
+                pda.post_id,
+                pda.target_price,
+                pda.percentage_threshold,
+                pda.is_active,
+                pda.last_notified_at,
+                pda.created_at,
+                pda.created_at AS updated_at,
                 p.title,
                 p.price as current_price,
                 p.images,
@@ -73,24 +123,24 @@ const getAlerts = async (req, res) => {
             WHERE pda.user_id = $1
         `;
 
-        if (active === 'true') {
+        if (activeOnly) {
             query += ` AND pda.is_active = true`;
         }
 
         query += ` ORDER BY pda.created_at DESC`;
 
-        const result = await pool.query(query, [userId]);
+        const result = await runQuery(query, [normalizedUserId]);
 
         res.json({ alerts: result.rows });
     } catch (error) {
-        console.error('Get alerts error:', error);
+        logger.error('Get alerts error:', error);
         res.status(500).json({ error: 'Failed to get alerts' });
     }
 };
 
 // Unsubscribe from alert
 const unsubscribeAlert = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getUserId(req);
     const { postId } = req.params;
 
     if (!userId) {
@@ -98,21 +148,21 @@ const unsubscribeAlert = async (req, res) => {
     }
 
     try {
-        await pool.query(
+        await runQuery(
             'UPDATE price_drop_alerts SET is_active = false WHERE user_id = $1 AND post_id = $2',
-            [userId, postId]
+            [String(userId), postId]
         );
 
         res.json({ message: 'Alert unsubscribed' });
     } catch (error) {
-        console.error('Unsubscribe error:', error);
+        logger.error('Unsubscribe error:', error);
         res.status(500).json({ error: 'Failed to unsubscribe' });
     }
 };
 
 // Delete alert completely
 const deleteAlert = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getUserId(req);
     const { postId } = req.params;
 
     if (!userId) {
@@ -120,25 +170,37 @@ const deleteAlert = async (req, res) => {
     }
 
     try {
-        await pool.query(
+        await runQuery(
             'DELETE FROM price_drop_alerts WHERE user_id = $1 AND post_id = $2',
-            [userId, postId]
+            [String(userId), postId]
         );
 
         res.json({ message: 'Alert deleted' });
     } catch (error) {
-        console.error('Delete alert error:', error);
+        logger.error('Delete alert error:', error);
         res.status(500).json({ error: 'Failed to delete' });
     }
 };
 
 // Check if price drop occurred (for background job)
 const checkPriceDrops = async (req, res) => {
+    if (!isAdmin(req)) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+
     try {
         // Find alerts where current price is below target or dropped by percentage
-        const result = await pool.query(`
+        const result = await runQuery(`
             SELECT 
-                pda.*,
+                pda.alert_id,
+                pda.user_id,
+                pda.post_id,
+                pda.target_price,
+                pda.percentage_threshold,
+                pda.is_active,
+                pda.last_notified_at,
+                pda.created_at,
+                pda.created_at AS updated_at,
                 p.price as current_price,
                 p.title,
                 u.email,
@@ -168,7 +230,7 @@ const checkPriceDrops = async (req, res) => {
             count: result.rows.length
         });
     } catch (error) {
-        console.error('Check price drops error:', error);
+        logger.error('Check price drops error:', error);
         res.status(500).json({ error: 'Failed to check' });
     }
 };

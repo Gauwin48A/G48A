@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { AlertTriangle, Users, FileText, Flag, Shield, TrendingUp, Search, MoreVertical, Ban, CheckCircle } from "lucide-react";
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const AdminPanel = () => {
   const { t } = useTranslation();
@@ -18,7 +19,7 @@ const AdminPanel = () => {
 
   useEffect(() => {
     setLoading(true);
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const baseUrl = getApiOriginBase();
     fetch(`${baseUrl}/api/admin/dashboard`)
       .then(res => res.json())
       .then(data => {
@@ -328,3 +329,4 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
+

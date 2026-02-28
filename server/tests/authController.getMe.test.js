@@ -86,4 +86,48 @@ describe('authController.getMe', () => {
       })
     );
   });
+
+  it('accepts req.user.user_id when id is absent', async () => {
+    const queryMockImpl = jest
+      .fn()
+      .mockResolvedValueOnce({ rows: [{ rewards_table: null }] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            user_id: 'user-xyz',
+            name: 'Alt Claim User',
+            phone_number: '7777777777',
+            email: 'alt@example.com',
+            role: 'user',
+            tier: 'Bronze'
+          }
+        ]
+      });
+
+    const { authController, queryMock } = loadAuthControllerWithQueryMock(queryMockImpl);
+    const req = { user: { user_id: 'user-xyz' } };
+    const res = createResponseMock();
+    await authController.getMe(req, res);
+
+    expect(queryMock).toHaveBeenCalledTimes(2);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'user-xyz',
+        tier: 'Bronze'
+      })
+    );
+  });
+
+  it('returns 401 when authenticated user id is missing', async () => {
+    const queryMockImpl = jest.fn();
+    const { authController, queryMock } = loadAuthControllerWithQueryMock(queryMockImpl);
+    const req = { user: { role: 'user' } };
+    const res = createResponseMock();
+
+    await authController.getMe(req, res);
+
+    expect(queryMock).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+  });
 });

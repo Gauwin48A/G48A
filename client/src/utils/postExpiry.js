@@ -1,14 +1,19 @@
 
 import { NotificationManager, NotificationTypes } from './notificationSystem.js';
 import { checkPostExpiry } from './fraudPrevention.js';
+import { buildApiPath } from '@/lib/networkConfig';
 
 export class PostExpiryManager {
+  static schedulerId = null;
+  static expiryCheckConcurrency = 10;
+
   static async checkAllPostsExpiry() {
     // Fetch posts from backend API
     const allPosts = await this.getAllPosts();
     if (!Array.isArray(allPosts)) return;
-    for (const post of allPosts) {
-      await this.processPostExpiry(post);
+    for (let i = 0; i < allPosts.length; i += this.expiryCheckConcurrency) {
+      const batch = allPosts.slice(i, i + this.expiryCheckConcurrency);
+      await Promise.allSettled(batch.map((post) => this.processPostExpiry(post)));
     }
   }
 
@@ -39,7 +44,8 @@ export class PostExpiryManager {
       movedToSaleUndoneAt: new Date().toISOString(),
       priority: 'high'
     };
-    await fetch(`http://localhost:5000/api/posts/${post.id}`, {
+    const encodedPostId = encodeURIComponent(post.id);
+    await fetch(buildApiPath(`/posts/${encodedPostId}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedPost)
@@ -68,13 +74,14 @@ export class PostExpiryManager {
 
   static async getAllPosts() {
     // Fetch posts from backend API
-    const res = await fetch('http://localhost:5000/api/posts');
+    const res = await fetch(buildApiPath('/posts'));
     return await res.json();
   }
 
   static async updatePost(post) {
     // Update post in backend
-    await fetch(`http://localhost:5000/api/posts/${post.id}`, {
+    const encodedPostId = encodeURIComponent(post.id);
+    await fetch(buildApiPath(`/posts/${encodedPostId}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(post)
@@ -83,14 +90,28 @@ export class PostExpiryManager {
 
   // Run expiry check daily
   static startExpiryScheduler() {
+    if (this.schedulerId) {
+      return;
+    }
+
     // Check immediately
     this.checkAllPostsExpiry();
     // Then check every 24 hours
-    setInterval(() => {
+    this.schedulerId = setInterval(() => {
       this.checkAllPostsExpiry();
     }, 24 * 60 * 60 * 1000);
+  }
+
+  static stopExpiryScheduler() {
+    if (!this.schedulerId) {
+      return;
+    }
+    clearInterval(this.schedulerId);
+    this.schedulerId = null;
   }
 }
 
 // Auto-start the expiry scheduler when the module loads
-PostExpiryManager.startExpiryScheduler();
+if (typeof window !== 'undefined' && import.meta.env.PROD) {
+  PostExpiryManager.startExpiryScheduler();
+}

@@ -16,9 +16,9 @@ describe('readinessService', () => {
         expect(result.missing).toContain('DB_HOST');
     });
 
-    it('warns when snapshot is stale', () => {
+    it('warns when snapshot is stale', async () => {
         const fixture = path.resolve(__dirname, 'test1.json');
-        const result = evaluateSnapshot(
+        const result = await evaluateSnapshot(
             {
                 DIRECTORY_SNAPSHOT_PATH: fixture,
                 DIRECTORY_SNAPSHOT_MAX_AGE_HOURS: '0'
@@ -70,5 +70,39 @@ describe('readinessService', () => {
         expect(readiness.status).toBe('ready');
         expect(readiness.checks.sessionStore.status).toBe('pass');
         expect(readiness.checks.sessionStore.mode).toBe('memory-fallback');
+    });
+
+    it('treats cache healthCheck { healthy: true } as pass', async () => {
+        const readiness = await runReadinessChecks({
+            pool: { query: jest.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }) },
+            cacheService: {
+                healthCheck: jest.fn().mockResolvedValue({ healthy: true, recommendation: 'Healthy' })
+            },
+            sessionStore: null,
+            env: {
+                JWT_SECRET: 'a',
+                REFRESH_SECRET: 'b',
+                DB_HOST: 'localhost',
+                DB_PORT: '5432',
+                DB_NAME: 'mhub',
+                DB_USER: 'postgres'
+            }
+        });
+
+        expect(readiness.checks.cache.status).toBe('pass');
+        expect(readiness.status).toBe('ready');
+    });
+
+    it('falls back snapshot max age to default when env value is invalid', async () => {
+        const fixture = path.resolve(__dirname, 'test1.json');
+        const result = await evaluateSnapshot(
+            {
+                DIRECTORY_SNAPSHOT_PATH: fixture,
+                DIRECTORY_SNAPSHOT_MAX_AGE_HOURS: 'invalid'
+            },
+            new Date()
+        );
+
+        expect(result.maxAgeHours).toBe(72);
     });
 });

@@ -1,0 +1,538 @@
+{
+  "mode": "live",
+  "generatedAt": "2026-02-28T03:49:10.075Z",
+  "baseUrl": "http://127.0.0.1:5055",
+  "timeoutMs": 5000,
+  "scenarios": [
+    "normal",
+    "abuse",
+    "authenticated"
+  ],
+  "results": [
+    {
+      "scenario": "normal",
+      "profile": "1k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 8.843700000000013,
+        "p95": 14.136300000000006,
+        "p99": 16.90840000000003,
+        "max": 17.147899999999936
+      },
+      "throughputRps": 1148.43
+    },
+    {
+      "scenario": "normal",
+      "profile": "1k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 22.542500000000018,
+        "p95": 34.880300000000034,
+        "p99": 210.2424000000001,
+        "max": 306.86930000000007
+      },
+      "throughputRps": 341.25
+    },
+    {
+      "scenario": "normal",
+      "profile": "1k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 21.82809999999995,
+        "p95": 40.86609999999996,
+        "p99": 219.80220000000008,
+        "max": 253.19319999999993
+      },
+      "throughputRps": 353.68
+    },
+    {
+      "scenario": "normal",
+      "profile": "10k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 19.71180000000004,
+        "p95": 30.98050000000012,
+        "p99": 33.226500000000215,
+        "max": 38.08609999999999
+      },
+      "throughputRps": 1415.63
+    },
+    {
+      "scenario": "normal",
+      "profile": "10k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 60.885899999999765,
+        "p95": 74.59970000000021,
+        "p99": 78.82819999999992,
+        "max": 82.39150000000018
+      },
+      "throughputRps": 482.96
+    },
+    {
+      "scenario": "normal",
+      "profile": "10k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 56.88510000000042,
+        "p95": 82.95999999999913,
+        "p99": 90.11009999999987,
+        "max": 95.69629999999961
+      },
+      "throughputRps": 505.74
+    },
+    {
+      "scenario": "normal",
+      "profile": "50k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 2400,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 65.15099999999984,
+        "p95": 80.35260000000017,
+        "p99": 102.85130000000026,
+        "max": 113.71680000000015
+      },
+      "throughputRps": 1211.42
+    },
+    {
+      "scenario": "normal",
+      "profile": "50k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 2400,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 137.8134000000009,
+        "p95": 162.34770000000026,
+        "p99": 167.9357999999993,
+        "max": 183.85699999999997
+      },
+      "throughputRps": 573.64
+    },
+    {
+      "scenario": "normal",
+      "profile": "50k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 2400,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 158.77069999999912,
+        "p95": 210.62129999999888,
+        "p99": 221.94620000000214,
+        "max": 231.87639999999737
+      },
+      "throughputRps": 484.36
+    },
+    {
+      "scenario": "abuse",
+      "profile": "1k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 13.4403999999995,
+        "p95": 31.957699999999022,
+        "p99": 42.900399999998626,
+        "max": 43.82770000000164
+      },
+      "throughputRps": 651.79
+    },
+    {
+      "scenario": "abuse",
+      "profile": "1k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 0,
+        "failures": 200
+      },
+      "errorBreakdown": {
+        "429": 200
+      },
+      "latency": {
+        "p50": 10.863000000001193,
+        "p95": 18.421800000000076,
+        "p99": 21.974699999998847,
+        "max": 22.330799999999726
+      },
+      "throughputRps": 906.85
+    },
+    {
+      "scenario": "abuse",
+      "profile": "1k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 0,
+        "failures": 200
+      },
+      "errorBreakdown": {
+        "429": 200
+      },
+      "latency": {
+        "p50": 9.583699999999226,
+        "p95": 16.920099999999366,
+        "p99": 22.315600000001723,
+        "max": 22.662599999999657
+      },
+      "throughputRps": 912.44
+    },
+    {
+      "scenario": "abuse",
+      "profile": "10k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 35.567800000000716,
+        "p95": 49.211599999998725,
+        "p99": 53.938099999999395,
+        "max": 56.048399999999674
+      },
+      "throughputRps": 820.89
+    },
+    {
+      "scenario": "abuse",
+      "profile": "10k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 0,
+        "failures": 800
+      },
+      "errorBreakdown": {
+        "429": 800
+      },
+      "latency": {
+        "p50": 31.443299999999,
+        "p95": 47.00080000000162,
+        "p99": 54.64689999999973,
+        "max": 57.49140000000261
+      },
+      "throughputRps": 907.43
+    },
+    {
+      "scenario": "abuse",
+      "profile": "10k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 0,
+        "failures": 800
+      },
+      "errorBreakdown": {
+        "429": 800
+      },
+      "latency": {
+        "p50": 24.978100000000268,
+        "p95": 50.994000000002416,
+        "p99": 55.888599999998405,
+        "max": 58.40979999999763
+      },
+      "throughputRps": 1082.39
+    },
+    {
+      "scenario": "abuse",
+      "profile": "50k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 2400,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 58.22820000000138,
+        "p95": 77.97139999999854,
+        "p99": 108.89500000000044,
+        "max": 113.26320000000123
+      },
+      "throughputRps": 1318.97
+    },
+    {
+      "scenario": "abuse",
+      "profile": "50k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 45.264100000000326,
+        "p95": 51.76440000000002,
+        "p99": 56.60699999999997,
+        "max": 58.79030000000057
+      },
+      "throughputRps": 1782.88
+    },
+    {
+      "scenario": "abuse",
+      "profile": "50k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 41.85160000000178,
+        "p95": 52.61079999999856,
+        "p99": 57.88799999999901,
+        "max": 63.936499999999796
+      },
+      "throughputRps": 1876
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "1k",
+      "endpoint": "/api/auth/me",
+      "method": "GET",
+      "totals": {
+        "requests": 240,
+        "success": 240,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 16.56040000000212,
+        "p95": 19.398799999999028,
+        "p99": 25.07679999999891,
+        "max": 25.60780000000159
+      },
+      "throughputRps": 478.86
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "1k",
+      "endpoint": "/api/auth/validate",
+      "method": "GET",
+      "totals": {
+        "requests": 240,
+        "success": 240,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 16.78519999999844,
+        "p95": 22.6234000000004,
+        "p99": 29.84150000000227,
+        "max": 31.26550000000134
+      },
+      "throughputRps": 468.24
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "1k",
+      "endpoint": "/api/posts/batch-view",
+      "method": "POST",
+      "totals": {
+        "requests": 240,
+        "success": 240,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 126.89939999999842,
+        "p95": 170.0668000000005,
+        "p99": 237.60199999999895,
+        "max": 255.07710000000225
+      },
+      "throughputRps": 63.7
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "10k",
+      "endpoint": "/api/auth/me",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 50.296699999998964,
+        "p95": 93.40450000000055,
+        "p99": 440.9578999999976,
+        "max": 492.40360000000146
+      },
+      "throughputRps": 321.09
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "10k",
+      "endpoint": "/api/auth/validate",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 38.73540000000139,
+        "p95": 49.94170000000304,
+        "p99": 80.57949999999983,
+        "max": 85.93070000000444
+      },
+      "throughputRps": 498.92
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "10k",
+      "endpoint": "/api/posts/batch-view",
+      "method": "POST",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 368.97929999999906,
+        "p95": 478.14890000000014,
+        "p99": 530.6916000000056,
+        "max": 577.623400000004
+      },
+      "throughputRps": 54.31
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "50k",
+      "endpoint": "/api/auth/me",
+      "method": "GET",
+      "totals": {
+        "requests": 1800,
+        "success": 1800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 146.34360000000015,
+        "p95": 220.19810000000143,
+        "p99": 338.62949999999546,
+        "max": 794.3327999999965
+      },
+      "throughputRps": 262.07
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "50k",
+      "endpoint": "/api/auth/validate",
+      "method": "GET",
+      "totals": {
+        "requests": 1800,
+        "success": 1800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 119.42610000000423,
+        "p95": 151.14710000000196,
+        "p99": 166.34710000000632,
+        "max": 171.7022999999972
+      },
+      "throughputRps": 329.79
+    },
+    {
+      "scenario": "authenticated",
+      "profile": "50k",
+      "endpoint": "/api/posts/batch-view",
+      "method": "POST",
+      "totals": {
+        "requests": 1800,
+        "success": 1800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 504.51699999999255,
+        "p95": 1470.3952999999892,
+        "p99": 1656.726600000009,
+        "max": 1864.7044999999925
+      },
+      "throughputRps": 50.53
+    }
+  ]
+}

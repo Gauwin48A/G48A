@@ -1,6 +1,22 @@
 const sharp = require('sharp');
 const fs = require('fs');
-const path = require('path');
+const fsp = fs.promises;
+
+function normalizeFiles(req) {
+    if (Array.isArray(req.files)) {
+        return req.files;
+    }
+
+    if (req.files && typeof req.files === 'object') {
+        return Object.values(req.files).flat().filter(Boolean);
+    }
+
+    if (req.file) {
+        return [req.file];
+    }
+
+    return [];
+}
 
 /**
  * Image Optimizer Middleware
@@ -9,12 +25,11 @@ const path = require('path');
  * (Cloudinary handles this automatically via config/cloudinary.js)
  */
 const optimizeLocalImages = async (req, res, next) => {
-    // 1. Skip if Cloudinary is active (files are already URLs)
-    // We check if file.path starts with 'http' or verify config
-    if (!req.files && !req.file) return next();
+    // 1. Skip if nothing uploaded.
+    const files = normalizeFiles(req);
+    if (!files.length) return next();
 
-    const files = req.files || [req.file];
-    const isCloudinary = files[0].path && files[0].path.startsWith('http');
+    const isCloudinary = Boolean(files[0]?.path && files[0].path.startsWith('http'));
 
     if (isCloudinary) {
         // Already handled by Cloudinary transformation
@@ -49,11 +64,11 @@ const optimizeLocalImages = async (req, res, next) => {
                 .toFile(tempPath);
 
             // Overwrite original file
-            fs.unlinkSync(originalPath);
-            fs.renameSync(tempPath, originalPath);
+            await fsp.unlink(originalPath);
+            await fsp.rename(tempPath, originalPath);
 
             // Update file metadata for controller
-            const newStats = fs.statSync(originalPath);
+            const newStats = await fsp.stat(originalPath);
             file.size = newStats.size;
 
             console.log(`   ✅ Optimized: ${file.originalname} (${Math.round(newStats.size / 1024)}KB)`);

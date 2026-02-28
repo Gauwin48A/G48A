@@ -11,7 +11,59 @@
 
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
+const crypto = require('crypto');
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+let twoFactorColumnsAvailabilityPromise = null;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+async function getTwoFactorColumnsAvailability() {
+    if (!twoFactorColumnsAvailabilityPromise) {
+        twoFactorColumnsAvailabilityPromise = runQuery(
+            `
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'users'
+                  AND column_name IN ('two_fa_enabled', 'two_fa_secret', 'two_fa_backup_codes')
+            `
+        )
+            .then((result) => {
+                const names = new Set((result?.rows || []).map((row) => row.column_name));
+                return {
+                    hasEnabled: names.has('two_fa_enabled'),
+                    hasSecret: names.has('two_fa_secret'),
+                    hasBackupCodes: names.has('two_fa_backup_codes')
+                };
+            })
+            .catch((error) => {
+                logger.warn('[2FA] Failed to inspect schema, assuming unavailable', { message: error.message });
+                return {
+                    hasEnabled: false,
+                    hasSecret: false,
+                    hasBackupCodes: false
+                };
+            });
+    }
+
+    return twoFactorColumnsAvailabilityPromise;
+}
+
+function isTwoFactorFullySupported(availability) {
+    return Boolean(availability?.hasEnabled && availability?.hasSecret && availability?.hasBackupCodes);
+}
+
+function getUserId(req) {
+    return req.user?.user_id || req.user?.id || req.user?.userId || null;
+}
 
 /**
  * Generate 2FA secret and QR code for setup
@@ -19,12 +71,20 @@ const pool = require('../config/db');
  */
 exports.setup2FA = async (req, res) => {
     try {
-        const userId = req.user.user_id || req.user.id;
+        const schema = await getTwoFactorColumnsAvailability();
+        if (!isTwoFactorFullySupported(schema)) {
+            return res.status(503).json({ error: '2FA service unavailable' });
+        }
+
+        const userId = getUserId(req);
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
 
         // Check if user already has 2FA enabled
-        const userCheck = await pool.query(
+        const userCheck = await runQuery(
             'SELECT two_fa_enabled FROM users WHERE user_id = $1',
-            [userId]
+            [String(userId)]
         );
 
         if (userCheck.rows[0]?.two_fa_enabled) {
@@ -41,11 +101,11 @@ exports.setup2FA = async (req, res) => {
         });
 
         // Store secret temporarily (not enabled yet until verified)
-        await pool.query(
+        await runQuery(
             `UPDATE users 
        SET two_fa_secret = $1, two_fa_enabled = false 
        WHERE user_id = $2`,
-            [secret.base32, userId]
+            [secret.base32, String(userId)]
         );
 
         // Generate QR code
@@ -59,7 +119,7 @@ exports.setup2FA = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('2FA Setup error:', error);
+        logger.error('2FA Setup error:', error);
         res.status(500).json({ error: 'Failed to setup 2FA' });
     }
 };
@@ -70,7 +130,15 @@ exports.setup2FA = async (req, res) => {
  */
 exports.verify2FA = async (req, res) => {
     try {
-        const userId = req.user.user_id || req.user.id;
+        const schema = await getTwoFactorColumnsAvailability();
+        if (!isTwoFactorFullySupported(schema)) {
+            return res.status(503).json({ error: '2FA service unavailable' });
+        }
+
+        const userId = getUserId(req);
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
         const { code } = req.body;
 
         if (!code) {
@@ -78,9 +146,9 @@ exports.verify2FA = async (req, res) => {
         }
 
         // Get user's secret
-        const userResult = await pool.query(
+        const userResult = await runQuery(
             'SELECT two_fa_secret FROM users WHERE user_id = $1',
-            [userId]
+            [String(userId)]
         );
 
         const secret = userResult.rows[0]?.two_fa_secret;
@@ -101,16 +169,16 @@ exports.verify2FA = async (req, res) => {
         }
 
         // Enable 2FA
-        await pool.query(
+        await runQuery(
             'UPDATE users SET two_fa_enabled = true WHERE user_id = $1',
-            [userId]
+            [String(userId)]
         );
 
         // Generate backup codes
         const backupCodes = generateBackupCodes();
-        await pool.query(
+        await runQuery(
             'UPDATE users SET two_fa_backup_codes = $1 WHERE user_id = $2',
-            [JSON.stringify(backupCodes), userId]
+            [JSON.stringify(backupCodes), String(userId)]
         );
 
         res.json({
@@ -120,7 +188,7 @@ exports.verify2FA = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('2FA Verify error:', error);
+        logger.error('2FA Verify error:', error);
         res.status(500).json({ error: 'Failed to verify 2FA' });
     }
 };
@@ -131,17 +199,25 @@ exports.verify2FA = async (req, res) => {
  */
 exports.disable2FA = async (req, res) => {
     try {
-        const userId = req.user.user_id || req.user.id;
-        const { code, password } = req.body;
+        const schema = await getTwoFactorColumnsAvailability();
+        if (!isTwoFactorFullySupported(schema)) {
+            return res.status(503).json({ error: '2FA service unavailable' });
+        }
+
+        const userId = getUserId(req);
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+        const { code } = req.body;
 
         if (!code) {
             return res.status(400).json({ error: 'Verification code required' });
         }
 
         // Get user's secret
-        const userResult = await pool.query(
+        const userResult = await runQuery(
             'SELECT two_fa_secret, two_fa_enabled FROM users WHERE user_id = $1',
-            [userId]
+            [String(userId)]
         );
 
         if (!userResult.rows[0]?.two_fa_enabled) {
@@ -163,11 +239,11 @@ exports.disable2FA = async (req, res) => {
         }
 
         // Disable 2FA
-        await pool.query(
+        await runQuery(
             `UPDATE users 
        SET two_fa_enabled = false, two_fa_secret = NULL, two_fa_backup_codes = NULL 
        WHERE user_id = $1`,
-            [userId]
+            [String(userId)]
         );
 
         res.json({
@@ -176,7 +252,7 @@ exports.disable2FA = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('2FA Disable error:', error);
+        logger.error('2FA Disable error:', error);
         res.status(500).json({ error: 'Failed to disable 2FA' });
     }
 };
@@ -187,6 +263,11 @@ exports.disable2FA = async (req, res) => {
  */
 exports.validate2FA = async (req, res) => {
     try {
+        const schema = await getTwoFactorColumnsAvailability();
+        if (!isTwoFactorFullySupported(schema)) {
+            return res.status(503).json({ error: '2FA service unavailable' });
+        }
+
         const { userId, code } = req.body;
 
         if (!userId || !code) {
@@ -194,9 +275,9 @@ exports.validate2FA = async (req, res) => {
         }
 
         // Get user's secret
-        const userResult = await pool.query(
+        const userResult = await runQuery(
             'SELECT two_fa_secret, two_fa_enabled, two_fa_backup_codes FROM users WHERE user_id = $1',
-            [userId]
+            [String(userId)]
         );
 
         const user = userResult.rows[0];
@@ -221,9 +302,9 @@ exports.validate2FA = async (req, res) => {
                 verified = true;
                 // Remove used backup code
                 backupCodes.splice(codeIndex, 1);
-                await pool.query(
+                await runQuery(
                     'UPDATE users SET two_fa_backup_codes = $1 WHERE user_id = $2',
-                    [JSON.stringify(backupCodes), userId]
+                    [JSON.stringify(backupCodes), String(userId)]
                 );
             }
         }
@@ -238,7 +319,7 @@ exports.validate2FA = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('2FA Validate error:', error);
+        logger.error('2FA Validate error:', error);
         res.status(500).json({ error: 'Failed to validate 2FA' });
     }
 };
@@ -249,19 +330,30 @@ exports.validate2FA = async (req, res) => {
  */
 exports.get2FAStatus = async (req, res) => {
     try {
-        const userId = req.user.user_id || req.user.id;
+        const schema = await getTwoFactorColumnsAvailability();
+        const userId = getUserId(req);
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+        if (!schema.hasEnabled) {
+            return res.json({
+                enabled: false,
+                available: false
+            });
+        }
 
-        const result = await pool.query(
+        const result = await runQuery(
             'SELECT two_fa_enabled FROM users WHERE user_id = $1',
-            [userId]
+            [String(userId)]
         );
 
         res.json({
-            enabled: result.rows[0]?.two_fa_enabled || false
+            enabled: result.rows[0]?.two_fa_enabled || false,
+            available: true
         });
 
     } catch (error) {
-        console.error('2FA Status error:', error);
+        logger.error('2FA Status error:', error);
         res.status(500).json({ error: 'Failed to get 2FA status' });
     }
 };
@@ -272,10 +364,9 @@ exports.get2FAStatus = async (req, res) => {
 function generateBackupCodes(count = 8) {
     const codes = [];
     for (let i = 0; i < count; i++) {
-        // Generate random 8-character alphanumeric code
-        const code = Math.random().toString(36).substring(2, 6).toUpperCase() +
-            '-' +
-            Math.random().toString(36).substring(2, 6).toUpperCase();
+        const left = crypto.randomInt(0, 36 ** 4).toString(36).toUpperCase().padStart(4, '0');
+        const right = crypto.randomInt(0, 36 ** 4).toString(36).toUpperCase().padStart(4, '0');
+        const code = `${left}-${right}`;
         codes.push(code);
     }
     return codes;

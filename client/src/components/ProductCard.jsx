@@ -2,6 +2,7 @@ import React from "react";
 import { AiFillStar } from "react-icons/ai";
 
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const ProductCard = ({ product }) => {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ const ProductCard = ({ product }) => {
   const rating = typeof product.rating === "number" ? product.rating : 0;
 
   // Helper to get full image URL
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const baseUrl = getApiOriginBase();
   const getImageUrl = (img) => {
     if (!img) return '/placeholder.svg';
     if (img.startsWith('/uploads/')) return baseUrl + img;
@@ -61,3 +62,4 @@ const ProductCard = ({ product }) => {
 };
 
 export default ProductCard;
+

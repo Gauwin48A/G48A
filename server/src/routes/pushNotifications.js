@@ -1,15 +1,68 @@
 const express = require('express');
 const router = express.Router();
 const fcm = require('../services/fcm');
+const pool = require('../config/db');
+const logger = require('../utils/logger');
+const { protect } = require('../middleware/auth');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+function parseOptionalString(value) {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).trim();
+    return normalized || null;
+}
+
+function getAuthenticatedUserId(req) {
+    return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
+
+function isAdminRole(role) {
+    const normalized = String(role || '').trim().toLowerCase();
+    return normalized === 'admin' || normalized === 'superadmin';
+}
+
+async function hasAdminAccess(req) {
+    if (isAdminRole(req.user?.role)) {
+        return true;
+    }
+
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return false;
+
+    try {
+        const result = await runQuery(
+            `
+                SELECT COALESCE(NULLIF(to_jsonb(u)->>'role', ''), 'user') AS role
+                FROM users u
+                WHERE u.user_id::text = $1
+                LIMIT 1
+            `,
+            [userId]
+        );
+        return isAdminRole(result.rows[0]?.role);
+    } catch (error) {
+        logger.warn('[Push] Admin access check failed', { message: error.message });
+        return false;
+    }
+}
 
 /**
  * Register device token for push notifications
  * POST /api/push/register
  * Body: { token, deviceType, deviceName }
  */
-router.post('/register', async (req, res) => {
+router.post('/register', protect, async (req, res) => {
     try {
-        const userId = req.headers['x-user-id'] || req.body.userId;
+        const userId = getAuthenticatedUserId(req);
         const { token, deviceType = 'web', deviceName } = req.body;
 
         if (!token) {
@@ -23,7 +76,7 @@ router.post('/register', async (req, res) => {
         await fcm.registerToken(userId, token, deviceType, deviceName);
         res.json({ success: true, message: 'Device registered for push notifications' });
     } catch (error) {
-        console.error('Error registering device:', error);
+        logger.error('Error registering device:', error);
         res.status(500).json({ error: 'Failed to register device' });
     }
 });
@@ -33,18 +86,26 @@ router.post('/register', async (req, res) => {
  * DELETE /api/push/unregister
  * Body: { token }
  */
-router.delete('/unregister', async (req, res) => {
+router.delete('/unregister', protect, async (req, res) => {
     try {
+        const userId = getAuthenticatedUserId(req);
         const { token } = req.body;
 
         if (!token) {
             return res.status(400).json({ error: 'Token is required' });
         }
 
-        await fcm.unregisterToken(token);
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const result = await fcm.unregisterToken(token, userId);
+        if ((result?.deactivatedCount || 0) === 0) {
+            return res.status(404).json({ error: 'Token not found for user' });
+        }
         res.json({ success: true, message: 'Device unregistered' });
     } catch (error) {
-        console.error('Error unregistering device:', error);
+        logger.error('Error unregistering device:', error);
         res.status(500).json({ error: 'Failed to unregister device' });
     }
 });
@@ -54,8 +115,13 @@ router.delete('/unregister', async (req, res) => {
  * POST /api/push/send
  * Body: { userId, title, body, data }
  */
-router.post('/send', async (req, res) => {
+router.post('/send', protect, async (req, res) => {
     try {
+        const canSend = await hasAdminAccess(req);
+        if (!canSend) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
         const { userId, title, body, data } = req.body;
 
         if (!userId || !title || !body) {
@@ -65,7 +131,7 @@ router.post('/send', async (req, res) => {
         const result = await fcm.sendToUser(userId, title, body, data || {});
         res.json(result);
     } catch (error) {
-        console.error('Error sending notification:', error);
+        logger.error('Error sending notification:', error);
         res.status(500).json({ error: 'Failed to send notification' });
     }
 });
@@ -75,8 +141,13 @@ router.post('/send', async (req, res) => {
  * POST /api/push/broadcast
  * Body: { title, body, data }
  */
-router.post('/broadcast', async (req, res) => {
+router.post('/broadcast', protect, async (req, res) => {
     try {
+        const canBroadcast = await hasAdminAccess(req);
+        if (!canBroadcast) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
         const { title, body, data } = req.body;
 
         if (!title || !body) {
@@ -84,8 +155,7 @@ router.post('/broadcast', async (req, res) => {
         }
 
         // Get all active tokens
-        const pool = require('../config/db');
-        const result = await pool.query('SELECT token FROM device_tokens WHERE is_active = true');
+        const result = await runQuery('SELECT token FROM device_tokens WHERE is_active = true');
 
         if (result.rows.length === 0) {
             return res.json({ success: false, reason: 'No registered devices' });
@@ -95,7 +165,7 @@ router.post('/broadcast', async (req, res) => {
         const sendResult = await fcm.sendToMultiple(tokens, title, body, data || {});
         res.json(sendResult);
     } catch (error) {
-        console.error('Error broadcasting notification:', error);
+        logger.error('Error broadcasting notification:', error);
         res.status(500).json({ error: 'Failed to broadcast notification' });
     }
 });

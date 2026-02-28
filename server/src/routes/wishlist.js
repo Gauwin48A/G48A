@@ -1,7 +1,10 @@
 // Wishlist Routes
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
 const wishlistController = require('../controllers/wishlistController');
+
+router.use(protect);
 
 // Get user's wishlist
 router.get('/', wishlistController.getWishlist);

@@ -1,6 +1,7 @@
 import { Contacts } from '@capacitor-community/contacts';
+import { buildApiPath } from '@/lib/networkConfig';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const CONTACT_SYNC_CONCURRENCY = 3;
 
 export const syncNativeContacts = async (userId) => {
     try {
@@ -29,22 +30,32 @@ export const syncNativeContacts = async (userId) => {
 
         if (cleanContacts.length === 0) return;
 
-        // 4. Batch Upload (100 at a time to prevent server crash)
+        // 4. Batch Upload
         const chunkSize = 100;
         const token = localStorage.getItem('authToken');
-
+        const batches = [];
         for (let i = 0; i < cleanContacts.length; i += chunkSize) {
-            const batch = cleanContacts.slice(i, i + chunkSize);
+            batches.push(cleanContacts.slice(i, i + chunkSize));
+        }
 
-            // We use our API endpoint instead of direct DB access
-            await fetch(`${API_BASE}/api/contacts/sync`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ contacts: batch })
-            });
+        for (let i = 0; i < batches.length; i += CONTACT_SYNC_CONCURRENCY) {
+            const windowBatches = batches.slice(i, i + CONTACT_SYNC_CONCURRENCY);
+            const responses = await Promise.all(
+                windowBatches.map((batch) => fetch(buildApiPath('/contacts/sync'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ contacts: batch })
+                }))
+            );
+
+            for (const response of responses) {
+                if (!response.ok) {
+                    throw new Error(`Contact sync failed with status ${response.status}`);
+                }
+            }
         }
 
         console.log(`[DEFENDER] Synced ${cleanContacts.length} contacts.`);

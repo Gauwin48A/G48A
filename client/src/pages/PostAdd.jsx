@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { FaNewspaper, FaArrowLeft } from 'react-icons/fa';
+import { getAccessToken, getUserId } from '@/utils/authStorage';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const PostAdd = () => {
   const { t } = useTranslation();
@@ -24,9 +26,15 @@ const PostAdd = () => {
     setError(null);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const userId = localStorage.getItem('userId');
-      const token = localStorage.getItem('authToken');
+      const baseUrl = getApiOriginBase();
+      const userId = getUserId();
+      const token = getAccessToken();
+
+      if (!userId || !token) {
+        navigate('/login', { state: { returnTo: '/post_add' } });
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch(`${baseUrl}/api/posts`, {
         method: 'POST',
@@ -173,3 +181,4 @@ const PostAdd = () => {
 };
 
 export default PostAdd;
+

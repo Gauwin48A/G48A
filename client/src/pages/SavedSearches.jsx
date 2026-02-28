@@ -1,24 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
     Search, Trash2, Bell, BellOff, Plus,
-    ArrowLeft, Filter, MapPin, Edit2, Save
+    ArrowLeft, MapPin, Save
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
-import { useTranslation } from 'react-i18next';
-
 const SavedSearches = () => {
-  const { t } = useTranslation();
     const navigate = useNavigate();
     const [searches, setSearches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
     const [toast, setToast] = useState(null);
+    const searchRequestIdRef = useRef(0);
+    const toastTimeoutRef = useRef(null);
 
     const [newSearch, setNewSearch] = useState({
         name: '',
@@ -28,24 +27,39 @@ const SavedSearches = () => {
         maxPrice: ''
     });
 
-    useEffect(() => {
-        fetchSearches();
+    const showToast = useCallback((message, type = 'success') => {
+        setToast({ message, type });
+        clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = setTimeout(() => setToast(null), 3000);
     }, []);
 
-    const fetchSearches = async () => {
+    const fetchSearches = useCallback(async () => {
+        const requestId = ++searchRequestIdRef.current;
         try {
             setLoading(true);
-            const token = localStorage.getItem('authToken');
-            const response = await api.get('/saved-searches', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setSearches(response.data.searches || []);
+            const response = await api.get('/saved-searches');
+            if (requestId !== searchRequestIdRef.current) {
+                return;
+            }
+            const payload = response?.data ?? response;
+            setSearches(Array.isArray(payload?.searches) ? payload.searches : []);
         } catch (err) {
-            console.error('Failed to fetch searches:', err);
+            if (import.meta.env.DEV) {
+                console.error('Failed to fetch searches:', err);
+            }
         } finally {
-            setLoading(false);
+            if (requestId === searchRequestIdRef.current) {
+                setLoading(false);
+            }
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchSearches();
+        return () => {
+            clearTimeout(toastTimeoutRef.current);
+        };
+    }, [fetchSearches]);
 
     const handleSave = async () => {
         if (!newSearch.name || !newSearch.searchQuery) {
@@ -54,14 +68,11 @@ const SavedSearches = () => {
         }
 
         try {
-            const token = localStorage.getItem('authToken');
-            await api.post('/saved-searches', newSearch, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('/saved-searches', newSearch);
             showToast('Search saved!');
             setShowAddForm(false);
             setNewSearch({ name: '', searchQuery: '', location: '', minPrice: '', maxPrice: '' });
-            fetchSearches();
+            await fetchSearches();
         } catch (err) {
             showToast('Failed to save', 'error');
         }
@@ -71,11 +82,8 @@ const SavedSearches = () => {
         if (!window.confirm('Delete this saved search?')) return;
 
         try {
-            const token = localStorage.getItem('authToken');
-            await api.delete(`/saved-searches/${searchId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setSearches(searches.filter(s => s.search_id !== searchId));
+            await api.delete(`/saved-searches/${searchId}`);
+            setSearches((prev) => prev.filter((s) => s.search_id !== searchId));
             showToast('Search deleted');
         } catch (err) {
             showToast('Failed to delete', 'error');
@@ -84,13 +92,14 @@ const SavedSearches = () => {
 
     const toggleNotifications = async (searchId) => {
         try {
-            const token = localStorage.getItem('authToken');
-            await api.put(`/saved-searches/${searchId}/toggle-notifications`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setSearches(searches.map(s =>
+            await api.put(`/saved-searches/${searchId}/toggle-notifications`, {});
+            setSearches((prev) => prev.map((s) =>
                 s.search_id === searchId
-                    ? { ...s, notification_enabled: !s.notification_enabled }
+                    ? {
+                        ...s,
+                        notification_enabled: !(s.notification_enabled ?? s.notify_enabled),
+                        notify_enabled: !(s.notification_enabled ?? s.notify_enabled)
+                    }
                     : s
             ));
             showToast('Notifications updated');
@@ -106,11 +115,6 @@ const SavedSearches = () => {
         if (search.min_price) params.set('minPrice', search.min_price);
         if (search.max_price) params.set('maxPrice', search.max_price);
         navigate(`/all-posts?${params.toString()}`);
-    };
-
-    const showToast = (message, type = 'success') => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
     };
 
     return (
@@ -262,9 +266,9 @@ const SavedSearches = () => {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => toggleNotifications(search.search_id)}
-                                                className={search.notification_enabled ? 'text-green-400' : 'text-gray-500'}
+                                                className={(search.notification_enabled ?? search.notify_enabled) ? 'text-green-400' : 'text-gray-500'}
                                             >
-                                                {search.notification_enabled ? (
+                                                {(search.notification_enabled ?? search.notify_enabled) ? (
                                                     <Bell className="h-5 w-5" />
                                                 ) : (
                                                     <BellOff className="h-5 w-5" />

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import BuyerInterestModal from "@/components/BuyerInterestModal";
 import MakeOfferModal from "@/components/MakeOfferModal";
 import BargainActions from "@/components/BargainActions";
+import { getApiOriginBase } from '@/lib/networkConfig';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -57,7 +58,7 @@ export default function PostDetail() {
     const source = previousPath.includes('/feed') ? 'feed' : 'allposts';
 
     // Track this view in recently viewed history
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const baseUrl = getApiOriginBase();
     fetch(`${baseUrl}/api/recently-viewed/track`, {
       method: 'POST',
       headers: {
@@ -82,8 +83,8 @@ export default function PostDetail() {
     if (!post) {
       const fetchPost = async () => {
         try {
-          const res = await axios.get(`/api/posts/${id}`);
-          const rawPost = res.data.post || res.data;
+          const payload = await axios.get(`/api/posts/${id}`);
+          const rawPost = payload?.post || payload;
           if (!rawPost || Object.keys(rawPost).length === 0) {
             throw new Error("API returned no post data.");
           }
@@ -418,3 +419,4 @@ export default function PostDetail() {
     </div>
   );
 }
+

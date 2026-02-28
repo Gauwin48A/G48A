@@ -6,18 +6,37 @@
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 
+const SUSPICIOUS_WINDOW_MS = 15 * 60 * 1000;
+const SUSPICIOUS_CLEANUP_INTERVAL_MS = 60 * 1000;
+const SUSPICIOUS_REQUEST_THRESHOLD = 500;
+
+function resolveClientIp(req) {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (typeof forwarded === 'string' && forwarded.trim().length > 0) {
+        const first = forwarded.split(',')[0].trim();
+        if (first) return first;
+    }
+
+    return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
+}
+
 // Store for tracking request counts (use Redis in production)
 const requestCounts = new Map();
 
 // Clean up old entries periodically
-setInterval(() => {
+const suspiciousCleanupTimer = setInterval(() => {
     const now = Date.now();
     for (const [key, data] of requestCounts) {
-        if (now - data.timestamp > 900000) { // 15 minutes
+        const lastSeenAt = Number.isFinite(data?.lastSeenAt) ? data.lastSeenAt : data?.timestamp;
+        if (!Number.isFinite(lastSeenAt) || (now - lastSeenAt) > SUSPICIOUS_WINDOW_MS) {
             requestCounts.delete(key);
         }
     }
-}, 60000);
+}, SUSPICIOUS_CLEANUP_INTERVAL_MS);
+
+if (typeof suspiciousCleanupTimer.unref === 'function') {
+    suspiciousCleanupTimer.unref();
+}
 
 // General API rate limiter
 const apiLimiter = rateLimit({
@@ -31,7 +50,7 @@ const apiLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
-        return req.ip || req.headers['x-forwarded-for'] || 'unknown';
+        return rateLimit.ipKeyGenerator(resolveClientIp(req));
     },
     skip: (req) => {
         // Skip rate limiting for health checks
@@ -95,17 +114,35 @@ const uploadLimiter = rateLimit({
 
 // Custom middleware for tracking suspicious activity
 const suspiciousActivityTracker = (req, res, next) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const ip = resolveClientIp(req);
     const now = Date.now();
 
     if (!requestCounts.has(ip)) {
-        requestCounts.set(ip, { count: 1, timestamp: now, flagged: false });
+        requestCounts.set(ip, {
+            count: 1,
+            timestamp: now, // Backward compatibility for existing diagnostics.
+            windowStartAt: now,
+            lastSeenAt: now,
+            flagged: false
+        });
     } else {
         const data = requestCounts.get(ip);
-        data.count++;
 
-        // Flag if more than 500 requests in 15 minutes
-        if (data.count > 500 && now - data.timestamp < 900000) {
+        const windowStartAt = Number.isFinite(data.windowStartAt)
+            ? data.windowStartAt
+            : (Number.isFinite(data.timestamp) ? data.timestamp : now);
+
+        if ((now - windowStartAt) >= SUSPICIOUS_WINDOW_MS) {
+            data.count = 0;
+            data.windowStartAt = now;
+            data.flagged = false;
+        }
+
+        data.count += 1;
+        data.lastSeenAt = now;
+
+        // Flag if more than threshold requests within the active window.
+        if (data.count > SUSPICIOUS_REQUEST_THRESHOLD && !data.flagged) {
             data.flagged = true;
             console.warn(`[SECURITY] Suspicious activity detected from IP: ${ip}`);
         }

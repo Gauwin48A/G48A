@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +8,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, FileText, Clock, CheckCircle, ArrowLeft, ArrowUp, Shield, MessageSquare, Send, AlertTriangle, Sparkles, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from '@/context/AuthContext';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const Complaints = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const baseUrl = useMemo(() => getApiOriginBase(), []);
+  const isLoggedIn = useMemo(
+    () => Boolean(user || localStorage.getItem('authToken') || localStorage.getItem('token')),
+    [user]
+  );
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [complaintForm, setComplaintForm] = useState({
     sellerId: '',
-    buyerId: '',
     postId: '',
     secretCode: '',
     complaintType: 'transaction',
@@ -45,11 +52,16 @@ const Complaints = () => {
   };
 
   const fetchMyComplaints = () => {
+    if (!isLoggedIn) return;
+
     setLoading(true);
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (token && !localStorage.getItem('authToken')) {
+      localStorage.setItem('authToken', token);
+    }
     fetch(`${baseUrl}/api/complaints/my`, {
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      credentials: 'include'
     })
       .then(res => res.json())
       .then(data => {
@@ -71,8 +83,9 @@ const Complaints = () => {
   };
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     fetchMyComplaints();
-  }, []);
+  }, [isLoggedIn]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -85,10 +98,15 @@ const Complaints = () => {
   const handleSubmitComplaint = async (e) => {
     e.preventDefault();
 
-    if (!complaintForm.sellerId || !complaintForm.buyerId || !complaintForm.postId || !complaintForm.description) {
+    if (!isLoggedIn) {
+      navigate('/login', { state: { returnTo: '/complaints' } });
+      return;
+    }
+
+    if (!complaintForm.postId || !complaintForm.description) {
       toast({
         title: "Incomplete Form",
-        description: "Please fill all required fields",
+        description: "Post ID and description are required",
         variant: "destructive"
       });
       return;
@@ -97,17 +115,19 @@ const Complaints = () => {
     setIsLoading(true);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      if (token && !localStorage.getItem('authToken')) {
+        localStorage.setItem('authToken', token);
+      }
       const response = await fetch(`${baseUrl}/api/complaints`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
+        credentials: 'include',
         body: JSON.stringify({
           seller_id: complaintForm.sellerId || undefined,
-          buyer_id: complaintForm.buyerId || undefined,
           post_id: complaintForm.postId,
           complaint_type: complaintForm.complaintType,
           description: complaintForm.description,
@@ -124,7 +144,6 @@ const Complaints = () => {
         });
         setComplaintForm({
           sellerId: '',
-          buyerId: '',
           postId: '',
           secretCode: '',
           complaintType: 'transaction',
@@ -150,34 +169,52 @@ const Complaints = () => {
     }
   };
 
+  const normalizeStatus = (status) => String(status || 'open').toLowerCase();
+
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Under Review':
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
+      case 'triage':
+      case 'investigating':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'Resolved':
+      case 'resolved':
+      case 'closed':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'Rejected':
+      case 'rejected':
         return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'open':
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
     }
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Under Review':
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
+      case 'triage':
+      case 'investigating':
         return <Clock className="w-4 h-4" />;
-      case 'Resolved':
+      case 'resolved':
+      case 'closed':
         return <CheckCircle className="w-4 h-4" />;
       default:
         return <AlertCircle className="w-4 h-4" />;
     }
   };
 
-  const displayedComplaints = complaints;
+  const getStatusLabel = (status) => {
+    const normalized = normalizeStatus(status);
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
 
-  // Check login status
-  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+  const formatComplaintDate = (value) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString();
+  };
+
+  const displayedComplaints = complaints;
 
   if (!isLoggedIn) {
     return (
@@ -195,8 +232,8 @@ const Complaints = () => {
 
         {/* Login/Signup Cards */}
         <div className="max-w-lg mx-auto px-6 space-y-4">
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -209,10 +246,10 @@ const Complaints = () => {
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
             </div>
-          </a>
+          </Link>
 
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -225,7 +262,7 @@ const Complaints = () => {
               </div>
               <ChevronRight className="w-6 h-6 text-white/60" />
             </div>
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -294,7 +331,7 @@ const Complaints = () => {
             <form onSubmit={handleSubmitComplaint} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('seller_id')} *</Label>
+                  <Label htmlFor="sellerId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('seller_id') || 'Seller ID'}</Label>
                   <Input
                     id="sellerId"
                     name="sellerId"
@@ -302,26 +339,10 @@ const Complaints = () => {
                     onChange={handleInputChange}
                     placeholder="e.g., USER123456"
                     className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"
-                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="buyerId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('buyer_id')} *</Label>
-                  <Input
-                    id="buyerId"
-                    name="buyerId"
-                    value={complaintForm.buyerId}
-                    onChange={handleInputChange}
-                    placeholder="e.g., USER654321"
-                    className="h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="postId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('post_id')} *</Label>
+                  <Label htmlFor="postId" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('post_id') || 'Post ID'} *</Label>
                   <Input
                     id="postId"
                     name="postId"
@@ -332,6 +353,9 @@ const Complaints = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div>
                 <div>
                   <Label htmlFor="secretCode" className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block">{t('transaction_code')}</Label>
                   <Input
@@ -415,6 +439,10 @@ const Complaints = () => {
                 <div className="w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-gray-500 dark:text-gray-400">{t('loading_complaints')}</p>
               </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 dark:text-red-400">{error}</p>
+              </div>
             ) : displayedComplaints.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -425,48 +453,55 @@ const Complaints = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {displayedComplaints.map((complaint) => (
-                  <div
-                    key={complaint.complaint_id || complaint.id || complaint._id}
-                    className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white text-lg">{complaint.type}</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">ID: {complaint.complaint_id || complaint.id}</p>
-                      </div>
-                      <Badge className={getStatusColor(complaint.status)}>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(complaint.status)}
-                          <span>{complaint.status}</span>
+                {displayedComplaints.map((complaint) => {
+                  const complaintId = complaint.complaint_id || complaint.id || complaint._id;
+                  const complaintType = complaint.complaint_type || complaint.type || 'other';
+                  const postId = complaint.post_id || complaint.postId || '-';
+                  const submittedAt = complaint.created_at || complaint.submittedDate || null;
+                  const adminResponse = complaint.admin_response || complaint.adminResponse || '';
+                  return (
+                    <div
+                      key={complaintId}
+                      className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white text-lg">{complaintType}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">ID: {complaintId}</p>
                         </div>
-                      </Badge>
+                        <Badge className={getStatusColor(complaint.status)}>
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(complaint.status)}
+                            <span>{getStatusLabel(complaint.status)}</span>
+                          </div>
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">Post ID:</span>
+                          <span className="font-medium">{postId}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">Submitted:</span>
+                          <span className="font-medium">{formatComplaintDate(submittedAt)}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">{complaint.description}</p>
+
+                      {adminResponse && (
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                          <p className="text-sm font-semibold text-green-800 mb-1 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            {t('admin_response')}:
+                          </p>
+                          <p className="text-sm text-green-700">{adminResponse}</p>
+                        </div>
+                      )}
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-500">Post ID:</span>
-                        <span className="font-medium">{complaint.postId}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-500">Submitted:</span>
-                        <span className="font-medium">{complaint.submittedDate}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">{complaint.description}</p>
-
-                    {complaint.adminResponse && (
-                      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                        <p className="text-sm font-semibold text-green-800 mb-1 flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4" />
-                          {t('admin_response')}:
-                        </p>
-                        <p className="text-sm text-green-700">{complaint.adminResponse}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -519,3 +554,4 @@ const Complaints = () => {
 };
 
 export default Complaints;
+

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import GreenNavbar from './components/GreenNavbar.jsx';
 import LocationGate from './components/LocationGate.jsx';
@@ -7,10 +7,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { socket } from './lib/socket';
 import { FilterProvider } from './context/FilterContext.jsx';
 import { LocationProvider, useLocation } from './context/LocationContext.jsx';
-import LanguageSelector from './components/LanguageSelector';
 import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { App as CapacitorApp } from '@capacitor/app';
+import { checkAndSyncLocation, syncLocationToBackend } from '@/services/locationService';
+import { getUserId } from '@/utils/authStorage';
 // Redundant mobileLocation import removed
 
 
@@ -65,7 +66,7 @@ const Reviews = lazy(() => import('./pages/Reviews.jsx'));
  */
 function LocationBanner() {
   const { t } = useTranslation();
-  const { error, retry, loading, skipForNow, permissionGranted, userSkipped, enableLocation } = useLocation();
+  const { error, retry, loading, skipForNow, permissionGranted, userSkipped } = useLocation();
 
   // Don't show banner if permission granted or user skipped
   if (permissionGranted || userSkipped) return null;
@@ -116,40 +117,31 @@ function LocationBanner() {
  */
 function AppContent() {
   const { t } = useTranslation();
-  const { loading, permissionGranted, skipForNow, city, userSkipped, enableLocation } = useLocation();
+  const { loading, permissionGranted, skipForNow, userSkipped } = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const lifecycleDebug = import.meta.env.DEV;
 
   // Initialize security and location sync on mount
   useEffect(() => {
-    // Initialize security measures (domain lock, anti-tamper)
-    import('@/utils/security').then(({ initializeSecurity }) => {
-      initializeSecurity();
-    }).catch(() => {
-      // Security module not critical, continue
-    });
-
     // Smart location sync (Zero Maintenance)
-    const userId = localStorage.getItem('userId');
+    const userId = getUserId(user);
     if (userId) {
-      import('@/services/locationService').then(({ checkAndSyncLocation }) => {
-        checkAndSyncLocation(userId);
-      }).catch(() => {
+      checkAndSyncLocation(userId).catch(() => {
         // Location sync not critical
       });
     }
-  }, []);
-
-  const { user } = useAuth();
+  }, [user]);
 
   // THE DEFENDER: Mobile Lifecycle Triggers
   useEffect(() => {
     const handleAppLaunch = async () => {
-      const userId = localStorage.getItem('userId');
+      const userId = getUserId(user);
       if (!userId) return;
-      console.log("[DEFENDER] App Active. Syncing Banking-Grade Location...");
-      import('@/services/locationService').then(({ syncLocationToBackend }) => {
-        syncLocationToBackend(userId);
-      });
+      if (lifecycleDebug) {
+        console.log("[DEFENDER] App Active. Syncing Banking-Grade Location...");
+      }
+      syncLocationToBackend(userId);
     };
 
     // Trigger on Mount
@@ -159,7 +151,9 @@ function AppContent() {
     const setupListener = async () => {
       const listener = await CapacitorApp.addListener('appStateChange', ({ isActive }) => {
         if (isActive) {
-          console.log("[DEFENDER] App Resumed. updating...");
+          if (lifecycleDebug) {
+            console.log("[DEFENDER] App Resumed. updating...");
+          }
           handleAppLaunch();
         }
       });
@@ -171,7 +165,7 @@ function AppContent() {
     return () => {
       listenerPromise.then(l => l.remove());
     };
-  }, [user]);
+  }, [lifecycleDebug, user]);
 
   // Socket listener for notifications
   useEffect(() => {

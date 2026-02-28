@@ -1,18 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Lock, Gift, TrendingUp, Zap, LogIn, Star } from 'lucide-react';
+import { Sparkles, Lock, Gift, TrendingUp, Zap, LogIn } from 'lucide-react';
 import api from '../lib/api';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useTranslatedPosts } from '../hooks/useTranslatedContent';
+import { useAuth } from '@/context/AuthContext';
+import { getAccessToken, getUserId } from '@/utils/authStorage';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const ForYou = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { user: authUser, loading: authLoading } = useAuth();
 
     // Read filters from URL params (set by navbar filter modal or search)
     const urlSearch = searchParams.get('search') || '';
@@ -21,9 +25,12 @@ const ForYou = () => {
     const urlMaxPrice = searchParams.get('maxPrice') || '';
     const urlLocation = searchParams.get('location') || '';
 
-    // Auth state
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [authChecked, setAuthChecked] = useState(false);
+    const token = getAccessToken();
+    const userId = getUserId(authUser);
+    const isAuthenticated = useMemo(
+        () => Boolean(authUser || (token && userId)),
+        [authUser, token, userId]
+    );
 
     // State
     const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', categories: [] });
@@ -36,46 +43,44 @@ const ForYou = () => {
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-    // Force refresh key - changes when navigating to this page
-    const [refreshKey, setRefreshKey] = useState(0);
+    const preferencesRequestIdRef = useRef(0);
+    const postsRequestIdRef = useRef(0);
 
     // Translate posts when language changes
     const { translatedPosts, isTranslating } = useTranslatedPosts(posts);
 
-
-
-    // Check authentication on mount
-    useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        const userId = localStorage.getItem('userId');
-        setIsAuthenticated(!!(token && userId));
-        setAuthChecked(true);
+    const debugLog = useCallback((message, data) => {
+        if (import.meta.env.DEV) {
+            console.log(message, data);
+        }
     }, []);
-
 
 
     // Fetch preferences (only if authenticated)
     // Re-fetch when page gains focus or when navigating to this page
     useEffect(() => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || !userId) return;
 
         const fetchPreferences = async () => {
-            const userId = localStorage.getItem('userId');
-            if (!userId) return;
+            const requestId = ++preferencesRequestIdRef.current;
             try {
-                const data = await api.get(`/profile/preferences?userId=${userId}`);
+                const response = await api.get('/profile/preferences', { params: { userId } });
+                if (requestId !== preferencesRequestIdRef.current) {
+                    return;
+                }
+                const data = response?.data ?? response;
                 if (data) {
-                    const userCategories = data.categories || [];
+                    const userCategories = Array.isArray(data.categories) ? data.categories : [];
                     setPreferences({
                         location: data.location || '',
                         minPrice: data.minPrice || '',
                         maxPrice: data.maxPrice || '',
                         categories: userCategories
                     });
-                    console.log('[ForYou] Loaded preferences:', data);
+                    debugLog('[ForYou] Loaded preferences:', data);
                 }
             } catch (err) {
-                console.log('[ForYou] No preferences found:', err.message);
+                debugLog('[ForYou] No preferences found:', err.message);
             }
         };
 
@@ -98,7 +103,7 @@ const ForYou = () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', fetchPreferences);
         };
-    }, [isAuthenticated, location.key]); // location.key changes on every navigation
+    }, [debugLog, isAuthenticated, location.key, userId]); // location.key changes on every navigation
 
     // Reset pagination when filters change
     useEffect(() => {
@@ -108,14 +113,14 @@ const ForYou = () => {
 
     // Fetch recommendations
     useEffect(() => {
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || !userId) return;
 
         const fetchPosts = async () => {
+            const requestId = ++postsRequestIdRef.current;
             if (page === 1) setLoading(true);
             else setIsLoadingMore(true);
 
             try {
-                const userId = localStorage.getItem('userId');
                 const params = {
                     // URL filters override saved preferences
                     location: urlLocation || preferences.location,
@@ -134,9 +139,13 @@ const ForYou = () => {
                     }
                 });
 
-                console.log('[ForYou] Fetching with params:', params);
-                const data = await api.get('/recommendations', { params });
-                const newPosts = Array.isArray(data?.posts) ? data.posts : [];
+                debugLog('[ForYou] Fetching with params:', params);
+                const response = await api.get('/recommendations', { params });
+                if (requestId !== postsRequestIdRef.current) {
+                    return;
+                }
+                const payload = response?.data ?? response;
+                const newPosts = Array.isArray(payload?.posts) ? payload.posts : [];
 
                 if (page === 1) {
                     setPosts(newPosts);
@@ -150,24 +159,26 @@ const ForYou = () => {
                 setError('Failed to load recommendations');
                 if (page === 1) setPosts([]);
             } finally {
-                setLoading(false);
-                setIsLoadingMore(false);
+                if (requestId === postsRequestIdRef.current) {
+                    setLoading(false);
+                    setIsLoadingMore(false);
+                }
             }
         };
 
         fetchPosts();
-    }, [isAuthenticated, preferences, page, urlSearch, urlCategory, urlMinPrice, urlMaxPrice, urlLocation]);
+    }, [debugLog, isAuthenticated, preferences, page, urlSearch, urlCategory, urlMinPrice, urlMaxPrice, urlLocation, userId]);
 
 
 
     const getImageUrl = (img) => {
         if (!img) return '/placeholder.svg';
         if (img.startsWith('http')) return img;
-        return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${img}`;
+        return `${getApiOriginBase()}${img}`;
     };
 
     // Not Authenticated - Show Login Screen
-    if (authChecked && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
                 <div className="absolute inset-0 overflow-hidden">
@@ -211,7 +222,7 @@ const ForYou = () => {
                         </div>
 
                         <Button
-                            onClick={() => navigate('/login')}
+                            onClick={() => navigate('/login', { state: { returnTo: '/for-you' } })}
                             className="w-full h-14 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold text-lg rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
                         >
                             <LogIn className="w-5 h-5 mr-2" />
@@ -420,3 +431,4 @@ const ForYou = () => {
 };
 
 export default ForYou;
+

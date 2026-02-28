@@ -1,5 +1,12 @@
 const db = require('../config/db');
 const logger = require('../utils/logger');
+const MAX_SEARCH_PAGE = 10000;
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
 
 // GET /api/products/deals
 exports.getDeals = async (req, res) => {
@@ -14,7 +21,8 @@ exports.getDeals = async (req, res) => {
 
 // GET /api/products/search?query=&category=&page=
 exports.searchProducts = async (req, res) => {
-  const { query = '', category = '', page = 1 } = req.query;
+  const { query = '', category = '' } = req.query;
+  const page = parsePositiveInt(req.query.page, 1, MAX_SEARCH_PAGE);
   const limit = 12;
   const offset = (page - 1) * limit;
   try {

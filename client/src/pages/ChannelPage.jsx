@@ -9,32 +9,74 @@ const ChannelPage = () => {
   const { channelId } = useParams();
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [description, setDescription] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
   const [type, setType] = useState('text');
   const [isOwner, setIsOwner] = useState(false);
+  const [error, setError] = useState(null);
+
+  const applyChannelPayload = (response) => {
+    const payload = response?.data ?? response;
+    setChannel(payload || null);
+    setIsOwner(Boolean(payload?.isOwner));
+    setPosts(Array.isArray(payload?.posts) ? payload.posts : []);
+  };
 
   useEffect(() => {
+    let isActive = true;
     const fetchChannel = async () => {
-      const res = await getChannelByUser(channelId);
-      setChannel(res.data);
-      setIsOwner(res.data.isOwner || false);
-      setPosts(res.data.posts || []);
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getChannelByUser(channelId);
+        if (!isActive) return;
+        applyChannelPayload(response);
+      } catch (err) {
+        if (import.meta.env.DEV) {
+          console.error('Failed to fetch channel:', err);
+        }
+        if (isActive) {
+          setError(t('something_went_wrong') || 'Failed to load channel');
+          setChannel(null);
+          setPosts([]);
+        }
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
     };
     fetchChannel();
-  }, [channelId]);
+    return () => {
+      isActive = false;
+    };
+  }, [channelId, t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await createChannelPost(channelId, { description, type, media_url: mediaUrl });
-    setDescription('');
-    setMediaUrl('');
-    // Refresh posts
-    const res = await getChannelByUser(channelId);
-    setPosts(res.data.posts || []);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await createChannelPost(channelId, { description, type, media_url: mediaUrl });
+      setDescription('');
+      setMediaUrl('');
+      // Refresh posts
+      const response = await getChannelByUser(channelId);
+      applyChannelPayload(response);
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.error('Failed to create channel post:', err);
+      }
+      setError(t('something_went_wrong') || 'Failed to post');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (!channel) return <div>{t('loading')}</div>;
+  if (loading) return <div>{t('loading')}</div>;
+  if (!channel) return <div>{error || (t('something_went_wrong') || 'Failed to load channel')}</div>;
 
   return (
     <div className="container mx-auto p-4">
@@ -67,7 +109,7 @@ const ChannelPage = () => {
             <option value="image">{t('image_type')}</option>
             <option value="video">{t('video_type')}</option>
           </select>
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">{t('post_button')}</button>
+          <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{t('post_button')}</button>
         </form>
       )}
       <div>

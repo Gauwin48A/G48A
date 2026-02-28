@@ -17,9 +17,6 @@ const LanguageSelector = () => {
     // 2. Persist & Apply
     i18n.changeLanguage(value);
     localStorage.setItem('mhub_language', value);
-
-    // Force reload to ensure all components and context update correctly
-    window.location.reload();
   };
 
   return (

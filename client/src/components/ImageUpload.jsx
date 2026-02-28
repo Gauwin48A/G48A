@@ -6,11 +6,10 @@
  * This saves bandwidth and storage at scale
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
 
 const MAX_FILE_SIZE_KB = 200;
 const MAX_WIDTH_PX = 1000;
@@ -26,6 +25,20 @@ const ImageUpload = ({
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState(null);
     const inputRef = useRef(null);
+    const imagesRef = useRef([]);
+    const imageDebug = import.meta.env.DEV;
+
+    useEffect(() => {
+        imagesRef.current = images;
+    }, [images]);
+
+    useEffect(() => () => {
+        imagesRef.current.forEach((image) => {
+            if (image?.preview) {
+                URL.revokeObjectURL(image.preview);
+            }
+        });
+    }, []);
 
     // Compression options
     const compressionOptions = {
@@ -43,9 +56,13 @@ const ImageUpload = ({
                 return file;
             }
 
-            console.log(`[ImageUpload] Compressing ${file.name}: ${(file.size / 1024).toFixed(0)}KB`);
+            if (imageDebug) {
+                console.log(`[ImageUpload] Compressing ${file.name}: ${(file.size / 1024).toFixed(0)}KB`);
+            }
             const compressed = await imageCompression(file, compressionOptions);
-            console.log(`[ImageUpload] Compressed to: ${(compressed.size / 1024).toFixed(0)}KB`);
+            if (imageDebug) {
+                console.log(`[ImageUpload] Compressed to: ${(compressed.size / 1024).toFixed(0)}KB`);
+            }
 
             return compressed;
         } catch (err) {

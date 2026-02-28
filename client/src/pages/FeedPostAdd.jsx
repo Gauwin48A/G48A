@@ -9,6 +9,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const FeedPostAdd = () => {
   const { t } = useTranslation();
@@ -36,7 +37,7 @@ const FeedPostAdd = () => {
     if (!validateFields()) return;
     setIsLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const baseUrl = getApiOriginBase();
       const token = localStorage.getItem('authToken');
       const res = await fetch(`${baseUrl}/api/feed/add`, {
         method: 'POST',
@@ -99,3 +100,4 @@ const FeedPostAdd = () => {
 };
 
 export default FeedPostAdd;
+

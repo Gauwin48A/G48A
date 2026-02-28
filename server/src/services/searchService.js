@@ -7,6 +7,17 @@
  */
 
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
 
 /**
  * Search posts using the optimized database function
@@ -34,13 +45,13 @@ const searchPosts = async ({
     offset = 0
 }) => {
     try {
-        const result = await pool.query(
+        const result = await runQuery(
             `SELECT * FROM search_posts_v2($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
             [query, lat, lng, radius, categoryId, minPrice, maxPrice, limit, offset]
         );
         return result.rows;
     } catch (error) {
-        console.error('[SearchService] search_posts_v2 error:', error.message);
+        logger.error('[SearchService] search_posts_v2 error:', error.message);
         throw error;
     }
 };
@@ -63,13 +74,13 @@ const getNearbyPosts = async ({
     limit = 20
 }) => {
     try {
-        const result = await pool.query(
+        const result = await runQuery(
             `SELECT * FROM get_nearby_posts_v2($1, $2, $3, $4, $5)`,
             [lat, lng, radius, categoryId, limit]
         );
         return result.rows;
     } catch (error) {
-        console.error('[SearchService] get_nearby_posts_v2 error:', error.message);
+        logger.error('[SearchService] get_nearby_posts_v2 error:', error.message);
         throw error;
     }
 };
@@ -84,13 +95,13 @@ const getNearbyPosts = async ({
  */
 const calculateDistance = async (lat1, lng1, lat2, lng2) => {
     try {
-        const result = await pool.query(
+        const result = await runQuery(
             `SELECT haversine_distance($1, $2, $3, $4) as distance`,
             [lat1, lng1, lat2, lng2]
         );
         return result.rows[0]?.distance || null;
     } catch (error) {
-        console.error('[SearchService] haversine_distance error:', error.message);
+        logger.error('[SearchService] haversine_distance error:', error.message);
         throw error;
     }
 };
@@ -104,13 +115,13 @@ const calculateDistance = async (lat1, lng1, lat2, lng2) => {
  */
 const getOrCreateChat = async (buyerId, sellerId, postId) => {
     try {
-        const result = await pool.query(
+        const result = await runQuery(
             `SELECT get_or_create_chat_v2($1, $2, $3) as chat_id`,
             [buyerId, sellerId, postId]
         );
         return result.rows[0]?.chat_id || null;
     } catch (error) {
-        console.error('[SearchService] get_or_create_chat_v2 error:', error.message);
+        logger.error('[SearchService] get_or_create_chat_v2 error:', error.message);
         throw error;
     }
 };
@@ -123,11 +134,11 @@ const getOrCreateChat = async (buyerId, sellerId, postId) => {
  */
 const cleanupExpiredData = async () => {
     try {
-        await pool.query(`SELECT cleanup_expired_data_v2()`);
-        console.log('[SearchService] Cleanup completed successfully');
+        await runQuery(`SELECT cleanup_expired_data_v2()`);
+        logger.info('[SearchService] Cleanup completed successfully');
         return true;
     } catch (error) {
-        console.error('[SearchService] cleanup_expired_data_v2 error:', error.message);
+        logger.error('[SearchService] cleanup_expired_data_v2 error:', error.message);
         return false;
     }
 };

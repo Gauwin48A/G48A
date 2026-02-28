@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Lock, Gift, TrendingUp, Zap, LogIn, Filter, Star, Heart } from 'lucide-react';
@@ -11,14 +11,21 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import BuyerInterestModal from '../components/BuyerInterestModal'; // Added BuyerInterestModal
 import { useTranslatedPosts } from '../hooks/useTranslatedContent'; // Kept existing import
+import { useAuth } from '@/context/AuthContext';
+import { getAccessToken, getUserId } from '@/utils/authStorage';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const MyRecommendations = () => {
 	const { t, i18n } = useTranslation();
 	const navigate = useNavigate();
+	const { user: authUser, loading: authLoading } = useAuth();
 
-	// Auth state
-	const [isAuthenticated, setIsAuthenticated] = useState(false);
-	const [authChecked, setAuthChecked] = useState(false);
+	const token = getAccessToken();
+	const userId = getUserId(authUser);
+	const isAuthenticated = useMemo(
+		() => Boolean(authUser || (token && userId)),
+		[authUser, token, userId]
+	);
 
 	// State
 	const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', date: '' });
@@ -45,20 +52,10 @@ const MyRecommendations = () => {
 		'Home': '🏠', 'Sports': '⚽', 'Beauty': '💄', 'Kids': '🧸'
 	};
 
-	// SECURITY: Check authentication on mount
-	useEffect(() => {
-		const token = localStorage.getItem('authToken');
-		const userId = localStorage.getItem('userId');
-		setIsAuthenticated(!!(token && userId));
-		setAuthChecked(true);
-	}, []);
-
 	// Fetch preferences (only if authenticated)
 	useEffect(() => {
-		if (!isAuthenticated) return;
+		if (!isAuthenticated || !userId) return;
 		const fetchPreferences = async () => {
-			const userId = localStorage.getItem('userId');
-			if (!userId) return;
 			try {
 				const data = await api.get(`/profile/preferences?userId=${userId}`);
 				if (data) {
@@ -74,7 +71,7 @@ const MyRecommendations = () => {
 			}
 		};
 		fetchPreferences();
-	}, [isAuthenticated]);
+	}, [isAuthenticated, userId]);
 
 
 
@@ -86,14 +83,13 @@ const MyRecommendations = () => {
 
 	// Fetch recommendations
 	useEffect(() => {
-		if (!isAuthenticated) return;
+		if (!isAuthenticated || !userId) return;
 
 		const fetchPosts = async () => {
 			if (page === 1) setLoading(true);
 			else setIsLoadingMore(true);
 
 			try {
-				const userId = localStorage.getItem('userId');
 				const params = {
 					location: preferences.location,
 					minPrice: preferences.minPrice,
@@ -126,7 +122,7 @@ const MyRecommendations = () => {
 		};
 
 		fetchPosts();
-	}, [isAuthenticated, preferences, selectedCategory, page]);
+	}, [isAuthenticated, preferences, selectedCategory, page, userId]);
 
 	// Handlers
 	const handleLike = async (postId) => {
@@ -149,13 +145,13 @@ const MyRecommendations = () => {
 	const getImageUrl = (img) => {
 		if (!img) return '/placeholder.svg';
 		if (img.startsWith('http')) return img;
-		return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${img}`;
+		return `${getApiOriginBase()}${img}`;
 	};
 
 	// ==========================================
 	// SECURITY: Not Authenticated - Show Login Screen
 	// ==========================================
-	if (authChecked && !isAuthenticated) {
+	if (!authLoading && !isAuthenticated) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
 				{/* Animated background */}
@@ -206,7 +202,7 @@ const MyRecommendations = () => {
 
 						{/* Actions */}
 						<Button
-							onClick={() => navigate('/login')}
+							onClick={() => navigate('/login', { state: { returnTo: '/my-recommendations' } })}
 							className="w-full h-14 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold text-lg rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
 						>
 							<LogIn className="w-5 h-5 mr-2" />
@@ -390,4 +386,5 @@ const MyRecommendations = () => {
 };
 
 export default MyRecommendations;
+
 

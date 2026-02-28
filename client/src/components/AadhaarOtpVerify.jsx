@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { buildApiPath } from '@/lib/networkConfig';
 
 import { useTranslation } from 'react-i18next';
 
@@ -23,7 +24,7 @@ export default function AadhaarOtpVerify({ onVerified, onError }) {
   // Send OTP
   const handleSendOtp = async () => {
     setLoading(true); setError('');
-    const res = await fetch('/api/aadhaar/send-otp', {
+    const res = await fetch(buildApiPath('/aadhaar/send-otp'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ aadhaar })
@@ -47,7 +48,7 @@ export default function AadhaarOtpVerify({ onVerified, onError }) {
   // Verify OTP
   const handleVerifyOtp = async () => {
     setLoading(true); setError('');
-    const res = await fetch('/api/aadhaar/verify-otp', {
+    const res = await fetch(buildApiPath('/aadhaar/verify-otp'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ aadhaar, otp, txnId })

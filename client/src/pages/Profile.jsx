@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,13 +16,17 @@ import { useToast } from "@/hooks/use-toast";
 import '../i18n';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
-import { createChannel, getChannelByUser } from '../lib/api';
+import { getChannelByUser } from '../lib/api';
 import api from '@/services/api'; // Import central API service
 import { syncNativeContacts } from '../services/mobileContacts';
+import { useAuth } from '@/context/AuthContext';
+import { getAccessToken, getUserId, isAuthenticated } from '@/utils/authStorage';
+import { fetchCategoriesCached } from '@/services/categoriesService';
 
 const Profile = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { user: authUser, setUser: setAuthUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
@@ -36,83 +40,173 @@ const Profile = () => {
   const [channel, setChannel] = useState(null);
   const [activeTab, setActiveTab] = useState('personal');
   const [userStats, setUserStats] = useState({ postCount: 0, rank: 'Bronze', memberDays: 0 });
+  const profileRequestIdRef = useRef(0);
+  const resolveUserId = useCallback((userData) => {
+    const candidate = userData?.id ?? userData?.user_id ?? null;
+    if (candidate === null || candidate === undefined || candidate === '') {
+      return null;
+    }
+    return String(candidate);
+  }, []);
+  const resolvedUserId = getUserId(authUser);
+  const isLoggedIn = useMemo(() => isAuthenticated(authUser), [authUser, resolvedUserId]);
 
-  useEffect(() => {
+  const loadProfile = useCallback(async () => {
+    const requestId = profileRequestIdRef.current + 1;
+    profileRequestIdRef.current = requestId;
     const cached = localStorage.getItem('userProfile');
     if (cached) {
-      try { setUser(JSON.parse(cached)); } catch (e) { }
+      try {
+        setUser(JSON.parse(cached));
+      } catch (e) {
+        // Ignore invalid cache and refetch profile from backend.
+      }
     }
-    setLoading(true);
 
-    // Auth check using localStorage (AuthContext backup)
-    const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId');
-    if (!userId || !token) {
-      setError('You must be logged in to view your profile.');
-      setLoading(false);
+    setLoading(true);
+    setError(null);
+
+    // Auth check using centralized helper (supports legacy keys).
+    const token = getAccessToken();
+    if (!token) {
+      if (requestId === profileRequestIdRef.current) {
+        setError('You must be logged in to view your profile.');
+        setLoading(false);
+      }
       return;
     }
 
-    // Use api.get (handles auto-refresh)
-    api.get(`/profile?userId=${userId}`)
-      .then(data => {
-        // Axios interceptor returns data directly
-        if (data && typeof data === 'object' && !data.error) {
-          setUser(data);
-          setEditData({
-            full_name: data.full_name || data.name || '',
-            phone: data.phone || '',
-            address: data.address || '',
-            avatar_url: data.avatar_url || '',
-            bio: data.bio || ''
-          });
-          localStorage.setItem('userProfile', JSON.stringify(data));
+    try {
+      // Axios interceptor returns data directly.
+      const data = await api.get('/profile');
+      if (requestId !== profileRequestIdRef.current) return;
+      if (data && typeof data === 'object' && !data.error) {
+        const resolvedUserId = resolveUserId(data);
+        if (resolvedUserId) {
+          localStorage.setItem('userId', resolvedUserId);
         }
+        localStorage.setItem('userProfile', JSON.stringify(data));
+
+        const mergedUser = {
+          ...(authUser || {}),
+          ...data,
+          id: resolveUserId(authUser) ?? resolveUserId(data) ?? authUser?.id ?? data?.id ?? data?.user_id ?? null,
+          user_id: data?.user_id ?? authUser?.user_id ?? authUser?.id ?? null
+        };
+
+        localStorage.setItem('user', JSON.stringify(mergedUser));
+        setUser(mergedUser);
+        setAuthUser(mergedUser);
+        setEditData({
+          full_name: data.full_name || data.name || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          avatar_url: data.avatar_url || '',
+          bio: data.bio || ''
+        });
+      }
+    } catch (err) {
+      if (requestId !== profileRequestIdRef.current) return;
+      console.error("Profile fetch error:", err);
+      const status = err?.status || err?.response?.status;
+      if (status === 401 || status === 403) {
+        setUser(null);
+        setError(null);
+        navigate('/login', { replace: true, state: { returnTo: '/profile' } });
+        return;
+      }
+      // Interceptor handles 401 redirect, so just show error if it persists.
+      setError(err.message || 'Failed to load profile');
+    } finally {
+      if (requestId === profileRequestIdRef.current) {
         setLoading(false);
+      }
+    }
+  }, [authUser, navigate, resolveUserId, setAuthUser]);
+
+  useEffect(() => {
+    if (authLoading) {
+      return undefined;
+    }
+
+    if (!isLoggedIn) {
+      setLoading(false);
+      setError(null);
+      setUser(null);
+      return undefined;
+    }
+
+    loadProfile();
+
+    return () => {
+      profileRequestIdRef.current += 1;
+    };
+  }, [authLoading, isLoggedIn, loadProfile]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchCategoriesCached()
+      .then((data) => {
+        if (!cancelled) {
+          setAvailableCategories(Array.isArray(data) ? data : []);
+        }
       })
-      .catch(err => {
-        console.error("Profile fetch error:", err);
-        // Interceptor handles 401 redirect, so just show error if it persists
-        setError(err.message || 'Failed to load profile');
-        setLoading(false);
+      .catch(() => {
+        if (!cancelled) {
+          setAvailableCategories([]);
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (user?.user_id) {
-      // Preferences
-      api.get(`/profile/preferences?userId=${user.user_id}`)
-        .then(data => {
-          if (data) setPreferences({
-            location: data.location || '',
-            minPrice: data.minPrice || '',
-            maxPrice: data.maxPrice || '',
-            categories: data.categories || []
+    const userId = resolveUserId(user);
+    if (!userId) return;
+
+    let cancelled = false;
+
+    Promise.all([
+      api.get('/profile/preferences').catch(() => null),
+      getChannelByUser(userId).catch(() => null),
+      api.get(`/posts/mine?userId=${userId}&limit=1&page=1`).catch(() => ({ total: 0 })),
+      api.get(`/rewards/user/${userId}`).catch(() => ({ tier: 'Bronze' }))
+    ])
+      .then(([preferencesData, channelData, postsData, rewardsData]) => {
+        if (cancelled) return;
+
+        if (preferencesData) {
+          setPreferences({
+            location: preferencesData.location || '',
+            minPrice: preferencesData.minPrice || '',
+            maxPrice: preferencesData.maxPrice || '',
+            categories: preferencesData.categories || []
           });
-        })
-        .catch(() => { });
+        }
 
-      // Fetch available categories
-      api.get('/categories')
-        .then(data => setAvailableCategories(Array.isArray(data) ? data : []))
-        .catch(() => setAvailableCategories([]));
+        setChannel(channelData);
 
-      getChannelByUser(user.user_id)
-        .then(res => setChannel(res.data))
-        .catch(() => setChannel(null));
-
-      // Fetch user's real stats
-      Promise.all([
-        api.get(`/posts/mine?userId=${user.user_id}`).catch(() => ({ total: 0 })),
-        api.get(`/rewards/user/${user.user_id}`).catch(() => ({ tier: 'Bronze' }))
-      ]).then(([postsData, rewardsData]) => {
         const postCount = postsData?.total || (Array.isArray(postsData?.posts) ? postsData.posts.length : 0);
         const rank = rewardsData?.tier || 'Bronze';
-        const memberDays = user.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        const memberDays = user?.created_at
+          ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+
         setUserStats({ postCount, rank, memberDays });
-      }).catch(() => { });
-    }
-  }, [user]);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setChannel(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resolveUserId, user?.created_at, user?.id, user?.user_id]);
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -137,9 +231,15 @@ const Profile = () => {
     setEditErrors(errors);
     if (Object.keys(errors).length > 0) return;
     try {
-      const updated = await api.post('/profile/update', { userId: user.user_id, ...editData });
+      const updated = await api.post('/profile/update', { ...editData });
 
-      setUser(prev => ({ ...prev, ...updated }));
+      setUser((prev) => {
+        const nextUser = { ...prev, ...updated };
+        localStorage.setItem('userProfile', JSON.stringify(nextUser));
+        localStorage.setItem('user', JSON.stringify(nextUser));
+        setAuthUser(nextUser);
+        return nextUser;
+      });
       setEditMode(false);
       toast({ title: 'Profile updated successfully!' });
 
@@ -151,7 +251,7 @@ const Profile = () => {
   const handlePrefSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await api.post('/profile/preferences/update', { userId: user.user_id, ...preferences });
+      const data = await api.post('/profile/preferences/update', { ...preferences });
 
       // Update local state with the saved preferences from the response
       setPreferences({
@@ -162,15 +262,22 @@ const Profile = () => {
       });
       setEditPrefMode(false);
       toast({ title: 'Preferences saved!', description: 'Your recommendations will now be personalized.' });
-      console.log('[Profile] Preferences saved successfully:', data);
 
     } catch (err) {
-      console.error('[Profile] Exception saving preferences:', err);
       toast({ title: 'Error saving preferences', description: err.message, variant: 'destructive' });
     }
   };
 
-  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">{t('loading') || 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     // ... (Login prompt UI same as before)
@@ -190,8 +297,8 @@ const Profile = () => {
 
         {/* Login/Signup Cards - Styled like MyRecommendations/MyPosts */}
         <div className="max-w-lg mx-auto px-6 space-y-4">
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -204,10 +311,10 @@ const Profile = () => {
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
             </div>
-          </a>
+          </Link>
 
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -220,7 +327,7 @@ const Profile = () => {
               </div>
               <ChevronRight className="w-6 h-6 text-white/60" />
             </div>
-          </a>
+          </Link>
         </div>
 
         {/* Features Grid */}
@@ -260,7 +367,7 @@ const Profile = () => {
         <div className="text-center p-8">
           <div className="text-6xl mb-4">😕</div>
           <p className="text-red-500 text-xl mb-4">{error || t('profile_not_found') || 'Profile not found'}</p>
-          <Button onClick={() => window.location.reload()}>{t('retry') || 'Retry'}</Button>
+          <Button onClick={loadProfile}>{t('retry') || 'Retry'}</Button>
         </div>
       </div>
     );
@@ -298,13 +405,18 @@ const Profile = () => {
                   if (!file) return;
                   const formData = new FormData();
                   formData.append('avatar', file);
-                  formData.append('userId', user.user_id);
                   try {
                     const data = await api.post('/profile/upload-avatar', formData, {
                       headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     if (data?.avatar_url) {
-                      setUser(prev => ({ ...prev, avatar_url: data.avatar_url }));
+                      setUser((prev) => {
+                        const nextUser = { ...prev, avatar_url: data.avatar_url };
+                        localStorage.setItem('userProfile', JSON.stringify(nextUser));
+                        localStorage.setItem('user', JSON.stringify(nextUser));
+                        setAuthUser(nextUser);
+                        return nextUser;
+                      });
                       toast({ title: 'Profile picture updated!' });
                     } else {
                       toast({ title: 'Upload failed', variant: 'destructive' });

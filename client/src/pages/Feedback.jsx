@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,20 +6,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Star, Send, Heart, ArrowLeft, ArrowUp, Sparkles, ThumbsUp, Lightbulb, Bug, Palette, Zap, CheckCircle, ChevronRight, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { MessageSquare, Star, Send, Heart, ArrowLeft, ArrowUp, Sparkles, ThumbsUp, Lightbulb, Bug, Palette, Zap, CheckCircle, ChevronRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/context/AuthContext';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const Feedback = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const baseUrl = useMemo(() => getApiOriginBase(), []);
+  const isLoggedIn = useMemo(
+    () => Boolean(user || localStorage.getItem('authToken') || localStorage.getItem('token')),
+    [user]
+  );
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState({
-    userId: localStorage.getItem('userId') || 'USER123456',
-    name: 'User',
-    email: '',
     feedbackType: 'general',
     rating: 5,
     subject: '',
@@ -57,6 +62,11 @@ const Feedback = () => {
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
 
+    if (!isLoggedIn) {
+      navigate('/login', { state: { returnTo: '/feedback' } });
+      return;
+    }
+
     if (!feedbackForm.subject || !feedbackForm.message) {
       toast({
         title: t('incomplete_form'),
@@ -67,22 +77,52 @@ const Feedback = () => {
     }
 
     setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: t('feedback_submitted'),
-        description: t('thank_you_feedback')
+    try {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      if (token && !localStorage.getItem('authToken')) {
+        localStorage.setItem('authToken', token);
+      }
+      const response = await fetch(`${baseUrl}/api/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subject: feedbackForm.subject,
+          message: feedbackForm.message,
+          rating: feedbackForm.rating,
+          category: feedbackForm.feedbackType
+        })
       });
 
-      setFeedbackForm(prev => ({
-        ...prev,
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || t('feedback_submit_failed') || 'Failed to submit feedback');
+      }
+
+      toast({
+        title: t('feedback_submitted'),
+        description: data.message || t('thank_you_feedback')
+      });
+
+      setFeedbackForm({
         feedbackType: 'general',
         rating: 5,
         subject: '',
         message: ''
-      }));
-    }, 1500);
+      });
+    } catch (err) {
+      toast({
+        title: t('feedback_submit_failed') || 'Submission failed',
+        description: err.message || t('could_not_submit_feedback') || 'Could not submit feedback',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderStars = () => {
@@ -106,9 +146,6 @@ const Feedback = () => {
     { icon: MessageSquare, name: t('general_feedback'), description: t('share_general_thoughts'), value: 'general', color: 'text-blue-500', bg: 'bg-blue-50' },
   ];
 
-  // Check login status
-  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
-
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" style={{ paddingBottom: '120px' }}>
@@ -125,8 +162,8 @@ const Feedback = () => {
 
         {/* Login/Signup Cards */}
         <div className="max-w-lg mx-auto px-6 space-y-4">
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -139,10 +176,10 @@ const Feedback = () => {
               </div>
               <ChevronRight className="w-6 h-6 text-gray-400" />
             </div>
-          </a>
+          </Link>
 
-          <a
-            href="/signup"
+          <Link
+            to="/signup"
             className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -155,7 +192,7 @@ const Feedback = () => {
               </div>
               <ChevronRight className="w-6 h-6 text-white/60" />
             </div>
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -386,3 +423,4 @@ const Feedback = () => {
 };
 
 export default Feedback;
+

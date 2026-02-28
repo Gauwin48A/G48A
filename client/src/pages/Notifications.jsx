@@ -1,27 +1,59 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { getUserId, isAuthenticated } from '@/utils/authStorage';
 import {
   Bell, Check, Trash2, Package, DollarSign, Shield, Heart,
   AlertCircle, MessageCircle, Gift, ChevronRight, RefreshCw,
-  Sparkles, TrendingUp, ShoppingBag, Star, Zap, Clock, Filter,
-  CheckCheck, X, MoreHorizontal, ArrowLeft
+  Sparkles, TrendingUp, Star, Zap, Clock, CheckCheck, X
 } from "lucide-react";
 import PageHeader from '../components/PageHeader';
+
+const resolveIconType = (notification) => {
+  const raw = String(notification.icon || notification.icon_category || notification.type || '').toLowerCase();
+
+  if (raw.includes('order') || raw.includes('sale') || raw.includes('package')) return 'package';
+  if (raw.includes('payment') || raw.includes('wallet') || raw.includes('money')) return 'money';
+  if (raw.includes('security')) return 'security';
+  if (raw.includes('message') || raw.includes('chat') || raw.includes('inquiry')) return 'message';
+  if (raw.includes('gift') || raw.includes('promo') || raw.includes('reward')) return 'gift';
+  if (raw.includes('heart') || raw.includes('like')) return 'heart';
+  if (raw.includes('star') || raw.includes('subscription') || raw.includes('tier')) return 'star';
+  if (raw.includes('trend') || raw.includes('price')) return 'trending';
+  if (raw.includes('alert') || raw.includes('warning')) return 'alert';
+
+  return 'package';
+};
+
+const normalizeNotification = (notification) => {
+  const id = notification.notification_id ?? notification.id;
+  return {
+    ...notification,
+    id,
+    notification_id: id,
+    read: notification.read === true || notification.is_read === true,
+    icon: resolveIconType(notification),
+    priority: notification.priority || 'normal',
+    created_at: notification.created_at || new Date().toISOString()
+  };
+};
 
 const Notifications = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user: authUser, loading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState([]);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [showActions, setShowActions] = useState(false);
+  const loadRequestIdRef = useRef(0);
+  const userId = useMemo(() => getUserId(authUser), [authUser]);
+  const isLoggedIn = useMemo(() => isAuthenticated(authUser), [authUser, userId]);
 
   // Sample realistic notifications for demo
-  const sampleNotifications = [
+  const sampleNotifications = useMemo(() => ([
     {
       id: 1,
       type: 'order',
@@ -110,27 +142,52 @@ const Notifications = () => {
       priority: 'medium',
       action: { label: 'View Item', path: '/wishlist' }
     }
-  ];
+  ]), []);
+
+  const loadNotifications = useCallback(async () => {
+    if (!isLoggedIn || !userId) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+
+    const requestId = loadRequestIdRef.current + 1;
+    loadRequestIdRef.current = requestId;
+    setLoading(true);
+    try {
+      const response = await api.get(`/notifications?userId=${encodeURIComponent(userId)}`);
+      if (requestId !== loadRequestIdRef.current) return;
+      const payload = response?.data ?? response;
+      const list = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.notifications)
+          ? payload.notifications
+          : [];
+
+      if (list.length > 0) {
+        setNotifications(list.map(normalizeNotification));
+      } else {
+        setNotifications(sampleNotifications.map(normalizeNotification));
+      }
+    } catch (loadError) {
+      if (requestId !== loadRequestIdRef.current) return;
+      console.error('[Notifications] Failed to load notifications:', loadError);
+      setNotifications(sampleNotifications.map(normalizeNotification));
+    } finally {
+      if (requestId === loadRequestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [isLoggedIn, sampleNotifications, userId]);
 
   useEffect(() => {
-    setLoading(true);
-    const userId = localStorage.getItem('userId') || 1;
-    api.get(`/api/notifications?userId=${userId}`)
-      .then(res => {
-        const data = res.data;
-        if (Array.isArray(data) && data.length > 0) {
-          setNotifications(data);
-        } else {
-          setNotifications(sampleNotifications);
-        }
-        setError(null);
-      })
-      .catch(() => {
-        setNotifications(sampleNotifications);
-        setError(null);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    if (!authLoading) {
+      loadNotifications();
+    }
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
+  }, [authLoading, loadNotifications]);
 
   const getIcon = (iconType) => {
     const iconClass = "w-5 h-5";
@@ -163,15 +220,6 @@ const Notifications = () => {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-blue-500';
-    }
-  };
-
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -187,49 +235,93 @@ const Notifications = () => {
     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
-  const markAsRead = useCallback((id) => {
+  const markAsRead = useCallback(async (id) => {
     setNotifications(prev => prev.map(notif =>
-      (notif.notification_id || notif.id) === id ? { ...notif, read: true } : notif
+      (notif.notification_id || notif.id) === id ? { ...notif, read: true, is_read: true } : notif
     ));
-  }, []);
 
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
-  }, []);
+    try {
+      await api.put(`/notifications/${id}/read`, { userId });
+    } catch (requestError) {
+      console.error('[Notifications] Failed to mark notification as read:', requestError);
+    }
+  }, [userId]);
 
-  const deleteNotification = useCallback((id) => {
+  const markAllAsRead = useCallback(async () => {
+    setNotifications(prev => prev.map(notif => ({ ...notif, read: true, is_read: true })));
+
+    try {
+      await api.put('/notifications/mark-all-read', { userId });
+    } catch (requestError) {
+      console.error('[Notifications] Failed to mark all as read:', requestError);
+    }
+  }, [userId]);
+
+  const deleteNotification = useCallback(async (id) => {
     setNotifications(prev => prev.filter(notif => (notif.notification_id || notif.id) !== id));
     setSelectedIds(prev => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
-  }, []);
 
-  const deleteSelected = useCallback(() => {
+    try {
+      await api.delete(`/notifications/${id}`, { data: { userId } });
+    } catch (requestError) {
+      console.error('[Notifications] Failed to delete notification:', requestError);
+    }
+  }, [userId]);
+
+  const deleteSelected = useCallback(async () => {
+    const idsToDelete = Array.from(selectedIds);
+    if (idsToDelete.length === 0) return;
+
     setNotifications(prev => prev.filter(notif => !selectedIds.has(notif.notification_id || notif.id)));
     setSelectedIds(new Set());
-    setShowActions(false);
-  }, [selectedIds]);
 
-  const toggleSelect = (id) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
+    await Promise.allSettled(
+      idsToDelete.map((id) => api.delete(`/notifications/${id}`, { data: { userId } }))
+    );
+  }, [selectedIds, userId]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const filteredNotifications = notifications.filter(n => {
-    if (filter === 'unread') return !n.read;
-    if (filter === 'read') return n.read;
-    return true;
-  });
+  const unreadCount = useMemo(
+    () => notifications.reduce((count, notification) => count + (notification.read ? 0 : 1), 0),
+    [notifications]
+  );
+  const filteredNotifications = useMemo(
+    () => notifications.filter((notification) => {
+      if (filter === 'unread') return !notification.read;
+      if (filter === 'read') return notification.read;
+      return true;
+    }),
+    [filter, notifications]
+  );
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">{t('loading') || 'Loading...'}</p>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn || !userId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center">
+          <Bell className="w-16 h-16 text-purple-300 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-3">{t('login_required') || 'Login Required'}</h1>
+          <p className="text-gray-300 mb-6">{t('please_login_to_continue') || 'Please sign in to view your notifications.'}</p>
+          <button
+            onClick={() => navigate('/login', { state: { returnTo: '/notifications' } })}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-xl font-semibold"
+          >
+            {t('sign_in') || 'Sign In'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -267,7 +359,7 @@ const Notifications = () => {
               </button>
             )}
             <button
-              onClick={() => window.location.reload()}
+              onClick={loadNotifications}
               className="p-2 hover:bg-white/10 rounded-xl transition-colors"
             >
               <RefreshCw className="w-5 h-5 text-purple-300" />

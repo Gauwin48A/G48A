@@ -1,26 +1,25 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, BellOff, Check } from 'lucide-react';
 import api from '../lib/api';
-
-import { useTranslation } from 'react-i18next';
+import { getAccessToken } from '@/utils/authStorage';
 
 /**
  * PriceAlertButton - Subscribe to price drop notifications
  * 
  * @param {number} postId - The post ID to subscribe to
- * @param {number} currentPrice - The current price of the post
  * @param {boolean} initialSubscribed - Initial subscription state
  */
-const PriceAlertButton = ({ postId, currentPrice, initialSubscribed = false }) => {
-  const { t } = useTranslation();
+const PriceAlertButton = ({ postId, initialSubscribed = false }) => {
     const [subscribed, setSubscribed] = useState(initialSubscribed);
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const successTimeoutRef = useRef(null);
+
+    useEffect(() => () => clearTimeout(successTimeoutRef.current), []);
 
     const handleToggle = async () => {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
+        if (!getAccessToken()) {
             alert('Please login to set price alerts');
             return;
         }
@@ -28,23 +27,22 @@ const PriceAlertButton = ({ postId, currentPrice, initialSubscribed = false }) =
         setLoading(true);
         try {
             if (subscribed) {
-                await api.put(`/price-alerts/unsubscribe/${postId}`, {}, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await api.put(`/price-alerts/unsubscribe/${postId}`, {});
                 setSubscribed(false);
             } else {
                 await api.post('/price-alerts/subscribe', {
                     postId,
                     percentageThreshold: 10
-                }, {
-                    headers: { Authorization: `Bearer ${token}` }
                 });
                 setSubscribed(true);
                 setShowSuccess(true);
-                setTimeout(() => setShowSuccess(false), 2000);
+                clearTimeout(successTimeoutRef.current);
+                successTimeoutRef.current = setTimeout(() => setShowSuccess(false), 2000);
             }
         } catch (error) {
-            console.error('Price alert error:', error);
+            if (import.meta.env.DEV) {
+                console.error('Price alert error:', error);
+            }
         } finally {
             setLoading(false);
         }

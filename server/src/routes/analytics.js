@@ -10,6 +10,7 @@ const analyticsController = require('../controllers/analyticsController');
 // DEVICE ANALYTICS (No auth - captures all visitors)
 // ============================================
 router.post('/device', optionalAuth, analyticsController.saveDeviceInfo);
+router.post('/client-error', optionalAuth, analyticsController.saveClientError);
 
 // ============================================
 // SELLER ANALYTICS (Auth required)

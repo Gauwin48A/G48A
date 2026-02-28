@@ -1,9 +1,23 @@
 const pool = require('../config/db');
 const geoip = require('geoip-lite');
 
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
 // --- CONSTANTS ---
 const MAX_CITY_SPEED = 60; // km/h (Traffic limit)
 const MAX_AIR_SPEED = 900; // km/h (Plane limit)
+
+function hasCoordinate(value) {
+    return value !== undefined && value !== null && value !== '';
+}
 
 // --- HELPER: Haversine Distance (km) ---
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -25,11 +39,13 @@ exports.evaluateLoginRisk = async (userId, newLat, newLng, newDeviceId, ipAddres
 
     // A. PROTOCOL: FALLBACK (IP Geolocation)
     // If strict GPS failed or was bypassed, we blindly trust IP.
-    if (!newLat || !newLng) {
+    let normalizedLat = hasCoordinate(newLat) ? Number(newLat) : null;
+    let normalizedLng = hasCoordinate(newLng) ? Number(newLng) : null;
+    if (!Number.isFinite(normalizedLat) || !Number.isFinite(normalizedLng)) {
         const geo = geoip.lookup(ipAddress);
         if (geo && geo.ll) {
-            newLat = geo.ll[0];
-            newLng = geo.ll[1];
+            normalizedLat = geo.ll[0];
+            normalizedLng = geo.ll[1];
             isIPFallback = true;
             riskScore += 15; // IP-only is risky, but allowed
             riskReasons.push("GPS Disabled (IP Fallback)");
@@ -40,13 +56,17 @@ exports.evaluateLoginRisk = async (userId, newLat, newLng, newDeviceId, ipAddres
     }
 
     // 1. Get Last Login
-    const history = await pool.query(
-        `SELECT * FROM login_history WHERE user_id = $1 ORDER BY login_time DESC LIMIT 1`,
+    const history = await runQuery(
+        `SELECT latitude, longitude, login_time, device_id, ip_address
+         FROM login_history
+         WHERE user_id = $1
+         ORDER BY login_time DESC
+         LIMIT 1`,
         [userId]
     );
 
     // If new user, ALLOW
-    if (history.rows.length === 0) return { action: 'ALLOW', score: 0, derivedCoords: { lat: newLat, lng: newLng } };
+    if (history.rows.length === 0) return { action: 'ALLOW', score: 0, derivedCoords: { lat: normalizedLat, lng: normalizedLng } };
 
     const lastLogin = history.rows[0];
 
@@ -55,7 +75,12 @@ exports.evaluateLoginRisk = async (userId, newLat, newLng, newDeviceId, ipAddres
     // Prevent division by zero
     const safeTime = timeDiffHours < 0.008 ? 0.008 : timeDiffHours;
 
-    const distanceKm = calculateDistance(lastLogin.latitude, lastLogin.longitude, newLat, newLng);
+    const distanceKm = calculateDistance(
+        Number(lastLogin.latitude),
+        Number(lastLogin.longitude),
+        normalizedLat,
+        normalizedLng
+    );
     const speed = distanceKm / safeTime;
 
     // --- RULE 1: DEVICE CONSISTENCY ---
@@ -89,7 +114,7 @@ exports.evaluateLoginRisk = async (userId, newLat, newLng, newDeviceId, ipAddres
     const ipGeo = geoip.lookup(ipAddress);
     if (!isIPFallback && ipGeo && ipGeo.ll) {
         // If we have both GPS and IP location, compare them
-        const discrepancyKm = calculateDistance(newLat, newLng, ipGeo.ll[0], ipGeo.ll[1]);
+        const discrepancyKm = calculateDistance(normalizedLat, normalizedLng, ipGeo.ll[0], ipGeo.ll[1]);
         if (discrepancyKm > 200) {
             riskScore += 40;
             riskReasons.push(`GPS-IP Mismatch (${Math.round(discrepancyKm)}km gap)`);
@@ -109,5 +134,5 @@ exports.evaluateLoginRisk = async (userId, newLat, newLng, newDeviceId, ipAddres
     if (riskScore >= 60) action = 'BLOCK';
     else if (riskScore >= 30) action = 'CHALLENGE';
 
-    return { action, score: Math.max(0, riskScore), reasons: riskReasons, derivedCoords: { lat: newLat, lng: newLng } };
+    return { action, score: Math.max(0, riskScore), reasons: riskReasons, derivedCoords: { lat: normalizedLat, lng: normalizedLng } };
 };

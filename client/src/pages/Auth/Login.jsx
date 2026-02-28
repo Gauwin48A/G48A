@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
 import { getDeviceId } from '@/utils/device';
 import { getBestAvailableLocation, captureLocation } from '@/services/locationService';
@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 const Login = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { setUser } = useAuth(); // Get setUser from AuthContext
 
@@ -37,24 +38,91 @@ const Login = () => {
   const [otpValue, setOtpValue] = useState("");
   const [otpSent, setOtpSent] = useState(false);
 
-  // Helper: Login API Call
-  const loginUser = async (payload) => {
-    // api.post returns response.data directly due to interceptor in services/api.js 
-    // BUT wait, standard axios returns object. 
-    // Let's check services/api.js interceptor. 
-    // Usually it returns response.data. 
-    // If not, we handle it.
-    // Safe bet: api.post returns the data (intercepted).
-    return api.post('/auth/login', payload);
+  const normalizeApiError = (error) => ({
+    status: error?.status ?? error?.response?.status ?? null,
+    data: error?.data ?? error?.response?.data ?? {},
+    message: error?.message || error?.response?.data?.error || error?.response?.data?.message || ''
+  });
+
+  const resolveUserId = (user) => {
+    const candidate = user?.id ?? user?.user_id ?? null;
+    if (candidate === null || candidate === undefined || candidate === '') {
+      return null;
+    }
+    return String(candidate);
   };
 
+  const persistUser = (nextUser) => {
+    if (!nextUser || typeof nextUser !== 'object') {
+      return;
+    }
+
+    localStorage.setItem("user", JSON.stringify(nextUser));
+    const userId = resolveUserId(nextUser);
+    if (userId) {
+      localStorage.setItem("userId", userId);
+    }
+    setUser(nextUser);
+  };
+
+  const persistAuth = (authPayload) => {
+    if (!authPayload?.token) {
+      return;
+    }
+
+    localStorage.setItem("authToken", authPayload.token);
+    localStorage.removeItem('token');
+    if (authPayload.refreshToken) localStorage.setItem("refreshToken", authPayload.refreshToken);
+
+    if (authPayload.user) {
+      persistUser(authPayload.user);
+    }
+  };
+
+  const getPostLoginRedirect = () => {
+    const queryReturnTo = new URLSearchParams(location.search).get('returnTo');
+    const stateReturnTo = location.state?.returnTo;
+    const target = stateReturnTo || queryReturnTo || '/all-posts';
+    return typeof target === 'string' && target.startsWith('/') ? target : '/all-posts';
+  };
+
+  // Helper: Login API Call
+  const loginUser = async (payload) => api.post('/auth/login', payload);
+
   // Helper: Fetch Profile
-  const fetchAndStoreUserProfile = async (token) => {
+  const fetchAndStoreUserProfile = async (fallbackUser = null) => {
     try {
-      const user = await api.get('/users/profile/me');
-      localStorage.setItem('user', JSON.stringify(user));
+      const profile = await api.get('/profile');
+      localStorage.setItem('userProfile', JSON.stringify(profile));
+
+      const fallbackId = resolveUserId(fallbackUser);
+      const profileId = resolveUserId(profile);
+      const mergedUser = {
+        ...(fallbackUser || {}),
+        ...(profile || {}),
+        id: fallbackId ?? profileId ?? fallbackUser?.id ?? profile?.id ?? profile?.user_id ?? null,
+        user_id: profile?.user_id ?? fallbackUser?.user_id ?? fallbackUser?.id ?? null,
+      };
+
+      persistUser(mergedUser);
     } catch (e) {
-      console.error("Failed to fetch profile", e);
+      if (import.meta.env.DEV) {
+        console.error("Failed to fetch profile after login", e);
+      }
+
+      if (fallbackUser) {
+        persistUser(fallbackUser);
+        return;
+      }
+
+      try {
+        const me = await api.get('/auth/me');
+        persistUser(me);
+      } catch (meError) {
+        if (import.meta.env.DEV) {
+          console.error("Failed to fetch /auth/me after login", meError);
+        }
+      }
     }
   };
 
@@ -122,44 +190,50 @@ const Login = () => {
 
       // Success Handling
       if (data && data.token) {
-        // CRITICAL: Use 'authToken' to match AuthContext and api.js
-        localStorage.setItem("authToken", data.token);
-        if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-          // CRITICAL: Many pages check for userId separately
-          localStorage.setItem("userId", data.user.id);
-          // CRITICAL: Sync with AuthContext so protected routes work immediately
-          setUser(data.user);
+        persistAuth(data);
+
+        await fetchAndStoreUserProfile(data.user || null);
+        setShowOtpInput(false);
+        setOtpValue('');
+
+        const captureUserId = resolveUserId(data.user) || localStorage.getItem('userId');
+        if (captureUserId) {
+          captureLocation(captureUserId).catch(() => { });
         }
 
-        await fetchAndStoreUserProfile(data.token);
-        captureLocation(data.user?.id).catch(() => { });
-
         toast({
-          title: t('login_successful') + " 🎉" || "Login Successful 🎉",
+          title: t('login_successful') || "Login Successful",
           description: t('welcome_back_msg') || "Welcome back!",
         });
-        navigate("/all-posts");
+        navigate(getPostLoginRedirect(), { replace: true });
       }
 
     } catch (err) {
-      console.error("Login Error:", err);
+      if (import.meta.env.DEV) {
+        console.error("Login Error:", err);
+      }
+      const normalizedError = normalizeApiError(err);
 
-      // Handle 202 Challenge specifically (Risk Engine)
-      if (err.response && err.response.status === 202 && err.response.data.requireOtp) {
+      // Handle risk challenge OTP responses (legacy + current backend variants)
+      const challengeCode = normalizedError.data?.code || normalizedError.data?.errorCode;
+      const requiresOtpChallenge =
+        (normalizedError.status === 202 && normalizedError.data?.requireOtp) ||
+        (normalizedError.status === 401 && challengeCode === 'RISK_CHALLENGE_REQUIRED') ||
+        normalizedError.data?.challengeType === 'otp';
+
+      if (requiresOtpChallenge) {
         setShowOtpInput(true);
         toast({
           title: "Security Check",
-          description: err.response.data.message || "Unusual activity detected.",
+          description: normalizedError.data?.message || "Additional verification is required to complete login.",
         });
         return; // Stop here, let user enter OTP
       }
 
       // Handle GPS Errors specifically
-      const normalizedMessage = (err?.message || '').toLowerCase();
+      const normalizedMessage = normalizedError.message.toLowerCase();
       const isGpsError = normalizedMessage.includes('location') || normalizedMessage.includes('geolocation') || normalizedMessage.includes('https');
-      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || t('login_failed') || "Login failed";
+      const errorMessage = normalizedError.data?.error || normalizedError.data?.message || normalizedError.message || t('login_failed') || "Login failed";
 
       toast({
         title: isGpsError ? "Security Block" : "Error",
@@ -193,9 +267,10 @@ const Login = () => {
         description: t('check_phone_otp') || "Check your phone for the verification code",
       });
     } catch (err) {
+      const normalizedError = normalizeApiError(err);
       toast({
         title: t('network_error') || "Error",
-        description: err.response?.data?.error || t('could_not_send_otp') || "Could not send OTP",
+        description: normalizedError.data?.error || normalizedError.message || t('could_not_send_otp') || "Could not send OTP",
         variant: "destructive",
       });
     } finally {
@@ -222,31 +297,28 @@ const Login = () => {
         otp: phoneLogin.otp,
       });
 
-      // CRITICAL: Use 'authToken' to match AuthContext and api.js
-      localStorage.setItem("authToken", data.token);
-      if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        // CRITICAL: Many pages check for userId separately
-        localStorage.setItem("userId", data.user.id);
-        // CRITICAL: Sync with AuthContext so protected routes work immediately
-        setUser(data.user);
-      }
+      persistAuth(data);
 
-      await fetchAndStoreUserProfile(data.token);
+      await fetchAndStoreUserProfile(data.user || null);
 
       // Capture fresh location after login
-      captureLocation(data.user?.id).catch(() => { });
+      const captureUserId = resolveUserId(data.user) || localStorage.getItem('userId');
+      if (captureUserId) {
+        captureLocation(captureUserId).catch(() => { });
+      }
 
       toast({
-        title: t('login_successful') + " 🎉" || "Login Successful 🎉",
+        title: t('login_successful') || "Login Successful",
         description: t('welcome_back_msg') || "Welcome back!",
       });
-      navigate("/all-posts");
+      setOtpSent(false);
+      setPhoneLogin((prev) => ({ ...prev, otp: '' }));
+      navigate(getPostLoginRedirect(), { replace: true });
     } catch (err) {
+      const normalizedError = normalizeApiError(err);
       toast({
         title: t('network_error') || "Error",
-        description: err.response?.data?.error || t('could_not_verify_otp') || "Could not verify OTP",
+        description: normalizedError.data?.error || normalizedError.message || t('could_not_verify_otp') || "Could not verify OTP",
         variant: "destructive",
       });
     } finally {
@@ -470,3 +542,4 @@ const Login = () => {
 };
 
 export default Login;
+

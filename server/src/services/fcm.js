@@ -126,13 +126,21 @@ async function registerToken(userId, token, deviceType = 'web', deviceName = nul
 /**
  * Unregister a device token (on logout)
  */
-async function unregisterToken(token) {
+async function unregisterToken(token, userId = null) {
     try {
-        await pool.query(
-            'UPDATE device_tokens SET is_active = false WHERE token = $1',
-            [token]
-        );
-        return { success: true };
+        let result;
+        if (userId === null || userId === undefined || String(userId).trim() === '') {
+            result = await pool.query(
+                'UPDATE device_tokens SET is_active = false WHERE token = $1',
+                [token]
+            );
+        } else {
+            result = await pool.query(
+                'UPDATE device_tokens SET is_active = false WHERE token = $1 AND user_id::text = $2',
+                [token, String(userId)]
+            );
+        }
+        return { success: true, deactivatedCount: result.rowCount || 0 };
     } catch (error) {
         console.error('Error unregistering token:', error);
         throw error;

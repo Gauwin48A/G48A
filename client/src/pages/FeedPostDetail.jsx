@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FaHeart, FaRegHeart, FaShare, FaEye, FaArrowLeft, FaNewspaper, FaClock, FaMapMarkerAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
+import { getApiOriginBase } from '@/lib/networkConfig';
 
 const FeedPostDetail = () => {
     const { t } = useTranslation();
@@ -24,7 +25,7 @@ const FeedPostDetail = () => {
         if (!post && id) {
             const fetchPost = async () => {
                 try {
-                    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                    const baseUrl = getApiOriginBase();
                     const res = await fetch(`${baseUrl}/api/posts/${id}`);
                     if (!res.ok) throw new Error('Post not found');
                     const data = await res.json();
@@ -51,7 +52,7 @@ const FeedPostDetail = () => {
             // Track recently viewed (for feed posts)
             const userId = localStorage.getItem('userId');
             if (userId) {
-                const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                const baseUrl = getApiOriginBase();
                 fetch(`${baseUrl}/api/recently-viewed/track`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -237,3 +238,4 @@ const FeedPostDetail = () => {
 };
 
 export default FeedPostDetail;
+

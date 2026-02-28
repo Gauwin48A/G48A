@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Smartphone, Shirt, Home, Monitor, ShoppingBag, Package, Laptop, Watch, Camera, Headphones, Gamepad, Car, ArrowLeft } from 'lucide-react';
+import { fetchCategoriesCached } from '@/services/categoriesService';
 
 // Category data with icons and colors
 const categoryData = {
@@ -30,16 +31,17 @@ const Categories = () => {
   const location = useLocation();
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchCategories = async () => {
       setLoading(true);
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        const res = await fetch(`${baseUrl}/api/categories`, { credentials: 'include' });
-        if (!res.ok) throw new Error(t('error'));
-        const data = await res.json();
+        const data = await fetchCategoriesCached();
+        if (cancelled) return;
         setCategories(Array.isArray(data) ? data : []);
         setError(null);
       } catch (err) {
+        if (cancelled) return;
         // Return default categories on error for better UX
         setCategories([
           { name: 'Electronics', description: 'Gadgets & devices' },
@@ -49,10 +51,15 @@ const Categories = () => {
         ]);
         setError(null);
       } finally {
+        if (cancelled) return;
         setLoading(false);
       }
     };
     fetchCategories();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleCategorySelect = (categoryName) => {

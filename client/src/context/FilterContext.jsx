@@ -5,7 +5,7 @@ const FilterContext = createContext();
 const defaultFilters = {
   search: '',
   category: 'All',
-  sortBy: 'recent',
+  sortBy: '',
   location: '',
   minPrice: '',
   maxPrice: '',

@@ -15,6 +15,7 @@
  */
 const crypto = require('crypto');
 const pool = require('../config/db');
+const otpDeliveryService = require('./otpDeliveryService');
 
 const OTP_EXPIRY_MINUTES = 10;
 const MAX_ATTEMPTS = 3;
@@ -22,7 +23,7 @@ const MAX_ATTEMPTS = 3;
 /* ─────────────────────────────────────────────
    Core helpers
 ───────────────────────────────────────────── */
-const generateOTP = () => crypto.randomInt(100000, 999999).toString();
+const generateOTP = () => crypto.randomInt(100000, 1000000).toString();
 const hashOTP = (otp) => crypto.createHash('sha256').update(otp).digest('hex');
 
 /* ─────────────────────────────────────────────
@@ -55,7 +56,16 @@ const verifyOTP = async (userId, code, purpose = 'sale_confirm') => {
     const hashedCode = hashOTP(code);
     try {
         const result = await pool.query(`
-            SELECT * FROM otp_store
+            SELECT
+                id,
+                user_id,
+                otp_hash,
+                purpose,
+                expires_at,
+                attempts,
+                is_used,
+                created_at
+            FROM otp_store
             WHERE user_id = $1 AND purpose = $2 AND is_used = false
             ORDER BY created_at DESC LIMIT 1
         `, [userId, purpose]);
@@ -93,8 +103,43 @@ const verifyOTP = async (userId, code, purpose = 'sale_confirm') => {
 /* ─────────────────────────────────────────────
    Send — real providers, env-gated
 ───────────────────────────────────────────── */
-const sendOTP = async (channel, destination, otp) => {
+const sendOTP = async (channel, destination, otp, options = {}) => {
     const message = `Your MHub verification code is: ${otp}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`;
+    const flow = String(options.flow || 'unknown');
+    const purpose = String(options.purpose || 'generic');
+    const metadata = (options.metadata && typeof options.metadata === 'object') ? options.metadata : {};
+
+    const { deliveryId } = await otpDeliveryService.startDeliveryRecord({
+        flow,
+        purpose,
+        channel,
+        destination,
+        metadata
+    });
+
+    const finalizeAndReturn = async (result, statusOverride = null) => {
+        const provider = result?.provider || null;
+        const providerMessageId = result?.providerMessageId || result?.messageId || result?.sid || null;
+        const sendStatus = statusOverride || (result?.mock ? 'mock' : (result?.success ? 'sent' : 'failed'));
+
+        await otpDeliveryService.finalizeDeliveryRecord({
+            deliveryId,
+            provider,
+            providerMessageId,
+            sendStatus,
+            metadata: {
+                ...metadata,
+                flow,
+                purpose
+            }
+        });
+
+        return {
+            ...result,
+            deliveryId,
+            providerMessageId
+        };
+    };
 
     /* ── SMS via Twilio ── */
     if (channel === 'sms' && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
@@ -109,7 +154,12 @@ const sendOTP = async (channel, destination, otp) => {
                 from: process.env.TWILIO_FROM
             });
             console.log(`[OTP] Twilio SMS sent to ${destination}: ${result.sid}`);
-            return { success: true, provider: 'twilio', sid: result.sid };
+            return finalizeAndReturn({
+                success: true,
+                provider: 'twilio',
+                sid: result.sid,
+                providerMessageId: result.sid
+            });
         } catch (err) {
             console.error('[OTP] Twilio error:', err.message);
             // Fall through to mock
@@ -126,7 +176,7 @@ const sendOTP = async (channel, destination, otp) => {
                 mobiles: destination.replace(/\D/g, ''),
                 otp
             });
-            await new Promise((resolve, reject) => {
+            const msg91Response = await new Promise((resolve, reject) => {
                 const req = https.request({
                     hostname: 'api.msg91.com',
                     path: '/api/v5/flow/',
@@ -145,7 +195,16 @@ const sendOTP = async (channel, destination, otp) => {
                 req.end();
             });
             console.log(`[OTP] MSG91 SMS sent to ${destination}`);
-            return { success: true, provider: 'msg91' };
+            const msg91MessageId =
+                msg91Response?.request_id
+                || msg91Response?.requestId
+                || msg91Response?.message_id
+                || null;
+            return finalizeAndReturn({
+                success: true,
+                provider: 'msg91',
+                providerMessageId: msg91MessageId
+            });
         } catch (err) {
             console.error('[OTP] MSG91 error:', err.message);
         }
@@ -156,7 +215,7 @@ const sendOTP = async (channel, destination, otp) => {
         try {
             const sgMail = require('@sendgrid/mail');
             sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-            await sgMail.send({
+            const sendGridResult = await sgMail.send({
                 to: destination,
                 from: process.env.SENDGRID_FROM || 'noreply@mhub.app',
                 subject: 'Your MHub Verification Code',
@@ -164,7 +223,12 @@ const sendOTP = async (channel, destination, otp) => {
                 html: `<p style="font-family:sans-serif">Your MHub code is: <strong style="font-size:24px;letter-spacing:4px">${otp}</strong></p><p>Valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`
             });
             console.log(`[OTP] SendGrid email sent to ${destination}`);
-            return { success: true, provider: 'sendgrid' };
+            const sendGridMessageId = sendGridResult?.[0]?.headers?.['x-message-id'] || null;
+            return finalizeAndReturn({
+                success: true,
+                provider: 'sendgrid',
+                providerMessageId: sendGridMessageId
+            });
         } catch (err) {
             console.error('[OTP] SendGrid error:', err.message);
         }
@@ -176,18 +240,22 @@ const sendOTP = async (channel, destination, otp) => {
             const nodemailer = require('nodemailer');
             const transporter = nodemailer.createTransport({
                 host: process.env.SMTP_HOST,
-                port: parseInt(process.env.SMTP_PORT || '587'),
+                port: Number.parseInt(process.env.SMTP_PORT || '587', 10),
                 secure: process.env.SMTP_SECURE === 'true',
                 auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
             });
-            await transporter.sendMail({
+            const smtpResult = await transporter.sendMail({
                 from: process.env.SMTP_FROM || process.env.SMTP_USER,
                 to: destination,
                 subject: 'Your MHub Verification Code',
                 text: message
             });
             console.log(`[OTP] SMTP email sent to ${destination}`);
-            return { success: true, provider: 'smtp' };
+            return finalizeAndReturn({
+                success: true,
+                provider: 'smtp',
+                providerMessageId: smtpResult?.messageId || null
+            });
         } catch (err) {
             console.error('[OTP] SMTP error:', err.message);
         }
@@ -201,7 +269,11 @@ const sendOTP = async (channel, destination, otp) => {
     console.log(`[MOCK OTP] Expires : ${OTP_EXPIRY_MINUTES} minutes`);
     console.log(`[MOCK OTP] ========================================\n`);
     await new Promise(resolve => setTimeout(resolve, 200));
-    return { success: true, mock: true };
+    return finalizeAndReturn({
+        success: true,
+        mock: true,
+        provider: 'mock'
+    }, 'mock');
 };
 
 module.exports = {

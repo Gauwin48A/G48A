@@ -8,6 +8,34 @@
 const pool = require('../config/db');
 const path = require('path');
 const fs = require('fs');
+const fsp = fs.promises;
+const logger = require('../utils/logger');
+const { listReviewQueue, reviewQueueItem } = require('../services/kycAutomationService');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+function getRequestUserId(req) {
+    return String(req.user?.userId || req.user?.user_id || req.user?.id || '').trim() || null;
+}
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+    return Math.min(parsed, max);
+}
+
+function isAdminRole(role) {
+    const normalizedRole = String(role || '').toLowerCase();
+    return normalizedRole === 'admin' || normalizedRole === 'superadmin';
+}
 
 // Private uploads directory (outside public web root)
 const PRIVATE_UPLOADS_DIR = path.join(__dirname, '../../private_uploads');
@@ -15,19 +43,27 @@ const PRIVATE_UPLOADS_DIR = path.join(__dirname, '../../private_uploads');
 // Ensure directory exists
 if (!fs.existsSync(PRIVATE_UPLOADS_DIR)) {
     fs.mkdirSync(PRIVATE_UPLOADS_DIR, { recursive: true });
-    console.log('📁 Created private_uploads directory');
+    logger.info('[Admin] Created private_uploads directory');
 }
 
 /**
  * Check if user is admin
  */
-const isAdmin = async (userId) => {
+const isAdmin = async (userId, userRoleHint = null) => {
     try {
-        const result = await pool.query(
-            'SELECT role FROM users WHERE user_id = $1',
+        if (isAdminRole(userRoleHint)) {
+            return true;
+        }
+        const result = await runQuery(
+            `
+              SELECT COALESCE(NULLIF(to_jsonb(u)->>'role', ''), 'user') AS role
+              FROM users u
+              WHERE u.user_id::text = $1
+              LIMIT 1
+            `,
             [userId]
         );
-        return result.rows[0]?.role === 'admin';
+        return isAdminRole(result.rows[0]?.role);
     } catch (error) {
         return false;
     }
@@ -39,7 +75,7 @@ const isAdmin = async (userId) => {
  * Admin only
  */
 const viewDocument = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getRequestUserId(req);
     const { id } = req.params;
 
     if (!userId) {
@@ -47,15 +83,17 @@ const viewDocument = async (req, res) => {
     }
 
     // Verify admin role
-    const adminCheck = await isAdmin(userId);
+    const adminCheck = await isAdmin(userId, req.user?.role);
     if (!adminCheck) {
         return res.status(403).json({ error: 'Admin access required' });
     }
 
     try {
         // Get document record
-        const result = await pool.query(
-            `SELECT * FROM verification_documents WHERE document_id = $1`,
+        const result = await runQuery(
+            `SELECT document_id, user_id, filename
+             FROM verification_documents
+             WHERE document_id = $1`,
             [id]
         );
 
@@ -64,24 +102,37 @@ const viewDocument = async (req, res) => {
         }
 
         const doc = result.rows[0];
-        const filePath = path.join(PRIVATE_UPLOADS_DIR, doc.filename);
+        const filename = String(doc.filename || '').trim();
+        const safeFilename = path.basename(filename);
+
+        if (!safeFilename || safeFilename !== filename) {
+            logger.warn('[Admin] Rejected unsafe verification filename', {
+                documentId: id,
+                filename
+            });
+            return res.status(400).json({ error: 'Invalid document path' });
+        }
+
+        const filePath = path.join(PRIVATE_UPLOADS_DIR, safeFilename);
 
         // Check file exists
-        if (!fs.existsSync(filePath)) {
+        try {
+            await fsp.access(filePath, fs.constants.F_OK);
+        } catch {
             return res.status(404).json({ error: 'File not found on disk' });
         }
 
         // Log access for audit
-        await pool.query(`
+        await runQuery(`
       INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, created_at)
       VALUES ($1, 'VIEW_DOCUMENT', 'verification_document', $2, $3, NOW())
     `, [userId, id, JSON.stringify({ viewed_user: doc.user_id })]);
 
-        // Send file
-        res.sendFile(filePath);
+        // Send file from private root.
+        res.sendFile(safeFilename, { root: PRIVATE_UPLOADS_DIR });
 
     } catch (error) {
-        console.error('[Admin] View document error:', error);
+        logger.error('[Admin] View document error:', error);
         res.status(500).json({ error: 'Failed to retrieve document' });
     }
 };
@@ -91,26 +142,57 @@ const viewDocument = async (req, res) => {
  * GET /api/admin/verifications
  */
 const listVerifications = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getRequestUserId(req);
 
-    if (!userId || !(await isAdmin(userId))) {
+    if (!userId || !(await isAdmin(userId, req.user?.role))) {
         return res.status(403).json({ error: 'Admin access required' });
     }
 
     try {
-        const result = await pool.query(`
-      SELECT vd.*, u.username, u.email, p.full_name
-      FROM verification_documents vd
-      JOIN users u ON u.user_id = vd.user_id
-      LEFT JOIN profiles p ON p.user_id = vd.user_id
-      WHERE vd.status = 'pending'
-      ORDER BY vd.created_at ASC
-    `);
+        const page = parsePositiveInt(req.query.page, 1);
+        const limit = parsePositiveInt(req.query.limit, 50, 200);
+        const offset = (page - 1) * limit;
 
-        res.json({ verifications: result.rows });
+        const result = await runQuery(
+            `
+              SELECT
+                COUNT(*) OVER()::int AS total_count,
+                vd.document_id,
+                vd.user_id,
+                vd.document_type,
+                vd.filename,
+                vd.original_name,
+                vd.file_size,
+                vd.status,
+                vd.reviewed_by,
+                vd.review_notes,
+                vd.reviewed_at,
+                vd.created_at,
+                u.username,
+                u.email,
+                p.full_name
+              FROM verification_documents vd
+              JOIN users u ON u.user_id = vd.user_id
+              LEFT JOIN profiles p ON p.user_id = vd.user_id
+              WHERE vd.status = 'pending'
+              ORDER BY vd.created_at ASC
+              LIMIT $1 OFFSET $2
+            `,
+            [limit, offset]
+        );
+
+        const total = result.rows.length ? Number(result.rows[0].total_count) || 0 : 0;
+        const verifications = result.rows.map(({ total_count, ...row }) => row);
+
+        res.json({
+            verifications,
+            total,
+            page,
+            limit
+        });
 
     } catch (error) {
-        console.error('[Admin] List verifications error:', error);
+        logger.error('[Admin] List verifications error:', error);
         res.status(500).json({ error: 'Failed to list verifications' });
     }
 };
@@ -120,11 +202,11 @@ const listVerifications = async (req, res) => {
  * POST /api/admin/verifications/:id/review
  */
 const reviewVerification = async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getRequestUserId(req);
     const { id } = req.params;
     const { status, notes } = req.body; // status: 'approved' | 'rejected'
 
-    if (!userId || !(await isAdmin(userId))) {
+    if (!userId || !(await isAdmin(userId, req.user?.role))) {
         return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -133,11 +215,19 @@ const reviewVerification = async (req, res) => {
     }
 
     try {
-        const result = await pool.query(`
+        const result = await runQuery(`
       UPDATE verification_documents 
       SET status = $1, reviewed_by = $2, review_notes = $3, reviewed_at = NOW()
       WHERE document_id = $4
-      RETURNING *
+      RETURNING
+        document_id,
+        user_id,
+        status,
+        reviewed_by,
+        review_notes,
+        reviewed_at,
+        created_at,
+        updated_at
     `, [status, userId, notes || '', id]);
 
         if (result.rows.length === 0) {
@@ -148,14 +238,14 @@ const reviewVerification = async (req, res) => {
 
         // Update user verification status if approved
         if (status === 'approved') {
-            await pool.query(
+            await runQuery(
                 `UPDATE users SET is_verified = true, verified_at = NOW() WHERE user_id = $1`,
                 [doc.user_id]
             );
         }
 
         // Notify user
-        await pool.query(`
+        await runQuery(`
       INSERT INTO notifications (user_id, title, message, type, created_at)
       VALUES ($1, $2, $3, 'verification_result', NOW())
     `, [
@@ -167,7 +257,7 @@ const reviewVerification = async (req, res) => {
         ]);
 
         // Log action
-        await pool.query(`
+        await runQuery(`
       INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, created_at)
       VALUES ($1, $2, 'verification_document', $3, $4, NOW())
     `, [userId, `VERIFICATION_${status.toUpperCase()}`, id, JSON.stringify({ notes })]);
@@ -175,7 +265,7 @@ const reviewVerification = async (req, res) => {
         res.json({ message: `Verification ${status}`, document: result.rows[0] });
 
     } catch (error) {
-        console.error('[Admin] Review verification error:', error);
+        logger.error('[Admin] Review verification error:', error);
         res.status(500).json({ error: 'Failed to review verification' });
     }
 };
@@ -186,14 +276,14 @@ const reviewVerification = async (req, res) => {
  */
 const autoValidateDocument = async (req, res) => {
     const { id } = req.params;
-    const userId = req.user?.userId;
+    const userId = getRequestUserId(req);
 
-    if (!userId || !(await isAdmin(userId))) {
+    if (!userId || !(await isAdmin(userId, req.user?.role))) {
         return res.status(403).json({ error: 'Admin access required' });
     }
 
     try {
-        console.log(`[Admin] Auto-validating document ${id}...`);
+        logger.info(`[Admin] Auto-validating document ${id}...`);
 
         // Mock OCR delay
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -215,8 +305,74 @@ const autoValidateDocument = async (req, res) => {
         res.json(mockResult);
 
     } catch (error) {
-        console.error('[Admin] Auto-validate error:', error);
+        logger.error('[Admin] Auto-validate error:', error);
         res.status(500).json({ error: 'Auto-validation failed' });
+    }
+};
+
+/**
+ * List KYC review queue (admin)
+ * GET /api/admin/kyc/queue
+ */
+const listKycReviewQueue = async (req, res) => {
+    const userId = getRequestUserId(req);
+
+    if (!userId || !(await isAdmin(userId, req.user?.role))) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    try {
+        const status = req.query.status ? String(req.query.status).trim().toLowerCase() : 'pending';
+        const page = parsePositiveInt(req.query.page, 1);
+        const limit = parsePositiveInt(req.query.limit, 50, 200);
+
+        const payload = await listReviewQueue({ status, page, limit });
+        return res.json(payload);
+    } catch (error) {
+        logger.error('[Admin] KYC queue list error:', error);
+        return res.status(500).json({ error: 'Failed to fetch KYC review queue' });
+    }
+};
+
+/**
+ * Review a KYC queue item (admin)
+ * POST /api/admin/kyc/queue/:queueId/review
+ */
+const reviewKycQueueItem = async (req, res) => {
+    const reviewerId = getRequestUserId(req);
+    const { queueId } = req.params;
+    const { decision, notes } = req.body;
+
+    if (!reviewerId || !(await isAdmin(reviewerId, req.user?.role))) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    if (!queueId) {
+        return res.status(400).json({ error: 'Queue ID is required' });
+    }
+
+    try {
+        const result = await reviewQueueItem({
+            queueId,
+            reviewerId,
+            decision,
+            notes
+        });
+
+        if (result.not_found) {
+            return res.status(404).json({ error: 'KYC queue item not found' });
+        }
+        if (result.error) {
+            return res.status(400).json({ error: result.error });
+        }
+
+        return res.json({
+            success: true,
+            review: result
+        });
+    } catch (error) {
+        logger.error('[Admin] KYC queue review error:', error);
+        return res.status(500).json({ error: 'Failed to review KYC queue item' });
     }
 };
 
@@ -225,5 +381,8 @@ module.exports = {
     listVerifications,
     reviewVerification,
     autoValidateDocument,
+    listKycReviewQueue,
+    reviewKycQueueItem,
     PRIVATE_UPLOADS_DIR
 };
+

@@ -9,6 +9,17 @@
  */
 
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
 
 // Mock translation function (replace with actual API)
 const translateText = async (text, sourceLang, targetLang) => {
@@ -28,16 +39,16 @@ const translateText = async (text, sourceLang, targetLang) => {
  */
 const queueTranslation = async (postId, text, sourceLang = 'en', targetLang = 'hi') => {
     try {
-        await pool.query(`
+        await runQuery(`
       INSERT INTO translation_queue (post_id, source_text, source_lang, target_lang, status, created_at)
       VALUES ($1, $2, $3, $4, 'pending', NOW())
       ON CONFLICT DO NOTHING
     `, [postId, text, sourceLang, targetLang]);
 
-        console.log(`[Translation] Queued post ${postId} for translation`);
+        logger.info(`[Translation] Queued post ${postId} for translation`);
         return true;
     } catch (error) {
-        console.error('[Translation] Queue error:', error);
+        logger.error('[Translation] Queue error:', error);
         return false;
     }
 };
@@ -50,10 +61,11 @@ const queueTranslation = async (postId, text, sourceLang = 'en', targetLang = 'h
 const processTranslations = async (req, res) => {
     const BATCH_SIZE = 50;
     const MAX_RETRIES = 3;
+    const TRANSLATION_CONCURRENCY = Number.parseInt(process.env.TRANSLATION_CONCURRENCY, 10) || 5;
 
     try {
         // Get pending translations
-        const pending = await pool.query(`
+        const pending = await runQuery(`
       SELECT queue_id, post_id, source_text, source_lang, target_lang, retry_count
       FROM translation_queue
       WHERE status = 'pending' AND retry_count < $1
@@ -65,57 +77,71 @@ const processTranslations = async (req, res) => {
             return res.json({ message: 'No pending translations', processed: 0 });
         }
 
-        console.log(`[Translation] Processing ${pending.rows.length} items`);
+        logger.info(`[Translation] Processing ${pending.rows.length} items`);
 
         let successCount = 0;
         let failCount = 0;
 
         // Mark as processing
         const queueIds = pending.rows.map(r => r.queue_id);
-        await pool.query(`
+        await runQuery(`
       UPDATE translation_queue SET status = 'processing' WHERE queue_id = ANY($1)
     `, [queueIds]);
 
-        // Process each translation
-        for (const item of pending.rows) {
-            try {
-                const translated = await translateText(
-                    item.source_text,
-                    item.source_lang,
-                    item.target_lang
-                );
+        const successRecords = [];
+        const failedQueueIds = [];
 
-                // Update queue with result
-                await pool.query(`
-          UPDATE translation_queue 
-          SET status = 'completed', translated_text = $1, processed_at = NOW()
-          WHERE queue_id = $2
-        `, [translated, item.queue_id]);
+        for (let i = 0; i < pending.rows.length; i += TRANSLATION_CONCURRENCY) {
+            const batch = pending.rows.slice(i, i + TRANSLATION_CONCURRENCY);
+            const outcomes = await Promise.allSettled(
+                batch.map((item) => translateText(item.source_text, item.source_lang, item.target_lang))
+            );
 
-                // Update the post with translated text (if applicable)
-                await pool.query(`
-          UPDATE posts 
-          SET translated_title = $1 
-          WHERE post_id = $2
-        `, [translated, item.post_id]);
-
-                successCount++;
-
-            } catch (err) {
-                console.error(`[Translation] Failed for queue ${item.queue_id}:`, err);
-
-                // Mark as pending with increased retry count
-                await pool.query(`
-          UPDATE translation_queue 
-          SET status = 'pending', retry_count = retry_count + 1
-          WHERE queue_id = $1
-        `, [item.queue_id]);
-
-                failCount++;
+            for (let j = 0; j < batch.length; j += 1) {
+                const item = batch[j];
+                const outcome = outcomes[j];
+                if (outcome.status === 'fulfilled') {
+                    successRecords.push({
+                        queue_id: item.queue_id,
+                        post_id: item.post_id,
+                        translated_text: outcome.value
+                    });
+                    successCount += 1;
+                } else {
+                    logger.error(`[Translation] Failed for queue ${item.queue_id}:`, outcome.reason);
+                    failedQueueIds.push(item.queue_id);
+                    failCount += 1;
+                }
             }
         }
 
-        console.log(`[Translation] Completed: ${successCount} success, ${failCount} failed`);
+        if (successRecords.length > 0) {
+            await runQuery(`
+        UPDATE translation_queue q
+        SET status = 'completed',
+            translated_text = s.translated_text,
+            processed_at = NOW()
+        FROM jsonb_to_recordset($1::jsonb) AS s(queue_id bigint, translated_text text)
+        WHERE q.queue_id = s.queue_id
+      `, [JSON.stringify(successRecords.map(({ queue_id, translated_text }) => ({ queue_id, translated_text })))]);
+
+            await runQuery(`
+        UPDATE posts p
+        SET translated_title = s.translated_text
+        FROM jsonb_to_recordset($1::jsonb) AS s(post_id bigint, translated_text text)
+        WHERE p.post_id = s.post_id
+      `, [JSON.stringify(successRecords.map(({ post_id, translated_text }) => ({ post_id, translated_text })))]);
+        }
+
+        if (failedQueueIds.length > 0) {
+            await runQuery(`
+        UPDATE translation_queue
+        SET status = 'pending', retry_count = retry_count + 1
+        WHERE queue_id = ANY($1::bigint[])
+      `, [failedQueueIds]);
+        }
+
+        logger.info(`[Translation] Completed: ${successCount} success, ${failCount} failed`);
 
         res.json({
             message: 'Translation batch processed',
@@ -125,7 +151,7 @@ const processTranslations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[Translation] Process error:', error);
+        logger.error('[Translation] Process error:', error);
         res.status(500).json({ error: 'Translation processing failed' });
     }
 };
@@ -137,7 +163,7 @@ const getTranslationStatus = async (req, res) => {
     const { postId } = req.params;
 
     try {
-        const result = await pool.query(`
+        const result = await runQuery(`
       SELECT status, translated_text, processed_at
       FROM translation_queue
       WHERE post_id = $1
@@ -152,7 +178,7 @@ const getTranslationStatus = async (req, res) => {
         res.json(result.rows[0]);
 
     } catch (error) {
-        console.error('[Translation] Status error:', error);
+        logger.error('[Translation] Status error:', error);
         res.status(500).json({ error: 'Failed to get status' });
     }
 };
@@ -162,25 +188,26 @@ const getTranslationStatus = async (req, res) => {
  */
 const getQueueStats = async (req, res) => {
     try {
-        const stats = await pool.query(`
-      SELECT 
-        status,
-        COUNT(*) as count
-      FROM translation_queue
-      GROUP BY status
+        const result = await runQuery(`
+      WITH grouped AS (
+        SELECT status, COUNT(*)::int AS count
+        FROM translation_queue
+        GROUP BY status
+      )
+      SELECT
+        COALESCE((SELECT json_agg(grouped) FROM grouped), '[]'::json) AS stats,
+        COALESCE((SELECT count FROM grouped WHERE status = 'pending'), 0) AS pending_count
     `);
 
-        const pending = await pool.query(`
-      SELECT COUNT(*) as count FROM translation_queue WHERE status = 'pending'
-    `);
+        const payload = result.rows[0] || {};
 
         res.json({
-            stats: stats.rows,
-            pendingCount: parseInt(pending.rows[0]?.count || 0)
+            stats: Array.isArray(payload.stats) ? payload.stats : [],
+            pendingCount: Number.parseInt(payload.pending_count, 10) || 0
         });
 
     } catch (error) {
-        console.error('[Translation] Stats error:', error);
+        logger.error('[Translation] Stats error:', error);
         res.status(500).json({ error: 'Failed to get stats' });
     }
 };

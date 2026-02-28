@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import {
 import api from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { useToast } from "@/hooks/use-toast";
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
 const Rewards = () => {
   const [user, setUser] = useState(null);
@@ -18,12 +20,27 @@ const Rewards = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("overview");
+  const [retryNonce, setRetryNonce] = useState(0);
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
+  const isLoggedIn = useMemo(
+    () => Boolean(authUser || localStorage.getItem('authToken') || localStorage.getItem('token')),
+    [authUser]
+  );
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      setError('You must be logged in to view rewards.');
+      setLoading(false);
+      return;
+    }
+
     let userId = localStorage.getItem('userId');
-    let token = localStorage.getItem('authToken');
+    let token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    if (token && !localStorage.getItem('authToken')) {
+      localStorage.setItem('authToken', token);
+    }
     if (!userId || !token) {
       setError('You must be logged in to view rewards.');
       setLoading(false);
@@ -44,7 +61,7 @@ const Rewards = () => {
       }
     };
     fetchRewards();
-  }, []);
+  }, [isLoggedIn, retryNonce]);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -60,8 +77,6 @@ const Rewards = () => {
     }
   };
 
-  const isLoggedIn = localStorage.getItem('userId') && localStorage.getItem('authToken');
-
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700">
@@ -72,8 +87,8 @@ const Rewards = () => {
           <h2 className="text-3xl font-bold text-white mb-4">{t('rewards_referrals')}</h2>
           <p className="text-white/80 text-lg mb-8">{t('earn_coins_unlock_rewards')}</p>
           <div className="flex flex-col gap-3">
-            <a href="/login" className="bg-white text-indigo-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">{t('login_to_continue')}</a>
-            <a href="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">{t('create_account')}</a>
+            <Link to="/login" className="bg-white text-indigo-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">{t('login_to_continue')}</Link>
+            <Link to="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">{t('create_account')}</Link>
           </div>
         </div>
       </div>
@@ -97,7 +112,7 @@ const Rewards = () => {
         <div className="text-center p-8">
           <div className="text-6xl mb-4">😕</div>
           <p className="text-red-500 text-xl mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <Button onClick={() => setRetryNonce((value) => value + 1)}>Try Again</Button>
         </div>
       </div>
     );

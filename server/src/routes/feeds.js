@@ -3,6 +3,15 @@ const router = express.Router();
 const { requireAuth, requirePremium } = require('../middleware/auth');
 const db = require('../db');
 
+const DEFAULT_FEED_LIMIT = 20;
+const MAX_FEED_LIMIT = 100;
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
+
 // Create a feed post (description only)
 router.post('/', requireAuth, async (req, res) => {
   const { description } = req.body;
@@ -14,10 +23,23 @@ router.post('/', requireAuth, async (req, res) => {
 
 // Get all feed posts (paginated)
 router.get('/', requireAuth, async (req, res) => {
-  const { page = 1, limit = 20 } = req.query;
+  const page = parsePositiveInt(req.query.page, 1);
+  const limit = parsePositiveInt(req.query.limit, DEFAULT_FEED_LIMIT, MAX_FEED_LIMIT);
   const offset = (page - 1) * limit;
+
   const { rows } = await db.query(
-    'SELECT f.*, u.username FROM feeds f JOIN users u ON f.user_id = u.user_id ORDER BY f.created_at DESC LIMIT $1 OFFSET $2',
+    `
+      SELECT
+        f.feed_id,
+        f.user_id,
+        f.description,
+        f.created_at,
+        u.username
+      FROM feeds f
+      JOIN users u ON f.user_id = u.user_id
+      ORDER BY f.created_at DESC
+      LIMIT $1 OFFSET $2
+    `,
     [limit, offset]
   );
   res.json(rows);
@@ -26,7 +48,21 @@ router.get('/', requireAuth, async (req, res) => {
 // Get logged-in user's feed posts
 router.get('/my', requireAuth, async (req, res) => {
   const { userId } = req.user;
-  const { rows } = await db.query('SELECT * FROM feeds WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+  const limit = parsePositiveInt(req.query.limit, DEFAULT_FEED_LIMIT, MAX_FEED_LIMIT);
+  const { rows } = await db.query(
+    `
+      SELECT
+        feed_id,
+        user_id,
+        description,
+        created_at
+      FROM feeds
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2
+    `,
+    [userId, limit]
+  );
   res.json(rows);
 });
 

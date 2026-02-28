@@ -1,3 +1,5 @@
+import { buildApiPath } from '@/lib/networkConfig';
+
 // Notification System
 export const NotificationTypes = {
   SALE_INITIATED: 'sale_initiated',
@@ -41,7 +43,7 @@ export class NotificationManager {
 
   static async storeNotification(notification) {
     // Store notification in backend
-    await fetch(`http://localhost:5000/api/notifications`, {
+    await fetch(buildApiPath('/notifications'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(notification)
@@ -50,13 +52,15 @@ export class NotificationManager {
 
   static async getUserNotifications(userId) {
     // Fetch notifications from backend API
-    const res = await fetch(`http://localhost:5000/api/notifications?userId=${userId}`);
+    const encodedUserId = encodeURIComponent(userId);
+    const res = await fetch(`${buildApiPath('/notifications')}?userId=${encodedUserId}`);
     return await res.json();
   }
 
   static async markAsRead(userId, notificationId) {
     // Mark notification as read in backend
-    await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+    const encodedNotificationId = encodeURIComponent(notificationId);
+    await fetch(buildApiPath(`/notifications/${encodedNotificationId}/read`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' }
     });

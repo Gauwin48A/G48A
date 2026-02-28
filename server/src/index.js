@@ -69,12 +69,79 @@ app.use((req, res, next) => {
 // Enable extended query string parsing for array parameters (e.g., ?category[]=X&category[]=Y)
 app.set('query parser', 'extended');
 
+const sanitizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+const defaultCorsOrigins = [
+  "http://localhost:5173",
+  "http://localhost:8080",
+  "http://localhost:8081",
+  "http://localhost:8082",
+  "http://localhost:3000"
+];
+const envCorsOrigins = String(process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => sanitizeOrigin(origin))
+  .filter(Boolean);
+const configuredCorsOrigins = new Set(
+  [process.env.CLIENT_URL, ...envCorsOrigins, ...defaultCorsOrigins]
+    .map((origin) => sanitizeOrigin(origin))
+    .filter(Boolean)
+);
+
+const isOriginAllowed = (origin) => {
+  if (!origin) {
+    return true; // Non-browser clients (curl/mobile/native)
+  }
+
+  const normalizedOrigin = sanitizeOrigin(origin);
+  if (configuredCorsOrigins.has(normalizedOrigin)) {
+    return true;
+  }
+
+  // Dev fallback: allow localhost/127.0.0.1 on any port.
+  if (isDevelopment && localhostOriginPattern.test(normalizedOrigin)) {
+    return true;
+  }
+
+  return false;
+};
+
+const resolveCorsOrigin = (origin, callback) => {
+  if (isOriginAllowed(origin)) {
+    return callback(null, true);
+  }
+  console.warn(`[CORS] Blocked origin: ${origin}`);
+  return callback(new Error('Not allowed by CORS'));
+};
+
+const commonAllowedHeaders = [
+  'Content-Type',
+  'Authorization',
+  'X-Device-Id',
+  'X-Timezone',
+  'X-Correlation-Id',
+  'X-Request-Id',
+  'X-Load-Test-Scenario',
+  'X-Simulated-User'
+];
+
+const corsOptions = {
+  origin: resolveCorsOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: commonAllowedHeaders,
+  exposedHeaders: ['x-correlation-id', 'x-request-id'],
+  optionsSuccessStatus: 204
+};
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "http://localhost:3000"],
-    methods: ["GET", "POST"],
-    credentials: true
+    origin: resolveCorsOrigin,
+    methods: ['GET', 'POST'],
+    credentials: true,
+    allowedHeaders: commonAllowedHeaders
   }
 });
 
@@ -120,30 +187,9 @@ app.use(securityHeaders);
 // 2.1 HIDE TECH STACK - Security Best Practice
 app.disable('x-powered-by');
 
-// 3. CORS - Dynamic Whitelist (Audit Fix)
-const corsWhitelist = [
-  process.env.CLIENT_URL,
-  "http://localhost:5173",
-  "http://localhost:8080",
-  "http://localhost:8081",
-  "http://localhost:8082",
-  "http://localhost:3000"
-].filter(Boolean);
-const allowedCorsOrigins = new Set(corsWhitelist);
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl)
-    if (!origin) return callback(null, true);
-    if (allowedCorsOrigins.has(origin)) {
-      return callback(null, true);
-    }
-    console.warn(`🚫 CORS blocked: ${origin}`);
-    return callback(new Error('Not allowed by CORS'), false);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
-}));
+// 3. CORS - Shared policy for REST + preflight
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 // 4. RATE LIMITING (DDoS Protection)
 app.use(apiLimiter);
@@ -175,6 +221,7 @@ app.use('/api', trackActivity);
 // 10. HEALTH CHECK (For Production Monitoring)
 app.get('/health', (req, res) => {
   res.status(200).json({
+    service: 'mhub-backend',
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
@@ -282,9 +329,19 @@ console.log('📁 Static file caching configured');
 app.get('/api/health', async (req, res) => {
   try {
     const time = await pool.query('SELECT NOW()');
-    res.json({ status: 'ok', db: 'connected', time: time.rows[0].now });
+    res.json({
+      service: 'mhub-backend',
+      status: 'ok',
+      db: 'connected',
+      time: time.rows[0].now
+    });
   } catch (err) {
-    res.status(500).json({ status: 'error', db: 'disconnected', error: err.message });
+    res.status(500).json({
+      service: 'mhub-backend',
+      status: 'error',
+      db: 'disconnected',
+      error: err.message
+    });
   }
 });
 
@@ -345,7 +402,7 @@ app.use(errorHandler);
 // ============================================
 // SERVER STARTUP
 // ============================================
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 ensureUserTierColumns()
   .then(() => logger.info('Tier schema check complete'))
   .catch((schemaErr) => logger.warn(`Tier schema check failed: ${schemaErr.message}`));

@@ -1,4 +1,16 @@
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+const cacheService = require('../services/cacheService');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const TIER_CACHE_TTL_SECONDS = Number.parseInt(process.env.TIER_CACHE_TTL_SECONDS, 10) || 300;
+
+function runQuery(text, values = []) {
+  return pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
 
 // Default tiers if table doesn't exist
 const defaultTiers = [
@@ -10,16 +22,27 @@ const defaultTiers = [
 
 exports.getTiers = async (req, res) => {
   try {
-    // Try to get from database
-    const result = await pool.query('SELECT * FROM tiers ORDER BY tier_order ASC');
-    if (result.rows && result.rows.length > 0) {
-      res.json(result.rows);
+    const tiers = await cacheService.getOrSetWithStampedeProtection(
+      'tiers:all',
+      async () => {
+        const result = await runQuery(
+          `SELECT tier_id, name, price, description, max_images, color, icon, tier_order
+           FROM tiers
+           ORDER BY tier_order ASC`
+        );
+        return result.rows;
+      },
+      TIER_CACHE_TTL_SECONDS
+    );
+
+    if (tiers && tiers.length > 0) {
+      res.json(tiers);
     } else {
       // Return defaults if no data in table
       res.json(defaultTiers);
     }
   } catch (err) {
-    console.error('[Tiers] Error:', err.message);
+    logger.error('[Tiers] Error:', err.message);
     // Return defaults if table doesn't exist
     res.json(defaultTiers);
   }

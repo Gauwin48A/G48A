@@ -7,6 +7,21 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
+function getUserId(req) {
+    return req.user?.userId || req.user?.id || req.user?.user_id || null;
+}
 
 // All routes require authentication
 router.use(protect);
@@ -16,7 +31,7 @@ router.use(protect);
  * POST /api/contacts/sync
  */
 router.post('/sync', async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getUserId(req);
     const { contacts } = req.body;
 
     if (!userId) {
@@ -28,31 +43,44 @@ router.post('/sync', async (req, res) => {
     }
 
     try {
-        let synced = 0;
-
-        for (const contact of contacts) {
-            if (!contact.phone || contact.phone.length !== 10) continue;
-
-            // Upsert contact
-            await pool.query(`
-        INSERT INTO user_contacts (owner_id, name, phone, created_at)
-        VALUES ($1, $2, $3, NOW())
-        ON CONFLICT (owner_id, phone) 
-        DO UPDATE SET name = EXCLUDED.name
-      `, [userId, contact.name || 'Unknown', contact.phone]);
-
-            synced++;
-        }
+        const upsertResult = await runQuery(`
+      WITH incoming AS (
+        SELECT
+          $1::bigint AS owner_id,
+          COALESCE(NULLIF(TRIM(c.name), ''), 'Unknown') AS name,
+          c.phone
+        FROM jsonb_to_recordset($2::jsonb) AS c(name text, phone text)
+        WHERE c.phone ~ '^[0-9]{10}$'
+      ),
+      deduped AS (
+        SELECT owner_id, phone, MAX(name) AS name
+        FROM incoming
+        GROUP BY owner_id, phone
+      )
+      INSERT INTO user_contacts (owner_id, name, phone, created_at)
+      SELECT owner_id, name, phone, NOW()
+      FROM deduped
+      ON CONFLICT (owner_id, phone)
+      DO UPDATE SET name = EXCLUDED.name
+      RETURNING phone
+    `, [userId, JSON.stringify(contacts)]);
+        const synced = upsertResult.rowCount || 0;
 
         // Check which contacts are on the platform
-        await pool.query(`
+        await runQuery(`
+      WITH incoming AS (
+        SELECT DISTINCT c.phone
+        FROM jsonb_to_recordset($2::jsonb) AS c(name text, phone text)
+        WHERE c.phone ~ '^[0-9]{10}$'
+      )
       UPDATE user_contacts uc
       SET is_on_platform = TRUE, matched_user_id = u.user_id
       FROM users u
+      JOIN incoming i ON i.phone = uc.phone
       WHERE uc.owner_id = $1
-        AND (u.phone = uc.phone OR u.phone = CONCAT('+91', uc.phone))
+        AND (u.phone_number = uc.phone OR u.phone_number = CONCAT('+91', uc.phone))
         AND u.user_id != $1
-    `, [userId]);
+    `, [userId, JSON.stringify(contacts)]);
 
         res.json({
             message: 'Contacts synced',
@@ -60,7 +88,7 @@ router.post('/sync', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[Contacts] Sync error:', error);
+        logger.error('[Contacts] Sync error:', error);
         res.status(500).json({ error: 'Failed to sync contacts' });
     }
 });
@@ -70,14 +98,14 @@ router.post('/sync', async (req, res) => {
  * GET /api/contacts/friends
  */
 router.get('/friends', async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getUserId(req);
 
     if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
     }
 
     try {
-        const result = await pool.query(`
+        const result = await runQuery(`
       SELECT 
         uc.name as contact_name,
         uc.phone,
@@ -86,7 +114,7 @@ router.get('/friends', async (req, res) => {
         p.avatar_url,
         p.full_name
       FROM user_contacts uc
-      JOIN users u ON u.phone = uc.phone OR u.phone = CONCAT('+91', uc.phone)
+      JOIN users u ON u.phone_number = uc.phone OR u.phone_number = CONCAT('+91', uc.phone)
       LEFT JOIN profiles p ON p.user_id = u.user_id
       WHERE uc.owner_id = $1
         AND u.user_id != $1
@@ -96,7 +124,7 @@ router.get('/friends', async (req, res) => {
         res.json({ friends: result.rows });
 
     } catch (error) {
-        console.error('[Contacts] Find friends error:', error);
+        logger.error('[Contacts] Find friends error:', error);
         res.status(500).json({ error: 'Failed to find friends' });
     }
 });
@@ -106,14 +134,14 @@ router.get('/friends', async (req, res) => {
  * GET /api/contacts/stats
  */
 router.get('/stats', async (req, res) => {
-    const userId = req.user?.userId;
+    const userId = getUserId(req);
 
     if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });
     }
 
     try {
-        const stats = await pool.query(`
+        const stats = await runQuery(`
       SELECT 
         COUNT(*) as total_contacts,
         COUNT(CASE WHEN is_on_platform THEN 1 END) as friends_on_platform
@@ -124,7 +152,7 @@ router.get('/stats', async (req, res) => {
         res.json(stats.rows[0]);
 
     } catch (error) {
-        console.error('[Contacts] Stats error:', error);
+        logger.error('[Contacts] Stats error:', error);
         res.status(500).json({ error: 'Failed to get stats' });
     }
 });

@@ -9,13 +9,65 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
+function toggleLikeOnPost(post, targetPostId) {
+    if (!post || String(post.post_id) !== String(targetPostId)) {
+        return post;
+    }
+
+    const currentlyLiked = Boolean(post.is_liked);
+    const currentCount = Number(post.likes_count ?? post.likes ?? 0) || 0;
+
+    return {
+        ...post,
+        is_liked: !currentlyLiked,
+        likes_count: currentlyLiked ? Math.max(0, currentCount - 1) : currentCount + 1
+    };
+}
+
+function applyOptimisticLikeUpdate(data, postId) {
+    if (!data) return data;
+
+    if (Array.isArray(data)) {
+        return data.map((post) => toggleLikeOnPost(post, postId));
+    }
+
+    if (Array.isArray(data?.pages)) {
+        return {
+            ...data,
+            pages: data.pages.map((page) => {
+                if (Array.isArray(page)) {
+                    return page.map((post) => toggleLikeOnPost(post, postId));
+                }
+
+                if (Array.isArray(page?.posts)) {
+                    return {
+                        ...page,
+                        posts: page.posts.map((post) => toggleLikeOnPost(post, postId))
+                    };
+                }
+
+                return page;
+            })
+        };
+    }
+
+    if (Array.isArray(data?.posts)) {
+        return {
+            ...data,
+            posts: data.posts.map((post) => toggleLikeOnPost(post, postId))
+        };
+    }
+
+    return data;
+}
+
 export const useLikePost = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (postId) => {
             const response = await api.post(`/posts/${postId}/like`);
-            return response.data;
+            return response?.data ?? response;
         },
 
         // ON MUTATE: Run immediately when user clicks (0ms response)
@@ -24,54 +76,32 @@ export const useLikePost = () => {
             await queryClient.cancelQueries({ queryKey: ['feed'] });
             await queryClient.cancelQueries({ queryKey: ['posts'] });
 
-            // Snapshot previous values for rollback
-            const previousFeed = queryClient.getQueryData(['feed']);
-            const previousPosts = queryClient.getQueryData(['posts']);
+            // Snapshot all matching query values for rollback
+            const previousFeedEntries = queryClient.getQueriesData({ queryKey: ['feed'] });
+            const previousPostsEntries = queryClient.getQueriesData({ queryKey: ['posts'] });
 
-            // Optimistic update for feed
-            queryClient.setQueryData(['feed'], (old) => {
-                if (!old) return old;
-                return old.map(post =>
-                    post.post_id === postId
-                        ? {
-                            ...post,
-                            is_liked: !post.is_liked,
-                            likes_count: post.is_liked
-                                ? Math.max(0, (post.likes_count || 0) - 1)
-                                : (post.likes_count || 0) + 1
-                        }
-                        : post
-                );
+            // Optimistic updates across all feed/posts cache variants
+            previousFeedEntries.forEach(([queryKey]) => {
+                queryClient.setQueryData(queryKey, (old) => applyOptimisticLikeUpdate(old, postId));
+            });
+            previousPostsEntries.forEach(([queryKey]) => {
+                queryClient.setQueryData(queryKey, (old) => applyOptimisticLikeUpdate(old, postId));
             });
 
-            // Optimistic update for posts list
-            queryClient.setQueryData(['posts'], (old) => {
-                if (!old) return old;
-                return old.map(post =>
-                    post.post_id === postId
-                        ? {
-                            ...post,
-                            is_liked: !post.is_liked,
-                            likes_count: post.is_liked
-                                ? Math.max(0, (post.likes_count || 0) - 1)
-                                : (post.likes_count || 0) + 1
-                        }
-                        : post
-                );
-            });
-
-            return { previousFeed, previousPosts };
+            return { previousFeedEntries, previousPostsEntries };
         },
 
         // ON ERROR: Rollback to previous state
         onError: (err, postId, context) => {
-            if (context?.previousFeed) {
-                queryClient.setQueryData(['feed'], context.previousFeed);
+            context?.previousFeedEntries?.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+            context?.previousPostsEntries?.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
+            if (import.meta.env.DEV) {
+                console.error('Like failed:', err);
             }
-            if (context?.previousPosts) {
-                queryClient.setQueryData(['posts'], context.previousPosts);
-            }
-            console.error('Like failed:', err);
         },
 
         // ON SETTLED: Sync with server to confirm
@@ -91,7 +121,7 @@ export const useSavePost = () => {
     return useMutation({
         mutationFn: async (postId) => {
             const response = await api.post(`/wishlist/${postId}`);
-            return response.data;
+            return response?.data ?? response;
         },
 
         onMutate: async (postId) => {

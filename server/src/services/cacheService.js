@@ -1,5 +1,63 @@
 const NodeCache = require('node-cache');
-const log = require('../utils/logger'); // Ensure you have a logger, or use console
+
+const MATCH_ALL_PATTERN = '*';
+const MATCHER_CACHE_LIMIT = 128;
+
+function escapeRegex(value) {
+    return value.replace(/[\\^$+?.()|[\]{}]/g, '\\$&');
+}
+
+function createPatternMatcher(pattern) {
+    if (pattern === MATCH_ALL_PATTERN) {
+        return () => true;
+    }
+
+    const wildcardCount = (pattern.match(/\*/g) || []).length;
+    if (wildcardCount === 0) {
+        return (key) => key === pattern;
+    }
+
+    if (wildcardCount === 1) {
+        if (pattern.startsWith('*')) {
+            const suffix = pattern.slice(1);
+            return (key) => key.endsWith(suffix);
+        }
+
+        if (pattern.endsWith('*')) {
+            const prefix = pattern.slice(0, -1);
+            return (key) => key.startsWith(prefix);
+        }
+
+        const [prefix, suffix] = pattern.split('*');
+        return (key) => key.startsWith(prefix) && key.endsWith(suffix);
+    }
+
+    if (wildcardCount === 2 && pattern.startsWith('*') && pattern.endsWith('*')) {
+        const inner = pattern.slice(1, -1);
+        return (key) => key.includes(inner);
+    }
+
+    const regex = new RegExp(`^${pattern.split('*').map(escapeRegex).join('.*')}$`);
+    return (key) => regex.test(key);
+}
+
+async function awaitWithTimeout(promise, timeoutMs, timeoutMessage) {
+    let timeoutRef;
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutRef = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+        if (typeof timeoutRef.unref === 'function') {
+            timeoutRef.unref();
+        }
+    });
+
+    try {
+        return await Promise.race([promise, timeoutPromise]);
+    } finally {
+        if (timeoutRef) {
+            clearTimeout(timeoutRef);
+        }
+    }
+}
 
 /**
  * CACHE SERVICE (The Memory Bank)
@@ -15,126 +73,123 @@ const log = require('../utils/logger'); // Ensure you have a logger, or use cons
 class CacheService {
     constructor() {
         this.cache = new NodeCache({
-            stdTTL: 60, // Standard Time To Live: 60 seconds
-            checkperiod: 120, // Delete check interval
-            useClones: false // Performance optimization (store reference)
+            stdTTL: 60,
+            checkperiod: process.env.NODE_ENV === 'test' ? 0 : 120,
+            useClones: false
         });
 
-        // Stampede prevention: Track in-flight requests
         this.inFlightRequests = new Map();
+        this.patternMatchers = new Map();
 
-        // Cache metrics for monitoring
         this.stats = {
             hits: 0,
             misses: 0,
             stampedePrevented: 0
         };
 
-        console.log('⚡ [CacheService] In-Memory Cache Initialized with Stampede Protection');
+        console.log('[CacheService] In-memory cache initialized with stampede protection');
     }
 
-    /**
-     * Get value from cache
-     * @param {string} key
-     * @returns {any | undefined}
-     */
+    getPatternMatcher(pattern) {
+        const normalizedPattern = String(pattern);
+        const cachedMatcher = this.patternMatchers.get(normalizedPattern);
+        if (cachedMatcher) {
+            return cachedMatcher;
+        }
+
+        const matcher = createPatternMatcher(normalizedPattern);
+        if (this.patternMatchers.size >= MATCHER_CACHE_LIMIT) {
+            const oldestPattern = this.patternMatchers.keys().next().value;
+            this.patternMatchers.delete(oldestPattern);
+        }
+
+        this.patternMatchers.set(normalizedPattern, matcher);
+        return matcher;
+    }
+
     get(key) {
         const value = this.cache.get(key);
-        if (value) {
-            this.stats.hits++;
+        if (value !== undefined) {
+            this.stats.hits += 1;
         } else {
-            this.stats.misses++;
+            this.stats.misses += 1;
         }
         return value;
     }
 
-    /**
-     * Set value in cache
-     * @param {string} key
-     * @param {any} value
-     * @param {number} ttl - Optional specific TTL in seconds
-     */
     set(key, value, ttl = 60) {
         return this.cache.set(key, value, ttl);
     }
 
-    /**
-     * Delete value from cache
-     * @param {string} key
-     */
     del(key) {
         return this.cache.del(key);
     }
 
-    /**
-     * Clear all keys matching a pattern (e.g., "feed:*")
-     * PERFORMANCE: Use for cache invalidation after mutations
-     * @param {string} pattern - Glob pattern to match
-     */
-    clearPattern(pattern) {
-        const keys = this.cache.keys();
-        const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-        const deletedKeys = keys.filter(key => regex.test(key));
-        deletedKeys.forEach(key => this.cache.del(key));
-        console.log(`[Cache] Invalidated ${deletedKeys.length} keys matching pattern: ${pattern}`);
-        return deletedKeys.length;
+    deleteKeys(keys) {
+        if (!Array.isArray(keys) || keys.length === 0) {
+            return 0;
+        }
+        return this.cache.del(keys);
     }
 
-    /**
-     * Flush entire cache (Use with caution)
-     */
+    clearPattern(pattern) {
+        const normalizedPattern = (typeof pattern === 'string' ? pattern : '').trim();
+        if (!normalizedPattern) {
+            return 0;
+        }
+
+        if (!normalizedPattern.includes('*')) {
+            const deletedCount = this.cache.del(normalizedPattern);
+            console.log(`[Cache] Invalidated ${deletedCount} keys matching pattern: ${normalizedPattern}`);
+            return deletedCount;
+        }
+
+        const keys = this.cache.keys();
+        if (!keys.length) {
+            return 0;
+        }
+
+        const matchesPattern = this.getPatternMatcher(normalizedPattern);
+        const keysToDelete = [];
+        for (let i = 0; i < keys.length; i += 1) {
+            if (matchesPattern(keys[i])) {
+                keysToDelete.push(keys[i]);
+            }
+        }
+
+        const deletedCount = this.deleteKeys(keysToDelete);
+        console.log(`[Cache] Invalidated ${deletedCount} keys matching pattern: ${normalizedPattern}`);
+        return deletedCount;
+    }
+
     flush() {
         this.cache.flushAll();
-        console.log('🧹 [CacheService] Cache Flushed');
+        console.log('[CacheService] Cache flushed');
     }
 
-    /**
-     * STAMPEDE PREVENTION: Get or Set with distributed locking
-     * If multiple requests arrive before cache is populated, only one fetches from DB
-     * Others wait for the result and share the cached value
-     *
-     * Performance impact: 4-10x cache hit rate improvement on high-concurrency endpoints
-     *
-     * @param {string} key
-     * @param {Function} fetchFunction - Async function to fetch data
-     * @param {number} ttl - Cache TTL in seconds
-     * @param {number} lockTimeoutMs - How long to wait for in-flight request before timeout
-     */
     async getOrSetWithStampedeProtection(key, fetchFunction, ttl = 60, lockTimeoutMs = 5000) {
-        // 1. Check if value is already cached
         const cached = this.get(key);
-        if (cached) {
+        if (cached !== undefined) {
             return cached;
         }
 
-        // 2. Check if another request is already fetching this key (in-flight)
         if (this.inFlightRequests.has(key)) {
-            // Wait for in-flight request to complete
+            this.stats.stampedePrevented += 1;
             try {
                 const promise = this.inFlightRequests.get(key);
-                const result = await Promise.race([
-                    promise,
-                    new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('Lock timeout')), lockTimeoutMs)
-                    )
-                ]);
-                return result;
+                return await awaitWithTimeout(promise, lockTimeoutMs, 'Lock timeout');
             } catch (err) {
-                // Timeout: fall through to fetch ourselves
                 console.warn(`[Cache] Stampede lock timeout for key: ${key}`);
             }
         }
 
-        // 3. This request will fetch - create in-flight promise
         const fetchPromise = (async () => {
             try {
                 const result = await fetchFunction();
                 this.set(key, result, ttl);
-                this.inFlightRequests.delete(key);
                 return result;
-            } catch (err) {
+            } finally {
                 this.inFlightRequests.delete(key);
-                throw err;
             }
         })();
 
@@ -142,46 +197,81 @@ class CacheService {
         return fetchPromise;
     }
 
-    /**
-     * Batch invalidation for related cache keys
-     * Use after updates to ensure consistency
-     *
-     * Example: After post creation, invalidate feed cache for all users
-     *
-     * @param {Array<string>} patterns - Array of glob patterns to invalidate
-     */
     invalidateRelated(patterns) {
+        if (!Array.isArray(patterns) || patterns.length === 0) {
+            return 0;
+        }
+
+        const normalizedPatterns = [...new Set(
+            patterns
+                .filter((pattern) => typeof pattern === 'string' && pattern.trim().length > 0)
+                .map((pattern) => pattern.trim())
+        )];
+
+        if (!normalizedPatterns.length) {
+            return 0;
+        }
+
+        const exactPatterns = [];
+        const wildcardPatterns = [];
+        for (let i = 0; i < normalizedPatterns.length; i += 1) {
+            if (normalizedPatterns[i].includes('*')) {
+                wildcardPatterns.push(normalizedPatterns[i]);
+            } else {
+                exactPatterns.push(normalizedPatterns[i]);
+            }
+        }
+
         let totalInvalidated = 0;
-        patterns.forEach(pattern => {
-            const count = this.clearPattern(pattern);
-            totalInvalidated += count;
-        });
-        console.log(`[Cache Invalidation] Cleared ${totalInvalidated} keys across ${patterns.length} patterns`);
+
+        if (exactPatterns.length) {
+            totalInvalidated += this.deleteKeys(exactPatterns);
+        }
+
+        if (wildcardPatterns.length) {
+            const keys = this.cache.keys();
+            if (keys.length) {
+                const matchers = wildcardPatterns.map((pattern) => this.getPatternMatcher(pattern));
+                const keysToDelete = [];
+
+                keyLoop:
+                for (let i = 0; i < keys.length; i += 1) {
+                    for (let j = 0; j < matchers.length; j += 1) {
+                        if (matchers[j](keys[i])) {
+                            keysToDelete.push(keys[i]);
+                            continue keyLoop;
+                        }
+                    }
+                }
+
+                if (keysToDelete.length) {
+                    totalInvalidated += this.deleteKeys(keysToDelete);
+                }
+            }
+        }
+
+        console.log(`[Cache Invalidation] Cleared ${totalInvalidated} keys across ${normalizedPatterns.length} patterns`);
         return totalInvalidated;
     }
 
-    /**
-     * Get cache health metrics
-     * @returns {Object} Cache statistics
-     */
     getStats() {
-        const hitRate = this.stats.hits + this.stats.misses > 0
-            ? (this.stats.hits / (this.stats.hits + this.stats.misses) * 100).toFixed(2)
+        const totalRequests = this.stats.hits + this.stats.misses;
+        const hitRate = totalRequests > 0
+            ? Number((this.stats.hits / totalRequests * 100).toFixed(2))
             : 0;
 
+        const cacheStats = this.cache.getStats();
         return {
             hits: this.stats.hits,
             misses: this.stats.misses,
-            hitRate: `${hitRate}%`,
-            keysInCache: this.cache.keys().length,
+            hitRate,
+            hitRatePercent: `${hitRate}%`,
+            keysInCache: cacheStats.keys ?? this.cache.keys().length,
             stampedePrevented: this.stats.stampedePrevented,
-            memoryUsage: Object.keys(this.cache.getStats()).length
+            memoryUsage: (cacheStats.ksize || 0) + (cacheStats.vsize || 0)
         };
     }
 
-    /**
-     * Reset metrics (useful for benchmarking)
-     */
     resetStats() {
         this.stats = {
             hits: 0,
@@ -190,19 +280,19 @@ class CacheService {
         };
     }
 
-    /**
-     * Health check endpoint
-     * @returns {Object} Health details
-     */
     healthCheck() {
         const stats = this.getStats();
+        const keysInCache = stats.keysInCache || 0;
         return {
-            healthy: stats.hitRate > 30 || this.cache.keys().length === 0,
-            recommendation: stats.hitRate < 30 && this.cache.keys().length > 0
+            healthy: stats.hitRate > 30 || keysInCache === 0,
+            recommendation: stats.hitRate < 30 && keysInCache > 0
                 ? 'Cache hit rate low - consider increasing TTL or optimizing cache keys'
                 : 'Healthy'
         };
     }
 }
 
-module.exports = new CacheService();
+const cacheService = new CacheService();
+module.exports = cacheService;
+module.exports.CacheService = CacheService;
+module.exports.createPatternMatcher = createPatternMatcher;

@@ -3,44 +3,46 @@
  * =============================================================================
  * Logs authentication-related information for debugging session issues.
  * Enable in development by adding to routes that have auth problems.
- * 
+ *
  * Usage: router.get('/debug-path', authLogger, protect, controller.method);
  */
 
+const { getBearerTokenFromHeader } = require('../utils/requestAuth');
+
 const authLogger = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const hasCookie = !!req.cookies?.accessToken;
-    const hasRefreshCookie = !!req.cookies?.refreshToken;
-    const hasBearer = !!authHeader?.startsWith('Bearer ');
+    const hasCookie = Boolean(req.cookies?.accessToken);
+    const hasRefreshCookie = Boolean(req.cookies?.refreshToken);
+    const token = getBearerTokenFromHeader(authHeader);
+    const hasBearer = Boolean(token);
 
-    console.log(`\n[AUTH-DEBUG] ═══════════════════════════════════`);
-    console.log(`  📍 ${req.method} ${req.path}`);
-    console.log(`  🍪 Cookie Token: ${hasCookie ? '✅ Present' : '❌ Missing'}`);
-    console.log(`  🔄 Refresh Cookie: ${hasRefreshCookie ? '✅ Present' : '❌ Missing'}`);
-    console.log(`  🔑 Bearer Token: ${hasBearer ? '✅ Present' : '❌ Missing'}`);
+    console.log('\n[AUTH-DEBUG] ===================================');
+    console.log(`  METHOD/PATH: ${req.method} ${req.path}`);
+    console.log(`  COOKIE TOKEN: ${hasCookie ? 'Present' : 'Missing'}`);
+    console.log(`  REFRESH COOKIE: ${hasRefreshCookie ? 'Present' : 'Missing'}`);
+    console.log(`  BEARER TOKEN: ${hasBearer ? 'Present' : 'Missing'}`);
 
-    if (hasBearer) {
-        const token = authHeader.split(' ')[1];
-        console.log(`  📋 Token Preview: ${token.substring(0, 20)}...${token.substring(token.length - 10)}`);
+    if (token) {
+        const previewEndIndex = Math.max(0, token.length - 10);
+        console.log(`  TOKEN PREVIEW: ${token.substring(0, 20)}...${token.substring(previewEndIndex)}`);
 
-        // Try to decode without verification to see payload
+        // Try to decode without verification to inspect payload for debugging only.
         try {
             const base64Payload = token.split('.')[1];
             const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString());
-            console.log(`  👤 User ID: ${payload.id || payload.userId || 'N/A'}`);
-            console.log(`  ⏰ Expires: ${payload.exp ? new Date(payload.exp * 1000).toISOString() : 'N/A'}`);
+            console.log(`  USER ID: ${payload.id || payload.userId || 'N/A'}`);
+            console.log(`  EXPIRES: ${payload.exp ? new Date(payload.exp * 1000).toISOString() : 'N/A'}`);
 
-            // Check if expired
             if (payload.exp && payload.exp * 1000 < Date.now()) {
-                console.log(`  ⚠️ TOKEN EXPIRED!`);
+                console.log('  TOKEN STATUS: EXPIRED');
             }
-        } catch (e) {
-            console.log(`  ⚠️ Could not decode token payload`);
+        } catch {
+            console.log('  PAYLOAD: Unable to decode token payload');
         }
     }
 
-    console.log(`  🌐 IP: ${req.ip || req.headers['x-forwarded-for'] || 'Unknown'}`);
-    console.log(`[AUTH-DEBUG] ═══════════════════════════════════\n`);
+    console.log(`  IP: ${req.ip || req.headers['x-forwarded-for'] || 'Unknown'}`);
+    console.log('[AUTH-DEBUG] ===================================\n');
 
     next();
 };

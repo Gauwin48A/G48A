@@ -12,9 +12,9 @@ const Redis = require('ioredis');
 // ============================================
 const REDIS_CONFIG = {
     host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT) || 6379,
+    port: Number.parseInt(process.env.REDIS_PORT, 10) || 6379,
     password: process.env.REDIS_PASSWORD || undefined,
-    db: parseInt(process.env.REDIS_DB) || 0,
+    db: Number.parseInt(process.env.REDIS_DB, 10) || 0,
     keyPrefix: 'mhub:',
     retryStrategy: (times) => {
         if (times > 3) {
@@ -35,6 +35,8 @@ const CACHE_TTL = {
     USER: 60,          // User data - 1 minute
     CATEGORIES: 300,   // Categories - 5 minutes (rarely change)
 };
+const SCAN_COUNT = Number.parseInt(process.env.REDIS_SCAN_COUNT, 10) || 200;
+const DELETE_BATCH_SIZE = Number.parseInt(process.env.REDIS_DELETE_BATCH_SIZE, 10) || 200;
 
 // ============================================
 // REDIS CLIENT SINGLETON
@@ -89,13 +91,72 @@ async function getRedisClient() {
 // ============================================
 const memoryCache = new Map();
 const MAX_MEMORY_ENTRIES = 1000;
+let unlinkSupported = true;
 
 function cleanMemoryCache() {
+    const now = Date.now();
+    for (const [key, value] of memoryCache.entries()) {
+        if ((now - value.timestamp) >= (value.ttl * 1000)) {
+            memoryCache.delete(key);
+        }
+    }
+
     if (memoryCache.size > MAX_MEMORY_ENTRIES) {
         const toRemove = Math.floor(MAX_MEMORY_ENTRIES * 0.2);
         const keys = Array.from(memoryCache.keys()).slice(0, toRemove);
         keys.forEach(k => memoryCache.delete(k));
     }
+}
+
+function parseRedisValue(value) {
+    try {
+        return JSON.parse(value);
+    } catch {
+        return value;
+    }
+}
+
+function globPatternToMatcher(pattern) {
+    if (!pattern || pattern === '*') {
+        return () => true;
+    }
+
+    if (!pattern.includes('*')) {
+        return (key) => key === pattern;
+    }
+
+    const escaped = pattern
+        .split('*')
+        .map((segment) => segment.replace(/[\\^$+?.()|[\]{}]/g, '\\$&'))
+        .join('.*');
+    const regex = new RegExp(`^${escaped}$`);
+    return (key) => regex.test(key);
+}
+
+async function deleteRedisKeys(redis, keys) {
+    let deleted = 0;
+    for (let i = 0; i < keys.length; i += DELETE_BATCH_SIZE) {
+        const batch = keys.slice(i, i + DELETE_BATCH_SIZE);
+        if (!batch.length) {
+            continue;
+        }
+
+        if (unlinkSupported) {
+            try {
+                deleted += await redis.unlink(...batch);
+                continue;
+            } catch (err) {
+                if (err?.message?.toLowerCase?.().includes('unknown command')) {
+                    unlinkSupported = false;
+                } else {
+                    throw err;
+                }
+            }
+        }
+
+        deleted += await redis.del(...batch);
+    }
+    return deleted;
 }
 
 // ============================================
@@ -110,7 +171,10 @@ async function get(key) {
         const redis = await getRedisClient();
         if (redis && isRedisAvailable) {
             const value = await redis.get(key);
-            return value ? JSON.parse(value) : null;
+            if (value === null || value === undefined) {
+                return null;
+            }
+            return parseRedisValue(value);
         }
     } catch (err) {
         console.log('[Redis] Get error, using memory:', err.message);
@@ -164,24 +228,51 @@ async function del(key) {
  * Clear all cache with pattern
  */
 async function clearPattern(pattern) {
+    const normalizedPattern = (typeof pattern === 'string' && pattern.trim())
+        ? pattern.trim()
+        : '*';
+    const redisPrefix = REDIS_CONFIG.keyPrefix || '';
+    const redisPattern = redisPrefix && !normalizedPattern.startsWith(redisPrefix)
+        ? `${redisPrefix}${normalizedPattern}`
+        : normalizedPattern;
+    let redisDeleted = 0;
+
     try {
         const redis = await getRedisClient();
         if (redis && isRedisAvailable) {
-            const keys = await redis.keys(`mhub:${pattern}`);
-            if (keys.length > 0) {
-                await redis.del(...keys);
-            }
+            let cursor = '0';
+            do {
+                const [nextCursor, keys] = await redis.scan(
+                    cursor,
+                    'MATCH',
+                    redisPattern,
+                    'COUNT',
+                    SCAN_COUNT
+                );
+                cursor = nextCursor;
+                if (keys.length > 0) {
+                    const keysToDelete = redisPrefix
+                        ? keys.map((key) => key.startsWith(redisPrefix) ? key.slice(redisPrefix.length) : key)
+                        : keys;
+                    redisDeleted += await deleteRedisKeys(redis, keysToDelete);
+                }
+            } while (cursor !== '0');
         }
     } catch (err) {
         console.log('[Redis] ClearPattern error:', err.message);
     }
 
     // Clear matching keys from memory
+    const matchesPattern = globPatternToMatcher(normalizedPattern);
+    let memoryDeleted = 0;
     for (const key of memoryCache.keys()) {
-        if (key.includes(pattern.replace('*', ''))) {
+        if (matchesPattern(key)) {
             memoryCache.delete(key);
+            memoryDeleted += 1;
         }
     }
+
+    return redisDeleted + memoryDeleted;
 }
 
 // ============================================
@@ -264,6 +355,32 @@ async function healthCheck() {
     };
 }
 
+async function close() {
+    memoryCache.clear();
+    cacheStats = {
+        hits: 0,
+        misses: 0,
+        redisHits: 0,
+        memoryHits: 0,
+    };
+
+    if (redisClient) {
+        try {
+            await redisClient.quit();
+        } catch {
+            try {
+                redisClient.disconnect();
+            } catch {
+                // noop
+            }
+        }
+    }
+
+    redisClient = null;
+    isRedisAvailable = false;
+    connectionAttempted = false;
+}
+
 // ============================================
 // EXPORTS
 // ============================================
@@ -280,6 +397,7 @@ module.exports = {
     healthCheck,
     recordHit,
     recordMiss,
+    close,
     CACHE_TTL,
     isRedisAvailable: () => isRedisAvailable,
 };

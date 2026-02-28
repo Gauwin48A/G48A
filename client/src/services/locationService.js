@@ -1,5 +1,6 @@
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
+import { buildApiPath } from '@/lib/networkConfig';
 
 // 1. BANKING-GRADE CONFIGURATION
 const GEO_OPTIONS = {
@@ -33,6 +34,9 @@ const LOCATION_CACHE_KEYS = ['mhub_location', 'user_location', 'last_location'];
 
 const MIN_MOVEMENT_THRESHOLD = 500; // meters
 const NETWORK_TIMEOUT_MS = 6000;
+const LOCATION_SYNC_MAX_ATTEMPTS_PER_ENDPOINT = 2;
+const LOCATION_SYNC_RETRY_DELAY_MS = 1000;
+const LOCAL_DEV_BACKEND_ORIGINS = ['http://localhost:5000', 'http://localhost:5001'];
 
 /**
  * Wrapper to add timeout support to fetch
@@ -49,6 +53,34 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = NETWORK_TIMEOUT_M
   } finally {
     clearTimeout(timeout);
   }
+};
+
+const normalizeEndpointUrl = (value) => String(value || '').trim().replace(/\/+$/, '');
+
+const getLocationEndpointCandidates = () => {
+  const candidates = [buildApiPath('/location')];
+
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    candidates.push(`${window.location.origin}/api/location`);
+    LOCAL_DEV_BACKEND_ORIGINS.forEach((origin) => {
+      candidates.push(`${origin}/api/location`);
+    });
+  }
+
+  const deduped = [];
+  const seen = new Set();
+  candidates.forEach((candidate) => {
+    const normalized = normalizeEndpointUrl(candidate);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    deduped.push(normalized);
+  });
+
+  return deduped;
+};
+
+const isRouteNotFoundPayload = (status, bodyText) => {
+  return status === 404 && /route not found/i.test(String(bodyText || ''));
 };
 
 const getBrowserPositionOnce = (options) => {
@@ -590,42 +622,60 @@ export async function sendLocation(locationData) {
   const payload = buildLocationPayload(locationData);
   console.log("[LocationService] Sending location to backend:", payload);
 
-  let attempts = 0;
+  const endpointCandidates = getLocationEndpointCandidates();
   let lastError = null;
-  const API_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + "/api/location";
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
   const headers = { "Content-Type": "application/json" };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  while (attempts < 3) {
-    try {
-      const response = await fetchWithTimeout(API_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-        credentials: "include",
-      });
+  for (let endpointIndex = 0; endpointIndex < endpointCandidates.length; endpointIndex += 1) {
+    const endpoint = endpointCandidates[endpointIndex];
 
-      if (!response.ok) {
-        const errText = await response.text();
-        lastError = `Server returned ${response.status}: ${errText}`;
-        throw new Error(lastError);
+    for (let attempt = 0; attempt < LOCATION_SYNC_MAX_ATTEMPTS_PER_ENDPOINT; attempt += 1) {
+      try {
+        const response = await fetchWithTimeout(endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          lastError = `Server returned ${response.status}: ${errText}`;
+
+          if (isRouteNotFoundPayload(response.status, errText)) {
+            console.warn(`[LocationService] Endpoint not found at ${endpoint}, trying fallback target.`);
+            break;
+          }
+
+          throw new Error(lastError);
+        }
+
+        const result = await response.json();
+        if (endpointIndex > 0) {
+          console.info(`[LocationService] Location sync fallback succeeded via ${endpoint}`);
+        }
+        console.log("[LocationService] Backend response:", result);
+        return result;
+      } catch (error) {
+        lastError = error.message;
+        console.error(`[LocationService] sendLocation error (${endpoint}, attempt ${attempt + 1}):`, lastError);
+
+        const canRetrySameEndpoint =
+          attempt < LOCATION_SYNC_MAX_ATTEMPTS_PER_ENDPOINT - 1 &&
+          !/Server returned 404/i.test(lastError);
+        if (!canRetrySameEndpoint) {
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, LOCATION_SYNC_RETRY_DELAY_MS));
       }
-
-      const result = await response.json();
-      console.log("[LocationService] Backend response:", result);
-      return result;
-    } catch (error) {
-      lastError = error.message;
-      console.error("[LocationService] sendLocation error (attempt " + (attempts + 1) + "):", lastError);
-      attempts++;
-      if (attempts >= 3) throw new Error(lastError);
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
+
+  throw new Error(lastError || 'Location sync failed');
 }
 
 /**

@@ -4,8 +4,23 @@
  */
 const https = require('https');
 
-const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY;
-const RECAPTCHA_THRESHOLD = 0.5; // Score threshold (0.0 = bot, 1.0 = human)
+const DEFAULT_RECAPTCHA_THRESHOLD = 0.5; // Score threshold (0.0 = bot, 1.0 = human)
+
+function getRecaptchaSecret(env = process.env) {
+    return env.RECAPTCHA_SECRET_KEY;
+}
+
+function getRecaptchaThreshold(env = process.env) {
+    const parsed = Number.parseFloat(env.RECAPTCHA_THRESHOLD || '');
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 1) {
+        return parsed;
+    }
+    return DEFAULT_RECAPTCHA_THRESHOLD;
+}
+
+function normalizeAction(action) {
+    return String(action || '').trim().toLowerCase();
+}
 
 /**
  * Verify reCAPTCHA token with Google
@@ -13,8 +28,11 @@ const RECAPTCHA_THRESHOLD = 0.5; // Score threshold (0.0 = bot, 1.0 = human)
  * @param {string} expectedAction - Expected action name
  * @returns {Promise<{success: boolean, score: number, action: string}>}
  */
-const verifyRecaptcha = async (token, expectedAction = 'login') => {
-    if (!RECAPTCHA_SECRET) {
+const verifyRecaptcha = async (token, expectedAction = 'login', env = process.env) => {
+    const recaptchaSecret = getRecaptchaSecret(env);
+    const recaptchaThreshold = getRecaptchaThreshold(env);
+
+    if (!recaptchaSecret) {
         console.log('[CAPTCHA] Secret not configured, skipping verification');
         return { success: true, score: 1.0, action: expectedAction, skipped: true };
     }
@@ -24,7 +42,7 @@ const verifyRecaptcha = async (token, expectedAction = 'login') => {
     }
 
     return new Promise((resolve) => {
-        const postData = `secret=${RECAPTCHA_SECRET}&response=${token}`;
+        const postData = `secret=${encodeURIComponent(recaptchaSecret)}&response=${encodeURIComponent(token)}`;
 
         const options = {
             hostname: 'www.google.com',
@@ -43,10 +61,14 @@ const verifyRecaptcha = async (token, expectedAction = 'login') => {
             res.on('end', () => {
                 try {
                     const result = JSON.parse(data);
+                    const score = Number(result.score) || 0;
+                    const actionMatches = !normalizeAction(expectedAction)
+                        || normalizeAction(result.action) === normalizeAction(expectedAction);
                     resolve({
-                        success: result.success && result.score >= RECAPTCHA_THRESHOLD,
-                        score: result.score || 0,
+                        success: Boolean(result.success) && score >= recaptchaThreshold && actionMatches,
+                        score,
                         action: result.action,
+                        actionMatches,
                         hostname: result.hostname
                     });
                 } catch {
@@ -76,8 +98,10 @@ const verifyRecaptcha = async (token, expectedAction = 'login') => {
  * Add to login/signup routes
  */
 const captchaMiddleware = (action = 'login') => async (req, res, next) => {
+    const recaptchaSecret = getRecaptchaSecret();
+
     // Skip if not configured
-    if (!RECAPTCHA_SECRET) {
+    if (!recaptchaSecret) {
         return next();
     }
 
@@ -92,7 +116,8 @@ const captchaMiddleware = (action = 'login') => async (req, res, next) => {
     if (!result.success && !result.failedOpen) {
         return res.status(403).json({
             error: 'CAPTCHA verification failed. Please try again.',
-            score: result.score
+            score: result.score,
+            actionMatches: result.actionMatches ?? null
         });
     }
 

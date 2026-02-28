@@ -1,12 +1,165 @@
 const pool = require('../config/db');
+const logger = require('../utils/logger');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const DEFAULT_FEEDBACK_LIMIT = 50;
+const MAX_FEEDBACK_LIMIT = 200;
+let feedbackIdColumnAvailablePromise = null;
+
+function runQuery(text, values = []) {
+  return pool.query({
+    text,
+    values,
+    query_timeout: DB_QUERY_TIMEOUT_MS
+  });
+}
+
+async function hasFeedbackIdColumn() {
+  if (!feedbackIdColumnAvailablePromise) {
+    feedbackIdColumnAvailablePromise = runQuery(
+      `
+        SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'feedback'
+            AND column_name = 'id'
+        ) AS available
+      `
+    )
+      .then((result) => Boolean(result?.rows?.[0]?.available))
+      .catch((err) => {
+        logger.warn('[Feedback] Failed to inspect feedback.id column, using feedback_id fallback', {
+          message: err.message
+        });
+        return false;
+      });
+  }
+
+  return feedbackIdColumnAvailablePromise;
+}
+
+function getFeedbackIdSelectExpression(hasIdColumn, tableAlias = '') {
+  const prefix = tableAlias ? `${tableAlias}.` : '';
+  return hasIdColumn ? `${prefix}id` : `${prefix}feedback_id AS id`;
+}
+
+function parseOptionalString(value) {
+  if (value === undefined || value === null) return null;
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.min(parsed, max);
+}
+
+function getUserRole(req) {
+  return String(req.user?.role || '').toLowerCase();
+}
+
+function canModerateFeedback(req) {
+  const role = getUserRole(req);
+  return role === 'admin' || role === 'superadmin' || role === 'moderator';
+}
+
+function getAuthenticatedUserId(req) {
+  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
+}
 
 exports.getFeedback = async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM feedback ORDER BY created_at DESC');
+    if (!canModerateFeedback(req)) {
+      return res.status(403).json({ error: 'Admin or moderator access required' });
+    }
+
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = parsePositiveInt(req.query.limit, DEFAULT_FEEDBACK_LIMIT, MAX_FEEDBACK_LIMIT);
+    const offset = (page - 1) * limit;
+    const hasIdColumn = await hasFeedbackIdColumn();
+    const result = await runQuery(
+      `SELECT ${getFeedbackIdSelectExpression(hasIdColumn)}, user_id, message, rating, category, status, created_at
+       FROM feedback
+       ORDER BY created_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching feedback:', err.message);
+    logger.error('Error fetching feedback:', err.message);
     // Return empty array on error to allow page to load gracefully
     res.json([]);
+  }
+};
+
+exports.getMyFeedback = async (req, res) => {
+  try {
+    const hasIdColumn = await hasFeedbackIdColumn();
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const result = await runQuery(
+      `SELECT ${getFeedbackIdSelectExpression(hasIdColumn)}, user_id, message, rating, category, status, created_at
+       FROM feedback
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [String(userId)]
+    );
+
+    return res.json({ feedback: result.rows });
+  } catch (err) {
+    logger.error('Error fetching my feedback:', err.message);
+    return res.status(500).json({ error: 'Failed to fetch feedback', details: err.message });
+  }
+};
+
+exports.createFeedback = async (req, res) => {
+  try {
+    const hasIdColumn = await hasFeedbackIdColumn();
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const {
+      message,
+      rating = 5,
+      category = 'general',
+      subject = ''
+    } = req.body || {};
+
+    const trimmedMessage = String(message || '').trim();
+    if (!trimmedMessage) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const parsedRating = Number.parseInt(rating, 10);
+    if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      return res.status(400).json({ error: 'Rating must be an integer between 1 and 5' });
+    }
+
+    const normalizedCategory = String(category || 'general').trim().toLowerCase() || 'general';
+    const normalizedSubject = String(subject || '').trim();
+    const storedMessage = normalizedSubject ? `[${normalizedSubject}] ${trimmedMessage}` : trimmedMessage;
+
+    const result = await runQuery(
+      `INSERT INTO feedback (user_id, message, rating, category, status, created_at)
+       VALUES ($1, $2, $3, $4, 'open', NOW())
+       RETURNING ${getFeedbackIdSelectExpression(hasIdColumn)}, user_id, message, rating, category, status, created_at`,
+      [String(userId), storedMessage, parsedRating, normalizedCategory]
+    );
+
+    return res.status(201).json({
+      message: 'Feedback submitted successfully',
+      feedback: result.rows[0]
+    });
+  } catch (err) {
+    logger.error('Error creating feedback:', err.message);
+    return res.status(500).json({ error: 'Failed to submit feedback', details: err.message });
   }
 };
