@@ -3,26 +3,37 @@ const jwt = require('jsonwebtoken');
 const JWT_CONFIG = require('../config/jwtConfig');
 const logger = require('../utils/logger');
 const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
+const LOAD_TEST_SCENARIOS = new Set(['normal', 'abuse', 'authenticated']);
 
 const API_LIMIT_WINDOW_MS = Number.parseInt(process.env.API_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000;
 const API_RATE_LIMIT_MAX = Number.parseInt(process.env.API_RATE_LIMIT_MAX, 10) || 3000;
 const API_RATE_LIMIT_NORMAL_SCENARIO_MAX = Number.parseInt(process.env.API_RATE_LIMIT_NORMAL_SCENARIO_MAX, 10) || 12000;
-const RATE_LIMIT_ALLOW_SIMULATED_IDS = process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === 'true';
+const RATE_LIMIT_ALLOW_SIMULATED_IDS = process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === undefined
+    ? process.env.NODE_ENV !== 'production'
+    : process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === 'true';
 const READY_PATHS = new Set(['/health', '/api/health', '/api/ready']);
+
+function getLoadScenario(req) {
+    return String(req.headers['x-load-test-scenario'] || '').toLowerCase();
+}
+
+function isTrustedSimulatedLoadRequest(req) {
+    return RATE_LIMIT_ALLOW_SIMULATED_IDS && LOAD_TEST_SCENARIOS.has(getLoadScenario(req));
+}
 
 // A. DDoS Protection: Limit repeated requests
 exports.apiLimiter = rateLimit({
     windowMs: API_LIMIT_WINDOW_MS,
     max: (req) => {
-        const scenario = String(req.headers['x-load-test-scenario'] || '').toLowerCase();
-        if (RATE_LIMIT_ALLOW_SIMULATED_IDS && ['normal', 'authenticated'].includes(scenario)) {
+        const scenario = getLoadScenario(req);
+        if (isTrustedSimulatedLoadRequest(req) && ['normal', 'authenticated'].includes(scenario)) {
             return API_RATE_LIMIT_NORMAL_SCENARIO_MAX;
         }
         return API_RATE_LIMIT_MAX;
     },
     keyGenerator: (req) => {
         const simulatedUser = req.headers['x-simulated-user'];
-        if (RATE_LIMIT_ALLOW_SIMULATED_IDS && simulatedUser) {
+        if (isTrustedSimulatedLoadRequest(req) && simulatedUser) {
             return `simulated:${String(simulatedUser)}`;
         }
         const ipAddress = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';

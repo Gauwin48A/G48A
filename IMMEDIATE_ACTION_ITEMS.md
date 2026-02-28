@@ -12,7 +12,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Validation: `npm test -- tests/runActiveActiveOrchestration.test.js tests/failoverSafetyService.test.js`
 - [x] Active-active dependency gate with explicit owner/dependency/impact/fallback output.
   - Status: COMPLETE
-  - Evidence: `server/scripts/run_active_active_dependency_gate.js`, `server/tests/activeActiveDependencyGate.test.js`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-39-10-441Z.json`
+  - Evidence: `server/scripts/run_active_active_dependency_gate.js`, `server/tests/activeActiveDependencyGate.test.js`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-56-34-192Z.json`
   - Validation: `npm run failover:active-active:dependency-gate`
 - [x] DB/queue failover eligibility audit with guardrail thresholds.
   - Status: COMPLETE
@@ -20,21 +20,21 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Validation: `npm run failover:db-queue-audit`
 - [x] Active-active staged shift execution proof under synthetic probes.
   - Status: COMPLETE
-  - Evidence: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T05-39-10-475Z.json`
-  - Validation: `$env:ACTIVE_ACTIVE_SYNTHETIC_PROBE='true'; $env:MULTI_REGION_EXEC_MODE='execute'; $env:ACTIVE_ACTIVE_REQUIRE_SAFETY_GATE='false'; $env:ACTIVE_ACTIVE_TRAFFIC_COMMAND='echo SHIFT_A={WEIGHT_A} SHIFT_B={WEIGHT_B}'; npm run failover:active-active`
+  - Evidence: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-56-34-101Z.json`
+  - Validation: `$env:ACTIVE_ACTIVE_RUN_SAFETY_AUDIT='false'; npm run failover:active-active:synthetic-execute`
 
 ## Priority 2 (Performance + Readiness)
 - [x] Legit vs abuse profile rerun with tuned limiter behavior.
   - Status: COMPLETE
-  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T04-39-36-639Z.json`
-  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both`
+  - Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/results/capacity_report_2026-02-28T05-54-30-958Z.json`
+  - Validation: `node tests/load/simple_load_runner.js --scenario both`
 - [x] Authenticated read/write load closure.
   - Status: COMPLETE
-  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T04-39-15-952Z.json`
-  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full`
+  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T05-55-55-973Z.json`
+  - Validation: `node tests/load/simple_load_runner.js --scenario full`
 - [x] Readiness matrix refresh for `ready/degraded/not_ready` paths.
   - Status: COMPLETE
-  - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T04-39-50-002Z.json`
+  - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T05-56-38-414Z.json`
   - Validation: `npm run readiness:probe-matrix`
 
 ## Priority 3 (Trust/Ops Evidence)
@@ -50,13 +50,13 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Remaining Blockers
 - [ ] Live multi-region active-active weighted shift in staging cloud.
   - Status: BLOCKED
-  - Dependency: secondary region stack + traffic manager credentials + replica endpoints (`server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-39-10-441Z.json`)
+  - Dependency: secondary region stack + traffic manager credentials + replica endpoints (`server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-56-34-192Z.json`)
   - Impact: production-like live failover cutover still unavailable from this environment
   - Owner: Platform Engineering
   - Fallback path: keep synthetic orchestration + tabletop + DB/queue safety audit gates active until infra is provisioned
 
 ## Current Gate Snapshot
-- Backend tests: COMPLETE (`19/19 suites`, `115/115 tests`)
+- Backend tests: COMPLETE (`20/20 suites`, `122/122 tests`)
 - Client quality gates: COMPLETE (`test`, `build`, `check:bundle-budget`)
 - Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_20260228_100712.log`)
 - Scope status: OPERATIONAL for baseline, COMPLETE for closure items, BLOCKED only for external infra dependency

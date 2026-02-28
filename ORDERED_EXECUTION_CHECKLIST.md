@@ -9,7 +9,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 0 - Backend Baseline Snapshot
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/docs/TEST_VALIDATION.md`, `server/docs/LOAD_CAPACITY_REPORT.md`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T04-39-50-002Z.json`
+- Evidence: `server/docs/TEST_VALIDATION.md`, `server/docs/LOAD_CAPACITY_REPORT.md`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T05-56-38-414Z.json`
 - Validation: `npm test`, `npm run test:critical-paths`, `npm run test:waf`, `npm run test:e2e:journeys`
 
 ### Phase 1 - ML Fraud Spike Advancement
@@ -21,8 +21,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 2 - Failover Drill + Active-Active Hardening
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-39-10-441Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T05-39-10-475Z.json`
-- Validation: `npm run failover:tabletop`, `npm run failover:active-active:dependency-gate`, `npm run failover:db-queue-audit`, `npm run failover:active-active` + synthetic execute command
+- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-56-34-192Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T05-56-34-101Z.json`
+- Validation: `npm run failover:tabletop`, `npm run failover:active-active:dependency-gate`, `npm run failover:db-queue-audit`, `npm run failover:active-active:synthetic-execute`
 
 ### Phase 3 - Progressive Rollout Operationalization
 - Status: COMPLETE
@@ -33,13 +33,13 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 4 - Limiter and Load Tuning
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/src/middleware/security.js`, `server/tests/load/results/capacity_report_2026-02-28T04-39-36-639Z.json`, `server/tests/load/results/capacity_report_2026-02-28T04-39-15-952Z.json`
-- Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both` and `--scenario full`
+- Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/results/capacity_report_2026-02-28T05-54-30-958Z.json`, `server/tests/load/results/capacity_report_2026-02-28T05-55-55-973Z.json`
+- Validation: `node tests/load/simple_load_runner.js --scenario both` and `--scenario full`
 
 ### Phase 5 - Readiness Hardening
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/src/services/readinessService.js`, `server/scripts/probe_readiness_matrix.js`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T04-39-50-002Z.json`
+- Evidence: `server/src/services/readinessService.js`, `server/scripts/probe_readiness_matrix.js`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T05-56-38-414Z.json`
 - Validation: `npm run readiness:probe-matrix`
 
 ### Phase 6 - Ops Evidence and Doc Reconciliation
@@ -66,7 +66,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Active-Active Live Path
 - Staged synthetic execute path: COMPLETE (`active_active_orchestration_2026-02-28T04-34-16-803Z.json`)
 - Safety gate enforced path: BLOCKED (`active_active_orchestration_2026-02-28T05-39-10-475Z.json`, reason `safety_gate_blocked` with explicit dependency reasons)
-- Dependency gate evidence path: BLOCKED (`active_active_dependency_gate_2026-02-28T05-39-10-441Z.json`)
+- Dependency gate evidence path: BLOCKED (`active_active_dependency_gate_2026-02-28T05-56-34-192Z.json`)
 - Live infra execution: BLOCKED (external credentials and secondary region provisioning)
 
 ## Final Checklist Status
