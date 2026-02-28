@@ -1,20 +1,9 @@
 const rateLimit = require('express-rate-limit');
-const jwt = require('jsonwebtoken');
 const JWT_CONFIG = require('../config/jwtConfig');
 const logger = require('../utils/logger');
+const { verifyToken } = require('../services/tokenVerificationCache');
 const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
 const LOAD_TEST_SCENARIOS = new Set(['normal', 'abuse', 'authenticated']);
-const AUTH_TOKEN_CACHE_TTL_MS = (() => {
-    const parsed = Number.parseInt(process.env.AUTH_TOKEN_CACHE_TTL_MS, 10);
-    if (Number.isFinite(parsed)) return Math.max(0, parsed);
-    return process.env.NODE_ENV === 'production' ? 0 : 1000;
-})();
-const AUTH_TOKEN_CACHE_MAX = (() => {
-    const parsed = Number.parseInt(process.env.AUTH_TOKEN_CACHE_MAX, 10);
-    if (Number.isFinite(parsed) && parsed > 0) return parsed;
-    return 10000;
-})();
-const verifiedTokenCache = new Map();
 
 const API_LIMIT_WINDOW_MS = Number.parseInt(process.env.API_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000;
 const API_RATE_LIMIT_MAX = Number.parseInt(process.env.API_RATE_LIMIT_MAX, 10) || 3000;
@@ -30,42 +19,6 @@ function getLoadScenario(req) {
 
 function isTrustedSimulatedLoadRequest(req) {
     return RATE_LIMIT_ALLOW_SIMULATED_IDS && LOAD_TEST_SCENARIOS.has(getLoadScenario(req));
-}
-
-function getCachedAuthPayload(token) {
-    if (!token || AUTH_TOKEN_CACHE_TTL_MS <= 0) return null;
-    const entry = verifiedTokenCache.get(token);
-    if (!entry) return null;
-
-    const now = Date.now();
-    if (entry.cacheExpiresAtMs <= now || entry.jwtExpiresAtMs <= now) {
-        verifiedTokenCache.delete(token);
-        return null;
-    }
-
-    return entry.payload;
-}
-
-function setCachedAuthPayload(token, payload) {
-    if (!token || !payload || AUTH_TOKEN_CACHE_TTL_MS <= 0) return;
-    const now = Date.now();
-    const jwtExpiresAtMs = Number.isFinite(payload.exp) ? Number(payload.exp) * 1000 : (now + AUTH_TOKEN_CACHE_TTL_MS);
-    const cacheExpiresAtMs = Math.min(now + AUTH_TOKEN_CACHE_TTL_MS, jwtExpiresAtMs);
-
-    if (cacheExpiresAtMs <= now) return;
-
-    if (verifiedTokenCache.size >= AUTH_TOKEN_CACHE_MAX) {
-        const oldestKey = verifiedTokenCache.keys().next().value;
-        if (oldestKey !== undefined) {
-            verifiedTokenCache.delete(oldestKey);
-        }
-    }
-
-    verifiedTokenCache.set(token, {
-        payload,
-        jwtExpiresAtMs,
-        cacheExpiresAtMs
-    });
 }
 
 // A. DDoS Protection: Limit repeated requests
@@ -112,16 +65,9 @@ exports.authenticateToken = (req, res, next) => {
         return res.status(401).json({ error: "Access denied. No token." });
     }
 
-    const cachedPayload = getCachedAuthPayload(token);
-    if (cachedPayload) {
-        req.user = cachedPayload;
-        return next();
-    }
-
     try {
-        const user = jwt.verify(token, JWT_CONFIG.SECRET);
+        const user = verifyToken(token, JWT_CONFIG.SECRET);
         req.user = user;
-        setCachedAuthPayload(token, user);
         return next();
     } catch (err) {
         logger.error('[AUTH] Token verify failed:', err.message, '| Path:', req.path);

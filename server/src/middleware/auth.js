@@ -1,5 +1,6 @@
-const jwt = require("jsonwebtoken");
 const JWT_CONFIG = require('../config/jwtConfig');
+const { verifyToken } = require('../services/tokenVerificationCache');
+const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
 
 /**
  * Auth Middleware - Operation Polish
@@ -16,12 +17,14 @@ const protect = (req, res, next) => {
   }
 
   if (!token) {
-    console.log('[AUTH] No token provided for:', req.path);
+    if (authDebugEnabled) {
+      console.log('[AUTH] No token provided for:', req.path);
+    }
     return res.status(401).json({ error: "No token provided, authorization denied" });
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_CONFIG.SECRET);
+    const decoded = verifyToken(token, JWT_CONFIG.SECRET);
     req.user = decoded;
     next();
   } catch (err) {
@@ -50,7 +53,7 @@ const optionalAuth = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_CONFIG.SECRET);
+    const decoded = verifyToken(token, JWT_CONFIG.SECRET);
     req.user = decoded;
   } catch (err) {
     req.user = null;

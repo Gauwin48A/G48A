@@ -21,7 +21,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 | 2026-02-28 | Migration apply+rereun | migration loop (7 files x2) | PASS | `server/docs/artifacts/migration_apply_rerun_20260228_100712.log` |
 | 2026-02-28 | Readiness probe matrix | `npm run readiness:probe-matrix` | PASS | `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-06-43-870Z.json` |
 | 2026-02-28 | Load test (legit+abuse) | `node tests/load/simple_load_runner.js --scenario both` | PASS | `server/tests/load/results/capacity_report_2026-02-28T06-09-25-345Z.json` |
-| 2026-02-28 | Load test (full incl auth/write) | `node tests/load/simple_load_runner.js --scenario full` | PASS | `server/tests/load/results/capacity_report_2026-02-28T06-13-28-531Z.json` |
+| 2026-02-28 | Load test (full incl auth/write) | `node tests/load/simple_load_runner.js --scenario full` | PASS | `server/tests/load/results/capacity_report_2026-02-28T06-18-29-402Z.json` |
 | 2026-02-28 | DB/queue failover safety audit | `npm run failover:db-queue-audit` | PASS | `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json` (status `BLOCKED` due missing replica infra, expected) |
 | 2026-02-28 | Active-active dependency gate | `npm run failover:active-active:dependency-gate` | PASS | `server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-06-37-663Z.json` (`BLOCKED` with explicit owner/dependency/impact/fallback rows, expected; runtime optimized to sub-second path when replica inputs are missing) |
 | 2026-02-28 | Failover tabletop simulation | `npm run failover:tabletop` | PASS | `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json` |
