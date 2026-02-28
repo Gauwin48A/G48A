@@ -104,7 +104,7 @@ function buildConfig(args = {}, env = process.env) {
         runSafetyAudit,
         safetyGateRequired: parseBoolean(args['require-safety-gate'] || env.ACTIVE_ACTIVE_REQUIRE_SAFETY_GATE, true),
         safetyAuditPath: args['safety-audit-path'] || env.ACTIVE_ACTIVE_SAFETY_AUDIT_PATH || '',
-        safetyAuditScript: path.resolve(process.cwd(), args['safety-audit-script'] || env.ACTIVE_ACTIVE_SAFETY_AUDIT_SCRIPT || 'scripts/run_failover_db_queue_audit.js'),
+        safetyAuditScript: path.resolve(process.cwd(), args['safety-audit-script'] || env.ACTIVE_ACTIVE_SAFETY_AUDIT_SCRIPT || 'scripts/run_active_active_dependency_gate.js'),
         outputDir: path.resolve(process.cwd(), args['output-dir'] || env.ACTIVE_ACTIVE_OUTPUT_DIR || 'docs/artifacts')
     };
 }
@@ -112,6 +112,12 @@ function buildConfig(args = {}, env = process.env) {
 function loadJson(filePath) {
     const raw = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(raw);
+}
+
+function normalizeSafetyReport(payload) {
+    if (payload && payload.gate) return payload;
+    if (payload && payload.report && payload.report.gate) return payload.report;
+    return payload;
 }
 
 function resolveSafetyAudit(config) {
@@ -129,11 +135,12 @@ function resolveSafetyAudit(config) {
             };
         }
         try {
+            const loaded = loadJson(resolvedPath);
             return {
                 source: 'path',
                 status: 'COMPLETE',
                 path: resolvedPath,
-                report: loadJson(resolvedPath)
+                report: normalizeSafetyReport(loaded)
             };
         } catch (error) {
             return {
@@ -162,14 +169,17 @@ function resolveSafetyAudit(config) {
             timeout: 90000,
             shell: true
         });
-        const reportPath = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_AUDIT');
-        const status = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_STATUS');
+        const reportPath = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_AUDIT')
+            || parseOutputValue(stdout, 'ACTIVE_ACTIVE_DEPENDENCY_REPORT');
+        const status = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_STATUS')
+            || parseOutputValue(stdout, 'ACTIVE_ACTIVE_DEPENDENCY_STATUS');
         if (reportPath && fs.existsSync(reportPath)) {
+            const loaded = loadJson(reportPath);
             return {
                 source: 'script',
                 status: status || 'COMPLETE',
                 path: reportPath,
-                report: loadJson(reportPath),
+                report: normalizeSafetyReport(loaded),
                 rawOutput: stdout.trim()
             };
         }

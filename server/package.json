@@ -16,6 +16,7 @@
     "flags:simulate-rollout": "node scripts/simulate_flag_rollout.js",
     "failover:tabletop": "node scripts/run_failover_tabletop.js",
     "failover:active-active": "node scripts/run_active_active_orchestration.js",
+    "failover:active-active:dependency-gate": "node scripts/run_active_active_dependency_gate.js",
     "failover:db-queue-audit": "node scripts/run_failover_db_queue_audit.js",
     "risk:telemetry:export": "node scripts/export_risk_telemetry.js",
     "backup:drill": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run_backup_drill.ps1",
