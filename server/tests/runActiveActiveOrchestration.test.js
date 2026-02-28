@@ -1,6 +1,7 @@
 const {
     parseShiftSteps,
     renderTrafficCommand,
+    evaluatePreflight,
     runOrchestration
 } = require('../scripts/run_active_active_orchestration');
 
@@ -60,6 +61,53 @@ describe('run_active_active_orchestration', () => {
         expect(report.timeline.length).toBeGreaterThan(2);
     });
 
+    it('blocks orchestration when execute preflight is not eligible', async () => {
+        const preflight = evaluatePreflight(
+            {
+                mode: 'execute',
+                trafficCommandTemplate: '',
+                trafficCommandRequired: true,
+                safetyGateRequired: true
+            },
+            {
+                report: {
+                    gate: {
+                        status: 'BLOCKED'
+                    }
+                }
+            }
+        );
+
+        const report = await runOrchestration(
+            {
+                regionA: 'http://a',
+                regionB: 'http://b',
+                healthPath: '/api/ready',
+                timeoutMs: 100,
+                settleMs: 0,
+                rollbackOnFailure: true,
+                syntheticProbe: false,
+                shiftSteps: [{ weightA: 50, weightB: 50 }],
+                preflight
+            },
+            {
+                probeFn: async () => ({
+                    ok: true,
+                    statusCode: 200,
+                    healthStatus: 'ready',
+                    durationMs: 1
+                }),
+                commandRunner: async () => ({ mode: 'simulate' }),
+                sleepFn: async () => undefined
+            }
+        );
+
+        expect(report.finalStatus).toBe('blocked_preflight');
+        expect(report.failures).toEqual(
+            expect.arrayContaining(['missing_traffic_command_template', 'safety_gate_blocked'])
+        );
+    });
+
     it('rolls back when a probe becomes unhealthy', async () => {
         let probeCallCount = 0;
         const commandCalls = [];
@@ -93,5 +141,33 @@ describe('run_active_active_orchestration', () => {
         expect(report.finalStatus).toBe('rolled_back');
         expect(commandCalls).toEqual([{ weightA: 50, weightB: 50 }, { weightA: 100, weightB: 0 }]);
         expect(report.failures.length).toBe(1);
+    });
+
+    it('blocks when region-b is unhealthy before shift starts', async () => {
+        const report = await runOrchestration(
+            {
+                regionA: 'http://a',
+                regionB: 'http://b',
+                healthPath: '/api/ready',
+                timeoutMs: 100,
+                settleMs: 0,
+                rollbackOnFailure: true,
+                syntheticProbe: false,
+                shiftSteps: [{ weightA: 50, weightB: 50 }]
+            },
+            {
+                probeFn: async (baseUrl) => {
+                    if (baseUrl === 'http://b') {
+                        return { ok: false, statusCode: 503, healthStatus: 'not_ready', durationMs: 1 };
+                    }
+                    return { ok: true, statusCode: 200, healthStatus: 'ready', durationMs: 1 };
+                },
+                commandRunner: async () => ({ mode: 'simulate' }),
+                sleepFn: async () => undefined
+            }
+        );
+
+        expect(report.finalStatus).toBe('blocked_initial_unhealthy_region_b');
+        expect(report.failures).toEqual(expect.arrayContaining(['Region-B is unhealthy before orchestration start']));
     });
 });

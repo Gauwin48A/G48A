@@ -17,6 +17,12 @@ function parseIntSafe(value, fallback) {
     return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseOutputValue(output, key) {
+    const pattern = new RegExp(`^${key}=(.+)$`, 'm');
+    const match = String(output || '').match(pattern);
+    return match ? match[1].trim() : null;
+}
+
 function parseArgs(argv = process.argv.slice(2)) {
     const args = {};
     for (let i = 0; i < argv.length; i += 1) {
@@ -76,6 +82,12 @@ function normalizeUrl(url) {
 }
 
 function buildConfig(args = {}, env = process.env) {
+    const mode = String(args.mode || env.MULTI_REGION_EXEC_MODE || 'simulate').toLowerCase();
+    const runSafetyAuditArg = args['run-safety-audit'] ?? env.ACTIVE_ACTIVE_RUN_SAFETY_AUDIT;
+    const runSafetyAudit = runSafetyAuditArg === undefined
+        ? mode === 'execute'
+        : parseBoolean(runSafetyAuditArg, mode === 'execute');
+
     return {
         runId: args['run-id'] || env.ACTIVE_ACTIVE_RUN_ID || `aa-${Date.now()}`,
         regionA: normalizeUrl(args['region-a-url'] || env.REGION_A_BASE_URL || 'http://127.0.0.1:5055'),
@@ -83,12 +95,122 @@ function buildConfig(args = {}, env = process.env) {
         healthPath: args['health-path'] || env.ACTIVE_ACTIVE_HEALTH_PATH || '/api/ready',
         timeoutMs: parseIntSafe(args['timeout-ms'] || env.ACTIVE_ACTIVE_TIMEOUT_MS, 5000),
         settleMs: parseIntSafe(args['settle-ms'] || env.ACTIVE_ACTIVE_SETTLE_MS, 250),
-        mode: String(args.mode || env.MULTI_REGION_EXEC_MODE || 'simulate').toLowerCase(),
+        mode,
         rollbackOnFailure: parseBoolean(args['rollback-on-failure'] || env.ACTIVE_ACTIVE_ROLLBACK_ON_FAILURE, true),
         syntheticProbe: parseBoolean(args['synthetic-probe'] || env.ACTIVE_ACTIVE_SYNTHETIC_PROBE, false),
         shiftSteps: parseShiftSteps(args['shift-steps'] || env.ACTIVE_ACTIVE_SHIFT_STEPS),
         trafficCommandTemplate: args['traffic-command'] || env.ACTIVE_ACTIVE_TRAFFIC_COMMAND || '',
+        trafficCommandRequired: parseBoolean(args['require-traffic-command'] || env.ACTIVE_ACTIVE_REQUIRE_TRAFFIC_COMMAND, true),
+        runSafetyAudit,
+        safetyGateRequired: parseBoolean(args['require-safety-gate'] || env.ACTIVE_ACTIVE_REQUIRE_SAFETY_GATE, true),
+        safetyAuditPath: args['safety-audit-path'] || env.ACTIVE_ACTIVE_SAFETY_AUDIT_PATH || '',
+        safetyAuditScript: path.resolve(process.cwd(), args['safety-audit-script'] || env.ACTIVE_ACTIVE_SAFETY_AUDIT_SCRIPT || 'scripts/run_failover_db_queue_audit.js'),
         outputDir: path.resolve(process.cwd(), args['output-dir'] || env.ACTIVE_ACTIVE_OUTPUT_DIR || 'docs/artifacts')
+    };
+}
+
+function loadJson(filePath) {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(raw);
+}
+
+function resolveSafetyAudit(config) {
+    if (config.safetyAuditPath) {
+        const resolvedPath = path.isAbsolute(config.safetyAuditPath)
+            ? config.safetyAuditPath
+            : path.resolve(process.cwd(), config.safetyAuditPath);
+        if (!fs.existsSync(resolvedPath)) {
+            return {
+                source: 'path',
+                status: 'BLOCKED',
+                path: resolvedPath,
+                reason: 'safety_audit_path_not_found',
+                report: null
+            };
+        }
+        try {
+            return {
+                source: 'path',
+                status: 'COMPLETE',
+                path: resolvedPath,
+                report: loadJson(resolvedPath)
+            };
+        } catch (error) {
+            return {
+                source: 'path',
+                status: 'BLOCKED',
+                path: resolvedPath,
+                reason: `safety_audit_parse_failed:${error.message}`,
+                report: null
+            };
+        }
+    }
+
+    if (!config.runSafetyAudit) {
+        return {
+            source: 'disabled',
+            status: 'PENDING',
+            reason: 'safety_audit_not_requested',
+            report: null
+        };
+    }
+
+    try {
+        const stdout = execSync(`node "${config.safetyAuditScript}"`, {
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'pipe'],
+            timeout: 90000,
+            shell: true
+        });
+        const reportPath = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_AUDIT');
+        const status = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_STATUS');
+        if (reportPath && fs.existsSync(reportPath)) {
+            return {
+                source: 'script',
+                status: status || 'COMPLETE',
+                path: reportPath,
+                report: loadJson(reportPath),
+                rawOutput: stdout.trim()
+            };
+        }
+
+        return {
+            source: 'script',
+            status: status || 'BLOCKED',
+            reason: 'safety_audit_report_missing',
+            path: reportPath,
+            report: null,
+            rawOutput: stdout.trim()
+        };
+    } catch (error) {
+        return {
+            source: 'script',
+            status: 'BLOCKED',
+            reason: `safety_audit_execution_failed:${error.message}`,
+            report: null
+        };
+    }
+}
+
+function evaluatePreflight(config, safetyAudit) {
+    const issues = [];
+
+    if (config.mode === 'execute' && config.trafficCommandRequired && !String(config.trafficCommandTemplate).trim()) {
+        issues.push('missing_traffic_command_template');
+    }
+
+    if (config.mode === 'execute' && config.safetyGateRequired) {
+        if (!safetyAudit || !safetyAudit.report || !safetyAudit.report.gate) {
+            issues.push('missing_safety_gate_report');
+        } else if (String(safetyAudit.report.gate.status || '').toUpperCase() !== 'COMPLETE') {
+            issues.push(`safety_gate_${String(safetyAudit.report.gate.status || 'unknown').toLowerCase()}`);
+        }
+    }
+
+    return {
+        status: issues.length === 0 ? 'COMPLETE' : 'BLOCKED',
+        eligible: issues.length === 0,
+        issues
     };
 }
 
@@ -136,11 +258,15 @@ function runTrafficShiftCommand(config, step) {
         regionB: config.regionB
     };
     const rendered = renderTrafficCommand(config.trafficCommandTemplate, payload);
-    if (config.mode !== 'execute' || !rendered) {
+    if (config.mode !== 'execute') {
         return {
             mode: 'simulate',
             command: rendered || `SIMULATED_SHIFT regionA=${step.weightA} regionB=${step.weightB}`
         };
+    }
+
+    if (!rendered) {
+        throw new Error('Missing ACTIVE_ACTIVE_TRAFFIC_COMMAND template for execute mode');
     }
 
     const startedAt = Date.now();
@@ -188,6 +314,34 @@ async function runOrchestration(config, deps = {}) {
     let finalStatus = 'completed';
 
     const probeInvoker = config.syntheticProbe ? syntheticProbeRegion : probeFn;
+    if (config.preflight) {
+        timeline.push({
+            phase: 'preflight',
+            timestamp: new Date().toISOString(),
+            mode: config.mode,
+            preflight: config.preflight,
+            safetyAudit: config.safetyAudit
+                ? {
+                    source: config.safetyAudit.source || null,
+                    status: config.safetyAudit.status || null,
+                    path: config.safetyAudit.path || null,
+                    reason: config.safetyAudit.reason || null
+                }
+                : null
+        });
+        if (!config.preflight.eligible) {
+            finalStatus = 'blocked_preflight';
+            return {
+                finalStatus,
+                startedAt: new Date(startedAt).toISOString(),
+                finishedAt: new Date().toISOString(),
+                durationMs: Date.now() - startedAt,
+                timeline,
+                failures: config.preflight.issues
+            };
+        }
+    }
+
     const initialRegionA = await probeInvoker(config.regionA, config.healthPath, config.timeoutMs);
     const initialRegionB = await probeInvoker(config.regionB, config.healthPath, config.timeoutMs);
     timeline.push({
@@ -199,6 +353,19 @@ async function runOrchestration(config, deps = {}) {
     if (!initialRegionA.ok) {
         finalStatus = 'blocked_initial_unhealthy_region_a';
         failures.push('Region-A is unhealthy before orchestration start');
+        return {
+            finalStatus,
+            startedAt: new Date(startedAt).toISOString(),
+            finishedAt: new Date().toISOString(),
+            durationMs: Date.now() - startedAt,
+            timeline,
+            failures
+        };
+    }
+
+    if (!initialRegionB.ok) {
+        finalStatus = 'blocked_initial_unhealthy_region_b';
+        failures.push('Region-B is unhealthy before orchestration start');
         return {
             finalStatus,
             startedAt: new Date(startedAt).toISOString(),
@@ -295,7 +462,13 @@ function writeArtifact(config, report) {
 async function main() {
     const args = parseArgs(process.argv.slice(2));
     const config = buildConfig(args, process.env);
-    const report = await runOrchestration(config);
+    const safetyAudit = resolveSafetyAudit(config);
+    const preflight = evaluatePreflight(config, safetyAudit);
+    const report = await runOrchestration({
+        ...config,
+        safetyAudit,
+        preflight
+    });
     const outputPath = writeArtifact(config, report);
     console.log(`ACTIVE_ACTIVE_REPORT=${outputPath}`);
     console.log(`ACTIVE_ACTIVE_STATUS=${report.finalStatus}`);
@@ -313,5 +486,7 @@ module.exports = {
     parseShiftSteps,
     renderTrafficCommand,
     buildConfig,
+    evaluatePreflight,
+    resolveSafetyAudit,
     runOrchestration
 };
