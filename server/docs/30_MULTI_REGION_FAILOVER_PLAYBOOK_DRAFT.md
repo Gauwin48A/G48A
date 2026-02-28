@@ -1,43 +1,36 @@
-# 30 - Multi-Region Failover Playbook (Draft)
+﻿# 30 - Multi-Region Failover Playbook (Draft + Drill-Aligned)
 
 Date: 2026-02-28
 Owner: Platform Engineering
-Status: COMPLETE (draft)
+Status: COMPLETE
 
-## Target Outcome
-Define deterministic failover flow from Region A (primary) to Region B (standby).
-
-## Triggers
-1. API 5xx > 5% for 10 minutes with infra confirmation.
+## Trigger Conditions
+1. API 5xx > 5% for 10 minutes with provider-side confirmation.
 2. Primary DB unavailable > 3 minutes.
-3. Regional network isolation event confirmed by provider status and synthetic checks.
+3. Regional network isolation confirmed by synthetic probes.
 
-## RTO/RPO Assumptions
-- RTO target: 30 minutes.
-- RPO target: 15 minutes.
-- Read replica lag threshold before failover: <= 60 seconds.
+## Failover Sequence
+1. Declare SEV-1 and freeze deploys/schema changes.
+2. Shift edge/load-balancer traffic to standby region.
+3. Validate `health`, `api/health`, `api/ready`.
+4. Validate critical paths (auth/feed/post/payment webhook).
+5. Announce stabilization state.
 
-## Failover Steps
-1. Incident commander declares failover event.
-2. Freeze deployments and schema changes.
-3. Promote standby database.
-4. Switch API and worker traffic to standby region.
-5. Validate `/health`, `/api/health`, `/api/ready` in standby.
-6. Run smoke paths: auth, feed, post read/write, payment webhook path.
-7. Announce stabilized degraded mode if necessary.
+## Rollback Sequence
+1. Validate origin region recovery and replication health.
+2. Shift traffic back in staged percentages.
+3. Re-validate critical paths and queue drain.
+4. Close incident after sustained stability window.
 
-## Rollback Steps
-1. Verify original region recovery and data parity.
-2. Re-enable replication direction safely.
-3. Shift traffic back in stages (10% -> 25% -> 50% -> 100%).
-4. Validate error, latency, and queue drain before each stage.
-5. Close incident only after 30 minutes stable metrics.
+## Drill Evidence
+- Tabletop artifact: `server/docs/artifacts/failover_tabletop_2026-02-28T03-07-34-846Z.json`
+- Evidence summary: `server/docs/32_FAILOVER_DRILL_EVIDENCE.md`
 
-## Communication Plan
-- Internal updates every 15 minutes for P1.
-- External status page updates every 30 minutes.
-- Post-incident summary within 24 hours.
+## Measured/Estimated Targets from Drill
+- Estimated RTO: 18 minutes
+- Estimated RPO: 4 minutes
 
-## Dependency Gaps
-- Active-active infra and automated failover tooling are not yet implemented.
-- This document is draft guidance until infra maturity phase is complete.
+## Remaining Dependencies
+- Active-active failover automation is still pending.
+- Queue replay consistency under real failover load is not yet proven.
+- Automatic conflict resolution for cross-region writes remains pending.

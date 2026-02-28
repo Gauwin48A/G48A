@@ -1,44 +1,41 @@
-# MHub Production Launch Roadmap (Unified)
+﻿# MHub Production Launch Roadmap (Unified)
 
 Date: 2026-02-28
 Owner: Engineering
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Current Position
-Baseline hardening and scale-readiness phases are complete with validation artifacts.
+Production baseline plus remaining half-pending closure items are complete with fresh evidence.
 
 ## Completed Phases
-- Phase 0: Truth baseline and reconciliation - COMPLETE
-- Phase 1: Auth/session verification - COMPLETE
-- Phase 2: Migration safety/idempotency validation - COMPLETE
-- Phase 3: Performance path hardening - COMPLETE
-- Phase 4: Cache + open-handle stability - COMPLETE
-- Phase 5: Observability/readiness evidence - COMPLETE
-- Phase 6: Regression test expansion - COMPLETE
-- Phase 7: CI quality gates + bundle budget - COMPLETE
-- Phase 8: Non-dry-run load artifact generation - COMPLETE
-- Phase 9: Resilience/security checks - COMPLETE
-- Phase 10: Enhancement spike starts - COMPLETE
+1. Baseline reconciliation and single truth model - COMPLETE
+2. Auth/session consistency validation - COMPLETE
+3. Migration apply + rerun safety validation - COMPLETE
+4. Performance and limiter tuning pass - COMPLETE
+5. Cache/open-handle stability - COMPLETE
+6. Readiness/observability evidence - COMPLETE
+7. Regression net expansion - COMPLETE
+8. CI quality and client perf budget gates - COMPLETE
+9. Non-dry-run load validation and artifacting - COMPLETE
+10. Enhancement closure pack (ML challenge, failover drill, flag audit) - COMPLETE
 
-## Enhancement Roadmap (Post-Baseline)
-### Enhancement A
-- ML-assisted fraud scoring productionization beyond shadow mode.
-- Evidence seed: `server/src/services/mlFraudScoringService.js`, `server/docs/29_ML_FRAUD_SPIKE_PLAN.md`.
+## Evidence Pack
+- Validation matrix: `server/docs/TEST_VALIDATION.md`
+- Load/capacity report: `server/docs/LOAD_CAPACITY_REPORT.md`
+- Monitoring ownership evidence: `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
+- Failover drill evidence: `server/docs/32_FAILOVER_DRILL_EVIDENCE.md`
+- Flag rollout operational audit: `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md`
 
-### Enhancement B
-- Multi-region failover execution from draft to tested runbook.
-- Evidence seed: `server/docs/30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md`.
+## Remaining Roadmap
+### Phase A (next)
+- Multi-region active-active deployment automation
+- Status: PENDING
 
-### Enhancement C
-- Progressive feature rollout governance and cohort automation.
-- Evidence seed: `server/docs/31_PROGRESSIVE_FEATURE_ROLLOUT_BASELINE.md`.
+### Phase B (next)
+- ML hard-block policy decisioning with staged safeguards
+- Status: PENDING
 
-## Launch Gate Decision
+## Launch Gate
 - Baseline scope: GO
 - Enhancement scope: CONDITIONAL GO
-- Blocking issues in core paths: NONE
-
-## Evidence Pointers
-- Test matrix: `server/docs/TEST_VALIDATION.md`
-- Monitoring ownership: `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
-- Capacity report: `server/docs/LOAD_CAPACITY_REPORT.md`
-- Ordered checklist: `ORDERED_EXECUTION_CHECKLIST.md`
+- Known hard blocker: none for baseline paths

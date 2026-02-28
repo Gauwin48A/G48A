@@ -40,4 +40,48 @@ describe('mlFraudScoringService', () => {
         expect(result.explainability.length).toBeGreaterThan(0);
         expect(result.shouldEnforce).toBe(false);
     });
+
+    it('enables challenge-only cohort when challenge flag is on', async () => {
+        const result = await scoreLoginAttempt(
+            {
+                userId: 'user-3',
+                signals: {
+                    impossibleTravel: true,
+                    recentFailedLogins: 2
+                }
+            },
+            {
+                FEATURE_FLAGS_ENABLED: 'true',
+                FF_ML_FRAUD_SCORING_ENABLED: 'true',
+                FF_ML_FRAUD_SCORING_ROLLOUT_PERCENT: '100',
+                FF_ML_FRAUD_SCORING_CHALLENGE_ENABLED: 'true',
+                FF_ML_FRAUD_SCORING_CHALLENGE_ROLLOUT_PERCENT: '100',
+                FRAUD_ML_SHADOW_MODE: 'true'
+            }
+        );
+
+        expect(result.enabled).toBe(true);
+        expect(result.shouldChallenge).toBe(true);
+        expect(result.challengeFlag.enabled).toBe(true);
+        expect(result.shouldEnforce).toBe(false);
+    });
+
+    it('disables ML scoring immediately when kill switch is enabled', async () => {
+        const result = await scoreLoginAttempt(
+            {
+                userId: 'user-4',
+                signals: { impossibleTravel: true }
+            },
+            {
+                FEATURE_FLAGS_ENABLED: 'true',
+                FF_ML_FRAUD_SCORING_ENABLED: 'true',
+                FF_ML_FRAUD_SCORING_ROLLOUT_PERCENT: '100',
+                FRAUD_ML_KILL_SWITCH: 'true'
+            }
+        );
+
+        expect(result.enabled).toBe(false);
+        expect(result.recommendedAction).toBe('SKIP');
+        expect(result.killSwitch).toBe(true);
+    });
 });

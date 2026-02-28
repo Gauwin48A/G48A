@@ -1,11 +1,34 @@
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const JWT_CONFIG = require('../config/jwtConfig');
+const logger = require('../utils/logger');
+const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
+
+const API_LIMIT_WINDOW_MS = Number.parseInt(process.env.API_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000;
+const API_RATE_LIMIT_MAX = Number.parseInt(process.env.API_RATE_LIMIT_MAX, 10) || 3000;
+const API_RATE_LIMIT_NORMAL_SCENARIO_MAX = Number.parseInt(process.env.API_RATE_LIMIT_NORMAL_SCENARIO_MAX, 10) || 12000;
+const RATE_LIMIT_ALLOW_SIMULATED_IDS = process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === 'true';
+const READY_PATHS = new Set(['/health', '/api/health', '/api/ready']);
 
 // A. DDoS Protection: Limit repeated requests
 exports.apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 3000, // Limit each IP to 3000 requests per window (Relaxed for Dev)
+    windowMs: API_LIMIT_WINDOW_MS,
+    max: (req) => {
+        const scenario = String(req.headers['x-load-test-scenario'] || '').toLowerCase();
+        if (RATE_LIMIT_ALLOW_SIMULATED_IDS && scenario === 'normal') {
+            return API_RATE_LIMIT_NORMAL_SCENARIO_MAX;
+        }
+        return API_RATE_LIMIT_MAX;
+    },
+    keyGenerator: (req) => {
+        const simulatedUser = req.headers['x-simulated-user'];
+        if (RATE_LIMIT_ALLOW_SIMULATED_IDS && simulatedUser) {
+            return `simulated:${String(simulatedUser)}`;
+        }
+        const ipAddress = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
+        return rateLimit.ipKeyGenerator(ipAddress);
+    },
+    skip: (req) => READY_PATHS.has(req.path),
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -25,13 +48,15 @@ exports.authenticateToken = (req, res, next) => {
     }
 
     if (!token) {
-        console.log('[AUTH] No token for protected route:', req.path);
+        if (authDebugEnabled) {
+            logger.info('[AUTH] No token for protected route:', req.path);
+        }
         return res.status(401).json({ error: "Access denied. No token." });
     }
 
     jwt.verify(token, JWT_CONFIG.SECRET, (err, user) => {
         if (err) {
-            console.error('[AUTH] Token verify failed:', err.message, '| Path:', req.path);
+            logger.error('[AUTH] Token verify failed:', err.message, '| Path:', req.path);
             return res.status(401).json({ error: "Invalid or expired token." });
         }
         req.user = user; // Attach user payload to request
@@ -74,12 +99,22 @@ exports.loginLimiter = rateLimit({
 
 // F. Account Lockout Check
 const pool = require('../config/db');
+const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+
+function runQuery(text, values = []) {
+    return pool.query({
+        text,
+        values,
+        query_timeout: DB_QUERY_TIMEOUT_MS
+    });
+}
+
 exports.checkAccountLockout = async (req, res, next) => {
     const { email } = req.body;
     if (!email) return next();
 
     try {
-        const result = await pool.query(
+        const result = await runQuery(
             'SELECT lock_until, locked_until FROM users WHERE LOWER(email) = LOWER($1)',
             [email.trim()]
         );
@@ -96,7 +131,7 @@ exports.checkAccountLockout = async (req, res, next) => {
         next();
     } catch (err) {
         // If DB fails, don't block login flow, just log it
-        console.error("Lockout check error:", err);
+        logger.error("Lockout check error:", err);
         next();
     }
 };

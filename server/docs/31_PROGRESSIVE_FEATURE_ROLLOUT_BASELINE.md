@@ -1,45 +1,33 @@
-# 31 - Progressive Feature Rollout Baseline
+﻿# 31 - Progressive Feature Rollout Baseline
 
 Date: 2026-02-28
 Owner: Platform + Product Engineering
-Status: COMPLETE (baseline design)
+Status: COMPLETE
 
-## Objective
-Standardize safe progressive rollout and rollback controls for production changes.
+## Operational Lifecycle Rules
+Every production flag now requires:
+1. owner (`FF_<FLAG>_OWNER`)
+2. rollback owner (`FF_<FLAG>_ROLLBACK_OWNER`)
+3. change ticket (`FF_<FLAG>_CHANGE_TICKET`)
+4. expiry (`FF_<FLAG>_EXPIRES_ON`)
 
-## Flag Taxonomy
-1. `release_*`: enable/disable functional release.
-2. `experiment_*`: cohort experiments with metric tracking.
-3. `ops_*`: operational toggles (fallbacks, queue guards, strict mode).
-4. `kill_*`: immediate emergency off switches.
+Validation helper:
+- `validateFlagLifecycle` in `server/src/services/featureFlagService.js`
 
-## Cohort Strategy
-1. Internal-only cohort (staff/test accounts).
-2. Canary cohort (1-5% deterministic hash bucket).
-3. Ramp cohort (10% -> 25% -> 50%).
-4. Broad rollout (100%) only after KPI stability window.
+## Auditability Controls
+- Audit service: `server/src/services/flagAuditService.js`
+- Required audit fields: flag key, actor, action, owner, rollback owner, change ticket, before/after rollout.
+- Output log path: `FEATURE_FLAG_AUDIT_LOG_PATH` (default under `server/docs/artifacts`).
 
-## Governance
-1. Every flag must have owner and expiry date.
-2. Every rollout must define success/fail metrics before enable.
-3. Every experiment must include abort thresholds.
-4. Every kill-switch must be documented in incident runbook.
+## Rollout Checklist
+1. Canary: 1%
+2. Ramp: 5%
+3. Broad: 25%+
+4. Abort: kill-switch / rollback owner action
 
-## Implementation Baseline
-- Service: `server/src/services/featureFlagService.js`
-- Current active spike usage: ML fraud scoring shadow mode.
+Abort thresholds must be declared per step and logged in audit entry metadata.
 
-## Required Metrics Before Ramp
-1. Error rate delta.
-2. p95/p99 latency delta.
-3. Key business-flow success ratio.
-4. Support ticket and abuse alert delta.
-
-## Kill-Switch Governance
-1. Trigger: P1/P2 regression crossing threshold.
-2. Action: disable related `release_*` or `ops_*` flag immediately.
-3. Owner acknowledgment: within 15 minutes.
-4. Post-action note: add timeline entry in incident channel and runbook.
-
-## Next Step
-- Add admin/operator interface for controlled flag updates with audit trail.
+## Operational Proof
+- Simulation command: `npm run flags:simulate-rollout`
+- Artifact: `server/docs/artifacts/flag_rollout_simulation_2026-02-28T03-07-35-168Z.json`
+- Summary doc: `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md`

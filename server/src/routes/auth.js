@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/security');
+const { strictLoginLimiter } = require('../middleware/wafEnforcement');
 
 const validationGuard = (req, res, next) => {
     const errors = validationResult(req);
@@ -95,9 +96,10 @@ const loginValidation = [
 
 // Public routes
 router.post('/signup', signupLimiter, signupValidation, validationGuard, authController.signup);
-router.post('/login', loginLimiter, loginValidation, validationGuard, authController.login);
+router.post('/login', strictLoginLimiter, loginLimiter, loginValidation, validationGuard, authController.login);
 router.post('/send-otp', otpSendLimiter, authController.sendOTP);
 router.post('/verify-otp', otpVerifyLimiter, authController.verifyOTP);
+router.post('/otp/callback/:provider', authController.handleOtpDeliveryCallback);
 router.post('/refresh-token', refreshLimiter, authController.refreshToken);
 router.post('/logout', authController.logout);
 router.post('/forgot-password', recoveryLimiter, authController.forgotPassword);
@@ -106,6 +108,8 @@ router.post('/reset-password', recoveryLimiter, authController.resetPassword);
 // Protected routes
 router.get('/me', authenticateToken, authController.getMe);
 router.get('/validate', authenticateToken, (req, res) => res.json({ valid: true, user: req.user }));
+router.get('/otp/metrics', authenticateToken, authController.getOtpDeliveryMetrics);
+router.get('/risk-metrics', authenticateToken, authController.getRiskDecisionMetrics);
 router.post('/set-password', authenticateToken, authController.setPassword);
 
 module.exports = router;

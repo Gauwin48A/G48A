@@ -1,43 +1,39 @@
-# MHub Feature Completion Matrix (Unified)
+﻿# MHub Feature Completion Matrix (Unified)
 
 Date: 2026-02-28
-
-## Status Legend
-- OPERATIONAL: implemented + validated + owned.
-- COMPLETE: implemented + validated.
-- PENDING: approved backlog.
-- BLOCKED: waiting on external dependency.
+Owner: Engineering
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Matrix
 
 | Area | Sub-area | Status |
 |---|---|---|
 | Core | Auth/session/2FA | OPERATIONAL |
-| Core | User profile + tier handling | OPERATIONAL |
+| Core | User profile and tier handling | OPERATIONAL |
 | Core | Post lifecycle | OPERATIONAL |
 | Discovery | Feed/recommendations/nearby/search | OPERATIONAL |
-| Discovery | Pagination/payload optimization | OPERATIONAL |
-| Commerce | Payment submit/verify/retry | OPERATIONAL |
-| Commerce | Webhook signature + reconciliation | OPERATIONAL |
+| Discovery | Pagination and payload controls | OPERATIONAL |
+| Commerce | Payment submit/verify/retry/reconcile | OPERATIONAL |
 | Commerce | Sale OTP handshake | OPERATIONAL |
-| Trust | KYC routing + review queue | OPERATIONAL |
-| Trust | Complaints + SLA + evidence | OPERATIONAL |
+| Trust | KYC routing + manual review queue | OPERATIONAL |
+| Trust | Complaints lifecycle + SLA + evidence | OPERATIONAL |
 | Trust | Reviews lifecycle + moderation controls | OPERATIONAL |
-| Admin | Moderation filters/bulk/export/audit | OPERATIONAL |
-| Realtime | Chat + read-state flows | OPERATIONAL |
-| Ops | CI quality gates + bundle budget | OPERATIONAL |
-| Ops | Monitoring ownership + incident runbook | OPERATIONAL |
-| Ops | WAF + limiter verification | OPERATIONAL |
-| Ops | Readiness endpoint dependency checks | COMPLETE |
-| Future | ML fraud production model | PENDING |
-| Future | Multi-region active-active rollout | PENDING |
-| Future | Progressive feature-flag service at scale | PENDING |
+| Security | WAF + abuse limiter + webhook integrity | OPERATIONAL |
+| Realtime | Chat messaging + read-state controls | OPERATIONAL |
+| Ops | CI quality gates + bundle budget gate | OPERATIONAL |
+| Ops | Monitoring ownership + incident runbook linkage | OPERATIONAL |
+| Ops | Readiness endpoint dependency checks | OPERATIONAL |
+| Ops | Migration safety/idempotency evidence | COMPLETE |
+| Scale | Split load profile (legit vs abuse) + tuned limiter policy | COMPLETE |
+| Enhancement | ML fraud challenge cohort rollout with telemetry | COMPLETE |
+| Enhancement | Progressive flag lifecycle + audit + rollback simulation | COMPLETE |
+| Enhancement | Multi-region tabletop drill (trigger->failover->rollback) | COMPLETE |
+| Future | Multi-region active-active deployment automation | PENDING |
 
 ## Rollup
-- OPERATIONAL: 16
-- COMPLETE: 1
-- PENDING: 3
+- OPERATIONAL: 15
+- COMPLETE: 5
+- PENDING: 1
 - BLOCKED: 0
 
-Current production baseline completion: 100%
-Including future enhancements: 85%
+Current baseline survival ratio: 95% (20/21)

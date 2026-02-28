@@ -1,37 +1,33 @@
-# 29 - ML Fraud Scoring Spike Plan
+﻿# 29 - ML Fraud Scoring Productionization Plan
 
 Date: 2026-02-28
 Owner: Trust Engineering
-Status: COMPLETE (spike start)
+Status: COMPLETE
 
-## Scope
-Introduce a feature-flagged ML-style fraud scoring path in safe shadow mode.
+## Delivered in This Closure Cycle
+1. Challenge-only cohort rollout path.
+- Flag: `ml_fraud_scoring_challenge`
+- Cohort: deterministic percentage rollout (1-5% canary supported)
+- Runtime behavior: challenge path independent from hard-block enforcement.
 
-## Implemented
-1. Feature flag framework:
-   - `server/src/services/featureFlagService.js`
-2. Fraud scoring spike service:
-   - `server/src/services/mlFraudScoringService.js`
-3. Auth login integration (non-breaking):
-   - `server/src/controllers/authController.js`
-4. Unit tests:
-   - `server/tests/featureFlagService.test.js`
-   - `server/tests/mlFraudScoringService.test.js`
+2. Decision telemetry pipeline.
+- Service: `server/src/services/riskTelemetryService.js`
+- Captured fields: `score`, `recommendedAction`, `shouldChallenge`, `shouldEnforce`, `flagReason`, `modelVersion`, explainability count.
+- Admin endpoint: `GET /api/auth/risk-metrics`
 
-## Current Behavior
-- Default mode: shadow (no enforcement).
-- Flag key: `ML_FRAUD_SCORING`.
-- Optional enforcement key: `ML_FRAUD_SCORING_ENFORCE`.
-- Explainability payload includes feature impacts and signal values.
+3. Emergency kill-switch proof.
+- Global flag kill-switch: `FEATURE_FLAGS_KILL_SWITCH`
+- Fraud-specific switch: `FRAUD_ML_KILL_SWITCH`
+- Validation: scoring returns `SKIP` when kill-switch is enabled.
 
-## Guardrails
-- `FEATURE_FLAGS_ENABLED=true` global switch.
-- `FF_ML_FRAUD_SCORING_ROLLOUT_PERCENT=0` by default.
-- `FRAUD_ML_SHADOW_MODE=true` by default.
+## Evidence
+- Code: `server/src/services/mlFraudScoringService.js`, `server/src/services/featureFlagService.js`, `server/src/controllers/authController.js`
+- Tests: `server/tests/mlFraudScoringService.test.js`, `server/tests/featureFlagService.test.js`, `server/tests/riskTelemetryService.test.js`
+- Operational artifact: `server/docs/artifacts/flag_rollout_simulation_2026-02-28T03-07-35-168Z.json`
 
-## Validation
-- Command: `npm test -- tests/featureFlagService.test.js tests/mlFraudScoringService.test.js`
-- Result: PASS
+## Validation Commands
+- `npm test -- tests/mlFraudScoringService.test.js tests/featureFlagService.test.js tests/riskTelemetryService.test.js`
+- `npm run flags:simulate-rollout`
 
-## Next Step
-- Add controlled challenge-only cohort before any block enforcement.
+## Exit Decision
+ML path is productionized for challenge-only staged operation with telemetry and immediate rollback controls.

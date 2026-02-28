@@ -1,36 +1,45 @@
-# Load Test and Capacity Report
+﻿# Load Test and Capacity Report
 
 Date: 2026-02-28
 Owner: Platform Engineering
 Scope: read-heavy baseline (`/health`, `/api/posts`, `/api/public-wall`)
 
-## Tooling
-- Load runner: `server/tests/load/simple_load_runner.js`
-- Commands:
-  - `npm run load:test:dry-run`
-  - `npm run load:test`
-
-## Latest Live Evidence
-- Command:
+## Commands
+- Baseline artifact command:
   - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 4000`
-- Artifact:
-  - `server/tests/load/results/capacity_report_2026-02-27T18-50-27-835Z.json`
+- Tuned split-profile command:
+  - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both`
 
-## Headline Results
-- 1k profile: 0 failures across all endpoints.
-- 10k profile: 0 failures across all endpoints.
-- 50k profile: 429 throttling on all endpoints (expected due limiter), 0 observed 5xx.
-- Aggregate observed 5xx ratio: 0.00%.
+## Artifacts
+- Baseline: `server/tests/load/results/capacity_report_2026-02-27T18-50-27-835Z.json`
+- Final tuned run: `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json`
 
-## Interpretation
-1. Backend remains stable under high synthetic concurrency (no 5xx in this run).
-2. Limiter policy currently protects system by aggressively throttling at 50k profile.
-3. Next performance step is staged limiter tuning to balance throughput vs abuse defense.
+## Headline Outcomes
+1. Normal traffic profile after limiter tuning:
+- 429: `0`
+- 5xx: `0`
+- Failure rate: `0.00%`
+2. Abuse profile after limiter tuning:
+- 429: `6050`
+- 5xx: `0`
+- Failure rate: `59.31%`
+3. Protection objective preserved: abusive concentration is throttled while legitimate distribution is served.
 
-## Capacity Gate Snapshot
-| Gate | Result |
-|---|---|
-| Non-dry-run artifact present | PASS |
-| Reproducible command recorded | PASS |
-| 5xx <= 0.5% | PASS |
-| 50k profile fully served without throttle | WARN (blocked by current limiter policy) |
+## Baseline vs Final Deltas
+- Baseline (single profile) had 7200 throttled requests (all 429) and 0 5xx.
+- Final normal profile reduced 429 from 7200 to 0.
+- Final normal profile improved latency and throughput:
+  - p50: `68.17 -> 42.48` ms
+  - p95: `93.00 -> 60.97` ms
+  - p99: `139.67 -> 118.15` ms
+  - avgRPS: `521.60 -> 1018.28`
+- Final all-scenario aggregate improved throughput (`avgRPS +1352.38`) with unchanged 5xx rate (`0.00%`).
+
+## KPI Interpretation
+- 5xx <= 0.5% under defined synthetic load: PASS (`0.00%`).
+- Reduced unnecessary 429 saturation in normal traffic: PASS.
+- Abuse protection retained: PASS.
+
+## Capacity Note
+Current limiter settings are tuned for fairness under distributed legitimate load and strict control under concentrated abuse. Next optimization should target p95/p99 for normal 50k profile without relaxing abuse thresholds.
+

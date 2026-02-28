@@ -64,34 +64,46 @@ function toDecision(score) {
 
 async function scoreLoginAttempt(input = {}, env = process.env) {
     const flag = evaluateFlag('ml_fraud_scoring', { userId: input.userId, deviceId: input.deviceId }, env);
+    const challengeFlag = evaluateFlag(
+        'ml_fraud_scoring_challenge',
+        { userId: input.userId, deviceId: input.deviceId },
+        env
+    );
     const enforceFlag = evaluateFlag(
         'ml_fraud_scoring_enforce',
         { userId: input.userId, deviceId: input.deviceId },
         env
     );
     const shadowMode = parseBoolean(env.FRAUD_ML_SHADOW_MODE, true);
+    const killSwitch = parseBoolean(env.FRAUD_ML_KILL_SWITCH, false);
 
     const baseline = {
         evaluatedAt: new Date().toISOString(),
         modelVersion: DEFAULT_MODEL_VERSION,
         flag,
+        challengeFlag,
         enforceFlag,
-        shadowMode
+        shadowMode,
+        killSwitch
     };
 
-    if (!flag.enabled) {
+    if (!flag.enabled || killSwitch) {
         return {
             ...baseline,
             enabled: false,
             score: null,
             recommendedAction: 'SKIP',
             shouldEnforce: false,
-            explainability: [{ feature: 'feature_flag', impact: 0, value: 'disabled' }]
+            shouldChallenge: false,
+            explainability: [
+                { feature: 'feature_flag', impact: 0, value: killSwitch ? 'kill_switch' : 'disabled' }
+            ]
         };
     }
 
     const signalResult = evaluateSignals(input.signals || {});
     const recommendedAction = toDecision(signalResult.score);
+    const shouldChallenge = challengeFlag.enabled && recommendedAction !== 'ALLOW';
     const shouldEnforce = enforceFlag.enabled && !shadowMode && recommendedAction === 'BLOCK';
 
     return {
@@ -99,6 +111,7 @@ async function scoreLoginAttempt(input = {}, env = process.env) {
         enabled: true,
         score: signalResult.score,
         recommendedAction,
+        shouldChallenge,
         shouldEnforce,
         explainability: signalResult.explainability
     };

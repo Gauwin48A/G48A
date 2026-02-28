@@ -48,4 +48,27 @@ describe('readinessService', () => {
         expect(readiness.checks.db.status).toBe('pass');
         expect(readiness.checks.requiredConfig.status).toBe('pass');
     });
+
+    it('supports memory session fallback as pass when explicitly allowed', async () => {
+        const readiness = await runReadinessChecks({
+            pool: { query: jest.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }) },
+            cacheService: null,
+            sessionStore: {
+                isRedisAvailable: jest.fn().mockReturnValue(false)
+            },
+            env: {
+                JWT_SECRET: 'a',
+                REFRESH_SECRET: 'b',
+                DB_HOST: 'localhost',
+                DB_PORT: '5432',
+                DB_NAME: 'mhub',
+                DB_USER: 'postgres',
+                READINESS_ALLOW_MEMORY_SESSION_FALLBACK: 'true'
+            }
+        });
+
+        expect(readiness.status).toBe('ready');
+        expect(readiness.checks.sessionStore.status).toBe('pass');
+        expect(readiness.checks.sessionStore.mode).toBe('memory-fallback');
+    });
 });

@@ -1,0 +1,176 @@
+{
+  "mode": "live",
+  "generatedAt": "2026-02-27T18:50:27.831Z",
+  "baseUrl": "http://127.0.0.1:5055",
+  "timeoutMs": 4000,
+  "results": [
+    {
+      "profile": "1k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 18.891099999999994,
+        "p95": 41.54469999999998,
+        "p99": 70.896,
+        "max": 73.307
+      },
+      "throughputRps": 447.41
+    },
+    {
+      "profile": "1k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 40.102300000000014,
+        "p95": 64.63220000000001,
+        "p99": 209.7744,
+        "max": 243.58380000000005
+      },
+      "throughputRps": 208.59
+    },
+    {
+      "profile": "1k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 200,
+        "success": 200,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 31.052999999999884,
+        "p95": 62.496200000000044,
+        "p99": 238.6731000000002,
+        "max": 266.06190000000015
+      },
+      "throughputRps": 258.95
+    },
+    {
+      "profile": "10k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 44.48759999999993,
+        "p95": 61.013600000000224,
+        "p99": 64.18249999999989,
+        "max": 68.96540000000005
+      },
+      "throughputRps": 653.34
+    },
+    {
+      "profile": "10k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 109.33650000000034,
+        "p95": 149.4679000000001,
+        "p99": 166.7856999999999,
+        "max": 177.67159999999967
+      },
+      "throughputRps": 267.07
+    },
+    {
+      "profile": "10k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 800,
+        "success": 800,
+        "failures": 0
+      },
+      "errorBreakdown": {},
+      "latency": {
+        "p50": 83.20969999999943,
+        "p95": 116.26569999999992,
+        "p99": 123.94230000000061,
+        "max": 135.30109999999968
+      },
+      "throughputRps": 350.09
+    },
+    {
+      "profile": "50k",
+      "endpoint": "/health",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 102.98759999999857,
+        "p95": 125.28770000000077,
+        "p99": 149.38940000000002,
+        "max": 177.52719999999863
+      },
+      "throughputRps": 770.84
+    },
+    {
+      "profile": "50k",
+      "endpoint": "/api/posts",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 96.02169999999933,
+        "p95": 115.17720000000008,
+        "p99": 126.16570000000138,
+        "max": 128.91600000000108
+      },
+      "throughputRps": 828.86
+    },
+    {
+      "profile": "50k",
+      "endpoint": "/api/public-wall",
+      "method": "GET",
+      "totals": {
+        "requests": 2400,
+        "success": 0,
+        "failures": 2400
+      },
+      "errorBreakdown": {
+        "429": 2400
+      },
+      "latency": {
+        "p50": 87.46579999999994,
+        "p95": 101.07999999999993,
+        "p99": 107.26009999999951,
+        "max": 112.4898000000012
+      },
+      "throughputRps": 909.29
+    }
+  ]
+}

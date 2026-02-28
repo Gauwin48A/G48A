@@ -1,101 +1,30 @@
-# Monitoring, Alerting, and Runbook Ownership
+﻿# Monitoring, Alerting, and Runbook Ownership
 
-Last updated: 2026-02-27  
-Primary owner: Platform Engineering  
-Secondary owner: On-call Rotation Lead
+Last updated: 2026-02-28
+Primary owner: Platform Engineering
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
-## 1. Required Dashboards
+## Alert Ownership Matrix
 
-### Dashboard A: API Reliability
-- Metrics:
-  - `http_requests_total` by route/status.
-  - `http_request_duration_ms` P50/P95/P99.
-  - `5xx_rate_percent` over 5m and 15m windows.
-- Owner: Backend Lead.
-- Runbook: `docs/INCIDENT_RESPONSE.md` (API/Server section).
-
-### Dashboard B: Auth and Session Health
-- Metrics:
-  - Login success/failure rate.
-  - Refresh token failure ratio.
-  - Session revoke volume.
-- Owner: Security Lead.
-- Runbook: `docs/INCIDENT_RESPONSE.md` (Token/session failures).
-
-### Dashboard C: Payments and Reconciliation
-- Metrics:
-  - Pending/verified/failed payment counts.
-  - Webhook processing latency.
-  - Reconciliation mismatch rate.
-- Owner: Payments Owner.
-- Runbook: payment reconciliation workflow in backend.
-
-### Dashboard D: Trust Operations (OTP + KYC + Complaints + Reviews)
-- Metrics:
-  - OTP delivery success and callback lag.
-  - KYC queue depth and SLA age.
-  - Complaint SLA breaches.
-  - Review flag volume and hidden ratio.
-- Owner: Trust and Safety Lead.
-- Runbook: trust workflow docs + incident response.
-
-### Dashboard E: Realtime Chat and Notifications
-- Metrics:
-  - Active socket connections.
-  - Message delivery latency/error rate.
-  - Notification send failure rate.
-- Owner: Realtime Owner.
-- Runbook: `docs/INCIDENT_RESPONSE.md` (Realtime section).
-
-## 2. Alert Rules (Minimum Set)
-
-| Alert | Threshold | Severity | Owner |
-|---|---|---|---|
-| API 5xx spike | `>2%` for 10m | P1 | Backend Lead |
-| API p95 latency | `>1200ms` for 15m | P2 | Backend Lead |
-| Auth login failures | `>20%` for 15m | P1 | Security Lead |
-| Payment verification lag | `>10m` median for 15m | P1 | Payments Owner |
-| Reconciliation mismatch | `>0.5%` daily | P2 | Payments Owner |
-| OTP callback delay | `>120s` p95 for 15m | P2 | Trust and Safety Lead |
-| KYC queue backlog | `>200 pending` for 30m | P2 | Trust and Safety Lead |
-| Complaint SLA breach rate | `>5%` daily | P2 | Support Ops |
-| Chat message failures | `>1%` for 10m | P2 | Realtime Owner |
-
-Notification channels:
-- P1: Pager + incident channel.
-- P2: Slack alert channel + on-call acknowledgment in 15 minutes.
-- P3: Ticket queue and next business-day triage.
-
-## 3. Runbook Ownership Matrix
-
-| Area | Primary Owner | Secondary Owner | Review Cadence |
-|---|---|---|---|
-| API reliability | Backend Lead | Platform Engineer | Weekly |
-| Auth/session security | Security Lead | Backend Lead | Weekly |
-| Payments | Payments Owner | Finance Ops | Daily |
-| Trust operations | Trust and Safety Lead | Support Ops | Daily |
-| Realtime chat | Realtime Owner | Backend Lead | Weekly |
-| Incident command | On-call Rotation Lead | Engineering Manager | Per incident |
-
-## 4. Operational Process
-
-1. Each owner validates dashboard signal quality every Monday.
-2. Alert thresholds are reviewed monthly and tuned with incident data.
-3. Any runbook change requires:
-   - changelog entry with date,
-   - primary owner approval,
-   - confirmation in on-call handover notes.
-
-## 5. Evidence Log Template
-
-Use this table to track dashboard and alert validation evidence.
-
-| Date | Owner | Scope | Result | Link/Note |
+| Domain | Alert Signal | Threshold | Owner | Runbook Action |
 |---|---|---|---|---|
-| 2026-02-27 | Platform Engineering | Dashboard/Alert baseline | PASS | Initial ownership matrix published |
-| 2026-02-27 | Backend Lead | Dashboard A: API Reliability signals | PASS | Weekly verification row added (p95/5xx checks reviewed) |
-| 2026-02-27 | Security Lead | Dashboard B: Auth/session checks | PASS | Weekly verification row added (login/refresh/revoke metrics reviewed) |
-| 2026-02-27 | Payments Owner | Dashboard C: Payment/reconciliation alerts | PASS | Weekly verification row added (pending/verified/mismatch alerts reviewed) |
-| 2026-02-27 | Trust and Safety Lead | Dashboard D: OTP/KYC/complaints/reviews | PASS | Weekly verification row added (SLA + queue thresholds reviewed) |
-| 2026-02-27 | Realtime Owner | Dashboard E: Chat/notification reliability | PASS | Weekly verification row added (connection/delivery error thresholds reviewed) |
-| 2026-02-28 | Platform Engineering | Readiness + correlation traceability checks | PASS | `/api/ready` dependency probe and `x-correlation-id` propagation verified |
+| API reliability | `5xx_rate_percent` | >1% for 10m | Backend Lead | `docs/INCIDENT_RESPONSE.md` -> API degradation steps |
+| API latency | `p95_ms` | >1200ms for 15m | Backend Lead | `docs/INCIDENT_RESPONSE.md` -> latency triage and rollback |
+| Auth security | login failure ratio | >20% for 15m | Security Lead | `docs/INCIDENT_RESPONSE.md` -> auth abuse path |
+| Fraud rollout | challenge dropoff | >15% window | Trust Engineering | `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md` abort rules |
+| Payments | reconciliation mismatch | >0.5% daily | Payments Owner | payment incident section in runbook |
+| Readiness | `/api/ready` not_ready | any sustained 5m | Platform Engineering | readiness dependency checklist |
+
+## Weekly Verification Evidence
+
+| Date | Owner | Scope | Status | Artifact |
+|---|---|---|---|---|
+| 2026-02-28 | Platform Engineering | Readiness matrix verification | COMPLETE | `server/docs/artifacts/readiness_probe_matrix_2026-02-28T03-21-08-731Z.json` |
+| 2026-02-28 | Backend Lead | Load/limiter profile verification | COMPLETE | `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json` |
+| 2026-02-28 | Trust Engineering | Fraud challenge telemetry + kill switch simulation | COMPLETE | `server/docs/artifacts/flag_rollout_simulation_2026-02-28T03-07-35-168Z.json` |
+| 2026-02-28 | Platform Engineering | Failover tabletop drill evidence | COMPLETE | `server/docs/artifacts/failover_tabletop_2026-02-28T03-07-34-846Z.json` |
+| 2026-02-28 | Engineering | Validation matrix refresh | COMPLETE | `server/docs/TEST_VALIDATION.md` |
+
+## Operational Rule
+No dashboard/alert row may stay OPERATIONAL without a dated evidence artifact and explicit runbook linkage.
+

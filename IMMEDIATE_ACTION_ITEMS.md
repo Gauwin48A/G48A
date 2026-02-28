@@ -1,38 +1,55 @@
-# Immediate Action Items
+﻿# Immediate Action Items
 
 Date: 2026-02-28
 Owner: Engineering
-Scope: post-baseline hardening closure
+Scope: remaining + half-pending closure
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Priority 1
-- [x] Eliminate Jest open-handle warning in server test teardown.
-  - Evidence: `server/tests/jest.teardown.js`, `server/tests/cacheService.test.js`, `server/src/config/redisSession.js`, `server/src/config/redisCache.js`
-  - Validation: `npm test` (13 suites, 90 tests passed; no open-handle warning observed in this run)
-- [x] Apply and validate all new DB migrations in target environments.
-  - Evidence: `server/database/migrations/add_admin_moderation_contract.sql`, `add_complaint_sla_and_evidence.sql`, `add_kyc_review_queue.sql`, `add_otp_delivery_tracking.sql`, `add_query_path_indexes_20260227.sql`, `add_review_moderation_controls.sql`
-  - Validation: apply pass + rerun pass on `localhost:5433/db_shop_2`
-- [x] Execute non-dry-run load tests and append evidence artifact.
-  - Evidence: `server/tests/load/results/capacity_report_2026-02-27T18-50-27-835Z.json`
-  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 4000`
+- [x] Eliminate Jest open-handle warning in server teardown.
+  - Status: COMPLETE
+  - Evidence: `server/tests/jest.teardown.js`
+  - Validation: `npm test` (15 suites, 98 tests passed; no open-handle warning in summary)
+- [x] Apply and rerun migrations in target DB environment.
+  - Status: COMPLETE
+  - Evidence: `server/docs/artifacts/migration_apply_rerun_20260228_083255.log`
+  - Validation: `node run_migration.js <migration>` apply+rereun for six new migrations on `localhost:5433/db_shop_2`
+- [x] Execute non-dry-run load and store artifact.
+  - Status: COMPLETE
+  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json`
+  - Validation: `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both`
 
 ## Priority 2
-- [x] Add regression tests for recently optimized controllers/routes.
-  - Evidence: `server/tests/feedController.regression.test.js`, `server/tests/postController.regression.test.js`
-  - Validation: `npm test -- tests/feedController.regression.test.js tests/postController.regression.test.js`
-- [x] Add performance budgets for client bundle growth in CI.
+- [x] Expand regression net for optimized backend routes/services.
+  - Status: COMPLETE
+  - Evidence: `server/tests/feedController.regression.test.js`, `server/tests/postController.regression.test.js`, `server/tests/featureFlagService.test.js`, `server/tests/mlFraudScoringService.test.js`, `server/tests/flagAuditService.test.js`, `server/tests/riskTelemetryService.test.js`
+  - Validation: targeted test command and full `npm test`
+- [x] Keep client perf budget gate enforced in CI.
+  - Status: OPERATIONAL
   - Evidence: `.github/workflows/ci.yml`, `client/scripts/check-bundle-budget.mjs`
-  - Validation: `npm run build && npm run check:bundle-budget`
-- [x] Add dashboard alert evidence rows for weekly verification cadence.
+  - Validation: `npm run test`, `npm run build`, `npm run check:bundle-budget`
+- [x] Add weekly monitoring verification rows with concrete artifacts.
+  - Status: COMPLETE
   - Evidence: `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
-  - Validation: evidence log rows updated with dated owner checks
+  - Validation: dated rows include artifact links and runbook mapping
 
 ## Priority 3
-- [x] Start ML fraud scoring spike (feature-flagged).
-  - Evidence: `server/src/services/featureFlagService.js`, `server/src/services/mlFraudScoringService.js`, `server/src/controllers/authController.js`
-  - Validation: `npm test -- tests/featureFlagService.test.js tests/mlFraudScoringService.test.js`
-- [x] Prepare multi-region failover playbook draft.
-  - Evidence: `server/docs/30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md`
-  - Validation: playbook sections complete with triggers, RTO/RPO assumptions, rollback
-- [x] Define progressive feature rollout baseline.
-  - Evidence: `server/docs/31_PROGRESSIVE_FEATURE_ROLLOUT_BASELINE.md`
-  - Validation: framework includes taxonomy, cohorts, guardrails, kill-switch governance
+- [x] ML fraud scoring productionization (challenge-only cohort, telemetry, kill switch proof).
+  - Status: COMPLETE
+  - Evidence: `server/src/services/mlFraudScoringService.js`, `server/src/services/riskTelemetryService.js`, `server/docs/29_ML_FRAUD_SPIKE_PLAN.md`
+  - Validation: tests + rollout simulation artifact
+- [x] Multi-region failover validation (tabletop drill evidence).
+  - Status: COMPLETE
+  - Evidence: `server/docs/32_FAILOVER_DRILL_EVIDENCE.md`, `server/docs/artifacts/failover_tabletop_2026-02-28T03-07-34-846Z.json`
+  - Validation: `npm run failover:tabletop`
+- [x] Progressive rollout operationalization (lifecycle/audit/abort simulation).
+  - Status: COMPLETE
+  - Evidence: `server/src/services/flagAuditService.js`, `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md`, `server/docs/artifacts/flag_rollout_simulation_2026-02-28T03-07-35-168Z.json`
+  - Validation: `npm run flags:simulate-rollout`
+
+## Remaining Blockers
+- [ ] Multi-region active-active deployment automation.
+  - Status: PENDING
+  - Dependency: infrastructure provisioning and traffic manager orchestration
+  - Impact: failover remains drill-validated, not fully automated
+

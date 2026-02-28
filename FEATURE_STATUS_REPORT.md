@@ -1,50 +1,49 @@
-# MHub Feature Status Report (Unified Model)
+﻿# MHub Feature Status Report (Unified Model)
 
 Date: 2026-02-28
-Status model owner: Engineering
+Owner: Engineering
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
-## Status Model
-- OPERATIONAL: implemented + validated + ownership/runbook in place.
+## Status Definitions
+- OPERATIONAL: implemented + validated + ownership/runbook coverage.
 - COMPLETE: implemented + validated.
 - PENDING: approved but not complete.
-- BLOCKED: cannot proceed due to named external dependency.
+- BLOCKED: blocked by explicit external dependency.
 
 ## Executive Summary
-- Core product path: OPERATIONAL
-- Revenue/trust path: OPERATIONAL
-- Reliability baseline: OPERATIONAL
-- Enhancement spikes: COMPLETE (fraud ML spike + failover draft + rollout baseline)
+- Baseline production scope: OPERATIONAL
+- Remaining half-pending closure items: COMPLETE
+- Residual strategic backlog: PENDING (multi-region active-active automation)
 
 ## Capability Status
 
 | Capability | Status | Evidence | Validation |
 |---|---|---|---|
-| Authentication/session security | OPERATIONAL | `server/src/controllers/authController.js`, `client/src/context/AuthContext.jsx` | `npm test -- tests/auth.test.js tests/auth.real.integration.test.js` |
-| Marketplace + feed/discovery | OPERATIONAL | `server/src/controllers/postController.js`, `server/src/controllers/feedController.js` | `npm run test:critical-paths` |
-| Payments + webhook + reconciliation | OPERATIONAL | `server/src/controllers/paymentController.js`, `server/src/services/paymentReconciliationService.js` | `npm run test:critical-paths` |
-| OTP + delivery callbacks | OPERATIONAL | `server/src/services/otpService.js`, `server/src/services/otpDeliveryService.js` | `npm test -- tests/integration.test.js` |
-| WAF and abuse controls | OPERATIONAL | `server/src/middleware/wafEnforcement.js`, `server/src/middleware/security.js` | `npm run test:waf` |
-| Readiness and observability baseline | OPERATIONAL | `server/src/index.js` (`/api/ready`), `server/docs/MONITORING_ALERTING_OWNERSHIP.md` | runtime probe `/api/ready` |
-| Migration safety/idempotency | COMPLETE | `server/database/migrations/add_*.sql` | apply + rerun passes on `localhost:5433/db_shop_2` |
-| Load validation artifacts | COMPLETE | `server/tests/load/results/capacity_report_2026-02-27T18-50-27-835Z.json` | non-dry-run load command |
-| ML fraud scoring spike (feature-flagged) | COMPLETE | `server/src/services/featureFlagService.js`, `server/src/services/mlFraudScoringService.js` | `npm test -- tests/featureFlagService.test.js tests/mlFraudScoringService.test.js` |
-| Multi-region failover draft | COMPLETE | `server/docs/30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md` | doc audit and owner review |
-| Progressive rollout baseline | COMPLETE | `server/docs/31_PROGRESSIVE_FEATURE_ROLLOUT_BASELINE.md` | doc audit and owner review |
+| Auth/session consistency | OPERATIONAL | `server/src/controllers/authController.js`, `client/src/pages/Auth/Login.jsx`, `client/src/context/AuthContext.jsx` | `npm test -- tests/auth.test.js tests/auth.real.integration.test.js` |
+| Fraud ML challenge rollout + telemetry + kill switch | COMPLETE | `server/src/services/mlFraudScoringService.js`, `server/src/services/riskTelemetryService.js`, `server/docs/29_ML_FRAUD_SPIKE_PLAN.md` | `npm test -- tests/mlFraudScoringService.test.js tests/riskTelemetryService.test.js` |
+| Progressive feature flag governance + audit trail | COMPLETE | `server/src/services/featureFlagService.js`, `server/src/services/flagAuditService.js`, `server/docs/33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md` | `npm run flags:simulate-rollout` |
+| Multi-region failover validation (tabletop) | COMPLETE | `server/docs/30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md`, `server/docs/32_FAILOVER_DRILL_EVIDENCE.md` | `npm run failover:tabletop` |
+| Limiter/load maturity (legit vs abuse profiles) | COMPLETE | `server/src/middleware/security.js`, `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json` | non-dry load command in `server/docs/LOAD_CAPACITY_REPORT.md` |
+| Readiness endpoint hardening matrix | COMPLETE | `server/src/services/readinessService.js`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T03-21-08-731Z.json` | `npm run readiness:probe-matrix` |
+| Ops evidence and runbook linkage | OPERATIONAL | `server/docs/MONITORING_ALERTING_OWNERSHIP.md`, `docs/INCIDENT_RESPONSE.md`, `server/docs/security-policy.md` | weekly evidence rows + WAF/critical path tests |
+| Migration safety and idempotency | COMPLETE | `server/docs/artifacts/migration_apply_rerun_20260228_083255.log` | apply+rereun migration loop |
 
 ## Validation Snapshot
-- Server tests: PASS (`npm test` => 13 suites, 90 tests)
-- Server focused suites: PASS (`test:waf`, `test:critical-paths`, `test:e2e:journeys`)
-- Client quality: PASS (`npm run test`, `npm run build`, `npm run check:bundle-budget`)
-- Readiness endpoint: PASS (`/api/ready` returned `degraded` with DB/config checks passing)
+- Server full suite: PASS (`npm test` -> 15/15 suites, 98/98 tests).
+- Server focused suites: PASS (`npm run test:critical-paths`, `npm run test:waf`, `npm run test:e2e:journeys`).
+- Client quality gates: PASS (`npm run test`, `npm run build`, `npm run check:bundle-budget`).
+- Readiness matrix: PASS (`ready`, `degraded`, `not_ready` scenarios proven).
+- Load profile split: PASS (normal profile 0% 5xx and 0% 429; abuse profile throttled with 0% 5xx).
 
 ## Residual Risks
-- 50k synthetic profile currently triggers 429 due global limiter; this is intentional abuse defense, not 5xx instability.
-- Multi-region execution remains draft-level (not deployed active-active).
+- Multi-region active-active failover is still PENDING (drill validated, automation pending).
+- ML path is challenge-oriented today; hard-block policy remains intentionally gated.
 
 ## Current Scores
-- Survival ratio: 94%
-- Architecture score: 8.9/10
+- Survival ratio: 95% (19 complete-or-operational items / 20 scoped items)
+- Architecture score: 9.1/10 (91/100)
 
-## Decision
-- Current baseline scope: GO
-- Enhancement scope: CONDITIONAL GO (requires staged rollout and telemetry review)
+## Gate Decision
+- Launch recommendation for current scope: GO
+- Enhancement roadmap recommendation: CONDITIONAL GO
+

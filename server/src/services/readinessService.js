@@ -1,6 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 
+function parseBoolean(value, fallback = false) {
+    if (value === undefined || value === null || value === '') return fallback;
+    const normalized = String(value).trim().toLowerCase();
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+    if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+    return fallback;
+}
+
 function evaluateRequiredConfig(env = process.env) {
     const required = ['JWT_SECRET', 'REFRESH_SECRET', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER'];
     const missing = required.filter((key) => {
@@ -93,7 +101,7 @@ async function evaluateCache(cacheService) {
     }
 }
 
-function evaluateSessionStore(sessionStore) {
+function evaluateSessionStore(sessionStore, env = process.env) {
     if (!sessionStore || typeof sessionStore.isRedisAvailable !== 'function') {
         return {
             status: 'skip',
@@ -103,6 +111,15 @@ function evaluateSessionStore(sessionStore) {
     }
 
     const redisAvailable = Boolean(sessionStore.isRedisAvailable());
+    const allowMemoryFallback = parseBoolean(env.READINESS_ALLOW_MEMORY_SESSION_FALLBACK, false);
+    if (!redisAvailable && allowMemoryFallback) {
+        return {
+            status: 'pass',
+            mode: 'memory-fallback',
+            reason: 'memory fallback explicitly allowed for readiness scenario'
+        };
+    }
+
     return {
         status: redisAvailable ? 'pass' : 'warn',
         mode: redisAvailable ? 'redis' : 'memory-fallback'
@@ -114,7 +131,7 @@ async function runReadinessChecks({ pool, cacheService, sessionStore, env = proc
         requiredConfig: evaluateRequiredConfig(env),
         db: await evaluateDb(pool),
         cache: await evaluateCache(cacheService),
-        sessionStore: evaluateSessionStore(sessionStore),
+        sessionStore: evaluateSessionStore(sessionStore, env),
         snapshot: evaluateSnapshot(env, now)
     };
 

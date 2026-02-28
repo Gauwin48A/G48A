@@ -1,31 +1,24 @@
-# Week 1-10 Sprint Plan
+﻿# Week 1-10 Sprint Plan
 
 Date: 2026-02-28
 Owner: Engineering
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
-## Historical Execution Status
-- Week 1-5 baseline hardening scope: COMPLETE
-- Week 6-10 enhancement scale-up scope: IN PROGRESS
+## Execution Status
+- Week 1-5 baseline hardening: COMPLETE
+- Week 6-8 remaining half-pending closure: COMPLETE
+- Week 9-10 strategic enhancements: PENDING
 
-## Completed
-- [x] Auth/session consistency hardening and validation
-- [x] Migration safety and rerun-idempotency checks
-- [x] Regression test expansion on optimized controllers
-- [x] CI bundle budget enforcement
-- [x] Non-dry-run load evidence artifact generation
-- [x] Readiness endpoint dependency checks
-- [x] ML fraud spike scaffold start (feature-flagged)
+## Completed in Current Closure Cycle
+- [x] ML fraud challenge-only cohort path with decision telemetry and kill switch proof.
+- [x] Multi-region failover tabletop drill with RTO/RPO evidence artifact.
+- [x] Progressive flag lifecycle metadata and audit simulation.
+- [x] Split load scenarios (legit vs abuse) with limiter tuning and new artifact.
+- [x] Readiness scenario matrix (`ready`, `degraded`, `not_ready`) with probe artifact.
+- [x] Ops evidence rows refreshed with dated runbook-linked entries.
 
-## Planned Next Sprints
-### Sprint A (next 72 hours)
-- [ ] Analyze 429 saturation at 50k profile and tune staged limiter policy.
-- [ ] Add `/api/ready` checks for configured snapshot freshness in staging.
-- [ ] Add alert threshold verification screenshots/artifacts to weekly ops evidence.
-
-### Sprint B
-- [ ] Expand ML fraud spike from shadow scoring to controlled challenge flow cohort.
-- [ ] Run failover playbook tabletop + timed dry run.
-
-### Sprint C
-- [ ] Implement progressive rollout control plane integration in admin ops.
-- [ ] Add rollout rollback automation and audit trail checks.
+## Next 72 Hours (Strict Order)
+1. Multi-region automation backlog breakdown into infra tickets and owners.
+2. Add persistent risk telemetry export sink (current in-memory is intentionally lightweight).
+3. Add load test profiles for authenticated heavy read routes and write bursts.
+4. Add canary rollback dashboard widget tied to flag audit log.

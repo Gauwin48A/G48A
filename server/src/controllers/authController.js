@@ -11,6 +11,7 @@ const logger = require('../utils/logger');
 const otpService = require('../services/otpService');
 const otpDeliveryService = require('../services/otpDeliveryService');
 const mlFraudScoringService = require('../services/mlFraudScoringService');
+const riskTelemetryService = require('../services/riskTelemetryService');
 
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 
@@ -461,9 +462,23 @@ exports.login = async (req, res) => {
 
     if (fraudAssessment.enabled) {
       logger.info(
-        `[LOGIN RISK] user=${user.user_id} score=${fraudAssessment.score} action=${fraudAssessment.recommendedAction} enforce=${fraudAssessment.shouldEnforce}`
+        `[LOGIN RISK] user=${user.user_id} score=${fraudAssessment.score} action=${fraudAssessment.recommendedAction} challenge=${fraudAssessment.shouldChallenge} enforce=${fraudAssessment.shouldEnforce}`
       );
     }
+
+    riskTelemetryService.recordDecision({
+      userId: user.user_id,
+      flow: 'auth_login',
+      enabled: fraudAssessment.enabled,
+      score: fraudAssessment.score,
+      recommendedAction: fraudAssessment.recommendedAction,
+      shouldChallenge: fraudAssessment.shouldChallenge,
+      shouldEnforce: fraudAssessment.shouldEnforce,
+      shadowMode: fraudAssessment.shadowMode,
+      flagReason: fraudAssessment.flag?.reason,
+      modelVersion: fraudAssessment.modelVersion,
+      explainability: fraudAssessment.explainability
+    });
 
     if (fraudAssessment.shouldEnforce) {
       return res.status(403).json({
@@ -494,9 +509,26 @@ exports.login = async (req, res) => {
       logger.warn('[AUDIT] Failed to log login, continuing anyway:', logErr.message);
     }
 
+    const challengeMode = String(process.env.FRAUD_ML_CHALLENGE_MODE || 'observe').toLowerCase();
+    if (fraudAssessment.shouldChallenge && challengeMode === 'enforce') {
+      return res.status(401).json({
+        error: 'Additional verification required before login can continue.',
+        code: 'RISK_CHALLENGE_REQUIRED',
+        challengeType: 'otp'
+      });
+    }
+
     res.json({
       success: true,
-      ...sessionData
+      ...sessionData,
+      riskChallenge: fraudAssessment.shouldChallenge
+        ? {
+            required: true,
+            mode: challengeMode,
+            challengeType: 'otp',
+            recommendedAction: fraudAssessment.recommendedAction
+          }
+        : null
     });
   } catch (err) {
     logger.error('[LOGIN ERROR]', err);
@@ -631,6 +663,25 @@ exports.getOtpDeliveryMetrics = async (req, res) => {
   } catch (err) {
     logger.error('[OTP METRICS ERROR]', err);
     return res.status(500).json({ error: 'Failed to fetch OTP delivery metrics' });
+  }
+};
+
+exports.getRiskDecisionMetrics = async (req, res) => {
+  try {
+    if (!req.user?.id || !hasAdminAccess(req)) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const lookbackMinutes = parsePositiveInt(req.query.lookback_minutes, 60, 24 * 60);
+    const metrics = riskTelemetryService.getMetrics({ lookbackMinutes });
+
+    return res.json({
+      success: true,
+      metrics
+    });
+  } catch (err) {
+    logger.error('[RISK METRICS ERROR]', err);
+    return res.status(500).json({ error: 'Failed to fetch risk metrics' });
   }
 };
 
