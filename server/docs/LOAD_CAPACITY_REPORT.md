@@ -2,51 +2,58 @@
 
 Date: 2026-02-28
 Owner: Platform Engineering
-Scope: read-heavy baseline (`/health`, `/api/posts`, `/api/public-wall`)
+Scope: legit traffic, abuse traffic, and authenticated read/write profiles
+Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Commands
-- Baseline artifact command:
-  - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 4000`
-- Tuned split-profile command:
+- Split profile run:
   - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario both`
-- Extended auth + write-burst command:
+- Extended authenticated/write run:
   - `node tests/load/simple_load_runner.js --base-url http://127.0.0.1:5055 --timeout-ms 5000 --scenario full`
 
 ## Artifacts
-- Baseline: `server/tests/load/results/capacity_report_2026-02-27T18-50-27-835Z.json`
-- Final tuned run (`both`): `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json`
-- Extended run (`full`): `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json`
+- Baseline split profile: `server/tests/load/results/capacity_report_2026-02-28T03-25-53-753Z.json`
+- Final split profile: `server/tests/load/results/capacity_report_2026-02-28T04-39-36-639Z.json`
+- Baseline authenticated profile: `server/tests/load/results/capacity_report_2026-02-28T03-49-10-081Z.json`
+- Final authenticated profile: `server/tests/load/results/capacity_report_2026-02-28T04-39-15-952Z.json`
 
-## Headline Outcomes
-1. Normal traffic profile after limiter tuning:
-- 429: `0`
-- 5xx: `0`
-- Failure rate: `0.00%`
-2. Abuse profile after limiter tuning:
-- 429: `6050`
-- 5xx: `0`
-- Failure rate: `59.31%`
-3. Protection objective preserved: abusive concentration is throttled while legitimate distribution is served.
-4. Authenticated read/write scenario:
-- `/api/auth/me`: 0 failures across profiles.
-- `/api/auth/validate`: 0 failures across profiles.
-- `/api/posts/batch-view` (write burst): 0 failures across profiles, with expected higher p95 at 50k profile.
+## Baseline vs Final Deltas (50k profile aggregate)
 
-## Baseline vs Final Deltas
-- Baseline (single profile) had 7200 throttled requests (all 429) and 0 5xx.
-- Final normal profile reduced 429 from 7200 to 0.
-- Final normal profile improved latency and throughput:
-  - p50: `68.17 -> 42.48` ms
-  - p95: `93.00 -> 60.97` ms
-  - p99: `139.67 -> 118.15` ms
-  - avgRPS: `521.60 -> 1018.28`
-- Final all-scenario aggregate improved throughput (`avgRPS +1352.38`) with unchanged 5xx rate (`0.00%`).
+### Normal traffic
+| Metric | Baseline | Final | Delta |
+|---|---:|---:|---:|
+| p50 (ms) | 73.99 | 73.28 | -0.71 |
+| p95 (ms) | 96.97 | 85.82 | -11.15 |
+| p99 (ms) | 124.53 | 95.98 | -28.55 |
+| RPS (total across endpoints) | 4249.91 | 4131.18 | -118.73 |
+| 429 count | 0 | 0 | 0 |
+| 5xx count | 0 | 0 | 0 |
+
+### Abuse traffic
+| Metric | Baseline | Final | Delta |
+|---|---:|---:|---:|
+| p50 (ms) | 21.28 | 27.26 | +5.98 |
+| p95 (ms) | 55.27 | 33.21 | -22.06 |
+| p99 (ms) | 83.64 | 38.31 | -45.33 |
+| RPS (total across endpoints) | 10174.52 | 8712.57 | -1461.95 |
+| 429 count | 4550 | 4800 | +250 |
+| 5xx count | 0 | 0 | 0 |
+
+### Authenticated read/write traffic
+| Metric | Baseline | Final | Delta |
+|---|---:|---:|---:|
+| p50 (ms) | 256.76 | 44.80 | -211.96 |
+| p95 (ms) | 613.91 | 55.25 | -558.66 |
+| p99 (ms) | 720.57 | 61.98 | -658.59 |
+| RPS (total across endpoints) | 642.39 | 3162.45 | +2520.06 |
+| 429 count | 0 | 0 | 0 |
+| 5xx count | 0 | 0 | 0 |
 
 ## KPI Interpretation
-- 5xx <= 0.5% under defined synthetic load: PASS (`0.00%`).
-- Reduced unnecessary 429 saturation in normal traffic: PASS.
-- Abuse protection retained: PASS.
+1. `5xx <= 0.5%` under normal load: PASS (`0.00%`).
+2. Unnecessary 429 saturation in normal profile: PASS (`0.00%`, unchanged at zero).
+3. Abuse protection retained: PASS (high-throttle behavior preserved under concentrated traffic).
+4. Authenticated write-path tail latency: PASS (p95/p99 improved materially vs baseline).
 
-## Capacity Note
-Current limiter settings are tuned for fairness under distributed legitimate load and strict control under concentrated abuse. Next optimization should target p95/p99 for normal 50k profile without relaxing abuse thresholds.
-
+## Capacity Decision
+Load/Limiter maturity target is COMPLETE for current backend scope. Next step is live multi-region failover load validation once external infra dependencies are available.

@@ -17,7 +17,11 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - Feature-flag lifecycle governance + kill-switch controls.
 - Readiness dependency checks with scenario probe matrix.
 - Correlation IDs on request/response for incident traceability.
-- IPv6-safe rate-limit key generation (`rateLimit.ipKeyGenerator`).
+- Active-active execute preflight controls:
+  - required traffic-manager command template in execute mode
+  - optional mandatory safety gate before weighted shift
+  - dual-region health checks before any shift step
+- DB/queue failover eligibility gate with replica lag + duplicate replay thresholds.
 
 ## Incident Severity Targets
 - P1: acknowledge within 5 minutes.
@@ -28,7 +32,13 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - `npm run test:waf`: PASS
 - `npm run test:critical-paths`: PASS
 - `npm run readiness:probe-matrix`: PASS
-- `node tests/load/simple_load_runner.js ... --scenario both`: PASS (0% 5xx)
+- `npm run failover:db-queue-audit`: PASS (gate result currently `BLOCKED` by external infra dependency)
+- execute-mode active-active proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
+- safety-gate enforcement proof: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-59-205Z.json`
 
 ## Policy Sync Rule
-Any security control update must be reflected in incident runbook and monitoring ownership evidence in the same release cycle.
+Any security control update must be reflected in:
+1. Incident runbook (`docs/INCIDENT_RESPONSE.md`).
+2. Monitoring ownership matrix (`server/docs/MONITORING_ALERTING_OWNERSHIP.md`).
+3. Validation evidence (`server/docs/TEST_VALIDATION.md`).
+in the same release cycle.
