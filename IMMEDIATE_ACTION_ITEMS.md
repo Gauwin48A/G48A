@@ -10,13 +10,17 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Status: COMPLETE
   - Evidence: `server/scripts/run_active_active_orchestration.js`, `server/tests/runActiveActiveOrchestration.test.js`, `server/tests/failoverSafetyService.test.js`
   - Validation: `npm test -- tests/runActiveActiveOrchestration.test.js tests/failoverSafetyService.test.js`
+- [x] Active-active dependency gate with explicit owner/dependency/impact/fallback output.
+  - Status: COMPLETE
+  - Evidence: `server/scripts/run_active_active_dependency_gate.js`, `server/tests/activeActiveDependencyGate.test.js`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json`
+  - Validation: `npm run failover:active-active:dependency-gate`
 - [x] DB/queue failover eligibility audit with guardrail thresholds.
   - Status: COMPLETE
   - Evidence: `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json`
   - Validation: `npm run failover:db-queue-audit`
 - [x] Active-active staged shift execution proof under synthetic probes.
   - Status: COMPLETE
-  - Evidence: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
+  - Evidence: `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json`
   - Validation: `$env:ACTIVE_ACTIVE_SYNTHETIC_PROBE='true'; $env:MULTI_REGION_EXEC_MODE='execute'; $env:ACTIVE_ACTIVE_REQUIRE_SAFETY_GATE='false'; $env:ACTIVE_ACTIVE_TRAFFIC_COMMAND='echo SHIFT_A={WEIGHT_A} SHIFT_B={WEIGHT_B}'; npm run failover:active-active`
 
 ## Priority 2 (Performance + Readiness)
@@ -46,13 +50,13 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Remaining Blockers
 - [ ] Live multi-region active-active weighted shift in staging cloud.
   - Status: BLOCKED
-  - Dependency: secondary region stack + traffic manager credentials + replica endpoints
+  - Dependency: secondary region stack + traffic manager credentials + replica endpoints (`server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json`)
   - Impact: production-like live failover cutover still unavailable from this environment
   - Owner: Platform Engineering
   - Fallback path: keep synthetic orchestration + tabletop + DB/queue safety audit gates active until infra is provisioned
 
 ## Current Gate Snapshot
-- Backend tests: COMPLETE (`18/18 suites`, `111/111 tests`)
+- Backend tests: COMPLETE (`19/19 suites`, `113/113 tests`)
 - Client quality gates: COMPLETE (`test`, `build`, `check:bundle-budget`)
 - Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_20260228_100712.log`)
 - Scope status: OPERATIONAL for baseline, COMPLETE for closure items, BLOCKED only for external infra dependency

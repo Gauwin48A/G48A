@@ -21,8 +21,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 2 - Failover Drill + Active-Active Hardening
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T04-34-16-803Z.json`
-- Validation: `npm run failover:tabletop`, `npm run failover:db-queue-audit`, `npm run failover:active-active` + synthetic execute command
+- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-18-03-656Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T05-18-03-693Z.json`
+- Validation: `npm run failover:tabletop`, `npm run failover:active-active:dependency-gate`, `npm run failover:db-queue-audit`, `npm run failover:active-active` + synthetic execute command
 
 ### Phase 3 - Progressive Rollout Operationalization
 - Status: COMPLETE
@@ -65,7 +65,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Active-Active Live Path
 - Staged synthetic execute path: COMPLETE (`active_active_orchestration_2026-02-28T04-34-16-803Z.json`)
-- Safety gate enforced path: BLOCKED (`active_active_orchestration_2026-02-28T04-34-59-205Z.json`, reason `safety_gate_blocked`)
+- Safety gate enforced path: BLOCKED (`active_active_orchestration_2026-02-28T05-18-03-693Z.json`, reason `safety_gate_blocked`)
+- Dependency gate evidence path: BLOCKED (`active_active_dependency_gate_2026-02-28T05-18-03-656Z.json`)
 - Live infra execution: BLOCKED (external credentials and secondary region provisioning)
 
 ## Final Checklist Status
