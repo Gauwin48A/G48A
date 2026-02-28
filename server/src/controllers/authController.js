@@ -32,6 +32,8 @@ const runQuery = (text, values = []) =>
     query_timeout: DB_QUERY_TIMEOUT_MS
   });
 
+let rewardsTableAvailability = null;
+
 let sessionSchemaCheckPromise = null;
 
 const hashSha256 = (value) =>
@@ -48,6 +50,25 @@ const parsePositiveInt = (value, fallback, max = Number.MAX_SAFE_INTEGER) => {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed) || parsed < 1) return fallback;
   return Math.min(parsed, max);
+};
+
+const isUndefinedTableError = (error) =>
+  String(error?.code || '').toUpperCase() === '42P01';
+
+const resolveRewardsTableAvailability = async () => {
+  if (typeof rewardsTableAvailability === 'boolean') {
+    return rewardsTableAvailability;
+  }
+
+  try {
+    const availabilityResult = await runQuery(
+      `SELECT to_regclass('public.rewards') AS rewards_table`
+    );
+    rewardsTableAvailability = Boolean(availabilityResult.rows[0]?.rewards_table);
+  } catch {
+    rewardsTableAvailability = false;
+  }
+  return rewardsTableAvailability;
 };
 
 const hasAdminAccess = (req) => {
@@ -840,21 +861,47 @@ exports.logout = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await runQuery(
-      `
-        SELECT
-          u.user_id,
-          u.name,
-          u.phone_number,
-          u.email,
-          u.role,
-          COALESCE(r.tier, 'Bronze') AS tier
-        FROM users u
-        LEFT JOIN rewards r ON r.user_id = u.user_id
-        WHERE u.user_id = $1
-      `,
-      [req.user.id]
-    );
+    const rewardsAvailable = await resolveRewardsTableAvailability();
+    let user;
+
+    if (rewardsAvailable) {
+      try {
+        user = await runQuery(
+          `
+            SELECT
+              u.user_id,
+              u.name,
+              u.phone_number,
+              u.email,
+              u.role,
+              COALESCE(r.tier, 'Bronze') AS tier
+            FROM users u
+            LEFT JOIN rewards r ON r.user_id = u.user_id
+            WHERE u.user_id = $1
+          `,
+          [req.user.id]
+        );
+      } catch (err) {
+        if (!isUndefinedTableError(err)) {
+          throw err;
+        }
+        rewardsTableAvailability = false;
+        user = await runQuery(
+          `SELECT user_id, name, phone_number, email, role, 'Bronze'::text AS tier
+           FROM users
+           WHERE user_id = $1`,
+          [req.user.id]
+        );
+      }
+    } else {
+      user = await runQuery(
+        `SELECT user_id, name, phone_number, email, role, 'Bronze'::text AS tier
+         FROM users
+         WHERE user_id = $1`,
+        [req.user.id]
+      );
+    }
+
     if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     const u = user.rows[0];
 

@@ -11,8 +11,34 @@ const TOKEN_CACHE_MAX = (() => {
     if (Number.isFinite(parsed) && parsed > 0) return parsed;
     return 10000;
 })();
+const TOKEN_CACHE_SWEEP_INTERVAL_MS = (() => {
+    const parsed = Number.parseInt(process.env.AUTH_TOKEN_CACHE_SWEEP_INTERVAL_MS, 10);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    return 60000;
+})();
 
 const tokenCache = new Map();
+
+function sweepExpiredEntries(now = Date.now()) {
+    if (tokenCache.size === 0) return 0;
+    let removed = 0;
+    for (const [token, entry] of tokenCache.entries()) {
+        if (entry.cacheExpiresAtMs <= now || entry.jwtExpiresAtMs <= now) {
+            tokenCache.delete(token);
+            removed += 1;
+        }
+    }
+    return removed;
+}
+
+if (TOKEN_CACHE_TTL_MS > 0) {
+    const sweepTimer = setInterval(() => {
+        sweepExpiredEntries();
+    }, TOKEN_CACHE_SWEEP_INTERVAL_MS);
+    if (typeof sweepTimer.unref === 'function') {
+        sweepTimer.unref();
+    }
+}
 
 function getCachedToken(token, secret) {
     if (!token || !secret || TOKEN_CACHE_TTL_MS <= 0) return null;
@@ -70,5 +96,6 @@ function clearTokenVerificationCache() {
 
 module.exports = {
     verifyToken,
-    clearTokenVerificationCache
+    clearTokenVerificationCache,
+    sweepExpiredEntries
 };
