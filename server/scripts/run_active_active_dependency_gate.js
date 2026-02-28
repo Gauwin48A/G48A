@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const axios = require('axios');
 
 function parseBoolean(value, fallback = false) {
@@ -22,10 +22,18 @@ function parseArgs(argv = process.argv.slice(2)) {
     for (let i = 0; i < argv.length; i += 1) {
         const token = argv[i];
         if (!token.startsWith('--')) continue;
+        const equalIndex = token.indexOf('=');
+        if (equalIndex > 2) {
+            const key = token.slice(2, equalIndex);
+            const value = token.slice(equalIndex + 1) || 'true';
+            args[key] = value;
+            continue;
+        }
         const key = token.slice(2);
-        const value = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : 'true';
+        const hasInlineValue = argv[i + 1] !== undefined && !String(argv[i + 1]).startsWith('--');
+        const value = hasInlineValue ? argv[i + 1] : 'true';
         args[key] = value;
-        if (value !== 'true') i += 1;
+        if (hasInlineValue) i += 1;
     }
     return args;
 }
@@ -100,12 +108,21 @@ async function probeRegion(baseUrl, healthPath, timeoutMs) {
 }
 
 function runDbQueueAudit(config) {
+    if (!fs.existsSync(config.dbQueueAuditScript)) {
+        return {
+            status: 'BLOCKED',
+            reportPath: null,
+            report: null,
+            error: `db_queue_audit_script_not_found:${config.dbQueueAuditScript}`
+        };
+    }
+
+    const scriptArgs = buildDbQueueAuditArgs(config);
     try {
-        const stdout = execSync(`node "${config.dbQueueAuditScript}"`, {
+        const stdout = execFileSync('node', scriptArgs, {
             encoding: 'utf8',
             stdio: ['ignore', 'pipe', 'pipe'],
-            timeout: 90000,
-            shell: true
+            timeout: 90000
         });
         const reportPath = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_AUDIT');
         const status = parseOutputValue(stdout, 'FAILOVER_DB_QUEUE_STATUS');
@@ -127,6 +144,22 @@ function runDbQueueAudit(config) {
             error: error.message
         };
     }
+}
+
+function buildDbQueueAuditArgs(config) {
+    const args = [config.dbQueueAuditScript];
+
+    if (config.primaryDbUrl) {
+        args.push('--primary-url', config.primaryDbUrl);
+    }
+    if (config.replicaDbUrl) {
+        args.push('--replica-url', config.replicaDbUrl);
+    }
+    if (config.outputDir) {
+        args.push('--output-dir', config.outputDir);
+    }
+
+    return args;
 }
 
 function evaluateDependencies({
@@ -253,12 +286,17 @@ async function main() {
     const args = parseArgs(process.argv.slice(2));
     const config = buildConfig(args, process.env);
 
-    const probeRegionA = config.skipProbe
-        ? { ok: true, healthStatus: 'skipped' }
-        : await probeRegion(config.regionA, config.healthPath, config.timeoutMs);
-    const probeRegionB = config.skipProbe
-        ? { ok: true, healthStatus: 'skipped' }
-        : await probeRegion(config.regionB, config.healthPath, config.timeoutMs);
+    let probeRegionA;
+    let probeRegionB;
+    if (config.skipProbe) {
+        probeRegionA = { ok: true, healthStatus: 'skipped' };
+        probeRegionB = { ok: true, healthStatus: 'skipped' };
+    } else {
+        [probeRegionA, probeRegionB] = await Promise.all([
+            probeRegion(config.regionA, config.healthPath, config.timeoutMs),
+            probeRegion(config.regionB, config.healthPath, config.timeoutMs)
+        ]);
+    }
     const shouldRunDbQueueAudit = Boolean(config.primaryDbUrl && config.replicaDbUrl) || config.forceDbQueueAudit;
     const dbQueueAudit = shouldRunDbQueueAudit
         ? runDbQueueAudit(config)
@@ -302,5 +340,6 @@ if (require.main === module) {
 module.exports = {
     parseArgs,
     buildConfig,
+    buildDbQueueAuditArgs,
     evaluateDependencies
 };

@@ -1,4 +1,5 @@
 const {
+    parseArgs,
     parseShiftSteps,
     renderTrafficCommand,
     buildSafetyAuditArgs,
@@ -7,6 +8,24 @@ const {
 } = require('../scripts/run_active_active_orchestration');
 
 describe('run_active_active_orchestration', () => {
+    it('parses mixed --key value and --key=value argument styles', () => {
+        const args = parseArgs([
+            '--mode=execute',
+            '--synthetic-probe=true',
+            '--settle-ms', '0',
+            '--traffic-command=echo shift',
+            '--run-safety-audit'
+        ]);
+
+        expect(args).toEqual(expect.objectContaining({
+            mode: 'execute',
+            'synthetic-probe': 'true',
+            'settle-ms': '0',
+            'traffic-command': 'echo shift',
+            'run-safety-audit': 'true'
+        }));
+    });
+
     it('parses valid shift steps and rejects invalid ones', () => {
         const steps = parseShiftSteps('90:10,75:25,0:100');
         expect(steps).toEqual([
@@ -44,7 +63,24 @@ describe('run_active_active_orchestration', () => {
             '--region-b-url', 'https://region-b.example.com',
             '--health-path', '/api/ready',
             '--timeout-ms', '4500',
-            '--traffic-command', 'shift --a {WEIGHT_A} --b {WEIGHT_B}',
+            '--traffic-command', 'shift --a {WEIGHT_A} --b {WEIGHT_B}'
+        ]));
+
+        expect(args).not.toEqual(expect.arrayContaining(['--force-db-queue-audit', 'true']));
+    });
+
+    it('includes force-db-queue-audit flag only when configured', () => {
+        const args = buildSafetyAuditArgs({
+            regionA: 'https://region-a.example.com',
+            regionB: 'https://region-b.example.com',
+            healthPath: '/api/ready',
+            timeoutMs: 4500,
+            trafficCommandTemplate: 'shift --a {WEIGHT_A} --b {WEIGHT_B}',
+            mode: 'execute',
+            forceDbQueueAudit: true
+        });
+
+        expect(args).toEqual(expect.arrayContaining([
             '--force-db-queue-audit', 'true'
         ]));
     });
@@ -162,6 +198,51 @@ describe('run_active_active_orchestration', () => {
         expect(report.finalStatus).toBe('rolled_back');
         expect(commandCalls).toEqual([{ weightA: 50, weightB: 50 }, { weightA: 100, weightB: 0 }]);
         expect(report.failures.length).toBe(1);
+    });
+
+    it('flags rollback_failed_command when rollback command execution fails', async () => {
+        let probeCallCount = 0;
+        const report = await runOrchestration(
+            {
+                regionA: 'http://a',
+                regionB: 'http://b',
+                healthPath: '/api/ready',
+                timeoutMs: 100,
+                settleMs: 0,
+                rollbackOnFailure: true,
+                syntheticProbe: false,
+                shiftSteps: [{ weightA: 50, weightB: 50 }]
+            },
+            {
+                probeFn: async (baseUrl) => {
+                    probeCallCount += 1;
+                    if (probeCallCount === 4 && baseUrl === 'http://b') {
+                        return { ok: false, statusCode: 500, healthStatus: 'not_ready', durationMs: 1 };
+                    }
+                    return { ok: true, statusCode: 200, healthStatus: 'ready', durationMs: 1 };
+                },
+                commandRunner: async (_weights, index) => {
+                    if (index === -1) {
+                        throw new Error('rollback transport unavailable');
+                    }
+                    return { mode: 'simulate' };
+                },
+                sleepFn: async () => undefined
+            }
+        );
+
+        expect(report.finalStatus).toBe('rollback_failed_command');
+        expect(report.failures).toEqual(expect.arrayContaining([
+            'Health check failed at step 1',
+            'Rollback command failed: rollback transport unavailable'
+        ]));
+        expect(report.timeline).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                phase: 'rollback',
+                commandError: 'rollback transport unavailable',
+                healthy: false
+            })
+        ]));
     });
 
     it('blocks when region-b is unhealthy before shift starts', async () => {

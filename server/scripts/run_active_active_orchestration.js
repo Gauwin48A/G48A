@@ -28,10 +28,18 @@ function parseArgs(argv = process.argv.slice(2)) {
     for (let i = 0; i < argv.length; i += 1) {
         const token = argv[i];
         if (!token.startsWith('--')) continue;
+        const equalIndex = token.indexOf('=');
+        if (equalIndex > 2) {
+            const key = token.slice(2, equalIndex);
+            const value = token.slice(equalIndex + 1) || 'true';
+            args[key] = value;
+            continue;
+        }
         const key = token.slice(2);
-        const value = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : 'true';
+        const hasInlineValue = argv[i + 1] !== undefined && !String(argv[i + 1]).startsWith('--');
+        const value = hasInlineValue ? argv[i + 1] : 'true';
         args[key] = value;
-        if (value !== 'true') i += 1;
+        if (hasInlineValue) i += 1;
     }
     return args;
 }
@@ -101,6 +109,7 @@ function buildConfig(args = {}, env = process.env) {
         shiftSteps: parseShiftSteps(args['shift-steps'] || env.ACTIVE_ACTIVE_SHIFT_STEPS),
         trafficCommandTemplate: args['traffic-command'] || env.ACTIVE_ACTIVE_TRAFFIC_COMMAND || '',
         trafficCommandRequired: parseBoolean(args['require-traffic-command'] || env.ACTIVE_ACTIVE_REQUIRE_TRAFFIC_COMMAND, true),
+        forceDbQueueAudit: parseBoolean(args['force-db-queue-audit'] || env.ACTIVE_ACTIVE_FORCE_DB_QUEUE_AUDIT, false),
         runSafetyAudit,
         safetyGateRequired: parseBoolean(args['require-safety-gate'] || env.ACTIVE_ACTIVE_REQUIRE_SAFETY_GATE, true),
         safetyAuditPath: args['safety-audit-path'] || env.ACTIVE_ACTIVE_SAFETY_AUDIT_PATH || '',
@@ -118,7 +127,7 @@ function buildSafetyAuditArgs(config) {
         '--traffic-command', String(config.trafficCommandTemplate || '')
     ];
 
-    if (config.mode === 'execute') {
+    if (config.mode === 'execute' && config.forceDbQueueAudit) {
         args.push('--force-db-queue-audit', 'true');
     }
 
@@ -319,6 +328,14 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function probeBothRegions(config, probeInvoker) {
+    const [regionA, regionB] = await Promise.all([
+        probeInvoker(config.regionA, config.healthPath, config.timeoutMs),
+        probeInvoker(config.regionB, config.healthPath, config.timeoutMs)
+    ]);
+    return { regionA, regionB };
+}
+
 function buildStepRecord(index, weights, commandResult, probeA, probeB) {
     return {
         step: index + 1,
@@ -373,8 +390,7 @@ async function runOrchestration(config, deps = {}) {
         }
     }
 
-    const initialRegionA = await probeInvoker(config.regionA, config.healthPath, config.timeoutMs);
-    const initialRegionB = await probeInvoker(config.regionB, config.healthPath, config.timeoutMs);
+    const { regionA: initialRegionA, regionB: initialRegionB } = await probeBothRegions(config, probeInvoker);
     timeline.push({
         phase: 'initial_probe',
         timestamp: new Date().toISOString(),
@@ -419,8 +435,7 @@ async function runOrchestration(config, deps = {}) {
         }
 
         await sleepFn(config.settleMs);
-        const probeA = await probeInvoker(config.regionA, config.healthPath, config.timeoutMs);
-        const probeB = await probeInvoker(config.regionB, config.healthPath, config.timeoutMs);
+        const { regionA: probeA, regionB: probeB } = await probeBothRegions(config, probeInvoker);
         const stepRecord = buildStepRecord(i, weights, commandResult, probeA, probeB);
         timeline.push(stepRecord);
 
@@ -428,9 +443,24 @@ async function runOrchestration(config, deps = {}) {
             failures.push(`Health check failed at step ${i + 1}`);
             finalStatus = 'rollback_triggered';
             if (config.rollbackOnFailure) {
-                const rollbackResult = await commandRunner(previousWeights, -1);
-                const rollbackProbeA = await probeInvoker(config.regionA, config.healthPath, config.timeoutMs);
-                const rollbackProbeB = await probeInvoker(config.regionB, config.healthPath, config.timeoutMs);
+                let rollbackResult = null;
+                try {
+                    rollbackResult = await commandRunner(previousWeights, -1);
+                } catch (error) {
+                    failures.push(`Rollback command failed: ${error.message}`);
+                    timeline.push({
+                        phase: 'rollback',
+                        timestamp: new Date().toISOString(),
+                        weights: previousWeights,
+                        command: null,
+                        commandError: error.message,
+                        probes: null,
+                        healthy: false
+                    });
+                    finalStatus = 'rollback_failed_command';
+                    break;
+                }
+                const { regionA: rollbackProbeA, regionB: rollbackProbeB } = await probeBothRegions(config, probeInvoker);
                 timeline.push({
                     phase: 'rollback',
                     timestamp: new Date().toISOString(),

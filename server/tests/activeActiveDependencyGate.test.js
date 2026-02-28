@@ -1,10 +1,47 @@
-const { buildConfig, evaluateDependencies } = require('../scripts/run_active_active_dependency_gate');
+const {
+    parseArgs,
+    buildConfig,
+    buildDbQueueAuditArgs,
+    evaluateDependencies
+} = require('../scripts/run_active_active_dependency_gate');
 
 describe('run_active_active_dependency_gate', () => {
+    it('parses mixed --key value and --key=value argument styles', () => {
+        const args = parseArgs([
+            '--skip-probe=true',
+            '--timeout-ms', '3500',
+            '--region-a-url=https://region-a.example.com',
+            '--force-db-queue-audit'
+        ]);
+
+        expect(args).toEqual(expect.objectContaining({
+            'skip-probe': 'true',
+            'timeout-ms': '3500',
+            'region-a-url': 'https://region-a.example.com',
+            'force-db-queue-audit': 'true'
+        }));
+    });
+
     it('defaults region urls to orchestration-compatible localhost values', () => {
         const config = buildConfig({}, {});
         expect(config.regionA).toBe('http://127.0.0.1:5055');
         expect(config.regionB).toBe('http://127.0.0.1:6055');
+    });
+
+    it('forwards explicit db urls into db/queue audit command args', () => {
+        const args = buildDbQueueAuditArgs({
+            dbQueueAuditScript: 'scripts/run_failover_db_queue_audit.js',
+            primaryDbUrl: 'postgres://primary',
+            replicaDbUrl: 'postgres://replica',
+            outputDir: 'docs/artifacts'
+        });
+
+        expect(args).toEqual([
+            'scripts/run_failover_db_queue_audit.js',
+            '--primary-url', 'postgres://primary',
+            '--replica-url', 'postgres://replica',
+            '--output-dir', 'docs/artifacts'
+        ]);
     });
 
     it('returns BLOCKED when core live dependencies are missing', () => {
