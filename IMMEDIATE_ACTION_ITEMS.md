@@ -26,15 +26,15 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Priority 2 (Performance + Readiness)
 - [x] Legit vs abuse profile rerun with tuned limiter behavior.
   - Status: COMPLETE
-  - Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/results/capacity_report_2026-02-28T05-54-30-958Z.json`
+  - Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-09-25-345Z.json`
   - Validation: `node tests/load/simple_load_runner.js --scenario both`
 - [x] Authenticated read/write load closure.
   - Status: COMPLETE
-  - Evidence: `server/tests/load/results/capacity_report_2026-02-28T05-55-55-973Z.json`
+  - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-08-26-697Z.json`
   - Validation: `node tests/load/simple_load_runner.js --scenario full`
 - [x] Readiness matrix refresh for `ready/degraded/not_ready` paths.
   - Status: COMPLETE
-  - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T05-56-38-414Z.json`
+  - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-06-43-870Z.json`
   - Validation: `npm run readiness:probe-matrix`
 
 ## Priority 3 (Trust/Ops Evidence)
@@ -50,13 +50,13 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Remaining Blockers
 - [ ] Live multi-region active-active weighted shift in staging cloud.
   - Status: BLOCKED
-  - Dependency: secondary region stack + traffic manager credentials + replica endpoints (`server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-56-34-192Z.json`)
+  - Dependency: secondary region stack + traffic manager credentials + replica endpoints (`server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-06-37-663Z.json`)
   - Impact: production-like live failover cutover still unavailable from this environment
   - Owner: Platform Engineering
   - Fallback path: keep synthetic orchestration + tabletop + DB/queue safety audit gates active until infra is provisioned
 
 ## Current Gate Snapshot
-- Backend tests: COMPLETE (`20/20 suites`, `122/122 tests`)
+- Backend tests: COMPLETE (`21/21 suites`, `124/124 tests`)
 - Client quality gates: COMPLETE (`test`, `build`, `check:bundle-budget`)
 - Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_20260228_100712.log`)
 - Scope status: OPERATIONAL for baseline, COMPLETE for closure items, BLOCKED only for external infra dependency
