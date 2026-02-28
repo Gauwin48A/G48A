@@ -12,33 +12,33 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Validation: `npm test -- tests/runActiveActiveOrchestration.test.js tests/failoverSafetyService.test.js`
 - [x] Active-active dependency gate with explicit owner/dependency/impact/fallback output.
   - Status: COMPLETE
-  - Evidence: `server/scripts/run_active_active_dependency_gate.js`, `server/tests/activeActiveDependencyGate.test.js`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T05-56-34-192Z.json`
+  - Evidence: `server/scripts/run_active_active_dependency_gate.js`, `server/tests/activeActiveDependencyGate.test.js`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-41-18-417Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-41-18-416Z.json` (skip-probe strict BLOCKED proof)
   - Validation: `npm run failover:active-active:dependency-gate`
 - [x] DB/queue failover eligibility audit with guardrail thresholds.
   - Status: COMPLETE
-  - Evidence: `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_db_queue_audit_2026-02-28T04-34-28-871Z.json`
+  - Evidence: `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_db_queue_audit_2026-02-28T05-16-39-487Z.json`
   - Validation: `npm run failover:db-queue-audit`
 - [x] Active-active staged shift execution proof under synthetic probes.
   - Status: COMPLETE
-  - Evidence: `server/docs/artifacts/active_active_orchestration_2026-02-28T05-56-34-101Z.json`
+  - Evidence: `server/docs/artifacts/active_active_orchestration_2026-02-28T06-41-41-340Z.json`
   - Validation: `$env:ACTIVE_ACTIVE_RUN_SAFETY_AUDIT='false'; npm run failover:active-active:synthetic-execute`
 
 ## Priority 2 (Performance + Readiness)
 - [x] Legit vs abuse profile rerun with tuned limiter behavior.
   - Status: COMPLETE
-  - Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-09-25-345Z.json`
+  - Evidence: `server/src/middleware/security.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-45-36-850Z.json` (managed-server validated target)
   - Validation: `node tests/load/simple_load_runner.js --scenario both`
 - [x] Authenticated read/write load closure.
   - Status: COMPLETE
-  - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-25-44-508Z.json`
+  - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-47-18-177Z.json`
   - Validation: `node tests/load/simple_load_runner.js --scenario full`
 - [x] Load benchmark command reliability hardening.
   - Status: COMPLETE
-  - Evidence: `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-20-36-275Z.json`
+  - Evidence: `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-44-43-232Z.json` (dry-run), `server/tests/load/results/capacity_report_2026-02-28T06-45-36-850Z.json` (live managed-server run)
   - Validation: `node tests/load/simple_load_runner.js --dry-run=true --scenario=full --timeout-ms=7000`
 - [x] Readiness matrix refresh for `ready/degraded/not_ready` paths.
   - Status: COMPLETE
-  - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-06-43-870Z.json`
+  - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-41-25-786Z.json`
   - Validation: `npm run readiness:probe-matrix`
 
 ## Priority 3 (Trust/Ops Evidence)
@@ -54,14 +54,14 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ## Remaining Blockers
 - [ ] Live multi-region active-active weighted shift in staging cloud.
   - Status: BLOCKED
-  - Dependency: secondary region stack + traffic manager credentials + replica endpoints (`server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-06-37-663Z.json`)
+  - Dependency: secondary region stack + traffic manager credentials + replica endpoints (`server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-41-18-417Z.json`)
   - Impact: production-like live failover cutover still unavailable from this environment
   - Owner: Platform Engineering
   - Fallback path: keep synthetic orchestration + tabletop + DB/queue safety audit gates active until infra is provisioned
 
 ## Current Gate Snapshot
-- Backend tests: COMPLETE (`21/21 suites`, `124/124 tests`)
+- Backend tests: COMPLETE (`23/23 suites`, `130/130 tests`)
 - Client quality gates: COMPLETE (`test`, `build`, `check:bundle-budget`)
-- Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_20260228_100712.log`)
+- Migration apply+rereun loop: COMPLETE (`server/docs/artifacts/migration_apply_rerun_20260228_121027.log`)
 - Scope status: OPERATIONAL for baseline, COMPLETE for closure items, BLOCKED only for external infra dependency
 

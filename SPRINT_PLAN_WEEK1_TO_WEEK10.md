@@ -18,6 +18,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - [x] Ops evidence rows refreshed with dated runbook-linked references.
 - [x] Active-active orchestration hardening (preflight gate, command enforcement, dual-region health checks).
 - [x] DB/queue failover safety gate and idempotency audit command path.
+- [x] Load target integrity hardening (auto-bootstrap managed server when default target probes mismatch).
 
 ## Next 72 Hours (Strict Backend Sequence)
 1. Provision secondary region stack and inject traffic-manager credentials (owner: Platform Engineering).

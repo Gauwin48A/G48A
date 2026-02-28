@@ -9,7 +9,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 0 - Backend Baseline Snapshot
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/docs/TEST_VALIDATION.md`, `server/docs/LOAD_CAPACITY_REPORT.md`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-06-43-870Z.json`
+- Evidence: `server/docs/TEST_VALIDATION.md`, `server/docs/LOAD_CAPACITY_REPORT.md`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-41-25-786Z.json`
 - Validation: `npm test`, `npm run test:critical-paths`, `npm run test:waf`, `npm run test:e2e:journeys`
 
 ### Phase 1 - ML Fraud Spike Advancement
@@ -21,7 +21,7 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 2 - Failover Drill + Active-Active Hardening
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-06-37-663Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T06-09-48-970Z.json`
+- Evidence: `server/scripts/run_failover_tabletop.js`, `server/scripts/run_active_active_orchestration.js`, `server/scripts/run_active_active_dependency_gate.js`, `server/scripts/run_failover_db_queue_audit.js`, `server/docs/artifacts/failover_tabletop_2026-02-28T04-40-00-718Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-41-18-417Z.json`, `server/docs/artifacts/active_active_dependency_gate_2026-02-28T06-41-18-416Z.json`, `server/docs/artifacts/active_active_orchestration_2026-02-28T06-41-41-340Z.json`
 - Validation: `npm run failover:tabletop`, `npm run failover:active-active:dependency-gate`, `npm run failover:db-queue-audit`, `npm run failover:active-active:synthetic-execute`
 
 ### Phase 3 - Progressive Rollout Operationalization
@@ -33,13 +33,13 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 ### Phase 4 - Limiter and Load Tuning
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/src/controllers/authController.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-09-25-345Z.json`, `server/tests/load/results/capacity_report_2026-02-28T06-25-44-508Z.json`
+- Evidence: `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/src/controllers/authController.js`, `server/tests/apiLimiter.simulatedLoad.test.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-45-36-850Z.json`, `server/tests/load/results/capacity_report_2026-02-28T06-47-18-177Z.json`
 - Validation: `node tests/load/simple_load_runner.js --scenario both` and `--scenario full`
 
 ### Phase 5 - Readiness Hardening
 - Status: COMPLETE
 - % Complete: 100
-- Evidence: `server/src/services/readinessService.js`, `server/scripts/probe_readiness_matrix.js`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T05-56-38-414Z.json`
+- Evidence: `server/src/services/readinessService.js`, `server/scripts/probe_readiness_matrix.js`, `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-41-25-786Z.json`
 - Validation: `npm run readiness:probe-matrix`
 
 ### Phase 6 - Ops Evidence and Doc Reconciliation
@@ -64,9 +64,9 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 - Multi-region DB/queue safety gate: COMPLETE
 
 ## Active-Active Live Path
-- Staged synthetic execute path: COMPLETE (`active_active_orchestration_2026-02-28T04-34-16-803Z.json`)
+- Staged synthetic execute path: COMPLETE (`active_active_orchestration_2026-02-28T06-41-41-340Z.json`)
 - Safety gate enforced path: BLOCKED (`active_active_orchestration_2026-02-28T05-39-10-475Z.json`, reason `safety_gate_blocked` with explicit dependency reasons)
-- Dependency gate evidence path: BLOCKED (`active_active_dependency_gate_2026-02-28T06-06-37-663Z.json`)
+- Dependency gate evidence path: BLOCKED (`active_active_dependency_gate_2026-02-28T06-41-18-417Z.json`; skip-probe strict path also BLOCKED in `active_active_dependency_gate_2026-02-28T06-41-18-416Z.json`)
 - Live infra execution: BLOCKED (external credentials and secondary region provisioning)
 
 ## Final Checklist Status
