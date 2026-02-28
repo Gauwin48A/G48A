@@ -32,6 +32,10 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
   - Status: COMPLETE
   - Evidence: `server/src/controllers/authController.js`, `server/src/middleware/security.js`, `server/src/middleware/auth.js`, `server/src/services/tokenVerificationCache.js`, `server/tests/authenticateToken.cache.test.js`, `server/tests/load/results/capacity_report_2026-02-28T06-18-29-402Z.json`
   - Validation: `node tests/load/simple_load_runner.js --scenario full`
+- [x] Load benchmark command reliability hardening.
+  - Status: COMPLETE
+  - Evidence: `server/tests/load/simple_load_runner.js`, `server/tests/load/results/capacity_report_2026-02-28T06-20-36-275Z.json`
+  - Validation: `node tests/load/simple_load_runner.js --dry-run=true --scenario=full --timeout-ms=7000`
 - [x] Readiness matrix refresh for `ready/degraded/not_ready` paths.
   - Status: COMPLETE
   - Evidence: `server/docs/artifacts/readiness_probe_matrix_2026-02-28T06-06-43-870Z.json`

@@ -11,11 +11,22 @@ const { performance } = require('perf_hooks');
 const args = process.argv.slice(2);
 const argMap = new Map();
 for (let i = 0; i < args.length; i += 1) {
-  if (args[i].startsWith('--')) {
-    const key = args[i].replace(/^--/, '');
-    const value = args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : 'true';
+  const token = args[i];
+  if (!token.startsWith('--')) continue;
+
+  const equalIndex = token.indexOf('=');
+  if (equalIndex > 2) {
+    const key = token.slice(2, equalIndex);
+    const value = token.slice(equalIndex + 1) || 'true';
     argMap.set(key, value);
+    continue;
   }
+
+  const key = token.replace(/^--/, '');
+  const hasInlineValue = args[i + 1] !== undefined && !String(args[i + 1]).startsWith('--');
+  const value = hasInlineValue ? args[i + 1] : 'true';
+  argMap.set(key, value);
+  if (hasInlineValue) i += 1;
 }
 
 const dryRun = argMap.get('dry-run') === 'true' || argMap.get('dry-run') === '1';

@@ -57,6 +57,7 @@ Comparison set: `05-55-55-973Z` -> `06-18-29-402Z`.
 3. Authenticated path improved materially after JWT cache + `/auth/me` query collapse (p95/p99 and RPS improved).
 4. `5xx` remained `0` across all measured 50k scenarios.
 5. Load bootstrap now uses bounded retry/backoff (`LOAD_TEST_BOOTSTRAP_RETRIES`, `LOAD_TEST_BOOTSTRAP_RETRY_DELAY_MS`) to avoid transient `ECONNRESET` false negatives during scenario startup.
+6. Load runner CLI now supports both `--key value` and `--key=value` invocation styles for non-interactive automation safety.
 
 ## KPI Check
 1. `5xx <= 0.5%` in normal load: PASS (`0.00%`).
