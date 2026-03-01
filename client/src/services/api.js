@@ -22,8 +22,11 @@ const AUTH_REFRESH_EXCLUDED_PATHS = [
 const LOCAL_DEV_BACKEND_ORIGINS = ['http://localhost:5001', 'http://localhost:5000'];
 const LOCALHOST_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
 const BACKEND_HEALTH_TIMEOUT_MS = 2500;
+const BACKEND_RECOVERY_FAILURE_TTL_MS = 15000;
 let refreshPromise = null;
 let backendRecoveryPromise = null;
+let backendRecoveryFailureUntil = 0;
+let backendRecoveredOriginCache = '';
 
 const normalizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
 const isLocalhostRuntime = () =>
@@ -32,6 +35,17 @@ const isRouteNotFoundResponse = (status, backendErrorText) => {
     if (status !== 404) return false;
     const text = String(backendErrorText || '').toLowerCase();
     return text.includes('route not found') || text.includes('not found - /api');
+};
+const isLikelyNetworkOrCorsError = (error) => {
+    if (!error || error.response) return false;
+    const text = `${error.message || ''} ${error.code || ''}`.toLowerCase();
+    return (
+        text.includes('network error')
+        || text.includes('failed to fetch')
+        || text.includes('cors')
+        || text.includes('err_network')
+        || text.includes('timeout')
+    );
 };
 
 async function probeMhubHealth(origin) {
@@ -75,6 +89,14 @@ async function probeMhubHealth(origin) {
 async function resolveLocalDevBackendOrigin() {
     if (!isLocalhostRuntime()) return '';
 
+    const now = Date.now();
+    if (backendRecoveredOriginCache) {
+        return backendRecoveredOriginCache;
+    }
+    if (backendRecoveryFailureUntil && now < backendRecoveryFailureUntil) {
+        return '';
+    }
+
     if (!backendRecoveryPromise) {
         backendRecoveryPromise = (async () => {
             const currentRoot = getCurrentApiRootUrl();
@@ -89,13 +111,15 @@ async function resolveLocalDevBackendOrigin() {
 
             const candidates = LOCAL_DEV_BACKEND_ORIGINS.filter((origin) => origin !== currentOrigin);
             for (const origin of candidates) {
-                // eslint-disable-next-line no-await-in-loop
                 const isMhub = await probeMhubHealth(origin);
                 if (isMhub) {
-                    return normalizeOrigin(origin);
+                    backendRecoveredOriginCache = normalizeOrigin(origin);
+                    backendRecoveryFailureUntil = 0;
+                    return backendRecoveredOriginCache;
                 }
             }
 
+            backendRecoveryFailureUntil = Date.now() + BACKEND_RECOVERY_FAILURE_TTL_MS;
             return '';
         })().finally(() => {
             backendRecoveryPromise = null;
@@ -210,6 +234,7 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         const status = error.response?.status;
+        const isNetworkError = !error.response;
         const backendError = error.response?.data?.error || error.response?.data?.message || '';
         const backendErrorText = typeof backendError === 'string' ? backendError.toLowerCase() : '';
         const authErrorFromApi = backendErrorText.includes('token') || backendErrorText.includes('session');
@@ -248,18 +273,27 @@ api.interceptors.response.use(
         }
 
         // C. Auto-recover from wrong local backend attachment (common during multi-project dev).
-        if (
+        const shouldAttemptBackendRecovery =
             originalRequest &&
             !originalRequest._backendRecoveryAttempted &&
             isLocalhostRuntime() &&
-            isRouteNotFoundResponse(status, backendErrorText)
-        ) {
+            (isRouteNotFoundResponse(status, backendErrorText) || isLikelyNetworkOrCorsError(error));
+        if (shouldAttemptBackendRecovery) {
             originalRequest._backendRecoveryAttempted = true;
             try {
                 const recoveredOrigin = await resolveLocalDevBackendOrigin();
                 if (recoveredOrigin) {
                     if (typeof window !== 'undefined') {
                         window.__MHUB_API_ORIGIN_OVERRIDE__ = recoveredOrigin;
+                    }
+                    backendRecoveredOriginCache = recoveredOrigin;
+                    if (typeof originalRequest.url === 'string' && /^https?:\/\//i.test(originalRequest.url)) {
+                        try {
+                            const parsed = new URL(originalRequest.url);
+                            originalRequest.url = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+                        } catch {
+                            // Keep original URL when parsing fails.
+                        }
                     }
                     originalRequest.baseURL = `${recoveredOrigin}/api`;
                     return api(originalRequest);
@@ -269,7 +303,6 @@ api.interceptors.response.use(
             }
         }
 
-        const isNetworkError = !error.response;
         let normalizedMessage = error.response?.data?.error || error.response?.data?.message || '';
 
         if (isRouteNotFoundResponse(status, backendErrorText)) {

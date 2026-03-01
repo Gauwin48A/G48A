@@ -1,6 +1,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
+const { evaluateSchemaContract } = require('./schemaGuard');
 
 function parseBoolean(value, fallback = false) {
     if (value === undefined || value === null || value === '') return fallback;
@@ -112,6 +113,23 @@ async function evaluateCache(cacheService) {
     }
 }
 
+async function evaluateSchema() {
+  try {
+    const report = await evaluateSchemaContract({ autoCreateTwoFactorFallback: false });
+    const status = report.status === 'warn' ? 'pass' : report.status;
+    return {
+      status,
+      details: report,
+      warning: report.status === 'warn' ? report.twoFactor?.warning : null
+    };
+  } catch (err) {
+    return {
+      status: 'fail',
+      error: err.message
+    };
+  }
+}
+
 function evaluateSessionStore(sessionStore, env = process.env) {
     if (!sessionStore || typeof sessionStore.isRedisAvailable !== 'function') {
         return {
@@ -138,15 +156,19 @@ function evaluateSessionStore(sessionStore, env = process.env) {
 }
 
 async function runReadinessChecks({ pool, cacheService, sessionStore, env = process.env, now = new Date() }) {
-    const checks = {
-        requiredConfig: evaluateRequiredConfig(env),
-        db: await evaluateDb(pool),
-        cache: await evaluateCache(cacheService),
-        sessionStore: evaluateSessionStore(sessionStore, env),
-        snapshot: await evaluateSnapshot(env, now)
-    };
+  const checks = {
+    requiredConfig: evaluateRequiredConfig(env),
+    db: await evaluateDb(pool),
+    schema: await evaluateSchema(),
+    cache: await evaluateCache(cacheService),
+    sessionStore: evaluateSessionStore(sessionStore, env),
+    snapshot: await evaluateSnapshot(env, now)
+  };
 
-    const hasHardFailure = checks.requiredConfig.status === 'fail' || checks.db.status === 'fail';
+  const hasHardFailure =
+    checks.requiredConfig.status === 'fail'
+    || checks.db.status === 'fail'
+    || checks.schema.status === 'fail';
     const hasWarn = Object.values(checks).some((value) => value.status === 'warn');
     const status = hasHardFailure ? 'not_ready' : hasWarn ? 'degraded' : 'ready';
 

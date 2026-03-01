@@ -2,24 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import {
-    Shield, ShieldCheck, ShieldX, Copy, Eye, EyeOff,
+    Shield, ShieldCheck, ShieldX, Copy, Eye,
     Smartphone, Key, QrCode, AlertTriangle, CheckCircle,
     ArrowLeft, Loader2, RefreshCw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { getApiOriginBase } from '@/lib/networkConfig';
+import api from '@/services/api';
 
 const SecuritySettings = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
 
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    const [twoFactorAvailable, setTwoFactorAvailable] = useState(true);
     const [loading, setLoading] = useState(false);
     const [setupMode, setSetupMode] = useState(false);
     const [verifyMode, setVerifyMode] = useState(false);
@@ -31,8 +31,7 @@ const SecuritySettings = () => {
     const [showBackupCodes, setShowBackupCodes] = useState(false);
     const [verificationCode, setVerificationCode] = useState('');
 
-    const baseUrl = getApiOriginBase();
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
 
     // Check 2FA status on mount
@@ -44,45 +43,44 @@ const SecuritySettings = () => {
         if (!userId || !token) return;
 
         try {
-            const res = await fetch(`${baseUrl}/api/profile?userId=${userId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            if (data && !data.error) {
-                setTwoFactorEnabled(data.two_factor_enabled || false);
-            }
+            const data = await api.get('/auth/2fa/status');
+            setTwoFactorEnabled(Boolean(data?.enabled));
+            setTwoFactorAvailable(data?.available !== false);
         } catch (err) {
             console.error('Failed to check 2FA status:', err);
+            setTwoFactorEnabled(false);
+            setTwoFactorAvailable(false);
         }
     };
 
     // Start 2FA setup
     const handleSetup2FA = async () => {
+        if (!twoFactorAvailable) {
+            toast({
+                title: '2FA Unavailable',
+                description: 'Two-factor authentication is temporarily unavailable on this server.',
+                variant: 'destructive'
+            });
+            return;
+        }
+
         setLoading(true);
         try {
-            const res = await fetch(`${baseUrl}/api/auth/2fa/setup`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await res.json();
-
-            if (data.error) {
-                toast({ title: 'Error', description: data.error, variant: 'destructive' });
-                return;
-            }
+            const data = await api.post('/auth/2fa/setup', {});
 
             setQrCode(data.qrCode);
-            setBackupCodes(data.backupCodes || []);
+            setBackupCodes([]);
+            setShowBackupCodes(false);
             setSetupMode(true);
             setVerifyMode(true);
 
             toast({ title: 'Setup Started', description: 'Scan the QR code with your authenticator app.' });
         } catch (err) {
-            toast({ title: 'Error', description: 'Failed to start 2FA setup', variant: 'destructive' });
+            const description = err?.message || 'Failed to start 2FA setup';
+            if (String(description).toLowerCase().includes('unavailable')) {
+                setTwoFactorAvailable(false);
+            }
+            toast({ title: 'Error', description, variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -97,28 +95,20 @@ const SecuritySettings = () => {
 
         setLoading(true);
         try {
-            const res = await fetch(`${baseUrl}/api/auth/2fa/verify`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ token: verificationCode, userId })
-            });
-
-            const data = await res.json();
+            const data = await api.post('/auth/2fa/verify', { code: verificationCode });
 
             if (data.success) {
                 setTwoFactorEnabled(true);
                 setSetupMode(false);
                 setVerifyMode(false);
+                setBackupCodes(Array.isArray(data.backupCodes) ? data.backupCodes : []);
                 setShowBackupCodes(true);
                 toast({ title: '2FA Enabled!', description: 'Your account is now protected with 2FA.' });
             } else {
                 toast({ title: 'Verification Failed', description: data.error || 'Invalid code', variant: 'destructive' });
             }
         } catch (err) {
-            toast({ title: 'Error', description: 'Verification failed', variant: 'destructive' });
+            toast({ title: 'Error', description: err?.message || 'Verification failed', variant: 'destructive' });
         } finally {
             setLoading(false);
             setVerificationCode('');
@@ -134,26 +124,19 @@ const SecuritySettings = () => {
 
         setLoading(true);
         try {
-            const res = await fetch(`${baseUrl}/api/auth/2fa/disable`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ token: verificationCode })
-            });
-
-            const data = await res.json();
+            const data = await api.post('/auth/2fa/disable', { code: verificationCode });
 
             if (data.success) {
                 setTwoFactorEnabled(false);
                 setDisableMode(false);
+                setBackupCodes([]);
+                setShowBackupCodes(false);
                 toast({ title: '2FA Disabled', description: 'Two-factor authentication has been removed.' });
             } else {
                 toast({ title: 'Error', description: data.error || 'Failed to disable 2FA', variant: 'destructive' });
             }
         } catch (err) {
-            toast({ title: 'Error', description: 'Failed to disable 2FA', variant: 'destructive' });
+            toast({ title: 'Error', description: err?.message || 'Failed to disable 2FA', variant: 'destructive' });
         } finally {
             setLoading(false);
             setVerificationCode('');
@@ -232,6 +215,15 @@ const SecuritySettings = () => {
                     <CardContent>
                         {/* Status description */}
                         <div className="mb-6">
+                            {!twoFactorAvailable && (
+                                <Alert className="bg-red-50 border-red-200 mb-4">
+                                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                                    <AlertTitle className="text-red-800">2FA is temporarily unavailable</AlertTitle>
+                                    <AlertDescription className="text-red-700">
+                                        The server has not enabled secure 2FA storage yet. Contact support/admin to enable it.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             {twoFactorEnabled ? (
                                 <Alert className="bg-emerald-50 border-emerald-200">
                                     <CheckCircle className="h-4 w-4 text-emerald-600" />
@@ -369,7 +361,7 @@ const SecuritySettings = () => {
                         {!setupMode && !disableMode && (
                             <div className="flex gap-3 mt-4">
                                 {!twoFactorEnabled ? (
-                                    <Button onClick={handleSetup2FA} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
+                                    <Button onClick={handleSetup2FA} disabled={loading || !twoFactorAvailable} className="bg-emerald-600 hover:bg-emerald-700">
                                         {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
                                         Enable 2FA
                                     </Button>

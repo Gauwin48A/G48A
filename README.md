@@ -18,12 +18,22 @@ npm install
 npm run dev
 ```
 
+Expected local backend: `http://localhost:5001`
+
 ### Client
 ```bash
 cd client
 npm install
 npm run dev
 ```
+
+Expected local frontend: `http://localhost:8081`
+
+### Local CORS/Port Guardrails
+- Client localhost development now prefers same-origin `/api` via Vite proxy to avoid CORS drift.
+- Keep `VITE_FORCE_ABSOLUTE_API_ORIGIN=false` (or unset) for local dev.
+- If you intentionally want direct `http://localhost:5000`, first stop any conflicting service on `5000`.
+- After any env/base URL change, do a hard refresh (`Ctrl+F5`) in browser.
 
 ## Key Documentation
 - `ORDERED_EXECUTION_CHECKLIST.md`

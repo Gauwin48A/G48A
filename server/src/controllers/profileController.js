@@ -6,6 +6,7 @@ const PROFILE_CACHE_TTL_SECONDS = 60;
 const PREFERENCES_CACHE_TTL_SECONDS = 60;
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 let preferencesDateColumnAvailablePromise = null;
+let profilesUpdatedAtColumnAvailablePromise = null;
 
 function runQuery(text, values = []) {
   return pool.query({
@@ -38,6 +39,41 @@ async function hasPreferencesDateColumn() {
   }
 
   return preferencesDateColumnAvailablePromise;
+}
+
+async function hasProfilesUpdatedAtColumn() {
+  if (!profilesUpdatedAtColumnAvailablePromise) {
+    profilesUpdatedAtColumnAvailablePromise = runQuery(
+      `
+        SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'profiles'
+            AND column_name = 'updated_at'
+        ) AS available
+      `
+    )
+      .then((result) => Boolean(result?.rows?.[0]?.available))
+      .catch((err) => {
+        logger.warn('[Profile] Failed to inspect profiles.updated_at column, using compatibility query', {
+          message: err.message
+        });
+        return false;
+      });
+  }
+
+  return profilesUpdatedAtColumnAvailablePromise;
+}
+
+function isOnConflictConstraintError(error) {
+  return Boolean(
+    error
+    && (
+      error.code === '42P10'
+      || /no unique or exclusion constraint matching the on conflict specification/i.test(String(error.message || ''))
+    )
+  );
 }
 
 function getPreferencesDateSelectExpression(hasDateColumn, tableAlias = '') {
@@ -209,6 +245,7 @@ exports.updateProfile = async (req, res) => {
     const authenticatedUserId = getAuthenticatedUserId(req);
     const requestedUserId = normalizeUserId(req.body.userId ?? authenticatedUserId);
     const { full_name, phone, address, avatar_url, bio } = req.body;
+    const hasUpdatedAtColumn = await hasProfilesUpdatedAtColumn();
 
     if (!requestedUserId) {
       return res.status(400).json({ error: 'userId is required' });
@@ -218,44 +255,155 @@ exports.updateProfile = async (req, res) => {
       return;
     }
 
-    const result = await runQuery(
-      `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())
-       ON CONFLICT (user_id) DO UPDATE
-       SET full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
-           phone = COALESCE(EXCLUDED.phone, profiles.phone),
-           address = COALESCE(EXCLUDED.address, profiles.address),
-           avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
-           bio = COALESCE(EXCLUDED.bio, profiles.bio),
-           updated_at = NOW()
-       RETURNING
-         profile_id,
-         user_id,
-         full_name,
-         phone,
-         address,
-         avatar_url,
-         bio,
-         verified,
-         created_at,
-         updated_at`,
-      [
-        requestedUserId,
-        parseOptionalString(full_name),
-        parseOptionalString(phone),
-        parseOptionalString(address),
-        parseOptionalString(avatar_url),
-        parseOptionalString(bio)
-      ]
-    );
+    const normalizedFullName =
+      parseOptionalString(full_name)
+      || parseOptionalString(req.user?.name)
+      || parseOptionalString(req.user?.username)
+      || 'User';
+    const queryParams = [
+      requestedUserId,
+      normalizedFullName,
+      parseOptionalString(phone),
+      parseOptionalString(address),
+      parseOptionalString(avatar_url),
+      parseOptionalString(bio)
+    ];
+    const returningFields = hasUpdatedAtColumn
+      ? `
+             profile_id,
+             user_id,
+             full_name,
+             phone,
+             address,
+             avatar_url,
+             bio,
+             verified,
+             created_at,
+             updated_at`
+      : `
+             profile_id,
+             user_id,
+             full_name,
+             phone,
+             address,
+             avatar_url,
+             bio,
+             verified,
+             created_at`;
+    let result;
+
+    try {
+      result = await runQuery(
+        hasUpdatedAtColumn
+          ? `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())
+             ON CONFLICT (user_id) DO UPDATE
+             SET full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
+                 phone = COALESCE(EXCLUDED.phone, profiles.phone),
+                 address = COALESCE(EXCLUDED.address, profiles.address),
+                 avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
+                 bio = COALESCE(EXCLUDED.bio, profiles.bio),
+                 updated_at = NOW()
+             RETURNING ${returningFields}`
+          : `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (user_id) DO UPDATE
+             SET full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
+                 phone = COALESCE(EXCLUDED.phone, profiles.phone),
+                 address = COALESCE(EXCLUDED.address, profiles.address),
+                 avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
+                 bio = COALESCE(EXCLUDED.bio, profiles.bio)
+             RETURNING ${returningFields}`,
+        queryParams
+      );
+    } catch (upsertError) {
+      if (!isOnConflictConstraintError(upsertError)) {
+        throw upsertError;
+      }
+
+      // Compatibility path for schemas where profiles.user_id is not declared unique.
+      logger.warn('[Profile] profiles.user_id unique constraint missing; using update/insert compatibility path', {
+        message: upsertError.message
+      });
+
+      const updateResult = await runQuery(
+        hasUpdatedAtColumn
+          ? `UPDATE profiles
+             SET full_name = COALESCE($2, full_name),
+                 phone = COALESCE($3, phone),
+                 address = COALESCE($4, address),
+                 avatar_url = COALESCE($5, avatar_url),
+                 bio = COALESCE($6, bio),
+                 updated_at = NOW()
+             WHERE user_id::text = $1
+             RETURNING ${returningFields}`
+          : `UPDATE profiles
+             SET full_name = COALESCE($2, full_name),
+                 phone = COALESCE($3, phone),
+                 address = COALESCE($4, address),
+                 avatar_url = COALESCE($5, avatar_url),
+                 bio = COALESCE($6, bio)
+             WHERE user_id::text = $1
+             RETURNING ${returningFields}`,
+        queryParams
+      );
+
+      if (updateResult.rows?.length) {
+        result = updateResult;
+      } else {
+        try {
+          result = await runQuery(
+            hasUpdatedAtColumn
+              ? `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, NOW())
+                 RETURNING ${returningFields}`
+              : `INSERT INTO profiles (user_id, full_name, phone, address, avatar_url, bio)
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                 RETURNING ${returningFields}`,
+            queryParams
+          );
+        } catch (insertError) {
+          if (String(insertError?.code || '') === '23505') {
+            result = await runQuery(
+              hasUpdatedAtColumn
+                ? `UPDATE profiles
+                   SET full_name = COALESCE($2, full_name),
+                       phone = COALESCE($3, phone),
+                       address = COALESCE($4, address),
+                       avatar_url = COALESCE($5, avatar_url),
+                       bio = COALESCE($6, bio),
+                       updated_at = NOW()
+                   WHERE user_id::text = $1
+                   RETURNING ${returningFields}`
+                : `UPDATE profiles
+                   SET full_name = COALESCE($2, full_name),
+                       phone = COALESCE($3, phone),
+                       address = COALESCE($4, address),
+                       avatar_url = COALESCE($5, avatar_url),
+                       bio = COALESCE($6, bio)
+                   WHERE user_id::text = $1
+                   RETURNING ${returningFields}`,
+              queryParams
+            );
+          } else {
+            throw insertError;
+          }
+        }
+      }
+    }
 
     if (!result.rows?.length) {
       logger.error('Profile upsert returned no rows for user:', requestedUserId);
       return res.status(500).json({ error: 'Failed to update profile', fallback: null });
     }
 
+    const payload = result.rows[0];
+    if (!hasUpdatedAtColumn) {
+      payload.updated_at = payload.updated_at || null;
+    }
+
     invalidateProfileCache(requestedUserId);
-    return res.json(result.rows[0]);
+    return res.json(payload);
   } catch (err) {
     logger.error('Error updating profile:', err);
     return res.status(500).json({ error: err.message, fallback: null });
@@ -409,6 +557,7 @@ exports.uploadAvatar = async (req, res) => {
   try {
     const authenticatedUserId = getAuthenticatedUserId(req);
     const requestedUserId = normalizeUserId(req.body.userId ?? authenticatedUserId);
+    const hasUpdatedAtColumn = await hasProfilesUpdatedAtColumn();
 
     if (!requestedUserId) {
       return res.status(400).json({ error: 'userId required' });
@@ -427,12 +576,18 @@ exports.uploadAvatar = async (req, res) => {
     const avatarUrl = `data:${mimeType};base64,${base64}`;
 
     const result = await runQuery(
-      `INSERT INTO profiles (user_id, full_name, avatar_url, updated_at)
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT (user_id) DO UPDATE
-       SET avatar_url = EXCLUDED.avatar_url,
-           updated_at = NOW()
-       RETURNING avatar_url`,
+      hasUpdatedAtColumn
+        ? `INSERT INTO profiles (user_id, full_name, avatar_url, updated_at)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (user_id) DO UPDATE
+           SET avatar_url = EXCLUDED.avatar_url,
+               updated_at = NOW()
+           RETURNING avatar_url`
+        : `INSERT INTO profiles (user_id, full_name, avatar_url)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (user_id) DO UPDATE
+           SET avatar_url = EXCLUDED.avatar_url
+           RETURNING avatar_url`,
       [requestedUserId, 'User', avatarUrl]
     );
 

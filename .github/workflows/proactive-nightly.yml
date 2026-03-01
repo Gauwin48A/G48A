@@ -9,6 +9,10 @@ on:
         description: 'Force a failure to validate alerting and issue lifecycle'
         required: false
         default: 'false'
+      run_full_suite:
+        description: 'Run the full proactive suite on manual dispatch'
+        required: false
+        default: 'true'
 
 permissions:
   contents: read
@@ -55,11 +59,11 @@ jobs:
           exit 1
 
       - name: Lifecycle dry-run success
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.simulate_failure != 'true' }}
-        run: echo "Lifecycle validation mode: skipping full proactive suite."
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.simulate_failure != 'true' && inputs.run_full_suite != 'true' }}
+        run: echo "Lifecycle validation mode: full proactive suite skipped by input."
 
       - name: Run proactive suite
-        if: ${{ github.event_name != 'workflow_dispatch' }}
+        if: ${{ github.event_name != 'workflow_dispatch' || (inputs.simulate_failure != 'true' && inputs.run_full_suite == 'true') }}
         run: |
           set -o pipefail
           node scripts/proactive-check.js 2>&1 | tee proactive-check.log

@@ -18,6 +18,15 @@ jobs:
         with:
           node-version: 22
 
+      - name: Enforce tracked dependency hygiene
+        run: node scripts/guard-tracked-deps.js
+
+      - name: Enforce workspace footprint guard
+        run: node scripts/guard-footprint.js
+
+      - name: Validate locale consistency
+        run: node scripts/validate-locales.js
+
       - name: Verify proactive workflow contract
         run: node scripts/check-proactive-workflow-contract.js
 

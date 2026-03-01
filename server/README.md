@@ -13,6 +13,11 @@ Last updated: 2026-02-27
 - `npm run test:critical-paths`
 - `npm run test:e2e:journeys`
 
+## Local Runtime
+- Default local port: `5001`.
+- If configured port is busy in development, server startup will try a safe fallback port.
+- CORS allowlist supports `CORS_ORIGINS`, `CORS_ORIGIN`, and `ALLOWED_ORIGINS`.
+
 ## Operational Modules
 - Auth/session/OTP/2FA
 - Posts/feed/recommendations

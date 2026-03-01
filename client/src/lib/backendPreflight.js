@@ -1,7 +1,7 @@
 import { getApiRootUrl } from '@/lib/networkConfig';
 
 const PRECHECK_TIMEOUT_MS = Number.parseInt(import.meta.env.VITE_BACKEND_PREFLIGHT_TIMEOUT_MS || '3500', 10);
-const LOCAL_DEV_BACKEND_ORIGINS = ['http://localhost:5000', 'http://localhost:5001'];
+const LOCAL_DEV_BACKEND_ORIGINS = ['http://localhost:5001', 'http://localhost:5000'];
 const LOCALHOST_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
 
 function normalize(value) {

@@ -4,6 +4,45 @@ import path from 'path';
 
 const DEV_PROXY_TARGET = process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:5001';
 
+const REALTIME_VENDOR_PACKAGES = new Set([
+  'socket.io-client',
+  'engine.io-client',
+  'socket.io-parser',
+  'pusher-js'
+]);
+
+function getNodeModulePackageName(id) {
+  const normalized = String(id || '').replace(/\\/g, '/');
+  const marker = '/node_modules/';
+  const markerIndex = normalized.lastIndexOf(marker);
+  if (markerIndex === -1) return '';
+  const afterNodeModules = normalized.slice(markerIndex + marker.length);
+  const segments = afterNodeModules.split('/');
+  if (!segments[0]) return '';
+  if (segments[0].startsWith('@') && segments[1]) {
+    return `${segments[0]}/${segments[1]}`;
+  }
+  return segments[0];
+}
+
+function resolveVendorChunk(id) {
+  if (!id.includes('node_modules')) return undefined;
+
+  const packageName = getNodeModulePackageName(id);
+  if (!packageName) return undefined;
+
+  if (packageName.startsWith('@tanstack/')) {
+    return 'query-vendor';
+  }
+
+  if (REALTIME_VENDOR_PACKAGES.has(packageName)) {
+    return 'realtime-vendor';
+  }
+
+  // Keep the rest in a stable baseline vendor chunk to avoid over-fragmentation.
+  return 'vendor';
+}
+
 // MINIMAL CONFIG FOR BUILD TESTING
 export default defineConfig({
   plugins: [react()],
@@ -39,53 +78,16 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    force: true,
+    // Keep known lazy UI/native deps pre-optimized to reduce stale on-demand dep fetches in dev.
+    include: ['@radix-ui/react-tabs', '@capacitor-community/contacts'],
+  },
   build: {
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-
-          if (
-            id.includes('/react/') ||
-            id.includes('/react-dom/') ||
-            id.includes('/react-router-dom/')
-          ) {
-            return 'react-vendor';
-          }
-
-          if (id.includes('/@tanstack/')) {
-            return 'query-vendor';
-          }
-
-          if (
-            id.includes('/@radix-ui/') ||
-            id.includes('/lucide-react/') ||
-            id.includes('/react-icons/')
-          ) {
-            return 'ui-vendor';
-          }
-
-          if (
-            id.includes('/i18next') ||
-            id.includes('/react-i18next')
-          ) {
-            return 'i18n-vendor';
-          }
-
-          if (
-            id.includes('/socket.io-client/') ||
-            id.includes('/pusher-js/')
-          ) {
-            return 'realtime-vendor';
-          }
-
-          if (id.includes('/@capacitor/')) {
-            return 'capacitor-vendor';
-          }
-
-          return 'vendor';
-        },
+        manualChunks: resolveVendorChunk,
       },
     },
   }

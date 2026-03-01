@@ -51,8 +51,9 @@ const Categories = () => {
         ]);
         setError(null);
       } finally {
-        if (cancelled) return;
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
     fetchCategories();

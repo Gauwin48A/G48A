@@ -17,8 +17,9 @@ describe('networkConfig', () => {
   });
 
   it('falls back to default dev origin on localhost runtime', () => {
-    expect(getApiOriginBase()).toBe('http://localhost:5001');
-    expect(getApiRootUrl()).toBe('http://localhost:5001/api');
-    expect(getSocketUrl()).toBe('http://localhost:5001');
+    expect(getApiOriginBase()).toBe('');
+    expect(getApiRootUrl()).toBe('/api');
+    expect(getSocketUrl()).toBe(window.location.origin);
+    expect(buildApiPath('/categories')).toBe('/api/categories');
   });
 });

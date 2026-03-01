@@ -13,7 +13,9 @@ Last updated: 2026-02-27
 - `npm run build`
 
 ## Runtime Notes
-- API base URL should come from env-driven configuration.
+- On localhost dev, API calls prefer same-origin `/api` (Vite proxy on `8081`) to avoid CORS issues.
+- Keep `VITE_FORCE_ABSOLUTE_API_ORIGIN=false` unless you intentionally want direct backend origin calls.
+- Default backend proxy target is `http://localhost:5001`.
 - Keep route-level code splitting enabled for large screens.
 
 ## Validation

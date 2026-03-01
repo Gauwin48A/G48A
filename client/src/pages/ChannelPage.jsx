@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { getChannelByUser, createChannelPost } from '../lib/api';
+import { getChannelById, createChannelPost, followChannel } from '../lib/api';
 import { useParams } from 'react-router-dom';
 
 import { useTranslation } from 'react-i18next';
 
 const ChannelPage = () => {
   const { t } = useTranslation();
-  const { channelId } = useParams();
+  const { channelId: routeChannelId, id: routeId } = useParams();
+  const channelId = routeChannelId || routeId;
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,13 +16,15 @@ const ChannelPage = () => {
   const [mediaUrl, setMediaUrl] = useState('');
   const [type, setType] = useState('text');
   const [isOwner, setIsOwner] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
   const [error, setError] = useState(null);
 
   const applyChannelPayload = (response) => {
     const payload = response?.data ?? response;
-    setChannel(payload || null);
-    setIsOwner(Boolean(payload?.isOwner));
-    setPosts(Array.isArray(payload?.posts) ? payload.posts : []);
+    const channelData = payload?.channel || payload || null;
+    setChannel(channelData);
+    setIsOwner(Boolean(payload?.isOwner) || (channelData?.owner_id && String(channelData.owner_id) === String(localStorage.getItem('userId'))));
+    setPosts(Array.isArray(payload?.posts) ? payload.posts : Array.isArray(channelData?.posts) ? channelData.posts : []);
   };
 
   useEffect(() => {
@@ -29,8 +32,15 @@ const ChannelPage = () => {
     const fetchChannel = async () => {
       setLoading(true);
       setError(null);
+      if (!channelId) {
+        if (isActive) {
+          setError(t('something_went_wrong') || 'Failed to load channel');
+          setLoading(false);
+        }
+        return;
+      }
       try {
-        const response = await getChannelByUser(channelId);
+        const response = await getChannelById(channelId);
         if (!isActive) return;
         applyChannelPayload(response);
       } catch (err) {
@@ -56,6 +66,7 @@ const ChannelPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!channelId) return;
     if (submitting) return;
     setSubmitting(true);
     try {
@@ -63,7 +74,7 @@ const ChannelPage = () => {
       setDescription('');
       setMediaUrl('');
       // Refresh posts
-      const response = await getChannelByUser(channelId);
+      const response = await getChannelById(channelId);
       applyChannelPayload(response);
     } catch (err) {
       if (import.meta.env.DEV) {
@@ -75,20 +86,68 @@ const ChannelPage = () => {
     }
   };
 
+  const handleToggleFollow = async () => {
+    if (!channelId || followBusy || isOwner) return;
+    setFollowBusy(true);
+    setError(null);
+    try {
+      const response = await followChannel(channelId);
+      const payload = response?.data ?? response;
+      const action = String(payload?.action || '').toLowerCase();
+
+      if (action === 'followed' || action === 'unfollowed') {
+        setChannel((prev) => {
+          if (!prev) return prev;
+          const currentlyFollowing = Boolean(prev.is_following);
+          const nextFollowing = action === 'followed' ? true : false;
+          const currentFollowers = Number.parseInt(prev.follower_count, 10) || 0;
+          const followerDelta =
+            nextFollowing === currentlyFollowing ? 0 : (nextFollowing ? 1 : -1);
+
+          return {
+            ...prev,
+            is_following: nextFollowing,
+            follower_count: Math.max(0, currentFollowers + followerDelta)
+          };
+        });
+      } else {
+        const latest = await getChannelById(channelId);
+        applyChannelPayload(latest);
+      }
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.error('Failed to toggle follow:', err);
+      }
+      setError(err?.message || t('something_went_wrong') || 'Failed to update follow state');
+    } finally {
+      setFollowBusy(false);
+    }
+  };
+
   if (loading) return <div>{t('loading')}</div>;
   if (!channel) return <div>{error || (t('something_went_wrong') || 'Failed to load channel')}</div>;
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex items-center gap-4 mb-4">
-        {channel.profile_pic && <img src={channel.profile_pic} alt="logo" className="w-16 h-16 rounded-full object-cover" />}
+        {(channel.logo_url || channel.profile_pic) && <img src={channel.logo_url || channel.profile_pic} alt="logo" className="w-16 h-16 rounded-full object-cover" />}
         <div>
           <div className="font-bold text-xl">{channel.name}</div>
-          <div className="text-xs text-gray-500">{t('owner_label', { name: channel.owner_name })}</div>
-          <div className="text-xs text-gray-400">{t('followers_count', { count: channel.follower_count })}</div>
+          <div className="text-xs text-gray-500">{t('owner_label', { name: channel.owner_name || channel.owner_id || '-' })}</div>
+          <div className="text-xs text-gray-400">{t('followers_count', { count: channel.follower_count || 0 })}</div>
         </div>
+        {!isOwner && (
+          <button
+            type="button"
+            onClick={handleToggleFollow}
+            disabled={followBusy}
+            className="ml-auto px-3 py-1 rounded bg-blue-600 text-white disabled:opacity-60"
+          >
+            {channel.is_following ? (t('unfollow') || 'Unfollow') : (t('follow') || 'Follow')}
+          </button>
+        )}
       </div>
-      <div className="mb-4 text-gray-600">{channel.bio}</div>
+      <div className="mb-4 text-gray-600">{channel.bio || channel.description}</div>
       {isOwner && (
         <form onSubmit={handleSubmit} className="mb-4">
           <textarea
@@ -118,7 +177,15 @@ const ChannelPage = () => {
           <ul className="space-y-2">
             {posts.map(post => (
               <li key={post.post_id} className="border rounded p-2">
-                <div className="font-semibold">{post.type === 'text' ? post.description : <a href={post.media_url} target="_blank" rel="noopener noreferrer">{post.type}</a>}</div>
+                <div className="font-semibold">
+                  {post.description || ''}
+                  {!post.description && post.image_url && (
+                    <a href={post.image_url} target="_blank" rel="noopener noreferrer">image</a>
+                  )}
+                  {!post.description && !post.image_url && post.video_url && (
+                    <a href={post.video_url} target="_blank" rel="noopener noreferrer">video</a>
+                  )}
+                </div>
                 <div className="text-xs text-gray-400">{new Date(post.created_at).toLocaleString()}</div>
               </li>
             ))}

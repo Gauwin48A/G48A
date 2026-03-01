@@ -6,6 +6,24 @@ const npmCommand = 'npm';
 
 const checks = [
   {
+    name: 'Workspace tracked dependency guard',
+    command: process.execPath,
+    cwd: rootDir,
+    args: ['scripts/guard-tracked-deps.js']
+  },
+  {
+    name: 'Workspace footprint guard',
+    command: process.execPath,
+    cwd: rootDir,
+    args: ['scripts/guard-footprint.js']
+  },
+  {
+    name: 'Workspace locale validation',
+    command: process.execPath,
+    cwd: rootDir,
+    args: ['scripts/validate-locales.js']
+  },
+  {
     name: 'Proactive workflow contract gate',
     command: process.execPath,
     cwd: rootDir,
@@ -16,6 +34,12 @@ const checks = [
     command: npmCommand,
     cwd: path.join(rootDir, 'client'),
     args: ['run', 'check:no-hardcoded-localhost']
+  },
+  {
+    name: 'Client lint',
+    command: npmCommand,
+    cwd: path.join(rootDir, 'client'),
+    args: ['run', 'lint']
   },
   {
     name: 'Client network contract gate',
@@ -46,6 +70,12 @@ const checks = [
     command: npmCommand,
     cwd: path.join(rootDir, 'server'),
     args: ['run', 'check:route-contract']
+  },
+  {
+    name: 'Server schema contract gate',
+    command: npmCommand,
+    cwd: path.join(rootDir, 'server'),
+    args: ['run', 'check:schema-contract']
   },
   {
     name: 'Server runtime contract probe',

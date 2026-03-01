@@ -1,15 +1,22 @@
-import { Contacts } from '@capacitor-community/contacts';
+import { Capacitor } from '@capacitor/core';
 import { buildApiPath } from '@/lib/networkConfig';
 
 const CONTACT_SYNC_CONCURRENCY = 3;
 
 export const syncNativeContacts = async (userId) => {
     try {
+        if (!Capacitor.isNativePlatform()) {
+            console.log('[DEFENDER] Contact sync skipped on web.');
+            return { skipped: true, reason: 'web-platform', synced: 0 };
+        }
+
+        const { Contacts } = await import('@capacitor-community/contacts');
+
         // 1. Ask Permission
         const perm = await Contacts.requestPermissions();
         if (perm.contacts !== 'granted') {
             console.log("[DEFENDER] Contact permission denied");
-            return;
+            return { skipped: true, reason: 'permission-denied', synced: 0 };
         }
 
         // 2. Read Phonebook (The "Heavy" Lift)
@@ -28,7 +35,9 @@ export const syncNativeContacts = async (userId) => {
                 contact_phone: c.phones[0].number?.replace(/[^0-9]/g, '').slice(-10)
             }));
 
-        if (cleanContacts.length === 0) return;
+        if (cleanContacts.length === 0) {
+            return { skipped: true, reason: 'no-contacts', synced: 0 };
+        }
 
         // 4. Batch Upload
         const chunkSize = 100;
@@ -59,7 +68,9 @@ export const syncNativeContacts = async (userId) => {
         }
 
         console.log(`[DEFENDER] Synced ${cleanContacts.length} contacts.`);
+        return { skipped: false, synced: cleanContacts.length };
     } catch (err) {
         console.error("[DEFENDER] Contact integration failed:", err);
+        throw err;
     }
 };

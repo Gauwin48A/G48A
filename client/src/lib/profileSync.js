@@ -1,0 +1,24 @@
+function normalizeUserObject(value) {
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+  return value;
+}
+
+export function mergeProfileIntoAuthUser(previousUser, profilePayload, resolveUserId) {
+  const prior = normalizeUserObject(previousUser);
+  const payload = normalizeUserObject(profilePayload);
+  const getResolvedUserId = typeof resolveUserId === 'function' ? resolveUserId : () => null;
+
+  return {
+    ...prior,
+    ...payload,
+    id: getResolvedUserId(prior) ?? getResolvedUserId(payload) ?? prior.id ?? payload.id ?? payload.user_id ?? null,
+    user_id: payload.user_id ?? prior.user_id ?? prior.id ?? null
+  };
+}
+
+export function hasUserSnapshotChanged(previousUser, nextUser) {
+  return JSON.stringify(normalizeUserObject(previousUser)) !== JSON.stringify(normalizeUserObject(nextUser));
+}
+

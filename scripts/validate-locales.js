@@ -6,6 +6,7 @@ const path = require('path');
 const rootDir = path.resolve(__dirname, '..');
 const srcLocalesDir = path.join(rootDir, 'client', 'src', 'locales');
 const publicLocalesDir = path.join(rootDir, 'client', 'public', 'locales');
+const validationConfigPath = path.join(__dirname, 'locale-validation.config.json');
 
 function listFiles(dirPath, extension = '.json') {
   if (!fs.existsSync(dirPath)) return [];
@@ -24,8 +25,42 @@ function getLocaleCodeFromFile(filePath) {
   return path.basename(filePath, '.json');
 }
 
+function loadValidationConfig() {
+  if (!fs.existsSync(validationConfigPath)) {
+    return {
+      allowPublicOnlyLocales: new Set(),
+      allowKeyCountDriftLocales: new Set()
+    };
+  }
+
+  try {
+    const parsed = parseJsonFile(validationConfigPath);
+    const allowPublicOnlyLocales = new Set(
+      Array.isArray(parsed.allowPublicOnlyLocales) ? parsed.allowPublicOnlyLocales : []
+    );
+    const allowKeyCountDriftLocales = new Set(
+      Array.isArray(parsed.allowKeyCountDriftLocales) ? parsed.allowKeyCountDriftLocales : []
+    );
+
+    return { allowPublicOnlyLocales, allowKeyCountDriftLocales };
+  } catch (error) {
+    return {
+      allowPublicOnlyLocales: new Set(),
+      allowKeyCountDriftLocales: new Set(),
+      configError: `Invalid locale validation config: ${error.message}`
+    };
+  }
+}
+
+const validationConfig = loadValidationConfig();
+
 const errors = [];
 const warnings = [];
+const infos = [];
+
+if (validationConfig.configError) {
+  warnings.push(validationConfig.configError);
+}
 
 const srcLocaleFiles = listFiles(srcLocalesDir);
 const srcLocaleCodes = srcLocaleFiles.map(getLocaleCodeFromFile).sort();
@@ -60,9 +95,15 @@ for (const localeCode of srcLocaleCodes) {
     const srcKeys = Object.keys(srcData);
     const publicKeys = Object.keys(publicData);
     if (srcKeys.length !== publicKeys.length) {
-      warnings.push(
-        `Key count differs for ${localeCode}: src=${srcKeys.length}, public=${publicKeys.length}`
-      );
+      if (validationConfig.allowKeyCountDriftLocales.has(localeCode)) {
+        infos.push(
+          `Allowed key count drift for ${localeCode}: src=${srcKeys.length}, public=${publicKeys.length}`
+        );
+      } else {
+        warnings.push(
+          `Key count differs for ${localeCode}: src=${srcKeys.length}, public=${publicKeys.length}`
+        );
+      }
     }
   } catch (error) {
     errors.push(`Invalid JSON in public locale ${localeCode}: ${error.message}`);
@@ -79,7 +120,11 @@ const publicLocaleDirs = fs.existsSync(publicLocalesDir)
 
 for (const publicLocaleCode of publicLocaleDirs) {
   if (!srcLocaleCodes.includes(publicLocaleCode)) {
-    warnings.push(`Public locale exists without src counterpart: ${publicLocaleCode}`);
+    if (validationConfig.allowPublicOnlyLocales.has(publicLocaleCode)) {
+      infos.push(`Allowed public-only locale: ${publicLocaleCode}`);
+    } else {
+      warnings.push(`Public locale exists without src counterpart: ${publicLocaleCode}`);
+    }
   }
 }
 
@@ -88,6 +133,14 @@ console.log(`- src locales: ${srcLocaleCodes.length}`);
 console.log(`- public locale dirs: ${publicLocaleDirs.length}`);
 console.log(`- warnings: ${warnings.length}`);
 console.log(`- errors: ${errors.length}`);
+console.log(`- info: ${infos.length}`);
+
+if (infos.length > 0) {
+  console.log('Info:');
+  for (const info of infos) {
+    console.log(`  - ${info}`);
+  }
+}
 
 if (warnings.length > 0) {
   console.log('Warnings:');

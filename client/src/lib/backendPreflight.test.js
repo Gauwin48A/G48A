@@ -21,8 +21,8 @@ describe('runBackendPreflight', () => {
 
     expect(result.ok).toBe(true);
     expect(result.healthUrl).toContain('/api/health');
-    expect(result.resolvedOrigin).toBe('http://localhost:5001');
-    expect(window.__MHUB_API_ORIGIN_OVERRIDE__).toBe('http://localhost:5001');
+    expect(result.resolvedOrigin).toBe(window.location.origin);
+    expect(window.__MHUB_API_ORIGIN_OVERRIDE__).toBe(window.location.origin);
   });
 
   it('fails fast when all health probes fail', async () => {

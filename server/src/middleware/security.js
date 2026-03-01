@@ -5,10 +5,20 @@ const { verifyToken } = require('../services/tokenVerificationCache');
 const { getAccessTokenFromRequest } = require('../utils/requestAuth');
 const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
 const LOAD_TEST_SCENARIOS = new Set(['normal', 'abuse', 'authenticated']);
+const RATE_LIMIT_CONTEXT_SYMBOL = Symbol('rate-limit-context');
 
-const API_LIMIT_WINDOW_MS = Number.parseInt(process.env.API_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000;
-const API_RATE_LIMIT_MAX = Number.parseInt(process.env.API_RATE_LIMIT_MAX, 10) || 3000;
-const API_RATE_LIMIT_NORMAL_SCENARIO_MAX = Number.parseInt(process.env.API_RATE_LIMIT_NORMAL_SCENARIO_MAX, 10) || 12000;
+function parsePositiveIntEnv(envName, fallback) {
+    const parsed = Number.parseInt(process.env[envName], 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const API_LIMIT_WINDOW_MS = parsePositiveIntEnv('API_RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000);
+const API_RATE_LIMIT_MAX = parsePositiveIntEnv('API_RATE_LIMIT_MAX', 3000);
+const API_RATE_LIMIT_AUTHENTICATED_MAX = parsePositiveIntEnv(
+    'API_RATE_LIMIT_AUTHENTICATED_MAX',
+    process.env.API_RATE_LIMIT_MAX ? API_RATE_LIMIT_MAX : Math.max(API_RATE_LIMIT_MAX, 6000)
+);
+const API_RATE_LIMIT_NORMAL_SCENARIO_MAX = parsePositiveIntEnv('API_RATE_LIMIT_NORMAL_SCENARIO_MAX', 12000);
 const RATE_LIMIT_ALLOW_SIMULATED_IDS = process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === undefined
     ? process.env.NODE_ENV !== 'production'
     : process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === 'true';
@@ -22,6 +32,29 @@ function isTrustedSimulatedLoadRequest(req) {
     return RATE_LIMIT_ALLOW_SIMULATED_IDS && LOAD_TEST_SCENARIOS.has(getLoadScenario(req));
 }
 
+function getAuthenticatedRateLimitKey(req) {
+    if (req[RATE_LIMIT_CONTEXT_SYMBOL]) {
+        return req[RATE_LIMIT_CONTEXT_SYMBOL].authenticatedKey;
+    }
+
+    const context = { authenticatedKey: null };
+    const token = getAccessTokenFromRequest(req, { preferCookie: true });
+    if (token) {
+        try {
+            const payload = verifyToken(token, JWT_CONFIG.SECRET);
+            const userId = payload?.userId ?? payload?.id ?? payload?.user_id ?? payload?.sub ?? null;
+            if (userId !== null && userId !== undefined && userId !== '') {
+                context.authenticatedKey = `user:${String(userId)}`;
+            }
+        } catch {
+            // Keep IP fallback for invalid/expired tokens.
+        }
+    }
+
+    req[RATE_LIMIT_CONTEXT_SYMBOL] = context;
+    return context.authenticatedKey;
+}
+
 // A. DDoS Protection: Limit repeated requests
 exports.apiLimiter = rateLimit({
     windowMs: API_LIMIT_WINDOW_MS,
@@ -30,12 +63,19 @@ exports.apiLimiter = rateLimit({
         if (isTrustedSimulatedLoadRequest(req) && ['normal', 'authenticated'].includes(scenario)) {
             return API_RATE_LIMIT_NORMAL_SCENARIO_MAX;
         }
+        if (getAuthenticatedRateLimitKey(req)) {
+            return API_RATE_LIMIT_AUTHENTICATED_MAX;
+        }
         return API_RATE_LIMIT_MAX;
     },
     keyGenerator: (req) => {
         const simulatedUser = req.headers['x-simulated-user'];
         if (isTrustedSimulatedLoadRequest(req) && simulatedUser) {
             return `simulated:${String(simulatedUser)}`;
+        }
+        const authenticatedKey = getAuthenticatedRateLimitKey(req);
+        if (authenticatedKey) {
+            return authenticatedKey;
         }
         const ipAddress = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
         return rateLimit.ipKeyGenerator(ipAddress);

@@ -14,51 +14,100 @@ import { checkAndSyncLocation, syncLocationToBackend } from '@/services/location
 import { getUserId } from '@/utils/authStorage';
 // Redundant mobileLocation import removed
 
+const LAZY_RELOAD_PREFIX = 'mhub:lazy-retry:';
+const LAZY_RELOAD_WINDOW_MS = 60 * 1000;
+const DEV_DEFENDER_SYNC_DEBOUNCE_MS = 1500;
+let lastDefenderSyncAt = 0;
+
+function lazyWithRetry(importer, routeKey) {
+  return lazy(async () => {
+    const retryKey = `${LAZY_RELOAD_PREFIX}${routeKey}`;
+
+    try {
+      const module = await importer();
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(retryKey);
+      }
+      return module;
+    } catch (error) {
+      const message = String(error?.message || error || '');
+      const isRecoverableImportFailure = /Failed to fetch dynamically imported module|Importing a module script failed|Outdated Optimize Dep|fetch dynamically imported module/i.test(
+        message
+      );
+
+      if (typeof window !== 'undefined' && isRecoverableImportFailure) {
+        const lastRetryRaw = window.sessionStorage.getItem(retryKey);
+        const lastRetry = Number.parseInt(lastRetryRaw || '0', 10);
+        const now = Date.now();
+        const shouldRetry = !Number.isFinite(lastRetry) || now - lastRetry > LAZY_RELOAD_WINDOW_MS;
+
+        if (shouldRetry) {
+          window.sessionStorage.setItem(retryKey, String(now));
+          if (import.meta.env.DEV) {
+            console.warn(`[LAZY_RETRY] Reloading after module import failure on "${routeKey}": ${message}`);
+          }
+          window.location.reload();
+          return new Promise(() => {});
+        }
+      }
+
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(retryKey);
+      }
+      throw error;
+    }
+  });
+}
+
 
 // Lazy load pages
-const AllPosts = lazy(() => import('./pages/AllPosts.jsx'));
-const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
-const Profile = lazy(() => import('./pages/Profile.jsx'));
-const SignUp = lazy(() => import('./pages/Auth/SignUp.jsx'));
-const Login = lazy(() => import('./pages/Auth/Login.jsx'));
-const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword.jsx'));
-const ResetPassword = lazy(() => import('./pages/Auth/ResetPassword.jsx'));
-const AddPost = lazy(() => import('./pages/AddPost.jsx'));
-const TierSelection = lazy(() => import('./pages/TierSelection.jsx'));
-const BuyerView = lazy(() => import('./pages/BuyerView.jsx'));
-const Saledone = lazy(() => import('./pages/Saledone.jsx'));
-const SaleUndone = lazy(() => import('./pages/SaleUndone.jsx'));
-const AdminPanel = lazy(() => import('./pages/AdminPanel.jsx'));
-const AadhaarVerify = lazy(() => import('./pages/AadhaarVerify.jsx'));
-const PublicWall = lazy(() => import('./pages/PublicWall.jsx'));
-const Notifications = lazy(() => import('./pages/Notifications.jsx'));
-const Complaints = lazy(() => import('./pages/Complaints.jsx'));
-const Feedback = lazy(() => import('./pages/Feedback.jsx'));
-const MyHome = lazy(() => import('./pages/MyHome.jsx'));
-const Home = lazy(() => import('./pages/Home.jsx'));
-const ForYou = lazy(() => import('./pages/ForYou.jsx'));
-const BoughtPosts = lazy(() => import('./pages/BoughtPosts.jsx'));
-const SoldPosts = lazy(() => import('./pages/SoldPosts.jsx'));
-const PostDetail = lazy(() => import('./pages/PostDetail.jsx'));
-const Rewards = lazy(() => import('./pages/Rewards.jsx'));
-const MyRecommendations = lazy(() => import('./pages/MyRecommendations.jsx'));
-const Categories = lazy(() => import('./pages/Categories.jsx'));
-const FeedPage = lazy(() => import('./pages/FeedPage.jsx'));
-const FeedPostDetail = lazy(() => import('./pages/FeedPostDetail.jsx'));
-const MyFeedPage = lazy(() => import('./pages/MyFeedPage.jsx'));
-const PostAdd = lazy(() => import('./pages/PostAdd.jsx'));
-const Wishlist = lazy(() => import('./pages/Wishlist.jsx'));
-const RecentlyViewed = lazy(() => import('./pages/RecentlyViewed.jsx'));
-const SavedSearches = lazy(() => import('./pages/SavedSearches.jsx'));
-const Verification = lazy(() => import('./pages/Verification.jsx'));
-const NearbyPosts = lazy(() => import('./pages/NearbyPosts.jsx'));
-const Chat = lazy(() => import('./pages/Chat.jsx'));
-const SearchPage = lazy(() => import('./pages/SearchPage.jsx'));
-const SecuritySettings = lazy(() => import('./pages/SecuritySettings.jsx'));
-const KycVerification = lazy(() => import('./pages/KYC/KycVerification.jsx'));
-const PaymentPage = lazy(() => import('./pages/Payments/PaymentPage.jsx'));
-const Offers = lazy(() => import('./pages/Offers.jsx'));
-const Reviews = lazy(() => import('./pages/Reviews.jsx'));
+const AllPosts = lazyWithRetry(() => import('./pages/AllPosts.jsx'), 'AllPosts');
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard.jsx'), 'Dashboard');
+const Profile = lazyWithRetry(() => import('./pages/Profile.jsx'), 'Profile');
+const SignUp = lazyWithRetry(() => import('./pages/Auth/SignUp.jsx'), 'SignUp');
+const Login = lazyWithRetry(() => import('./pages/Auth/Login.jsx'), 'Login');
+const ForgotPassword = lazyWithRetry(() => import('./pages/Auth/ForgotPassword.jsx'), 'ForgotPassword');
+const ResetPassword = lazyWithRetry(() => import('./pages/Auth/ResetPassword.jsx'), 'ResetPassword');
+const AddPost = lazyWithRetry(() => import('./pages/AddPost.jsx'), 'AddPost');
+const TierSelection = lazyWithRetry(() => import('./pages/TierSelection.jsx'), 'TierSelection');
+const BuyerView = lazyWithRetry(() => import('./pages/BuyerView.jsx'), 'BuyerView');
+const Saledone = lazyWithRetry(() => import('./pages/Saledone.jsx'), 'Saledone');
+const SaleUndone = lazyWithRetry(() => import('./pages/SaleUndone.jsx'), 'SaleUndone');
+const AdminPanel = lazyWithRetry(() => import('./pages/AdminPanel.jsx'), 'AdminPanel');
+const AadhaarVerify = lazyWithRetry(() => import('./pages/AadhaarVerify.jsx'), 'AadhaarVerify');
+const PublicWall = lazyWithRetry(() => import('./pages/PublicWall.jsx'), 'PublicWall');
+const Notifications = lazyWithRetry(() => import('./pages/Notifications.jsx'), 'Notifications');
+const Complaints = lazyWithRetry(() => import('./pages/Complaints.jsx'), 'Complaints');
+const Feedback = lazyWithRetry(() => import('./pages/Feedback.jsx'), 'Feedback');
+const MyHome = lazyWithRetry(() => import('./pages/MyHome.jsx'), 'MyHome');
+const Home = lazyWithRetry(() => import('./pages/Home.jsx'), 'Home');
+const ForYou = lazyWithRetry(() => import('./pages/ForYou.jsx'), 'ForYou');
+const BoughtPosts = lazyWithRetry(() => import('./pages/BoughtPosts.jsx'), 'BoughtPosts');
+const SoldPosts = lazyWithRetry(() => import('./pages/SoldPosts.jsx'), 'SoldPosts');
+const PostDetail = lazyWithRetry(() => import('./pages/PostDetail.jsx'), 'PostDetail');
+const Rewards = lazyWithRetry(() => import('./pages/Rewards.jsx'), 'Rewards');
+const MyRecommendations = lazyWithRetry(() => import('./pages/MyRecommendations.jsx'), 'MyRecommendations');
+const Categories = lazyWithRetry(() => import('./pages/Categories.jsx'), 'Categories');
+const FeedPage = lazyWithRetry(() => import('./pages/FeedPage.jsx'), 'FeedPage');
+const FeedPostDetail = lazyWithRetry(() => import('./pages/FeedPostDetail.jsx'), 'FeedPostDetail');
+const MyFeedPage = lazyWithRetry(() => import('./pages/MyFeedPage.jsx'), 'MyFeedPage');
+const PostAdd = lazyWithRetry(() => import('./pages/PostAdd.jsx'), 'PostAdd');
+const Wishlist = lazyWithRetry(() => import('./pages/Wishlist.jsx'), 'Wishlist');
+const RecentlyViewed = lazyWithRetry(() => import('./pages/RecentlyViewed.jsx'), 'RecentlyViewed');
+const SavedSearches = lazyWithRetry(() => import('./pages/SavedSearches.jsx'), 'SavedSearches');
+const Verification = lazyWithRetry(() => import('./pages/Verification.jsx'), 'Verification');
+const NearbyPosts = lazyWithRetry(() => import('./pages/NearbyPosts.jsx'), 'NearbyPosts');
+const Chat = lazyWithRetry(() => import('./pages/Chat.jsx'), 'Chat');
+const SearchPage = lazyWithRetry(() => import('./pages/SearchPage.jsx'), 'SearchPage');
+const SecuritySettings = lazyWithRetry(() => import('./pages/SecuritySettings.jsx'), 'SecuritySettings');
+const KycVerification = lazyWithRetry(() => import('./pages/KYC/KycVerification.jsx'), 'KycVerification');
+const PaymentPage = lazyWithRetry(() => import('./pages/Payments/PaymentPage.jsx'), 'PaymentPage');
+const Offers = lazyWithRetry(() => import('./pages/Offers.jsx'), 'Offers');
+const Reviews = lazyWithRetry(() => import('./pages/Reviews.jsx'), 'Reviews');
+const Analytics = lazyWithRetry(() => import('./pages/Analytics.jsx'), 'Analytics');
+const ChannelsListPage = lazyWithRetry(() => import('./pages/ChannelsListPage.jsx'), 'ChannelsListPage');
+const CreateChannelPage = lazyWithRetry(() => import('./pages/CreateChannelPage.jsx'), 'CreateChannelPage');
+const ChannelPage = lazyWithRetry(() => import('./pages/ChannelPage.jsx'), 'ChannelPage');
 
 /**
  * Location Banner - Shows when location is not granted
@@ -138,6 +187,15 @@ function AppContent() {
     const handleAppLaunch = async () => {
       const userId = getUserId(user);
       if (!userId) return;
+
+      if (lifecycleDebug) {
+        const now = Date.now();
+        if (now - lastDefenderSyncAt < DEV_DEFENDER_SYNC_DEBOUNCE_MS) {
+          return;
+        }
+        lastDefenderSyncAt = now;
+      }
+
       if (lifecycleDebug) {
         console.log("[DEFENDER] App Active. Syncing Banking-Grade Location...");
       }
@@ -268,6 +326,10 @@ function AppContent() {
                 <Route path="/nearby" element={<NearbyPosts />} />
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/channels" element={<ChannelsListPage />} />
+                <Route path="/channels/create" element={<CreateChannelPage />} />
+                <Route path="/channels/:id" element={<ChannelPage />} />
                 <Route path="/kyc" element={<KycVerification />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/offers" element={<Offers />} />

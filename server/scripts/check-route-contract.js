@@ -16,6 +16,9 @@ const checks = [
       /app\.use\(['"]\/api\/categories['"],\s*categoriesRoutes\);/,
       /app\.use\(['"]\/api\/posts['"],\s*postsRoutes\);/,
       /app\.use\(['"]\/api\/location['"],\s*locationRoutes\);/,
+      /app\.use\(['"]\/api\/channel['"],\s*channelsRoutes\);/,
+      /app\.use\(['"]\/api\/channels['"],\s*channelsRoutes\);/,
+      /app\.use\(['"]\/api\/users['"],\s*usersRoutes\);/,
       /app\.use\(['"]\/api\/publicwall['"],\s*publicWallRoutes\);/,
       /app\.use\(['"]\/api\/public-wall['"],\s*publicWallRoutes\);/
     ]
@@ -66,6 +69,25 @@ const checks = [
     file: 'src/routes/locationRoutes.js',
     patterns: [
       /router\.post\(['"]\/['"]/
+    ]
+  },
+  {
+    id: 'channels-route-contract',
+    file: 'src/routes/channels.js',
+    patterns: [
+      /router\.post\(['"]\/create['"]/,
+      /router\.get\(['"]\/owner\/:userId['"]/,
+      /router\.put\(['"]\/:id['"]/,
+      /router\.get\(['"]\/:id['"]/,
+      /router\.post\(['"]\/:id\/posts['"]/
+    ]
+  },
+  {
+    id: 'users-kyc-route-contract',
+    file: 'src/routes/users.js',
+    patterns: [
+      /router\.post\(['"]\/kyc\/submit['"]/,
+      /router\.get\(['"]\/kyc\/status['"]/
     ]
   }
 ];

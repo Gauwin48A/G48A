@@ -10,12 +10,64 @@ import './index.css'
 import { ToastProvider } from "@/hooks/use-toast"
 import { activateDefenseMode, isAuthorizedHostname } from './utils/security'
 import { initErrorReporting } from './lib/errorReporting'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const App = React.lazy(() => import('./App.jsx'))
+const PRELOAD_RELOAD_KEY = 'mhub:vite-preload-reload-at'
+const PRELOAD_RELOAD_WINDOW_MS = 10 * 1000
+const MODULE_RELOAD_KEY = 'mhub:module-import-reload-at'
+const MODULE_RELOAD_WINDOW_MS = 10 * 1000
+
+const isRecoverableModuleError = (message) => /Failed to fetch dynamically imported module|Importing a module script failed|Outdated Optimize Dep/i.test(
+  String(message || '')
+);
 
 // 1. ACTIVATE RUNTIME SHIELD
 activateDefenseMode();
 initErrorReporting();
+
+if (typeof window !== 'undefined') {
+  const triggerBoundedReload = (storageKey, windowMs, reason) => {
+    const now = Date.now();
+    const lastReload = Number.parseInt(window.sessionStorage.getItem(storageKey) || '0', 10);
+    const shouldReload = !Number.isFinite(lastReload) || now - lastReload > windowMs;
+
+    if (shouldReload) {
+      window.sessionStorage.setItem(storageKey, String(now));
+      if (import.meta.env.DEV) {
+        console.warn(`[bootstrap] ${reason}. Reloading page once to recover stale deps/chunks.`);
+      }
+      window.location.reload();
+      return true;
+    }
+
+    if (import.meta.env.DEV) {
+      console.error(`[bootstrap] Repeated ${reason} shortly after reload; skipping auto-reload loop.`);
+    }
+    return false;
+  };
+
+  window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault();
+    triggerBoundedReload(PRELOAD_RELOAD_KEY, PRELOAD_RELOAD_WINDOW_MS, 'Vite preload error detected');
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reasonMessage = String(event?.reason?.message || event?.reason || '');
+    if (!isRecoverableModuleError(reasonMessage)) {
+      return;
+    }
+    triggerBoundedReload(MODULE_RELOAD_KEY, MODULE_RELOAD_WINDOW_MS, 'dynamic import failure detected');
+  });
+
+  window.addEventListener('error', (event) => {
+    const errorMessage = String(event?.error?.message || event?.message || '');
+    if (!isRecoverableModuleError(errorMessage)) {
+      return;
+    }
+    triggerBoundedReload(MODULE_RELOAD_KEY, MODULE_RELOAD_WINDOW_MS, 'module script failure detected');
+  });
+}
 
 // 2. DOMAIN LOCKING (Prevent Piracy)
 const currentDomain = window.location.hostname;
@@ -54,13 +106,20 @@ const BackendUnavailableScreen = ({ failure }) => {
 };
 
 function renderApp(root) {
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.removeItem(PRELOAD_RELOAD_KEY);
+    window.sessionStorage.removeItem(MODULE_RELOAD_KEY);
+  }
+
   root.render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <Suspense fallback={<LoadingScreen />}>
           <BrowserRouter>
             <ToastProvider>
-              <App />
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
             </ToastProvider>
           </BrowserRouter>
         </Suspense>

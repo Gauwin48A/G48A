@@ -18,10 +18,10 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../components/LanguageSelector';
 import { getChannelByUser } from '../lib/api';
 import api from '@/services/api'; // Import central API service
-import { syncNativeContacts } from '../services/mobileContacts';
 import { useAuth } from '@/context/AuthContext';
 import { getAccessToken, getUserId, isAuthenticated } from '@/utils/authStorage';
 import { fetchCategoriesCached } from '@/services/categoriesService';
+import { hasUserSnapshotChanged, mergeProfileIntoAuthUser } from '@/lib/profileSync';
 
 const Profile = () => {
   const { toast } = useToast();
@@ -41,6 +41,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('personal');
   const [userStats, setUserStats] = useState({ postCount: 0, rank: 'Bronze', memberDays: 0 });
   const profileRequestIdRef = useRef(0);
+  const authUserRef = useRef(authUser);
   const resolveUserId = useCallback((userData) => {
     const candidate = userData?.id ?? userData?.user_id ?? null;
     if (candidate === null || candidate === undefined || candidate === '') {
@@ -50,6 +51,10 @@ const Profile = () => {
   }, []);
   const resolvedUserId = getUserId(authUser);
   const isLoggedIn = useMemo(() => isAuthenticated(authUser), [authUser, resolvedUserId]);
+
+  useEffect(() => {
+    authUserRef.current = authUser;
+  }, [authUser]);
 
   const loadProfile = useCallback(async () => {
     const requestId = profileRequestIdRef.current + 1;
@@ -85,18 +90,14 @@ const Profile = () => {
         if (resolvedUserId) {
           localStorage.setItem('userId', resolvedUserId);
         }
+        const mergedUser = mergeProfileIntoAuthUser(authUserRef.current, data, resolveUserId);
+
         localStorage.setItem('userProfile', JSON.stringify(data));
-
-        const mergedUser = {
-          ...(authUser || {}),
-          ...data,
-          id: resolveUserId(authUser) ?? resolveUserId(data) ?? authUser?.id ?? data?.id ?? data?.user_id ?? null,
-          user_id: data?.user_id ?? authUser?.user_id ?? authUser?.id ?? null
-        };
-
         localStorage.setItem('user', JSON.stringify(mergedUser));
         setUser(mergedUser);
-        setAuthUser(mergedUser);
+        if (hasUserSnapshotChanged(authUserRef.current, mergedUser)) {
+          setAuthUser(mergedUser);
+        }
         setEditData({
           full_name: data.full_name || data.name || '',
           phone: data.phone || '',
@@ -122,7 +123,7 @@ const Profile = () => {
         setLoading(false);
       }
     }
-  }, [authUser, navigate, resolveUserId, setAuthUser]);
+  }, [navigate, resolveUserId, setAuthUser]);
 
   useEffect(() => {
     if (authLoading) {
@@ -801,10 +802,27 @@ const Profile = () => {
                 {/* Find Friends (Native Contacts Sync) */}
                 <div
                   onClick={async () => {
+                    if (!user?.user_id) return;
                     toast({ title: 'Syncing Contacts...', description: 'Please allow access if prompted.' });
-                    if (user?.user_id) {
-                      await syncNativeContacts(user.user_id);
+                    try {
+                      const { syncNativeContacts } = await import('../services/mobileContacts');
+                      const result = await syncNativeContacts(user.user_id);
+                      if (result?.skipped) {
+                        if (result.reason === 'web-platform') {
+                          toast({ title: 'Mobile Only', description: 'Contact sync is available in the native app.' });
+                          return;
+                        }
+                        if (result.reason === 'permission-denied') {
+                          toast({ title: 'Permission Required', description: 'Allow contacts permission to continue.' });
+                          return;
+                        }
+                        toast({ title: 'No Contacts Found', description: 'No syncable contacts were found.' });
+                        return;
+                      }
                       toast({ title: 'Sync Complete', description: 'Your contacts have been processed.' });
+                    } catch (error) {
+                      console.error('[Profile] Contact sync failed:', error);
+                      toast({ title: 'Sync Failed', description: 'Unable to sync contacts right now.', variant: 'destructive' });
                     }
                   }}
                   className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"

@@ -50,12 +50,27 @@ const nearbyRoutes = require("./routes/nearby.js");
 const reviewsRoutes = require("./routes/reviews.js");
 const publicWallRoutes = require("./routes/publicWall.js");
 const transactionsRoutes = require("./routes/transactions.js");
+const channelsRoutes = require("./routes/channels.js");
 
 const http = require('http');
 const { Server } = require("socket.io");
 
 const app = express();
 app.set('db', pool);
+
+function resolveTrustProxySetting(rawValue) {
+  const normalized = String(rawValue || '').trim();
+  if (!normalized) return false;
+  if (normalized.toLowerCase() === 'true') return true;
+  if (normalized.toLowerCase() === 'false') return false;
+  if (/^\d+$/.test(normalized)) return Number.parseInt(normalized, 10);
+  return normalized;
+}
+
+const trustProxySetting = resolveTrustProxySetting(process.env.TRUST_PROXY);
+if (trustProxySetting !== false) {
+  app.set('trust proxy', trustProxySetting);
+}
 
 // Attach correlation IDs for traceability across requests and incident triage.
 app.use((req, res, next) => {
@@ -79,10 +94,17 @@ const defaultCorsOrigins = [
   "http://localhost:8082",
   "http://localhost:3000"
 ];
-const envCorsOrigins = String(process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((origin) => sanitizeOrigin(origin))
-  .filter(Boolean);
+const parseOriginList = (...rawLists) =>
+  rawLists
+    .flatMap((raw) => String(raw || '').split(','))
+    .map((origin) => sanitizeOrigin(origin))
+    .filter(Boolean);
+
+const envCorsOrigins = parseOriginList(
+  process.env.CORS_ORIGINS,
+  process.env.CORS_ORIGIN,
+  process.env.ALLOWED_ORIGINS
+);
 const configuredCorsOrigins = new Set(
   [process.env.CLIENT_URL, ...envCorsOrigins, ...defaultCorsOrigins]
     .map((origin) => sanitizeOrigin(origin))
@@ -248,6 +270,8 @@ app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/inquiries', inquiriesRoutes);
+app.use('/api/channel', channelsRoutes);
+app.use('/api/channels', channelsRoutes);
 // Batch 2 Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/offers', offersRoutes);
@@ -382,7 +406,7 @@ app.post('/api/test-notification', (req, res) => {
 });
 
 const logger = require('./config/logger');
-const { ensureUserTierColumns } = require('./services/schemaGuard');
+const { ensureUserTierColumns, ensureSchemaPreflight } = require('./services/schemaGuard');
 
 // ============================================
 // GLOBAL ERROR HANDLING (The Safety Net)
@@ -402,56 +426,112 @@ app.use(errorHandler);
 // ============================================
 // SERVER STARTUP
 // ============================================
-const PORT = process.env.PORT || 5001;
-ensureUserTierColumns()
-  .then(() => logger.info('Tier schema check complete'))
-  .catch((schemaErr) => logger.warn(`Tier schema check failed: ${schemaErr.message}`));
-const serverInstance = server.listen(PORT, () => {
-  logger.info(`✅ Server running on port ${PORT}`);
-  logger.info(`🚀 System Online: Enforced Architecture`);
+const PORT = Number.parseInt(process.env.PORT || '5001', 10) || 5001;
+const DEV_FALLBACK_PORTS = isDevelopment ? [5001, 5000].filter((candidate) => candidate !== PORT) : [];
+let serverInstance = null;
+let shuttingDown = false;
 
+const listenOnPort = (port) =>
+  new Promise((resolve, reject) => {
+    const onError = (error) => {
+      server.off('listening', onListening);
+      reject(error);
+    };
+    const onListening = () => {
+      server.off('error', onError);
+      resolve();
+    };
+
+    server.once('error', onError);
+    server.once('listening', onListening);
+    server.listen(port);
+  });
+
+const startBackgroundJobs = () => {
   // PROTOCOL: VALUE HIERARCHY - Check expiring subscriptions on startup
   try {
     const { checkExpiringSubscriptions } = require('./services/subscriptionNotifications');
 
     // Run once on startup (after 5 second delay to let DB connect)
     setTimeout(async () => {
-      logger.info('🔔 Checking expiring subscriptions...');
+      logger.info('Checking expiring subscriptions...');
       await checkExpiringSubscriptions();
-      logger.info(`🔔 Subscription check complete`);
+      logger.info('Subscription check complete');
     }, 5000);
 
     // Schedule to run every 24 hours
     setInterval(async () => {
-      logger.info('🔔 Running daily subscription expiry check...');
+      logger.info('Running daily subscription expiry check...');
       await checkExpiringSubscriptions();
     }, 24 * 60 * 60 * 1000); // 24 hours
   } catch (e) {
-    logger.warn('Subscription service not loaded:', e.message);
+    logger.warn(`Subscription service not loaded: ${e.message}`);
   }
+};
+
+const startServer = async () => {
+  const portCandidates = [PORT, ...DEV_FALLBACK_PORTS];
+
+  for (let index = 0; index < portCandidates.length; index += 1) {
+    const candidatePort = portCandidates[index];
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await listenOnPort(candidatePort);
+      serverInstance = server;
+      if (candidatePort !== PORT) {
+        logger.warn(`Port ${PORT} is busy. Started on fallback port ${candidatePort} (development only).`);
+      }
+      logger.info(`Server running on port ${candidatePort}`);
+      logger.info('System Online: Enforced Architecture');
+      startBackgroundJobs();
+      return;
+    } catch (error) {
+      const nextCandidate = portCandidates[index + 1];
+      if (error?.code === 'EADDRINUSE' && nextCandidate) {
+        logger.warn(`Port ${candidatePort} is already in use. Trying ${nextCandidate}...`);
+        continue;
+      }
+      throw error;
+    }
+  }
+};
+function parseBooleanEnv(rawValue, fallback) {
+  if (rawValue === undefined || rawValue === null || rawValue === '') return fallback;
+  const normalized = String(rawValue).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  return fallback;
+}
+
+const strictSchemaContract = isDevelopment
+  ? parseBooleanEnv(process.env.STRICT_SCHEMA_CONTRACT, false)
+  : parseBooleanEnv(process.env.STRICT_SCHEMA_CONTRACT, true);
+
+const bootstrap = async () => {
+  await ensureUserTierColumns();
+  logger.info('Tier schema check complete');
+  const schemaReport = await ensureSchemaPreflight({
+    strict: strictSchemaContract,
+    autoCreateTwoFactorFallback: true
+  });
+  logger.info(`[SchemaGuard] Preflight status: ${schemaReport.status}`);
+  await startServer();
+};
+
+bootstrap().catch((startupError) => {
+  logger.error(`Server startup failed: ${startupError.message}`);
+  process.exit(1);
 });
 
 // ============================================
 // GRACEFUL SHUTDOWN (The Resilient Server)
 // ============================================
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Closing DB pool and shutting down gracefully...');
-  serverInstance.close(() => {
-    Promise.allSettled([
-      cacheLayer.close?.(),
-      sessionStore.close?.()
-    ]).finally(() => {
-      pool.end(() => {
-        logger.info('Database pool closed. Exiting.');
-        process.exit(0);
-      });
-    });
-  });
-});
+const shutdown = (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down...');
-  serverInstance.close(() => {
+  logger.info(`${signal} received. Shutting down gracefully...`);
+  const finalize = () => {
     Promise.allSettled([
       cacheLayer.close?.(),
       sessionStore.close?.()
@@ -461,5 +541,17 @@ process.on('SIGINT', () => {
         process.exit(0);
       });
     });
+  };
+
+  if (!serverInstance || !serverInstance.listening) {
+    finalize();
+    return;
+  }
+
+  serverInstance.close(() => {
+    finalize();
   });
-});
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

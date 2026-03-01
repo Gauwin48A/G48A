@@ -36,7 +36,7 @@ const MIN_MOVEMENT_THRESHOLD = 500; // meters
 const NETWORK_TIMEOUT_MS = 6000;
 const LOCATION_SYNC_MAX_ATTEMPTS_PER_ENDPOINT = 2;
 const LOCATION_SYNC_RETRY_DELAY_MS = 1000;
-const LOCAL_DEV_BACKEND_ORIGINS = ['http://localhost:5000', 'http://localhost:5001'];
+const LOCAL_DEV_BACKEND_ORIGINS = ['http://localhost:5001', 'http://localhost:5000'];
 
 /**
  * Wrapper to add timeout support to fetch

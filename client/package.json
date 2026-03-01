@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev-safe.mjs",
     "build": "vite build",
     "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
     "check:no-hardcoded-localhost": "node scripts/check-no-hardcoded-localhost.mjs",

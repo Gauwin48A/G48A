@@ -450,6 +450,49 @@ exports.submitKYC = async (req, res) => {
   }
 };
 
+function isUndefinedColumnError(error) {
+  return Boolean(
+    error
+    && (
+      error.code === '42703'
+      || /column .* does not exist/i.test(String(error.message || ''))
+    )
+  );
+}
+
+async function getKycStatusRow(userId) {
+  try {
+    return await runQuery(
+      `SELECT aadhaar_status, rejection_reason, aadhaar_number, pan_number, kyc_documents
+       FROM users WHERE user_id::text = $1
+       LIMIT 1`,
+      [userId]
+    );
+  } catch (error) {
+    if (!isUndefinedColumnError(error)) {
+      throw error;
+    }
+
+    logger.warn('[KYC] Falling back to schema-flex status query', {
+      userId,
+      message: error.message
+    });
+
+    return runQuery(
+      `SELECT
+         COALESCE(NULLIF(to_jsonb(u)->>'aadhaar_status', ''), 'PENDING') AS aadhaar_status,
+         NULLIF(to_jsonb(u)->>'rejection_reason', '') AS rejection_reason,
+         NULLIF(to_jsonb(u)->>'aadhaar_number', '') AS aadhaar_number,
+         NULLIF(to_jsonb(u)->>'pan_number', '') AS pan_number,
+         COALESCE(to_jsonb(u)->'kyc_documents', '{}'::jsonb) AS kyc_documents
+       FROM users u
+       WHERE COALESCE(NULLIF(to_jsonb(u)->>'user_id', ''), NULLIF(to_jsonb(u)->>'id', '')) = $1
+       LIMIT 1`,
+      [userId]
+    );
+  }
+}
+
 exports.getKYCStatus = async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
@@ -458,11 +501,7 @@ exports.getKYCStatus = async (req, res) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const result = await runQuery(
-      `SELECT aadhaar_status, rejection_reason, aadhaar_number, pan_number, kyc_documents
-       FROM users WHERE user_id::text = $1`,
-      [userId]
-    );
+    const result = await getKycStatusRow(userId);
 
     if (!result.rows.length) {
       return res.status(404).json({ error: 'User not found' });
@@ -475,11 +514,11 @@ exports.getKYCStatus = async (req, res) => {
     const maskedPan = pan ? `XXXXX${pan.slice(-4)}` : null;
 
     return res.json({
-      status: data.aadhaar_status,
+      status: parseOptionalString(data.aadhaar_status) || 'PENDING',
       rejection_reason: data.rejection_reason,
       aadhaar_number: maskedAadhaar,
       pan_number: maskedPan,
-      documents: data.kyc_documents
+      documents: data.kyc_documents || {}
     });
   } catch (err) {
     logger.error('[KYC] Status fetch failed:', err);

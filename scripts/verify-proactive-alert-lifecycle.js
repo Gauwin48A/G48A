@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 
 const WORKFLOW_FILE = 'proactive-alert-lifecycle.yml';
 const ISSUE_TITLE = '[Proactive Nightly] Failing';
@@ -34,25 +34,61 @@ function getCurrentBranch() {
   return readGit('git rev-parse --abbrev-ref HEAD');
 }
 
+function readTokenFromGitCredentialManager() {
+  const result = spawnSync('git', ['credential', 'fill'], {
+    input: 'protocol=https\nhost=github.com\n',
+    encoding: 'utf8'
+  });
+
+  if (result.error) {
+    throw new Error(`Unable to run git credential fill: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    throw new Error('git credential fill failed.');
+  }
+
+  const match = String(result.stdout || '').match(/^password=(.+)$/m);
+  if (!match || !match[1]) {
+    throw new Error('No GitHub token available from git credential manager.');
+  }
+
+  return match[1].trim();
+}
+
 function getToken() {
   const token = String(process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
-  if (!token) {
-    throw new Error('Missing GITHUB_TOKEN (or GH_TOKEN).');
+  if (token) return token;
+
+  try {
+    const fallback = readTokenFromGitCredentialManager();
+    console.log('Using GitHub token from git credential manager.');
+    return fallback;
+  } catch (error) {
+    const reason = error?.message ? ` (${error.message})` : '';
+    throw new Error(
+      `Missing GITHUB_TOKEN (or GH_TOKEN) and unable to auto-resolve token${reason}.`
+    );
   }
-  return token;
 }
 
 async function githubRequest({ token, method, path, body }) {
-  const response = await fetch(`https://api.github.com${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(body ? { 'Content-Type': 'application/json' } : {})
-    },
-    body: body ? JSON.stringify(body) : undefined
-  });
+  let response;
+  try {
+    response = await fetch(`https://api.github.com${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(body ? { 'Content-Type': 'application/json' } : {})
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (error) {
+    throw new Error(
+      `GitHub API ${method} ${path} request failed: ${error?.message || String(error)}`
+    );
+  }
 
   if (!response.ok) {
     let details = '';
