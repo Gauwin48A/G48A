@@ -73,7 +73,7 @@ jobs:
     name: Create Failure Issue
     runs-on: ubuntu-latest
     needs: proactive-suite
-    if: needs.proactive-suite.result == 'failure'
+    if: always() && needs.proactive-suite.result == 'failure'
     steps:
       - name: Create or update failure issue
         uses: actions/github-script@v7
@@ -124,7 +124,7 @@ jobs:
     name: Close Failure Issue On Recovery
     runs-on: ubuntu-latest
     needs: proactive-suite
-    if: needs.proactive-suite.result == 'success'
+    if: always() && needs.proactive-suite.result == 'success'
     steps:
       - name: Close proactive failure issue if open
         uses: actions/github-script@v7
