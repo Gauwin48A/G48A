@@ -33,6 +33,42 @@ npm run dev
 - `server/docs/TEST_VALIDATION.md`
 - `server/docs/PHASE5_VALIDATION_EVIDENCE_2026-02-27.md`
 
+## Footprint Commands
+```bash
+# Size report
+npm run footprint:report
+
+# Guard against tracked/generated bloat
+npm run footprint:guard
+npm run footprint:guard:strict
+npm run footprint:guard:tracked-deps
+
+# Cleanup generated artifacts
+npm run optimize:footprint
+
+# Aggressive cleanup (preserves dependencies unless explicitly confirmed)
+npm run optimize:footprint:aggressive
+
+# Aggressive cleanup + explicit dependency removal confirmation
+npm run optimize:footprint:aggressive:remove-deps
+
+# Minify locale JSON payloads
+npm run optimize:locales
+
+# Validate locale integrity (src/public JSON + coverage)
+npm run validate:locales
+
+# Flawless optimization pipeline (fail-fast, end-to-end)
+npm run optimize:run
+npm run optimize:run:aggressive
+
+# Reinstall both apps when needed
+npm run install:all
+
+# Reinstall + dedupe to reduce dependency footprint
+npm run install:all:optimized
+```
+
 ## Enhancement Backlog
 - Fraud ML scoring.
 - Multi-region active-active setup.

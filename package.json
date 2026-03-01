@@ -5,6 +5,26 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "doctor": "node scripts/doctor.js",
-    "proactive:test": "node scripts/proactive-check.js"
+    "proactive:test": "node scripts/proactive-check.js",
+    "footprint:report": "node scripts/footprint-report.js",
+    "footprint:guard": "node scripts/guard-footprint.js",
+    "footprint:guard:strict": "node scripts/guard-footprint.js --strict-tracked",
+    "footprint:guard:tracked-deps": "node scripts/guard-tracked-deps.js",
+    "validate:locales": "node scripts/validate-locales.js",
+    "optimize:locales": "node scripts/optimize-locales.js",
+    "optimize:run": "node scripts/optimize-pipeline.js",
+    "optimize:run:aggressive": "node scripts/optimize-pipeline.js --aggressive",
+    "optimize:run:aggressive:with-install": "node scripts/optimize-pipeline.js --aggressive --with-install",
+    "optimize:footprint": "node scripts/optimize-footprint.js",
+    "optimize:footprint:aggressive": "node scripts/optimize-footprint.js --aggressive",
+    "optimize:footprint:aggressive:remove-deps": "node scripts/optimize-footprint.js --aggressive --confirm-remove-deps",
+    "install:client": "npm ci --prefix client --no-audit --no-fund",
+    "install:server": "npm ci --prefix server --no-audit --no-fund",
+    "install:all": "npm run install:client && npm run install:server",
+    "install:all:prod": "npm ci --prefix client --omit=dev --no-audit --no-fund && npm ci --prefix server --omit=dev --no-audit --no-fund",
+    "dedupe:client": "npm dedupe --prefix client",
+    "dedupe:server": "npm dedupe --prefix server",
+    "dedupe:all": "npm run dedupe:client && npm run dedupe:server",
+    "install:all:optimized": "npm run install:all && npm run dedupe:all && npm run footprint:report"
   }
 }

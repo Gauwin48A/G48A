@@ -21,6 +21,21 @@ yarn-error.log*
 /build
 /out
 
+# Generated artifacts
+/server/docs/artifacts/
+/server/tests/load/results/
+/client/tmpclaude-*
+/client/stderr.txt
+/client/lint_log.txt
+/client/build*.txt
+/client/build*.log
+/client/android/app/src/main/assets/public/
+/client/android/app/build/
+/client/android/build/
+/client/android/.gradle/
+/server/*.log
+/server/*.err.log
+
 # System files
 .DS_Store
 Thumbs.db
