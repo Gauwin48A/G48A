@@ -95,7 +95,7 @@ async function ensureWorkflowAvailable({ token, owner, repo }) {
 
 async function listWorkflowDispatchRuns({ token, owner, repo, branch }) {
   const encodedBranch = encodeURIComponent(branch);
-  const encodedEvent = encodeURIComponent('workflow_dispatch');
+  const encodedEvent = encodeURIComponent('repository_dispatch');
   const data = await githubRequest({
     token,
     method: 'GET',
@@ -108,12 +108,13 @@ async function dispatchWorkflow({ token, owner, repo, ref, simulateFailure }) {
   await githubRequest({
     token,
     method: 'POST',
-    path: `/repos/${owner}/${repo}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
+    path: `/repos/${owner}/${repo}/dispatches`,
     body: {
-      ref,
-      inputs: {
+      event_type: 'proactive_lifecycle',
+      client_payload: {
         simulate_failure: simulateFailure ? 'true' : 'false',
-        lifecycle_dry_run: 'true'
+        lifecycle_dry_run: 'true',
+        source_branch: ref
       }
     }
   });
