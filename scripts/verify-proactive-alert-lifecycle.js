@@ -112,7 +112,8 @@ async function dispatchWorkflow({ token, owner, repo, ref, simulateFailure }) {
     body: {
       ref,
       inputs: {
-        simulate_failure: simulateFailure ? 'true' : 'false'
+        simulate_failure: simulateFailure ? 'true' : 'false',
+        lifecycle_dry_run: 'true'
       }
     }
   });
