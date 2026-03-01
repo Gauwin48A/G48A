@@ -23,11 +23,11 @@ const requiredPatterns = [
   },
   {
     id: 'failure-job-condition',
-    pattern: /alert-on-failure:[\s\S]*if:\s*needs\.proactive-suite\.result == 'failure'/m
+    pattern: /alert-on-failure:[\s\S]*if:\s*(?:always\(\)\s*&&\s*)?needs\.proactive-suite\.result == 'failure'/m
   },
   {
     id: 'recovery-job-condition',
-    pattern: /close-on-recovery:[\s\S]*if:\s*needs\.proactive-suite\.result == 'success'/m
+    pattern: /close-on-recovery:[\s\S]*if:\s*(?:always\(\)\s*&&\s*)?needs\.proactive-suite\.result == 'success'/m
   },
   {
     id: 'failure-issue-title',
