@@ -1,6 +1,6 @@
 const { execSync } = require('child_process');
 
-const WORKFLOW_FILE = 'proactive-nightly.yml';
+const WORKFLOW_FILE = 'proactive-alert-lifecycle.yml';
 const ISSUE_TITLE = '[Proactive Nightly] Failing';
 const POLL_INTERVAL_MS = 10000;
 const RUN_TIMEOUT_MS = 25 * 60 * 1000;
