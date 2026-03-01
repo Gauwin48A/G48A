@@ -113,7 +113,7 @@ async function dispatchWorkflow({ token, owner, repo, ref, simulateFailure }) {
       event_type: 'proactive_lifecycle',
       client_payload: {
         simulate_failure: simulateFailure ? 'true' : 'false',
-        lifecycle_dry_run: 'true',
+        lifecycle_dryrun: 'true',
         source_branch: ref
       }
     }
