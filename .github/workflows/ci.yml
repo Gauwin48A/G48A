@@ -6,6 +6,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  workflow-contracts:
+    name: Workflow Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify proactive workflow contract
+        run: node scripts/check-proactive-workflow-contract.js
+
   client-quality:
     name: Client Lint/Test/Build
     runs-on: ubuntu-latest
@@ -73,6 +88,9 @@ jobs:
 
       - name: Probe backend runtime contract
         run: npm run check:runtime-contract
+
+      - name: Probe backend page-flow contract
+        run: npm run check:page-flow-contract
 
       - name: Run tests
         run: npm test -- --runInBand

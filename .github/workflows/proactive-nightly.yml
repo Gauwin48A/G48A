@@ -1,0 +1,165 @@
+name: Proactive Nightly
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: 'Force a failure to validate alerting and issue lifecycle'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  group: proactive-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proactive-suite:
+    name: Run Proactive Test Suite
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      JWT_SECRET: ci_access_secret_x9k3f2m8n1v6p4r7t2w5z8q1y3u6i9o
+      REFRESH_SECRET: ci_refresh_secret_m4b7n2c9x6v1z8a5s3d0f7g4h9j2k6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Simulate failure for alert validation
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.simulate_failure }}
+        run: |
+          echo "Simulating proactive-suite failure by request."
+          exit 1
+
+      - name: Run proactive suite
+        run: |
+          set -o pipefail
+          node scripts/proactive-check.js 2>&1 | tee proactive-check.log
+        shell: bash
+
+      - name: Upload proactive log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proactive-nightly-log-${{ github.run_id }}
+          path: proactive-check.log
+          retention-days: 7
+
+  alert-on-failure:
+    name: Create Failure Issue
+    runs-on: ubuntu-latest
+    needs: proactive-suite
+    if: needs.proactive-suite.result == 'failure'
+    steps:
+      - name: Create or update failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const title = '[Proactive Nightly] Failing';
+            const body = [
+              'Automated proactive nightly run failed.',
+              '',
+              `- Date (UTC): ${new Date().toISOString()}`,
+              `- Workflow: ${context.workflow}`,
+              `- Run: ${runUrl}`,
+              `- Branch: ${context.ref}`,
+              '',
+              'Please inspect the uploaded `proactive-nightly-log-*` artifact and fix regressions before merge/deploy.'
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const openIssue = existing.data.find((issue) => issue.title === title);
+            if (openIssue) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: openIssue.number,
+                body
+              });
+              core.info(`Appended failure details to existing issue #${openIssue.number}.`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body
+              });
+              core.info(`Created failure issue #${created.data.number}.`);
+            }
+
+  close-on-recovery:
+    name: Close Failure Issue On Recovery
+    runs-on: ubuntu-latest
+    needs: proactive-suite
+    if: needs.proactive-suite.result == 'success'
+    steps:
+      - name: Close proactive failure issue if open
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = '[Proactive Nightly] Failing';
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const existing = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const openIssue = existing.data.find((issue) => issue.title === title);
+            if (!openIssue) {
+              core.info('No open proactive failure issue found.');
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: openIssue.number,
+              body: `Proactive suite recovered on ${new Date().toISOString()} (${runUrl}). Closing this issue.`
+            });
+
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: openIssue.number,
+              state: 'closed'
+            });
+
+            core.info(`Closed recovery issue #${openIssue.number}.`);

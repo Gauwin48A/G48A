@@ -6,6 +6,12 @@ const npmCommand = 'npm';
 
 const checks = [
   {
+    name: 'Proactive workflow contract gate',
+    command: process.execPath,
+    cwd: rootDir,
+    args: ['scripts/check-proactive-workflow-contract.js']
+  },
+  {
     name: 'Client localhost hardcode gate',
     command: npmCommand,
     cwd: path.join(rootDir, 'client'),
@@ -30,6 +36,12 @@ const checks = [
     args: ['run', 'build']
   },
   {
+    name: 'Client bundle budget gate',
+    command: npmCommand,
+    cwd: path.join(rootDir, 'client'),
+    args: ['run', 'check:bundle-budget']
+  },
+  {
     name: 'Server route contract gate',
     command: npmCommand,
     cwd: path.join(rootDir, 'server'),
@@ -40,6 +52,18 @@ const checks = [
     command: npmCommand,
     cwd: path.join(rootDir, 'server'),
     args: ['run', 'check:runtime-contract']
+  },
+  {
+    name: 'Server page-flow contract probe',
+    command: npmCommand,
+    cwd: path.join(rootDir, 'server'),
+    args: ['run', 'check:page-flow-contract']
+  },
+  {
+    name: 'Server test suite',
+    command: npmCommand,
+    cwd: path.join(rootDir, 'server'),
+    args: ['test', '--', '--runInBand']
   },
   {
     name: 'Server syntax check',
@@ -54,10 +78,13 @@ for (const check of checks) {
   const useShell = check.command === npmCommand;
   const result = spawnSync(check.command, check.args, {
     cwd: check.cwd,
-    stdio: 'inherit',
     shell: useShell,
-    env: process.env
+    env: process.env,
+    encoding: 'utf8'
   });
+
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
 
   if (result.error) {
     console.error(`\nUnable to run step: ${check.name}`);
@@ -66,6 +93,13 @@ for (const check of checks) {
   }
 
   if (result.status !== 0) {
+    if (
+      process.platform === 'win32' &&
+      /(EPERM|EBUSY|EACCES)/i.test(`${result.stdout || ''}\n${result.stderr || ''}`)
+    ) {
+      console.error('\nWindows file-lock detected (EPERM/EBUSY/EACCES).');
+      console.error('Close running dev servers/watchers and retry the same command.');
+    }
     console.error(`\nProactive check failed at step: ${check.name}`);
     process.exit(result.status || 1);
   }
