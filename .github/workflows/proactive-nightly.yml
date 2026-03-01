@@ -3,17 +3,10 @@ name: Proactive Nightly
 on:
   schedule:
     - cron: '30 3 * * *'
-  repository_dispatch:
-    types:
-      - proactive_lifecycle
   workflow_dispatch:
     inputs:
       simulate_failure:
         description: 'Force a failure to validate alerting and issue lifecycle'
-        required: false
-        default: 'false'
-      lifecycle_dryrun:
-        description: 'Skip full proactive suite and run lifecycle validation only'
         required: false
         default: 'false'
 
@@ -56,17 +49,17 @@ jobs:
         working-directory: server
 
       - name: Simulate failure for alert validation
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.simulate_failure == 'true') || (github.event_name == 'repository_dispatch' && github.event.client_payload.simulate_failure == 'true') }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.simulate_failure == 'true' }}
         run: |
           echo "Simulating proactive-suite failure by request."
           exit 1
 
       - name: Lifecycle dry-run success
-        if: ${{ ((github.event_name == 'workflow_dispatch' && inputs.lifecycle_dryrun == 'true') || (github.event_name == 'repository_dispatch' && github.event.client_payload.lifecycle_dryrun == 'true')) && ((github.event_name == 'workflow_dispatch' && inputs.simulate_failure != 'true') || (github.event_name == 'repository_dispatch' && github.event.client_payload.simulate_failure != 'true')) }}
-        run: echo "Lifecycle dry-run mode: skipping full proactive suite."
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.simulate_failure != 'true' }}
+        run: echo "Lifecycle validation mode: skipping full proactive suite."
 
       - name: Run proactive suite
-        if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.lifecycle_dryrun == 'true') || (github.event_name == 'repository_dispatch' && github.event.client_payload.lifecycle_dryrun == 'true')) }}
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           set -o pipefail
           node scripts/proactive-check.js 2>&1 | tee proactive-check.log
