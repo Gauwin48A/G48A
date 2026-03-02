@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useToast } from '@/hooks/use-toast';
+import TransactionStepper from '@/components/TransactionStepper';
 
 import { useTranslation } from 'react-i18next';
 
@@ -19,14 +20,23 @@ const Offers = () => {
     const { toast } = useToast();
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [role, setRole] = useState('seller'); // 'seller' or 'buyer'
     const [counterPrice, setCounterPrice] = useState({});
     const [actionOfferId, setActionOfferId] = useState(null);
     const requestIdRef = useRef(0);
+    const negotiationSteps = [
+        { key: 'offer', label: 'Offer Submitted', hint: 'Buyer proposes price' },
+        { key: 'review', label: 'Seller Review', hint: 'Accept, reject, or counter' },
+        { key: 'payment', label: 'Payment', hint: 'Buyer pays after acceptance' },
+        { key: 'verify', label: 'Verification', hint: 'Both parties confirm completion' },
+        { key: 'closed', label: 'Transaction Closed', hint: 'Sale done or reopened' }
+    ];
 
     const fetchOffers = useCallback(async () => {
         const requestId = ++requestIdRef.current;
         setLoading(true);
+        setError('');
         try {
             const response = await api.get('/api/offers', {
                 params: { role }
@@ -39,6 +49,10 @@ const Offers = () => {
         } catch (error) {
             if (import.meta.env.DEV) {
                 console.error('Failed to fetch offers:', error);
+            }
+            if (requestId === requestIdRef.current) {
+                setOffers([]);
+                setError(error?.message || 'Failed to load offers');
             }
         } finally {
             if (requestId === requestIdRef.current) {
@@ -140,12 +154,31 @@ const Offers = () => {
                     </div>
                 </div>
             </div>
+            <div className="max-w-4xl mx-auto px-4 -mt-2">
+                <TransactionStepper steps={negotiationSteps} currentStep={1} className="bg-white dark:bg-gray-900" />
+            </div>
 
             <div className="max-w-4xl mx-auto px-4 py-6">
                 {loading ? (
                     <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
                     </div>
+                ) : error ? (
+                    <Card className="border-0 shadow-lg">
+                        <CardContent className="py-10 text-center">
+                            <h3 className="text-xl font-semibold text-red-600 mb-2">Unable to load offers</h3>
+                            <p className="text-gray-500 mb-4">{error}</p>
+                            <div className="flex flex-wrap gap-2 justify-center">
+                                <Button className="bg-green-600 hover:bg-green-700" onClick={fetchOffers}>
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Retry
+                                </Button>
+                                <Button variant="outline" onClick={() => navigate('/all-posts')}>
+                                    Browse posts
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
                 ) : offers.length === 0 ? (
                     <Card className="border-0 shadow-lg">
                         <CardContent className="text-center py-12">
@@ -154,6 +187,14 @@ const Offers = () => {
                             <p className="text-gray-500 mt-2">
                                 {role === 'seller' ? 'You haven\'t received any offers yet' : 'You haven\'t made any offers yet'}
                             </p>
+                            <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                <Button variant="outline" onClick={fetchOffers}>
+                                    Refresh
+                                </Button>
+                                <Button className="bg-green-600 hover:bg-green-700" onClick={() => navigate('/all-posts')}>
+                                    Browse listings
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ) : (

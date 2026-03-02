@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FaHeart, FaRegHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaUser } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ import LoginPromptModal from '@/components/LoginPromptModal';
 import { translatePosts } from '@/utils/translateContent';
 import { useAuth } from '@/context/AuthContext';
 import { getApiOriginBase } from '@/lib/networkConfig';
+import { PageEmptyState, PageErrorState, PageLoadingState } from '@/components/page-state/PageStateBlocks';
 
 const GUEST_POST_LIMIT = 5; // Limit posts for non-logged-in users
 
@@ -39,6 +41,7 @@ const FeedPage = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [loadMoreError, setLoadMoreError] = useState('');
   const postsPerPage = 10;
   const shuffleSeedRef = useRef(Date.now());
   const activeRequestIdRef = useRef(0);
@@ -81,6 +84,7 @@ const FeedPage = () => {
     const requestId = activeRequestIdRef.current + 1;
     activeRequestIdRef.current = requestId;
     loadingGuardRef.current = true;
+    const pageToFetch = isRefresh ? 1 : currentPage;
 
     if (fetchAbortControllerRef.current) {
       fetchAbortControllerRef.current.abort();
@@ -90,14 +94,18 @@ const FeedPage = () => {
 
     try {
       setLoading(true);
-      setError(null);
+      if (pageToFetch === 1) {
+        setError(null);
+        setLoadMoreError('');
+      } else {
+        setLoadMoreError('');
+      }
 
       // Keep one shuffle seed across pagination; rotate seed only on manual refresh.
       const activeShuffleSeed = isRefresh ? Date.now() : shuffleSeedRef.current;
       if (isRefresh) {
         shuffleSeedRef.current = activeShuffleSeed;
       }
-      const pageToFetch = isRefresh ? 1 : currentPage;
       const url = `${baseUrl}/api/posts?page=${pageToFetch}&limit=${postsPerPage}&sortBy=shuffle&shuffleSeed=${activeShuffleSeed}`;
 
       const res = await fetch(url, { signal: abortController.signal });
@@ -140,9 +148,12 @@ const FeedPage = () => {
       if (requestId !== activeRequestIdRef.current) {
         return;
       }
-      setError(err.message);
-      if (isRefresh) setPosts([]);
-      setHasMore(false);
+      if (pageToFetch > 1) {
+        setLoadMoreError('Unable to load more posts right now. Please retry.');
+        setHasMore(false);
+      } else {
+        setError('Unable to load the feed right now. Please retry.');
+      }
     } finally {
       if (fetchAbortControllerRef.current === abortController) {
         fetchAbortControllerRef.current = null;
@@ -169,6 +180,17 @@ const FeedPage = () => {
   const handleRefresh = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     fetchFeed(true);
+  };
+
+  const handleRetry = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    fetchFeed(true);
+  };
+
+  const handleLoadMoreRetry = () => {
+    setLoadMoreError('');
+    setHasMore(true);
+    fetchFeed(false);
   };
 
 
@@ -273,6 +295,9 @@ const FeedPage = () => {
     return date.toLocaleDateString();
   };
 
+  const showBlockingError = Boolean(error) && posts.length === 0;
+  const showRefreshErrorBanner = Boolean(error) && posts.length > 0;
+
   return (
     <div className="bg-gradient-to-b from-slate-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
       {/* Header */}
@@ -321,18 +346,39 @@ const FeedPage = () => {
         <button
           onClick={handleRefresh}
           disabled={loading}
+          aria-label={t('refresh_feed') || 'Refresh feed posts'}
+          data-ux-action="feed_refresh_posts"
           className="text-xs font-bold text-indigo-600 dark:text-indigo-400 px-6 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/40 shadow-sm border border-indigo-100 dark:border-indigo-800 active:scale-95 transition-transform flex items-center gap-2"
         >
           {loading && currentPage === 1 ? (
-            <><span className="animate-spin inline-block">🔄</span> {t('refreshing') || 'Refreshing...'}</>
+            <><span className="animate-spin inline-block">R</span> {t('refreshing') || 'Refreshing...'}</>
           ) : (
-            <>✨ {t('tap_for_new') || 'Tap for new posts'} ↑</>
+            <>{t('tap_for_new') || 'Tap for new posts'}</>
           )}
         </button>
       </div>
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-6">
+        {!isLoggedIn && (
+          <Card className="mb-6 border border-indigo-100 bg-indigo-50/70 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-indigo-900">Guest mode is active</p>
+                <p className="text-sm text-indigo-700">
+                  You can read a few posts now. Log in to keep scrolling and post updates.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="border-indigo-300 text-indigo-700 hover:bg-indigo-100"
+                onClick={() => navigate('/login', { state: { returnTo: '/feed' } })}
+              >
+                Log in for full feed
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Quick Post - Only show for logged-in users */}
         {isLoggedIn && (
@@ -355,23 +401,71 @@ const FeedPage = () => {
 
         {/* Posts */}
         <div className="space-y-4">
-          {loading && currentPage === 1 ? (
-            <div className="text-center py-12">
-              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-gray-500">{t('loading') || 'Loading...'}</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-12 text-red-500">{error}</div>
+          {showRefreshErrorBanner ? (
+            <Alert className="border-amber-300 bg-amber-50 text-amber-900" data-ux-state="feed-refresh-error">
+              <AlertTitle>Latest refresh failed</AlertTitle>
+              <AlertDescription>
+                {error}
+                {' '}
+                Showing the last loaded posts.
+              </AlertDescription>
+              <div className="mt-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  data-ux-action="feed_refresh_retry"
+                  className="border-amber-400 text-amber-900"
+                  onClick={handleRetry}
+                >
+                  Retry refresh
+                </Button>
+              </div>
+            </Alert>
+          ) : null}
+
+          {loading && currentPage === 1 && posts.length === 0 ? (
+            <PageLoadingState
+              title={t('loading') || 'Loading...'}
+              description={t('feed_loading_desc') || 'Loading feed posts for you.'}
+              marker="loading"
+            />
+          ) : showBlockingError ? (
+            <PageErrorState
+              title="Feed unavailable"
+              description={error}
+              onRetry={handleRetry}
+              retryLabel="Retry"
+              marker="error"
+              secondaryAction={(
+                <Button
+                  variant="outline"
+                  className="border-indigo-300 text-indigo-700"
+                  onClick={() => navigate('/all-posts')}
+                >
+                  Browse marketplace posts
+                </Button>
+              )}
+            />
           ) : posts.length === 0 ? (
-            <Card className="p-8 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed">
-              <FaNewspaper className="text-5xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">{t('no_posts') || 'No posts yet. Be the first to share!'}</p>
-              {isLoggedIn && (
+            <PageEmptyState
+              title={t('no_posts') || 'No posts yet. Be the first to share!'}
+              description={t('feed_empty_desc') || 'Share an update or browse marketplace listings while the feed is empty.'}
+              icon={FaNewspaper}
+              marker="empty"
+              action={isLoggedIn ? (
                 <Button onClick={() => navigate('/feed/feedpostadd')} className="bg-indigo-600 text-white">
                   {t('create_post') || 'Create Post'}
                 </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="border-indigo-300 text-indigo-700"
+                  onClick={() => navigate('/login', { state: { returnTo: '/feed' } })}
+                >
+                  Log in to share updates
+                </Button>
               )}
-            </Card>
+            />
           ) : (
             (isLoggedIn ? posts : posts.slice(0, GUEST_POST_LIMIT)).map((post) => {
               const postId = post.post_id || post.id;
@@ -397,7 +491,7 @@ const FeedPage = () => {
                       </span>
                       <div className="text-gray-400 text-xs flex items-center gap-2">
                         <span>{post.location || 'Global'}</span>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <span>{timeAgo(post.created_at)}</span>
                       </div>
                     </div>
@@ -477,9 +571,27 @@ const FeedPage = () => {
           )}
 
           {loading && currentPage > 1 && (
-            <div className="text-center py-4">
+            <div className="text-center py-4" data-ux-state="feed-load-more-loading">
               <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
             </div>
+          )}
+
+          {loadMoreError && posts.length > 0 && (
+            <Alert className="border-red-300 bg-red-50 text-red-900" data-ux-state="feed-load-more-error">
+              <AlertTitle>More posts unavailable</AlertTitle>
+              <AlertDescription>{loadMoreError}</AlertDescription>
+              <div className="mt-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  data-ux-action="feed_load_more_retry"
+                  className="border-red-300 text-red-700"
+                  onClick={handleLoadMoreRetry}
+                >
+                  Retry loading more
+                </Button>
+              </div>
+            </Alert>
           )}
 
           {!hasMore && posts.length > 0 && (

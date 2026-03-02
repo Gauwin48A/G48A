@@ -12,12 +12,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Shield, Mail, Phone, Eye, EyeOff } from "lucide-react";
+import { Shield, Mail, Phone, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { getDeviceId } from '@/utils/device';
 import { getBestAvailableLocation, captureLocation } from '@/services/locationService';
 import { useTranslation } from "react-i18next";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+
+const PHONE_OTP_LOGIN_ENABLED = String(import.meta.env.VITE_ENABLE_PHONE_OTP_LOGIN || "").toLowerCase() === "true";
 
 const Login = () => {
   const { t } = useTranslation();
@@ -30,19 +32,71 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   // State for Inputs
-  const [emailLogin, setEmailLogin] = useState({ email: "", password: "" });
+  const [emailLogin, setEmailLogin] = useState({ identifier: "", password: "" });
   const [phoneLogin, setPhoneLogin] = useState({ phone: "", otp: "" });
 
   // State for OTP/Risk Logic
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpValue, setOtpValue] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [authHint, setAuthHint] = useState('');
 
   const normalizeApiError = (error) => ({
     status: error?.status ?? error?.response?.status ?? null,
     data: error?.data ?? error?.response?.data ?? {},
     message: error?.message || error?.response?.data?.error || error?.response?.data?.message || ''
   });
+
+  const resolveAuthErrorMessage = (normalizedError, fallbackMessage) => {
+    const status = normalizedError?.status;
+    const errorCode = String(normalizedError?.data?.code || normalizedError?.data?.errorCode || '').toLowerCase();
+    const rawMessage = String(
+      normalizedError?.data?.error
+      || normalizedError?.data?.message
+      || normalizedError?.message
+      || ''
+    ).toLowerCase();
+
+    if (status === 429 || rawMessage.includes('too many') || rawMessage.includes('rate limit')) {
+      return 'Too many sign-in attempts detected. Please wait a few minutes and retry.';
+    }
+    if (status === 423 || rawMessage.includes('locked')) {
+      return 'Your account is temporarily locked. Use Forgot Password or retry later.';
+    }
+    if (
+      status === 401
+      || rawMessage.includes('invalid credential')
+      || rawMessage.includes('wrong password')
+      || rawMessage.includes('incorrect password')
+      || rawMessage.includes('user not found')
+    ) {
+      return 'Credentials did not match. Verify your identifier and password.';
+    }
+    if (
+      rawMessage.includes('location')
+      || rawMessage.includes('geolocation')
+      || rawMessage.includes('gps')
+      || rawMessage.includes('https')
+    ) {
+      return 'Location permission is required for secure login. Enable location and retry.';
+    }
+    if (
+      errorCode === 'risk_challenge_required'
+      || rawMessage.includes('otp')
+      || normalizedError?.data?.challengeType === 'otp'
+    ) {
+      return normalizedError?.data?.message || 'Additional verification is required to complete login.';
+    }
+    if (rawMessage.includes('network') || rawMessage.includes('fetch') || rawMessage.includes('timeout')) {
+      return 'Login service is temporarily unreachable. Please retry shortly.';
+    }
+    return fallbackMessage
+      || normalizedError?.data?.error
+      || normalizedError?.data?.message
+      || normalizedError?.message
+      || t('login_failed')
+      || 'Login failed';
+  };
 
   const resolveUserId = (user) => {
     const candidate = user?.id ?? user?.user_id ?? null;
@@ -144,10 +198,13 @@ const Login = () => {
   // ------------------ EMAIL LOGIN ------------------ //
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    if (!emailLogin.email || !emailLogin.password) {
+    setAuthHint('');
+    if (!emailLogin.identifier || !emailLogin.password) {
+      const message = t('identifier_password_required') || "Email/phone/username and password are required";
+      setAuthHint(message);
       toast({
         title: t('validation_error') || "Validation Error",
-        description: t('email_password_required') || "Email and password are required",
+        description: message,
         variant: "destructive",
       });
       return;
@@ -155,9 +212,11 @@ const Login = () => {
 
     // OTP validation if visible
     if (showOtpInput && (!otpValue || otpValue.length < 4)) {
+      const message = "Please enter the code sent to your email.";
+      setAuthHint(message);
       toast({
         title: "OTP Required",
-        description: "Please enter the code sent to your email.",
+        description: message,
         variant: "destructive",
       });
       return;
@@ -172,7 +231,7 @@ const Login = () => {
       const deviceId = getDeviceId();
 
       const payload = {
-        email: emailLogin.email,
+        identifier: emailLogin.identifier,
         password: emailLogin.password,
         deviceId: deviceId,
         lat: location.lat,
@@ -205,6 +264,7 @@ const Login = () => {
           title: t('login_successful') || "Login Successful",
           description: t('welcome_back_msg') || "Welcome back!",
         });
+        setAuthHint('');
         navigate(getPostLoginRedirect(), { replace: true });
       }
 
@@ -223,20 +283,21 @@ const Login = () => {
 
       if (requiresOtpChallenge) {
         setShowOtpInput(true);
+        const challengeMessage = normalizedError.data?.message || "Additional verification is required to complete login.";
+        setAuthHint(challengeMessage);
         toast({
           title: "Security Check",
-          description: normalizedError.data?.message || "Additional verification is required to complete login.",
+          description: challengeMessage,
         });
         return; // Stop here, let user enter OTP
       }
 
-      // Handle GPS Errors specifically
-      const normalizedMessage = normalizedError.message.toLowerCase();
-      const isGpsError = normalizedMessage.includes('location') || normalizedMessage.includes('geolocation') || normalizedMessage.includes('https');
-      const errorMessage = normalizedError.data?.error || normalizedError.data?.message || normalizedError.message || t('login_failed') || "Login failed";
+      const errorMessage = resolveAuthErrorMessage(normalizedError, t('login_failed') || "Login failed");
+      setAuthHint(errorMessage);
+      const isSecurityBlock = errorMessage.toLowerCase().includes('location permission');
 
       toast({
-        title: isGpsError ? "Security Block" : "Error",
+        title: isSecurityBlock ? "Security Block" : "Sign-in Failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -247,12 +308,23 @@ const Login = () => {
 
   // ------------------ PHONE OTP LOGIN (Legacy/Alternative) ------------------ //
   const handleSendOTP = async () => {
+    setAuthHint('');
+    if (!PHONE_OTP_LOGIN_ENABLED) {
+      toast({
+        title: t('coming_soon') || "Coming Soon",
+        description: t('phone_otp_coming_soon') || "Phone OTP login will be enabled soon.",
+      });
+      return;
+    }
+
     // Phone validation
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneLogin.phone || !phoneRegex.test(phoneLogin.phone)) {
+      const message = t('invalid_phone_desc') || "Please enter a valid 10-digit phone number starting with 6-9.";
+      setAuthHint(message);
       toast({
         title: t('invalid_phone_number') || "Invalid Phone Number",
-        description: t('invalid_phone_desc') || "Please enter a valid 10-digit phone number starting with 6-9.",
+        description: message,
         variant: "destructive",
       });
       return;
@@ -268,9 +340,14 @@ const Login = () => {
       });
     } catch (err) {
       const normalizedError = normalizeApiError(err);
+      const resolvedMessage = resolveAuthErrorMessage(
+        normalizedError,
+        t('could_not_send_otp') || "Could not send OTP"
+      );
+      setAuthHint(resolvedMessage);
       toast({
         title: t('network_error') || "Error",
-        description: normalizedError.data?.error || normalizedError.message || t('could_not_send_otp') || "Could not send OTP",
+        description: resolvedMessage,
         variant: "destructive",
       });
     } finally {
@@ -280,12 +357,23 @@ const Login = () => {
 
   const handlePhoneLogin = async (e) => {
     e.preventDefault();
+    setAuthHint('');
+    if (!PHONE_OTP_LOGIN_ENABLED) {
+      toast({
+        title: t('coming_soon') || "Coming Soon",
+        description: t('phone_otp_coming_soon') || "Phone OTP login will be enabled soon.",
+      });
+      return;
+    }
+
     // OTP validation
     const otpRegex = /^\d{4,8}$/;
     if (!phoneLogin.otp || !otpRegex.test(phoneLogin.otp)) {
+      const message = t('otp_valid_desc') || "Please enter a valid OTP.";
+      setAuthHint(message);
       toast({
         title: t('invalid_otp') || "Invalid OTP",
-        description: t('otp_valid_desc') || "Please enter a valid OTP.",
+        description: message,
         variant: "destructive",
       });
       return;
@@ -311,14 +399,20 @@ const Login = () => {
         title: t('login_successful') || "Login Successful",
         description: t('welcome_back_msg') || "Welcome back!",
       });
+      setAuthHint('');
       setOtpSent(false);
       setPhoneLogin((prev) => ({ ...prev, otp: '' }));
       navigate(getPostLoginRedirect(), { replace: true });
     } catch (err) {
       const normalizedError = normalizeApiError(err);
+      const resolvedMessage = resolveAuthErrorMessage(
+        normalizedError,
+        t('could_not_verify_otp') || "Could not verify OTP"
+      );
+      setAuthHint(resolvedMessage);
       toast({
         title: t('network_error') || "Error",
-        description: normalizedError.data?.error || normalizedError.message || t('could_not_verify_otp') || "Could not verify OTP",
+        description: resolvedMessage,
         variant: "destructive",
       });
     } finally {
@@ -361,6 +455,7 @@ const Login = () => {
                 </TabsTrigger>
                 <TabsTrigger
                   value="phone"
+                  disabled={!PHONE_OTP_LOGIN_ENABLED}
                   className="rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
                 >
                   <Phone className="w-4 h-4" />
@@ -373,19 +468,22 @@ const Login = () => {
                 <form onSubmit={handleEmailLogin} className="space-y-6">
                   <div>
                     <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      {t('email') || "Email"}
+                      {t('email_phone_username') || "Email / Phone / Username"}
                     </Label>
                     <Input
                       id="email"
-                      type="email"
+                      type="text"
                       required
-                      value={emailLogin.email}
+                      value={emailLogin.identifier}
                       onChange={(e) =>
-                        setEmailLogin((prev) => ({ ...prev, email: e.target.value }))
+                        setEmailLogin((prev) => ({ ...prev, identifier: e.target.value }))
                       }
                       className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl"
-                      placeholder={t('email_placeholder') || "Enter your email"}
+                      placeholder={t('email_phone_username_placeholder') || "Enter your email, phone, or username"}
                     />
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      {t('login_identifier_help') || "Use the same email, phone, or username used during signup."}
+                    </p>
                   </div>
                   <div>
                     <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -434,6 +532,13 @@ const Login = () => {
                     </Link>
                   </div>
 
+                  {authHint && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>{authHint}</span>
+                    </div>
+                  )}
+
                   {showOtpInput && (
                     <div className="animate-in fade-in slide-in-from-top-4 duration-300">
                       <Label htmlFor="challenge-otp" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -467,6 +572,16 @@ const Login = () => {
 
               {/* Phone OTP Login */}
               <TabsContent value="phone">
+                {!PHONE_OTP_LOGIN_ENABLED ? (
+                  <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-center space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                      {t('phone_otp') || "Phone OTP"}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t('phone_otp_coming_soon') || "Phone OTP login will be enabled soon."}
+                    </p>
+                  </div>
+                ) : (
                 <div className="space-y-6">
                   <div>
                     <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -494,6 +609,13 @@ const Login = () => {
                       {t('sign_up_here') || "Sign up here"}
                     </span>
                   </p>
+
+                  {authHint && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>{authHint}</span>
+                    </div>
+                  )}
 
                   {!otpSent ? (
                     <Button
@@ -532,6 +654,7 @@ const Login = () => {
                     </form>
                   )}
                 </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

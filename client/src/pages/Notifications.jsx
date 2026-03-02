@@ -11,6 +11,45 @@ import {
 } from "lucide-react";
 import PageHeader from '../components/PageHeader';
 
+const KNOWN_NOTIFICATION_ROUTES = [
+  '/all-posts',
+  '/post/',
+  '/bought-posts',
+  '/sold-posts',
+  '/my-home',
+  '/profile',
+  '/tier-selection',
+  '/chat',
+  '/rewards',
+  '/wishlist',
+  '/payment',
+  '/offers',
+  '/notifications',
+  '/my-recommendations',
+  '/categories',
+  '/search'
+];
+
+const resolveNotificationActionPath = (rawPath) => {
+  if (!rawPath) return '/notifications';
+  const normalizedPath = String(rawPath).trim().startsWith('/')
+    ? String(rawPath).trim()
+    : `/${String(rawPath).trim()}`;
+
+  if (normalizedPath.startsWith('/orders')) return '/bought-posts';
+  if (normalizedPath.startsWith('/wallet')) return '/payment';
+  if (normalizedPath.startsWith('/messages')) return '/chat';
+  if (normalizedPath.startsWith('/post/')) return normalizedPath;
+
+  const isKnown = KNOWN_NOTIFICATION_ROUTES.some((route) =>
+    route.endsWith('/')
+      ? normalizedPath.startsWith(route)
+      : (normalizedPath === route || normalizedPath.startsWith(`${route}/`))
+  );
+
+  return isKnown ? normalizedPath : '/all-posts';
+};
+
 const resolveIconType = (notification) => {
   const raw = String(notification.icon || notification.icon_category || notification.type || '').toLowerCase();
 
@@ -288,6 +327,18 @@ const Notifications = () => {
     () => notifications.reduce((count, notification) => count + (notification.read ? 0 : 1), 0),
     [notifications]
   );
+  const handleNotificationAction = useCallback((notification) => {
+    const id = notification.notification_id || notification.id;
+    const rawActionPath = notification?.action?.path || '';
+    const targetPath = resolveNotificationActionPath(rawActionPath);
+
+    markAsRead(id);
+    navigate(targetPath, {
+      state: targetPath !== rawActionPath
+        ? { fromNotificationFallback: true, originalPath: rawActionPath }
+        : undefined
+    });
+  }, [markAsRead, navigate]);
   const filteredNotifications = useMemo(
     () => notifications.filter((notification) => {
       if (filter === 'unread') return !notification.read;
@@ -432,6 +483,22 @@ const Notifications = () => {
                   : (t('check_back_later') || 'Check back later for updates and offers.')
                 }
               </p>
+              <div className="mt-6 flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/all-posts')}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium"
+                >
+                  Browse Listings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/chat')}
+                  className="px-4 py-2 rounded-xl border border-purple-400/40 text-purple-200 text-sm font-medium hover:bg-white/10"
+                >
+                  Open Chat
+                </button>
+              </div>
             </div>
           ) : (
             filteredNotifications.map((notif, index) => (
@@ -477,10 +544,7 @@ const Notifications = () => {
                     {/* Action Button */}
                     {notif.action && (
                       <button
-                        onClick={() => {
-                          markAsRead(notif.notification_id || notif.id);
-                          navigate(notif.action.path);
-                        }}
+                        onClick={() => handleNotificationAction(notif)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 rounded-lg text-sm font-medium text-purple-200 transition-all group/btn"
                       >
                         {notif.action.label}

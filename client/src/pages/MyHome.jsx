@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { translatePosts } from '@/utils/translateContent';
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Eye,
     Heart,
@@ -26,6 +27,8 @@ import {
     Sparkles,
     ChevronRight,
     Copy,
+    AlertTriangle,
+    RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
@@ -59,8 +62,9 @@ const MyHome = () => {
     const [selectedPostForDelete, setSelectedPostForDelete] = useState(null);
     const [postsMovedToUndone, setPostsMovedToUndone] = useState(new Set());
     const [posts, setPosts] = useState([]);
-    const [, setError] = useState(null);
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [retryNonce, setRetryNonce] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
     const [searchTerm, setSearchTerm] = useState("");
@@ -117,13 +121,18 @@ const MyHome = () => {
 
                 if (!cancelled) {
                     setPosts(nextPosts);
-                    setError(null);
+                    setError('');
                 }
             } catch (err) {
                 console.error("Fetch posts error:", err);
                 if (!cancelled) {
                     setPosts([]);
-                    setError(null); // Silent fail for UI?
+                    const status = Number(err?.status || err?.response?.status || 0);
+                    if (status === 401 || status === 403) {
+                        setError('Your session expired. Please sign in again.');
+                    } else {
+                        setError('Could not load your listings. Please retry.');
+                    }
                 }
             } finally {
                 if (!cancelled) {
@@ -136,7 +145,11 @@ const MyHome = () => {
         return () => {
             cancelled = true;
         };
-    }, [authToken, currentLang, resolvedUserId]);
+    }, [authToken, currentLang, resolvedUserId, retryNonce]);
+
+    const retryFetchPosts = useCallback(() => {
+        setRetryNonce((value) => value + 1);
+    }, []);
 
     const allPosts = useMemo(() => (Array.isArray(posts) ? posts : []), [posts]);
     const boughtPosts = useMemo(
@@ -364,6 +377,7 @@ const MyHome = () => {
                 <div className="max-w-lg mx-auto px-6 space-y-4">
                     <Link
                         to="/login"
+                        state={{ returnTo: '/my-home' }}
                         className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
                     >
                         <div className="flex items-center gap-4">
@@ -397,6 +411,34 @@ const MyHome = () => {
             </div>
         );
     }
+
+    if (error && allPosts.length === 0) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 px-4 pt-28">
+                <Card className="max-w-xl mx-auto border-red-200">
+                    <CardContent className="p-8 text-center">
+                        <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-3">
+                            <AlertTriangle className="w-6 h-6" />
+                        </div>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            Listings unavailable
+                        </h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">{error}</p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button onClick={retryFetchPosts}>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retry
+                            </Button>
+                            <Button variant="outline" onClick={() => navigate('/all-posts')}>
+                                Browse Marketplace
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 pt-20">
             {/* Premium Header */}
@@ -415,7 +457,7 @@ const MyHome = () => {
 
                     <div className="text-center">
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm mb-4">
-                            <span className="text-4xl">🏠</span>
+                            <span className="text-3xl font-semibold text-white">MH</span>
                         </div>
                         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('my_home_title')}</h1>
                         <p className="text-blue-100 text-lg">{t('my_home_subtitle')}</p>
@@ -474,6 +516,19 @@ const MyHome = () => {
             </div>
 
             <div className="max-w-4xl mx-auto px-4 pb-8">
+                {error ? (
+                    <Alert variant="destructive" className="mb-4 bg-white/90 dark:bg-gray-900/90">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Latest refresh failed</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                        <div className="mt-3">
+                            <Button size="sm" onClick={retryFetchPosts}>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retry
+                            </Button>
+                        </div>
+                    </Alert>
+                ) : null}
 
                 {/* Tabs */}
                 <div className="w-full flex justify-center gap-2 py-2 mb-4 overflow-x-auto">
@@ -542,7 +597,7 @@ const MyHome = () => {
                             )}
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            💡 {t('bulk_selection_tip')}
+                            Tip: {t('bulk_selection_tip')}
                         </p>
                     </div>
                 )}
@@ -563,7 +618,7 @@ const MyHome = () => {
                 <div className="w-full flex flex-col gap-6 pb-24 pt-20">
                     {visiblePosts.length === 0 ? (
                         <div className="text-center py-16">
-                            <div className="text-6xl mb-4">📭</div>
+                            <div className="text-6xl mb-4">[]</div>
                             <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">{t('no_posts')}</h3>
                             <p className="text-gray-500 dark:text-gray-400 mb-6">{t('start_selling')}</p>
                             <Button
@@ -642,7 +697,7 @@ const MyHome = () => {
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         navigator.clipboard.writeText(String(post.postId || post.post_id || post.id));
-                                                        toast({ title: "📋 Copied!", description: "Post ID copied to clipboard" });
+                                                        toast({ title: "Copied", description: "Post ID copied to clipboard" });
                                                     }}
                                                     className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
                                                     title={t('copy_post_id_tooltip')}
@@ -664,7 +719,7 @@ const MyHome = () => {
                                         </h3>
 
                                         <div className="text-2xl font-extrabold text-green-600 dark:text-green-400 mb-3">
-                                            ₹{typeof post.price === 'number' ? post.price.toLocaleString() : post.price}
+                                            INR {typeof post.price === 'number' ? post.price.toLocaleString() : post.price}
                                         </div>
 
                                         {post.location && (
@@ -809,4 +864,5 @@ const MyHome = () => {
 };
 
 export default MyHome;
+
 

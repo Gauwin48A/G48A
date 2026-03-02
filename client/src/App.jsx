@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import GreenNavbar from './components/GreenNavbar.jsx';
 import LocationGate from './components/LocationGate.jsx';
+import RouteTelemetry from './components/RouteTelemetry.jsx';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/components/ui/use-toast";
 import { socket } from './lib/socket';
@@ -276,6 +277,7 @@ function AppContent() {
       ) : (
         <>
           <GreenNavbar />
+          <RouteTelemetry />
           <main className="flex-1" style={{ marginTop: !permissionGranted && !userSkipped ? '60px' : '0' }}>
             <Suspense fallback={<div className="flex justify-center items-center h-full py-20">{t('loading')}</div>}>
               <Routes>

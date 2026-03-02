@@ -1,15 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Lock, Gift, TrendingUp, Zap, LogIn } from 'lucide-react';
+import { Sparkles, Lock, Gift, TrendingUp, Zap, LogIn, AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 import api from '../lib/api';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useTranslatedPosts } from '../hooks/useTranslatedContent';
 import { useAuth } from '@/context/AuthContext';
 import { getAccessToken, getUserId } from '@/utils/authStorage';
 import { getApiOriginBase } from '@/lib/networkConfig';
+
+const RECOMMENDATIONS_PAGE_SIZE = 12;
+
+const normalizeRecommendationsError = (error) => {
+    const status = Number(error?.status || error?.response?.status || 0);
+    const message = String(error?.message || '').toLowerCase();
+
+    if (status === 401 || status === 403 || message.includes('auth') || message.includes('session')) {
+        return 'Your session expired. Please sign in again to continue.';
+    }
+
+    return 'Recommendations are temporarily unavailable. Please retry.';
+};
 
 const ForYou = () => {
     const { t } = useTranslation();
@@ -18,7 +32,6 @@ const ForYou = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { user: authUser, loading: authLoading } = useAuth();
 
-    // Read filters from URL params (set by navbar filter modal or search)
     const urlSearch = searchParams.get('search') || '';
     const urlCategory = searchParams.get('category') || '';
     const urlMinPrice = searchParams.get('minPrice') || '';
@@ -32,13 +45,12 @@ const ForYou = () => {
         [authUser, token, userId]
     );
 
-    // State
     const [preferences, setPreferences] = useState({ location: '', minPrice: '', maxPrice: '', categories: [] });
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState('');
+    const [retryNonce, setRetryNonce] = useState(0);
 
-    // Pagination
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -46,7 +58,6 @@ const ForYou = () => {
     const preferencesRequestIdRef = useRef(0);
     const postsRequestIdRef = useRef(0);
 
-    // Translate posts when language changes
     const { translatedPosts, isTranslating } = useTranslatedPosts(posts);
 
     const debugLog = useCallback((message, data) => {
@@ -55,11 +66,33 @@ const ForYou = () => {
         }
     }, []);
 
+    const hasActiveFilters = useMemo(
+        () => Boolean(urlSearch || urlCategory || urlMinPrice || urlMaxPrice || urlLocation),
+        [urlCategory, urlLocation, urlMaxPrice, urlMinPrice, urlSearch]
+    );
 
-    // Fetch preferences (only if authenticated)
-    // Re-fetch when page gains focus or when navigating to this page
+    const clearSearchFilter = useCallback(() => {
+        const nextSearchParams = new URLSearchParams(searchParams);
+        nextSearchParams.delete('search');
+        setSearchParams(nextSearchParams, { replace: true });
+    }, [searchParams, setSearchParams]);
+
+    const clearAllFilters = useCallback(() => {
+        const nextSearchParams = new URLSearchParams(searchParams);
+        ['search', 'category', 'minPrice', 'maxPrice', 'location'].forEach((key) => {
+            nextSearchParams.delete(key);
+        });
+        setSearchParams(nextSearchParams, { replace: true });
+    }, [searchParams, setSearchParams]);
+
+    const retryRecommendations = useCallback(() => {
+        setRetryNonce((value) => value + 1);
+    }, []);
+
     useEffect(() => {
-        if (!isAuthenticated || !userId) return;
+        if (!isAuthenticated || !userId) {
+            return;
+        }
 
         const fetchPreferences = async () => {
             const requestId = ++preferencesRequestIdRef.current;
@@ -75,19 +108,17 @@ const ForYou = () => {
                         location: data.location || '',
                         minPrice: data.minPrice || '',
                         maxPrice: data.maxPrice || '',
-                        categories: userCategories
+                        categories: userCategories,
                     });
                     debugLog('[ForYou] Loaded preferences:', data);
                 }
-            } catch (err) {
-                debugLog('[ForYou] No preferences found:', err.message);
+            } catch (fetchError) {
+                debugLog('[ForYou] No preferences found:', fetchError?.message || fetchError);
             }
         };
 
-        // Fetch on mount and on navigation (location.key changes)
         fetchPreferences();
 
-        // Re-fetch when page becomes visible (user navigates back from another tab)
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
                 fetchPreferences();
@@ -95,34 +126,34 @@ const ForYou = () => {
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        // Also re-fetch when window regains focus
         window.addEventListener('focus', fetchPreferences);
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', fetchPreferences);
         };
-    }, [debugLog, isAuthenticated, location.key, userId]); // location.key changes on every navigation
+    }, [debugLog, isAuthenticated, location.key, userId]);
 
-    // Reset pagination when filters change
     useEffect(() => {
         setPage(1);
         setHasMore(true);
     }, [preferences, urlSearch, urlCategory, urlMinPrice, urlMaxPrice, urlLocation]);
 
-    // Fetch recommendations
     useEffect(() => {
-        if (!isAuthenticated || !userId) return;
+        if (!isAuthenticated || !userId) {
+            return;
+        }
 
         const fetchPosts = async () => {
             const requestId = ++postsRequestIdRef.current;
-            if (page === 1) setLoading(true);
-            else setIsLoadingMore(true);
+            if (page === 1) {
+                setLoading(true);
+            } else {
+                setIsLoadingMore(true);
+            }
 
             try {
                 const params = {
-                    // URL filters override saved preferences
                     location: urlLocation || preferences.location,
                     minPrice: urlMinPrice || preferences.minPrice,
                     maxPrice: urlMaxPrice || preferences.maxPrice,
@@ -130,10 +161,10 @@ const ForYou = () => {
                     search: urlSearch,
                     userId,
                     page,
-                    limit: 12
+                    limit: RECOMMENDATIONS_PAGE_SIZE,
                 };
-                Object.keys(params).forEach(key => {
-                    // Remove empty values
+
+                Object.keys(params).forEach((key) => {
                     if (!params[key] || (Array.isArray(params[key]) && params[key].length === 0)) {
                         delete params[key];
                     }
@@ -144,20 +175,38 @@ const ForYou = () => {
                 if (requestId !== postsRequestIdRef.current) {
                     return;
                 }
+
                 const payload = response?.data ?? response;
                 const newPosts = Array.isArray(payload?.posts) ? payload.posts : [];
 
                 if (page === 1) {
                     setPosts(newPosts);
                 } else {
-                    setPosts(prev => [...prev, ...newPosts]);
+                    setPosts((previousPosts) => {
+                        const mergedPosts = [...previousPosts, ...newPosts];
+                        const seenIds = new Set();
+                        return mergedPosts.filter((post) => {
+                            const id = String(post.post_id || post.id || '');
+                            if (!id || seenIds.has(id)) {
+                                return false;
+                            }
+                            seenIds.add(id);
+                            return true;
+                        });
+                    });
                 }
 
-                setHasMore(newPosts.length === 12);
-                setError(null);
-            } catch (err) {
-                setError('Failed to load recommendations');
-                if (page === 1) setPosts([]);
+                setHasMore(newPosts.length === RECOMMENDATIONS_PAGE_SIZE);
+                setError('');
+            } catch (fetchError) {
+                setError(
+                    page === 1
+                        ? normalizeRecommendationsError(fetchError)
+                        : 'Could not load more recommendations. Please retry.'
+                );
+                if (page === 1) {
+                    setPosts([]);
+                }
             } finally {
                 if (requestId === postsRequestIdRef.current) {
                     setLoading(false);
@@ -167,9 +216,19 @@ const ForYou = () => {
         };
 
         fetchPosts();
-    }, [debugLog, isAuthenticated, preferences, page, urlSearch, urlCategory, urlMinPrice, urlMaxPrice, urlLocation, userId]);
-
-
+    }, [
+        debugLog,
+        isAuthenticated,
+        page,
+        preferences,
+        retryNonce,
+        urlCategory,
+        urlLocation,
+        urlMaxPrice,
+        urlMinPrice,
+        urlSearch,
+        userId,
+    ]);
 
     const getImageUrl = (img) => {
         if (!img) return '/placeholder.svg';
@@ -177,7 +236,6 @@ const ForYou = () => {
         return `${getApiOriginBase()}${img}`;
     };
 
-    // Not Authenticated - Show Login Screen
     if (!authLoading && !isAuthenticated) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
@@ -210,9 +268,9 @@ const ForYou = () => {
                             {[
                                 { icon: Gift, text: 'Personalized product picks' },
                                 { icon: TrendingUp, text: 'Based on your preferences' },
-                                { icon: Zap, text: 'Real-time updates' }
-                            ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-3 text-gray-300">
+                                { icon: Zap, text: 'Real-time updates' },
+                            ].map((item, index) => (
+                                <div key={index} className="flex items-center gap-3 text-gray-300">
                                     <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
                                         <item.icon className="w-4 h-4 text-purple-400" />
                                     </div>
@@ -222,7 +280,7 @@ const ForYou = () => {
                         </div>
 
                         <Button
-                            onClick={() => navigate('/login', { state: { returnTo: '/for-you' } })}
+                            onClick={() => navigate('/login', { state: { returnTo: `${location.pathname}${location.search}` } })}
                             className="w-full h-14 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold text-lg rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-105"
                         >
                             <LogIn className="w-5 h-5 mr-2" />
@@ -244,13 +302,9 @@ const ForYou = () => {
         );
     }
 
-    // AUTHENTICATED: Show Full Recommendations UI (Same as Home Page)
     return (
         <div className="min-h-screen bg-white dark:bg-gray-900 pb-20">
-
-
             <div className="max-w-6xl mx-auto px-4 pt-4">
-                {/* Great Deals Banner */}
                 <div className="flex flex-col md:flex-row items-center justify-between px-3 md:px-8 py-6 md:py-8 bg-blue-100 dark:bg-gray-800 rounded-xl mb-8 shadow-lg w-full relative overflow-hidden border border-blue-200 dark:border-gray-700">
                     <div className="flex flex-col gap-2 z-10 w-full md:w-auto">
                         <span className="text-xl md:text-3xl font-bold text-blue-900 dark:text-blue-100 mb-1">{t('great_deals')}</span>
@@ -265,23 +319,18 @@ const ForYou = () => {
                     <div className="absolute right-0 bottom-0 opacity-10 w-32 h-24 md:w-40 md:h-32 bg-blue-300 dark:bg-blue-700 rounded-bl-2xl" />
                 </div>
 
-                {/* Sponsored Deals Section */}
                 <div className="mb-8">
                     <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4">{t('sponsored_deals')}</h3>
                     <div className="text-center text-blue-400 dark:text-blue-300">{t('no_sponsored_deals')}</div>
                 </div>
 
-                {/* Active Search Filter Badge */}
-                {urlSearch && (
+                {urlSearch ? (
                     <div className="mb-4 flex items-center gap-2 flex-wrap">
                         <span className="text-sm text-gray-600 dark:text-gray-400">{t('search_results_for') || 'Search results for'}:</span>
                         <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
                             "{urlSearch}"
                             <button
-                                onClick={() => {
-                                    searchParams.delete('search');
-                                    setSearchParams(searchParams);
-                                }}
+                                onClick={clearSearchFilter}
                                 className="p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full transition"
                                 aria-label="Clear search"
                             >
@@ -291,10 +340,37 @@ const ForYou = () => {
                             </button>
                         </span>
                     </div>
-                )}
+                ) : null}
 
-                {/* All Posts Header */}
-                <h3 className="text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-300 mb-4">{urlSearch ? t('search_results') || 'Search Results' : t('for_you') || 'For You'}</h3>
+                <h3 className="text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-300 mb-4">
+                    {urlSearch ? t('search_results') || 'Search Results' : t('for_you') || 'For You'}
+                </h3>
+
+                {isTranslating ? (
+                    <p className="mb-4 text-sm text-blue-700 dark:text-blue-300">
+                        Updating post language...
+                    </p>
+                ) : null}
+
+                {error && posts.length > 0 ? (
+                    <Alert variant="destructive" className="mb-5">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Latest refresh failed</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            <Button size="sm" onClick={retryRecommendations}>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retry
+                            </Button>
+                            {hasActiveFilters ? (
+                                <Button size="sm" variant="outline" onClick={clearAllFilters}>
+                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                    Reset Filters
+                                </Button>
+                            ) : null}
+                        </div>
+                    </Alert>
+                ) : null}
 
                 {loading ? (
                     <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
@@ -306,109 +382,147 @@ const ForYou = () => {
                             </div>
                         ))}
                     </div>
+                ) : error && posts.length === 0 ? (
+                    <Card className="max-w-2xl mx-auto p-6 text-center border-red-200">
+                        <div className="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-3">
+                            <AlertTriangle className="w-6 h-6" />
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Could not load recommendations
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">{error}</p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button onClick={retryRecommendations}>
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retry
+                            </Button>
+                            {hasActiveFilters ? (
+                                <Button variant="outline" onClick={clearAllFilters}>
+                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                    Reset Filters
+                                </Button>
+                            ) : null}
+                            <Button variant="outline" onClick={() => navigate('/all-posts')}>
+                                Explore Marketplace
+                            </Button>
+                        </div>
+                    </Card>
                 ) : posts.length === 0 ? (
                     <div className="text-center py-20">
                         <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Sparkles className="w-12 h-12 text-blue-500" />
                         </div>
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('no_recommendations')}</h3>
-                        <p className="text-gray-500 dark:text-gray-400">Interact with more posts to get personalized picks!</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-5">
+                            {hasActiveFilters
+                                ? 'No matches found for your current filters.'
+                                : 'Interact with more posts to get personalized picks.'}
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {hasActiveFilters ? (
+                                <Button variant="outline" onClick={clearAllFilters}>
+                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                    Reset Filters
+                                </Button>
+                            ) : null}
+                            <Button onClick={() => navigate('/all-posts')}>
+                                Browse All Posts
+                            </Button>
+                        </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
-                        {translatedPosts.map((post) => {
-                            const imageUrl = post.images?.[0]
-                                ? getImageUrl(post.images[0])
-                                : post.image_url
-                                    ? getImageUrl(post.image_url)
-                                    : '/placeholder.svg';
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
+                            {translatedPosts.map((post) => {
+                                const imageUrl = post.images?.[0]
+                                    ? getImageUrl(post.images[0])
+                                    : post.image_url
+                                        ? getImageUrl(post.image_url)
+                                        : '/placeholder.svg';
 
-                            return (
-                                <Card
-                                    key={post.post_id || post.id}
-                                    className="group rounded-2xl shadow-md hover:shadow-2xl bg-white dark:bg-gray-800 border-0 overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                                    onClick={() => navigate(`/post/${post.post_id || post.id}`)}
-                                >
-                                    {/* Image Section with Gradient Overlay */}
-                                    <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 overflow-hidden">
-                                        <img
-                                            src={imageUrl}
-                                            alt={post.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = '/placeholder.svg';
-                                            }}
-                                        />
-                                        {/* Category Badge */}
-                                        <div className="absolute top-3 left-3">
-                                            <span className="px-2.5 py-1 bg-white/90 dark:bg-gray-900/90 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-full backdrop-blur-sm shadow-sm">
-                                                {post.category || post.category_name || 'General'}
-                                            </span>
-                                        </div>
-                                        {/* Wishlist Button */}
-                                        <button
-                                            className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-900/90 rounded-full flex items-center justify-center shadow-sm hover:bg-red-50 dark:hover:bg-red-900/50 transition-colors"
-                                            onClick={(e) => { e.stopPropagation(); }}
-                                        >
-                                            <svg className="w-4 h-4 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    {/* Content Section */}
-                                    <div className="p-4">
-                                        {/* Title & Price Row */}
-                                        <div className="flex items-start justify-between gap-2 mb-2">
-                                            <h3 className="font-semibold text-gray-900 dark:text-white text-sm md:text-base line-clamp-2 flex-1">
-                                                {post.title}
-                                            </h3>
-                                            <span className="text-blue-600 dark:text-blue-400 font-bold text-base md:text-lg whitespace-nowrap">
-                                                ₹{post.price?.toLocaleString() || '0'}
-                                            </span>
-                                        </div>
-
-                                        {/* Location */}
-                                        {post.location && (
-                                            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs mb-3">
-                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                                <span className="truncate">{post.location}</span>
-                                            </div>
-                                        )}
-
-                                        {/* Seller Info */}
-                                        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="w-7 h-7">
-                                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-medium">
-                                                        {(post.author_name || post.seller_name || 'S')[0].toUpperCase()}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <span className="text-gray-600 dark:text-gray-300 text-xs font-medium truncate max-w-[100px]">
-                                                    {post.author_name || post.seller_name || post.username || 'Seller'}
+                                return (
+                                    <Card
+                                        key={post.post_id || post.id}
+                                        className="group rounded-2xl shadow-md hover:shadow-2xl bg-white dark:bg-gray-800 border-0 overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                                        onClick={() => navigate(`/post/${post.post_id || post.id}`)}
+                                    >
+                                        <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 overflow-hidden">
+                                            <img
+                                                src={imageUrl}
+                                                alt={post.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(event) => {
+                                                    event.target.onerror = null;
+                                                    event.target.src = '/placeholder.svg';
+                                                }}
+                                            />
+                                            <div className="absolute top-3 left-3">
+                                                <span className="px-2.5 py-1 bg-white/90 dark:bg-gray-900/90 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-full backdrop-blur-sm shadow-sm">
+                                                    {post.category || post.category_name || 'General'}
                                                 </span>
                                             </div>
-                                            <Button
-                                                size="sm"
-                                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-auto rounded-lg shadow-sm"
-                                                onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.post_id || post.id}`); }}
+                                            <button
+                                                className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-900/90 rounded-full flex items-center justify-center shadow-sm hover:bg-red-50 dark:hover:bg-red-900/50 transition-colors"
+                                                onClick={(event) => { event.stopPropagation(); }}
                                             >
-                                                {t('view_details') || 'View'}
-                                            </Button>
+                                                <svg className="w-4 h-4 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                                </svg>
+                                            </button>
                                         </div>
-                                    </div>
-                                </Card>
-                            );
-                        })}
 
-                        {hasMore && !loading && (
+                                        <div className="p-4">
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                <h3 className="font-semibold text-gray-900 dark:text-white text-sm md:text-base line-clamp-2 flex-1">
+                                                    {post.title}
+                                                </h3>
+                                                <span className="text-blue-600 dark:text-blue-400 font-bold text-base md:text-lg whitespace-nowrap">
+                                                    INR {post.price?.toLocaleString() || '0'}
+                                                </span>
+                                            </div>
+
+                                            {post.location ? (
+                                                <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs mb-3">
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                    <span className="truncate">{post.location}</span>
+                                                </div>
+                                            ) : null}
+
+                                            <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="w-7 h-7">
+                                                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-medium">
+                                                            {(post.author_name || post.seller_name || 'S')[0].toUpperCase()}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-gray-600 dark:text-gray-300 text-xs font-medium truncate max-w-[100px]">
+                                                        {post.author_name || post.seller_name || post.username || 'Seller'}
+                                                    </span>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-auto rounded-lg shadow-sm"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        navigate(`/post/${post.post_id || post.id}`);
+                                                    }}
+                                                >
+                                                    {t('view_details') || 'View'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+
+                        {hasMore ? (
                             <div className="flex justify-center pt-8 pb-4">
                                 <Button
-                                    onClick={() => setPage(p => p + 1)}
+                                    onClick={() => setPage((value) => value + 1)}
                                     disabled={isLoadingMore}
                                     className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 px-8 py-2 rounded-full shadow-sm transition-all"
                                 >
@@ -422,8 +536,8 @@ const ForYou = () => {
                                     )}
                                 </Button>
                             </div>
-                        )}
-                    </div>
+                        ) : null}
+                    </>
                 )}
             </div>
         </div>
@@ -431,4 +545,3 @@ const ForYou = () => {
 };
 
 export default ForYou;
-

@@ -27,8 +27,6 @@ import {
   CheckCircle,
   Sparkles,
   ShieldCheck,
-  Truck,
-  BadgePercent,
   DollarSign
 } from "lucide-react";
 
@@ -38,6 +36,8 @@ export default function PostDetail() {
   const location = useLocation();
   const [post, setPost] = useState(location.state?.post || null);
   const [loading, setLoading] = useState(!location.state?.post);
+  const [loadError, setLoadError] = useState('');
+  const [retryTick, setRetryTick] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [showInterestModal, setShowInterestModal] = useState(false);
@@ -83,6 +83,7 @@ export default function PostDetail() {
     if (!post) {
       const fetchPost = async () => {
         try {
+          setLoadError('');
           const payload = await axios.get(`/api/posts/${id}`);
           const rawPost = payload?.post || payload;
           if (!rawPost || Object.keys(rawPost).length === 0) {
@@ -97,6 +98,7 @@ export default function PostDetail() {
           setLoading(false);
         } catch (err) {
           console.error("Error fetching post data:", err);
+          setLoadError(err?.message || 'Failed to load product');
           setLoading(false);
           setPost(null);
         }
@@ -104,7 +106,7 @@ export default function PostDetail() {
       fetchPost();
     }
     setCurrentImageIndex(0);
-  }, [id]);
+  }, [id, retryTick]);
 
   if (loading) {
     return (
@@ -125,13 +127,29 @@ export default function PostDetail() {
             <Package className="w-10 h-10 text-red-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">{t('error') || 'Product Not Found'}</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">This product is no longer available or has been removed.</p>
-          <Link to="/all-posts">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Browse Products
+          <p className="text-gray-600 dark:text-gray-300 mb-2">This product is no longer available or has been removed.</p>
+          {loadError && (
+            <p className="text-sm text-red-500 mb-4">{loadError}</p>
+          )}
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setLoading(true);
+                setPost(null);
+                setRetryTick((value) => value + 1);
+              }}
+            >
+              Retry
             </Button>
-          </Link>
+            <Link to="/all-posts">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Browse Products
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -165,6 +183,66 @@ export default function PostDetail() {
       return new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     } catch { return 'Recently'; }
   };
+
+  const sellerVerified = Boolean(
+    seller?.verified
+    || seller?.isVerified
+    || post?.seller_verified
+    || post?.aadhaar_verified
+    || post?.pan_verified
+    || post?.user?.isVerified
+  );
+  const ratingValue = Number(seller?.rating || post?.seller_rating || 0);
+  const successfulSales = Number(
+    seller?.successful_sales
+    || post?.successful_sales
+    || post?.completed_sales
+    || post?.seller_completed_sales
+    || 0
+  );
+  const responseRateValue = Number(
+    seller?.response_rate
+    || post?.response_rate
+    || post?.seller_response_rate
+    || 0
+  );
+  const memberSinceRaw = seller?.member_since || post?.seller_member_since || post?.user?.created_at || null;
+  const memberSince = memberSinceRaw ? formatDate(memberSinceRaw) : 'Not available';
+  const averageResponseTime = seller?.response_time || post?.response_time || post?.avg_response_time || 'Not available';
+  const listingId = post?.post_id || post?.id || id;
+
+  const trustSignals = [
+    {
+      key: 'verification',
+      label: 'Seller verification',
+      value: sellerVerified ? 'Verified profile' : 'Verification pending',
+      hint: sellerVerified ? 'Identity checks completed.' : 'Use in-app chat and confirm identity before payment.',
+    },
+    {
+      key: 'rating',
+      label: 'Seller rating',
+      value: ratingValue > 0 ? `${ratingValue.toFixed(1)} / 5` : 'No rating yet',
+      hint: 'Based on prior buyer feedback.',
+    },
+    {
+      key: 'sales',
+      label: 'Completed sales',
+      value: successfulSales > 0 ? `${successfulSales}` : 'New seller',
+      hint: 'Higher completed sales can indicate reliability.',
+    },
+    {
+      key: 'response',
+      label: 'Response profile',
+      value: responseRateValue > 0 ? `${responseRateValue}% response rate` : String(averageResponseTime),
+      hint: 'Check response time before committing to urgent deals.',
+    },
+    {
+      key: 'member',
+      label: 'Member since',
+      value: memberSince,
+      hint: `Listing ID: ${listingId}`,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" style={{ paddingBottom: '180px' }}>
@@ -286,21 +364,29 @@ export default function PostDetail() {
           </CardContent>
         </Card>
 
-        {/* Highlights */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 text-center shadow-md">
-            <ShieldCheck className="w-6 h-6 mx-auto mb-1 text-green-500" />
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Verified Seller</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 text-center shadow-md">
-            <Truck className="w-6 h-6 mx-auto mb-1 text-blue-500" />
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Fast Response</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-3 text-center shadow-md">
-            <BadgePercent className="w-6 h-6 mx-auto mb-1 text-orange-500" />
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Best Deal</p>
-          </div>
-        </div>
+        {/* Trust Panel */}
+        <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg rounded-2xl">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <ShieldCheck className="w-5 h-5 text-green-500" />
+              <h3 className="font-bold text-gray-900 dark:text-white">Trust & Safety</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {trustSignals.map((signal) => (
+                <div key={signal.key} className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{signal.label}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{signal.value}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{signal.hint}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3">
+              <p className="text-xs text-amber-800 dark:text-amber-300">
+                Safety tip: avoid sharing sensitive details outside the app and verify the listing ID before payment handover.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Description */}
         <Card className="bg-white dark:bg-gray-800 border-0 shadow-lg rounded-2xl">

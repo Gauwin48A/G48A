@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-    Heart, Trash2, MapPin, ShoppingBag, ExternalLink
+    Heart, Trash2, MapPin, ShoppingBag, ExternalLink, RefreshCw, Compass
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import { useNavigate } from 'react-router-dom';
@@ -82,6 +82,7 @@ const Wishlist = () => {
             if (import.meta.env.DEV) {
                 console.error('Failed to remove:', err);
             }
+            setError(t('failed_remove_wishlist_item') || 'Unable to remove item right now.');
         }
     };
 
@@ -130,6 +131,20 @@ const Wishlist = () => {
                     <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
                     <p className="text-gray-600 dark:text-gray-300">{items.length} {t('saved_items') || 'saved items'}</p>
                 </div>
+                {error && (
+                    <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <p className="text-sm text-red-700">{error}</p>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="border-red-300 text-red-700 w-fit"
+                            onClick={fetchWishlist}
+                        >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Retry
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Content */}
@@ -151,12 +166,30 @@ const Wishlist = () => {
                         </div>
                         <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">{t('wishlist_empty') || 'Your wishlist is empty'}</h3>
                         <p className="text-gray-500 mb-6">{t('start_saving') || 'Start saving items you love!'}</p>
-                        <Button
-                            onClick={() => navigate('/all-posts')}
-                            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-6 text-lg rounded-2xl"
-                        >
-                            <ShoppingBag className="w-5 h-5 mr-2" /> {t('browse_products') || 'Browse Products'}
-                        </Button>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button
+                                onClick={() => navigate('/all-posts')}
+                                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-6 text-lg rounded-2xl"
+                            >
+                                <ShoppingBag className="w-5 h-5 mr-2" /> {t('browse_products') || 'Browse Products'}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="px-6 py-6 rounded-2xl"
+                                onClick={() => navigate('/my-recommendations')}
+                            >
+                                <Compass className="w-4 h-4 mr-2" /> Recommendations
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="px-6 py-6 rounded-2xl"
+                                onClick={() => navigate('/categories')}
+                            >
+                                Explore Categories
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

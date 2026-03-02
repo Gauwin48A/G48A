@@ -3,12 +3,34 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 const DEV_PROXY_TARGET = process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:5001';
+const FORCE_OPTIMIZE_DEPS = String(process.env.VITE_OPTIMIZE_DEPS_FORCE || '').toLowerCase() === 'true';
 
 const REALTIME_VENDOR_PACKAGES = new Set([
   'socket.io-client',
   'engine.io-client',
   'socket.io-parser',
   'pusher-js'
+]);
+const CORE_VENDOR_PACKAGES = new Set([
+  'react',
+  'react-dom',
+  'react-router-dom',
+  'scheduler'
+]);
+const I18N_VENDOR_PACKAGES = new Set([
+  'i18next',
+  'react-i18next',
+  'i18next-browser-languagedetector',
+  'i18next-chained-backend',
+  'i18next-http-backend',
+  'i18next-localstorage-backend'
+]);
+const NATIVE_VENDOR_PACKAGES = new Set([
+  '@capacitor/app',
+  '@capacitor/core',
+  '@capacitor/geolocation',
+  '@capacitor/device',
+  '@capacitor-community/contacts'
 ]);
 
 function getNodeModulePackageName(id) {
@@ -31,6 +53,10 @@ function resolveVendorChunk(id) {
   const packageName = getNodeModulePackageName(id);
   if (!packageName) return undefined;
 
+  if (CORE_VENDOR_PACKAGES.has(packageName)) {
+    return 'core-vendor';
+  }
+
   if (packageName.startsWith('@tanstack/')) {
     return 'query-vendor';
   }
@@ -39,8 +65,20 @@ function resolveVendorChunk(id) {
     return 'realtime-vendor';
   }
 
-  // Keep the rest in a stable baseline vendor chunk to avoid over-fragmentation.
-  return 'vendor';
+  if (I18N_VENDOR_PACKAGES.has(packageName)) {
+    return 'i18n-vendor';
+  }
+
+  if (packageName === 'lucide-react') {
+    return 'icons-vendor';
+  }
+
+  if (NATIVE_VENDOR_PACKAGES.has(packageName)) {
+    return 'native-vendor';
+  }
+
+  // Let Rollup decide for non-core dependencies so route-only libs can stay lazy.
+  return undefined;
 }
 
 // MINIMAL CONFIG FOR BUILD TESTING
@@ -79,7 +117,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    force: true,
+    force: FORCE_OPTIMIZE_DEPS,
     // Keep known lazy UI/native deps pre-optimized to reduce stale on-demand dep fetches in dev.
     include: ['@radix-ui/react-tabs', '@capacitor-community/contacts'],
   },

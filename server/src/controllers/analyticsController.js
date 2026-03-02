@@ -414,6 +414,89 @@ const saveClientError = async (req, res) => {
 };
 
 /**
+ * Capture frontend UX telemetry events (route views, exits, drop-offs).
+ * POST /api/analytics/client-event
+ */
+const saveClientEvent = async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        const payload = req.body || {};
+        const eventName = String(payload.eventName || payload.event || '').trim().slice(0, 120);
+
+        if (!eventName) {
+            return res.status(400).json({ error: 'eventName is required' });
+        }
+
+        const rawMetadata = payload.metadata && typeof payload.metadata === 'object' && !Array.isArray(payload.metadata)
+            ? payload.metadata
+            : {};
+        const normalizedMetadata = {};
+        Object.entries(rawMetadata).slice(0, 40).forEach(([key, value]) => {
+            const safeKey = String(key || '').trim().slice(0, 80);
+            if (!safeKey) return;
+
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                normalizedMetadata[safeKey] = value;
+                return;
+            }
+
+            if (typeof value === 'boolean') {
+                normalizedMetadata[safeKey] = value;
+                return;
+            }
+
+            if (typeof value === 'string') {
+                normalizedMetadata[safeKey] = value.slice(0, 300);
+                return;
+            }
+
+            normalizedMetadata[safeKey] = String(value ?? '').slice(0, 300);
+        });
+
+        const normalizedPayload = {
+            eventName,
+            source: String(payload.source || 'ux-telemetry').slice(0, 80),
+            page: String(payload.page || '').slice(0, 500),
+            pathname: String(payload.pathname || '').slice(0, 200),
+            search: String(payload.search || '').slice(0, 300),
+            sessionId: String(payload.sessionId || '').slice(0, 80),
+            metadata: normalizedMetadata,
+            userAgent: String(payload.userAgent || '').slice(0, 500),
+            timestamp: payload.timestamp || new Date().toISOString()
+        };
+
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]
+            || req.connection?.remoteAddress
+            || req.socket?.remoteAddress
+            || 'unknown';
+
+        captureClientError(
+            {
+                message: `[UX_EVENT] ${eventName}`,
+                source: 'client-event',
+                page: normalizedPayload.page,
+                userAgent: normalizedPayload.userAgent,
+                timestamp: normalizedPayload.timestamp,
+                metadata: normalizedPayload
+            },
+            {
+                userId: userId || null,
+                ip
+            }
+        );
+
+        if (ANALYTICS_DEBUG) {
+            logger.info(`[Analytics] Client event captured: ${eventName}`);
+        }
+
+        return res.status(202).json({ success: true });
+    } catch (error) {
+        logger.error('[Analytics] Client event capture failed:', error);
+        return res.status(200).json({ success: false });
+    }
+};
+
+/**
  * Get device analytics summary (admin)
  * GET /api/analytics/devices/summary
  */
@@ -457,5 +540,6 @@ module.exports = {
     getCategoryBreakdown,
     saveDeviceInfo,
     saveClientError,
+    saveClientEvent,
     getDeviceSummary
 };

@@ -2,13 +2,17 @@ import fs from 'fs';
 import path from 'path';
 import { gzipSync } from 'zlib';
 
+const distDir = path.resolve(process.cwd(), 'dist');
 const distAssetsDir = path.resolve(process.cwd(), 'dist', 'assets');
+const distHtmlPath = path.resolve(process.cwd(), 'dist', 'index.html');
 
 const budgets = {
   entryJsGzipKb: Number.parseInt(process.env.BUNDLE_BUDGET_ENTRY_JS_GZIP_KB || '170', 10),
   entryCssGzipKb: Number.parseInt(process.env.BUNDLE_BUDGET_ENTRY_CSS_GZIP_KB || '25', 10),
   entryJsRawKb: Number.parseInt(process.env.BUNDLE_BUDGET_ENTRY_JS_RAW_KB || '550', 10),
-  entryCssRawKb: Number.parseInt(process.env.BUNDLE_BUDGET_ENTRY_CSS_RAW_KB || '180', 10)
+  entryCssRawKb: Number.parseInt(process.env.BUNDLE_BUDGET_ENTRY_CSS_RAW_KB || '180', 10),
+  bootstrapJsGzipKb: Number.parseInt(process.env.BUNDLE_BUDGET_BOOTSTRAP_JS_GZIP_KB || '150', 10),
+  bootstrapJsRawKb: Number.parseInt(process.env.BUNDLE_BUDGET_BOOTSTRAP_JS_RAW_KB || '420', 10)
 };
 
 function bytesToKb(bytes) {
@@ -22,6 +26,9 @@ function fail(message) {
 
 if (!fs.existsSync(distAssetsDir)) {
   fail(`Build output not found at ${distAssetsDir}. Run "npm run build" first.`);
+}
+if (!fs.existsSync(distHtmlPath)) {
+  fail(`Build output not found at ${distHtmlPath}. Run "npm run build" first.`);
 }
 
 const assetFiles = fs.readdirSync(distAssetsDir);
@@ -65,6 +72,46 @@ function readAssetMetrics(fileName) {
 const jsMetrics = readAssetMetrics(entryJsFile);
 const cssMetrics = readAssetMetrics(entryCssFile);
 
+function parseBootstrapAssetFileNames(indexHtmlText) {
+  const candidates = new Set();
+  const assetPathPattern = /(?:src|href)="([^"]+)"/g;
+  let match = null;
+
+  while ((match = assetPathPattern.exec(indexHtmlText)) !== null) {
+    const value = String(match[1] || '');
+    if (!value.includes('/assets/')) {
+      continue;
+    }
+    if (!value.endsWith('.js')) {
+      continue;
+    }
+
+    const assetName = value.split('/assets/')[1]?.split('?')[0]?.trim();
+    if (!assetName) {
+      continue;
+    }
+    candidates.add(assetName);
+  }
+
+  return [...candidates].filter((fileName) => fs.existsSync(path.join(distAssetsDir, fileName)));
+}
+
+function aggregateAssetMetrics(fileNames = []) {
+  return fileNames.reduce(
+    (summary, fileName) => {
+      const metrics = readAssetMetrics(fileName);
+      summary.rawBytes += metrics.rawBytes;
+      summary.gzipBytes += metrics.gzipBytes;
+      return summary;
+    },
+    { rawBytes: 0, gzipBytes: 0 }
+  );
+}
+
+const indexHtmlText = fs.readFileSync(distHtmlPath, 'utf8');
+const bootstrapJsFiles = parseBootstrapAssetFileNames(indexHtmlText);
+const bootstrapJsMetrics = aggregateAssetMetrics(bootstrapJsFiles);
+
 const checks = [
   {
     label: 'entry JS gzip',
@@ -89,12 +136,25 @@ const checks = [
     actual: bytesToKb(cssMetrics.rawBytes),
     budget: budgets.entryCssRawKb,
     unit: 'KB'
+  },
+  {
+    label: 'bootstrap JS gzip',
+    actual: bytesToKb(bootstrapJsMetrics.gzipBytes),
+    budget: budgets.bootstrapJsGzipKb,
+    unit: 'KB'
+  },
+  {
+    label: 'bootstrap JS raw',
+    actual: bytesToKb(bootstrapJsMetrics.rawBytes),
+    budget: budgets.bootstrapJsRawKb,
+    unit: 'KB'
   }
 ];
 
 console.log('[bundle-budget] Checked assets:');
 console.log(`  JS  -> ${jsMetrics.fileName}`);
 console.log(`  CSS -> ${cssMetrics.fileName}`);
+console.log(`  Bootstrap JS assets (${bootstrapJsFiles.length}) -> ${bootstrapJsFiles.join(', ')}`);
 
 let failed = false;
 for (const check of checks) {

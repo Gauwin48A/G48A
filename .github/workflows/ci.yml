@@ -101,6 +101,11 @@ jobs:
       - name: Probe backend page-flow contract
         run: npm run check:page-flow-contract
 
+      - name: Run operations gate (advisory)
+        run: npm --prefix .. run ops:gate
+        env:
+          OPS_GATE_STRICT: "false"
+
       - name: Run tests
         run: npm test -- --runInBand
 

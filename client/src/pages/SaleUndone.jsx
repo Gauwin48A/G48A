@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
 import { getApiOriginBase } from '@/lib/networkConfig';
+import TransactionStepper from '../components/TransactionStepper';
 
 const SaleUndone = () => {
   const { t } = useTranslation();
@@ -26,12 +27,36 @@ const SaleUndone = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [undonePosts, setUndonePosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingError, setLoadingError] = useState('');
+  const [reloadTick, setReloadTick] = useState(0);
+  const recoveryFlowSteps = [
+    { key: 'listed', label: 'Listed', hint: 'Post was active previously' },
+    { key: 'sold', label: 'Marked Sold', hint: 'Sale was recorded' },
+    { key: 'issue', label: 'Issue Found', hint: 'Deal did not complete' },
+    { key: 'undo', label: 'Undo Request', hint: 'Reason and notes submitted' },
+    { key: 'reactivated', label: 'Reactivated', hint: 'Listing returns to market' }
+  ];
 
   const normalizeUrl = (value) => String(value || '').replace(/\/+$/, '');
   const baseUrl = normalizeUrl(getApiOriginBase());
   const transactionsUndoneUrl = baseUrl.endsWith('/api')
     ? `${baseUrl}/transactions/undone`
     : `${baseUrl}/api/transactions/undone`;
+
+  const toSafeActionMessage = (raw, fallback) => {
+    const message = String(raw || '').toLowerCase();
+    if (!message) return fallback;
+    if (message.includes('unauthorized') || message.includes('token') || message.includes('login')) {
+      return 'Please sign in again and retry this action.';
+    }
+    if (message.includes('network') || message.includes('timeout') || message.includes('fetch')) {
+      return 'The service is temporarily unavailable. Please try again in a moment.';
+    }
+    if (message.includes('not found')) {
+      return 'We could not find that listing. Verify the Post ID and try again.';
+    }
+    return fallback;
+  };
 
   // Scroll handler
   useEffect(() => {
@@ -50,8 +75,10 @@ const SaleUndone = () => {
   useEffect(() => {
     const fetchUndonePosts = async () => {
       try {
+        setLoadingError('');
         const token = localStorage.getItem('authToken');
         if (!token) {
+          setLoadingError('Login required to load reactivation history.');
           setLoadingPosts(false);
           return;
         }
@@ -67,22 +94,25 @@ const SaleUndone = () => {
         if (res.ok) {
           const data = await res.json();
           setUndonePosts(Array.isArray(data) ? data : []);
+        } else {
+          setLoadingError('Failed to load reactivation history.');
         }
       } catch (err) {
         console.error('Failed to fetch undone posts:', err);
+        setLoadingError(err.message || 'Failed to load reactivation history.');
       } finally {
         setLoadingPosts(false);
       }
     };
     fetchUndonePosts();
-  }, [transactionsUndoneUrl]);
+  }, [transactionsUndoneUrl, reloadTick]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.postId) {
       toast({
         title: "Post ID Required",
-        description: "Please enter the Post ID you want to reactivate",
+        description: "Enter the listing Post ID to continue.",
         variant: "destructive"
       });
       return;
@@ -123,7 +153,7 @@ const SaleUndone = () => {
       console.error('Sale undone error:', err);
       toast({
         title: "Action Failed",
-        description: err.message || "Could not reactivate the post. Please try again.",
+        description: toSafeActionMessage(err.message, "We couldn't reactivate this post. Please retry shortly."),
         variant: "destructive"
       });
     } finally {
@@ -234,6 +264,7 @@ const SaleUndone = () => {
             {t('reactivate_sold_posts')}
           </p>
         </div>
+        <TransactionStepper steps={recoveryFlowSteps} currentStep={3} />
 
         {/* Info Badges */}
         <div className="flex flex-wrap justify-center gap-3">
@@ -362,6 +393,13 @@ const SaleUndone = () => {
               <div className="text-center py-8">
                 <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-gray-500 dark:text-gray-400">{t('loading_history')}</p>
+              </div>
+            ) : loadingError ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 mb-3">{loadingError}</p>
+                <Button type="button" variant="outline" onClick={() => setReloadTick((value) => value + 1)}>
+                  Retry
+                </Button>
               </div>
             ) : undonePosts.length === 0 ? (
               <div className="text-center py-12">

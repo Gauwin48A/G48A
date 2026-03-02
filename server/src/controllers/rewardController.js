@@ -4,6 +4,12 @@
  */
 const pool = require('../config/db');
 const logger = require('../utils/logger');
+const {
+    applyRewardDeltaInTransaction,
+    afterCommitRewardMutation,
+    InsufficientPointsError,
+    InvalidRewardInputError
+} = require('../services/rewardsLedgerService');
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 let rewardLogIdColumnAvailablePromise = null;
 let usersLegacyIdColumnAvailablePromise = null;
@@ -52,6 +58,12 @@ function parsePositiveInt(value, fallback) {
         return fallback;
     }
     return parsed;
+}
+
+function parseOptionalString(value) {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).trim();
+    return normalized.length ? normalized : null;
 }
 
 function getAuthenticatedUserId(req) {
@@ -154,46 +166,32 @@ exports.redeemRewards = async (req, res) => {
         return res.status(400).json({ error: 'Valid points amount required' });
     }
 
+    if (requestedPoints % 100 !== 0) {
+        return res.status(400).json({ error: 'Redemption points must be in multiples of 100' });
+    }
+
     try {
         const normalizedUserId = await resolveCanonicalUserId(userId);
         const credits = Math.floor(requestedPoints / 100);
+        const idempotencyKey = parseOptionalString(
+            (typeof req.get === 'function' ? req.get('x-idempotency-key') : null)
+            || req.body?.idempotencyKey
+            || req.body?.requestId
+        );
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
-            const debitResult = await client.query({
-                text: `
-          UPDATE rewards
-          SET points = points - $1
-          WHERE user_id::text = $2
-            AND points >= $1
-          RETURNING points
-        `,
-                values: [requestedPoints, normalizedUserId],
-                query_timeout: DB_QUERY_TIMEOUT_MS
+            const rewardChange = await applyRewardDeltaInTransaction({
+                client,
+                userId: normalizedUserId,
+                pointsDelta: -requestedPoints,
+                action: 'redemption',
+                description: `Points redeemed for ${credits} post credits`,
+                idempotencyKey
             });
 
-            if (debitResult.rowCount === 0) {
-                const balanceResult = await client.query({
-                    text: 'SELECT points FROM rewards WHERE user_id::text = $1',
-                    values: [normalizedUserId],
-                    query_timeout: DB_QUERY_TIMEOUT_MS
-                });
-                const available = balanceResult.rows[0]?.points || 0;
-                await client.query('ROLLBACK');
-                return res.status(400).json({ error: `Insufficient points. Available: ${available}` });
-            }
-
-            await client.query({
-                text: `
-          INSERT INTO reward_log (user_id, action, points, description, created_at)
-          VALUES ($1, 'redemption', $2, 'Points redeemed for credits', NOW())
-        `,
-                values: [normalizedUserId, -requestedPoints],
-                query_timeout: DB_QUERY_TIMEOUT_MS
-            });
-
-            if (credits > 0) {
+            if (rewardChange.applied && credits > 0) {
                 await client.query({
                     text: 'UPDATE users SET post_credits = post_credits + $1 WHERE user_id::text = $2',
                     values: [credits, normalizedUserId],
@@ -202,21 +200,37 @@ exports.redeemRewards = async (req, res) => {
             }
 
             await client.query('COMMIT');
-            const remainingPoints = debitResult.rows[0]?.points || 0;
+            if (rewardChange.applied) {
+                afterCommitRewardMutation(rewardChange);
+            }
 
+            const duplicateMessage = 'Redemption request already processed';
             res.json({
-                message: `Redeemed ${requestedPoints} points for ${credits} post credits`,
+                message: rewardChange.duplicate
+                    ? duplicateMessage
+                    : `Redeemed ${requestedPoints} points for ${credits} post credits`,
                 creditsGranted: credits,
-                remainingPoints
+                remainingPoints: rewardChange.pointsAfter,
+                duplicate: rewardChange.duplicate
             });
         } catch (txErr) {
-            await client.query('ROLLBACK');
+            try {
+                await client.query('ROLLBACK');
+            } catch {
+                // noop
+            }
             throw txErr;
         } finally {
             client.release();
         }
     } catch (err) {
+        if (err instanceof InsufficientPointsError) {
+            return res.status(400).json({ error: `Insufficient points. Available: ${err.availablePoints}` });
+        }
+        if (err instanceof InvalidRewardInputError) {
+            return res.status(400).json({ error: err.message });
+        }
         logger.error('Redeem error:', err);
-        res.status(500).json({ error: 'Failed to redeem rewards' });
+        return res.status(500).json({ error: 'Failed to redeem rewards' });
     }
 };

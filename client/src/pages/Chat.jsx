@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Send, ArrowLeft, Search } from 'lucide-react';
+import { MessageCircle, Send, ArrowLeft, Search, Wifi, WifiOff, AlertCircle, RotateCcw, Compass } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
@@ -17,6 +17,10 @@ const Chat = () => {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [messagesLoading, setMessagesLoading] = useState(false);
+    const [messagesError, setMessagesError] = useState('');
+    const [sendError, setSendError] = useState('');
+    const [connectionState, setConnectionState] = useState(socket.connected ? 'connected' : 'connecting');
     const messagesEndRef = useRef(null);
 
     // Real-time features
@@ -58,6 +62,8 @@ const Chat = () => {
 
     const fetchMessages = useCallback(async (conversationId) => {
         const requestId = ++messageRequestIdRef.current;
+        setMessagesLoading(true);
+        setMessagesError('');
         try {
             const response = await api.get(`/chat/conversations/${conversationId}`);
             if (requestId !== messageRequestIdRef.current) {
@@ -68,6 +74,14 @@ const Chat = () => {
         } catch (error) {
             if (import.meta.env.DEV) {
                 console.error('Failed to fetch messages:', error);
+            }
+            if (requestId === messageRequestIdRef.current) {
+                setMessages([]);
+                setMessagesError('Unable to load this conversation right now.');
+            }
+        } finally {
+            if (requestId === messageRequestIdRef.current) {
+                setMessagesLoading(false);
             }
         }
     }, []);
@@ -81,6 +95,12 @@ const Chat = () => {
             return undefined;
         }
 
+        if (!socket.connected) {
+            setConnectionState('connecting');
+            socket.connect();
+        } else {
+            setConnectionState('connected');
+        }
         socket.emit('join_room', `user_${currentUserId}`);
 
         const handleNewMessage = (data) => {
@@ -188,6 +208,18 @@ const Chat = () => {
                 setMessages((prev) => prev.map((msg) => ({ ...msg, is_read: true })));
             }
         };
+        const handleSocketConnect = () => {
+            setConnectionState('connected');
+        };
+        const handleSocketDisconnect = () => {
+            setConnectionState('offline');
+        };
+        const handleSocketReconnectAttempt = () => {
+            setConnectionState('reconnecting');
+        };
+        const handleSocketConnectError = () => {
+            setConnectionState('offline');
+        };
 
         socket.on('new_message', handleNewMessage);
         socket.on('user_typing', handleUserTyping);
@@ -195,6 +227,10 @@ const Chat = () => {
         socket.on('user_online', handleUserOnline);
         socket.on('user_offline', handleUserOffline);
         socket.on('messages_read', handleMessagesRead);
+        socket.on('connect', handleSocketConnect);
+        socket.on('disconnect', handleSocketDisconnect);
+        socket.on('reconnect_attempt', handleSocketReconnectAttempt);
+        socket.on('connect_error', handleSocketConnectError);
 
         return () => {
             socket.off('new_message', handleNewMessage);
@@ -203,6 +239,10 @@ const Chat = () => {
             socket.off('user_online', handleUserOnline);
             socket.off('user_offline', handleUserOffline);
             socket.off('messages_read', handleMessagesRead);
+            socket.off('connect', handleSocketConnect);
+            socket.off('disconnect', handleSocketDisconnect);
+            socket.off('reconnect_attempt', handleSocketReconnectAttempt);
+            socket.off('connect_error', handleSocketConnectError);
             clearTimeout(typingTimeoutRef.current);
         };
     }, [currentUserId]);
@@ -237,6 +277,7 @@ const Chat = () => {
         if (!content || !selectedConversation || sending) return;
 
         setSending(true);
+        setSendError('');
         try {
             const response = await api.post('/chat/send', {
                 receiverId: selectedConversation.other_user_id,
@@ -273,6 +314,7 @@ const Chat = () => {
             if (import.meta.env.DEV) {
                 console.error('Failed to send message:', error);
             }
+            setSendError('Message failed to send. Check your connection and retry.');
         } finally {
             setSending(false);
         }
@@ -282,6 +324,8 @@ const Chat = () => {
         setSelectedConversation(conversation);
         setIsTyping(false);
         setTypingUser(null);
+        setSendError('');
+        setMessagesError('');
         setMessages([]);
         fetchMessages(conversation.conversation_id);
         setConversations((prev) => prev.map((conv) =>
@@ -339,6 +383,13 @@ const Chat = () => {
         );
     }
 
+    const connectionBannerLabel = connectionState === 'reconnecting'
+        ? 'Reconnecting to chat service...'
+        : connectionState === 'offline'
+            ? 'Realtime chat disconnected. You can still retry sending manually.'
+            : 'Connecting to chat service...';
+    const connectionIsHealthy = connectionState === 'connected';
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Header */}
@@ -355,6 +406,29 @@ const Chat = () => {
                     </div>
                 </div>
             </div>
+
+            {!connectionIsHealthy && (
+                <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+                    <div className="max-w-4xl mx-auto flex items-center justify-between gap-3 text-amber-800">
+                        <div className="flex items-center gap-2 text-sm">
+                            {connectionState === 'offline' ? <WifiOff className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+                            <span>{connectionBannerLabel}</span>
+                        </div>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="border-amber-300 text-amber-800"
+                            onClick={() => {
+                                setConnectionState('connecting');
+                                socket.connect();
+                            }}
+                        >
+                            Reconnect
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             <div className="max-w-4xl mx-auto px-4 py-6">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden" style={{ height: 'calc(100vh - 240px)' }}>
@@ -381,6 +455,14 @@ const Chat = () => {
                                         <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                                         <p>{normalizedSearch ? 'No matching conversations' : 'No conversations yet'}</p>
                                         {!normalizedSearch && <p className="text-sm">Start chatting by inquiring on a post</p>}
+                                        <div className="mt-4 flex flex-wrap justify-center gap-2">
+                                            <Button type="button" size="sm" onClick={() => navigate('/all-posts')}>
+                                                Browse Listings
+                                            </Button>
+                                            <Button type="button" size="sm" variant="outline" onClick={() => navigate('/my-recommendations')}>
+                                                Find Recommendations
+                                            </Button>
+                                        </div>
                                     </div>
                                 ) : (
                                     filteredConversations.map((conv) => (
@@ -441,22 +523,65 @@ const Chat = () => {
 
                                     {/* Messages */}
                                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                        {messages.map((msg, idx) => (
-                                            <div
-                                                key={msg.id || msg.message_id || `${msg.sender_id}-${msg.created_at}-${idx}`}
-                                                className={`flex ${Number.parseInt(msg.sender_id, 10) === currentUserId ? 'justify-end' : 'justify-start'}`}
-                                            >
-                                                <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${Number.parseInt(msg.sender_id, 10) === currentUserId
-                                                    ? 'bg-blue-600 text-white rounded-br-sm'
-                                                    : 'bg-gray-100 dark:bg-gray-700 rounded-bl-sm'
-                                                    }`}>
-                                                    <p>{msg.content}</p>
-                                                    <p className={`text-xs mt-1 ${Number.parseInt(msg.sender_id, 10) === currentUserId ? 'text-blue-100' : 'text-gray-500'}`}>
-                                                        {formatTime(msg.created_at)}
-                                                    </p>
+                                        {messagesLoading ? (
+                                            <div className="h-full flex items-center justify-center">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                                            </div>
+                                        ) : messagesError ? (
+                                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                                <p className="font-medium">{messagesError}</p>
+                                                <div className="mt-3">
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        className="bg-red-600 hover:bg-red-700 text-white"
+                                                        onClick={() => fetchMessages(selectedConversation.conversation_id)}
+                                                    >
+                                                        Retry
+                                                    </Button>
                                                 </div>
                                             </div>
-                                        ))}
+                                        ) : messages.length === 0 ? (
+                                            <div className="h-full flex items-center justify-center">
+                                                <div className="text-center text-gray-500 max-w-sm">
+                                                    <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                                    <p className="font-medium text-gray-700 dark:text-gray-300">No messages yet</p>
+                                                    <p className="text-sm mt-1">Start the conversation to close this deal faster.</p>
+                                                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                                                        {selectedConversation.post_id ? (
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => navigate(`/post/${selectedConversation.post_id}`)}
+                                                            >
+                                                                View Listing
+                                                            </Button>
+                                                        ) : null}
+                                                        <Button type="button" size="sm" onClick={() => navigate('/all-posts')}>
+                                                            Explore Listings
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            messages.map((msg, idx) => (
+                                                <div
+                                                    key={msg.id || msg.message_id || `${msg.sender_id}-${msg.created_at}-${idx}`}
+                                                    className={`flex ${Number.parseInt(msg.sender_id, 10) === currentUserId ? 'justify-end' : 'justify-start'}`}
+                                                >
+                                                    <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${Number.parseInt(msg.sender_id, 10) === currentUserId
+                                                        ? 'bg-blue-600 text-white rounded-br-sm'
+                                                        : 'bg-gray-100 dark:bg-gray-700 rounded-bl-sm'
+                                                        }`}>
+                                                        <p>{msg.content}</p>
+                                                        <p className={`text-xs mt-1 ${Number.parseInt(msg.sender_id, 10) === currentUserId ? 'text-blue-100' : 'text-gray-500'}`}>
+                                                            {formatTime(msg.created_at)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                         {isTyping && (
                                             <p className="text-xs text-gray-500">
                                                 {typingUser || 'Someone'} is typing...
@@ -467,6 +592,24 @@ const Chat = () => {
 
                                     {/* Input */}
                                     <div className="p-4 border-t dark:border-gray-700">
+                                        {sendError && (
+                                            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700 flex items-center justify-between gap-2">
+                                                <span className="flex items-center gap-1">
+                                                    <AlertCircle className="w-3.5 h-3.5" />
+                                                    {sendError}
+                                                </span>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-7 px-2 border-red-300 text-red-700"
+                                                    onClick={sendMessage}
+                                                >
+                                                    <RotateCcw className="w-3 h-3 mr-1" />
+                                                    Retry
+                                                </Button>
+                                            </div>
+                                        )}
                                         <div className="flex gap-2">
                                             <Input
                                                 placeholder="Type a message..."
@@ -482,7 +625,7 @@ const Chat = () => {
                                             />
                                             <Button
                                                 onClick={sendMessage}
-                                                disabled={sending || !newMessage.trim()}
+                                                disabled={sending || !newMessage.trim() || connectionState === 'offline'}
                                                 className="bg-blue-600 hover:bg-blue-700"
                                             >
                                                 <Send className="w-5 h-5" />
@@ -495,6 +638,15 @@ const Chat = () => {
                                     <div className="text-center text-gray-500">
                                         <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
                                         <p className="text-lg">Select a conversation to start chatting</p>
+                                        <div className="mt-4 flex flex-wrap justify-center gap-2">
+                                            <Button type="button" size="sm" onClick={() => navigate('/all-posts')}>
+                                                Browse Listings
+                                            </Button>
+                                            <Button type="button" size="sm" variant="outline" onClick={() => navigate('/my-recommendations')}>
+                                                <Compass className="w-4 h-4 mr-1" />
+                                                Find Matches
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             )}

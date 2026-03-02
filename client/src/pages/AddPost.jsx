@@ -68,12 +68,15 @@ const AddPost = () => {
   // Dropdown options from backend
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [dropdownError, setDropdownError] = useState('');
+  const [dropdownReloadTick, setDropdownReloadTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
     const fetchDropdownData = async () => {
       try {
+        setDropdownError('');
         const [categoriesData, brandsRes] = await Promise.all([
           fetchCategoriesCached(),
           fetch(buildApiPath('/brands'))
@@ -87,6 +90,7 @@ const AddPost = () => {
         if (cancelled) return;
         setCategories([]);
         setBrands([]);
+        setDropdownError('Failed to load categories and brands. Please retry.');
       }
     };
 
@@ -94,7 +98,7 @@ const AddPost = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [dropdownReloadTick]);
 
   // Add title to formData and pre-fill category
   const [formData, setFormData] = useState({
@@ -116,6 +120,9 @@ const AddPost = () => {
   const [audioBlob, setAudioBlob] = useState(null); // Voice description
   const [isFlashSale, setIsFlashSale] = useState(false); // 24-hour Flash Sale
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState('idle');
+  const [uploadHint, setUploadHint] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const previewImageUrls = useMemo(
@@ -129,15 +136,19 @@ const AddPost = () => {
 
   // Fetch tiers from backend if needed, or define in DB
   const [tiers, setTiers] = useState([]);
+  const [tiersError, setTiersError] = useState('');
+  const [tiersReloadTick, setTiersReloadTick] = useState(0);
   useEffect(() => {
     let cancelled = false;
 
     const fetchTiers = async () => {
       try {
+        setTiersError('');
         const res = await fetch(buildApiPath('/tiers'));
         if (!res.ok) {
           if (!cancelled) {
             setTiers([]);
+            setTiersError(`Tier data failed to load (HTTP ${res.status}).`);
             toast({
               title: "Tier fetch error",
               description: `Error ${res.status}`,
@@ -151,6 +162,7 @@ const AddPost = () => {
         if (!contentType || !contentType.includes("application/json")) {
           if (!cancelled) {
             setTiers([]);
+            setTiersError('Tier data response was invalid.');
             toast({
               title: "Tier fetch error",
               description: "Invalid response",
@@ -164,10 +176,12 @@ const AddPost = () => {
         if (!cancelled) {
           const normalized = Array.isArray(data) ? data.map(normalizeTier) : [];
           setTiers(normalized.length > 0 ? normalized : FALLBACK_TIERS);
+          setTiersError('');
         }
       } catch (err) {
         if (cancelled) return;
         setTiers(FALLBACK_TIERS);
+        setTiersError(err.message || 'Tier data unavailable. Using fallback tiers.');
         toast({
           title: "Tier fetch error",
           description: err.message,
@@ -180,12 +194,71 @@ const AddPost = () => {
     return () => {
       cancelled = true;
     };
-  }, [toast]);
+  }, [toast, tiersReloadTick]);
 
   const currentTier = useMemo(
     () => tiers.find((tier) => normalizeTierKey(tier.key) === selectedTier) || FALLBACK_TIERS.find((tier) => tier.key === selectedTier) || FALLBACK_TIERS[0],
     [tiers, selectedTier]
   );
+
+  const preSubmitChecklist = useMemo(() => ([
+    {
+      key: 'title',
+      label: 'Title (5-100 chars)',
+      met: formData.title.trim().length >= 5 && formData.title.trim().length <= 100,
+      hint: `${formData.title.trim().length}/100`
+    },
+    {
+      key: 'category',
+      label: 'Category selected',
+      met: Boolean(formData.category),
+      hint: formData.category ? formData.category : 'Required'
+    },
+    {
+      key: 'brand_model',
+      label: 'Brand and model',
+      met: formData.brand.trim().length >= 2 && formData.model.trim().length >= 2,
+      hint: formData.brand && formData.model ? `${formData.brand} ${formData.model}` : 'Required'
+    },
+    {
+      key: 'condition',
+      label: 'Condition selected',
+      met: Boolean(formData.condition),
+      hint: formData.condition || 'Required'
+    },
+    {
+      key: 'price',
+      label: 'Valid price',
+      met: Number(formData.price) > 0,
+      hint: formData.price ? `INR ${Number(formData.price) || 0}` : 'Required'
+    },
+    {
+      key: 'location',
+      label: 'District and state',
+      met: Boolean(formData.district.trim() && formData.state.trim()),
+      hint: formData.district && formData.state ? `${formData.district}, ${formData.state}` : 'Required'
+    },
+    {
+      key: 'contact',
+      label: 'Contact number',
+      met: /^([6-9][0-9]{9})$/.test(formData.contactNumber),
+      hint: formData.contactNumber ? `${formData.contactNumber.length}/10 digits` : 'Required'
+    },
+    {
+      key: 'description',
+      label: 'Description (20-1000 chars)',
+      met: formData.description.trim().length >= 20 && formData.description.trim().length <= 1000,
+      hint: `${formData.description.trim().length}/1000`
+    },
+    {
+      key: 'images',
+      label: `Images (1-${currentTier?.maxImages || 1})`,
+      met: images.length > 0 && images.length <= (currentTier?.maxImages || 1),
+      hint: `${images.length}/${currentTier?.maxImages || 1}`
+    }
+  ]), [formData, images.length, currentTier?.maxImages]);
+  const completedChecklistCount = preSubmitChecklist.filter((item) => item.met).length;
+  const remainingChecklistCount = preSubmitChecklist.length - completedChecklistCount;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -243,7 +316,10 @@ const AddPost = () => {
     if (!formData.category) errors.category = 'Category is required.';
     if (!formData.brand || formData.brand.length < 2) errors.brand = 'Brand is required (min 2 chars).';
     if (!formData.model || formData.model.length < 2) errors.model = 'Model is required (min 2 chars).';
+    if (!formData.condition) errors.condition = 'Condition is required.';
     if (!formData.price || isNaN(formData.price) || Number(formData.price) <= 0) errors.price = 'Price must be a positive number.';
+    if (!formData.district || formData.district.trim().length < 2) errors.district = 'District is required.';
+    if (!formData.state || formData.state.trim().length < 2) errors.state = 'State is required.';
     if (!formData.contactNumber || !/^([6-9][0-9]{9})$/.test(formData.contactNumber)) errors.contactNumber = 'Contact number must be 10 digits and start with 6-9.';
     if (!formData.description || formData.description.length < 20 || formData.description.length > 1000) errors.description = 'Description is required (20-1000 chars).';
     if (images.length === 0) errors.images = 'At least one image is required.';
@@ -264,8 +340,66 @@ const AddPost = () => {
     setShowPreview(true);
   };
 
+  const resetUploadState = useCallback(() => {
+    setUploadProgress(0);
+    setUploadStage('idle');
+    setUploadHint('');
+  }, []);
+
+  const submitPostRequest = useCallback((payload, token) => (
+    new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', buildApiPath('/posts'));
+      xhr.withCredentials = true;
+      xhr.timeout = 180000;
+
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.upload.onprogress = (event) => {
+        setUploadStage('uploading');
+        if (event.lengthComputable && event.total > 0) {
+          const percent = Math.max(1, Math.min(99, Math.round((event.loaded / event.total) * 100)));
+          setUploadProgress(percent);
+          setUploadHint(`Uploading media ${percent}%`);
+        } else {
+          setUploadHint('Uploading media...');
+        }
+      };
+
+      xhr.upload.onload = () => {
+        setUploadProgress(100);
+        setUploadStage('processing');
+        setUploadHint('Upload complete. Finalizing listing...');
+      };
+
+      xhr.onload = () => {
+        let responseBody = {};
+        try {
+          responseBody = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+        } catch {
+          responseBody = {};
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(responseBody);
+          return;
+        }
+        reject(new Error(responseBody?.error || responseBody?.message || `Upload failed (HTTP ${xhr.status})`));
+      };
+
+      xhr.onerror = () => reject(new Error('Network issue while uploading. Please try again.'));
+      xhr.ontimeout = () => reject(new Error('Upload timed out. Please retry with a smaller payload.'));
+      xhr.send(payload);
+    })
+  ), []);
+
   const handleSubmit = async () => {
     setIsLoading(true);
+    setUploadStage('uploading');
+    setUploadProgress(0);
+    setUploadHint('Preparing upload...');
     const errors = validateFields();
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -274,6 +408,7 @@ const AddPost = () => {
         description: Object.values(errors).join(' '),
         variant: 'destructive'
       });
+      resetUploadState();
       setIsLoading(false);
       return;
     }
@@ -287,6 +422,7 @@ const AddPost = () => {
         variant: "destructive"
       });
       navigate('/login', { state: { returnTo: location.pathname + location.search } });
+      resetUploadState();
       setIsLoading(false);
       return;
     }
@@ -305,33 +441,21 @@ const AddPost = () => {
 
       // Add Flash Sale flag (24-hour urgent listing)
       data.append('is_flash_sale', isFlashSale ? 'true' : 'false');
-      // Send to backend
-      const res = await fetch(buildApiPath('/posts'), {
-        method: 'POST',
-        body: data,
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        credentials: 'include'
+      await submitPostRequest(data, token);
+      localStorage.setItem('mhub:first-post-created', 'true');
+      toast({
+        title: "Post Created Successfully",
+        description: `Your mobile listing has been created.`
       });
-      const result = await res.json();
-      if (res.ok) {
-        toast({
-          title: "Post Created Successfully",
-          description: `Your mobile listing has been created.`
-        });
-        navigate('/all-posts');
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to create post.",
-          variant: "destructive"
-        });
-      }
+      resetUploadState();
+      navigate('/all-posts');
     } catch (err) {
       toast({
         title: "Error",
         description: err.message || "Failed to create post.",
         variant: "destructive"
       });
+      resetUploadState();
     }
     setIsLoading(false);
   };
@@ -408,9 +532,23 @@ const AddPost = () => {
               className="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700"
               disabled={isLoading}
             >
-              {isLoading ? "Publishing..." : "Publish Post"}
+              {isLoading ? (uploadStage === 'processing' ? "Finalizing..." : "Publishing...") : "Publish Post"}
             </Button>
           </div>
+          {isLoading && (
+            <div className="mt-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3">
+              <div className="flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1">
+                <span>{uploadHint || 'Uploading media...'}</span>
+                <span>{uploadProgress > 0 ? `${uploadProgress}%` : ''}</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900">
+                <div
+                  className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.max(5, uploadProgress || 5))}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -436,6 +574,57 @@ const AddPost = () => {
             </Badge>
           </div>
         </div>
+        {dropdownError && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-amber-800 dark:text-amber-300">{dropdownError}</p>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-amber-300 text-amber-800"
+              onClick={() => setDropdownReloadTick((value) => value + 1)}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+        {tiersError && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-amber-800 dark:text-amber-300">{tiersError}</p>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-amber-300 text-amber-800"
+              onClick={() => setTiersReloadTick((value) => value + 1)}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+        <Card className="mb-4 border border-sky-200 dark:border-sky-900 bg-sky-50 dark:bg-sky-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="text-sm font-semibold text-sky-800 dark:text-sky-300">Pre-submit checklist</p>
+              <Badge className={`${remainingChecklistCount === 0 ? 'bg-emerald-600' : 'bg-sky-600'} text-white`}>
+                {completedChecklistCount}/{preSubmitChecklist.length} complete
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {preSubmitChecklist.map((item) => (
+                <div key={item.key} className={`rounded-lg border px-3 py-2 text-xs ${item.met ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900'}`}>
+                  <p className={`font-semibold ${item.met ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                    {item.met ? 'Complete:' : 'Pending:'} {item.label}
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-300">{item.hint}</p>
+                </div>
+              ))}
+            </div>
+            {remainingChecklistCount > 0 && (
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-3">
+                Complete pending fields above to reduce submit errors and rework.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="shadow-xl border-0 rounded-2xl overflow-hidden dark:bg-gray-800">
           <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white">
@@ -464,6 +653,9 @@ const AddPost = () => {
                       minLength={5}
                     />
                     {formErrors.title && <div className="text-red-500 text-xs mt-1">{formErrors.title}</div>}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Use a clear title with brand + model. {formData.title.trim().length}/100
+                    </p>
                   </div>
                   <div>
                     <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('category')} *</Label>
@@ -603,6 +795,8 @@ const AddPost = () => {
                       className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
+                    {formErrors.price && <div className="text-red-500 text-xs mt-1">{formErrors.price}</div>}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter your expected final selling price.</p>
                   </div>
 
                   <div>
@@ -616,6 +810,7 @@ const AddPost = () => {
                       className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
+                    {formErrors.district && <div className="text-red-500 text-xs mt-1">{formErrors.district}</div>}
                   </div>
 
                   <div>
@@ -629,6 +824,7 @@ const AddPost = () => {
                       className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
+                    {formErrors.state && <div className="text-red-500 text-xs mt-1">{formErrors.state}</div>}
                   </div>
                 </div>
               </div>
@@ -649,6 +845,8 @@ const AddPost = () => {
                       className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"
                       required
                     />
+                    {formErrors.contactNumber && <div className="text-red-500 text-xs mt-1">{formErrors.contactNumber}</div>}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Use a 10-digit Indian number starting with 6-9.</p>
                   </div>
 
                   <div>
@@ -678,6 +876,9 @@ const AddPost = () => {
                                 className="sr-only"
                               />
                             </label>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                              Selected: {images.length}/{currentTier?.maxImages || 1}
+                            </p>
                             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                               PNG, JPG up to 2MB each • Max {currentTier?.maxImages || 1} images
                             </p>
@@ -707,6 +908,7 @@ const AddPost = () => {
                         </div>
                       )}
                     </div>
+                    {formErrors.images && <div className="text-red-500 text-xs mt-2">{formErrors.images}</div>}
                   </div>
 
                   <div>
@@ -724,6 +926,9 @@ const AddPost = () => {
                       maxLength={1000}
                     />
                     {formErrors.description && <div className="text-red-500 text-xs mt-1">{formErrors.description}</div>}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Share condition, accessories, and reason for selling. {formData.description.trim().length}/1000
+                    </p>
                   </div>
 
                   {/* Voice Description - The Defender's Voice-First Commerce */}
@@ -786,10 +991,24 @@ const AddPost = () => {
                   style={{ minWidth: 140 }}
                 >
                   {isLoading ? (
-                    <span className="flex items-center justify-center"><svg className="animate-spin mr-2 w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Publishing...</span>
+                    <span className="flex items-center justify-center"><svg className="animate-spin mr-2 w-5 h-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>{uploadStage === 'processing' ? 'Finalizing...' : 'Publishing...'}</span>
                   ) : "Publish Post"}
                 </Button>
               </div>
+              {isLoading && (
+                <div className="rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3">
+                  <div className="flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1">
+                    <span>{uploadHint || 'Uploading media...'}</span>
+                    <span>{uploadProgress > 0 ? `${uploadProgress}%` : ''}</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300"
+                      style={{ width: `${Math.min(100, Math.max(5, uploadProgress || 5))}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -799,5 +1018,8 @@ const AddPost = () => {
 };
 
 export default AddPost;
+
+
+
 
 

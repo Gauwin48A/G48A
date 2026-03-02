@@ -9,9 +9,14 @@ const redisSession = require('../config/redisSession');
 const JWT_CONFIG = require('../config/jwtConfig');
 const logger = require('../utils/logger');
 const otpService = require('../services/otpService');
+const emailService = require('../services/emailService');
 const otpDeliveryService = require('../services/otpDeliveryService');
 const mlFraudScoringService = require('../services/mlFraudScoringService');
 const riskTelemetryService = require('../services/riskTelemetryService');
+const {
+  applyRewardDeltaInTransaction,
+  afterCommitRewardMutation
+} = require('../services/rewardsLedgerService');
 
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 
@@ -24,6 +29,7 @@ const PASSWORD_HASH_OPTIONS = {
 
 const DUMMY_ARGON_HASH =
   '$argon2id$v=19$m=65536,t=3,p=1$9eLY+7rUQEB+HZa217oMNQ$6HQEI495JcdVXPUdDHibTnZECqFl+K+ffBXzMB+4dKM';
+const PASSWORD_RESET_TTL_SECONDS = 15 * 60;
 
 const runQuery = (text, values = []) =>
   pool.query({
@@ -58,6 +64,91 @@ const parseOptionalString = (value) => {
   if (value === undefined || value === null) return null;
   const normalized = String(value).trim();
   return normalized.length > 0 ? normalized : null;
+};
+
+const normalizeIndianPhoneNumber = (value) => {
+  const normalized = parseOptionalString(value);
+  if (!normalized) return null;
+
+  const digitsOnly = normalized.replace(/\D/g, '');
+  if (/^[6-9]\d{9}$/.test(digitsOnly)) {
+    return digitsOnly;
+  }
+
+  if (/^91[6-9]\d{9}$/.test(digitsOnly)) {
+    return digitsOnly.slice(2);
+  }
+
+  return null;
+};
+
+const getPhoneCandidates = (value) => {
+  const normalizedPhone = normalizeIndianPhoneNumber(value);
+  if (!normalizedPhone) {
+    const raw = parseOptionalString(value);
+    return raw ? [raw] : [];
+  }
+
+  return [normalizedPhone, `+91${normalizedPhone}`];
+};
+
+const isPhoneOtpAuthEnabled = () =>
+  String(process.env.ENABLE_PHONE_OTP_AUTH || '').toLowerCase() === 'true';
+
+const isSmsTransportConfigured = () =>
+  Boolean(parseOptionalString(process.env.TWILIO_ACCOUNT_SID) && parseOptionalString(process.env.TWILIO_AUTH_TOKEN))
+  || Boolean(parseOptionalString(process.env.MSG91_AUTH_KEY));
+
+const parseForwardedHeaderFirst = (value) => {
+  const raw = parseOptionalString(value);
+  if (!raw) return null;
+  return raw.split(',')[0]?.trim() || null;
+};
+
+const normalizeUrlBase = (value) => String(value || '').trim().replace(/\/+$/, '');
+
+const resolveClientBaseUrl = (req) => {
+  const configured =
+    parseOptionalString(process.env.PASSWORD_RESET_CLIENT_URL)
+    || parseOptionalString(process.env.CLIENT_URL);
+  if (configured) {
+    return normalizeUrlBase(configured);
+  }
+
+  const forwardedProto = parseForwardedHeaderFirst(req.headers['x-forwarded-proto']);
+  const forwardedHost = parseForwardedHeaderFirst(req.headers['x-forwarded-host']);
+  const proto = forwardedProto || req.protocol || 'http';
+  const host = forwardedHost || parseOptionalString(req.get('host'));
+
+  if (host) {
+    return `${proto}://${host}`.replace(/\/+$/, '');
+  }
+
+  return 'http://localhost:8081';
+};
+
+const buildResetPasswordUrl = (req, token) => {
+  const baseUrl = resolveClientBaseUrl(req);
+  return `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
+};
+
+const dedupeTextList = (values) => {
+  const unique = new Set();
+  const list = [];
+  for (const value of values) {
+    const normalized = parseOptionalString(value);
+    if (!normalized) continue;
+    if (unique.has(normalized)) continue;
+    unique.add(normalized);
+    list.push(normalized);
+  }
+  return list;
+};
+
+const getResetOtpKeyCandidates = (value) => {
+  const raw = parseOptionalString(value);
+  const phoneCandidates = getPhoneCandidates(value);
+  return dedupeTextList([raw, ...phoneCandidates]);
 };
 
 const getAuthenticatedUserId = (req) =>
@@ -326,11 +417,16 @@ exports.signup = async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   const { phone, password, fullName, email } = req.body;
-  const phoneNumber = phone || req.body.phone_number;
+  const phoneNumber = normalizeIndianPhoneNumber(phone || req.body.phone_number);
   const normalizedEmail = email?.trim().toLowerCase();
+  const referralCode = parseOptionalString(req.body.referral_code || req.body.referralCode);
   const client = await pool.connect();
 
   try {
+    if (!phoneNumber) {
+      return res.status(400).json({ error: 'Valid phone number is required' });
+    }
+
     const strength = zxcvbn(password || '');
     if (strength.score < 2) {
       return res.status(400).json({
@@ -340,6 +436,19 @@ exports.signup = async (req, res) => {
     }
 
     await client.query('BEGIN');
+
+    let referrerUserId = null;
+    if (referralCode) {
+      const referralLookup = await client.query(
+        'SELECT user_id FROM users WHERE referral_code = $1 LIMIT 1',
+        [referralCode]
+      );
+      if (referralLookup.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Invalid referral code' });
+      }
+      referrerUserId = String(referralLookup.rows[0].user_id);
+    }
 
     const userCheck = await client.query(
       'SELECT user_id FROM users WHERE LOWER(email) = LOWER($1) OR phone_number = $2',
@@ -373,7 +482,50 @@ exports.signup = async (req, res) => {
       [newUser.user_id, fullName?.trim() || newUser.name || 'User', phoneNumber || null]
     );
 
+    let signupRewardChange = null;
+    let referralRewardChange = null;
+    await client.query('SAVEPOINT signup_rewards');
+    try {
+      signupRewardChange = await applyRewardDeltaInTransaction({
+        client,
+        userId: newUser.user_id,
+        pointsDelta: 25,
+        action: 'signup_bonus',
+        description: 'Welcome signup bonus',
+        idempotencyKey: `signup-bonus:${newUser.user_id}`
+      });
+
+      if (referrerUserId && referrerUserId !== String(newUser.user_id)) {
+        await client.query(
+          'UPDATE users SET referred_by = $1 WHERE user_id::text = $2 AND referred_by IS NULL',
+          [referrerUserId, String(newUser.user_id)]
+        );
+
+        referralRewardChange = await applyRewardDeltaInTransaction({
+          client,
+          userId: referrerUserId,
+          pointsDelta: 50,
+          action: 'referral_bonus',
+          description: `Signup referral bonus for ${newUser.user_id}`,
+          idempotencyKey: `signup-referral:${newUser.user_id}`
+        });
+      }
+    } catch (rewardErr) {
+      await client.query('ROLLBACK TO SAVEPOINT signup_rewards');
+      logger.warn('[SIGNUP] Rewards award failed; continuing signup flow', {
+        message: rewardErr.message
+      });
+      signupRewardChange = null;
+      referralRewardChange = null;
+    }
+
     await client.query('COMMIT');
+    if (signupRewardChange?.applied) {
+      afterCommitRewardMutation(signupRewardChange);
+    }
+    if (referralRewardChange?.applied) {
+      afterCommitRewardMutation(referralRewardChange);
+    }
 
     const sessionData = await createSession(newUser, req, res);
 
@@ -402,6 +554,8 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, phone, password, identifier } = req.body;
   const loginIdentifier = (identifier || email || phone || '').trim();
+  const normalizedPhoneIdentifier = normalizeIndianPhoneNumber(loginIdentifier);
+  const prefixedPhoneIdentifier = normalizedPhoneIdentifier ? `+91${normalizedPhoneIdentifier}` : null;
 
   try {
     const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
@@ -420,9 +574,13 @@ exports.login = async (req, res) => {
          NULLIF(to_jsonb(u)->>'locked_until', '') AS locked_until_legacy,
          u.login_attempts
        FROM users u
-       WHERE LOWER(u.email) = LOWER($1) OR u.phone_number = $1
+       WHERE LOWER(u.email) = LOWER($1)
+         OR LOWER(COALESCE(u.username, '')) = LOWER($1)
+         OR u.phone_number = $1
+         OR ($2::text IS NOT NULL AND u.phone_number = $2::text)
+         OR ($3::text IS NOT NULL AND u.phone_number = $3::text)
        LIMIT 1`,
-      [loginIdentifier]
+      [loginIdentifier, normalizedPhoneIdentifier, prefixedPhoneIdentifier]
     );
 
     if (result.rows.length === 0) {
@@ -449,7 +607,7 @@ exports.login = async (req, res) => {
 
     if (!user.password_hash) {
       return res.status(400).json({
-        error: 'No password set for this account. Please use OTP login.',
+        error: 'No password set for this account. Use Forgot Password to set one.',
         useOtp: true
       });
     }
@@ -569,16 +727,24 @@ exports.login = async (req, res) => {
 };
 
 exports.sendOTP = async (req, res) => {
-  const { phone } = req.body;
+  if (!isPhoneOtpAuthEnabled()) {
+    return res.status(503).json({
+      error: 'Phone OTP login is not enabled yet.',
+      code: 'PHONE_OTP_DISABLED'
+    });
+  }
 
-  if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
+  const { phone } = req.body;
+  const normalizedPhone = normalizeIndianPhoneNumber(phone);
+
+  if (!normalizedPhone) {
     return res.status(400).json({
       error: 'Invalid phone number. Must be 10 digits starting with 6-9.'
     });
   }
 
   try {
-    const rateKey = `OTP_RATE:${phone}`;
+    const rateKey = `OTP_RATE:${normalizedPhone}`;
     const attempts = (await redisSession.get(rateKey)) || 0;
 
     if (attempts >= 3) {
@@ -592,23 +758,23 @@ exports.sendOTP = async (req, res) => {
     const otpHash = hashSha256(otp);
 
     await Promise.all([
-      redisSession.set(`OTP:${phone}`, otpHash, 300),
-      redisSession.del(`OTP_VERIFY_ATTEMPTS:${phone}`),
+      redisSession.set(`OTP:${normalizedPhone}`, otpHash, 300),
+      redisSession.del(`OTP_VERIFY_ATTEMPTS:${normalizedPhone}`),
       redisSession.incr(rateKey, 600)
     ]);
 
-    const destination = `+91${phone}`;
+    const destination = `+91${normalizedPhone}`;
     const deliveryResult = await otpService.sendOTP('sms', destination, otp, {
       flow: 'auth',
       purpose: 'login_otp',
       metadata: {
-        phone_last4: phone.slice(-4)
+        phone_last4: normalizedPhone.slice(-4)
       }
     });
 
     if (process.env.NODE_ENV !== 'production') {
       logger.info(
-        `[OTP REQUEST] Phone: ${phone}, OTP Hash: ${otpHash.substring(0, 16)}, Delivery: ${deliveryResult.provider || (deliveryResult.mock ? 'mock' : 'unknown')}, DeliveryID: ${deliveryResult.deliveryId || 'n/a'}, Timestamp: ${new Date().toISOString()}`
+        `[OTP REQUEST] Phone: ${normalizedPhone}, OTP Hash: ${otpHash.substring(0, 16)}, Delivery: ${deliveryResult.provider || (deliveryResult.mock ? 'mock' : 'unknown')}, DeliveryID: ${deliveryResult.deliveryId || 'n/a'}, Timestamp: ${new Date().toISOString()}`
       );
     }
 
@@ -720,14 +886,23 @@ exports.getRiskDecisionMetrics = async (req, res) => {
 };
 
 exports.verifyOTP = async (req, res) => {
-  const { phone, otp } = req.body;
+  if (!isPhoneOtpAuthEnabled()) {
+    return res.status(503).json({
+      error: 'Phone OTP login is not enabled yet.',
+      code: 'PHONE_OTP_DISABLED'
+    });
+  }
 
-  if (!phone || !otp) {
+  const { phone, otp } = req.body;
+  const normalizedPhone = normalizeIndianPhoneNumber(phone);
+  const phoneStorageKey = normalizedPhone || parseOptionalString(phone);
+
+  if (!phoneStorageKey || !otp) {
     return res.status(400).json({ error: 'Phone and OTP are required' });
   }
 
   try {
-    const verifyAttemptsKey = `OTP_VERIFY_ATTEMPTS:${phone}`;
+    const verifyAttemptsKey = `OTP_VERIFY_ATTEMPTS:${phoneStorageKey}`;
     const verifyAttempts = (await redisSession.get(verifyAttemptsKey)) || 0;
     if (verifyAttempts >= 5) {
       return res.status(429).json({
@@ -736,7 +911,7 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    const storedOtpHash = await redisSession.get(`OTP:${phone}`);
+    const storedOtpHash = await redisSession.get(`OTP:${phoneStorageKey}`);
     const incomingOtpHash = hashSha256(otp);
 
     if (!storedOtpHash || !safeTextEqual(storedOtpHash, incomingOtpHash)) {
@@ -750,38 +925,39 @@ exports.verifyOTP = async (req, res) => {
     let userResult = await runQuery(
       `SELECT user_id, phone_number, name, email, role, tier
        FROM users
-       WHERE phone_number = $1
+       WHERE phone_number = ANY($1::text[])
        LIMIT 1`,
-      [phone]
+      [dedupeTextList([phoneStorageKey, ...getPhoneCandidates(phoneStorageKey)])]
     );
     let user = userResult.rows[0];
     let isNewUser = false;
+    const normalizedPhoneForStorage = normalizedPhone || phoneStorageKey;
 
     if (!user) {
-      const autoUsername = `phone_${phone}_${crypto.randomBytes(3).toString('hex')}`;
+      const autoUsername = `phone_${normalizedPhoneForStorage}_${crypto.randomBytes(3).toString('hex')}`;
       const newUser = await runQuery(
         `INSERT INTO users (username, name, phone_number, phone_verified, role)
          VALUES ($1, $2, $3, true, 'user')
          RETURNING user_id, phone_number, name, email, role`,
-        [autoUsername, 'User', phone]
+        [autoUsername, 'User', normalizedPhoneForStorage]
       );
       user = newUser.rows[0];
       await runQuery(
         `INSERT INTO profiles (user_id, full_name, phone)
          VALUES ($1, $2, $3)
          ON CONFLICT (user_id) DO NOTHING`,
-        [user.user_id, user.name || 'User', phone]
+        [user.user_id, user.name || 'User', normalizedPhoneForStorage]
       );
       isNewUser = true;
       if (process.env.NODE_ENV !== 'production') {
-        logger.info(`[AUTH] New user registered via OTP: ${phone}`);
+        logger.info(`[AUTH] New user registered via OTP: ${normalizedPhoneForStorage}`);
       }
     } else {
       await runQuery('UPDATE users SET phone_verified = true WHERE user_id = $1', [user.user_id]);
     }
 
     await Promise.all([
-      redisSession.del(`OTP:${phone}`),
+      redisSession.del(`OTP:${phoneStorageKey}`),
       redisSession.del(verifyAttemptsKey)
     ]);
 
@@ -978,24 +1154,45 @@ exports.setPassword = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   const { identifier, phone } = req.body;
   const lookupValue = (identifier || phone || '').trim();
+  const normalizedLookupPhone = normalizeIndianPhoneNumber(lookupValue);
+  const prefixedLookupPhone = normalizedLookupPhone ? `+91${normalizedLookupPhone}` : null;
+  const rateKeySubject = normalizedLookupPhone || lookupValue.toLowerCase();
 
   if (!lookupValue) {
     return res.status(400).json({ error: 'Email or phone number is required' });
   }
 
+  if (
+    process.env.NODE_ENV === 'production'
+    && !emailService.isEmailTransportConfigured()
+    && !isSmsTransportConfigured()
+  ) {
+    logger.error('[FORGOT PASSWORD] No email/SMS transport configured in production');
+    return res.status(503).json({
+      error: 'Password reset service is temporarily unavailable. Please contact support.'
+    });
+  }
+
   try {
     const userResult = await runQuery(
-      'SELECT user_id, email, phone_number FROM users WHERE LOWER(email) = LOWER($1) OR phone_number = $1',
-      [lookupValue]
+      `SELECT user_id, email, phone_number
+       FROM users
+       WHERE LOWER(email) = LOWER($1)
+         OR LOWER(COALESCE(username, '')) = LOWER($1)
+         OR phone_number = $1
+         OR ($2::text IS NOT NULL AND phone_number = $2::text)
+         OR ($3::text IS NOT NULL AND phone_number = $3::text)
+       LIMIT 1`,
+      [lookupValue, normalizedLookupPhone, prefixedLookupPhone]
     );
 
     if (userResult.rows.length === 0) {
-      return res.json({ message: 'If this account exists, a reset link/OTP has been sent.' });
+      return res.json({ message: 'If this account exists, reset instructions have been sent.' });
     }
 
     const user = userResult.rows[0];
 
-    const rateKey = `RESET_RATE:${lookupValue}`;
+    const rateKey = `RESET_RATE:${rateKeySubject}`;
     const attempts = (await redisSession.get(rateKey)) || 0;
     if (attempts >= 5) {
       return res.status(429).json({
@@ -1009,24 +1206,77 @@ exports.forgotPassword = async (req, res) => {
 
     const otp = generateSixDigitOtp();
     const otpHash = hashSha256(otp);
-    const resetOtpKey = user.phone_number || lookupValue;
+    const resetOtpKeys = getResetOtpKeyCandidates(user.phone_number || lookupValue);
+    const resetLink = buildResetPasswordUrl(req, resetToken);
 
-    await Promise.all([
-      redisSession.set(`RESET_TOKEN:${resetTokenHash}`, user.user_id, 900),
-      redisSession.set(`RESET_OTP:${resetOtpKey}`, otpHash, 900),
+    const redisOps = [
+      redisSession.set(`RESET_TOKEN:${resetTokenHash}`, user.user_id, PASSWORD_RESET_TTL_SECONDS),
       redisSession.incr(rateKey, 1800)
-    ]);
+    ];
+
+    for (const resetOtpKey of resetOtpKeys) {
+      redisOps.push(redisSession.set(`RESET_OTP:${resetOtpKey}`, otpHash, PASSWORD_RESET_TTL_SECONDS));
+    }
+
+    await Promise.all(redisOps);
+
+    let delivery = null;
+    let deliveryChannel = 'none';
+    const canSms = Boolean(user.phone_number) && isSmsTransportConfigured();
+
+    if (user.email) {
+      try {
+        delivery = await emailService.sendPasswordResetEmail({
+          email: user.email,
+          resetLink,
+          otp,
+          expiresInMinutes: Math.floor(PASSWORD_RESET_TTL_SECONDS / 60)
+        });
+        deliveryChannel = 'email';
+      } catch (emailError) {
+        logger.warn('[FORGOT PASSWORD] Email reset delivery failed', {
+          userId: String(user.user_id),
+          message: emailError.message
+        });
+      }
+    }
+
+    if (!delivery && canSms) {
+      const smsPhone = normalizeIndianPhoneNumber(user.phone_number) || user.phone_number;
+      const destination = smsPhone.startsWith('+') ? smsPhone : `+91${smsPhone}`;
+      delivery = await otpService.sendOTP('sms', destination, otp, {
+        flow: 'auth',
+        purpose: 'password_reset',
+        metadata: { user_id: String(user.user_id) }
+      });
+      deliveryChannel = 'sms_otp';
+    }
+
+    if (!delivery && process.env.NODE_ENV === 'production') {
+      return res.status(503).json({
+        error: 'Password reset service is temporarily unavailable. Please contact support.'
+      });
+    }
 
     if (process.env.NODE_ENV !== 'production') {
       logger.info(
-        `[PASSWORD RESET REQUEST] User: ${user.user_id}, Token Hash: ${resetTokenHash.substring(0, 16)}, OTP Hash: ${otpHash.substring(0, 16)}`
+        `[PASSWORD RESET REQUEST] User: ${user.user_id}, Token Hash: ${resetTokenHash.substring(0, 16)}, OTP Hash: ${otpHash.substring(0, 16)}, Channel: ${deliveryChannel}, Provider: ${delivery?.provider || 'none'}`
       );
     }
 
     const responsePayload = {
-      message: 'If this account exists, a reset link/OTP has been sent.',
-      expiresIn: 900
+      message: 'If this account exists, reset instructions have been sent.',
+      expiresIn: PASSWORD_RESET_TTL_SECONDS
     };
+
+    if (process.env.NODE_ENV !== 'production') {
+      responsePayload.debug = {
+        channel: deliveryChannel,
+        provider: delivery?.provider || null,
+        mock: Boolean(delivery?.mock),
+        resetLink
+      };
+    }
 
     // Test-only hook for real integration tests where Redis is process-local.
     if (process.env.NODE_ENV === 'test' && process.env.AUTH_EXPOSE_TEST_SECRETS === 'true') {
@@ -1043,6 +1293,8 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   const { token, phone, otp, newPassword } = req.body;
+  const normalizedPhone = normalizeIndianPhoneNumber(phone);
+  const resetOtpCandidates = getResetOtpKeyCandidates(phone || normalizedPhone);
 
   if (!newPassword) {
     return res.status(400).json({ error: 'New password is required' });
@@ -1069,14 +1321,32 @@ exports.resetPassword = async (req, res) => {
         return res.status(400).json({ error: 'Invalid or expired reset link' });
       }
     } else if (phone && otp) {
-      const storedOtpHash = await redisSession.get(`RESET_OTP:${phone}`);
+      let storedOtpHash = null;
+      for (const candidate of resetOtpCandidates) {
+        // eslint-disable-next-line no-await-in-loop
+        const candidateHash = await redisSession.get(`RESET_OTP:${candidate}`);
+        if (candidateHash) {
+          storedOtpHash = candidateHash;
+          break;
+        }
+      }
       const incomingOtpHash = hashSha256(otp);
 
       if (!storedOtpHash || !safeTextEqual(storedOtpHash, incomingOtpHash)) {
         return res.status(400).json({ error: 'Invalid or expired OTP' });
       }
 
-      const userResult = await runQuery('SELECT user_id FROM users WHERE phone_number = $1', [phone]);
+      const phoneLookupCandidates = dedupeTextList([
+        parseOptionalString(phone),
+        normalizedPhone,
+        ...getPhoneCandidates(phone),
+        ...getPhoneCandidates(normalizedPhone)
+      ]);
+
+      const userResult = await runQuery(
+        'SELECT user_id FROM users WHERE phone_number = ANY($1::text[]) LIMIT 1',
+        [phoneLookupCandidates]
+      );
       if (userResult.rows.length === 0) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -1109,7 +1379,11 @@ exports.resetPassword = async (req, res) => {
       cleanupOps.push(redisSession.del(`RESET_TOKEN:${tokenHash}`));
       cleanupOps.push(redisSession.del(`RESET_TOKEN:${token}`));
     }
-    if (phone) cleanupOps.push(redisSession.del(`RESET_OTP:${phone}`));
+    if (resetOtpCandidates.length > 0) {
+      cleanupOps.push(
+        ...resetOtpCandidates.map((candidate) => redisSession.del(`RESET_OTP:${candidate}`))
+      );
+    }
     if (cleanupOps.length) await Promise.all(cleanupOps);
 
     await revokeAllRefreshSessions(userId);

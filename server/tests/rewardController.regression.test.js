@@ -8,7 +8,7 @@ function normalizeQueryArgs(arg, values) {
     return { text: String(arg || ''), values: [] };
 }
 
-function loadControllerWithPoolMock(queryImpl) {
+function loadControllerWithPoolMock(queryImpl, options = {}) {
     jest.resetModules();
 
     const poolQuery = jest.fn((arg, values) => queryImpl(normalizeQueryArgs(arg, values)));
@@ -28,12 +28,33 @@ function loadControllerWithPoolMock(queryImpl) {
         error: jest.fn(),
         info: jest.fn()
     };
+    class MockInsufficientPointsError extends Error {
+        constructor(availablePoints) {
+            super('Insufficient reward points');
+            this.availablePoints = availablePoints;
+        }
+    }
+    class MockInvalidRewardInputError extends Error {}
+    const rewardsLedgerService = {
+        applyRewardDeltaInTransaction: jest.fn(
+            options.applyRewardDeltaInTransaction
+            || (async () => ({
+                applied: true,
+                duplicate: false,
+                pointsAfter: 800
+            }))
+        ),
+        afterCommitRewardMutation: jest.fn(),
+        InsufficientPointsError: MockInsufficientPointsError,
+        InvalidRewardInputError: MockInvalidRewardInputError
+    };
 
     jest.doMock('../src/config/db', () => ({ query: poolQuery, connect }));
     jest.doMock('../src/utils/logger', () => logger);
+    jest.doMock('../src/services/rewardsLedgerService', () => rewardsLedgerService);
 
     const controller = require('../src/controllers/rewardController');
-    return { controller, poolQuery, clientQuery, connect, logger };
+    return { controller, poolQuery, clientQuery, connect, logger, rewardsLedgerService };
 }
 
 function createResponseMock() {
@@ -95,20 +116,12 @@ describe('rewardController regression behavior', () => {
     });
 
     it('redeemRewards updates balances with text-safe user id filters', async () => {
-        const { controller, clientQuery } = loadControllerWithPoolMock(async ({ text, values }) => {
+        const { controller, clientQuery, rewardsLedgerService } = loadControllerWithPoolMock(async ({ text, values }) => {
             if (text.includes("table_name = 'users'") && text.includes("column_name = 'id'")) {
                 return { rows: [{ available: true }] };
             }
             if (text.includes('SELECT user_id::text AS user_id') && text.includes('OR id::text = $1')) {
                 return { rows: [{ user_id: '11111111-1111-4111-8111-111111111111' }] };
-            }
-            if (text.includes('UPDATE rewards') && text.includes('SET points = points - $1')) {
-                expect(text).toContain('WHERE user_id::text = $2');
-                expect(values).toEqual([200, '11111111-1111-4111-8111-111111111111']);
-                return { rowCount: 1, rows: [{ points: 800 }] };
-            }
-            if (text.includes('INSERT INTO reward_log')) {
-                return { rowCount: 1, rows: [] };
             }
             if (text.includes('UPDATE users SET post_credits = post_credits + $1')) {
                 expect(text).toContain('WHERE user_id::text = $2');
@@ -130,13 +143,16 @@ describe('rewardController regression behavior', () => {
         expect(res.json).toHaveBeenCalledWith({
             message: 'Redeemed 200 points for 2 post credits',
             creditsGranted: 2,
-            remainingPoints: 800
+            remainingPoints: 800,
+            duplicate: false
         });
-
-        const debitCall = clientQuery.mock.calls.find((call) => {
-            const arg = normalizeQueryArgs(call[0], call[1]);
-            return arg.text.includes('UPDATE rewards') && arg.text.includes('SET points = points - $1');
-        });
-        expect(normalizeQueryArgs(debitCall[0], debitCall[1]).text).toContain('user_id::text = $2');
+        expect(rewardsLedgerService.applyRewardDeltaInTransaction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: '11111111-1111-4111-8111-111111111111',
+                pointsDelta: -200,
+                action: 'redemption'
+            })
+        );
+        expect(clientQuery).toHaveBeenCalledWith('COMMIT');
     });
 });

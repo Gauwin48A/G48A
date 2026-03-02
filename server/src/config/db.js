@@ -1,30 +1,72 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 require('dotenv').config();
 
-// Production SSL check (Audit Fix: Encrypt DB traffic)
+function parseBoolean(rawValue, fallback) {
+  if (rawValue === undefined || rawValue === null || rawValue === '') return fallback;
+  const normalized = String(rawValue).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  return fallback;
+}
+
+function parseInteger(rawValue, fallback, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = {}) {
+  const parsed = Number.parseInt(String(rawValue ?? ''), 10);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function readEnv(name, fallback = undefined) {
+  const value = process.env[name];
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return fallback;
+  }
+  return String(value).trim();
+}
+
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Create a new pool instance with robust configuration
+const dbUser = readEnv('DB_USER', isProduction ? undefined : 'postgres');
+const dbHost = readEnv('DB_HOST', isProduction ? undefined : 'localhost');
+const dbName = readEnv('DB_NAME', isProduction ? undefined : 'mhub_db');
+const dbPassword = readEnv('DB_PASSWORD', isProduction ? undefined : 'password');
+const dbPort = parseInteger(process.env.DB_PORT, 5432, { min: 1, max: 65535 });
+
+if (isProduction) {
+  const missing = [];
+  if (!dbUser) missing.push('DB_USER');
+  if (!dbHost) missing.push('DB_HOST');
+  if (!dbName) missing.push('DB_NAME');
+  if (!dbPassword) missing.push('DB_PASSWORD');
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required production database env vars: ${missing.join(', ')}`);
+  }
+}
+
+const sslEnabled = parseBoolean(process.env.DB_SSL, isProduction);
+const sslRejectUnauthorized = parseBoolean(process.env.DB_SSL_REJECT_UNAUTHORIZED, true);
+
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'mhub_db',
-  password: process.env.DB_PASSWORD || 'password',
-  port: process.env.DB_PORT || 5432,
-  max: 20, // Max clients in the pool
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-  // SECURITY: Enforce SSL in production
-  ssl: isProduction ? { rejectUnauthorized: false } : false
+  user: dbUser,
+  host: dbHost,
+  database: dbName,
+  password: dbPassword,
+  port: dbPort,
+  max: parseInteger(process.env.DB_POOL_MAX, 20, { min: 1, max: 200 }),
+  idleTimeoutMillis: parseInteger(process.env.DB_IDLE_TIMEOUT_MS, 30000, { min: 1000 }),
+  connectionTimeoutMillis: parseInteger(process.env.DB_CONNECT_TIMEOUT_MS, 5000, { min: 1000 }),
+  ssl: sslEnabled ? { rejectUnauthorized: sslRejectUnauthorized } : false
 });
 
 pool.on('connect', () => {
-  console.log('✅ Database connected successfully');
+  console.log('[DB] Connected');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err);
-  process.exit(-1);
+  console.error('[DB] Unexpected idle client error', err);
+  process.exit(1);
 });
 
 module.exports = pool;

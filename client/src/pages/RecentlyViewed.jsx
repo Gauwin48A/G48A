@@ -328,13 +328,32 @@ const RecentlyViewed = () => {
                         <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
                             {t('posts_you_view_appear')}
                         </p>
-                        <Button
-                            onClick={() => navigate('/all-posts')}
-                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl shadow-blue-500/25"
-                        >
-                            <ShoppingBag className="h-5 w-5 mr-2" />
-                            {t('browse_posts')}
-                        </Button>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button
+                                onClick={() => navigate('/all-posts')}
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl shadow-blue-500/25"
+                            >
+                                <ShoppingBag className="h-5 w-5 mr-2" />
+                                {t('browse_posts')}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-2xl px-6 py-6"
+                                onClick={() => navigate('/my-recommendations')}
+                            >
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                Recommendations
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-2xl px-6 py-6"
+                                onClick={() => navigate('/categories')}
+                            >
+                                Explore Categories
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     <div className={viewMode === 'grid'

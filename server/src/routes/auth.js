@@ -62,10 +62,18 @@ const recoveryLimiter = rateLimit({
     message: { error: 'Too many password recovery attempts. Please wait 30 minutes.' }
 });
 
+const normalizePhone = (value) => String(value || '').trim().replace(/\D/g, '');
+
 const signupValidation = [
     body('phone')
         .trim()
-        .isMobilePhone('any', { strictMode: false })
+        .custom((value) => {
+            const digits = normalizePhone(value);
+            if (/^[6-9]\d{9}$/.test(digits) || /^91[6-9]\d{9}$/.test(digits)) {
+                return true;
+            }
+            throw new Error('Invalid phone number');
+        })
         .withMessage('Invalid phone number'),
     body('email')
         .trim()
@@ -78,14 +86,21 @@ const signupValidation = [
     body('fullName')
         .trim()
         .isLength({ min: 2, max: 100 })
-        .withMessage('Name is required')
+        .withMessage('Name is required'),
+    body('referral_code')
+        .optional({ values: 'falsy' })
+        .trim()
+        .isLength({ min: 4, max: 20 })
+        .withMessage('Referral code must be between 4 and 20 characters')
+        .matches(/^[A-Za-z0-9-]+$/)
+        .withMessage('Referral code format is invalid')
 ];
 
 const loginValidation = [
     body().custom((value) => {
         const hasIdentifier = Boolean(value?.identifier || value?.email || value?.phone);
         if (!hasIdentifier) {
-            throw new Error('Email, phone, or identifier is required');
+            throw new Error('Email, phone, username, or identifier is required');
         }
         if (!value?.password) {
             throw new Error('Password is required');

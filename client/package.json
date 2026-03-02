@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-safe.mjs",
+    "dev:fresh": "node scripts/dev-safe.mjs --fresh",
     "build": "vite build",
     "check:bundle-budget": "node scripts/check-bundle-budget.mjs",
     "check:no-hardcoded-localhost": "node scripts/check-no-hardcoded-localhost.mjs",
     "check:network-contract": "node scripts/check-network-contract.mjs",
+    "check:ux-smoke": "node scripts/check-ux-route-smoke.mjs",
+    "test:e2e:smoke": "npx playwright test -c playwright.config.mjs",
+    "test:e2e:smoke:headed": "npx playwright test -c playwright.config.mjs --headed",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run"
@@ -67,6 +71,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^18.2.66",

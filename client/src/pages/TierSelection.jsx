@@ -13,11 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import api from '@/lib/api';
 import { getAccessToken, getUserId } from '@/utils/authStorage';
+import { useToast } from '@/hooks/use-toast';
 
 const TierSelection = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleSelectTier = async (tier) => {
     const userId = getUserId();
@@ -29,18 +32,29 @@ const TierSelection = () => {
     }
 
     setLoading(tier);
+    setError(null);
 
     try {
       // In production, this would trigger Razorpay/Stripe payment
       // For MVP, we simulate success and update DB directly
       await api.post('/users/upgrade-tier', { tier });
       setSuccess(tier);
+      toast({
+        title: 'Plan Activated',
+        description: `Your ${tier} plan is active now.`
+      });
       setTimeout(() => {
         navigate(`/add-post?tier=${encodeURIComponent(tier)}`);
       }, 800);
     } catch (err) {
       console.error('Tier upgrade error:', err);
-      alert('Failed to upgrade. Please try again.');
+      const message = err?.response?.data?.error || err?.message || 'Failed to upgrade. Please try again.';
+      setError(message);
+      toast({
+        title: 'Upgrade Failed',
+        description: message,
+        variant: 'destructive'
+      });
     } finally {
       setLoading(null);
     }
@@ -128,6 +142,12 @@ const TierSelection = () => {
           <p className="text-green-800 dark:text-green-300 font-semibold">
             🎉 {success.toUpperCase()} plan activated! Redirecting...
           </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="max-w-md mx-auto mb-8 p-4 bg-red-100 dark:bg-red-900/40 border border-red-300 rounded-xl text-center">
+          <p className="text-red-700 dark:text-red-300 text-sm font-medium">{error}</p>
         </div>
       )}
 

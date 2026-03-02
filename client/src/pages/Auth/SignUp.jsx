@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,9 @@ import {
 import { registerUser } from "@/lib/auth";
 import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/context/AuthContext";
+
+const GOOGLE_AUTH_ENABLED = String(import.meta.env.VITE_ENABLE_GOOGLE_AUTH || '').toLowerCase() === 'true';
+const PHONE_OTP_SIGNUP_ENABLED = String(import.meta.env.VITE_ENABLE_PHONE_OTP_SIGNUP || '').toLowerCase() === 'true';
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -49,6 +52,32 @@ const SignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const formatSignupError = (err) => {
+    if (Array.isArray(err?.errors)) {
+      const parsed = err.errors
+        .map((entry) => {
+          if (typeof entry === 'string') return entry;
+          if (entry?.msg) return entry.msg;
+          if (entry?.message) return entry.message;
+          return null;
+        })
+        .filter(Boolean);
+      if (parsed.length > 0) {
+        return parsed.join(', ');
+      }
+    }
+
+    if (typeof err?.error === 'string' && err.error.trim()) {
+      return err.error;
+    }
+
+    if (typeof err?.message === 'string' && err.message.trim()) {
+      return err.message;
+    }
+
+    return "Something went wrong. Please try again.";
+  };
 
   // Real-time validation states
   const [validations, setValidations] = useState({
@@ -171,7 +200,7 @@ const SignUp = () => {
     } catch (err) {
       toast({
         title: "Signup Failed",
-        description: err.errors ? err.errors.join(", ") : (err.error || "Something went wrong. Please try again."),
+        description: formatSignupError(err),
         variant: "destructive",
       });
     } finally {
@@ -504,8 +533,9 @@ const SignUp = () => {
               <Button
                 type="button"
                 variant="outline"
+                disabled={!GOOGLE_AUTH_ENABLED}
                 className="h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2"
-                onClick={() => toast({ title: "Coming Soon", description: "Google login will be available soon!" })}
+                onClick={() => toast({ title: "Coming Soon", description: "Google login will be available soon." })}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -518,6 +548,7 @@ const SignUp = () => {
               <Button
                 type="button"
                 variant="outline"
+                disabled={!PHONE_OTP_SIGNUP_ENABLED}
                 className="h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2"
                 onClick={() => toast({ title: t('coming_soon'), description: t('phone_otp_coming_soon') })}
               >
@@ -525,6 +556,11 @@ const SignUp = () => {
                 {t('phone_otp')}
               </Button>
             </div>
+            {(!GOOGLE_AUTH_ENABLED || !PHONE_OTP_SIGNUP_ENABLED) && (
+              <p className="text-center text-xs text-gray-500 mt-2">
+                {t('third_party_auth_not_ready') || "Google and Phone OTP signup are not enabled yet."}
+              </p>
+            )}
 
             {/* Login Link */}
             <p className="text-center text-sm text-gray-400 mt-6">

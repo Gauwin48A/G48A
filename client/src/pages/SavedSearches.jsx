@@ -1,19 +1,24 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
     Search, Trash2, Bell, BellOff, Plus,
-    ArrowLeft, MapPin, Save
+    ArrowLeft, MapPin, Save, RefreshCw, Compass, LogIn
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { isAuthenticated } from '@/utils/authStorage';
 
 const SavedSearches = () => {
     const navigate = useNavigate();
+    const { user: authUser, loading: authLoading } = useAuth();
+    const isLoggedIn = useMemo(() => isAuthenticated(authUser), [authUser]);
     const [searches, setSearches] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [showAddForm, setShowAddForm] = useState(false);
     const [toast, setToast] = useState(null);
     const searchRequestIdRef = useRef(0);
@@ -35,8 +40,15 @@ const SavedSearches = () => {
 
     const fetchSearches = useCallback(async () => {
         const requestId = ++searchRequestIdRef.current;
+        if (!isLoggedIn) {
+            setSearches([]);
+            setError('Please sign in to view saved searches.');
+            setLoading(false);
+            return;
+        }
         try {
             setLoading(true);
+            setError('');
             const response = await api.get('/saved-searches');
             if (requestId !== searchRequestIdRef.current) {
                 return;
@@ -47,19 +59,25 @@ const SavedSearches = () => {
             if (import.meta.env.DEV) {
                 console.error('Failed to fetch searches:', err);
             }
+            if (requestId === searchRequestIdRef.current) {
+                setSearches([]);
+                setError('Failed to load saved searches. Please retry.');
+            }
         } finally {
             if (requestId === searchRequestIdRef.current) {
                 setLoading(false);
             }
         }
-    }, []);
+    }, [isLoggedIn]);
 
     useEffect(() => {
-        fetchSearches();
+        if (!authLoading) {
+            fetchSearches();
+        }
         return () => {
             clearTimeout(toastTimeoutRef.current);
         };
-    }, [fetchSearches]);
+    }, [authLoading, fetchSearches]);
 
     const handleSave = async () => {
         if (!newSearch.name || !newSearch.searchQuery) {
@@ -117,6 +135,43 @@ const SavedSearches = () => {
         navigate(`/all-posts?${params.toString()}`);
     };
 
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            </div>
+        );
+    }
+
+    if (!isLoggedIn) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+                <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center">
+                    <Search className="w-16 h-16 text-purple-300 mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold text-white mb-3">Sign in to manage saved searches</h1>
+                    <p className="text-gray-300 mb-6">Track market changes automatically for your favorite keywords.</p>
+                    <div className="flex flex-col gap-2">
+                        <Button
+                            onClick={() => navigate('/login', { state: { returnTo: '/saved-searches' } })}
+                            className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-6 text-lg rounded-xl"
+                        >
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Sign In
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="border-white/40 text-white"
+                            onClick={() => navigate('/all-posts')}
+                        >
+                            Browse Listings
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
             {/* Header */}
@@ -139,6 +194,16 @@ const SavedSearches = () => {
                             <p className="text-xs text-gray-500 dark:text-gray-400">{searches.length} saved</p>
                         </div>
                     </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchSearches}
+                        className="border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                    >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        Refresh
+                    </Button>
                     <Button
                         onClick={() => setShowAddForm(!showAddForm)}
                         className="bg-purple-600 hover:bg-purple-700"
@@ -213,18 +278,57 @@ const SavedSearches = () => {
                     <div className="flex justify-center items-center h-64">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
                     </div>
+                ) : error ? (
+                    <div className="text-center py-16">
+                        <Search className="h-16 w-16 mx-auto text-red-400 mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Unable to load saved searches</h3>
+                        <p className="text-gray-500 dark:text-gray-500 mb-6">{error}</p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button
+                                onClick={fetchSearches}
+                                className="bg-purple-600 hover:bg-purple-700"
+                            >
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                Retry
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate('/all-posts')}
+                            >
+                                Browse Listings
+                            </Button>
+                        </div>
+                    </div>
                 ) : searches.length === 0 ? (
                     <div className="text-center py-16">
                         <Search className="h-16 w-16 mx-auto text-gray-600 mb-4" />
                         <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Saved Searches</h3>
                         <p className="text-gray-500 dark:text-gray-500 mb-6">Save your searches to get alerts when new posts match</p>
-                        <Button
-                            onClick={() => setShowAddForm(true)}
-                            className="bg-purple-600 hover:bg-purple-700"
-                        >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Create First Search
-                        </Button>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button
+                                onClick={() => setShowAddForm(true)}
+                                className="bg-purple-600 hover:bg-purple-700"
+                            >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Create First Search
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate('/all-posts')}
+                            >
+                                Browse Listings
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate('/my-recommendations')}
+                            >
+                                <Compass className="h-4 w-4 mr-1" />
+                                Recommendations
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-3">

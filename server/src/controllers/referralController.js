@@ -1,6 +1,10 @@
 const pool = require('../config/db');
 const crypto = require('crypto');
 const logger = require('../utils/logger');
+const {
+  applyRewardDeltaInTransaction,
+  afterCommitRewardMutation
+} = require('../services/rewardsLedgerService');
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const REFERRAL_CODE_MAX_ATTEMPTS = 5;
 
@@ -132,6 +136,11 @@ exports.createReferral = async (req, res) => {
 
 // POST /api/referral/track — Record a referral (used during signup)
 exports.trackReferral = async (req, res) => {
+  const authenticatedUserId = getAuthenticatedUserId(req);
+  if (!authenticatedUserId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
   const { referralCode, newUserId } = req.body;
 
   if (!referralCode || !newUserId) {
@@ -140,8 +149,12 @@ exports.trackReferral = async (req, res) => {
 
   try {
     const normalizedNewUserId = String(newUserId);
+    if (normalizedNewUserId !== String(authenticatedUserId) && !isAdmin(req)) {
+      return res.status(403).json({ error: 'Cannot apply referral code for another user' });
+    }
     const normalizedReferralCode = String(referralCode).trim();
     const client = await pool.connect();
+    let rewardChange = null;
     try {
       await client.query('BEGIN');
 
@@ -165,14 +178,14 @@ exports.trackReferral = async (req, res) => {
 
       const updateResult = await runClientQuery(
         client,
-        'UPDATE users SET referred_by = $1 WHERE user_id = $2 AND referred_by IS NULL RETURNING user_id',
+        'UPDATE users SET referred_by = $1 WHERE user_id::text = $2 AND referred_by IS NULL RETURNING user_id',
         [referrerId, normalizedNewUserId]
       );
 
       if (updateResult.rowCount === 0) {
         const existingResult = await runClientQuery(
           client,
-          'SELECT referred_by FROM users WHERE user_id = $1 LIMIT 1',
+          'SELECT referred_by FROM users WHERE user_id::text = $1 LIMIT 1',
           [normalizedNewUserId]
         );
 
@@ -190,26 +203,19 @@ exports.trackReferral = async (req, res) => {
         return res.status(409).json({ error: 'Referral already assigned for this user' });
       }
 
-      await runClientQuery(
+      rewardChange = await applyRewardDeltaInTransaction({
         client,
-        `
-          INSERT INTO reward_log (user_id, action, points, description, created_at)
-          VALUES ($1, 'referral_bonus', 50, 'Direct referral bonus', NOW())
-        `,
-        [referrerId]
-      );
-
-      await runClientQuery(
-        client,
-        `
-          INSERT INTO rewards (user_id, points, tier)
-          VALUES ($1, 50, 'Bronze')
-          ON CONFLICT (user_id) DO UPDATE SET points = rewards.points + 50
-        `,
-        [referrerId]
-      );
+        userId: referrerId,
+        pointsDelta: 50,
+        action: 'referral_bonus',
+        description: `Direct referral bonus for ${normalizedNewUserId}`,
+        idempotencyKey: `referral:${normalizedNewUserId}`
+      });
 
       await client.query('COMMIT');
+      if (rewardChange?.applied) {
+        afterCommitRewardMutation(rewardChange);
+      }
       return res.json({ message: 'Referral tracked successfully', referrerId });
     } catch (innerErr) {
       try {

@@ -22,6 +22,8 @@ const Verification = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [aadhaarVerified, setAadhaarVerified] = useState(false);
+  const [kycStatusError, setKycStatusError] = useState('');
+  const [retryTick, setRetryTick] = useState(0);
 
   const [formData, setFormData] = useState({
     aadhaarNumber: '',
@@ -60,6 +62,7 @@ const Verification = () => {
         const status = String(payload?.status || '').toUpperCase();
 
         if (!cancelled) {
+          setKycStatusError('');
           setAadhaarVerified(status === 'APPROVED' || status === 'VERIFIED');
 
           // Endpoint returns masked values; keep only if available.
@@ -75,6 +78,9 @@ const Verification = () => {
         if (import.meta.env.DEV) {
           console.error('[Verification] Failed to fetch KYC status:', err);
         }
+        if (!cancelled) {
+          setKycStatusError(err?.message || 'Failed to load verification status.');
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -87,7 +93,7 @@ const Verification = () => {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isLoggedIn]);
+  }, [authLoading, isLoggedIn, retryTick]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -223,6 +229,14 @@ const Verification = () => {
           </CardHeader>
 
           <CardContent className="p-8">
+            {kycStatusError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-4 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-red-700 dark:text-red-300">{kycStatusError}</p>
+                <Button type="button" variant="outline" onClick={() => setRetryTick((value) => value + 1)}>
+                  Retry
+                </Button>
+              </div>
+            )}
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

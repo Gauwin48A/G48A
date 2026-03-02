@@ -12,6 +12,10 @@ const crypto = require('crypto');
 const otpService = require('../services/otpService');
 const cacheService = require('../services/cacheService');
 const logger = require('../utils/logger');
+const {
+    applyRewardDeltaInTransaction,
+    afterCommitRewardMutation
+} = require('../services/rewardsLedgerService');
 
 const DEFAULT_PENDING_SALES_LIMIT = 50;
 const MAX_PENDING_SALES_LIMIT = 200;
@@ -61,35 +65,12 @@ function isLegacyTransactionSchemaError(error) {
         || message.includes('cancel_reason');
 }
 
-async function awardSaleRewards(sellerId, buyerId, saleAmount) {
-    try {
-        const normalizedSaleAmount = Math.max(0, Number(saleAmount) || 0);
-        const sellerPoints = Math.floor(normalizedSaleAmount / 100); // 1 point per Rs100
-        const buyerPoints = Math.floor(normalizedSaleAmount / 200); // 0.5 point per Rs100
-
-        await Promise.all([
-            runQuery(
-                `
-                    INSERT INTO rewards (user_id, type, points, description, created_at)
-                    VALUES ($1, 'sale_completed', $2, 'Sale completed successfully', NOW())
-                `,
-                [sellerId, sellerPoints]
-            ),
-            runQuery(
-                `
-                    INSERT INTO rewards (user_id, type, points, description, created_at)
-                    VALUES ($1, 'purchase_completed', $2, 'Purchase verified', NOW())
-                `,
-                [buyerId, buyerPoints]
-            )
-        ]);
-
-        if (process.env.NODE_ENV !== 'production') {
-            logger.info(`[Rewards] Awarded ${sellerPoints} to seller, ${buyerPoints} to buyer`);
-        }
-    } catch (error) {
-        logger.error('[Rewards] Award error:', error);
-    }
+function calculateSaleRewardPoints(saleAmount) {
+    const normalizedSaleAmount = Math.max(0, Number(saleAmount) || 0);
+    return {
+        sellerPoints: Math.floor(normalizedSaleAmount / 100), // 1 point per Rs100
+        buyerPoints: Math.floor(normalizedSaleAmount / 200) // 0.5 point per Rs100
+    };
 }
 
 /**
@@ -420,17 +401,49 @@ const confirmSale = async (req, res) => {
             )
         ]);
 
+        const rewardReferenceId = String(transaction.transaction_id || transactionId);
+        const rewardPoints = calculateSaleRewardPoints(transaction.agreed_price);
+        let sellerRewardChange = null;
+        let buyerRewardChange = null;
+
+        if (rewardPoints.sellerPoints > 0) {
+            sellerRewardChange = await applyRewardDeltaInTransaction({
+                client,
+                userId: transaction.seller_id,
+                pointsDelta: rewardPoints.sellerPoints,
+                action: 'sale_completed',
+                description: `Sale completion reward for transaction ${rewardReferenceId}`,
+                idempotencyKey: `sale:${rewardReferenceId}:seller`
+            });
+        }
+
+        if (rewardPoints.buyerPoints > 0) {
+            buyerRewardChange = await applyRewardDeltaInTransaction({
+                client,
+                userId: transaction.buyer_id,
+                pointsDelta: rewardPoints.buyerPoints,
+                action: 'purchase_completed',
+                description: `Purchase verification reward for transaction ${rewardReferenceId}`,
+                idempotencyKey: `sale:${rewardReferenceId}:buyer`
+            });
+        }
+
         await client.query('COMMIT');
         invalidateSaleCache(transaction.seller_id);
         invalidateSaleCache(transaction.buyer_id);
+        if (sellerRewardChange?.applied) {
+            afterCommitRewardMutation(sellerRewardChange);
+        }
+        if (buyerRewardChange?.applied) {
+            afterCommitRewardMutation(buyerRewardChange);
+        }
 
         // Best-effort side effects after the state transition is committed
         const nonBlockingTasks = [
-            awardSaleRewards(transaction.seller_id, transaction.buyer_id, transaction.agreed_price),
             runQuery(
                 `
                     INSERT INTO notifications (user_id, title, message, type, reference_id, created_at)
-                    VALUES ($1, 'Sale Completed!', 'Your item has been sold successfully. Rewards have been credited.', 'sale_completed', $2, NOW())
+                    VALUES ($1, 'Sale Completed!', 'Your item has been sold successfully.', 'sale_completed', $2, NOW())
                 `,
                 [transaction.seller_id, transactionId]
             )

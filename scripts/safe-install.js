@@ -4,7 +4,6 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 const target = process.argv[2];
 if (!target || !['client', 'server'].includes(target)) {
@@ -15,9 +14,13 @@ if (!target || !['client', 'server'].includes(target)) {
 const isProd = process.argv.includes('--prod');
 
 function runNpm(args) {
-  const result = spawnSync(npmCommand, args, {
+  const invocation = process.platform === 'win32'
+    ? { command: 'cmd.exe', commandArgs: ['/d', '/s', '/c', 'npm', ...args] }
+    : { command: 'npm', commandArgs: args };
+
+  const result = spawnSync(invocation.command, invocation.commandArgs, {
     cwd: rootDir,
-    shell: true,
+    shell: false,
     env: process.env,
     encoding: 'utf8'
   });

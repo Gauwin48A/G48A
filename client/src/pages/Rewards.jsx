@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Copy, Gift, Star, Trophy, Users, Zap, TrendingUp,
-  Calendar, Share2, Award, Crown, Sparkles, Target
+  Calendar, Share2, Award, Crown, Sparkles, Target, CheckCircle2, Circle, ArrowRight
 } from "lucide-react";
 import api from '../lib/api';
 import { useTranslation } from 'react-i18next';
@@ -29,15 +29,15 @@ const Rewards = () => {
     [authUser]
   );
 
-  useEffect(() => {
+  const fetchRewards = useCallback(async ({ silent = false } = {}) => {
     if (!isLoggedIn) {
       setError('You must be logged in to view rewards.');
       setLoading(false);
       return;
     }
 
-    let userId = localStorage.getItem('userId');
-    let token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     if (token && !localStorage.getItem('authToken')) {
       localStorage.setItem('authToken', token);
     }
@@ -46,22 +46,56 @@ const Rewards = () => {
       setLoading(false);
       return;
     }
-    const fetchRewards = async () => {
+
+    if (!silent) {
       setLoading(true);
-      try {
-        const data = await api.get(`/rewards?userId=${userId}`);
-        if (data) {
-          setUser(data.user || null);
-          setReferralChain(data.referralChain || []);
-        }
-      } catch (err) {
+    }
+    setError(null);
+    try {
+      const data = await api.get(`/rewards?userId=${userId}`);
+      if (data) {
+        setUser(data.user || null);
+        setReferralChain(data.referralChain || []);
+      }
+    } catch (err) {
+      if (!silent) {
         setError(err.message || 'Failed to fetch rewards');
-      } finally {
+      }
+    } finally {
+      if (!silent) {
         setLoading(false);
       }
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setError('You must be logged in to view rewards.');
+      setLoading(false);
+      return;
+    }
+
+    fetchRewards({ silent: false });
+  }, [isLoggedIn, retryNonce, fetchRewards]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return undefined;
+
+    const stream = new EventSource('/api/rewards/stream', { withCredentials: true });
+    const handleRewardUpdate = () => {
+      fetchRewards({ silent: true });
     };
-    fetchRewards();
-  }, [isLoggedIn, retryNonce]);
+
+    stream.addEventListener('reward_update', handleRewardUpdate);
+    stream.onerror = () => {
+      // Browser handles automatic SSE retries; no-op by design.
+    };
+
+    return () => {
+      stream.removeEventListener('reward_update', handleRewardUpdate);
+      stream.close();
+    };
+  }, [isLoggedIn, fetchRewards]);
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -112,15 +146,68 @@ const Rewards = () => {
         <div className="text-center p-8">
           <div className="text-6xl mb-4">😕</div>
           <p className="text-red-500 text-xl mb-4">{error}</p>
-          <Button onClick={() => setRetryNonce((value) => value + 1)}>Try Again</Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button onClick={() => setRetryNonce((value) => value + 1)}>Try Again</Button>
+            <Button type="button" variant="outline" onClick={() => window.location.assign('/all-posts')}>
+              Browse Listings
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
+        <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-lg text-center">
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Rewards profile unavailable</h2>
+          <p className="text-sm text-slate-600 mb-5">We could not load your rewards profile. Retry or continue browsing.</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button type="button" onClick={() => setRetryNonce((value) => value + 1)}>Retry</Button>
+            <Button type="button" variant="outline" onClick={() => window.location.assign('/all-posts')}>Browse Listings</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const progressPercentage = Math.min((user.xpCurrent / user.xpRequired) * 100, 100);
+  const xpRemaining = Math.max(0, Number(user.xpRequired || 0) - Number(user.xpCurrent || 0));
+  const nextActionKey = xpRemaining > 0
+    ? 'earn_xp'
+    : (Number(user.successfulRefs || 0) === 0 ? 'verify_referral' : 'maintain_streak');
+  const progressChecklist = [
+    {
+      key: 'share',
+      label: 'Share your referral code',
+      done: Boolean(user.referralCode),
+      hint: user.referralCode ? `Code ${user.referralCode}` : 'Generate from referral card'
+    },
+    {
+      key: 'invite',
+      label: 'Invite at least 1 friend',
+      done: Number(user.totalReferrals || 0) > 0,
+      hint: `${Number(user.totalReferrals || 0)} invited`
+    },
+    {
+      key: 'verify',
+      label: 'Get 1 verified referral',
+      done: Number(user.successfulRefs || 0) > 0,
+      hint: `${Number(user.successfulRefs || 0)} verified`
+    },
+    {
+      key: 'level',
+      label: 'Reach next level',
+      done: xpRemaining === 0,
+      hint: xpRemaining === 0 ? 'Level-up ready' : `${xpRemaining} XP remaining`
+    }
+  ];
+  const referralPlaybook = [
+    { key: 'step1', title: 'Share code', detail: 'Send your referral link or code to trusted buyers/sellers.' },
+    { key: 'step2', title: 'Friend signs up', detail: 'Rewards are tracked when signup uses your referral code.' },
+    { key: 'step3', title: 'First successful trade', detail: 'You earn verified referral rewards after completion.' }
+  ];
   const rankColors = {
     'Bronze': 'from-amber-600 to-amber-800',
     'Silver': 'from-gray-400 to-gray-600',
@@ -220,6 +307,67 @@ const Rewards = () => {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-4 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-indigo-600" /> Progress Tracker
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {progressChecklist.map((item) => (
+                <div key={item.key} className={`flex items-center justify-between rounded-xl border px-3 py-2 ${item.done ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-900/20' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/30'}`}>
+                  <div className="flex items-center gap-2">
+                    {item.done ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Circle className="w-4 h-4 text-slate-400" />}
+                    <div>
+                      <p className={`text-sm font-medium ${item.done ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'}`}>{item.label}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{item.hint}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-1">
+                <Button type="button" variant="outline" className="w-full" onClick={() => {
+                  if (nextActionKey === 'earn_xp') {
+                    window.location.assign('/all-posts');
+                    return;
+                  }
+                  if (nextActionKey === 'verify_referral') {
+                    shareReferral();
+                    return;
+                  }
+                  window.location.assign('/my-home');
+                }}>
+                  {nextActionKey === 'earn_xp' ? 'Earn XP through activity' : nextActionKey === 'verify_referral' ? 'Share referral link now' : 'Review account activity'}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-indigo-600" /> Referral Playbook
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {referralPlaybook.map((item, index) => (
+                <div key={item.key} className="flex items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2">
+                  <Badge className="bg-indigo-600 text-white mt-0.5">{index + 1}</Badge>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{item.title}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{item.detail}</p>
+                  </div>
+                </div>
+              ))}
+              <Button type="button" variant="outline" className="w-full" onClick={shareReferral}>
+                <Share2 className="w-4 h-4 mr-2" /> Share referral to start
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Referral & Secret Code Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Referral Code Card */}
@@ -320,9 +468,14 @@ const Rewards = () => {
                   <div className="text-center py-12">
                     <div className="text-6xl mb-4">👥</div>
                     <p className="text-gray-500 mb-4">{t('no_referrals_yet')}</p>
-                    <Button onClick={shareReferral} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                      <Share2 className="w-4 h-4 mr-2" /> {t('share_your_code')}
-                    </Button>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button onClick={shareReferral} className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                        <Share2 className="w-4 h-4 mr-2" /> {t('share_your_code')}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => window.location.assign('/all-posts')}>
+                        Discover listings
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">

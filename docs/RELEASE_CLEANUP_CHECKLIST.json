@@ -1,0 +1,73 @@
+{
+  "generatedAt": "2026-03-02T06:02:35.336Z",
+  "totals": {
+    "changedPaths": 4,
+    "safeToRestore": 0,
+    "intentionalReview": 4,
+    "highRiskIntentionalDeletions": 0
+  },
+  "byStatus": {
+    "modified": 2,
+    "untracked": 2
+  },
+  "byBucket": {
+    "intentional_review_required": 4
+  },
+  "byReason": {
+    "configuration": 2,
+    "other": 2
+  },
+  "byTopLevel": {
+    "server": 2,
+    "package.json": 1,
+    "scripts": 1
+  },
+  "commandHints": {
+    "restoreTrackedSafeChanges": null,
+    "cleanUntrackedSafeChanges": null
+  },
+  "safeToRestore": [],
+  "intentionalReview": [
+    {
+      "raw": " M package.json",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "package.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "configuration",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/package.json",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/package.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "configuration",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? scripts/release-cleanup-checklist.js",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "scripts/release-cleanup-checklist.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? server/scripts/preflight-schema.js",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "server/scripts/preflight-schema.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    }
+  ],
+  "highRiskIntentional": []
+}

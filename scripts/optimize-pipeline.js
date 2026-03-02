@@ -1,25 +1,42 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const isAggressive = process.argv.includes('--aggressive');
 const withInstall = process.argv.includes('--with-install');
 
+function resolveNpmInvocation(args) {
+  if (process.platform === 'win32') {
+    return {
+      command: 'cmd.exe',
+      commandArgs: ['/d', '/s', '/c', 'npm', ...args]
+    };
+  }
+
+  return {
+    command: 'npm',
+    commandArgs: args
+  };
+}
+
 function runStep(label, npmArgs) {
   console.log(`\n[Optimize] ${label}`);
-  try {
-    const command = [npmCommand, ...npmArgs].join(' ');
-    execSync(command, {
-      cwd: rootDir,
-      stdio: 'inherit',
-      shell: true
-    });
-  } catch (error) {
-    const details = error?.message ? ` (${error.message})` : '';
-    throw new Error(`Step failed: ${label}${details}`);
+  const invocation = resolveNpmInvocation(npmArgs);
+  const result = spawnSync(invocation.command, invocation.commandArgs, {
+    cwd: rootDir,
+    stdio: 'inherit',
+    shell: false,
+    env: process.env
+  });
+
+  if (result.error) {
+    throw new Error(`Step failed: ${label} (${result.error.message})`);
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`Step failed: ${label} (exit code ${result.status || 1})`);
   }
 }
 

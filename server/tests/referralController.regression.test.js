@@ -36,12 +36,20 @@ function loadReferralControllerWithClientMock(clientQueryImpl) {
     info: jest.fn(),
     error: jest.fn()
   };
+  const rewardsLedgerService = {
+    applyRewardDeltaInTransaction: jest.fn(async () => ({
+      applied: true,
+      duplicate: false
+    })),
+    afterCommitRewardMutation: jest.fn()
+  };
 
   jest.doMock('../src/config/db', () => ({ query, connect }));
   jest.doMock('../src/utils/logger', () => logger);
+  jest.doMock('../src/services/rewardsLedgerService', () => rewardsLedgerService);
 
   const controller = require('../src/controllers/referralController');
-  return { controller, query, connect, clientQuery, release };
+  return { controller, query, connect, clientQuery, release, rewardsLedgerService };
 }
 
 describe('referralController regression behavior', () => {
@@ -116,17 +124,17 @@ describe('referralController regression behavior', () => {
       if (text.includes('SELECT user_id FROM users WHERE referral_code = $1')) {
         return { rows: [{ user_id: 'ref-1' }] };
       }
-      if (text.includes('UPDATE users SET referred_by = $1 WHERE user_id = $2 AND referred_by IS NULL RETURNING user_id')) {
+      if (text.includes('UPDATE users SET referred_by = $1 WHERE user_id::text = $2 AND referred_by IS NULL RETURNING user_id')) {
         return { rowCount: 0, rows: [] };
       }
-      if (text.includes('SELECT referred_by FROM users WHERE user_id = $1 LIMIT 1')) {
+      if (text.includes('SELECT referred_by FROM users WHERE user_id::text = $1 LIMIT 1')) {
         return { rows: [{ referred_by: 'ref-1' }] };
       }
 
       throw new Error(`Unexpected query: ${text}`);
     });
 
-    const req = { body: { referralCode: 'REF-CODE', newUserId: 'new-user' } };
+    const req = { user: { user_id: 'new-user' }, body: { referralCode: 'REF-CODE', newUserId: 'new-user' } };
     const res = createResponseMock();
 
     await controller.trackReferral(req, res);
@@ -142,7 +150,7 @@ describe('referralController regression behavior', () => {
   });
 
   it('trackReferral commits once for first-time valid referral', async () => {
-    const { controller, clientQuery, release } = loadReferralControllerWithClientMock(async (queryArg) => {
+    const { controller, clientQuery, release, rewardsLedgerService } = loadReferralControllerWithClientMock(async (queryArg) => {
       if (queryArg === 'BEGIN' || queryArg === 'COMMIT') {
         return {};
       }
@@ -151,20 +159,14 @@ describe('referralController regression behavior', () => {
       if (text.includes('SELECT user_id FROM users WHERE referral_code = $1')) {
         return { rows: [{ user_id: 'ref-1' }] };
       }
-      if (text.includes('UPDATE users SET referred_by = $1 WHERE user_id = $2 AND referred_by IS NULL RETURNING user_id')) {
+      if (text.includes('UPDATE users SET referred_by = $1 WHERE user_id::text = $2 AND referred_by IS NULL RETURNING user_id')) {
         return { rowCount: 1, rows: [{ user_id: 'new-user' }] };
-      }
-      if (text.includes('INSERT INTO reward_log')) {
-        return { rows: [] };
-      }
-      if (text.includes('INSERT INTO rewards')) {
-        return { rows: [] };
       }
 
       throw new Error(`Unexpected query: ${text}`);
     });
 
-    const req = { body: { referralCode: 'REF-CODE', newUserId: 'new-user' } };
+    const req = { user: { user_id: 'new-user' }, body: { referralCode: 'REF-CODE', newUserId: 'new-user' } };
     const res = createResponseMock();
 
     await controller.trackReferral(req, res);
@@ -174,6 +176,13 @@ describe('referralController regression behavior', () => {
       message: 'Referral tracked successfully',
       referrerId: 'ref-1'
     });
+    expect(rewardsLedgerService.applyRewardDeltaInTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'ref-1',
+        pointsDelta: 50,
+        action: 'referral_bonus'
+      })
+    );
     expect(clientQuery).toHaveBeenCalledWith('BEGIN');
     expect(clientQuery).toHaveBeenCalledWith('COMMIT');
     expect(release).toHaveBeenCalledTimes(1);

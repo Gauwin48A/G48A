@@ -5,16 +5,28 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   RefreshCw, TrendingUp, Sparkles, Clock, Eye, Heart,
-  MapPin, ChevronRight, Zap, ShoppingBag, AlertTriangle
+  MapPin, ChevronRight, Zap, ShoppingBag, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import api from '../services/api'; // Centralized Axios Service
+import { useFilter } from '@/context/FilterContext';
+import api from '@/lib/api';
 import { fetchCategoriesCached } from '@/services/categoriesService';
 
 const FEED_REFRESH_COOLDOWN_MS = 3000;
 const FEED_PAGE_SIZE = 20;
 const FALLBACK_IMAGE_URL = 'https://via.placeholder.com/300x200?text=No+Image';
+const DEFAULT_FILTERS = {
+  search: '',
+  category: 'All',
+  sortBy: '',
+  location: '',
+  minPrice: '',
+  maxPrice: '',
+  priceRange: '',
+  startDate: '',
+  endDate: '',
+};
 
 const createSeededRandom = (seed) => {
   let state = seed % 2147483647;
@@ -38,8 +50,9 @@ const shufflePostsWithSeed = (posts, seed) => {
 };
 
 const Home = () => {
-  useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { filters, setFilters } = useFilter();
   const [feedPosts, setFeedPosts] = useState([]);
   const [trendingPosts, setTrendingPosts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -55,6 +68,94 @@ const Home = () => {
     () => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
     []
   );
+  const hasActiveBrowseFilters = useMemo(() => (
+    Boolean(filters.search)
+    || Boolean(filters.location)
+    || Boolean(filters.minPrice)
+    || Boolean(filters.maxPrice)
+    || Boolean(filters.startDate)
+    || Boolean(filters.endDate)
+    || Boolean(filters.sortBy)
+    || Boolean(filters.category && filters.category !== 'All')
+  ), [
+    filters.category,
+    filters.endDate,
+    filters.location,
+    filters.maxPrice,
+    filters.minPrice,
+    filters.search,
+    filters.sortBy,
+    filters.startDate,
+  ]);
+  const onboardingChecklist = useMemo(() => {
+    let storedUser = null;
+    try {
+      storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      storedUser = null;
+    }
+
+    const authToken = localStorage.getItem('authToken') || localStorage.getItem('token');
+    const localUserId = String(storedUser?.id ?? storedUser?.user_id ?? localStorage.getItem('userId') ?? '');
+    const hasProfileBasics = Boolean(
+      (storedUser?.name || storedUser?.full_name || storedUser?.username)
+      && (storedUser?.email || storedUser?.phone || storedUser?.phone_number)
+    );
+    const verificationStatus = String(
+      storedUser?.verification_status
+      || storedUser?.kyc_status
+      || storedUser?.kycStatus
+      || storedUser?.verificationStatus
+      || ''
+    ).toLowerCase();
+    const isVerified = Boolean(
+      storedUser?.is_verified
+      || storedUser?.verified
+      || storedUser?.kyc_verified
+      || verificationStatus === 'approved'
+      || verificationStatus === 'verified'
+      || verificationStatus === 'completed'
+    );
+    const explicitPostCount = Number(storedUser?.posts_count ?? storedUser?.post_count ?? 0);
+    const hasPostInFeed = Boolean(
+      localUserId
+      && feedPosts.some((post) => String(post?.author_id ?? post?.user_id ?? post?.seller_id ?? post?.userId ?? '') === localUserId)
+    );
+    const hasCreatedPost = explicitPostCount > 0
+      || localStorage.getItem('mhub:first-post-created') === 'true'
+      || hasPostInFeed;
+
+    const items = [
+      {
+        key: 'profile',
+        label: 'Complete profile basics',
+        done: hasProfileBasics,
+        action: () => navigate('/profile')
+      },
+      {
+        key: 'verification',
+        label: 'Finish verification',
+        done: isVerified,
+        action: () => navigate('/verification')
+      },
+      {
+        key: 'first_post',
+        label: 'Publish your first listing',
+        done: hasCreatedPost,
+        action: () => navigate('/add-post')
+      }
+    ];
+
+    const completedCount = items.filter((item) => item.done).length;
+    return {
+      isLoggedIn: Boolean(authToken),
+      items,
+      completedCount,
+      totalCount: items.length,
+      remainingCount: items.length - completedCount
+    };
+  }, [feedPosts, navigate]);
+  const showOnboardingChecklist = onboardingChecklist.isLoggedIn && onboardingChecklist.remainingCount > 0;
 
   const devLog = useCallback((message, error) => {
     if (import.meta.env.DEV) {
@@ -161,6 +262,15 @@ const Home = () => {
     }
   };
 
+  const handleViewAllTrending = () => {
+    navigate('/all-posts?sortBy=views_count&sortOrder=desc');
+  };
+
+  const handleClearBrowseFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    navigate('/all-posts');
+  };
+
   const legacyFormatPrice = (price) => {
     if (!price) return '₹ --';
     return new Intl.NumberFormat('en-IN', {
@@ -231,9 +341,14 @@ const Home = () => {
         <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
         <p className="text-gray-500 mb-6 text-center">{error}</p>
-        <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
-          Reload Page
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
+            Reload Page
+          </Button>
+          <Button type="button" variant="outline" onClick={() => navigate('/all-posts')}>
+            Open All Posts
+          </Button>
+        </div>
       </div>
     );
   }
@@ -246,10 +361,12 @@ const Home = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                For You
+                {t('for_you') || 'For You'}
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {feedMeta ? `${feedMeta.freshCount} fresh • ${feedMeta.explorationCount} discoveries` : 'Personalized feed'}
+                {feedMeta
+                  ? `${feedMeta.freshCount} ${t('fresh') || 'fresh'} • ${feedMeta.explorationCount} ${t('discover') || 'discoveries'}`
+                  : (t('personalized_feed') || 'Personalized feed')}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -271,6 +388,70 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      <div className="px-4 pt-4">
+        <div className="max-w-6xl mx-auto flex flex-wrap gap-2">
+          <Button type="button" variant="outline" className="border-blue-200 text-blue-700" onClick={() => navigate('/search?context=all-posts')}>
+            Search Listings
+          </Button>
+          <Button type="button" variant="outline" className="border-blue-200 text-blue-700" onClick={() => navigate('/categories')}>
+            Categories
+          </Button>
+          <Button type="button" variant="outline" className="border-blue-200 text-blue-700" onClick={() => navigate('/all-posts')}>
+            Browse All
+          </Button>
+        </div>
+      </div>
+
+      {hasActiveBrowseFilters && (
+        <div className="px-4 pt-3">
+          <div className="max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <p className="text-sm text-amber-800 dark:text-amber-300">
+              Browse filters are active from previous pages and may hide some listings.
+            </p>
+            <Button type="button" variant="outline" className="border-amber-300 text-amber-800 w-fit" onClick={handleClearBrowseFilters}>
+              Clear filters
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {showOnboardingChecklist && (
+        <div className="px-4 pt-3">
+          <div className="max-w-6xl mx-auto rounded-xl border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/20 p-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-sky-900 dark:text-sky-200">Getting started checklist</p>
+                <p className="text-xs text-sky-700 dark:text-sky-300">
+                  Complete onboarding essentials to build trust and discoverability.
+                </p>
+              </div>
+              <Badge className="w-fit bg-sky-600 text-white">
+                {onboardingChecklist.completedCount}/{onboardingChecklist.totalCount} complete
+              </Badge>
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              {onboardingChecklist.items.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={item.action}
+                  className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
+                    item.done
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300'
+                      : 'border-sky-200 bg-white text-sky-900 hover:border-sky-400 dark:border-sky-800 dark:bg-slate-900/40 dark:text-sky-200'
+                  }`}
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span>{item.label}</span>
+                    {item.done ? <CheckCircle2 className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Categories Scroll */}
       <div className="px-4 py-4 overflow-x-auto">
@@ -300,10 +481,13 @@ const Home = () => {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-orange-400" />
-              Trending Now
+              {t('trending_now') || 'Trending Now'}
             </h2>
-            <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
-              View All <ChevronRight className="h-4 w-4" />
+            <button
+              onClick={handleViewAllTrending}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
+            >
+              {t('view_all') || 'View All'} <ChevronRight className="h-4 w-4" />
             </button>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -328,9 +512,9 @@ const Home = () => {
       {/* Main Feed Grid */}
       <div className="px-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-400" />
-            Your Feed
+            {t('your_feed') || 'Your Feed'}
           </h2>
         </div>
 
@@ -340,21 +524,26 @@ const Home = () => {
               <div className="w-16 h-16 border-4 border-blue-500/30 rounded-full"></div>
               <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">Loading your personalized feed...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('loading_personalized_feed') || 'Loading your personalized feed...'}</p>
           </div>
         ) : feedPosts.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <ShoppingBag className="h-12 w-12 text-blue-400" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-3">No Posts Yet</h3>
-            <p className="text-gray-400 mb-8">Be the first to post something amazing!</p>
-            <Button
-              onClick={() => navigate('/create-post')}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl"
-            >
-              Create Post
-            </Button>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t('no_posts_yet') || 'No Posts Yet'}</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">{t('be_first_to_post') || 'Be the first to post something amazing!'}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button
+                onClick={() => navigate('/tier-selection')}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl"
+              >
+                {t('create_post') || 'Create Post'}
+              </Button>
+              <Button type="button" variant="outline" className="rounded-2xl px-6 py-6" onClick={() => navigate('/all-posts')}>
+                Browse All Posts
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

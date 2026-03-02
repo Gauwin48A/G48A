@@ -11,6 +11,7 @@ const analyticsController = require('../controllers/analyticsController');
 // ============================================
 router.post('/device', optionalAuth, analyticsController.saveDeviceInfo);
 router.post('/client-error', optionalAuth, analyticsController.saveClientError);
+router.post('/client-event', optionalAuth, analyticsController.saveClientEvent);
 
 // ============================================
 // SELLER ANALYTICS (Auth required)

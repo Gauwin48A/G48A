@@ -10,7 +10,7 @@ router.get('/', protect, referralController.getReferral);
 router.post('/create', protect, referralController.createReferral);
 
 // POST /api/referral/track — Record a referral during signup
-router.post('/track', referralController.trackReferral);
+router.post('/track', protect, referralController.trackReferral);
 
 // GET /api/referral/leaderboard — Top referrers
 router.get('/leaderboard', referralController.getLeaderboard);

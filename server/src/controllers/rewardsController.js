@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const logger = require('../utils/logger');
 const cacheService = require('../services/cacheService');
+const { subscribeToRewardUpdates } = require('../services/rewardsRealtimeService');
 
 const DEFAULT_LOG_LIMIT = 50;
 const MAX_LOG_LIMIT = 200;
@@ -227,7 +228,7 @@ exports.getRewardsByUser = async (req, res) => {
         const displayName = user.full_name || user.username || 'Unknown User';
 
         const persistedPoints = Number(rewardsData.points || 0);
-        const totalPoints = persistedPoints + chainData.totalChainPoints;
+        const totalPoints = persistedPoints;
 
         let rank = 'Bronze';
         if (totalPoints >= 5000) rank = 'Platinum';
@@ -283,6 +284,7 @@ exports.getRewardsByUser = async (req, res) => {
             totalCoins: totalPoints,
             directPoints: chainData.directPoints,
             indirectPoints: chainData.indirectPoints,
+            potentialReferralPoints: chainData.totalChainPoints,
             streak: 1,
             successfulRefs: chainData.directReferrals.length
           },
@@ -340,4 +342,54 @@ exports.getRewardLog = async (req, res) => {
   } catch (err) {
     return res.json([]);
   }
+};
+
+exports.streamRewardUpdates = async (req, res) => {
+  const userIdFromSession = getAuthenticatedUserId(req);
+  if (!userIdFromSession) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const userId = await resolveCanonicalUserId(userIdFromSession);
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  if (typeof res.flushHeaders === 'function') {
+    res.flushHeaders();
+  }
+  res.write('retry: 5000\n\n');
+
+  const writeEvent = (eventName, payload) => {
+    res.write(`event: ${eventName}\n`);
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    if (typeof res.flush === 'function') {
+      res.flush();
+    }
+  };
+
+  writeEvent('connected', {
+    userId,
+    connectedAt: new Date().toISOString()
+  });
+
+  const unsubscribe = subscribeToRewardUpdates(userId, (payload) => {
+    writeEvent('reward_update', payload);
+  });
+  const keepAliveTimer = setInterval(() => {
+    writeEvent('keepalive', { ts: new Date().toISOString() });
+  }, 25000);
+  if (typeof keepAliveTimer.unref === 'function') {
+    keepAliveTimer.unref();
+  }
+
+  const cleanup = () => {
+    clearInterval(keepAliveTimer);
+    unsubscribe();
+  };
+
+  req.on('close', cleanup);
+  req.on('aborted', cleanup);
+  res.on('close', cleanup);
 };

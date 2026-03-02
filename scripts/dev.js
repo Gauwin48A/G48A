@@ -2,13 +2,27 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const defaultServerPort = process.env.MHUB_SERVER_PORT || '5001';
 const defaultApiOrigin = process.env.VITE_API_BASE_URL || `http://localhost:${defaultServerPort}`;
 const defaultSocketOrigin = process.env.VITE_SOCKET_URL || defaultApiOrigin;
 
+function resolveNpmCommand(args) {
+  if (process.platform === 'win32') {
+    return {
+      command: 'cmd.exe',
+      commandArgs: ['/d', '/s', '/c', 'npm', ...args]
+    };
+  }
+
+  return {
+    command: 'npm',
+    commandArgs: args
+  };
+}
+
 function run(label, cwd, args, extraEnv = {}) {
-  const child = spawn(npmCommand, args, {
+  const { command, commandArgs } = resolveNpmCommand(args);
+  const child = spawn(command, commandArgs, {
     cwd,
     stdio: 'inherit',
     shell: false,

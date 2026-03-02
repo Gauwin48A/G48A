@@ -22,6 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getAccessToken, getUserId, isAuthenticated } from '@/utils/authStorage';
 import { fetchCategoriesCached } from '@/services/categoriesService';
 import { hasUserSnapshotChanged, mergeProfileIntoAuthUser } from '@/lib/profileSync';
+import { PageEmptyState, PageErrorState, PageLoadingState } from '@/components/page-state/PageStateBlocks';
 
 const Profile = () => {
   const { toast } = useToast();
@@ -40,6 +41,12 @@ const Profile = () => {
   const [channel, setChannel] = useState(null);
   const [activeTab, setActiveTab] = useState('personal');
   const [userStats, setUserStats] = useState({ postCount: 0, rank: 'Bronze', memberDays: 0 });
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState('');
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+  const [preferencesError, setPreferencesError] = useState('');
+  const [contactsSyncLoading, setContactsSyncLoading] = useState(false);
+  const [contactsSyncError, setContactsSyncError] = useState('');
   const profileRequestIdRef = useRef(0);
   const authUserRef = useRef(authUser);
   const resolveUserId = useCallback((userData) => {
@@ -117,7 +124,11 @@ const Profile = () => {
         return;
       }
       // Interceptor handles 401 redirect, so just show error if it persists.
-      setError(err.message || 'Failed to load profile');
+      if (status >= 500) {
+        setError('Profile is temporarily unavailable. Please retry in a moment.');
+      } else {
+        setError('We could not load your profile right now. Please retry.');
+      }
     } finally {
       if (requestId === profileRequestIdRef.current) {
         setLoading(false);
@@ -144,70 +155,99 @@ const Profile = () => {
     };
   }, [authLoading, isLoggedIn, loadProfile]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchCategoriesCached()
-      .then((data) => {
-        if (!cancelled) {
-          setAvailableCategories(Array.isArray(data) ? data : []);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAvailableCategories([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
+  const loadCategoryOptions = useCallback(async ({ force = false, guard = () => true } = {}) => {
+    setCategoriesLoading(true);
+    setCategoriesError('');
+    try {
+      const data = await fetchCategoriesCached({ force });
+      if (!guard()) return;
+      setAvailableCategories(Array.isArray(data) ? data : []);
+    } catch {
+      if (!guard()) return;
+      setAvailableCategories([]);
+      setCategoriesError('Category preferences are temporarily unavailable. Please retry.');
+    } finally {
+      if (guard()) {
+        setCategoriesLoading(false);
+      }
+    }
   }, []);
 
   useEffect(() => {
-    const userId = resolveUserId(user);
-    if (!userId) return;
-
-    let cancelled = false;
-
-    Promise.all([
-      api.get('/profile/preferences').catch(() => null),
-      getChannelByUser(userId).catch(() => null),
-      api.get(`/posts/mine?userId=${userId}&limit=1&page=1`).catch(() => ({ total: 0 })),
-      api.get(`/rewards/user/${userId}`).catch(() => ({ tier: 'Bronze' }))
-    ])
-      .then(([preferencesData, channelData, postsData, rewardsData]) => {
-        if (cancelled) return;
-
-        if (preferencesData) {
-          setPreferences({
-            location: preferencesData.location || '',
-            minPrice: preferencesData.minPrice || '',
-            maxPrice: preferencesData.maxPrice || '',
-            categories: preferencesData.categories || []
-          });
-        }
-
-        setChannel(channelData);
-
-        const postCount = postsData?.total || (Array.isArray(postsData?.posts) ? postsData.posts.length : 0);
-        const rank = rewardsData?.tier || 'Bronze';
-        const memberDays = user?.created_at
-          ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))
-          : 0;
-
-        setUserStats({ postCount, rank, memberDays });
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setChannel(null);
-        }
-      });
-
+    let active = true;
+    loadCategoryOptions({ guard: () => active });
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [resolveUserId, user?.created_at, user?.id, user?.user_id]);
+  }, [loadCategoryOptions]);
+
+  const loadPreferencePanel = useCallback(async ({ guard = () => true } = {}) => {
+    const userId = resolveUserId(user);
+    if (!userId) {
+      if (guard()) {
+        setPreferencesLoading(false);
+        setPreferencesError('');
+        setChannel(null);
+      }
+      return;
+    }
+
+    if (guard()) {
+      setPreferencesLoading(true);
+      setPreferencesError('');
+    }
+
+    const [preferencesResult, channelResult, postsResult, rewardsResult] = await Promise.allSettled([
+      api.get('/profile/preferences'),
+      getChannelByUser(userId),
+      api.get(`/posts/mine?userId=${userId}&limit=1&page=1`),
+      api.get(`/rewards/user/${userId}`)
+    ]);
+
+    if (!guard()) return;
+
+    if (preferencesResult.status === 'fulfilled' && preferencesResult.value) {
+      const preferencesData = preferencesResult.value;
+      setPreferences({
+        location: preferencesData.location || '',
+        minPrice: preferencesData.minPrice || '',
+        maxPrice: preferencesData.maxPrice || '',
+        categories: preferencesData.categories || []
+      });
+    } else {
+      setPreferencesError('Recommendation preferences are temporarily unavailable. Please retry.');
+    }
+
+    if (channelResult.status === 'fulfilled') {
+      setChannel(channelResult.value || null);
+    } else {
+      setChannel(null);
+    }
+
+    const postsData = postsResult.status === 'fulfilled'
+      ? postsResult.value
+      : { total: 0, posts: [] };
+    const rewardsData = rewardsResult.status === 'fulfilled'
+      ? rewardsResult.value
+      : { tier: 'Bronze' };
+
+    const postCount = postsData?.total || (Array.isArray(postsData?.posts) ? postsData.posts.length : 0);
+    const rank = rewardsData?.tier || 'Bronze';
+    const memberDays = user?.created_at
+      ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    setUserStats({ postCount, rank, memberDays });
+    setPreferencesLoading(false);
+  }, [resolveUserId, user]);
+
+  useEffect(() => {
+    let active = true;
+    loadPreferencePanel({ guard: () => active });
+    return () => {
+      active = false;
+    };
+  }, [loadPreferencePanel]);
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -218,6 +258,47 @@ const Profile = () => {
     const { name, value } = e.target;
     setPreferences(prev => ({ ...prev, [name]: value }));
   };
+
+  const handleRetryPreferencePanel = () => {
+    loadPreferencePanel();
+    loadCategoryOptions({ force: true });
+  };
+
+  const handleContactsSync = useCallback(async () => {
+    const profileUserId = user?.user_id || user?.id;
+    if (!profileUserId) {
+      setContactsSyncError('Profile data is unavailable. Reload your profile and try again.');
+      return;
+    }
+
+    setContactsSyncLoading(true);
+    setContactsSyncError('');
+    toast({ title: 'Syncing Contacts...', description: 'Please allow access if prompted.' });
+
+    try {
+      const { syncNativeContacts } = await import('../services/mobileContacts');
+      const result = await syncNativeContacts(profileUserId);
+      if (result?.skipped) {
+        if (result.reason === 'web-platform') {
+          setContactsSyncError('Contact sync is available in the native app.');
+          return;
+        }
+        if (result.reason === 'permission-denied') {
+          setContactsSyncError('Contacts permission is required to continue.');
+          return;
+        }
+        setContactsSyncError('No syncable contacts were found. Please retry later.');
+        return;
+      }
+
+      toast({ title: 'Sync Complete', description: 'Your contacts have been processed.' });
+    } catch (syncError) {
+      console.error('[Profile] Contact sync failed:', syncError);
+      setContactsSyncError('Unable to sync contacts right now. Please retry.');
+    } finally {
+      setContactsSyncLoading(false);
+    }
+  }, [toast, user?.id, user?.user_id]);
 
   const validateEdit = () => {
     const errors = {};
@@ -272,9 +353,12 @@ const Profile = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">{t('loading') || 'Loading...'}</p>
+        <div className="w-full max-w-md px-4">
+          <PageLoadingState
+            title={t('loading') || 'Loading...'}
+            description={t('profile_auth_loading_desc') || 'Checking your account session.'}
+            marker="loading"
+          />
         </div>
       </div>
     );
@@ -299,7 +383,7 @@ const Profile = () => {
         {/* Login/Signup Cards - Styled like MyRecommendations/MyPosts */}
         <div className="max-w-lg mx-auto px-6 space-y-4">
           <Link
-            to="/login"
+            to="/login?returnTo=%2Fprofile"
             className="block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -315,7 +399,7 @@ const Profile = () => {
           </Link>
 
           <Link
-            to="/signup"
+            to="/signup?returnTo=%2Fprofile"
             className="block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"
           >
             <div className="flex items-center gap-4">
@@ -354,9 +438,12 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">{t('loading_profile') || 'Loading profile...'}</p>
+        <div className="w-full max-w-md px-4">
+          <PageLoadingState
+            title={t('loading_profile') || 'Loading profile...'}
+            description={t('profile_loading_desc') || 'Fetching your profile details.'}
+            marker="loading"
+          />
         </div>
       </div>
     );
@@ -365,10 +452,14 @@ const Profile = () => {
   if (error || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
-        <div className="text-center p-8">
-          <div className="text-6xl mb-4">😕</div>
-          <p className="text-red-500 text-xl mb-4">{error || t('profile_not_found') || 'Profile not found'}</p>
-          <Button onClick={loadProfile}>{t('retry') || 'Retry'}</Button>
+        <div className="w-full max-w-md px-4">
+          <PageErrorState
+            title={t('profile_not_found') || 'Profile not found'}
+            description={error || (t('profile_unavailable_desc') || 'We could not load your profile right now. Please retry.')}
+            onRetry={loadProfile}
+            retryLabel={t('retry') || 'Retry'}
+            marker="error"
+          />
         </div>
       </div>
     );
@@ -698,7 +789,30 @@ const Profile = () => {
               <CardContent>
                 <p className="text-gray-500 mb-6">{t('preferences_desc') || 'These preferences are used to show personalized recommendations on your feed.'}</p>
 
-                {editPrefMode ? (
+                {preferencesLoading ? (
+                  <PageLoadingState
+                    title="Loading recommendation preferences"
+                    description="Fetching your current preference settings."
+                    marker="profile-preferences-loading"
+                  />
+                ) : preferencesError ? (
+                  <PageErrorState
+                    title="Recommendation preferences unavailable"
+                    description={preferencesError}
+                    onRetry={handleRetryPreferencePanel}
+                    retryLabel="Retry"
+                    marker="profile-preferences-error"
+                    secondaryAction={(
+                      <Button
+                        variant="outline"
+                        data-ux-action="profile_preferences_clear_error"
+                        onClick={() => setPreferencesError('')}
+                      >
+                        Continue anyway
+                      </Button>
+                    )}
+                  />
+                ) : editPrefMode ? (
                   <form onSubmit={handlePrefSubmit} className="space-y-4">
                     <div>
                       <Label>{t('preferred_location') || 'Preferred Location'}</Label>
@@ -715,30 +829,70 @@ const Profile = () => {
                     <div>
                       <Label>{t('preferred_categories') || 'Preferred Categories'}</Label>
                       <p className="text-sm text-gray-500 mb-2">{t('select_categories_desc') || 'Select categories to see in For You page'}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {availableCategories.map(cat => (
-                          <label
-                            key={cat.category_id || cat.name}
-                            className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${preferences.categories?.includes(cat.name) ? 'bg-blue-100 border-blue-500 dark:bg-blue-900/30 dark:border-blue-400' : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 hover:border-blue-300'}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={preferences.categories?.includes(cat.name) || false}
-                              onChange={(e) => {
-                                const catName = cat.name;
-                                setPreferences(prev => ({
-                                  ...prev,
-                                  categories: e.target.checked
-                                    ? [...(prev.categories || []), catName]
-                                    : (prev.categories || []).filter(c => c !== catName)
-                                }));
-                              }}
-                              className="w-4 h-4 text-blue-600"
-                            />
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{cat.name}</span>
-                          </label>
-                        ))}
-                      </div>
+                      {categoriesLoading ? (
+                        <PageLoadingState
+                          title="Loading categories"
+                          description="Getting category options for personalization."
+                          marker="profile-categories-loading"
+                        />
+                      ) : categoriesError ? (
+                        <PageErrorState
+                          title="Category options unavailable"
+                          description={categoriesError}
+                          onRetry={() => loadCategoryOptions({ force: true })}
+                          retryLabel="Retry"
+                          marker="profile-categories-error"
+                          secondaryAction={(
+                            <Button
+                              variant="outline"
+                              data-ux-action="profile_categories_retry"
+                              onClick={() => loadCategoryOptions({ force: true })}
+                            >
+                              Retry categories
+                            </Button>
+                          )}
+                        />
+                      ) : availableCategories.length === 0 ? (
+                        <PageEmptyState
+                          title="No categories available"
+                          description="Try again in a moment to load category options."
+                          marker="profile-categories-empty"
+                          action={(
+                            <Button
+                              variant="outline"
+                              data-ux-action="profile_categories_retry"
+                              onClick={() => loadCategoryOptions({ force: true })}
+                            >
+                              Retry categories
+                            </Button>
+                          )}
+                        />
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {availableCategories.map(cat => (
+                            <label
+                              key={cat.category_id || cat.name}
+                              className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${preferences.categories?.includes(cat.name) ? 'bg-blue-100 border-blue-500 dark:bg-blue-900/30 dark:border-blue-400' : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 hover:border-blue-300'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={preferences.categories?.includes(cat.name) || false}
+                                onChange={(e) => {
+                                  const catName = cat.name;
+                                  setPreferences(prev => ({
+                                    ...prev,
+                                    categories: e.target.checked
+                                      ? [...(prev.categories || []), catName]
+                                      : (prev.categories || []).filter(c => c !== catName)
+                                  }));
+                                }}
+                                className="w-4 h-4 text-blue-600"
+                              />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{cat.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -800,32 +954,39 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Find Friends (Native Contacts Sync) */}
-                <div
-                  onClick={async () => {
-                    if (!user?.user_id) return;
-                    toast({ title: 'Syncing Contacts...', description: 'Please allow access if prompted.' });
-                    try {
-                      const { syncNativeContacts } = await import('../services/mobileContacts');
-                      const result = await syncNativeContacts(user.user_id);
-                      if (result?.skipped) {
-                        if (result.reason === 'web-platform') {
-                          toast({ title: 'Mobile Only', description: 'Contact sync is available in the native app.' });
-                          return;
-                        }
-                        if (result.reason === 'permission-denied') {
-                          toast({ title: 'Permission Required', description: 'Allow contacts permission to continue.' });
-                          return;
-                        }
-                        toast({ title: 'No Contacts Found', description: 'No syncable contacts were found.' });
-                        return;
-                      }
-                      toast({ title: 'Sync Complete', description: 'Your contacts have been processed.' });
-                    } catch (error) {
-                      console.error('[Profile] Contact sync failed:', error);
-                      toast({ title: 'Sync Failed', description: 'Unable to sync contacts right now.', variant: 'destructive' });
-                    }
-                  }}
-                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition cursor-pointer"
+                {contactsSyncLoading && (
+                  <PageLoadingState
+                    title="Syncing contacts"
+                    description="Checking permissions and syncing your contacts."
+                    marker="profile-settings-contacts-loading"
+                  />
+                )}
+
+                {contactsSyncError && (
+                  <PageErrorState
+                    title="Contact sync unavailable"
+                    description={contactsSyncError}
+                    onRetry={handleContactsSync}
+                    retryLabel="Retry sync"
+                    marker="profile-settings-contacts-error"
+                    secondaryAction={(
+                      <Button
+                        variant="outline"
+                        data-ux-action="profile_contacts_sync_dismiss_error"
+                        onClick={() => setContactsSyncError('')}
+                      >
+                        Dismiss
+                      </Button>
+                    )}
+                  />
+                )}
+
+                <button
+                  type="button"
+                  data-ux-action="profile_contacts_sync_start"
+                  onClick={handleContactsSync}
+                  disabled={contactsSyncLoading}
+                  className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition disabled:opacity-60 disabled:cursor-not-allowed text-left"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -837,7 +998,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
-                </div>
+                </button>
 
                 {[
                   { icon: Shield, labelKey: 'security_settings', descKey: 'two_factor_auth', action: 'Setup', link: '/security' },

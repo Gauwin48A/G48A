@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
 import api from '@/services/api';
+import { PageAuthGateState, PageErrorState, PageLoadingState } from '@/components/page-state/PageStateBlocks';
 
 const SecuritySettings = () => {
     const { toast } = useToast();
@@ -20,7 +21,17 @@ const SecuritySettings = () => {
 
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [twoFactorAvailable, setTwoFactorAvailable] = useState(true);
-    const [loading, setLoading] = useState(false);
+    const [statusLoading, setStatusLoading] = useState(true);
+    const [statusError, setStatusError] = useState('');
+    const [setupLoading, setSetupLoading] = useState(false);
+    const [setupError, setSetupError] = useState('');
+    const [setupSuccess, setSetupSuccess] = useState('');
+    const [verifyLoading, setVerifyLoading] = useState(false);
+    const [verifyError, setVerifyError] = useState('');
+    const [verifySuccess, setVerifySuccess] = useState('');
+    const [disableLoading, setDisableLoading] = useState(false);
+    const [disableError, setDisableError] = useState('');
+    const [disableSuccess, setDisableSuccess] = useState('');
     const [setupMode, setSetupMode] = useState(false);
     const [verifyMode, setVerifyMode] = useState(false);
     const [disableMode, setDisableMode] = useState(false);
@@ -32,7 +43,7 @@ const SecuritySettings = () => {
     const [verificationCode, setVerificationCode] = useState('');
 
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
+    const userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
 
     // Check 2FA status on mount
     useEffect(() => {
@@ -40,7 +51,13 @@ const SecuritySettings = () => {
     }, []);
 
     const checkTwoFactorStatus = async () => {
-        if (!userId || !token) return;
+        if (!userId || !token) {
+            setStatusLoading(false);
+            return;
+        }
+
+        setStatusLoading(true);
+        setStatusError('');
 
         try {
             const data = await api.get('/auth/2fa/status');
@@ -50,29 +67,37 @@ const SecuritySettings = () => {
             console.error('Failed to check 2FA status:', err);
             setTwoFactorEnabled(false);
             setTwoFactorAvailable(false);
+            setStatusError('Unable to load security settings right now. Please retry.');
+        } finally {
+            setStatusLoading(false);
         }
     };
 
     // Start 2FA setup
     const handleSetup2FA = async () => {
+        setSetupSuccess('');
+        setSetupError('');
+        setVerifyError('');
+        setDisableError('');
         if (!twoFactorAvailable) {
-            toast({
-                title: '2FA Unavailable',
-                description: 'Two-factor authentication is temporarily unavailable on this server.',
-                variant: 'destructive'
-            });
+            setSetupError('Two-factor authentication is temporarily unavailable on this server.');
             return;
         }
 
-        setLoading(true);
+        setSetupLoading(true);
         try {
             const data = await api.post('/auth/2fa/setup', {});
+            if (!data?.qrCode) {
+                throw new Error('Unable to generate QR code. Please retry.');
+            }
 
             setQrCode(data.qrCode);
             setBackupCodes([]);
             setShowBackupCodes(false);
             setSetupMode(true);
             setVerifyMode(true);
+            setDisableMode(false);
+            setSetupSuccess('Setup started. Scan the QR code and verify to enable 2FA.');
 
             toast({ title: 'Setup Started', description: 'Scan the QR code with your authenticator app.' });
         } catch (err) {
@@ -80,20 +105,22 @@ const SecuritySettings = () => {
             if (String(description).toLowerCase().includes('unavailable')) {
                 setTwoFactorAvailable(false);
             }
-            toast({ title: 'Error', description, variant: 'destructive' });
+            setSetupError(description);
         } finally {
-            setLoading(false);
+            setSetupLoading(false);
         }
     };
 
     // Verify 2FA code
     const handleVerify2FA = async () => {
         if (!verificationCode || verificationCode.length !== 6) {
-            toast({ title: 'Invalid Code', description: 'Please enter a 6-digit code', variant: 'destructive' });
+            setVerifyError('Please enter a valid 6-digit code.');
             return;
         }
 
-        setLoading(true);
+        setVerifyLoading(true);
+        setVerifyError('');
+        setVerifySuccess('');
         try {
             const data = await api.post('/auth/2fa/verify', { code: verificationCode });
 
@@ -103,14 +130,15 @@ const SecuritySettings = () => {
                 setVerifyMode(false);
                 setBackupCodes(Array.isArray(data.backupCodes) ? data.backupCodes : []);
                 setShowBackupCodes(true);
+                setVerifySuccess('2FA enabled successfully.');
                 toast({ title: '2FA Enabled!', description: 'Your account is now protected with 2FA.' });
             } else {
-                toast({ title: 'Verification Failed', description: data.error || 'Invalid code', variant: 'destructive' });
+                setVerifyError(data.error || 'Verification failed. Check the code and retry.');
             }
         } catch (err) {
-            toast({ title: 'Error', description: err?.message || 'Verification failed', variant: 'destructive' });
+            setVerifyError(err?.message || 'Verification failed. Please retry.');
         } finally {
-            setLoading(false);
+            setVerifyLoading(false);
             setVerificationCode('');
         }
     };
@@ -118,11 +146,13 @@ const SecuritySettings = () => {
     // Disable 2FA
     const handleDisable2FA = async () => {
         if (!verificationCode || verificationCode.length !== 6) {
-            toast({ title: 'Invalid Code', description: 'Please enter a 6-digit code to disable 2FA', variant: 'destructive' });
+            setDisableError('Please enter a valid 6-digit code to disable 2FA.');
             return;
         }
 
-        setLoading(true);
+        setDisableLoading(true);
+        setDisableError('');
+        setDisableSuccess('');
         try {
             const data = await api.post('/auth/2fa/disable', { code: verificationCode });
 
@@ -131,14 +161,15 @@ const SecuritySettings = () => {
                 setDisableMode(false);
                 setBackupCodes([]);
                 setShowBackupCodes(false);
+                setDisableSuccess('Two-factor authentication has been disabled.');
                 toast({ title: '2FA Disabled', description: 'Two-factor authentication has been removed.' });
             } else {
-                toast({ title: 'Error', description: data.error || 'Failed to disable 2FA', variant: 'destructive' });
+                setDisableError(data.error || 'Failed to disable 2FA. Please retry.');
             }
         } catch (err) {
-            toast({ title: 'Error', description: err?.message || 'Failed to disable 2FA', variant: 'destructive' });
+            setDisableError(err?.message || 'Failed to disable 2FA. Please retry.');
         } finally {
-            setLoading(false);
+            setDisableLoading(false);
             setVerificationCode('');
         }
     };
@@ -153,14 +184,31 @@ const SecuritySettings = () => {
     if (!userId || !token) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <Card className="max-w-md w-full">
-                    <CardContent className="pt-6 text-center">
-                        <Shield className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                        <h2 className="text-xl font-bold mb-2">Authentication Required</h2>
-                        <p className="text-gray-600 mb-4">Please log in to access security settings.</p>
-                        <Button onClick={() => navigate('/login')}>Go to Login</Button>
-                    </CardContent>
-                </Card>
+                <div className="max-w-md w-full">
+                    <PageAuthGateState
+                        title="Authentication Required"
+                        description="Please log in to access security settings."
+                        marker="auth-gate"
+                        primaryAction={(
+                            <Button onClick={() => navigate('/login', { state: { returnTo: '/security' } })}>
+                                Go to Login
+                            </Button>
+                        )}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    if (statusLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white flex items-center justify-center p-4">
+                <PageLoadingState
+                    title="Loading security settings"
+                    description="Checking your current 2FA status."
+                    className="max-w-md w-full"
+                    marker="loading"
+                />
             </div>
         );
     }
@@ -215,6 +263,25 @@ const SecuritySettings = () => {
                     <CardContent>
                         {/* Status description */}
                         <div className="mb-6">
+                            {statusError && (
+                                <Alert className="bg-red-50 border-red-200 mb-4">
+                                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                                    <AlertTitle className="text-red-800">Could not refresh security status</AlertTitle>
+                                    <AlertDescription className="text-red-700">
+                                        <div className="space-y-3">
+                                            <p>{statusError}</p>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="border-red-300 text-red-700 hover:bg-red-100"
+                                                onClick={checkTwoFactorStatus}
+                                            >
+                                                Retry
+                                            </Button>
+                                        </div>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             {!twoFactorAvailable && (
                                 <Alert className="bg-red-50 border-red-200 mb-4">
                                     <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -243,6 +310,59 @@ const SecuritySettings = () => {
                             )}
                         </div>
 
+                        {setupSuccess && (
+                            <Alert className="bg-emerald-50 border-emerald-200 mb-4">
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                <AlertTitle className="text-emerald-800">Setup in progress</AlertTitle>
+                                <AlertDescription className="text-emerald-700">{setupSuccess}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        {verifySuccess && (
+                            <Alert className="bg-emerald-50 border-emerald-200 mb-4">
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                <AlertTitle className="text-emerald-800">Verification successful</AlertTitle>
+                                <AlertDescription className="text-emerald-700">{verifySuccess}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        {disableSuccess && (
+                            <Alert className="bg-emerald-50 border-emerald-200 mb-4">
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                <AlertTitle className="text-emerald-800">2FA disabled</AlertTitle>
+                                <AlertDescription className="text-emerald-700">{disableSuccess}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        {setupLoading && !setupMode && (
+                            <PageLoadingState
+                                title="Preparing 2FA setup"
+                                description="Generating a secure QR code and setup token."
+                                marker="security-setup-loading"
+                                className="mb-4"
+                            />
+                        )}
+
+                        {setupError && !setupMode && (
+                            <PageErrorState
+                                title="2FA setup unavailable"
+                                description={setupError}
+                                onRetry={handleSetup2FA}
+                                retryLabel="Retry setup"
+                                marker="security-setup-error"
+                                className="mb-4"
+                                secondaryAction={(
+                                    <Button
+                                        variant="outline"
+                                        data-ux-action="security_setup_dismiss_error"
+                                        onClick={() => setSetupError('')}
+                                    >
+                                        Dismiss
+                                    </Button>
+                                )}
+                            />
+                        )}
+
                         {/* Setup Flow */}
                         {setupMode && verifyMode && (
                             <div className="space-y-6">
@@ -270,6 +390,33 @@ const SecuritySettings = () => {
                                         <Smartphone className="w-5 h-5" />
                                         Step 2: Enter Verification Code
                                     </h3>
+                                    {verifyLoading && (
+                                        <PageLoadingState
+                                            title="Verifying your code"
+                                            description="Checking the one-time code with the server."
+                                            marker="security-verify-loading"
+                                            className="mb-4"
+                                        />
+                                    )}
+                                    {verifyError && (
+                                        <PageErrorState
+                                            title="2FA verification failed"
+                                            description={verifyError}
+                                            onRetry={handleVerify2FA}
+                                            retryLabel="Retry verification"
+                                            marker="security-verify-error"
+                                            className="mb-4"
+                                            secondaryAction={(
+                                                <Button
+                                                    variant="outline"
+                                                    data-ux-action="security_verify_clear_error"
+                                                    onClick={() => setVerifyError('')}
+                                                >
+                                                    Clear error
+                                                </Button>
+                                            )}
+                                        />
+                                    )}
                                     <p className="text-sm text-gray-600 mb-4">
                                         Enter the 6-digit code from your authenticator app to complete setup.
                                     </p>
@@ -282,10 +429,10 @@ const SecuritySettings = () => {
                                             onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                                             className="max-w-32 text-center text-2xl tracking-widest font-mono"
                                         />
-                                        <Button onClick={handleVerify2FA} disabled={loading || verificationCode.length !== 6}>
-                                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Enable'}
+                                        <Button onClick={handleVerify2FA} disabled={verifyLoading || verificationCode.length !== 6}>
+                                            {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Enable'}
                                         </Button>
-                                        <Button variant="outline" onClick={() => { setSetupMode(false); setVerifyMode(false); }}>
+                                        <Button variant="outline" onClick={() => { setSetupMode(false); setVerifyMode(false); setVerifyError(''); }}>
                                             Cancel
                                         </Button>
                                     </div>
@@ -334,6 +481,33 @@ const SecuritySettings = () => {
                                 <Separator />
                                 <div>
                                     <h3 className="font-semibold mb-2 text-red-600">Disable Two-Factor Authentication</h3>
+                                    {disableLoading && (
+                                        <PageLoadingState
+                                            title="Disabling 2FA"
+                                            description="Verifying your code before disabling two-factor authentication."
+                                            marker="security-disable-loading"
+                                            className="mb-4"
+                                        />
+                                    )}
+                                    {disableError && (
+                                        <PageErrorState
+                                            title="Unable to disable 2FA"
+                                            description={disableError}
+                                            onRetry={handleDisable2FA}
+                                            retryLabel="Retry disable"
+                                            marker="security-disable-error"
+                                            className="mb-4"
+                                            secondaryAction={(
+                                                <Button
+                                                    variant="outline"
+                                                    data-ux-action="security_disable_clear_error"
+                                                    onClick={() => setDisableError('')}
+                                                >
+                                                    Clear error
+                                                </Button>
+                                            )}
+                                        />
+                                    )}
                                     <p className="text-sm text-gray-600 mb-4">
                                         Enter a code from your authenticator app to disable 2FA.
                                     </p>
@@ -346,10 +520,10 @@ const SecuritySettings = () => {
                                             onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                                             className="max-w-32 text-center text-2xl tracking-widest font-mono"
                                         />
-                                        <Button variant="destructive" onClick={handleDisable2FA} disabled={loading || verificationCode.length !== 6}>
-                                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disable 2FA'}
+                                        <Button variant="destructive" onClick={handleDisable2FA} disabled={disableLoading || verificationCode.length !== 6}>
+                                            {disableLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Disable 2FA'}
                                         </Button>
-                                        <Button variant="outline" onClick={() => setDisableMode(false)}>
+                                        <Button variant="outline" onClick={() => { setDisableMode(false); setDisableError(''); }}>
                                             Cancel
                                         </Button>
                                     </div>
@@ -361,8 +535,8 @@ const SecuritySettings = () => {
                         {!setupMode && !disableMode && (
                             <div className="flex gap-3 mt-4">
                                 {!twoFactorEnabled ? (
-                                    <Button onClick={handleSetup2FA} disabled={loading || !twoFactorAvailable} className="bg-emerald-600 hover:bg-emerald-700">
-                                        {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
+                                    <Button onClick={handleSetup2FA} disabled={setupLoading || !twoFactorAvailable} className="bg-emerald-600 hover:bg-emerald-700">
+                                        {setupLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
                                         Enable 2FA
                                     </Button>
                                 ) : (
@@ -370,7 +544,7 @@ const SecuritySettings = () => {
                                         <Button variant="outline" onClick={() => setShowBackupCodes(true)}>
                                             <Key className="w-4 h-4 mr-2" /> View Backup Codes
                                         </Button>
-                                        <Button variant="destructive" onClick={() => setDisableMode(true)}>
+                                        <Button variant="destructive" onClick={() => { setDisableMode(true); setDisableError(''); }}>
                                             <ShieldX className="w-4 h-4 mr-2" /> Disable 2FA
                                         </Button>
                                     </>

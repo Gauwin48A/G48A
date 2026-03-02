@@ -86,7 +86,7 @@ async function evaluateDb(pool) {
     }
 }
 
-async function evaluateCache(cacheService) {
+async function evaluateCache(cacheService, env = process.env) {
     if (!cacheService || typeof cacheService.healthCheck !== 'function') {
         return {
             status: 'skip',
@@ -101,6 +101,20 @@ async function evaluateCache(cacheService) {
         const isPass = hasBooleanHealthy
             ? health.healthy
             : (normalizedStatus === 'healthy' || normalizedStatus === 'pass');
+        const usingMemoryFallback = String(health?.type || '').toLowerCase() === 'memory';
+        const allowMemoryFallback = parseBoolean(
+            env.READINESS_ALLOW_MEMORY_CACHE_FALLBACK,
+            env.NODE_ENV !== 'production'
+        );
+
+        if (usingMemoryFallback && !allowMemoryFallback) {
+            return {
+                status: env.NODE_ENV === 'production' ? 'fail' : 'warn',
+                details: health,
+                reason: 'memory cache fallback is not allowed by readiness policy'
+            };
+        }
+
         return {
             status: isPass ? 'pass' : 'warn',
             details: health
@@ -140,7 +154,10 @@ function evaluateSessionStore(sessionStore, env = process.env) {
     }
 
     const redisAvailable = Boolean(sessionStore.isRedisAvailable());
-    const allowMemoryFallback = parseBoolean(env.READINESS_ALLOW_MEMORY_SESSION_FALLBACK, false);
+    const allowMemoryFallback = parseBoolean(
+        env.READINESS_ALLOW_MEMORY_SESSION_FALLBACK,
+        env.NODE_ENV !== 'production'
+    );
     if (!redisAvailable && allowMemoryFallback) {
         return {
             status: 'pass',
@@ -150,7 +167,7 @@ function evaluateSessionStore(sessionStore, env = process.env) {
     }
 
     return {
-        status: redisAvailable ? 'pass' : 'warn',
+        status: redisAvailable ? 'pass' : (env.NODE_ENV === 'production' ? 'fail' : 'warn'),
         mode: redisAvailable ? 'redis' : 'memory-fallback'
     };
 }
@@ -160,7 +177,7 @@ async function runReadinessChecks({ pool, cacheService, sessionStore, env = proc
     requiredConfig: evaluateRequiredConfig(env),
     db: await evaluateDb(pool),
     schema: await evaluateSchema(),
-    cache: await evaluateCache(cacheService),
+    cache: await evaluateCache(cacheService, env),
     sessionStore: evaluateSessionStore(sessionStore, env),
     snapshot: await evaluateSnapshot(env, now)
   };
@@ -168,9 +185,11 @@ async function runReadinessChecks({ pool, cacheService, sessionStore, env = proc
   const hasHardFailure =
     checks.requiredConfig.status === 'fail'
     || checks.db.status === 'fail'
-    || checks.schema.status === 'fail';
-    const hasWarn = Object.values(checks).some((value) => value.status === 'warn');
-    const status = hasHardFailure ? 'not_ready' : hasWarn ? 'degraded' : 'ready';
+    || checks.schema.status === 'fail'
+    || checks.cache.status === 'fail'
+    || checks.sessionStore.status === 'fail';
+  const hasWarn = Object.values(checks).some((value) => value.status === 'warn');
+  const status = hasHardFailure ? 'not_ready' : hasWarn ? 'degraded' : 'ready';
 
     return {
         status,

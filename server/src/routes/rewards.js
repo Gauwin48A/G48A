@@ -14,6 +14,10 @@ router.get('/', rewardsController.getRewards);
 // Returns reward history/log entries
 router.get('/log', rewardsController.getRewardLog);
 
+// GET /api/rewards/stream
+// Server-sent events stream for realtime reward updates
+router.get('/stream', rewardsController.streamRewardUpdates);
+
 // Protected: Get my rewards summary
 router.get('/my', rewardController.getMyRewards);
 

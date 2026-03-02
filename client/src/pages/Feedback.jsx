@@ -24,12 +24,42 @@ const Feedback = () => {
   );
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [latestReference, setLatestReference] = useState('');
+  const [latestSubmittedAt, setLatestSubmittedAt] = useState('');
   const [feedbackForm, setFeedbackForm] = useState({
     feedbackType: 'general',
     rating: 5,
     subject: '',
     message: ''
   });
+
+  const toModerationSafeMessage = (rawMessage, fallbackMessage) => {
+    const message = String(rawMessage || '').trim();
+    if (!message) return fallbackMessage;
+    const lowered = message.toLowerCase();
+
+    if (lowered.includes('unauthorized') || lowered.includes('token') || lowered.includes('login')) {
+      return 'Please sign in again and retry this action.';
+    }
+    if (lowered.includes('network') || lowered.includes('timeout') || lowered.includes('failed to fetch')) {
+      return 'Feedback services are currently unreachable. Please retry shortly.';
+    }
+    if (lowered.includes('required') || lowered.includes('invalid') || lowered.includes('validation')) {
+      return 'Some feedback details are missing or invalid. Review the form and retry.';
+    }
+    return fallbackMessage;
+  };
+
+  const extractReferenceId = (payload) => {
+    const reference = payload?.feedback_id
+      || payload?.id
+      || payload?.reference_id
+      || payload?.ticket_id
+      || payload?.feedback?.id
+      || payload?.feedback?.feedback_id
+      || '';
+    return reference ? String(reference) : '';
+  };
 
   // Scroll handler
   useEffect(() => {
@@ -100,12 +130,18 @@ const Feedback = () => {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.error || t('feedback_submit_failed') || 'Failed to submit feedback');
+        throw new Error(data.error || data.message || t('feedback_submit_failed') || 'Failed to submit feedback');
       }
+
+      const referenceId = extractReferenceId(data);
+      setLatestReference(referenceId || 'Pending assignment');
+      setLatestSubmittedAt(new Date().toISOString());
 
       toast({
         title: t('feedback_submitted'),
-        description: data.message || t('thank_you_feedback')
+        description: referenceId
+          ? `Reference ID: ${referenceId}. ${t('thank_you_feedback') || 'Thank you for helping us improve.'}`
+          : (data.message || t('thank_you_feedback'))
       });
 
       setFeedbackForm({
@@ -117,7 +153,10 @@ const Feedback = () => {
     } catch (err) {
       toast({
         title: t('feedback_submit_failed') || 'Submission failed',
-        description: err.message || t('could_not_submit_feedback') || 'Could not submit feedback',
+        description: toModerationSafeMessage(
+          err.message,
+          t('could_not_submit_feedback') || 'Could not submit feedback'
+        ),
         variant: 'destructive'
       });
     } finally {
@@ -136,6 +175,23 @@ const Feedback = () => {
         <Star className="w-8 h-8 fill-current" />
       </button>
     ));
+  };
+
+  const copyLatestReference = async () => {
+    if (!latestReference) return;
+    try {
+      await navigator.clipboard.writeText(latestReference);
+      toast({
+        title: "Reference Copied",
+        description: "Use this ID if you need support follow-up."
+      });
+    } catch {
+      toast({
+        title: "Unable to Copy",
+        description: "Please copy the reference manually.",
+        variant: "destructive"
+      });
+    }
   };
 
   const feedbackCategories = [
@@ -344,9 +400,36 @@ const Feedback = () => {
                   </span>
                 )}
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12"
+                onClick={() => navigate('/complaints')}
+              >
+                Report a transaction issue instead
+              </Button>
             </form>
           </CardContent>
         </Card>
+
+        {latestReference && (
+          <Card className="shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden">
+            <CardContent className="p-5">
+              <p className="text-sm text-blue-800 dark:text-blue-300 mb-1">Latest feedback reference</p>
+              <p className="font-mono text-lg font-bold text-blue-900 dark:text-blue-200">{latestReference}</p>
+              {latestSubmittedAt && (
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  Submitted {new Date(latestSubmittedAt).toLocaleString()}
+                </p>
+              )}
+              <div className="mt-3">
+                <Button type="button" variant="outline" className="border-blue-300 text-blue-800" onClick={copyLatestReference}>
+                  Copy reference
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Why Feedback Matters */}
         <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-blue-500 to-indigo-600">

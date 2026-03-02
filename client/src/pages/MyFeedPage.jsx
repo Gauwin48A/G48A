@@ -1,141 +1,263 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { FaHeart, FaRegHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaTrash, FaEdit } from 'react-icons/fa';
+import { FaHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaTrash } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
 import { getApiOriginBase } from '@/lib/networkConfig';
+import {
+  PageAuthGateState,
+  PageEmptyState,
+  PageErrorState,
+  PageLoadingState
+} from '@/components/page-state/PageStateBlocks';
+
+const getPostKey = (post) => post?.post_id ?? post?.id ?? null;
+
+const mergeUniquePosts = (existingPosts, incomingPosts) => {
+  const mergedMap = new Map();
+  existingPosts.forEach((post) => {
+    const key = getPostKey(post);
+    if (key !== null) {
+      mergedMap.set(String(key), post);
+    }
+  });
+  incomingPosts.forEach((post) => {
+    const key = getPostKey(post);
+    if (key !== null) {
+      mergedMap.set(String(key), post);
+    }
+  });
+  return Array.from(mergedMap.values());
+};
 
 const MyFeedPage = () => {
   const { t } = useTranslation();
   const [posts, setPosts] = useState([]);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const postsPerPage = 10;
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
+  const baseUrl = useMemo(() => getApiOriginBase(), []);
 
   const [expandedPosts, setExpandedPosts] = useState({});
   const [likeCounts, setLikeCounts] = useState({});
   const [viewCounts, setViewCounts] = useState({});
-  const [shareToast, setShareToast] = useState("");
+  const [shareToast, setShareToast] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Get userId from multiple possible keys
+  const activeRequestIdRef = useRef(0);
+  const fetchAbortControllerRef = useRef(null);
+  const loadingGuardRef = useRef(false);
+  const scrollTickingRef = useRef(false);
+  const shareToastTimeoutRef = useRef(null);
+
   const userId = authUser?.id || authUser?.user_id || localStorage.getItem('userId') || localStorage.getItem('user_id');
   const authToken = localStorage.getItem('authToken') || localStorage.getItem('token');
-  const isLoggedIn = !!(userId && authToken);
+  const isLoggedIn = Boolean(userId && authToken);
 
-  // Fetch user's own feed posts
-  useEffect(() => {
-    if (!userId) return;
+  useEffect(() => () => {
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort();
+    }
+    if (shareToastTimeoutRef.current) {
+      clearTimeout(shareToastTimeoutRef.current);
+    }
+  }, []);
+
+  const showToast = useCallback((message) => {
+    setShareToast(message);
+    if (shareToastTimeoutRef.current) {
+      clearTimeout(shareToastTimeoutRef.current);
+    }
+    shareToastTimeoutRef.current = setTimeout(() => {
+      setShareToast('');
+      shareToastTimeoutRef.current = null;
+    }, 2000);
+  }, []);
+
+  const fetchPosts = useCallback(async ({ page = 1, refresh = false } = {}) => {
+    if (!userId) {
+      return;
+    }
+
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+    loadingGuardRef.current = true;
+
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    fetchAbortControllerRef.current = abortController;
+
+    const pageToFetch = page;
+    if (refresh) {
+      setCurrentPage(1);
+    }
 
     setLoading(true);
-    setError(null);
-    const fetchPosts = async () => {
-      try {
-        const baseUrl = getApiOriginBase();
-        const url = `${baseUrl}/api/posts?author=${userId}&page=${currentPage}&limit=${postsPerPage}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch your posts');
-        const data = await res.json();
-        let loadedPosts = Array.isArray(data.posts) ? data.posts : [];
+    setError('');
 
-        if (currentPage === 1) {
-          setPosts(loadedPosts);
-        } else {
-          setPosts(prev => [...prev, ...loadedPosts]);
-        }
+    try {
+      const url = `${baseUrl}/api/posts?author=${encodeURIComponent(userId)}&page=${pageToFetch}&limit=${postsPerPage}`;
+      const res = await fetch(url, {
+        signal: abortController.signal,
+        credentials: 'include',
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+      });
+      if (!res.ok) {
+        throw new Error('fetch_failed');
+      }
 
-        const likes = {};
-        const views = {};
-        loadedPosts.forEach(post => {
-          const id = post.post_id || post.id;
-          likes[id] = post.likes || 0;
-          views[id] = post.views_count || post.views || 0;
-        });
-        setLikeCounts(prev => ({ ...prev, ...likes }));
-        setViewCounts(prev => ({ ...prev, ...views }));
-        setHasMore(loadedPosts.length === postsPerPage);
-      } catch (err) {
-        setError(err.message);
+      const data = await res.json();
+      const loadedPosts = Array.isArray(data.posts) ? data.posts : [];
+
+      if (requestId !== activeRequestIdRef.current) {
+        return;
+      }
+
+      if (refresh || pageToFetch === 1) {
+        setPosts(loadedPosts);
+      } else {
+        setPosts((prev) => mergeUniquePosts(prev, loadedPosts));
+      }
+
+      const likes = {};
+      const views = {};
+      loadedPosts.forEach((post) => {
+        const id = post.post_id || post.id;
+        likes[id] = post.likes || 0;
+        views[id] = post.views_count || post.views || 0;
+      });
+      setLikeCounts((prev) => (refresh ? likes : ({ ...prev, ...likes })));
+      setViewCounts((prev) => (refresh ? views : ({ ...prev, ...views })));
+      setHasMore(loadedPosts.length === postsPerPage);
+    } catch (err) {
+      if (err?.name === 'AbortError') {
+        return;
+      }
+      if (requestId !== activeRequestIdRef.current) {
+        return;
+      }
+      setError('Unable to load your feed posts right now. Please retry.');
+      if (refresh || pageToFetch === 1) {
         setPosts([]);
-        setHasMore(false);
-      } finally {
+      }
+      setHasMore(false);
+    } finally {
+      if (fetchAbortControllerRef.current === abortController) {
+        fetchAbortControllerRef.current = null;
+      }
+      if (requestId === activeRequestIdRef.current) {
+        loadingGuardRef.current = false;
         setLoading(false);
       }
-    };
-    fetchPosts();
-  }, [userId, currentPage]);
-
-  // Infinite scroll
-  const loadMorePosts = useCallback(() => {
-    if (loading || !hasMore) return;
-    setCurrentPage(prev => prev + 1);
-  }, [loading, hasMore]);
+    }
+  }, [authToken, baseUrl, postsPerPage, userId]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
-        loadMorePosts();
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadMorePosts]);
+    if (!isLoggedIn) {
+      return;
+    }
+    fetchPosts({ page: 1, refresh: true });
+  }, [fetchPosts, isLoggedIn]);
 
-  // Toggle expand
+  useEffect(() => {
+    if (!isLoggedIn || currentPage <= 1) {
+      return;
+    }
+    fetchPosts({ page: currentPage });
+  }, [currentPage, fetchPosts, isLoggedIn]);
+
+  const loadMorePosts = useCallback(() => {
+    if (loadingGuardRef.current || !hasMore) {
+      return;
+    }
+    loadingGuardRef.current = true;
+    setCurrentPage((prev) => prev + 1);
+  }, [hasMore]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return undefined;
+    }
+
+    const handleScroll = () => {
+      if (scrollTickingRef.current) {
+        return;
+      }
+      scrollTickingRef.current = true;
+
+      window.requestAnimationFrame(() => {
+        scrollTickingRef.current = false;
+        const scrollBottom = window.innerHeight + window.scrollY;
+        const pageBottom = document.documentElement.scrollHeight;
+        if (scrollBottom >= pageBottom - 900) {
+          loadMorePosts();
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      scrollTickingRef.current = false;
+    };
+  }, [isLoggedIn, loadMorePosts]);
+
   const toggleExpand = (postId) => {
-    setExpandedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
+    setExpandedPosts((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  // Share handler
+  const handleRefresh = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    fetchPosts({ page: 1, refresh: true });
+  };
+
   const handleShare = async (postId) => {
     const url = `${window.location.origin}/feed/${postId}`;
     try {
       await navigator.clipboard.writeText(url);
-      setShareToast('Link copied!');
-      setTimeout(() => setShareToast(''), 2000);
+      showToast('Link copied.');
     } catch {
-      setShareToast('Failed to copy');
-      setTimeout(() => setShareToast(''), 2000);
+      showToast('Unable to copy link.');
     }
   };
 
-  // Delete post
   const handleDelete = async (postId) => {
     try {
-      const baseUrl = getApiOriginBase();
-      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const res = await fetch(`${baseUrl}/api/posts/${postId}`, {
         method: 'DELETE',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
         credentials: 'include'
       });
-      if (!res.ok) throw new Error('Failed to delete');
-      setPosts(prev => prev.filter(p => (p.post_id || p.id) !== postId));
+      if (!res.ok) {
+        throw new Error('delete_failed');
+      }
+      setPosts((prev) => prev.filter((post) => (post.post_id || post.id) !== postId));
       setDeleteConfirm(null);
-      setShareToast('Post deleted!');
-      setTimeout(() => setShareToast(''), 2000);
-    } catch (err) {
-      setShareToast('Failed to delete post');
-      setTimeout(() => setShareToast(''), 2000);
+      showToast('Post deleted.');
+    } catch {
+      showToast('Unable to delete this post. Please retry.');
     }
   };
 
-  // View full post
   const handleViewDetails = (postId) => {
-    const postObj = posts.find(p => p.id === postId || p.post_id === postId);
+    const postObj = posts.find((p) => p.id === postId || p.post_id === postId);
     navigate(`/feed/${postId}`, { state: { post: postObj } });
   };
 
-  // Format time ago
   const timeAgo = (dateString) => {
-    if (!dateString) return '';
+    if (!dateString) {
+      return '';
+    }
     const now = new Date();
     const date = new Date(dateString);
     const diffMs = now - date;
@@ -150,20 +272,32 @@ const MyFeedPage = () => {
     return date.toLocaleDateString();
   };
 
-  // If not logged in, show login prompt (matching Profile page style)
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-10 shadow-2xl text-center max-w-md">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-            <FaNewspaper className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-4">{t('my_feed') || 'My Feed'}</h2>
-          <p className="text-white/80 text-lg mb-8">{t('view_manage_posts') || 'View and manage your posts'}</p>
-          <div className="flex flex-col gap-3">
-            <Link to="/login" className="bg-white text-emerald-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition">{t('login_to_continue') || 'Login to Continue'}</Link>
-            <Link to="/signup" className="border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition">{t('create_account') || 'Create Account'}</Link>
-          </div>
+        <div className="w-full max-w-md p-4">
+          <PageAuthGateState
+            title={t('my_feed') || 'My Feed'}
+            description={t('view_manage_posts') || 'View and manage your posts'}
+            className="bg-white/95"
+            marker="auth-gate"
+            primaryAction={(
+              <Link
+                to="/login?returnTo=%2Fmy-feed"
+                className="bg-emerald-600 text-white px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-700"
+              >
+                {t('login_to_continue') || 'Login to Continue'}
+              </Link>
+            )}
+            secondaryAction={(
+              <Link
+                to="/signup?returnTo=%2Fmy-feed"
+                className="border border-emerald-300 text-emerald-700 px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-50"
+              >
+                {t('create_account') || 'Create Account'}
+              </Link>
+            )}
+          />
         </div>
       </div>
     );
@@ -171,7 +305,6 @@ const MyFeedPage = () => {
 
   return (
     <div className="bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
-      {/* Header */}
       <div className="w-full bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-800 dark:via-emerald-800 dark:to-teal-800">
         <div className="max-w-3xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -187,20 +320,27 @@ const MyFeedPage = () => {
               </p>
             </div>
 
-            <Button
-              onClick={() => navigate('/feed/feedpostadd')}
-              className="bg-white text-green-600 hover:bg-green-50 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
-            >
-              <FaPlus /> {t('new_post') || 'New Post'}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleRefresh}
+                variant="outline"
+                className="bg-transparent border-2 border-white/50 text-white hover:bg-white/10 font-bold px-4 py-3 rounded-xl"
+                disabled={loading}
+              >
+                Refresh
+              </Button>
+              <Button
+                onClick={() => navigate('/feed/feedpostadd')}
+                className="bg-white text-green-600 hover:bg-green-50 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
+              >
+                <FaPlus /> {t('new_post') || 'New Post'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-6">
-
-        {/* Stats */}
         <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border flex items-center justify-between">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">{posts.length}</div>
@@ -220,24 +360,43 @@ const MyFeedPage = () => {
           </div>
         </div>
 
-        {/* Posts */}
         <div className="space-y-4">
           {loading && currentPage === 1 ? (
-            <div className="text-center py-12">
-              <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-gray-500">{t('loading') || 'Loading...'}</p>
-            </div>
+            <PageLoadingState
+              title={t('loading') || 'Loading...'}
+              description={t('my_feed_loading_desc') || 'Loading your feed posts.'}
+              marker="loading"
+            />
           ) : error ? (
-            <div className="text-center py-12 text-red-500">{error}</div>
+            <PageErrorState
+              title="Unable to load your feed"
+              description={error}
+              onRetry={() => fetchPosts({ page: 1, refresh: true })}
+              retryLabel="Retry"
+              marker="error"
+              secondaryAction={(
+                <Button variant="outline" className="border-green-300 text-green-700" onClick={() => navigate('/feed')}>
+                  Open public feed
+                </Button>
+              )}
+            />
           ) : posts.length === 0 ? (
-            <Card className="p-8 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed">
-              <FaNewspaper className="text-5xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">{t('no_posts_yet') || "You haven't posted anything yet"}</p>
-              <p className="text-gray-400 text-sm mb-4">{t('share_first') || 'Share your first update with the community!'}</p>
-              <Button onClick={() => navigate('/feed/feedpostadd')} className="bg-green-600 text-white">
-                <FaPlus className="mr-2" /> {t('create_first') || 'Create Your First Post'}
-              </Button>
-            </Card>
+            <PageEmptyState
+              title={t('no_posts_yet') || "You haven't posted anything yet"}
+              description={t('share_first') || 'Share your first update with the community.'}
+              icon={FaNewspaper}
+              marker="empty"
+              action={(
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={() => navigate('/feed/feedpostadd')} className="bg-green-600 text-white">
+                    <FaPlus className="mr-2" /> {t('create_first') || 'Create Your First Post'}
+                  </Button>
+                  <Button variant="outline" className="border-green-300 text-green-700" onClick={() => navigate('/feed')}>
+                    Browse feed
+                  </Button>
+                </div>
+              )}
+            />
           ) : (
             posts.map((post) => {
               const postId = post.post_id || post.id;
@@ -250,7 +409,6 @@ const MyFeedPage = () => {
                   key={postId}
                   className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border overflow-hidden hover:shadow-md transition"
                 >
-                  {/* Header with Edit/Delete */}
                   <div className="flex items-center justify-between px-5 pt-5 pb-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500">
@@ -268,7 +426,6 @@ const MyFeedPage = () => {
                       </div>
                     </div>
 
-                    {/* Edit/Delete Actions */}
                     <div className="flex gap-2">
                       <button
                         onClick={() => setDeleteConfirm(postId)}
@@ -280,7 +437,6 @@ const MyFeedPage = () => {
                     </div>
                   </div>
 
-                  {/* Content */}
                   <div className="px-5 pb-4">
                     {post.title && (
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
@@ -315,7 +471,6 @@ const MyFeedPage = () => {
                     </div>
                   </div>
 
-                  {/* Stats */}
                   <div className="flex items-center justify-between px-5 py-3 border-t bg-gray-50 dark:bg-gray-800/50">
                     <div className="flex gap-5 text-sm">
                       <span className="flex items-center gap-1 text-red-500">
@@ -350,7 +505,7 @@ const MyFeedPage = () => {
 
           {loading && currentPage > 1 && (
             <div className="text-center py-4">
-              <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           )}
 
@@ -362,7 +517,6 @@ const MyFeedPage = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <Card className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-xl">
@@ -391,7 +545,6 @@ const MyFeedPage = () => {
         </div>
       )}
 
-      {/* Toast */}
       {shareToast && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50">
           {shareToast}
@@ -402,4 +555,3 @@ const MyFeedPage = () => {
 };
 
 export default MyFeedPage;
-

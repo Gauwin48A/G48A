@@ -37,6 +37,40 @@ const Complaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [latestReference, setLatestReference] = useState('');
+  const [latestSubmittedAt, setLatestSubmittedAt] = useState('');
+
+  const toModerationSafeMessage = (rawMessage, fallbackMessage) => {
+    const message = String(rawMessage || '').trim();
+    if (!message) return fallbackMessage;
+    const lowered = message.toLowerCase();
+
+    if (lowered.includes('unauthorized') || lowered.includes('token') || lowered.includes('login')) {
+      return 'Please sign in again and retry this action.';
+    }
+    if (lowered.includes('network') || lowered.includes('timeout') || lowered.includes('failed to fetch')) {
+      return 'Support services are temporarily unreachable. Please retry shortly.';
+    }
+    if (lowered.includes('required') || lowered.includes('invalid') || lowered.includes('validation')) {
+      return 'Some required complaint details are missing or invalid. Please review the form.';
+    }
+    if (lowered.includes('not found') || lowered.includes('post')) {
+      return 'We could not match the provided listing details. Verify Post ID and try again.';
+    }
+    return fallbackMessage;
+  };
+
+  const extractReferenceId = (payload) => {
+    const reference = payload?.complaint_id
+      || payload?.id
+      || payload?.ticket_id
+      || payload?.reference_id
+      || payload?.reference
+      || payload?.complaint?.complaint_id
+      || payload?.complaint?.id
+      || '';
+    return reference ? String(reference) : '';
+  };
 
   // Scroll handler
   useEffect(() => {
@@ -72,12 +106,12 @@ const Complaints = () => {
           setComplaints(data);
           setError(null);
         } else {
-          setError(data.error || 'Failed to fetch complaints');
+          setError(toModerationSafeMessage(data.error, 'Unable to load complaints right now.'));
         }
         setLoading(false);
       })
       .catch(err => {
-        setError(err.message || 'Failed to fetch complaints');
+        setError(toModerationSafeMessage(err.message, 'Unable to load complaints right now.'));
         setLoading(false);
       });
   };
@@ -95,6 +129,23 @@ const Complaints = () => {
     }));
   };
 
+  const copyLatestReference = async () => {
+    if (!latestReference) return;
+    try {
+      await navigator.clipboard.writeText(latestReference);
+      toast({
+        title: "Reference Copied",
+        description: "Use this ID if you need to follow up with support."
+      });
+    } catch {
+      toast({
+        title: "Unable to Copy",
+        description: "Please copy the reference manually.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSubmitComplaint = async (e) => {
     e.preventDefault();
 
@@ -105,8 +156,8 @@ const Complaints = () => {
 
     if (!complaintForm.postId || !complaintForm.description) {
       toast({
-        title: "Incomplete Form",
-        description: "Post ID and description are required",
+        title: "Missing Details",
+        description: "Post ID and issue details are required before submission.",
         variant: "destructive"
       });
       return;
@@ -138,9 +189,14 @@ const Complaints = () => {
       const data = await response.json();
 
       if (response.ok) {
+        const referenceId = extractReferenceId(data);
+        setLatestReference(referenceId || 'Pending assignment');
+        setLatestSubmittedAt(new Date().toISOString());
         toast({
-          title: "✅ Complaint Submitted",
-          description: data.message || "We'll review your complaint within 24-48 hours"
+          title: "Complaint Received",
+          description: referenceId
+            ? `Reference ID: ${referenceId}. We will review this within 24-48 hours.`
+            : (data.message || "Your complaint was received. You can track status in My Complaints.")
         });
         setComplaintForm({
           sellerId: '',
@@ -153,15 +209,15 @@ const Complaints = () => {
         fetchMyComplaints();
       } else {
         toast({
-          title: "❌ Submission Failed",
-          description: data.error || 'Failed to submit complaint',
+          title: "Could Not Submit Complaint",
+          description: toModerationSafeMessage(data.error, 'Please review details and retry.'),
           variant: "destructive"
         });
       }
     } catch (err) {
       toast({
-        title: "❌ Network Error",
-        description: err.message || 'Could not connect to server',
+        title: "Submission Unavailable",
+        description: toModerationSafeMessage(err.message, 'Support services are unreachable right now.'),
         variant: "destructive"
       });
     } finally {
@@ -422,6 +478,28 @@ const Complaints = () => {
           </CardContent>
         </Card>
 
+        {latestReference && (
+          <Card className="shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden">
+            <CardContent className="p-5">
+              <p className="text-sm text-blue-800 dark:text-blue-300 mb-1">Latest complaint reference</p>
+              <p className="font-mono text-lg font-bold text-blue-900 dark:text-blue-200">{latestReference}</p>
+              {latestSubmittedAt && (
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  Submitted {new Date(latestSubmittedAt).toLocaleString()}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2 mt-3">
+                <Button type="button" variant="outline" className="border-blue-300 text-blue-800" onClick={copyLatestReference}>
+                  Copy reference
+                </Button>
+                <Button type="button" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={fetchMyComplaints}>
+                  Refresh complaint status
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* My Complaints History */}
         <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
           <CardHeader className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6">
@@ -441,7 +519,10 @@ const Complaints = () => {
               </div>
             ) : error ? (
               <div className="text-center py-8">
-                <p className="text-red-500 dark:text-red-400">{error}</p>
+                <p className="text-red-500 dark:text-red-400 mb-3">{error}</p>
+                <Button type="button" variant="outline" onClick={fetchMyComplaints}>
+                  Retry
+                </Button>
               </div>
             ) : displayedComplaints.length === 0 ? (
               <div className="text-center py-12">

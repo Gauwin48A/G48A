@@ -9,7 +9,7 @@ const cors = require("cors");
 const compression = require("compression");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
-const { apiLimiter, sanitizeInput, securityHeaders } = require('./middleware/security');
+const { apiLimiter, sanitizeInput, securityHeaders, authenticateToken } = require('./middleware/security');
 const { wafEvidenceHeaders, wafRequestFilter } = require('./middleware/wafEnforcement');
 const cacheLayer = require('./config/redisCache');
 const sessionStore = require('./config/redisSession');
@@ -86,6 +86,25 @@ app.set('query parser', 'extended');
 
 const sanitizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
 const isDevelopment = process.env.NODE_ENV !== 'production';
+const isProduction = process.env.NODE_ENV === 'production';
+
+function parseBooleanEnv(rawValue, fallback) {
+  if (rawValue === undefined || rawValue === null || rawValue === '') return fallback;
+  const normalized = String(rawValue).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  return fallback;
+}
+
+const disableBackgroundJobs = parseBooleanEnv(process.env.DISABLE_BACKGROUND_JOBS, false);
+const enableTestNotificationEndpoint = parseBooleanEnv(
+  process.env.ENABLE_TEST_NOTIFICATION_ENDPOINT,
+  !isProduction
+);
+const readinessTreatDegradedAsNotReady = parseBooleanEnv(
+  process.env.READINESS_DEGRADED_AS_NOT_READY,
+  isProduction
+);
 const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 const defaultCorsOrigins = [
   "http://localhost:5173",
@@ -296,7 +315,11 @@ app.use('/api/transactions', transactionsRoutes);
 
 // Blue Team Gap 3: Initialize CRON Jobs
 const { initCronJobs } = require('./jobs/cronJobs.js');
-initCronJobs();
+if (disableBackgroundJobs) {
+  console.warn('[Startup] Background jobs disabled via DISABLE_BACKGROUND_JOBS=true');
+} else {
+  initCronJobs();
+}
 
 // Defender Prompt 5: Translation Worker
 const translationRoutes = require('./routes/translation.js');
@@ -376,7 +399,10 @@ app.get('/api/ready', async (req, res) => {
       cacheService: cacheLayer,
       sessionStore
     });
-    const statusCode = readiness.status === 'not_ready' ? 503 : 200;
+    const statusCode = readiness.status === 'not_ready'
+      || (readinessTreatDegradedAsNotReady && readiness.status === 'degraded')
+      ? 503
+      : 200;
     return res.status(statusCode).json(readiness);
   } catch (err) {
     return res.status(503).json({
@@ -392,18 +418,27 @@ app.get('/', (req, res) => {
   res.send('Backend running successfully.');
 });
 
-// Test Notification Endpoint
-app.post('/api/test-notification', (req, res) => {
-  const { message, type = 'info' } = req.body;
-  io.emit('notification', {
-    id: Date.now(),
-    title: 'Test Notification',
-    message: message || 'This is a test notification from server',
-    type,
-    timestamp: new Date()
+const requireAdminRole = (req, res, next) => {
+  const role = String(req.user?.role || req.user?.userRole || '').trim().toLowerCase();
+  if (role === 'admin' || role === 'super_admin' || role === 'superadmin') {
+    return next();
+  }
+  return res.status(403).json({ error: 'Admin access required.' });
+};
+
+if (enableTestNotificationEndpoint) {
+  app.post('/api/test-notification', authenticateToken, requireAdminRole, (req, res) => {
+    const { message, type = 'info' } = req.body;
+    io.emit('notification', {
+      id: Date.now(),
+      title: 'Test Notification',
+      message: message || 'This is a test notification from server',
+      type,
+      timestamp: new Date()
+    });
+    res.json({ status: 'sent', message });
   });
-  res.json({ status: 'sent', message });
-});
+}
 
 const logger = require('./config/logger');
 const { ensureUserTierColumns, ensureSchemaPreflight } = require('./services/schemaGuard');
@@ -448,6 +483,11 @@ const listenOnPort = (port) =>
   });
 
 const startBackgroundJobs = () => {
+  if (disableBackgroundJobs) {
+    logger.warn('[Startup] Delayed background jobs are disabled.');
+    return;
+  }
+
   // PROTOCOL: VALUE HIERARCHY - Check expiring subscriptions on startup
   try {
     const { checkExpiringSubscriptions } = require('./services/subscriptionNotifications');
@@ -495,14 +535,6 @@ const startServer = async () => {
     }
   }
 };
-function parseBooleanEnv(rawValue, fallback) {
-  if (rawValue === undefined || rawValue === null || rawValue === '') return fallback;
-  const normalized = String(rawValue).trim().toLowerCase();
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
-  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
-  return fallback;
-}
-
 const strictSchemaContract = isDevelopment
   ? parseBooleanEnv(process.env.STRICT_SCHEMA_CONTRACT, false)
   : parseBooleanEnv(process.env.STRICT_SCHEMA_CONTRACT, true);

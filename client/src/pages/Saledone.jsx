@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import { useTranslation } from 'react-i18next';
 import PageHeader from '../components/PageHeader';
+import TransactionStepper from '../components/TransactionStepper';
 
 const Saledone = () => {
   const { t } = useTranslation();
@@ -32,6 +33,13 @@ const Saledone = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationType, setConfirmationType] = useState('');
+  const saleFlowSteps = [
+    { key: 'listing', label: 'Listing Live', hint: 'Buyer discovers post' },
+    { key: 'offer', label: 'Deal Agreed', hint: 'Price and terms finalized' },
+    { key: 'handover', label: 'Payment/Handover', hint: 'Both parties complete exchange' },
+    { key: 'confirm', label: 'Dual Confirmation', hint: 'Buyer and seller verify codes' },
+    { key: 'complete', label: 'Sale Completed', hint: 'Trust points and history updated' }
+  ];
 
   // Scroll handler
   useEffect(() => {
@@ -88,7 +96,7 @@ const Saledone = () => {
       setConfirmationType('seller');
       setShowConfirmation(true);
       toast({
-        title: "🎉 " + t('sale_confirmation_initiated'),
+        title: t('sale_confirmation_initiated') || "Sale Confirmation Started",
         description: t('buyer_will_be_notified')
       });
     }, 1500);
@@ -103,7 +111,7 @@ const Saledone = () => {
       setConfirmationType('buyer');
       setShowConfirmation(true);
       toast({
-        title: "✅ " + t('sale_confirmed_successfully'),
+        title: t('sale_confirmed_successfully') || "Sale Confirmed",
         description: t('both_parties_verified')
       });
     }, 1500);
@@ -245,6 +253,7 @@ const Saledone = () => {
             {t('complete_dual_verification')}
           </p>
         </div>
+        <TransactionStepper steps={saleFlowSteps} currentStep={3} />
 
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-3">
@@ -471,6 +480,16 @@ const Saledone = () => {
                 </form>
               </TabsContent>
             </Tabs>
+          </CardContent>
+        </Card>
+        <Card className="shadow-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 rounded-2xl">
+          <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <p className="text-sm text-amber-800 dark:text-amber-300">
+              Need to revert a completed transaction because payment or handover failed?
+            </p>
+            <Button type="button" variant="outline" onClick={() => navigate('/saleundone')}>
+              Open Sale Undone
+            </Button>
           </CardContent>
         </Card>
 
