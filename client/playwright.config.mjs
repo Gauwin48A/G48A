@@ -15,6 +15,7 @@ export default defineConfig({
   use: {
     baseURL,
     headless: true,
+    serviceWorkers: 'block',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'

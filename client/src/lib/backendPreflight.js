@@ -1,6 +1,7 @@
 import { getApiRootUrl } from '@/lib/networkConfig';
 
 const PRECHECK_TIMEOUT_MS = Number.parseInt(import.meta.env.VITE_BACKEND_PREFLIGHT_TIMEOUT_MS || '3500', 10);
+const BACKUP_PROBE_STAGGER_MS = Number.parseInt(import.meta.env.VITE_BACKEND_PREFLIGHT_STAGGER_MS || '75', 10);
 const LOCAL_DEV_BACKEND_ORIGINS = ['http://localhost:5001', 'http://localhost:5000'];
 const LOCALHOST_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
 
@@ -85,66 +86,136 @@ function getApiOriginFromHealthUrl(url) {
     }
 }
 
-export async function runBackendPreflight() {
-    const candidateUrls = getCandidateHealthUrls();
-    let lastFailure = null;
+function wait(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
 
-    for (let index = 0; index < candidateUrls.length; index += 1) {
-        const healthUrl = candidateUrls[index];
-        try {
-            const response = await withTimeout(
-                fetch(healthUrl, {
-                    method: 'GET',
-                    credentials: 'include',
-                    cache: 'no-store',
-                    headers: {
-                        Accept: 'application/json'
-                    }
-                }),
-                PRECHECK_TIMEOUT_MS
-            );
-            const bodyText = await response.text();
-            const payload = parseJsonSafe(bodyText);
+async function probeHealthUrl(healthUrl) {
+    try {
+        const response = await withTimeout(
+            fetch(healthUrl, {
+                method: 'GET',
+                credentials: 'include',
+                cache: 'no-store',
+                headers: {
+                    Accept: 'application/json'
+                }
+            }),
+            PRECHECK_TIMEOUT_MS
+        );
+        const bodyText = await response.text();
+        const payload = parseJsonSafe(bodyText);
 
-            if (!response.ok) {
-                lastFailure = {
+        if (!response.ok) {
+            return {
+                ok: false,
+                failure: {
                     healthUrl,
                     status: response.status,
                     bodyText
-                };
-                continue;
-            }
+                }
+            };
+        }
 
-            if (!looksLikeMhubHealth(payload)) {
-                lastFailure = {
+        if (!looksLikeMhubHealth(payload)) {
+            return {
+                ok: false,
+                failure: {
                     healthUrl,
                     status: response.status,
                     bodyText: bodyText || 'Unexpected health payload'
-                };
-                continue;
-            }
-
-            const resolvedOrigin = getApiOriginFromHealthUrl(healthUrl);
-            if (typeof window !== 'undefined' && resolvedOrigin) {
-                window.__MHUB_API_ORIGIN_OVERRIDE__ = resolvedOrigin;
-            }
-
-            return {
-                ok: true,
-                healthUrl,
-                resolvedOrigin
+                }
             };
-        } catch (error) {
-            lastFailure = {
+        }
+
+        const resolvedOrigin = getApiOriginFromHealthUrl(healthUrl);
+        if (typeof window !== 'undefined' && resolvedOrigin) {
+            window.__MHUB_API_ORIGIN_OVERRIDE__ = resolvedOrigin;
+        }
+
+        return {
+            ok: true,
+            healthUrl,
+            resolvedOrigin
+        };
+    } catch (error) {
+        return {
+            ok: false,
+            failure: {
                 healthUrl,
                 status: null,
                 bodyText: error?.message || String(error)
-            };
-        }
+            }
+        };
     }
+}
 
-    return {
-        ok: false,
-        failure: lastFailure
-    };
+function promiseAnyFallback(promises) {
+    return new Promise((resolve, reject) => {
+        let pending = promises.length;
+        const errors = [];
+
+        if (pending === 0) {
+            reject(new Error('No promises provided'));
+            return;
+        }
+
+        promises.forEach((promise, index) => {
+            Promise.resolve(promise)
+                .then(resolve)
+                .catch((error) => {
+                    errors[index] = error;
+                    pending -= 1;
+                    if (pending === 0) {
+                        reject(errors);
+                    }
+                });
+        });
+    });
+}
+
+async function firstSuccessfulProbe(probePromises) {
+    if (typeof Promise.any === 'function') {
+        return Promise.any(probePromises);
+    }
+    return promiseAnyFallback(probePromises);
+}
+
+export async function runBackendPreflight() {
+    const candidateUrls = getCandidateHealthUrls();
+    const failuresByUrl = new Map();
+
+    const probePromises = candidateUrls.map((healthUrl, index) =>
+        (async () => {
+            if (index > 0 && BACKUP_PROBE_STAGGER_MS > 0) {
+                await wait(index * BACKUP_PROBE_STAGGER_MS);
+            }
+            return probeHealthUrl(healthUrl);
+        })().then((result) => {
+            if (result.ok) {
+                return result;
+            }
+            failuresByUrl.set(healthUrl, result.failure);
+            throw result.failure;
+        })
+    );
+
+    try {
+        return await firstSuccessfulProbe(probePromises);
+    } catch {
+        const preferredFailure =
+            candidateUrls.map((url) => failuresByUrl.get(url)).find(Boolean) ||
+            {
+                healthUrl: candidateUrls[0] || '/api/health',
+                status: null,
+                bodyText: 'Backend preflight failed'
+            };
+
+        return {
+            ok: false,
+            failure: preferredFailure
+        };
+    }
 }

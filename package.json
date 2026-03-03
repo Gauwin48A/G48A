@@ -14,6 +14,7 @@
     "check:proactive-workflow-contract": "node scripts/check-proactive-workflow-contract.js",
     "proactive:verify-alert-lifecycle": "node scripts/verify-proactive-alert-lifecycle.js",
     "proactive:verify-alert-lifecycle:auto-token": "node scripts/run-proactive-alert-lifecycle.js",
+    "check:testcase-catalog": "node scripts/check-testcase-catalog.js",
     "audit:worktree": "node scripts/worktree-risk-audit.js",
     "cleanup:checklist": "node scripts/release-cleanup-checklist.js",
     "backup:evidence:refresh": "node scripts/refresh-backup-evidence.js",

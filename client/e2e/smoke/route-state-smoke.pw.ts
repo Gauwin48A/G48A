@@ -1,6 +1,54 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Route State Smoke', () => {
+  test.beforeEach(async ({ page }) => {
+    // Bootstrap preflight probes /api/health before routes render.
+    await page.route('**/api/health**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'ok', db: 'connected', time: new Date().toISOString() })
+      });
+    });
+
+    // Keep background telemetry/refresh/location calls deterministic in smoke mode.
+    await page.route('**/api/auth/refresh-token**', async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, message: 'Not authenticated' })
+      });
+    });
+
+    await page.route('**/api/analytics/**', async (route) => {
+      await route.fulfill({
+        status: 202,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true })
+      });
+    });
+
+    await page.route('**/api/location**', async (route) => {
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true })
+      });
+    });
+
+    await page.route('**/api/posts/*/view**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true })
+      });
+    });
+
+    await page.route('**/socket.io/**', async (route) => {
+      await route.abort('failed');
+    });
+  });
+
   test('shows recoverable search category error state', async ({ page }) => {
     await page.route('**/api/categories**', async (route) => {
       await route.fulfill({

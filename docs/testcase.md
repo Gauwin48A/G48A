@@ -377,8 +377,38 @@ This document defines executable test cases for routed pages in `client/src/App.
 | TIR-002 | Upgrade failure UX | MA | P0 | Force upgrade API failure | Toast + inline recoverable error appears (no alert pop-up) |
 | TIR-003 | Retry/alternate CTA availability | MA | P1 | Retry after failure | Upgrade can be retried or user can navigate safely |
 
+## Platform Feature Cases
+| TC ID | Feature Sub-area | Type | Priority | Steps | Expected |
+| --- | --- | --- | --- | --- | --- |
+| FEA-001 | `Auth/session/2FA` | MA | P0 | Execute signup -> login -> forgot/reset password -> 2FA enable/verify/disable | Auth lifecycle succeeds with safe error handling and retry |
+| FEA-002 | `User profile and tier handling` | MA | P0 | Update profile data, then upgrade tier and verify new limits | Profile and tier state stay consistent across refresh |
+| FEA-003 | `Post lifecycle` | MA | P0 | Create post, open detail, edit, archive/sold, reactivate | Post state transitions are persisted and reflected in all views |
+| FEA-004 | `Feed/recommendations/nearby/search` | MA | P0 | Compare discovery routes with same user/session context | Recommendations, nearby, and search stay coherent with filters and auth |
+| FEA-005 | `Pagination and payload controls` | A | P1 | Request paged datasets with limit/cursor inputs | Stable ordering, no duplicates, bounded payload sizes |
+| FEA-006 | `Payment submit/verify/retry/reconcile` | MA | P0 | Submit payment, force verification failure, retry, run reconciliation | Transaction reaches terminal consistent state without data drift |
+| FEA-007 | `Sale OTP handshake` | MA | P0 | Run buyer/seller sale confirmation with OTP mismatch and retry | Sale confirms only on valid OTP and records audit trail |
+| FEA-008 | `KYC routing + manual review queue` | MA | P0 | Submit KYC, trigger manual-review path, resolve review | KYC status and queue ownership update correctly |
+| FEA-009 | `Complaints lifecycle + SLA + evidence` | MA | P0 | File complaint with evidence, advance status across SLA checkpoints | SLA timestamps and evidence links remain intact |
+| FEA-010 | `Reviews lifecycle + moderation controls` | MA | P1 | Submit review, trigger moderation action, verify visibility updates | Moderated content state is enforced consistently |
+| FEA-011 | `WAF + abuse limiter + webhook integrity` | A | P0 | Replay malicious payloads and webhook signature edge cases | Requests are blocked/throttled; forged webhooks rejected |
+| FEA-012 | `Chat messaging + read-state controls` | MA | P1 | Send/receive chat messages and toggle read state under reconnect | Message order and unread counters remain correct |
+| FEA-013 | `CI quality gates + bundle budget gate` | A | P1 | Run CI gate scripts including bundle budget and ux/network checks | Gate fails on contract drift and passes on compliant build |
+| FEA-014 | `Monitoring ownership + incident runbook linkage` | M | P1 | Trigger alert scenario and trace owner/runbook references | Alerts map to explicit owners and actionable runbook links |
+| FEA-015 | `Readiness endpoint dependency checks` | A | P0 | Call readiness endpoint with db/cache healthy and degraded states | Readiness output reflects dependency truth and recommendation |
+| FEA-016 | `Migration safety/idempotency evidence` | A | P0 | Re-run migration scripts on initialized schema | No destructive drift; idempotency evidence generated |
+| FEA-017 | `Split load profile (legit vs abuse) + tuned limiter policy` | A | P1 | Execute mixed load profile simulation | Legit traffic remains within SLO while abusive traffic throttles |
+| FEA-018 | `Authenticated read/write load profile coverage` | A | P1 | Run authenticated read/write load suite | Throughput and error rates remain within agreed thresholds |
+| FEA-019 | `ML fraud challenge cohort rollout with telemetry` | MA | P1 | Toggle fraud challenge cohort flag and submit risk events | Cohort behavior and telemetry tagging match rollout config |
+| FEA-020 | `Fraud telemetry persistence + export sink path` | A | P1 | Emit fraud events and execute export job | Events persist, export payload is complete and schema-valid |
+| FEA-021 | `Progressive flag lifecycle + audit + rollback simulation` | A | P1 | Roll out feature flag progressively, audit, rollback | Rollout and rollback events are fully auditable |
+| FEA-022 | `Multi-region tabletop drill (trigger->failover->rollback)` | M | P1 | Execute documented tabletop sequence | Decision points and rollback criteria are validated |
+| FEA-023 | `Multi-region active-active orchestration command set` | A | P1 | Run orchestration commands in dry-run and guarded modes | Commands execute in expected order with safety checks |
+| FEA-024 | `Multi-region DB/queue safety gate + idempotency audit` | A | P1 | Run dependency gate and queue idempotency audit scripts | Gate blocks unsafe state and emits actionable findings |
+| FEA-025 | `Multi-region active-active deployment automation (live infra execution)` | M | P2 | Validate preconditions and dry-run path for blocked live automation | Blocked status is explicit with documented unblock criteria |
+
 ## Completion Checklist
-- [ ] Every route in `App.jsx` is covered by at least one page-specific test case.
-- [ ] Every high-risk route has explicit `loading/empty/error/retry/auth-gate` checks.
-- [ ] Aliases and redirects are validated.
+- [x] Every route in `App.jsx` is covered by at least one page-specific test case.
+- [x] Every feature in `FEATURE_COMPLETION_MATRIX.md` is mapped to at least one test case.
+- [x] Every high-risk route has explicit `loading/empty/error/retry/auth-gate` checks.
+- [x] Aliases and redirects are validated.
 - [ ] P0 cases are automated or queued for immediate automation.

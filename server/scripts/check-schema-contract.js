@@ -1,7 +1,10 @@
 const { evaluateSchemaContract } = require('../src/services/schemaGuard');
 
 async function main() {
-  const report = await evaluateSchemaContract({ autoCreateTwoFactorFallback: true });
+  const report = await evaluateSchemaContract({
+    autoCreateTwoFactorFallback: true,
+    autoCreateUsersTwoFactorColumns: true
+  });
   const issues = [];
 
   for (const [tableName, check] of Object.entries(report.tableChecks || {})) {
