@@ -17,6 +17,8 @@ import {
   FaBookmark as Po,
   FaRegBookmark as Ro,
   FaEllipsisV as To,
+  FaChevronLeft as Lo,
+  FaChevronRight as Co,
 } from "react-icons/fa";
 import { useNavigate as Je, useLocation as Ke } from "react-router-dom";
 import { useFilter as We } from "@/context/FilterContext";
@@ -28,7 +30,10 @@ import A from "@/lib/api";
 import { getUserId as tt, isAuthenticated as rt } from "@/utils/authStorage";
 import { fetchCategoriesCached as at } from "@/services/categoriesService";
 import pt from "@/components/ShareLinkDialog";
-import { resolveMediaUrl as utm } from "@/lib/mediaUrl";
+import {
+  normalizeMediaList as ctm,
+  resolveMediaUrl as utm,
+} from "@/lib/mediaUrl";
 const ve = 5,
   SHOW_POST_ID_CHIP = !0,
   D = "/placeholder.svg",
@@ -36,6 +41,7 @@ const ve = 5,
     search: "",
     category: "All",
     sortBy: "",
+    latestWindow: "",
     location: "",
     minPrice: "",
     maxPrice: "",
@@ -64,22 +70,39 @@ const ve = 5,
     return m < 24 ? `${m}h ago` : `${Math.floor(m / 24)}d ago`;
   },
   isDateOnlyValue = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || "")),
+  normalizeLatestWindow = (s) => {
+    const c = Number.parseInt(String(s || ""), 10);
+    return c === 5 || c === 10 ? c : null;
+  },
   toInclusiveEndDateValue = (s) =>
     isDateOnlyValue(s) ? `${s}T23:59:59.999` : s,
+  collectPostImageUrls = (s) => {
+    if (!s) return [D];
+    const c = [];
+    const l = (t) => {
+      ctm(t).forEach((m) => {
+        const p = utm(m, D);
+        p && c.push(p);
+      });
+    };
+    (l(s.images),
+      l(s.image_urls),
+      l(s.imageUrls),
+      l(s.image_url),
+      l(s.imageUrl),
+      l(s.thumbnail));
+    const t = Array.from(
+      new Set(
+        c
+          .map((m) => String(m || "").trim())
+          .filter((m) => !!m && m !== D),
+      ),
+    );
+    return t.length ? t : [D];
+  },
   Ne = (s) => {
-    if (!s) return D;
-    const c = s.image_url || s.imageUrl || s.thumbnail;
-    if (typeof c == "string" && c.trim()) return utm(c, D);
-    const l = s.images;
-    if (Array.isArray(l) && l.length) return utm(l[0] || D, D);
-    if (typeof l == "string" && l.trim())
-      try {
-        const t = JSON.parse(l);
-        return Array.isArray(t) && t.length ? utm(t[0] || D, D) : utm(l, D);
-      } catch {
-        return utm(l, D);
-      }
-    return D;
+    const c = collectPostImageUrls(s);
+    return c[0] || D;
   },
   lt = (s, c) => {
     const l = new Map();
@@ -133,6 +156,7 @@ const ve = 5,
         maxPrice: e.get("maxPrice") || "",
         startDate: e.get("startDate") || "",
         endDate: e.get("endDate") || "",
+        latestWindow: e.get("latestWindow") || "",
         sortBy: e.get("sortBy") || n.sortBy || "",
       }));
     }, [Z.search, h, m]);
@@ -147,7 +171,9 @@ const ve = 5,
       [savedPosts, setSavedPosts] = g({}),
       [shareDialogOpen, setShareDialogOpen] = g(!1),
       [shareDialogUrl, setShareDialogUrl] = g(""),
+      [carouselIndexByPost, setCarouselIndexByPost] = g({}),
       de = k({}),
+      carouselTrackRefs = k({}),
       C = N(() => rt($), [$]);
     (w(() => {
       const e = sessionStorage.getItem("allPostsScrollPosition");
@@ -206,6 +232,10 @@ const ve = 5,
             : localStorage.getItem("mhub_user_city") || "",
         [],
       ),
+      latestWindow = N(
+        () => normalizeLatestWindow(t.latestWindow),
+        [t.latestWindow],
+      ),
       me = x((e) => {
         const a = new URLSearchParams();
         return (
@@ -216,6 +246,9 @@ const ve = 5,
           e.maxPrice && a.set("maxPrice", e.maxPrice),
           e.startDate && a.set("startDate", e.startDate),
           e.endDate && a.set("endDate", e.endDate),
+          e.latestWindow &&
+            normalizeLatestWindow(e.latestWindow) &&
+            a.set("latestWindow", String(normalizeLatestWindow(e.latestWindow))),
           e.sortBy && a.set("sortBy", e.sortBy),
           a.toString()
         );
@@ -231,13 +264,29 @@ const ve = 5,
       ),
       $e = x(
         (e) => {
-          b({ category: e });
+          b({ category: t.category === e ? "All" : e });
         },
-        [b],
+        [b, t.category],
       ),
       Ee = x(() => {
         b({ category: "All" });
       }, [b]),
+      jee = x(
+        (e) => {
+          const a = String(e);
+          if (String(t.latestWindow || "") === a) {
+            b({ latestWindow: "", sortBy: "" });
+            return;
+          }
+          b({
+            latestWindow: a,
+            sortBy: "date_desc",
+            startDate: "",
+            endDate: "",
+          });
+        },
+        [b, t.latestWindow],
+      ),
       Y = x(() => {
         (m(st), T(1), y("/all-posts"));
       }, [y, m]),
@@ -249,6 +298,10 @@ const ve = 5,
           }
           if (e === "date") {
             b({ startDate: "", endDate: "" });
+            return;
+          }
+          if (e === "latestWindow") {
+            b({ latestWindow: "", sortBy: "" });
             return;
           }
           b({ [e]: e === "category" ? "All" : "" });
@@ -263,11 +316,13 @@ const ve = 5,
           !!t.maxPrice ||
           !!t.startDate ||
           !!t.endDate ||
+          !!latestWindow ||
           !!t.sortBy ||
           !!(t.category && t.category !== "All"),
         [
           t.category,
           t.endDate,
+          latestWindow,
           t.location,
           t.maxPrice,
           t.minPrice,
@@ -295,12 +350,18 @@ const ve = 5,
               key: "date",
               label: `Date: ${t.startDate || "any"} to ${t.endDate || "any"}`,
             }),
+          latestWindow &&
+            e.push({
+              key: "latestWindow",
+              label: `Latest: ${latestWindow} posts`,
+            }),
           t.sortBy && e.push({ key: "sortBy", label: `Sort: ${t.sortBy}` }),
           e
         );
       }, [
         t.category,
         t.endDate,
+        latestWindow,
         t.location,
         t.maxPrice,
         t.minPrice,
@@ -308,6 +369,7 @@ const ve = 5,
         t.sortBy,
         t.startDate,
       ]),
+      requestLimit = latestWindow || q,
       be = x(() => {
         const e = new URLSearchParams();
         let a = t.category,
@@ -338,7 +400,9 @@ const ve = 5,
         return (
           t.startDate && e.append("startDate", t.startDate),
           t.endDate && e.append("endDate", toInclusiveEndDateValue(t.endDate)),
-          t.sortBy &&
+          latestWindow &&
+            e.append("latestWindow", String(latestWindow)),
+          (t.sortBy || latestWindow) &&
             (t.sortBy === "price_asc"
               ? (e.append("sortBy", "price"), e.append("sortOrder", "asc"))
               : t.sortBy === "price_desc"
@@ -346,19 +410,24 @@ const ve = 5,
                 : t.sortBy === "date_desc"
                   ? (e.append("sortBy", "created_at"),
                     e.append("sortOrder", "desc"))
-                  : t.sortBy === "date_asc"
+                : t.sortBy === "date_asc"
                     ? (e.append("sortBy", "created_at"),
                       e.append("sortOrder", "asc"))
+                    : latestWindow
+                      ? (e.append("sortBy", "created_at"),
+                        e.append("sortOrder", "desc"))
                     : (e.append("sortBy", t.sortBy),
                       e.append("sortOrder", "desc"))),
           e.append("page", L),
-          e.append("limit", q),
+          e.append("limit", requestLimit),
           e
         );
       }, [
         h,
         ce,
         L,
+        latestWindow,
+        requestLimit,
         t.category,
         t.endDate,
         t.location,
@@ -368,7 +437,6 @@ const ve = 5,
         t.search,
         t.sortBy,
         t.startDate,
-        q,
       ]);
     (w(() => {
       const e = P.current + 1;
@@ -396,16 +464,19 @@ const ve = 5,
             let p = Array.isArray(i.posts) ? i.posts : [];
             if ((l && l !== "en" && (p = await Re(p, l)), e !== P.current))
               return;
-            (O(L === 1 ? p : (d) => lt(d, p)), z(null));
-            const F = {},
-              _ = {};
-            (p.forEach((d) => {
-              ((F[d.post_id || d.id] = d.likes || 0),
-                (_[d.post_id || d.id] = d.views_count || d.views || 0));
+            const F = latestWindow
+              ? p.slice(0, latestWindow)
+              : p;
+            (O(L === 1 ? F : (d) => lt(d, F)), z(null));
+            const _ = {},
+              Vt = {};
+            (F.forEach((d) => {
+              ((_[d.post_id || d.id] = d.likes || 0),
+                (Vt[d.post_id || d.id] = d.views_count || d.views || 0));
             }),
-              se((d) => ({ ...d, ...F })),
-              oe((d) => ({ ...d, ..._ })),
-              ee(p.length === q));
+              se((d) => ({ ...d, ..._ })),
+              oe((d) => ({ ...d, ...Vt })),
+              ee(latestWindow ? !1 : p.length === requestLimit));
           } catch (n) {
             if (n?.name === "AbortError" || e !== P.current) return;
             (z(n.message || "Failed to fetch posts"), O([]), ee(!1));
@@ -429,13 +500,15 @@ const ve = 5,
         t.maxPrice,
         t.startDate,
         t.endDate,
+        t.latestWindow,
         t.sortBy,
       ]));
     const J = x(() => {
-      E || !H || T((e) => e + 1);
-    }, [E, H]);
+      E || !H || latestWindow || T((e) => e + 1);
+    }, [E, H, latestWindow]);
     w(() => {
       const e = () => {
+        if (latestWindow) return;
         C &&
           window.innerHeight + document.documentElement.scrollTop >=
             document.documentElement.offsetHeight - 1e3 &&
@@ -445,10 +518,17 @@ const ve = 5,
         window.addEventListener("scroll", e, { passive: !0 }),
         () => window.removeEventListener("scroll", e)
       );
-    }, [J, C]);
+    }, [J, C, latestWindow]);
     const K = N(
-        () => (!f || f.length === 0 ? [] : C ? f : f.slice(0, ve)),
-        [f, C],
+        () =>
+          !f || f.length === 0
+            ? []
+            : latestWindow
+              ? f.slice(0, latestWindow)
+              : C
+                ? f
+                : f.slice(0, ve),
+        [f, C, latestWindow],
       ),
       U = k(new Set()),
       fe = k(new Set()),
@@ -460,7 +540,66 @@ const ve = 5,
           (fe.current.add(a),
           U.current.add(a),
           oe((o) => ({ ...o, [a]: (o[a] || 0) + 1 })));
-      }, []);
+      }, []),
+      setCarouselTrackRef = x((e, a) => {
+        const o = I(e);
+        if (!o) return;
+        if (!a) {
+          delete carouselTrackRefs.current[o];
+          return;
+        }
+        carouselTrackRefs.current[o] = a;
+      }, []),
+      updateCarouselIndex = x((e, a) => {
+        const o = I(e);
+        if (!o) return;
+        setCarouselIndexByPost((n) =>
+          n[o] === a ? n : { ...n, [o]: a },
+        );
+      }, []),
+      getCarouselIndex = x(
+        (e, a) => {
+          const o = I(e);
+          if (!o || !a || a <= 0) return 0;
+          const n = Number(carouselIndexByPost[o] ?? 0);
+          if (!Number.isFinite(n) || n < 0) return 0;
+          if (n >= a) return a - 1;
+          return n;
+        },
+        [carouselIndexByPost],
+      ),
+      scrollCarouselToIndex = x(
+        (e, a, o) => {
+          const n = I(e);
+          if (!n || !o || o <= 0) return;
+          const i = carouselTrackRefs.current[n];
+          if (!i) return;
+          const p = ((a % o) + o) % o;
+          i.scrollTo({ left: i.clientWidth * p, behavior: "smooth" });
+          updateCarouselIndex(n, p);
+        },
+        [updateCarouselIndex],
+      ),
+      moveCarousel = x(
+        (e, a, o, n) => {
+          if (o <= 1) return;
+          n.preventDefault();
+          n.stopPropagation();
+          const i = getCarouselIndex(e, o);
+          scrollCarouselToIndex(e, i + a, o);
+        },
+        [getCarouselIndex, scrollCarouselToIndex],
+      ),
+      handleCarouselScroll = x(
+        (e, a, o) => {
+          if (o <= 1) return;
+          const n = a.currentTarget;
+          const i = n.clientWidth || 1;
+          const p = Math.round(n.scrollLeft / i);
+          updateCarouselIndex(e, Math.max(0, Math.min(o - 1, p)));
+        },
+        [updateCarouselIndex],
+      );
     (w(() => {
       const e = async () => {
           if (U.current.size === 0) return;
@@ -675,10 +814,20 @@ const ve = 5,
               {
                 type: "button",
                 variant: "outline",
-                className: "h-8 border-blue-200 text-blue-700",
-                onClick: () => b({ sortBy: "date_desc" }),
+                className: `h-8 border-blue-200 ${latestWindow === 5 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "text-blue-700"}`,
+                onClick: () => jee(5),
               },
-              "Latest",
+              "Latest 5",
+            ),
+            r.createElement(
+              u,
+              {
+                type: "button",
+                variant: "outline",
+                className: `h-8 border-blue-200 ${latestWindow === 10 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "text-blue-700"}`,
+                onClick: () => jee(10),
+              },
+              "Latest 10",
             ),
             r.createElement(
               u,
@@ -686,7 +835,8 @@ const ve = 5,
                 type: "button",
                 variant: "outline",
                 className: "h-8 border-blue-200 text-blue-700",
-                onClick: () => b({ startDate: ye, endDate: ye }),
+                onClick: () =>
+                  b({ startDate: ye, endDate: ye, latestWindow: "" }),
               },
               "Posted Today",
             ),
@@ -1035,7 +1185,9 @@ const ve = 5,
                       d = Be === a,
                       Oe = _.length >= 120,
                       he = nt(e.created_at || e.createdAt),
-                      we = e.location || e.city || e.area || "";
+                      we = e.location || e.city || e.area || "",
+                      imageList = collectPostImageUrls(e),
+                      activeImageIndex = getCarouselIndex(a, imageList.length);
                     return r.createElement(
                       S,
                       {
@@ -1216,15 +1368,102 @@ const ve = 5,
                             ),
                           ),
                       ),
-                      r.createElement("img", {
-                        src: Ne(e),
-                        alt: e.title || "Post",
-                        className:
-                          "w-full h-48 md:h-56 object-cover bg-gray-100 dark:bg-gray-700",
-                        onError: (X) => {
-                          X.currentTarget.src = D;
+                      r.createElement(
+                        "div",
+                        {
+                          className:
+                            "relative w-full bg-slate-100 dark:bg-slate-900/70 border-y border-slate-200/70 dark:border-slate-700",
                         },
-                      }),
+                        r.createElement(
+                          "div",
+                          {
+                            ref: (X) => setCarouselTrackRef(a, X),
+                            onScroll: (X) =>
+                              handleCarouselScroll(a, X, imageList.length),
+                            className:
+                              "flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide",
+                          },
+                          imageList.map((X, _t) =>
+                            r.createElement(
+                              "div",
+                              {
+                                key: `${a}-media-${_t}`,
+                                className:
+                                  "w-full shrink-0 snap-center bg-slate-100 dark:bg-slate-800",
+                              },
+                              r.createElement("img", {
+                                src: X,
+                                alt: `${e.title || "Post"} image ${_t + 1}`,
+                                loading: "lazy",
+                                className:
+                                  "w-full h-[280px] md:h-[420px] object-cover object-center",
+                                onError: (Nt) => {
+                                  Nt.currentTarget.src = D;
+                                },
+                              }),
+                            ),
+                          ),
+                        ),
+                        imageList.length > 1 &&
+                          r.createElement(
+                            r.Fragment,
+                            null,
+                            r.createElement(
+                              "button",
+                              {
+                                type: "button",
+                                onClick: (X) =>
+                                  moveCarousel(a, -1, imageList.length, X),
+                                className:
+                                  "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center",
+                                "aria-label": "Previous image",
+                              },
+                              r.createElement(Lo, { className: "w-3 h-3" }),
+                            ),
+                            r.createElement(
+                              "button",
+                              {
+                                type: "button",
+                                onClick: (X) =>
+                                  moveCarousel(a, 1, imageList.length, X),
+                                className:
+                                  "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center",
+                                "aria-label": "Next image",
+                              },
+                              r.createElement(Co, { className: "w-3 h-3" }),
+                            ),
+                            r.createElement(
+                              "div",
+                              {
+                                className:
+                                  "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-[11px] font-medium",
+                              },
+                              activeImageIndex + 1,
+                              "/",
+                              imageList.length,
+                            ),
+                            r.createElement(
+                              "div",
+                              {
+                                className:
+                                  "absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full",
+                              },
+                              imageList.map((X, _t) =>
+                                r.createElement("button", {
+                                  key: `${a}-dot-${_t}`,
+                                  type: "button",
+                                  onClick: (Nt) => {
+                                    Nt.preventDefault();
+                                    Nt.stopPropagation();
+                                    scrollCarouselToIndex(a, _t, imageList.length);
+                                  },
+                                  className: `h-1.5 w-1.5 rounded-full transition-all ${_t === activeImageIndex ? "bg-white w-3" : "bg-white/50"}`,
+                                  "aria-label": `Go to image ${_t + 1}`,
+                                }),
+                              ),
+                            ),
+                          ),
+                      ),
                       r.createElement(
                         "div",
                         {
@@ -1353,6 +1592,7 @@ const ve = 5,
         ),
         C &&
           H &&
+          !latestWindow &&
           !E &&
           !V &&
           K.length > 0 &&
