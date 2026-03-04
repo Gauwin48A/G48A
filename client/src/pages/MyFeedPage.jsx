@@ -1,18 +1,35 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { FaHeart, FaShare, FaEye, FaPlus, FaNewspaper, FaTrash } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/context/AuthContext';
-import { getApiOriginBase } from '@/lib/networkConfig';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  FaHeart,
+  FaShare,
+  FaEye,
+  FaPlus,
+  FaNewspaper,
+  FaTrash,
+  FaBookmark,
+  FaRegBookmark,
+  FaEllipsisV,
+} from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "@/context/AuthContext";
+import { getApiOriginBase } from "@/lib/networkConfig";
+import ShareLinkDialog from "@/components/ShareLinkDialog";
 import {
   PageAuthGateState,
   PageEmptyState,
   PageErrorState,
-  PageLoadingState
-} from '@/components/page-state/PageStateBlocks';
+  PageLoadingState,
+} from "@/components/page-state/PageStateBlocks";
 
 const getPostKey = (post) => post?.post_id ?? post?.id ?? null;
 
@@ -36,7 +53,7 @@ const mergeUniquePosts = (existingPosts, incomingPosts) => {
 const MyFeedPage = () => {
   const { t } = useTranslation();
   const [posts, setPosts] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -48,8 +65,12 @@ const MyFeedPage = () => {
   const [expandedPosts, setExpandedPosts] = useState({});
   const [likeCounts, setLikeCounts] = useState({});
   const [viewCounts, setViewCounts] = useState({});
-  const [shareToast, setShareToast] = useState('');
+  const [shareToast, setShareToast] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [menuPostId, setMenuPostId] = useState(null);
+  const [savedPosts, setSavedPosts] = useState({});
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareDialogUrl, setShareDialogUrl] = useState("");
 
   const activeRequestIdRef = useRef(0);
   const fetchAbortControllerRef = useRef(null);
@@ -57,18 +78,26 @@ const MyFeedPage = () => {
   const scrollTickingRef = useRef(false);
   const shareToastTimeoutRef = useRef(null);
 
-  const userId = authUser?.id || authUser?.user_id || localStorage.getItem('userId') || localStorage.getItem('user_id');
-  const authToken = localStorage.getItem('authToken') || localStorage.getItem('token');
+  const userId =
+    authUser?.id ||
+    authUser?.user_id ||
+    localStorage.getItem("userId") ||
+    localStorage.getItem("user_id");
+  const authToken =
+    localStorage.getItem("authToken") || localStorage.getItem("token");
   const isLoggedIn = Boolean(userId && authToken);
 
-  useEffect(() => () => {
-    if (fetchAbortControllerRef.current) {
-      fetchAbortControllerRef.current.abort();
-    }
-    if (shareToastTimeoutRef.current) {
-      clearTimeout(shareToastTimeoutRef.current);
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (fetchAbortControllerRef.current) {
+        fetchAbortControllerRef.current.abort();
+      }
+      if (shareToastTimeoutRef.current) {
+        clearTimeout(shareToastTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const showToast = useCallback((message) => {
     setShareToast(message);
@@ -76,90 +105,97 @@ const MyFeedPage = () => {
       clearTimeout(shareToastTimeoutRef.current);
     }
     shareToastTimeoutRef.current = setTimeout(() => {
-      setShareToast('');
+      setShareToast("");
       shareToastTimeoutRef.current = null;
     }, 2000);
   }, []);
 
-  const fetchPosts = useCallback(async ({ page = 1, refresh = false } = {}) => {
-    if (!userId) {
-      return;
-    }
-
-    const requestId = activeRequestIdRef.current + 1;
-    activeRequestIdRef.current = requestId;
-    loadingGuardRef.current = true;
-
-    if (fetchAbortControllerRef.current) {
-      fetchAbortControllerRef.current.abort();
-    }
-    const abortController = new AbortController();
-    fetchAbortControllerRef.current = abortController;
-
-    const pageToFetch = page;
-    if (refresh) {
-      setCurrentPage(1);
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const url = `${baseUrl}/api/posts?author=${encodeURIComponent(userId)}&page=${pageToFetch}&limit=${postsPerPage}`;
-      const res = await fetch(url, {
-        signal: abortController.signal,
-        credentials: 'include',
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
-      });
-      if (!res.ok) {
-        throw new Error('fetch_failed');
-      }
-
-      const data = await res.json();
-      const loadedPosts = Array.isArray(data.posts) ? data.posts : [];
-
-      if (requestId !== activeRequestIdRef.current) {
+  const fetchPosts = useCallback(
+    async ({ page = 1, refresh = false } = {}) => {
+      if (!userId) {
         return;
       }
 
-      if (refresh || pageToFetch === 1) {
-        setPosts(loadedPosts);
-      } else {
-        setPosts((prev) => mergeUniquePosts(prev, loadedPosts));
+      const requestId = activeRequestIdRef.current + 1;
+      activeRequestIdRef.current = requestId;
+      loadingGuardRef.current = true;
+
+      if (fetchAbortControllerRef.current) {
+        fetchAbortControllerRef.current.abort();
+      }
+      const abortController = new AbortController();
+      fetchAbortControllerRef.current = abortController;
+
+      const pageToFetch = page;
+      if (refresh) {
+        setCurrentPage(1);
       }
 
-      const likes = {};
-      const views = {};
-      loadedPosts.forEach((post) => {
-        const id = post.post_id || post.id;
-        likes[id] = post.likes || 0;
-        views[id] = post.views_count || post.views || 0;
-      });
-      setLikeCounts((prev) => (refresh ? likes : ({ ...prev, ...likes })));
-      setViewCounts((prev) => (refresh ? views : ({ ...prev, ...views })));
-      setHasMore(loadedPosts.length === postsPerPage);
-    } catch (err) {
-      if (err?.name === 'AbortError') {
-        return;
+      setLoading(true);
+      setError("");
+
+      try {
+        const url = `${baseUrl}/api/feed/mine?page=${pageToFetch}&limit=${postsPerPage}`;
+        const res = await fetch(url, {
+          signal: abortController.signal,
+          credentials: "include",
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+        });
+        if (!res.ok && res.status !== 404) {
+          throw new Error("fetch_failed");
+        }
+
+        const data = await res.json();
+        const loadedPosts = Array.isArray(data)
+          ? data
+          : Array.isArray(data.posts)
+            ? data.posts
+            : [];
+
+        if (requestId !== activeRequestIdRef.current) {
+          return;
+        }
+
+        if (refresh || pageToFetch === 1) {
+          setPosts(loadedPosts);
+        } else {
+          setPosts((prev) => mergeUniquePosts(prev, loadedPosts));
+        }
+
+        const likes = {};
+        const views = {};
+        loadedPosts.forEach((post) => {
+          const id = post.post_id || post.id;
+          likes[id] = post.likes || 0;
+          views[id] = post.views_count || post.views || 0;
+        });
+        setLikeCounts((prev) => (refresh ? likes : { ...prev, ...likes }));
+        setViewCounts((prev) => (refresh ? views : { ...prev, ...views }));
+        setHasMore(loadedPosts.length === postsPerPage);
+      } catch (err) {
+        if (err?.name === "AbortError") {
+          return;
+        }
+        if (requestId !== activeRequestIdRef.current) {
+          return;
+        }
+        setError("Unable to load your feed posts right now. Please retry.");
+        if (refresh || pageToFetch === 1) {
+          setPosts([]);
+        }
+        setHasMore(false);
+      } finally {
+        if (fetchAbortControllerRef.current === abortController) {
+          fetchAbortControllerRef.current = null;
+        }
+        if (requestId === activeRequestIdRef.current) {
+          loadingGuardRef.current = false;
+          setLoading(false);
+        }
       }
-      if (requestId !== activeRequestIdRef.current) {
-        return;
-      }
-      setError('Unable to load your feed posts right now. Please retry.');
-      if (refresh || pageToFetch === 1) {
-        setPosts([]);
-      }
-      setHasMore(false);
-    } finally {
-      if (fetchAbortControllerRef.current === abortController) {
-        fetchAbortControllerRef.current = null;
-      }
-      if (requestId === activeRequestIdRef.current) {
-        loadingGuardRef.current = false;
-        setLoading(false);
-      }
-    }
-  }, [authToken, baseUrl, postsPerPage, userId]);
+    },
+    [authToken, baseUrl, postsPerPage, userId],
+  );
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -204,10 +240,10 @@ const MyFeedPage = () => {
       });
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
       scrollTickingRef.current = false;
     };
   }, [isLoggedIn, loadMorePosts]);
@@ -217,35 +253,78 @@ const MyFeedPage = () => {
   };
 
   const handleRefresh = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
     fetchPosts({ page: 1, refresh: true });
   };
 
   const handleShare = async (postId) => {
     const url = `${window.location.origin}/feed/${postId}`;
+    setShareDialogUrl(url);
+    setShareDialogOpen(true);
     try {
-      await navigator.clipboard.writeText(url);
-      showToast('Link copied.');
+      await fetch(`${baseUrl}/api/posts/${postId}/share`, {
+        method: "POST",
+        credentials: "include",
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      });
     } catch {
-      showToast('Unable to copy link.');
+      // Ignore share counter failures to keep UX responsive.
+    }
+  };
+
+  const toggleSaveMyFeed = async (postId) => {
+    if (!isLoggedIn) {
+      showToast("Please login to save posts");
+      return;
+    }
+
+    const key = String(postId);
+    const isSaved = Boolean(savedPosts[key]);
+    setSavedPosts((prev) => ({ ...prev, [key]: !isSaved }));
+
+    try {
+      if (isSaved) {
+        await fetch(`${baseUrl}/api/wishlist/${key}`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+        });
+      } else {
+        await fetch(`${baseUrl}/api/wishlist`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+          },
+          body: JSON.stringify({ postId: key }),
+        });
+      }
+    } catch {
+      setSavedPosts((prev) => ({ ...prev, [key]: isSaved }));
+      showToast(
+        isSaved ? "Unable to remove saved post." : "Unable to save post.",
+      );
     }
   };
 
   const handleDelete = async (postId) => {
     try {
       const res = await fetch(`${baseUrl}/api/posts/${postId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-        credentials: 'include'
+        credentials: "include",
       });
       if (!res.ok) {
-        throw new Error('delete_failed');
+        throw new Error("delete_failed");
       }
-      setPosts((prev) => prev.filter((post) => (post.post_id || post.id) !== postId));
+      setPosts((prev) =>
+        prev.filter((post) => (post.post_id || post.id) !== postId),
+      );
       setDeleteConfirm(null);
-      showToast('Post deleted.');
+      showToast("Post deleted.");
     } catch {
-      showToast('Unable to delete this post. Please retry.');
+      showToast("Unable to delete this post. Please retry.");
     }
   };
 
@@ -256,7 +335,7 @@ const MyFeedPage = () => {
 
   const timeAgo = (dateString) => {
     if (!dateString) {
-      return '';
+      return "";
     }
     const now = new Date();
     const date = new Date(dateString);
@@ -265,7 +344,7 @@ const MyFeedPage = () => {
     const hrs = Math.floor(diffMs / 3600000);
     const days = Math.floor(diffMs / 86400000);
 
-    if (mins < 1) return 'Just now';
+    if (mins < 1) return "Just now";
     if (mins < 60) return `${mins}m ago`;
     if (hrs < 24) return `${hrs}h ago`;
     if (days < 7) return `${days}d ago`;
@@ -277,26 +356,26 @@ const MyFeedPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700">
         <div className="w-full max-w-md p-4">
           <PageAuthGateState
-            title={t('my_feed') || 'My Feed'}
-            description={t('view_manage_posts') || 'View and manage your posts'}
+            title={t("my_feed") || "My Feed"}
+            description={t("view_manage_posts") || "View and manage your posts"}
             className="bg-white/95"
             marker="auth-gate"
-            primaryAction={(
+            primaryAction={
               <Link
                 to="/login?returnTo=%2Fmy-feed"
                 className="bg-emerald-600 text-white px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-700"
               >
-                {t('login_to_continue') || 'Login to Continue'}
+                {t("login_to_continue") || "Login to Continue"}
               </Link>
-            )}
-            secondaryAction={(
+            }
+            secondaryAction={
               <Link
                 to="/signup?returnTo=%2Fmy-feed"
                 className="border border-emerald-300 text-emerald-700 px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-50"
               >
-                {t('create_account') || 'Create Account'}
+                {t("create_account") || "Create Account"}
               </Link>
-            )}
+            }
           />
         </div>
       </div>
@@ -312,11 +391,11 @@ const MyFeedPage = () => {
               <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
                 <FaNewspaper className="text-3xl text-white/90" />
                 <h1 className="text-2xl md:text-3xl font-bold text-white">
-                  {t('my_feed') || 'My Feed'}
+                  {t("my_feed") || "My Feed"}
                 </h1>
               </div>
               <p className="text-white/70 text-sm">
-                {t('your_posts') || 'Your posts and updates'}
+                {t("your_posts") || "Your posts and updates"}
               </p>
             </div>
 
@@ -330,10 +409,10 @@ const MyFeedPage = () => {
                 Refresh
               </Button>
               <Button
-                onClick={() => navigate('/feed/feedpostadd')}
+                onClick={() => navigate("/feed/feedpostadd")}
                 className="bg-white text-green-600 hover:bg-green-50 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
               >
-                <FaPlus /> {t('new_post') || 'New Post'}
+                <FaPlus /> {t("new_post") || "New Post"}
               </Button>
             </div>
           </div>
@@ -343,28 +422,36 @@ const MyFeedPage = () => {
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border flex items-center justify-between">
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{posts.length}</div>
-            <div className="text-xs text-gray-500">{t('posts') || 'Posts'}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {posts.length}
+            </div>
+            <div className="text-xs text-gray-500">{t("posts") || "Posts"}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {Object.values(viewCounts).reduce((a, b) => a + b, 0)}
             </div>
-            <div className="text-xs text-gray-500">{t('total_views') || 'Total Views'}</div>
+            <div className="text-xs text-gray-500">
+              {t("total_views") || "Total Views"}
+            </div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-red-500">
               {Object.values(likeCounts).reduce((a, b) => a + b, 0)}
             </div>
-            <div className="text-xs text-gray-500">{t('total_likes') || 'Total Likes'}</div>
+            <div className="text-xs text-gray-500">
+              {t("total_likes") || "Total Likes"}
+            </div>
           </div>
         </div>
 
         <div className="space-y-4">
           {loading && currentPage === 1 ? (
             <PageLoadingState
-              title={t('loading') || 'Loading...'}
-              description={t('my_feed_loading_desc') || 'Loading your feed posts.'}
+              title={t("loading") || "Loading..."}
+              description={
+                t("my_feed_loading_desc") || "Loading your feed posts."
+              }
               marker="loading"
             />
           ) : error ? (
@@ -374,34 +461,49 @@ const MyFeedPage = () => {
               onRetry={() => fetchPosts({ page: 1, refresh: true })}
               retryLabel="Retry"
               marker="error"
-              secondaryAction={(
-                <Button variant="outline" className="border-green-300 text-green-700" onClick={() => navigate('/feed')}>
+              secondaryAction={
+                <Button
+                  variant="outline"
+                  className="border-green-300 text-green-700"
+                  onClick={() => navigate("/feed")}
+                >
                   Open public feed
                 </Button>
-              )}
+              }
             />
           ) : posts.length === 0 ? (
             <PageEmptyState
-              title={t('no_posts_yet') || "You haven't posted anything yet"}
-              description={t('share_first') || 'Share your first update with the community.'}
+              title={t("no_posts_yet") || "You haven't posted anything yet"}
+              description={
+                t("share_first") ||
+                "Share your first update with the community."
+              }
               icon={FaNewspaper}
               marker="empty"
-              action={(
+              action={
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button onClick={() => navigate('/feed/feedpostadd')} className="bg-green-600 text-white">
-                    <FaPlus className="mr-2" /> {t('create_first') || 'Create Your First Post'}
+                  <Button
+                    onClick={() => navigate("/feed/feedpostadd")}
+                    className="bg-green-600 text-white"
+                  >
+                    <FaPlus className="mr-2" />{" "}
+                    {t("create_first") || "Create Your First Post"}
                   </Button>
-                  <Button variant="outline" className="border-green-300 text-green-700" onClick={() => navigate('/feed')}>
+                  <Button
+                    variant="outline"
+                    className="border-green-300 text-green-700"
+                    onClick={() => navigate("/feed")}
+                  >
                     Browse feed
                   </Button>
                 </div>
-              )}
+              }
             />
           ) : (
             posts.map((post) => {
               const postId = post.post_id || post.id;
               const isExpanded = expandedPosts[postId];
-              const description = post.description || '';
+              const description = post.description || "";
               const isLong = description.length > 250;
 
               return (
@@ -409,32 +511,86 @@ const MyFeedPage = () => {
                   key={postId}
                   className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border overflow-hidden hover:shadow-md transition"
                 >
-                  <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                  <div className="flex items-center justify-between px-5 pt-5 pb-3 relative">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500">
                         <AvatarFallback className="text-white font-bold">
-                          {post.user?.name?.[0] || 'Y'}
+                          {post.user?.name?.[0] || "Y"}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <span className="font-semibold text-gray-900 dark:text-white">
-                          {t('you') || 'You'}
+                          {t("you") || "You"}
                         </span>
                         <div className="text-gray-400 text-xs">
                           {timeAgo(post.created_at)}
+                        </div>
+                        <div className="mt-1">
+                          <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:text-gray-200">
+                            Post ID: {postId}
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
                       <button
+                        type="button"
+                        onClick={() =>
+                          setMenuPostId((prev) =>
+                            prev === String(postId) ? null : String(postId),
+                          )
+                        }
+                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition"
+                        title="More options"
+                      >
+                        <FaEllipsisV className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => setDeleteConfirm(postId)}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
-                        title={t('delete') || 'Delete'}
+                        title={t("delete") || "Delete"}
                       >
                         <FaTrash className="w-4 h-4" />
                       </button>
                     </div>
+
+                    {menuPostId === String(postId) && (
+                      <div className="absolute right-5 top-12 z-20 w-44 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleShare(postId);
+                            setMenuPostId(null);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                        >
+                          {t("share") || "Share"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            toggleSaveMyFeed(postId);
+                            setMenuPostId(null);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                        >
+                          {savedPosts[String(postId)]
+                            ? t("saved") || "Saved"
+                            : t("save") || "Save"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteConfirm(postId);
+                            setMenuPostId(null);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+                        >
+                          {t("delete") || "Delete"}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="px-5 pb-4">
@@ -452,18 +608,22 @@ const MyFeedPage = () => {
                             onClick={() => toggleExpand(postId)}
                             className="text-green-600 dark:text-green-400 font-medium hover:underline ml-1"
                           >
-                            {t('view_more') || 'View more'}
+                            {t("view_more") || "View more"}
                           </button>
                         </>
                       ) : (
                         <>
-                          {description || <span className="italic text-gray-400">No content</span>}
+                          {description || (
+                            <span className="italic text-gray-400">
+                              No content
+                            </span>
+                          )}
                           {isLong && isExpanded && (
                             <button
                               onClick={() => toggleExpand(postId)}
                               className="text-green-600 dark:text-green-400 font-medium hover:underline ml-1 block mt-2"
                             >
-                              {t('view_less') || 'View less'}
+                              {t("view_less") || "View less"}
                             </button>
                           )}
                         </>
@@ -487,14 +647,28 @@ const MyFeedPage = () => {
                         className="text-gray-500 hover:text-green-600 text-sm"
                         onClick={() => handleShare(postId)}
                       >
-                        <FaShare className="mr-1" /> {t('share') || 'Share'}
+                        <FaShare className="mr-1" /> {t("share") || "Share"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="text-gray-500 hover:text-green-600 text-sm"
+                        onClick={() => toggleSaveMyFeed(postId)}
+                      >
+                        {savedPosts[String(postId)] ? (
+                          <FaBookmark className="mr-1 text-green-600" />
+                        ) : (
+                          <FaRegBookmark className="mr-1" />
+                        )}
+                        {savedPosts[String(postId)]
+                          ? t("saved") || "Saved"
+                          : t("save") || "Save"}
                       </Button>
                       <Button
                         variant="ghost"
                         className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 font-medium text-sm"
                         onClick={() => handleViewDetails(postId)}
                       >
-                        {t('view') || 'View'}
+                        {t("view") || "View"}
                       </Button>
                     </div>
                   </div>
@@ -511,7 +685,7 @@ const MyFeedPage = () => {
 
           {!hasMore && posts.length > 0 && (
             <div className="text-center py-6 text-gray-400 text-sm">
-              {t('thats_all') || "That's all your posts"}
+              {t("thats_all") || "That's all your posts"}
             </div>
           )}
         </div>
@@ -521,10 +695,10 @@ const MyFeedPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <Card className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-xl">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              {t('delete_post') || 'Delete Post?'}
+              {t("delete_post") || "Delete Post?"}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-              {t('delete_confirm') || 'This action cannot be undone.'}
+              {t("delete_confirm") || "This action cannot be undone."}
             </p>
             <div className="flex gap-3">
               <Button
@@ -532,13 +706,13 @@ const MyFeedPage = () => {
                 className="flex-1"
                 onClick={() => setDeleteConfirm(null)}
               >
-                {t('cancel') || 'Cancel'}
+                {t("cancel") || "Cancel"}
               </Button>
               <Button
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                 onClick={() => handleDelete(deleteConfirm)}
               >
-                {t('delete') || 'Delete'}
+                {t("delete") || "Delete"}
               </Button>
             </div>
           </Card>
@@ -550,6 +724,13 @@ const MyFeedPage = () => {
           {shareToast}
         </div>
       )}
+
+      <ShareLinkDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        url={shareDialogUrl}
+        title={t("share") || "Share post"}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const net = require('net');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { execFileSync, spawnSync } = require('child_process');
 
 const rootDir = path.resolve(__dirname, '..');
 
@@ -27,6 +27,32 @@ function isTrackedByGit(relativePath) {
   } catch {
     return false;
   }
+}
+
+function probeExecutable(commandName) {
+  const probeCommand = process.platform === 'win32' ? 'where.exe' : 'which';
+  const result = spawnSync(probeCommand, [commandName], {
+    shell: false,
+    env: process.env,
+    encoding: 'utf8'
+  });
+
+  if (result.error || result.status !== 0) {
+    return {
+      available: false,
+      location: null
+    };
+  }
+
+  const location = String(result.stdout || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean) || null;
+
+  return {
+    available: Boolean(location),
+    location
+  };
 }
 
 function readEnvFile(envPath) {
@@ -140,6 +166,27 @@ async function run() {
   else {
     fail(`Node.js ${process.versions.node} is below required major version 20`);
     failures += 1;
+  }
+
+  const pgDumpProbe = probeExecutable('pg_dump');
+  if (pgDumpProbe.available) {
+    ok(`Backup tool pg_dump available (${pgDumpProbe.location})`);
+  } else {
+    warn('Backup tool pg_dump not found in PATH; backup evidence refresh will fail until PostgreSQL client tools are installed.');
+  }
+
+  const psqlProbe = probeExecutable('psql');
+  if (psqlProbe.available) {
+    ok(`Backup tool psql available (${psqlProbe.location})`);
+  } else {
+    warn('Backup tool psql not found in PATH; restore drills cannot run.');
+  }
+
+  const pgRestoreProbe = probeExecutable('pg_restore');
+  if (pgRestoreProbe.available) {
+    ok(`Backup tool pg_restore available (${pgRestoreProbe.location})`);
+  } else {
+    warn('Backup tool pg_restore not found in PATH; restore drills cannot run.');
   }
 
   let serverPort = 5000;

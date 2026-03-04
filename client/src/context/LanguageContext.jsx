@@ -1,9 +1,12 @@
 import React, { createContext, useState, useEffect } from 'react';
 export const LanguageContext = createContext();
 export const LanguageProvider = ({ children }) => {
-  const [currentLang, setCurrentLang] = useState(localStorage.getItem('lang') || 'en');
+  const [currentLang, setCurrentLang] = useState(
+    localStorage.getItem('mhub_language') || localStorage.getItem('lang') || 'en'
+  );
   useEffect(() => {
-    const handler = () => setCurrentLang(localStorage.getItem('lang') || 'en');
+    const handler = () =>
+      setCurrentLang(localStorage.getItem('mhub_language') || localStorage.getItem('lang') || 'en');
     window.addEventListener('languageChanged', handler);
     return () => window.removeEventListener('languageChanged', handler);
   }, []);

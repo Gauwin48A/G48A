@@ -42,6 +42,7 @@ function runStep(label, npmArgs) {
 
 try {
   runStep('Baseline footprint report', ['run', 'footprint:report']);
+  runStep('Baseline line budget report', ['run', 'lines:report']);
   runStep('Locale normalization/minification', ['run', 'optimize:locales']);
   runStep(
     isAggressive ? 'Aggressive footprint cleanup' : 'Standard footprint cleanup',
@@ -56,6 +57,7 @@ try {
   runStep('Locale integrity validation', ['run', 'validate:locales']);
   runStep('Footprint guard (present-files mode)', ['run', 'footprint:guard']);
   runStep('Tracked dependencies guard', ['run', 'footprint:guard:tracked-deps']);
+  runStep('Codebase line budget guard', ['run', 'lines:guard']);
   runStep('Final footprint report', ['run', 'footprint:report']);
 
   console.log('\n[Optimize] Pipeline completed successfully.');

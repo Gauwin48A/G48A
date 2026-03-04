@@ -14,13 +14,26 @@ function readRequiredFile(filePath, label) {
 }
 
 function extractRoutes(appSource) {
-  const routeRegex = /<Route\s+path="([^"]+)"/g;
   const routes = new Set();
-  let match = routeRegex.exec(appSource);
+
+  // JSX route form: <Route path="/foo" ... />
+  const jsxRouteRegex = /<Route\b[^>]*\bpath\s*=\s*["']([^"']+)["']/g;
+  let match = jsxRouteRegex.exec(appSource);
   while (match) {
-    routes.add(match[1]);
-    match = routeRegex.exec(appSource);
+    const route = String(match[1] || '').trim();
+    if (route && (route.startsWith('/') || route === '*')) routes.add(route);
+    match = jsxRouteRegex.exec(appSource);
   }
+
+  // Compiled/minified form (e.g. React.createElement(Route, { path:"/foo" }))
+  const compiledRouteRegex = /\bpath\s*:\s*["']([^"']+)["']/g;
+  match = compiledRouteRegex.exec(appSource);
+  while (match) {
+    const route = String(match[1] || '').trim();
+    if (route && (route.startsWith('/') || route === '*')) routes.add(route);
+    match = compiledRouteRegex.exec(appSource);
+  }
+
   return [...routes];
 }
 

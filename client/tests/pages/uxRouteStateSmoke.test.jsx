@@ -11,6 +11,11 @@ import SecuritySettings from '@/pages/SecuritySettings';
 import { fetchCategoriesCached } from '@/services/categoriesService';
 import api from '@/services/api';
 
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true
+};
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key) => key
@@ -30,7 +35,7 @@ vi.mock('@/services/api', () => ({
 
 function renderSearchPage() {
   return render(
-    <MemoryRouter initialEntries={['/search']}>
+    <MemoryRouter initialEntries={['/search']} future={routerFuture}>
       <FilterProvider>
         <SearchPage />
       </FilterProvider>
@@ -40,7 +45,7 @@ function renderSearchPage() {
 
 function renderBuyerView() {
   return render(
-    <MemoryRouter initialEntries={['/buyer-view']}>
+    <MemoryRouter initialEntries={['/buyer-view']} future={routerFuture}>
       <BuyerView />
     </MemoryRouter>
   );
@@ -48,7 +53,7 @@ function renderBuyerView() {
 
 function renderFeedPostDetail() {
   return render(
-    <MemoryRouter initialEntries={['/feed/123']}>
+    <MemoryRouter initialEntries={['/feed/123']} future={routerFuture}>
       <Routes>
         <Route path="/feed/:id" element={<FeedPostDetail />} />
       </Routes>
@@ -58,7 +63,7 @@ function renderFeedPostDetail() {
 
 function renderSecuritySettings() {
   return render(
-    <MemoryRouter initialEntries={['/security']}>
+    <MemoryRouter initialEntries={['/security']} future={routerFuture}>
       <Routes>
         <Route path="/security" element={<SecuritySettings />} />
       </Routes>
@@ -164,6 +169,8 @@ describe('UX route smoke flows', () => {
   });
 
   it('supports security route status error and retry recovery flow', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     localStorage.setItem('authToken', 'token-123');
     localStorage.setItem('userId', 'user-123');
 
@@ -171,15 +178,23 @@ describe('UX route smoke flows', () => {
       .mockRejectedValueOnce(new Error('status-failed'))
       .mockResolvedValueOnce({ enabled: true, available: true });
 
-    renderSecuritySettings();
+    try {
+      renderSecuritySettings();
 
-    expect(screen.getByText('Loading security settings')).toBeTruthy();
-    expect(await screen.findByText('Could not refresh security status')).toBeTruthy();
+      expect(screen.getByText('Loading security settings')).toBeTruthy();
+      expect(await screen.findByText('Could not refresh security status')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
-    expect(await screen.findByText('Your account is protected')).toBeTruthy();
-    expect(api.get).toHaveBeenCalledTimes(2);
+      expect(await screen.findByText('Your account is protected')).toBeTruthy();
+      expect(api.get).toHaveBeenCalledTimes(2);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to check 2FA status:',
+        expect.any(Error)
+      );
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it('supports security setup error with dismiss and retry flow', async () => {

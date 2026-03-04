@@ -18,13 +18,6 @@ export default {
         dark: '#212121',
         accent: '#4285F4',
       },
-      boxShadow: {
-        card: '0 2px 8px 0 rgba(0,123,255,0.08)',
-        cardHover: '0 4px 16px 0 rgba(0,123,255,0.16)',
-      },
-      borderRadius: {
-        xl: '16px',
-      },
       borderRadius: {
         lg: '16px',
         md: '12px',

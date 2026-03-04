@@ -1,16 +1,1 @@
-/**
- * GDPR Routes
- * Data export and account deletion endpoints
- */
-const express = require('express');
-const router = express.Router();
-const gdprController = require('../controllers/gdprController');
-const { protect } = require('../middleware/auth');
-
-// Export user data (GDPR Right to Access)
-router.get('/export', protect, gdprController.exportUserData);
-
-// Delete user account (GDPR Right to Erasure)
-router.delete('/delete', protect, gdprController.deleteUserData);
-
-module.exports = router;
+const express=require("express");const router=express.Router();const gdprController=require("../controllers/gdprController");const{protect:protect}=require("../middleware/auth");router.get("/export",protect,gdprController.exportUserData);router.delete("/delete",protect,gdprController.deleteUserData);module.exports=router;

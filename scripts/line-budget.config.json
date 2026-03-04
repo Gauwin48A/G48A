@@ -1,0 +1,22 @@
+{
+  "threshold": 50000,
+  "include": [
+    { "name": "client/src", "prefix": "client/src/" },
+    { "name": "server/src", "prefix": "server/src/" },
+    { "name": "scripts", "prefix": "scripts/" },
+    { "name": "client/scripts", "prefix": "client/scripts/" },
+    { "name": "server/scripts", "prefix": "server/scripts/" },
+    { "name": "client/tests", "prefix": "client/tests/" },
+    { "name": "server/tests", "prefix": "server/tests/" }
+  ],
+  "extensions": [
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".ts",
+    ".tsx",
+    ".css",
+    ".py"
+  ]
+}

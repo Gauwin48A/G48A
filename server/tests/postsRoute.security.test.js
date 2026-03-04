@@ -75,6 +75,7 @@ const express = require('express');
 const request = require('supertest');
 const router = require('../src/routes/posts');
 const pool = require('../src/config/db');
+const postController = require('../src/controllers/postController');
 
 describe('posts route security behavior', () => {
   const app = express();
@@ -175,5 +176,39 @@ describe('posts route security behavior', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
+  });
+
+  it('supports legacy PATCH /status for active -> reactivate mapping', async () => {
+    const response = await request(app)
+      .patch('/api/posts/42/status')
+      .set('x-test-user-id', 'seller-1')
+      .send({ status: 'active' });
+
+    expect(response.status).toBe(200);
+    expect(postController.reactivatePost).toHaveBeenCalled();
+    expect(postController.markAsSold).not.toHaveBeenCalled();
+  });
+
+  it('supports legacy PATCH /status for sold -> markAsSold mapping', async () => {
+    const response = await request(app)
+      .patch('/api/posts/42/status')
+      .set('x-test-user-id', 'seller-1')
+      .send({ status: 'sold' });
+
+    expect(response.status).toBe(200);
+    expect(postController.markAsSold).toHaveBeenCalled();
+    expect(postController.reactivatePost).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsupported statuses on legacy PATCH /status', async () => {
+    const response = await request(app)
+      .patch('/api/posts/42/status')
+      .set('x-test-user-id', 'seller-1')
+      .send({ status: 'undone' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Unsupported status transition');
+    expect(postController.markAsSold).not.toHaveBeenCalled();
+    expect(postController.reactivatePost).not.toHaveBeenCalled();
   });
 });

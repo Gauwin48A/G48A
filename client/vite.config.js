@@ -8,8 +8,7 @@ const FORCE_OPTIMIZE_DEPS = String(process.env.VITE_OPTIMIZE_DEPS_FORCE || '').t
 const REALTIME_VENDOR_PACKAGES = new Set([
   'socket.io-client',
   'engine.io-client',
-  'socket.io-parser',
-  'pusher-js'
+  'socket.io-parser'
 ]);
 const CORE_VENDOR_PACKAGES = new Set([
   'react',
@@ -29,7 +28,6 @@ const NATIVE_VENDOR_PACKAGES = new Set([
   '@capacitor/app',
   '@capacitor/core',
   '@capacitor/geolocation',
-  '@capacitor/device',
   '@capacitor-community/contacts'
 ]);
 

@@ -2,7 +2,18 @@ const { spawnSync } = require('child_process');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const npmCommand = 'npm';
+const npmCli = process.env.npm_execpath || null;
+const npmCommand = npmCli ? process.execPath : process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const toNpmArgs = (args) => (npmCli ? [npmCli, ...args] : args);
+
+function npmStep(name, cwd, args) {
+  return {
+    name,
+    command: npmCommand,
+    cwd,
+    args: toNpmArgs(args)
+  };
+}
 
 const checks = [
   {
@@ -18,6 +29,12 @@ const checks = [
     args: ['scripts/guard-footprint.js']
   },
   {
+    name: 'Workspace codebase line budget guard',
+    command: process.execPath,
+    cwd: rootDir,
+    args: ['scripts/line-budget.js', '--mode=guard', '--threshold=50000']
+  },
+  {
     name: 'Workspace locale validation',
     command: process.execPath,
     cwd: rootDir,
@@ -29,72 +46,27 @@ const checks = [
     cwd: rootDir,
     args: ['scripts/check-proactive-workflow-contract.js']
   },
-  {
-    name: 'Client localhost hardcode gate',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'client'),
-    args: ['run', 'check:no-hardcoded-localhost']
-  },
-  {
-    name: 'Client lint',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'client'),
-    args: ['run', 'lint']
-  },
-  {
-    name: 'Client network contract gate',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'client'),
-    args: ['run', 'check:network-contract']
-  },
-  {
-    name: 'Client unit tests',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'client'),
-    args: ['run', 'test']
-  },
-  {
-    name: 'Client production build',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'client'),
-    args: ['run', 'build']
-  },
-  {
-    name: 'Client bundle budget gate',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'client'),
-    args: ['run', 'check:bundle-budget']
-  },
-  {
-    name: 'Server route contract gate',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'server'),
-    args: ['run', 'check:route-contract']
-  },
-  {
-    name: 'Server schema contract gate',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'server'),
-    args: ['run', 'check:schema-contract']
-  },
-  {
-    name: 'Server runtime contract probe',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'server'),
-    args: ['run', 'check:runtime-contract']
-  },
-  {
-    name: 'Server page-flow contract probe',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'server'),
-    args: ['run', 'check:page-flow-contract']
-  },
-  {
-    name: 'Server test suite',
-    command: npmCommand,
-    cwd: path.join(rootDir, 'server'),
-    args: ['test', '--', '--runInBand']
-  },
+  npmStep('Testcase catalog coverage gate', rootDir, ['run', 'check:testcase-catalog']),
+  npmStep('Client localhost hardcode gate', path.join(rootDir, 'client'), ['run', 'check:no-hardcoded-localhost']),
+  npmStep('Client lint', path.join(rootDir, 'client'), ['run', 'lint']),
+  npmStep('Client network contract gate', path.join(rootDir, 'client'), ['run', 'check:network-contract']),
+  ...(process.platform === 'win32'
+    ? [
+        {
+          name: 'Client unit tests',
+          command: 'powershell',
+          cwd: path.join(rootDir, 'client'),
+          args: ['-NoProfile', '-Command', 'npm run test']
+        }
+      ]
+    : [npmStep('Client unit tests', path.join(rootDir, 'client'), ['run', 'test'])]),
+  npmStep('Client production build', path.join(rootDir, 'client'), ['run', 'build']),
+  npmStep('Client bundle budget gate', path.join(rootDir, 'client'), ['run', 'check:bundle-budget']),
+  npmStep('Server route contract gate', path.join(rootDir, 'server'), ['run', 'check:route-contract']),
+  npmStep('Server schema contract gate', path.join(rootDir, 'server'), ['run', 'check:schema-contract']),
+  npmStep('Server runtime contract probe', path.join(rootDir, 'server'), ['run', 'check:runtime-contract']),
+  npmStep('Server page-flow contract probe', path.join(rootDir, 'server'), ['run', 'check:page-flow-contract']),
+  npmStep('Server test suite', path.join(rootDir, 'server'), ['test']),
   {
     name: 'Server syntax check',
     command: process.execPath,
@@ -105,10 +77,10 @@ const checks = [
 
 for (const check of checks) {
   console.log(`\n=== ${check.name} ===`);
-  const useShell = check.command === npmCommand;
   const result = spawnSync(check.command, check.args, {
     cwd: check.cwd,
-    shell: useShell,
+    shell: false,
+    windowsHide: true,
     env: process.env,
     encoding: 'utf8'
   });

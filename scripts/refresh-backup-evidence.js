@@ -55,6 +55,26 @@ function resolveNpmInvocation(args) {
   };
 }
 
+function runBackupToolchainPreflight({ restoreDrill }) {
+  const scriptPath = path.join(rootDir, 'scripts', 'check-backup-toolchain.js');
+  const scriptArgs = [
+    scriptPath,
+    '--strict=true',
+    `--require-restore-tools=${restoreDrill}`
+  ];
+
+  const result = spawnSync(process.execPath, scriptArgs, {
+    cwd: rootDir,
+    shell: false,
+    env: process.env,
+    encoding: 'utf8'
+  });
+
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  return result;
+}
+
 function runServerBackupDrill({ restoreDrill, dryRun }) {
   const scriptArgs = ['run', 'backup:drill'];
   const forwardArgs = [];
@@ -188,6 +208,18 @@ function main() {
     console.log(`BACKUP_EVIDENCE_FILE=${current.newestFile}`);
     console.log(`BACKUP_EVIDENCE_AGE_HOURS=${current.ageHours}`);
     return;
+  }
+
+  if (!dryRun) {
+    const preflightResult = runBackupToolchainPreflight({ restoreDrill });
+    if (preflightResult.error) {
+      console.error(`[backup-evidence] backup toolchain preflight failed: ${preflightResult.error.message}`);
+      process.exit(1);
+    }
+    if (preflightResult.status !== 0) {
+      console.error('[backup-evidence] backup toolchain preflight failed; cannot run backup drill.');
+      process.exit(preflightResult.status || 1);
+    }
   }
 
   console.log('[backup-evidence] Refreshing backup drill evidence...');

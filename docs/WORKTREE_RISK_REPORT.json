@@ -1,27 +1,25 @@
 {
-  "generatedAt": "2026-03-02T10:05:03.342Z",
-  "total": 58,
+  "generatedAt": "2026-03-04T02:07:43.194Z",
+  "total": 265,
   "byStatus": {
-    "modified": 47,
-    "untracked": 11
+    "modified": 257,
+    "untracked": 8
   },
   "byTopLevel": {
-    "client": 23,
-    "server": 20,
-    "docs": 6,
-    "scripts": 6,
-    ".github": 1,
-    ".gitignore": 1,
+    "client": 126,
+    "server": 121,
+    "scripts": 9,
+    "docs": 8,
     "package.json": 1
   },
   "counts": {
     "dependencyChanges": 0,
     "artifactChanges": 0,
-    "sourceChanges": 36,
+    "sourceChanges": 232,
     "sourceDeletions": 0,
-    "configChanges": 4,
+    "configChanges": 7,
     "configDeletions": 0,
-    "untrackedChanges": 11
+    "untrackedChanges": 8
   },
   "findings": [
     {

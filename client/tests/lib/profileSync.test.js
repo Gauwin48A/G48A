@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { hasUserSnapshotChanged, mergeProfileIntoAuthUser } from './profileSync';
-
+import { hasUserSnapshotChanged, mergeProfileIntoAuthUser } from '../../src/lib/profileSync';
 const resolveUserId = (userData) => {
   const candidate = userData?.id ?? userData?.user_id ?? null;
   return candidate === null || candidate === undefined || candidate === '' ? null : String(candidate);
 };
-
 describe('profileSync', () => {
   it('merges profile payload into auth user while preserving stable ids', () => {
     const previousUser = {
@@ -19,15 +17,12 @@ describe('profileSync', () => {
       name: 'New Name',
       email: 'new@example.com'
     };
-
     const merged = mergeProfileIntoAuthUser(previousUser, profilePayload, resolveUserId);
-
     expect(merged.id).toBe('123');
     expect(merged.user_id).toBe('123');
     expect(merged.name).toBe('New Name');
     expect(merged.email).toBe('new@example.com');
   });
-
   it('produces identical snapshot for equivalent profile data', () => {
     const previousUser = {
       id: 'u-1',
@@ -41,9 +36,7 @@ describe('profileSync', () => {
       name: 'User One',
       email: 'user1@example.com'
     };
-
     const merged = mergeProfileIntoAuthUser(previousUser, profilePayload, resolveUserId);
     expect(hasUserSnapshotChanged(previousUser, merged)).toBe(false);
   });
 });
-

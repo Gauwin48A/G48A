@@ -1,43 +1,73 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
-const LanguageSelector = () => {
+const LANGUAGE_OPTIONS = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'Hindi (\u0939\u093f\u0902\u0926\u0940)' },
+  { code: 'te', label: 'Telugu (\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41)' },
+  { code: 'ta', label: 'Tamil (\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD)' },
+  { code: 'kn', label: 'Kannada (\u0C95\u0CA8\u0CCD\u0CA8\u0CA1)' },
+  { code: 'mr', label: 'Marathi (\u092E\u0930\u093E\u0920\u0940)' },
+  { code: 'bn', label: 'Bengali (\u09AC\u09BE\u0982\u09B2\u09BE)' }
+];
+
+function normalizeLanguageCode(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) {
+    return 'en';
+  }
+  return normalized.split('-')[0];
+}
+
+export default function LanguageSelector() {
   const { i18n } = useTranslation();
 
-  useEffect(() => {
-    // 1. Immediate Restore: Apply language before user interacts
-    const savedLang = localStorage.getItem('mhub_language');
-    if (savedLang && savedLang !== i18n.language) {
-      i18n.changeLanguage(savedLang);
-    }
-  }, [i18n]);
+  const currentLanguage = useMemo(
+    () => normalizeLanguageCode(i18n.resolvedLanguage || i18n.language),
+    [i18n.language, i18n.resolvedLanguage]
+  );
 
-  const handleLanguageChange = (value) => {
-    // 2. Persist & Apply
-    i18n.changeLanguage(value);
-    localStorage.setItem('mhub_language', value);
+  useEffect(() => {
+    const storedLanguage = normalizeLanguageCode(
+      localStorage.getItem('mhub_language') || localStorage.getItem('lang')
+    );
+    const nextLanguage = storedLanguage || currentLanguage || 'en';
+
+    if (nextLanguage !== currentLanguage) {
+      void i18n.changeLanguage(nextLanguage);
+    }
+
+    document.documentElement.lang = nextLanguage;
+  }, [currentLanguage, i18n]);
+
+  const handleLanguageChange = async (event) => {
+    const nextLanguage = normalizeLanguageCode(event.target.value);
+    if (!nextLanguage || nextLanguage === currentLanguage) {
+      return;
+    }
+
+    localStorage.setItem('mhub_language', nextLanguage);
+    localStorage.setItem('lang', nextLanguage);
+    await i18n.changeLanguage(nextLanguage);
+    document.documentElement.lang = nextLanguage;
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xl" role="img" aria-label="language">🌐</span>
-      <Select value={i18n.language} onValueChange={handleLanguageChange}>
-        <SelectTrigger className="w-[110px] h-8 text-xs font-medium border-green-600/20 focus:ring-green-500 bg-white dark:bg-gray-800 text-black dark:text-white border-gray-200 dark:border-gray-700">
-          <SelectValue placeholder="Lang" />
-        </SelectTrigger>
-        <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <SelectItem value="en" className="text-black dark:text-white focus:bg-gray-100 dark:focus:bg-gray-700">English</SelectItem>
-          <SelectItem value="hi" className="text-black dark:text-white focus:bg-gray-100 dark:focus:bg-gray-700">हिंदी (Hindi)</SelectItem>
-          <SelectItem value="te" className="text-black dark:text-white focus:bg-gray-100 dark:focus:bg-gray-700">తెలుగు (Telugu)</SelectItem>
-          <SelectItem value="ta" className="text-black dark:text-white focus:bg-gray-100 dark:focus:bg-gray-700">தமிழ் (Tamil)</SelectItem>
-          <SelectItem value="kn" className="text-black dark:text-white focus:bg-gray-100 dark:focus:bg-gray-700">ಕನ್ನಡ (Kannada)</SelectItem>
-          <SelectItem value="mr" className="text-black dark:text-white focus:bg-gray-100 dark:focus:bg-gray-700">मराठी (Marathi)</SelectItem>
-          <SelectItem value="bn" className="text-black dark:text-white focus:bg-gray-100 dark:focus:bg-gray-700">বাংলা (Bengali)</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+    <label className="flex items-center gap-2" aria-label="Language selector" data-no-auto-translate="true">
+      <span role="img" aria-label="language icon" className="text-lg">
+        {'\uD83C\uDF10'}
+      </span>
+      <select
+        value={currentLanguage}
+        onChange={handleLanguageChange}
+        className="h-8 min-w-[132px] rounded-md border border-white/40 bg-white px-2 text-xs font-medium text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/70 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+      >
+        {LANGUAGE_OPTIONS.map((language) => (
+          <option key={language.code} value={language.code}>
+            {language.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
-};
-
-export default LanguageSelector;
+}

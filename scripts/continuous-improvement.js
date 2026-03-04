@@ -74,6 +74,18 @@ function runNpmScript(scriptName) {
   });
 }
 
+function shouldRefreshBackupEvidence(mode) {
+  if (mode !== 'strict') return false;
+  const isProduction = String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
+  return parseBoolean(process.env.OPS_GATE_ENFORCE_BACKUP, isProduction);
+}
+
+function shouldEnforceOpsGateInStrictMode(mode) {
+  if (mode !== 'strict') return false;
+  const isProduction = String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
+  return parseBoolean(process.env.CONTINUOUS_IMPROVEMENT_ENFORCE_OPS_GATE, isProduction);
+}
+
 function buildSteps(mode, autoResolve) {
   const steps = [];
 
@@ -107,7 +119,7 @@ function buildSteps(mode, autoResolve) {
   });
 
   if (autoResolve) {
-    if (mode === 'strict') {
+    if (shouldRefreshBackupEvidence(mode)) {
       steps.push({
         phase: 'resolve',
         script: 'backup:evidence:refresh',
@@ -119,14 +131,24 @@ function buildSteps(mode, autoResolve) {
     steps.push({
       phase: 'resolve',
       script: 'optimize:run',
-      blocking: false,
+      blocking: mode === 'strict',
       description: 'Automated optimization and cleanup pipeline'
+    });
+
+    // Re-run the full quality matrix after optimization to ensure no behavior regressions.
+    steps.push({
+      phase: 'validate',
+      script: 'proactive:test',
+      blocking: true,
+      description: 'Post-optimization proactive quality matrix'
     });
   }
 
   steps.push({
     phase: 'validate',
-    script: mode === 'strict' ? 'ops:gate:strict:enforced' : 'ops:gate',
+    script: mode === 'strict'
+      ? (shouldEnforceOpsGateInStrictMode(mode) ? 'ops:gate:strict:enforced' : 'ops:gate:strict')
+      : 'ops:gate',
     blocking: mode === 'strict',
     description: 'Operational failover and backup evidence gate'
   });

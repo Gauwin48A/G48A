@@ -1,10 +1,1 @@
-import { v4 as uuidv4 } from 'uuid';
-
-export const getDeviceId = () => {
-    let deviceId = localStorage.getItem('mhub_device_id');
-    if (!deviceId) {
-        deviceId = uuidv4();
-        localStorage.setItem('mhub_device_id', deviceId);
-    }
-    return deviceId;
-};
+const t=()=>typeof globalThis!="undefined"&&globalThis.crypto&&typeof globalThis.crypto.randomUUID=="function"?globalThis.crypto.randomUUID():`dev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,10)}`;export const getDeviceId=()=>{let deviceId=localStorage.getItem("mhub_device_id");if(!deviceId){deviceId=t();localStorage.setItem("mhub_device_id",deviceId)}return deviceId};

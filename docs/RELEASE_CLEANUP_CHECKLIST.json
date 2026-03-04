@@ -1,26 +1,30 @@
 {
-  "generatedAt": "2026-03-02T06:02:35.336Z",
+  "generatedAt": "2026-03-04T02:14:34.361Z",
   "totals": {
-    "changedPaths": 4,
+    "changedPaths": 263,
     "safeToRestore": 0,
-    "intentionalReview": 4,
+    "intentionalReview": 263,
     "highRiskIntentionalDeletions": 0
   },
   "byStatus": {
-    "modified": 2,
-    "untracked": 2
+    "modified": 255,
+    "untracked": 8
   },
   "byBucket": {
-    "intentional_review_required": 4
+    "intentional_review_required": 263
   },
   "byReason": {
-    "configuration": 2,
-    "other": 2
+    "source_code": 232,
+    "other": 19,
+    "configuration": 6,
+    "documentation": 6
   },
   "byTopLevel": {
-    "server": 2,
-    "package.json": 1,
-    "scripts": 1
+    "client": 126,
+    "server": 121,
+    "scripts": 9,
+    "docs": 6,
+    "package.json": 1
   },
   "commandHints": {
     "restoreTrackedSafeChanges": null,
@@ -29,10 +33,1350 @@
   "safeToRestore": [],
   "intentionalReview": [
     {
+      "raw": " M client/package-lock.json",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/package-lock.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "configuration",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/package.json",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/package.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "configuration",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/scripts/verify-all-languages.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/scripts/verify-all-languages.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/App.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/App.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/AadhaarOtpVerify.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/AadhaarOtpVerify.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/AudioRecorder.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/AudioRecorder.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/BargainActions.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/BargainActions.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/BuyerInterestModal.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/BuyerInterestModal.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/CategoriesGrid.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/CategoriesGrid.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/EmptyState.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/EmptyState.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ErrorBoundary.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ErrorBoundary.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/GreenNavbar.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/GreenNavbar.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/LanguageSelector.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/LanguageSelector.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/LocationGate.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/LocationGate.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/LocationSelector.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/LocationSelector.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/LoginPromptModal.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/LoginPromptModal.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/MakeOfferModal.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/MakeOfferModal.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/PageHeader.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/PageHeader.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/RouteTelemetry.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/RouteTelemetry.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/TransactionStepper.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/TransactionStepper.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/page-state/PageStateBlocks.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/page-state/PageStateBlocks.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/alert-dialog.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/alert-dialog.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/alert.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/alert.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/avatar.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/avatar.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/badge.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/badge.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/button.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/button.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/card.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/card.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/checkbox.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/checkbox.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/dialog.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/dialog.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/dropdown-menu.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/dropdown-menu.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/input.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/input.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/label.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/label.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/select.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/select.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/separator.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/separator.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/switch.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/switch.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/tabs.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/tabs.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/textarea.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/textarea.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/toast.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/toast.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/toaster.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/toaster.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/components/ui/use-toast.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/components/ui/use-toast.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/constants/languages.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/constants/languages.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/context/AuthContext.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/context/AuthContext.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/context/FilterContext.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/context/FilterContext.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/context/LocationContext.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/context/LocationContext.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/hooks/use-toast.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/hooks/use-toast.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/hooks/useTranslatedContent.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/hooks/useTranslatedContent.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/i18n/index.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/i18n/index.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/index.css",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/index.css",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/api.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/api.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/auth.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/auth.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/backendPreflight.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/backendPreflight.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/errorReporting.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/errorReporting.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/networkConfig.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/networkConfig.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/profileSync.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/profileSync.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/queryClient.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/queryClient.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/socket.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/socket.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/utils.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/utils.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/uxTelemetry.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/uxTelemetry.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/lib/validate.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/lib/validate.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/main.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/main.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/AadhaarVerify.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/AadhaarVerify.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/AddPost.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/AddPost.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/AdminPanel.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/AdminPanel.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/AllPosts.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/AllPosts.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Analytics.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Analytics.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Auth/ForgotPassword.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Auth/ForgotPassword.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Auth/Login.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Auth/Login.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Auth/ResetPassword.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Auth/ResetPassword.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Auth/SignUp.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Auth/SignUp.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/BoughtPosts.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/BoughtPosts.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/BuyerView.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/BuyerView.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Categories.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Categories.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/ChannelPage.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/ChannelPage.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/ChannelsListPage.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/ChannelsListPage.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Chat.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Chat.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Complaints.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Complaints.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/CreateChannelPage.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/CreateChannelPage.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Dashboard.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Dashboard.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/FeedPage.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/FeedPage.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/FeedPostDetail.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/FeedPostDetail.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Feedback.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Feedback.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/ForYou.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/ForYou.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Home.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Home.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/KYC/KycVerification.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/KYC/KycVerification.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/MyFeedPage.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/MyFeedPage.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/MyHome.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/MyHome.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/MyRecommendations.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/MyRecommendations.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/NearbyPosts.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/NearbyPosts.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Notifications.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Notifications.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Offers.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Offers.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Payments/PaymentPage.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Payments/PaymentPage.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/PostAdd.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/PostAdd.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/PostDetail.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/PostDetail.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Profile.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Profile.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/PublicWall.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/PublicWall.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/RecentlyViewed.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/RecentlyViewed.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Reviews.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Reviews.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Rewards.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Rewards.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/SaleUndone.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/SaleUndone.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Saledone.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Saledone.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/SavedSearches.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/SavedSearches.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/SearchPage.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/SearchPage.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/SecuritySettings.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/SecuritySettings.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/SoldPosts.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/SoldPosts.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/TierSelection.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/TierSelection.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Verification.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Verification.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/pages/Wishlist.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/pages/Wishlist.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/services/api.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/services/api.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/services/categoriesService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/services/categoriesService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/services/locationService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/services/locationService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/services/mobileContacts.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/services/mobileContacts.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/utils/authStorage.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/utils/authStorage.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/utils/device.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/utils/device.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/utils/deviceInfo.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/utils/deviceInfo.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/utils/security.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/utils/security.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/src/utils/translateContent.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/src/utils/translateContent.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tailwind.config.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tailwind.config.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/lib/api.test.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/lib/api.test.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/lib/backendPreflight.test.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/lib/backendPreflight.test.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/lib/networkConfig.test.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/lib/networkConfig.test.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/lib/profileSync.test.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/lib/profileSync.test.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/lib/socket.test.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/lib/socket.test.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/setupTests.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/setupTests.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/smoke/Simple.test.jsx",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/smoke/Simple.test.jsx",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/tests/utils/security.test.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/tests/utils/security.test.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M client/vite.config.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "client/vite.config.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "configuration",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M docs/WORKTREE_RISK_REPORT.json",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "docs/WORKTREE_RISK_REPORT.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "documentation",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M docs/WORKTREE_RISK_REPORT.md",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "docs/WORKTREE_RISK_REPORT.md",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "documentation",
+      "action": "confirm_change_intent"
+    },
+    {
       "raw": " M package.json",
       "rawStatus": " M",
       "status": "modified",
       "path": "package.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "configuration",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M scripts/continuous-improvement.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "scripts/continuous-improvement.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M scripts/doctor.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "scripts/doctor.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M scripts/optimize-pipeline.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "scripts/optimize-pipeline.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M scripts/proactive-check.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "scripts/proactive-check.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M scripts/refresh-backup-evidence.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "scripts/refresh-backup-evidence.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/package-lock.json",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/package-lock.json",
       "oldPath": null,
       "bucket": "intentional_review_required",
       "reason": "configuration",
@@ -49,20 +1393,1270 @@
       "action": "confirm_change_intent"
     },
     {
-      "raw": "?? scripts/release-cleanup-checklist.js",
+      "raw": " M server/src/config/auditLogger.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/auditLogger.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/cloudinary.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/cloudinary.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/db.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/db.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/jwtConfig.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/jwtConfig.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/logger.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/logger.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/pusher.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/pusher.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/redisCache.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/redisCache.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/redisSession.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/redisSession.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/config/tierRules.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/config/tierRules.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/adminDocController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/adminDocController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/analyticsController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/analyticsController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/authController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/authController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/categoryController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/categoryController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/chatController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/chatController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/complaintsController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/complaintsController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/dashboardController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/dashboardController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/feedController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/feedController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/feedbackController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/feedbackController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/gdprController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/gdprController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/inquiryController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/inquiryController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/locationController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/locationController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/notificationController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/notificationController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/offersController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/offersController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/paymentController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/paymentController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/postController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/postController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/postGuaranteedReachController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/postGuaranteedReachController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/priceAlertsController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/priceAlertsController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/priceHistoryController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/priceHistoryController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/profileController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/profileController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/publicWallController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/publicWallController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/recentlyViewedController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/recentlyViewedController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/referralController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/referralController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/reviewsController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/reviewsController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/rewardController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/rewardController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/rewardsController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/rewardsController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/saleController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/saleController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/savedSearchesController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/savedSearchesController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/tiersController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/tiersController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/translationController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/translationController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/twoFactorController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/twoFactorController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/userController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/userController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/controllers/wishlistController.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/controllers/wishlistController.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/index.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/index.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/jobs/cronJobs.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/jobs/cronJobs.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/activityTracker.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/activityTracker.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/auth.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/auth.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/errorHandler.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/errorHandler.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/fraudCheck.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/fraudCheck.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/imageOptimizer.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/imageOptimizer.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/rbac.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/rbac.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/security.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/security.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/upload.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/upload.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/validators.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/validators.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/middleware/wafEnforcement.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/middleware/wafEnforcement.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/queries/feedQuery.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/queries/feedQuery.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/queries/guaranteedReachQuery.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/queries/guaranteedReachQuery.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/admin.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/admin.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/adminDashboard.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/adminDashboard.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/analytics.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/analytics.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/auth.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/auth.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/brands.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/brands.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/categories.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/categories.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/channels.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/channels.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/chat.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/chat.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/complaints.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/complaints.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/contacts.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/contacts.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/dashboard.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/dashboard.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/feed.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/feed.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/feedback.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/feedback.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/gdpr.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/gdpr.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/inquiries.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/inquiries.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/locationRoutes.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/locationRoutes.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/nearby.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/nearby.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/notifications.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/notifications.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/offers.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/offers.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/payments.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/payments.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/posts.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/posts.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/priceAlerts.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/priceAlerts.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/priceHistory.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/priceHistory.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/profile.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/profile.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/publicWall.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/publicWall.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/pushNotifications.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/pushNotifications.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/recentlyViewed.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/recentlyViewed.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/recommendations.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/recommendations.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/referral.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/referral.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/reviews.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/reviews.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/rewards.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/rewards.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/sale.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/sale.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/savedSearches.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/savedSearches.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/tiers.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/tiers.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/transactions.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/transactions.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/translation.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/translation.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/twoFactor.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/twoFactor.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/users.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/users.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/routes/wishlist.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/routes/wishlist.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/ChannelService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/ChannelService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/auditLogger.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/auditLogger.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/cacheService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/cacheService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/emailService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/emailService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/errorReporter.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/errorReporter.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/fcm.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/fcm.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/featureFlagService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/featureFlagService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/kycAutomationService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/kycAutomationService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/mlFraudScoringService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/mlFraudScoringService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/otpDeliveryService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/otpDeliveryService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/otpService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/otpService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/paymentReconciliationService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/paymentReconciliationService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/postViewBufferService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/postViewBufferService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/readinessService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/readinessService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/rewardsLedgerService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/rewardsLedgerService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/rewardsRealtimeService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/rewardsRealtimeService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/riskTelemetryService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/riskTelemetryService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/schemaGuard.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/schemaGuard.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/searchService.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/searchService.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/subscriptionNotifications.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/subscriptionNotifications.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/services/tokenVerificationCache.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/services/tokenVerificationCache.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/utils/logger.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/utils/logger.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/utils/profanity.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/utils/profanity.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": " M server/src/utils/requestAuth.js",
+      "rawStatus": " M",
+      "status": "modified",
+      "path": "server/src/utils/requestAuth.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "source_code",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? docs/SAFE_E2E_IMPLEMENTATION_REPORT.json",
       "rawStatus": "??",
       "status": "untracked",
-      "path": "scripts/release-cleanup-checklist.js",
+      "path": "docs/SAFE_E2E_IMPLEMENTATION_REPORT.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "documentation",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? docs/SAFE_E2E_IMPLEMENTATION_REPORT.md",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "docs/SAFE_E2E_IMPLEMENTATION_REPORT.md",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "documentation",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? docs/SAFE_E2E_IMPLEMENTATION_REPORT_REAL.json",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "docs/SAFE_E2E_IMPLEMENTATION_REPORT_REAL.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "documentation",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? docs/SAFE_E2E_IMPLEMENTATION_REPORT_REAL.md",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "docs/SAFE_E2E_IMPLEMENTATION_REPORT_REAL.md",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "documentation",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? scripts/check-backup-toolchain.js",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "scripts/check-backup-toolchain.js",
       "oldPath": null,
       "bucket": "intentional_review_required",
       "reason": "other",
       "action": "confirm_change_intent"
     },
     {
-      "raw": "?? server/scripts/preflight-schema.js",
+      "raw": "?? scripts/line-budget.config.json",
       "rawStatus": "??",
       "status": "untracked",
-      "path": "server/scripts/preflight-schema.js",
+      "path": "scripts/line-budget.config.json",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? scripts/line-budget.js",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "scripts/line-budget.js",
+      "oldPath": null,
+      "bucket": "intentional_review_required",
+      "reason": "other",
+      "action": "confirm_change_intent"
+    },
+    {
+      "raw": "?? scripts/safe-e2e-implementation.js",
+      "rawStatus": "??",
+      "status": "untracked",
+      "path": "scripts/safe-e2e-implementation.js",
       "oldPath": null,
       "bucket": "intentional_review_required",
       "reason": "other",
