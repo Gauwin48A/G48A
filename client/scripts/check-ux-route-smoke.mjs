@@ -113,6 +113,18 @@ const ROUTE_TARGETS = [
     requiredCtas: ['/login?returnTo=%2Fmy-feed', 'Open public feed']
   },
   {
+    route: '/my-posts',
+    file: 'src/pages/MyFeedPage.jsx',
+    requiredStates: ['Unable to load your feed posts right now. Please retry.', "You haven't posted anything yet"],
+    requiredCtas: ['/login?returnTo=%2Fmy-feed', 'Open public feed']
+  },
+  {
+    route: '/my-recommendations',
+    file: 'src/pages/MyRecommendations.jsx',
+    requiredStates: ['Failed to load recommendations', 'Interact with more posts to get personalized picks!'],
+    requiredCtas: ['Sign in to view personalized recommendations curated just for you', 'Retry', 'Browse all listings']
+  },
+  {
     route: '/buyer-view',
     file: 'src/pages/BuyerView.jsx',
     requiredStates: ['Buyer listings unavailable', 'No matching listings found'],
@@ -271,13 +283,6 @@ function countTokenHits(source) {
   return STATE_TOKENS.filter((token) => lowered.includes(token));
 }
 
-function findMissingPatterns(source, patterns = []) {
-  if (!patterns.length) {
-    return [];
-  }
-  return patterns.filter((pattern) => !hasPattern(source, pattern));
-}
-
 function hasAnyPattern(source, patterns = []) {
   if (!patterns.length) {
     return true;
@@ -310,12 +315,10 @@ async function main() {
       warnings.push(`Weak state coverage signal on ${target.route} (${target.file})`);
     }
 
-    const missingStates = findMissingPatterns(pageSource, target.requiredStates);
     if (target.requiredStates?.length && !hasAnyPattern(pageSource, target.requiredStates)) {
       failures.push(`Missing explicit state assertions on ${target.route}: ${target.requiredStates.join(', ')}`);
     }
 
-    const missingCtas = findMissingPatterns(pageSource, target.requiredCtas);
     if (target.requiredCtas?.length && !hasAnyPattern(pageSource, target.requiredCtas)) {
       failures.push(`Missing key CTA assertions on ${target.route}: ${target.requiredCtas.join(', ')}`);
     }
@@ -331,12 +334,10 @@ async function main() {
       continue;
     }
 
-    const missingPanelStates = findMissingPatterns(panelSource, panel.requiredStates);
     if (panel.requiredStates?.length && !hasAnyPattern(panelSource, panel.requiredStates)) {
       failures.push(`Missing panel-state assertions on ${panel.panel}: ${panel.requiredStates.join(', ')}`);
     }
 
-    const missingPanelCtas = findMissingPatterns(panelSource, panel.requiredCtas);
     if (panel.requiredCtas?.length && !hasAnyPattern(panelSource, panel.requiredCtas)) {
       failures.push(`Missing panel CTA assertions on ${panel.panel}: ${panel.requiredCtas.join(', ')}`);
     }
