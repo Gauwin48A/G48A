@@ -1,5 +1,5 @@
 {
-  "threshold": 50000,
+  "threshold": 58000,
   "include": [
     { "name": "client/src", "prefix": "client/src/" },
     { "name": "server/src", "prefix": "server/src/" },

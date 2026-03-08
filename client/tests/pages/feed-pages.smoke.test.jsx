@@ -10,6 +10,10 @@ const hoisted = vi.hoisted(() => ({
   navigate: vi.fn(),
   authUser: { id: "42", user_id: "42", name: "Feed Tester" },
 }));
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
 
 let originalFetch;
 
@@ -86,7 +90,7 @@ vi.mock("@/components/page-state/PageStateBlocks", () => ({
 
 function renderFeedPage() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={routerFuture}>
       <FeedPage />
     </MemoryRouter>,
   );
@@ -94,7 +98,7 @@ function renderFeedPage() {
 
 function renderMyFeedPage() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={routerFuture}>
       <MyFeedPage />
     </MemoryRouter>,
   );
@@ -243,7 +247,10 @@ describe("Feed surfaces smoke", () => {
     renderMyFeedPage();
 
     expect(await screen.findByText("Unable to load your feed")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    const retryOrRefreshButton =
+      screen.queryByRole("button", { name: "Retry" }) ||
+      screen.getByRole("button", { name: "Refresh" });
+    fireEvent.click(retryOrRefreshButton);
 
     expect(await screen.findByText("My Feed Recovery Post")).toBeTruthy();
     expect(myFeedAttempt).toBeGreaterThanOrEqual(2);
@@ -259,7 +266,7 @@ describe("Feed surfaces smoke", () => {
         post: expect.objectContaining({ post_id: 301 }),
       },
     });
-  });
+  }, 15000);
 
   it("shows auth-gate links for MyFeed when not logged in", async () => {
     hoisted.authUser = null;

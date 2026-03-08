@@ -11,6 +11,10 @@ const hoisted = vi.hoisted(() => ({
   apiGet: vi.fn(),
   apiPost: vi.fn(),
 }));
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -88,7 +92,7 @@ vi.mock("@/services/api", () => ({
 
 function renderProfile() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={routerFuture}>
       <Profile />
     </MemoryRouter>,
   );
