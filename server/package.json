@@ -13,6 +13,7 @@
     "preflight:schema": "node scripts/preflight-schema.js",
     "check:schema-contract": "node scripts/check-schema-contract.js",
     "check:route-contract": "node scripts/check-route-contract.js",
+    "check:foundation-contract": "node scripts/check-foundation-contract.js",
     "check:runtime-contract": "node scripts/probe-runtime-contract.js",
     "check:page-flow-contract": "node scripts/probe-page-flow-contract.js",
     "load:test:dry-run": "node tests/load/simple_load_runner.js --dry-run true",

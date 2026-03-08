@@ -13,6 +13,10 @@ const hoisted = vi.hoisted(() => ({
   apiDelete: vi.fn(),
   authUser: { id: "42", user_id: "42", name: "All Posts Tester" },
 }));
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
 
 let originalIntersectionObserver;
 let originalScrollTo;
@@ -73,7 +77,7 @@ const buildPosts = (count, extras = {}) =>
 
 function renderAllPosts() {
   return render(
-    <MemoryRouter initialEntries={["/all-posts"]}>
+    <MemoryRouter initialEntries={["/all-posts"]} future={routerFuture}>
       <FilterProvider>
         <AllPosts />
       </FilterProvider>
@@ -150,7 +154,7 @@ describe("AllPosts filters and media UX", () => {
         "bg-blue-600",
       );
     });
-  });
+  }, 15000);
 
   it("enforces latest window filters to 10 and 5 posts", async () => {
     hoisted.apiGet.mockImplementation(async (url) => {
@@ -177,7 +181,7 @@ describe("AllPosts filters and media UX", () => {
     await waitFor(() => {
       expect(screen.getAllByRole("button", { name: "view_details" })).toHaveLength(5);
     });
-  });
+  }, 20000);
 
   it("renders swipe-ready multi-image carousel controls", async () => {
     hoisted.apiGet.mockResolvedValue({

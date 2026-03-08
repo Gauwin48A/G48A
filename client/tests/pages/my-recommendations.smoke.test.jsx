@@ -12,6 +12,10 @@ const hoisted = vi.hoisted(() => ({
   accessToken: "token-xyz",
   userId: "51",
 }));
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
 
 let originalFetch;
 
@@ -71,7 +75,7 @@ vi.mock("@/components/ShareLinkDialog", () => ({
 
 function renderRecommendations() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={routerFuture}>
       <MyRecommendations />
     </MemoryRouter>,
   );

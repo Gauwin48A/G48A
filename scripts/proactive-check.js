@@ -32,7 +32,7 @@ const checks = [
     name: 'Workspace codebase line budget guard',
     command: process.execPath,
     cwd: rootDir,
-    args: ['scripts/line-budget.js', '--mode=guard', '--threshold=50000']
+    args: ['scripts/line-budget.js', '--mode=guard']
   },
   {
     name: 'Workspace locale validation',

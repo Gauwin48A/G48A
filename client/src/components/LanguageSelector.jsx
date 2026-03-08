@@ -21,10 +21,13 @@ function normalizeLanguageCode(value) {
 
 export default function LanguageSelector() {
   const { i18n } = useTranslation();
+  const i18nLanguage = i18n?.language;
+  const i18nResolvedLanguage = i18n?.resolvedLanguage;
+  const canChangeLanguage = typeof i18n?.changeLanguage === 'function';
 
   const currentLanguage = useMemo(
-    () => normalizeLanguageCode(i18n.resolvedLanguage || i18n.language),
-    [i18n.language, i18n.resolvedLanguage]
+    () => normalizeLanguageCode(i18nResolvedLanguage || i18nLanguage || 'en'),
+    [i18nLanguage, i18nResolvedLanguage]
   );
 
   useEffect(() => {
@@ -33,12 +36,12 @@ export default function LanguageSelector() {
     );
     const nextLanguage = storedLanguage || currentLanguage || 'en';
 
-    if (nextLanguage !== currentLanguage) {
+    if (nextLanguage !== currentLanguage && canChangeLanguage) {
       void i18n.changeLanguage(nextLanguage);
     }
 
     document.documentElement.lang = nextLanguage;
-  }, [currentLanguage, i18n]);
+  }, [canChangeLanguage, currentLanguage, i18n]);
 
   const handleLanguageChange = async (event) => {
     const nextLanguage = normalizeLanguageCode(event.target.value);
@@ -48,7 +51,9 @@ export default function LanguageSelector() {
 
     localStorage.setItem('mhub_language', nextLanguage);
     localStorage.setItem('lang', nextLanguage);
-    await i18n.changeLanguage(nextLanguage);
+    if (canChangeLanguage) {
+      await i18n.changeLanguage(nextLanguage);
+    }
     document.documentElement.lang = nextLanguage;
   };
 

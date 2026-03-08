@@ -276,6 +276,10 @@ function main() {
     args['enforce-backup'] ?? process.env.OPS_GATE_ENFORCE_BACKUP,
     isProduction
   );
+  const enforceFoundation = parseBoolean(
+    args['enforce-foundation'] ?? process.env.OPS_GATE_ENFORCE_FOUNDATION,
+    isProduction
+  );
   const maxAgeHours = parsePositiveInt(
     args['backup-max-age-hours'] || process.env.BACKUP_EVIDENCE_MAX_AGE_HOURS || '24',
     24
@@ -320,6 +324,21 @@ function main() {
     'ACTIVE_ACTIVE_DEPENDENCY_STATUS'
   ) || 'UNKNOWN';
 
+  const foundationGateResult = runNpm(serverDir, ['run', 'check:foundation-contract']);
+  if (foundationGateResult.error) {
+    console.error(`[ops-gate] foundation gate process error: ${foundationGateResult.error.message}`);
+    process.exit(1);
+  }
+  if (foundationGateResult.status !== 0) {
+    console.error(`[ops-gate] foundation gate exited with code ${foundationGateResult.status || 1}`);
+    process.exit(foundationGateResult.status || 1);
+  }
+
+  const foundationStatus = parseOutputValue(
+    `${foundationGateResult.stdout || ''}\n${foundationGateResult.stderr || ''}`,
+    'FOUNDATION_CONTRACT_STATUS'
+  ) || 'UNKNOWN';
+
   let backupRefreshResult = {
     attempted: false,
     ok: false,
@@ -353,15 +372,19 @@ function main() {
 
   const dependencyOk = dependencyStatus === 'COMPLETE';
   const backupOk = backupEvidence.status === 'ok';
+  const foundationOk = foundationStatus === 'PASS';
   const strictFailure = strict && (
     (enforceFailover && !dependencyOk) ||
-    (enforceBackup && !backupOk)
+    (enforceBackup && !backupOk) ||
+    (enforceFoundation && !foundationOk)
   );
 
   console.log(`[ops-gate] strict=${strict}`);
   console.log(`[ops-gate] enforce_failover=${enforceFailover}`);
   console.log(`[ops-gate] enforce_backup=${enforceBackup}`);
+  console.log(`[ops-gate] enforce_foundation=${enforceFoundation}`);
   console.log(`[ops-gate] dependency_status=${dependencyStatus}`);
+  console.log(`[ops-gate] foundation_status=${foundationStatus}`);
   console.log(`[ops-gate] backup_status=${backupEvidence.status}`);
   console.log(`[ops-gate] backup_refresh_attempted=${backupRefreshResult.attempted}`);
   if (backupRefreshResult.attempted) {
@@ -407,6 +430,17 @@ function main() {
     if (strict && enforceBackup) {
       console.error(message);
     } else if (strict && !enforceBackup) {
+      console.warn(`${message} (not enforced in current policy)`);
+    } else {
+      console.warn(message);
+    }
+  }
+
+  if (!foundationOk) {
+    const message = '[ops-gate] foundation contract gate is not PASS.';
+    if (strict && enforceFoundation) {
+      console.error(message);
+    } else if (strict && !enforceFoundation) {
       console.warn(`${message} (not enforced in current policy)`);
     } else {
       console.warn(message);
