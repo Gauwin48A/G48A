@@ -8,10 +8,87 @@ const STALE_DEP_PATTERNS = [
   /Outdated Optimize Dep/i,
   /Failed to fetch dynamically imported module/i,
   /Importing a module script failed/i,
-  /ERR_ABORTED 504/i
+  /ERR_ABORTED 504/i,
+  /Failed to reload \/src\/App\.jsx/i,
+  /Internal server error:\s+x Unexpected character/i,
+  /Plugin:\s+vite:react-swc/i
 ];
 
-const userArgs = process.argv.slice(2);
+function normalizeUserArgs(rawArgs) {
+  const args = Array.isArray(rawArgs) ? [...rawArgs] : [];
+  const normalized = [];
+  let sawPortFlag = false;
+  let sawHostFlag = false;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const current = String(args[index] || '').trim();
+    if (!current) {
+      continue;
+    }
+
+    if (current === '--port') {
+      const maybePort = String(args[index + 1] || '').trim();
+      if (/^\d+$/.test(maybePort)) {
+        normalized.push('--port', maybePort);
+        sawPortFlag = true;
+        index += 1;
+        continue;
+      }
+      continue;
+    }
+
+    if (current === '--host') {
+      const maybeHost = String(args[index + 1] || '').trim();
+      if (maybeHost) {
+        normalized.push('--host', maybeHost);
+        sawHostFlag = true;
+        index += 1;
+        continue;
+      }
+      continue;
+    }
+
+    if (current.startsWith('--port=')) {
+      const maybePort = current.slice('--port='.length).trim();
+      if (/^\d+$/.test(maybePort)) {
+        normalized.push('--port', maybePort);
+        sawPortFlag = true;
+      }
+      continue;
+    }
+
+    if (current.startsWith('--host=')) {
+      const maybeHost = current.slice('--host='.length).trim();
+      if (maybeHost) {
+        normalized.push('--host', maybeHost);
+        sawHostFlag = true;
+      }
+      continue;
+    }
+
+    if (/^\d+$/.test(current) && !sawPortFlag) {
+      normalized.push('--port', current);
+      sawPortFlag = true;
+      continue;
+    }
+
+    // npm on Windows may drop flag names and pass only host value as positional.
+    if (
+      !sawHostFlag &&
+      (/^[a-zA-Z0-9.-]+$/.test(current) || current === 'localhost')
+    ) {
+      normalized.push('--host', current);
+      sawHostFlag = true;
+      continue;
+    }
+
+    normalized.push(current);
+  }
+
+  return normalized;
+}
+
+const userArgs = normalizeUserArgs(process.argv.slice(2));
 const forceFresh = userArgs.includes('--fresh') || String(process.env.MHUB_DEV_FRESH || '').toLowerCase() === 'true';
 const strictPort = '--strictPort';
 

@@ -25,7 +25,14 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
   const copyResetTimerRef = useRef(null);
   const inputRef = useRef(null);
   const canUseNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
-  const safeUrl = useMemo(() => String(url || "").trim(), [url]);
+  const safeUrl = useMemo(() => {
+    if (typeof url === "string") return url.trim();
+    if (url && typeof url === "object") {
+      const candidate = url.url || url.href || url.link || "";
+      return String(candidate || "").trim();
+    }
+    return "";
+  }, [url]);
   const encodedUrl = useMemo(() => encodeURIComponent(safeUrl), [safeUrl]);
 
   useEffect(() => {

@@ -2,6 +2,8 @@ import axios from "axios";
 import { getDeviceId } from "@/utils/device";
 import { getApiRootUrl } from "@/lib/networkConfig";
 import { normalizeMediaList, resolveMediaUrl } from "@/lib/mediaUrl";
+import { mapAuthError } from "@/utils/authErrorMapper";
+import { logAuthDiagnostic } from "@/services/authDiagnostics";
 const getCurrentApiRootUrl = () => {
   const resolved = getApiRootUrl();
   return typeof resolved === "string" && resolved ? resolved : "/api";
@@ -12,7 +14,9 @@ const AUTH_REFRESH_EXCLUDED_PATHS = [
   "/auth/signup",
   "/auth/send-otp",
   "/auth/verify-otp",
+  "/auth/session",
   "/auth/refresh-token",
+  "/auth/csrf-token",
   "/auth/logout",
   "/auth/forgot-password",
   "/auth/reset-password",
@@ -44,9 +48,18 @@ const MEDIA_URL_KEYS = new Set([
 ]);
 const MEDIA_LIST_KEYS = new Set(["images", "image_urls", "imageUrls"]);
 let refreshPromise = null;
+let csrfBootstrapPromise = null;
 let backendRecoveryPromise = null;
 let backendRecoveryFailureUntil = 0;
 let backendRecoveredOriginCache = "";
+let refreshFailureBackoffUntil = 0;
+let authEventCooldownUntil = 0;
+const CSRF_COOKIE_NAME = "XSRF-TOKEN";
+const CSRF_HEADER_NAME = "X-XSRF-TOKEN";
+const AUTH_EVENT_NAME = "mhub:auth-required";
+const SECURITY_EVENT_NAME = "mhub:security-lockout";
+const REFRESH_FAILURE_BACKOFF_MS = 10 * 1000;
+const AUTH_EVENT_COOLDOWN_MS = 2 * 1000;
 const normalizeOrigin = (value) =>
   String(value || "")
     .trim()
@@ -149,9 +162,68 @@ const clearClientAuthState = () => {
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
   localStorage.removeItem("userId");
+  localStorage.removeItem("user_id");
   localStorage.removeItem("userProfile");
   localStorage.removeItem("token");
+  localStorage.removeItem("authSession");
 };
+const dispatchGlobalEvent = (eventName, detail = {}) => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(eventName, { detail }));
+    return true;
+  } catch {
+    return false;
+  }
+};
+const dispatchAuthRequiredOnce = (detail = {}) => {
+  const now = Date.now();
+  if (now < authEventCooldownUntil) {
+    return true;
+  }
+  authEventCooldownUntil = now + AUTH_EVENT_COOLDOWN_MS;
+  const payload = { ...detail, occurredAt: now };
+  const eventDispatched = dispatchGlobalEvent(AUTH_EVENT_NAME, payload);
+  if (!eventDispatched && typeof window !== "undefined") {
+    window.location.href = detail.redirectTo || "/login?expired=true";
+  }
+  return eventDispatched;
+};
+const getCookieValue = (name) => {
+  if (typeof document === "undefined") {
+    return "";
+  }
+  const encodedName = `${encodeURIComponent(name)}=`;
+  const cookieParts = document.cookie ? document.cookie.split("; ") : [];
+  for (const part of cookieParts) {
+    if (part.startsWith(encodedName)) {
+      return decodeURIComponent(part.slice(encodedName.length));
+    }
+  }
+  return "";
+};
+async function ensureCsrfTokenCookie(apiRootUrl) {
+  if (getCookieValue(CSRF_COOKIE_NAME)) {
+    return true;
+  }
+
+  if (!csrfBootstrapPromise) {
+    csrfBootstrapPromise = axios
+      .get(`${apiRootUrl}/auth/csrf-token`, {
+        withCredentials: true,
+        timeout: 10e3,
+      })
+      .then(() => Boolean(getCookieValue(CSRF_COOKIE_NAME)))
+      .catch(() => false)
+      .finally(() => {
+        csrfBootstrapPromise = null;
+      });
+  }
+
+  return csrfBootstrapPromise;
+}
 const getRequestPath = (url) => {
   if (typeof url !== "string") {
     return "";
@@ -168,6 +240,10 @@ const getRequestPath = (url) => {
 const shouldSkipAuthRefresh = (url) => {
   const requestPath = getRequestPath(url);
   return AUTH_REFRESH_EXCLUDED_PATHS.some((path) => requestPath.includes(path));
+};
+const isAuthRequestPath = (url) => {
+  const requestPath = getRequestPath(url).toLowerCase();
+  return requestPath.includes("/auth/");
 };
 function normalizeApiMediaPayload(payload) {
   const seen = new WeakSet();
@@ -205,20 +281,51 @@ function normalizeApiMediaPayload(payload) {
   return walk(payload);
 }
 async function refreshAccessToken() {
+  if (refreshFailureBackoffUntil > Date.now()) {
+    logAuthDiagnostic("refresh_skipped_backoff", {
+      waitMs: Math.max(0, refreshFailureBackoffUntil - Date.now()),
+    });
+    return null;
+  }
   if (!refreshPromise) {
     const apiRootUrl = getCurrentApiRootUrl();
+    logAuthDiagnostic("refresh_attempt_started", {
+      apiRootUrl,
+    });
     refreshPromise = axios
-      .post(
-        `${apiRootUrl}/auth/refresh-token`,
-        {},
-        { withCredentials: true, timeout: 15e3 },
-      )
+      .post(`${apiRootUrl}/auth/refresh-token`, {}, {
+        withCredentials: true,
+        timeout: 15e3,
+        headers: {
+          [CSRF_HEADER_NAME]: await ensureCsrfTokenCookie(apiRootUrl)
+            ? getCookieValue(CSRF_COOKIE_NAME)
+            : "",
+        },
+      })
       .then((res) => {
         if (res.status === 200 && res.data?.token) {
           localStorage.setItem("authToken", res.data.token);
+          refreshFailureBackoffUntil = 0;
+          logAuthDiagnostic("refresh_attempt_success", {
+            status: res.status,
+          });
           return res.data.token;
         }
+        refreshFailureBackoffUntil = Date.now() + REFRESH_FAILURE_BACKOFF_MS;
+        logAuthDiagnostic("refresh_attempt_missing_token", {
+          status: res.status,
+          backoffMs: REFRESH_FAILURE_BACKOFF_MS,
+        });
         return null;
+      })
+      .catch((error) => {
+        refreshFailureBackoffUntil = Date.now() + REFRESH_FAILURE_BACKOFF_MS;
+        logAuthDiagnostic("refresh_attempt_failed", {
+          status: error?.response?.status || null,
+          code: error?.code || null,
+          backoffMs: REFRESH_FAILURE_BACKOFF_MS,
+        });
+        throw error;
       })
       .finally(() => {
         refreshPromise = null;
@@ -230,6 +337,8 @@ const api = axios.create({
   baseURL: getCurrentApiRootUrl(),
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
+  xsrfCookieName: CSRF_COOKIE_NAME,
+  xsrfHeaderName: CSRF_HEADER_NAME,
   timeout: 15e3,
 });
 api.interceptors.request.use(
@@ -260,6 +369,13 @@ api.interceptors.request.use(
       localStorage.getItem("mhub_language") ||
       localStorage.getItem("lang") ||
       "en";
+    const method = String(config.method || "get").toLowerCase();
+    if (["post", "put", "patch", "delete"].includes(method)) {
+      const csrfToken = getCookieValue(CSRF_COOKIE_NAME);
+      if (csrfToken && !headers[CSRF_HEADER_NAME]) {
+        headers[CSRF_HEADER_NAME] = csrfToken;
+      }
+    }
     config.headers = headers;
     return config;
   },
@@ -285,6 +401,10 @@ api.interceptors.response.use(
       !originalRequest._retry &&
       !shouldSkipRefresh
     ) {
+      logAuthDiagnostic("auth_interceptor_retry_attempt", {
+        status,
+        path: getRequestPath(originalRequest?.url),
+      });
       originalRequest._retry = true;
       try {
         const refreshedToken = await refreshAccessToken();
@@ -296,7 +416,15 @@ api.interceptors.response.use(
         throw new Error("Token refresh failed");
       } catch (refreshError) {
         clearClientAuthState();
-        window.location.href = "/login?expired=true";
+        logAuthDiagnostic("auth_interceptor_retry_failed", {
+          status: refreshError?.response?.status || null,
+          path: getRequestPath(originalRequest?.url),
+        });
+        dispatchAuthRequiredOnce({
+          reason: "session_expired",
+          redirectTo: "/login?expired=true",
+          source: "api_interceptor_refresh_failure",
+        });
         return Promise.reject(refreshError);
       }
     }
@@ -304,7 +432,15 @@ api.interceptors.response.use(
       error.response?.status === 403 &&
       error.response?.data?.error === "Login Blocked"
     ) {
-      window.location.href = "/security-lockout";
+      const eventDispatched = dispatchGlobalEvent(SECURITY_EVENT_NAME, {
+        reason: "login_blocked",
+        redirectTo: "/security",
+        source: "api_interceptor_security_policy",
+        occurredAt: Date.now(),
+      });
+      if (!eventDispatched && typeof window !== "undefined") {
+        window.location.href = "/security";
+      }
     }
     const shouldAttemptBackendRecovery =
       originalRequest &&
@@ -354,6 +490,19 @@ api.interceptors.response.use(
     if (!normalizedMessage) {
       normalizedMessage = error.message || "Something went wrong";
     }
+    let mappedAuthError = null;
+    if (isAuthRequestPath(originalRequest?.url)) {
+      mappedAuthError = mapAuthError(error, {
+        defaultMessage: normalizedMessage,
+      });
+      normalizedMessage = mappedAuthError.message;
+      logAuthDiagnostic("auth_response_error", {
+        path: getRequestPath(originalRequest?.url),
+        status,
+        category: mappedAuthError.category,
+        code: mappedAuthError.code,
+      });
+    }
     const customError = {
       message: normalizedMessage,
       status: error.response?.status,
@@ -362,6 +511,7 @@ api.interceptors.response.use(
       response: error.response,
       data: error.response?.data,
       original: error,
+      auth: mappedAuthError,
     };
     return Promise.reject(customError);
   },

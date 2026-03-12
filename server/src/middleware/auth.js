@@ -4,6 +4,10 @@ const {
   getAccessTokenFromRequest,
   getBearerTokenFromHeader,
 } = require("../utils/requestAuth");
+const {
+  isAccessTokenInvalidByPasswordChange,
+  isAccessTokenRevoked,
+} = require("../services/accessTokenPolicyService");
 
 const authDebugEnabled = process.env.AUTH_DEBUG === "true";
 
@@ -18,7 +22,7 @@ function verifyCandidateToken(token) {
   }
 }
 
-function resolveVerifiedUser(req) {
+function resolveVerifiedAuth(req) {
   const cookieToken = req?.cookies?.accessToken || null;
   const headerToken = getBearerTokenFromHeader(req?.headers?.authorization);
 
@@ -26,7 +30,10 @@ function resolveVerifiedUser(req) {
   const preferredToken = getAccessTokenFromRequest(req, { preferCookie: true });
   const preferredDecoded = verifyCandidateToken(preferredToken);
   if (preferredDecoded) {
-    return preferredDecoded;
+    return {
+      token: preferredToken,
+      payload: preferredDecoded,
+    };
   }
 
   // Fallback to the alternate token when one source is stale.
@@ -36,10 +43,18 @@ function resolveVerifiedUser(req) {
     return null;
   }
 
-  return verifyCandidateToken(alternateToken);
+  const alternateDecoded = verifyCandidateToken(alternateToken);
+  if (!alternateDecoded) {
+    return null;
+  }
+
+  return {
+    token: alternateToken,
+    payload: alternateDecoded,
+  };
 }
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   const hasCookieToken = Boolean(req?.cookies?.accessToken);
   const hasHeaderToken = Boolean(
     getBearerTokenFromHeader(req?.headers?.authorization),
@@ -52,21 +67,43 @@ const protect = (req, res, next) => {
     return res.status(401).json({ error: "No token provided, authorization denied" });
   }
 
-  const decoded = resolveVerifiedUser(req);
-  if (!decoded) {
+  const verifiedAuth = resolveVerifiedAuth(req);
+  if (!verifiedAuth) {
     if (authDebugEnabled) {
       console.warn("[AUTH] Token verification failed | Path:", req.path);
     }
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 
-  req.user = decoded;
+  try {
+    const revoked = await isAccessTokenRevoked(verifiedAuth.token);
+    if (revoked) {
+      return res.status(401).json({ error: "Session revoked. Please login again." });
+    }
+
+    const invalidByPasswordChange = await isAccessTokenInvalidByPasswordChange(
+      verifiedAuth.payload,
+    );
+    if (invalidByPasswordChange) {
+      return res
+        .status(401)
+        .json({ error: "Session expired due to password change. Please login again." });
+    }
+  } catch (policyError) {
+    if (authDebugEnabled) {
+      console.warn("[AUTH] Token policy check failed (continuing):", policyError?.message);
+    }
+  }
+
+  req.user = verifiedAuth.payload;
+  req.authToken = verifiedAuth.token;
   return next();
 };
 
 const optionalAuth = (req, res, next) => {
-  const decoded = resolveVerifiedUser(req);
-  req.user = decoded || null;
+  const verifiedAuth = resolveVerifiedAuth(req);
+  req.user = verifiedAuth?.payload || null;
+  req.authToken = verifiedAuth?.token || null;
   return next();
 };
 

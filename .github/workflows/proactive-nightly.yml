@@ -66,7 +66,7 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || (inputs.simulate_failure != 'true' && inputs.run_full_suite == 'true') }}
         run: |
           set -o pipefail
-          node scripts/proactive-check.js 2>&1 | tee proactive-check.log
+          node server/workspace-scripts/proactive-check.js 2>&1 | tee proactive-check.log
         shell: bash
 
       - name: Upload proactive log artifact

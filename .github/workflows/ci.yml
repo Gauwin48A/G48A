@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   workflow-contracts:
     name: Workflow Contracts
@@ -18,17 +22,47 @@ jobs:
         with:
           node-version: 22
 
+      - name: Prepare doctor env
+        run: |
+          cat > server/.env <<'EOF'
+          PORT=5001
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_USER=ci
+          DB_PASSWORD=ci
+          DB_NAME=ci
+          JWT_SECRET=ci_jwt_secret
+          REFRESH_SECRET=ci_refresh_secret
+          EOF
+
+      - name: Run workspace doctor
+        run: npm run doctor
+
+      - name: No-secrets gate
+        run: npm run check:no-secrets
+
+      - name: Block new hardcoded UI strings
+        run: npm run check:hardcoded-strings
+
+      - name: UI screenshot evidence gate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run check:ui-screenshots
+
       - name: Enforce tracked dependency hygiene
-        run: node scripts/guard-tracked-deps.js
+        run: node server/workspace-scripts/guard-tracked-deps.js
 
       - name: Enforce workspace footprint guard
-        run: node scripts/guard-footprint.js
+        run: node server/workspace-scripts/guard-footprint.js
 
       - name: Validate locale consistency
-        run: node scripts/validate-locales.js
+        run: node server/workspace-scripts/validate-locales.js
 
       - name: Verify proactive workflow contract
-        run: node scripts/check-proactive-workflow-contract.js
+        run: node server/workspace-scripts/check-proactive-workflow-contract.js
+
+      - name: Enforce root repository structure
+        run: node server/workspace-scripts/check-repo-structure.js
 
   client-quality:
     name: Client Lint/Test/Build

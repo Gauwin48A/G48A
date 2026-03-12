@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { translateBatch } from '@/utils/translateContent';
+import { RUNTIME_TRANSLATION_ENABLED, translateBatch } from '@/utils/translateContent';
 
 const EXCLUDED_SELECTOR =
   'script,style,noscript,textarea,code,pre,[contenteditable="true"],[data-no-auto-translate="true"]';
 
 const MAX_TEXT_LENGTH = 280;
+const MAX_TASKS_PER_SCAN = 240;
 
 const isEligibleText = (value) => {
   if (typeof value !== 'string') {
@@ -32,11 +33,15 @@ const isNodeConnected = (node) => Boolean(node && node.isConnected);
 
 function GlobalContentTranslator() {
   const { i18n } = useTranslation();
+  const runtimeTranslationEnabled = RUNTIME_TRANSLATION_ENABLED;
+  const rootNodeRef = useRef(null);
 
   const textNodeStateRef = useRef(new Map());
   const attrStateRef = useRef(new Map());
   const observerRef = useRef(null);
   const scanTimerRef = useRef(null);
+  const scanIdleRef = useRef(null);
+  const pendingRootsRef = useRef(new Set());
   const isWorkingRef = useRef(false);
   const latestLanguageRef = useRef(getNormalizedLanguage(i18n.language));
 
@@ -139,24 +144,48 @@ function GlobalContentTranslator() {
   };
 
   const scheduleScan = (delayMs = 100) => {
+    if (!runtimeTranslationEnabled) {
+      return;
+    }
     if (scanTimerRef.current) {
       clearTimeout(scanTimerRef.current);
     }
     scanTimerRef.current = setTimeout(() => {
       scanTimerRef.current = null;
       const lang = latestLanguageRef.current;
+      const rootNode = rootNodeRef.current;
       if (lang === 'en') {
         return;
       }
-      void runScan(document.body, lang);
+      if (!rootNode) {
+        return;
+      }
+      const runTask = () => {
+        const pendingRoots = Array.from(pendingRootsRef.current);
+        pendingRootsRef.current.clear();
+        const rootsToScan = pendingRoots.length > 0 ? pendingRoots : [rootNode];
+        void (async () => {
+          for (const scanRoot of rootsToScan) {
+            await runScan(scanRoot, lang);
+          }
+        })();
+      };
+
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        scanIdleRef.current = window.requestIdleCallback(runTask, { timeout: 450 });
+        return;
+      }
+
+      runTask();
     }, delayMs);
   };
 
   const runScan = async (root, targetLang) => {
-    if (!root || targetLang === 'en' || isWorkingRef.current) {
+    if (!runtimeTranslationEnabled || !root || targetLang === 'en' || isWorkingRef.current) {
       return;
     }
 
+    let hasMoreTasks = false;
     isWorkingRef.current = true;
     try {
       cleanupDetachedState();
@@ -253,7 +282,9 @@ function GlobalContentTranslator() {
         });
       });
 
-      const allTasks = [...textTasks, ...attrTasks];
+      const combinedTasks = [...textTasks, ...attrTasks];
+      hasMoreTasks = combinedTasks.length > MAX_TASKS_PER_SCAN;
+      const allTasks = combinedTasks.slice(0, MAX_TASKS_PER_SCAN);
       if (allTasks.length === 0) {
         return;
       }
@@ -288,14 +319,25 @@ function GlobalContentTranslator() {
       }
     } finally {
       isWorkingRef.current = false;
+      if (hasMoreTasks) {
+        pendingRootsRef.current.add(root);
+        scheduleScan(24);
+      }
     }
   };
 
   useEffect(() => {
     const normalizedLang = getNormalizedLanguage(i18n.language);
     latestLanguageRef.current = normalizedLang;
+    const shouldRunRuntimeTranslation = runtimeTranslationEnabled && normalizedLang !== "en";
 
     if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return undefined;
+    }
+
+    rootNodeRef.current = document.getElementById('root') || document.body;
+    const translationRoot = rootNodeRef.current;
+    if (!translationRoot) {
       return undefined;
     }
 
@@ -303,8 +345,13 @@ function GlobalContentTranslator() {
       clearTimeout(scanTimerRef.current);
       scanTimerRef.current = null;
     }
+    if (scanIdleRef.current && typeof window !== 'undefined' && typeof window.cancelIdleCallback === 'function') {
+      window.cancelIdleCallback(scanIdleRef.current);
+      scanIdleRef.current = null;
+    }
+    pendingRootsRef.current.clear();
 
-    if (normalizedLang === 'en') {
+    if (!shouldRunRuntimeTranslation) {
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
@@ -313,16 +360,40 @@ function GlobalContentTranslator() {
       return undefined;
     }
 
-    void runScan(document.body, normalizedLang);
+    pendingRootsRef.current.add(translationRoot);
+    scheduleScan(0);
 
-    const observer = new MutationObserver(() => {
-      scheduleScan(80);
+    const observer = new MutationObserver((records) => {
+      records.forEach((record) => {
+        if (record.type === 'attributes' && record.target) {
+          pendingRootsRef.current.add(record.target);
+        }
+
+        if (record.type === 'childList') {
+          if (record.target) {
+            pendingRootsRef.current.add(record.target);
+          }
+          record.addedNodes.forEach((node) => {
+            if (!node || !node.isConnected) {
+              return;
+            }
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              pendingRootsRef.current.add(node);
+              return;
+            }
+            if (node.nodeType === Node.TEXT_NODE && node.parentElement) {
+              pendingRootsRef.current.add(node.parentElement);
+            }
+          });
+        }
+      });
+
+      scheduleScan(120);
     });
 
-    observer.observe(document.body, {
+    observer.observe(translationRoot, {
       childList: true,
       subtree: true,
-      characterData: true,
       attributes: true,
       attributeFilter: ['placeholder', 'title', 'aria-label']
     });
@@ -334,12 +405,21 @@ function GlobalContentTranslator() {
         clearTimeout(scanTimerRef.current);
         scanTimerRef.current = null;
       }
+      if (
+        scanIdleRef.current &&
+        typeof window !== 'undefined' &&
+        typeof window.cancelIdleCallback === 'function'
+      ) {
+        window.cancelIdleCallback(scanIdleRef.current);
+        scanIdleRef.current = null;
+      }
+      pendingRootsRef.current.clear();
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
       }
     };
-  }, [i18n.language]);
+  }, [i18n.language, i18n.options?.supportedLngs, runtimeTranslationEnabled]);
 
   return null;
 }

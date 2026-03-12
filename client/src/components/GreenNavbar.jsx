@@ -1,9 +1,1623 @@
-import e,{useState as b,useEffect as x,useMemo as J}from"react";import{Link as y,useLocation as X,useNavigate as q}from"react-router-dom";import{FiUser as Q,FiMenu as Z,FiSearch as R,FiFilter as ee,FiHome as te,FiUserCheck as ae,FiMapPin as oe,FiBell as re,FiHeart as se,FiClock as ne,FiFileText as le,FiLock as ie,FiStar as de,FiX as ue}from"react-icons/fi";import{useFilter as ce}from"@/context/FilterContext";import{useLocation as pe}from"@/context/LocationContext";import{useTranslation as me}from"react-i18next";import{useToast as ge}from"@/hooks/use-toast";import be from"./LanguageSelector";import fe from"./LocationSelector";import{useAuth as ye}from"@/context/AuthContext";import z from"@/services/api";import{getAccessToken as he,getUserId as M,isAuthenticated as j}from"@/utils/authStorage";import{fetchCategoriesCached as xe}from"@/services/categoriesService";const B=(a,w=!1)=>{if(a==null)return w;if(a==="true")return!0;if(a==="false")return!1;try{return!!JSON.parse(a)}catch{return w}},ve=()=>{const{t:a}=me(),w=[{name:a("all_categories"),path:"/all-posts"},{name:a("mobiles"),path:"/categories/mobiles"},{name:a("fashion"),path:"/categories/fashion"},{name:a("electronics"),path:"/categories/electronics"},{name:a("home"),path:"/categories/home"},{name:a("books"),path:"/categories/books"},{name:a("more"),path:"/categories/more"}],A=[{key:"nearby",path:"/nearby"},{key:"chat",path:"/chat"},{key:"verification",path:"/verification"},{key:"categories",path:"/categories"},{key:"feedback",path:"/feedback"},{key:"complaints",path:"/complaints"},{key:"dashboard",path:"/dashboard"},{key:"admin_panel",path:"/admin-panel"}],_=[{key:"home",path:"/all-posts",icon:e.createElement(te,null)},{key:"for_you",path:"/for-you",icon:e.createElement(de,null)},{key:"feed",path:"/feed",icon:e.createElement(le,null)},{key:"rewards",path:"/rewards",icon:e.createElement(ae,null)},{key:"profile",path:"/profile",icon:e.createElement(Q,null)},{key:"more",path:"#",icon:e.createElement(Z,null)}],{toast:S}=ge(),{user:f,logout:O}=ye(),{filters:s,setFilters:d}=ce(),[T,g]=b(!1),[E,v]=b(!1),[H,P]=b(!1),[U,C]=b([]),[c,W]=b(()=>{const t=localStorage.getItem("darkMode");return B(t,!1)}),[m,$]=b(()=>{const t=localStorage.getItem("largeFont");return B(t,!1)}),ke=c?"Disable Dark Mode":"Enable Dark Mode";x(()=>{let t=!1;return(async()=>{try{const r=await xe();if(t)return;C(Array.isArray(r)?r:[])}catch(r){if(t)return;import.meta.env.DEV&&console.error("Failed to fetch categories:",r),C([])}})(),()=>{t=!0}},[]),x(()=>{localStorage.setItem("darkMode",JSON.stringify(c)),c?document.documentElement.classList.add("dark"):document.documentElement.classList.remove("dark")},[c]),x(()=>{localStorage.setItem("largeFont",JSON.stringify(m)),m?(document.body.classList.add("text-lg"),document.body.style.fontSize="18px"):(document.body.classList.remove("text-lg"),document.body.style.fontSize="")},[m]);const h=J(()=>j(f),[f]),p=q(),[N,L]=b(null),G=async()=>{g(!1);try{await O(),p("/login",{replace:!0})}catch{localStorage.removeItem("authToken"),localStorage.removeItem("refreshToken"),localStorage.removeItem("user"),localStorage.removeItem("userId"),localStorage.removeItem("user_id"),localStorage.removeItem("userProfile"),localStorage.removeItem("token"),p("/login",{replace:!0})}};x(()=>{if(typeof window<"u"&&typeof document<"u"&&!document.getElementById("slideInRightStyle")){const t=document.createElement("style");t.id="slideInRightStyle",t.textContent=`
-          @keyframes slideInRight {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-          }
-          .animate-slideInRight {
-            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-        `,document.head.appendChild(t)}},[]);const{city:I,displayName:V,loading:Y,permissionGranted:we,retry:Ne,accuracy:D}=pe(),i=X(),k=i.pathname==="/for-you";x(()=>{const t=M(f),o=he();k&&t&&o?(async()=>{try{const l=await z.get("/profile/preferences",{params:{userId:t}}),u=l?.data??l;L(u||null),import.meta.env.DEV&&console.log("[Navbar] Loaded user preferences for For You page:",u),u&&d(n=>({...n,location:u.location||"",minPrice:u.minPrice!==void 0&&u.minPrice!==null?String(u.minPrice):"",maxPrice:u.maxPrice!==void 0&&u.maxPrice!==null?String(u.maxPrice):"",category:""}))}catch(l){import.meta.env.DEV&&console.error("Failed to fetch user preferences:",l)}})():k||L(null)},[k,d,f]);const K=!(["/login","/signup","/forgot-password"].includes(i.pathname)||i.pathname.startsWith("/reset-password")),F=t=>({"aria-label":t,role:"button",tabIndex:0,className:"flex flex-col items-center justify-center min-w-[48px] min-h-[48px] p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 active:bg-blue-100 dark:active:bg-blue-900"});return e.createElement(e.Fragment,null,K?e.createElement("nav",{className:`sticky top-0 z-50 shadow-lg ${c?"bg-gray-900":"bg-blue-600"} transition-all duration-300`,role:"navigation","aria-label":a("main_navigation")},e.createElement("div",{className:"max-w-6xl mx-auto flex items-center justify-between px-4 py-2 md:px-6 md:py-3"},e.createElement("div",{className:"flex items-center gap-3"},e.createElement(y,{to:"/",className:"flex items-center gap-2","aria-label":"Home"},e.createElement("span",{className:"bg-white rounded-lg p-2"},e.createElement("svg",{width:"28",height:"28",fill:"none",viewBox:"0 0 24 24"},e.createElement("rect",{width:"24",height:"24",rx:"6",fill:"#2563eb"}),e.createElement("path",{d:"M7 17V9.5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1V17",stroke:"#fff",strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round"}),e.createElement("circle",{cx:"12",cy:"13",r:"2",fill:"#fff"}))),e.createElement("span",{className:"text-white text-2xl font-bold hidden sm:block"},a("home"))),e.createElement("button",{onClick:()=>P(!0),className:"flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-400 rounded-lg transition-colors cursor-pointer",title:V||I||a("location")||"Click to detect location"},e.createElement(oe,{className:"text-white w-4 h-4"}),e.createElement("span",{className:"text-white text-sm font-medium max-w-[150px] truncate"},Y?"Detecting...":I||localStorage.getItem("mhub_user_city")||a("location")||"Location"),D&&D<100&&e.createElement("span",{className:"text-white/70 text-xs hidden sm:inline ml-1",title:"Banking-Grade Accuracy"},"(\u{1F3AF} GPS)"),e.createElement("svg",{className:"w-3 h-3 text-white",fill:"none",viewBox:"0 0 24 24",stroke:"currentColor"},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:2,d:"M19 9l-7 7-7-7"})))),e.createElement("div",{onClick:()=>{const t=i.pathname==="/for-you"?"for-you":"all-posts";p(`/search?context=${t}`)},className:"relative flex items-center gap-2 px-4 py-2 bg-white rounded-lg hover:bg-gray-50 transition-colors cursor-pointer max-w-xs sm:max-w-md group",role:"button",tabIndex:0,"aria-label":a("search")||"Search"},e.createElement(R,{className:"w-5 h-5 text-gray-400"}),e.createElement("span",{className:`text-sm truncate hidden sm:block flex-1 ${s.search?"text-gray-800 dark:text-gray-200":"text-gray-400"}`},s.search||a("search_placeholder")||"Search for products, brands..."),s.search&&e.createElement("button",{onClick:t=>{t.stopPropagation();const o=new URLSearchParams(i.search);o.delete("search"),p({pathname:i.pathname,search:o.toString()}),d(r=>({...r,search:""}))},className:"p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10","aria-label":"Clear search",title:"Clear search"},e.createElement(ue,{className:"w-4 h-4"}))),e.createElement("div",{className:"relative"},e.createElement("button",{type:"button",onClick:()=>v(!0),className:"bg-blue-500 text-white px-3 py-2 rounded-lg flex items-center gap-1 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-white"},e.createElement(ee,{className:"w-5 h-5"}),e.createElement("span",{className:"hidden sm:inline"},a("filter"))),E&&e.createElement("div",{className:"fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"},e.createElement("div",{className:"bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border p-6 w-full max-w-sm mx-2 flex flex-col gap-3 relative animate-fadeIn"},e.createElement("button",{className:"absolute top-3 right-3 text-gray-400 hover:text-blue-600 dark:hover:text-yellow-400",onClick:()=>v(!1),"aria-label":a("close")||"Close filter"},e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:"h-6 w-6",fill:"none",viewBox:"0 0 24 24",stroke:"currentColor"},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:2,d:"M6 18L18 6M6 6l12 12"}))),e.createElement("h4",{className:"font-semibold text-blue-600 dark:text-yellow-300 mb-2"},a("filter_products")||"Filter Products"),e.createElement("div",{className:"mb-2"},e.createElement("label",{className:"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"},a("location")),e.createElement("select",{className:"w-full border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-700 dark:text-white",value:s.location||"",onChange:t=>d(o=>({...o,location:t.target.value,page:1}))},e.createElement("option",{value:""},a("any_location")||"Any Location"),e.createElement("option",{value:"Delhi"},"Delhi"),e.createElement("option",{value:"Mumbai"},"Mumbai"),e.createElement("option",{value:"Bangalore"},"Bangalore"),e.createElement("option",{value:"Chennai"},"Chennai"),e.createElement("option",{value:"Kolkata"},"Kolkata"),e.createElement("option",{value:"Hyderabad"},"Hyderabad"))),e.createElement("div",{className:"mb-2"},e.createElement("label",{className:"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"},a("price_range")||"Price Range"),e.createElement("div",{className:"flex gap-2 items-center"},e.createElement("div",{className:"flex-1"},e.createElement("input",{type:"number",min:"0",placeholder:a("min_price_placeholder"),className:"w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white",value:s.minPrice||"",onChange:t=>d(o=>({...o,minPrice:t.target.value,page:1}))})),e.createElement("span",{className:"text-gray-400"},"to"),e.createElement("div",{className:"flex-1"},e.createElement("input",{type:"number",min:"0",placeholder:a("max_price_placeholder"),className:"w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white",value:s.maxPrice||"",onChange:t=>d(o=>({...o,maxPrice:t.target.value,page:1}))}))),e.createElement("div",{className:"flex gap-1 mt-2 flex-wrap"},e.createElement("button",{type:"button",onClick:()=>d(t=>({...t,minPrice:"",maxPrice:"500",page:1})),className:"px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200"},a("under_500")),e.createElement("button",{type:"button",onClick:()=>d(t=>({...t,minPrice:"500",maxPrice:"2000",page:1})),className:"px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200"},a("500_to_2k")),e.createElement("button",{type:"button",onClick:()=>d(t=>({...t,minPrice:"2000",maxPrice:"10000",page:1})),className:"px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200"},a("2k_to_10k")),e.createElement("button",{type:"button",onClick:()=>d(t=>({...t,minPrice:"10000",maxPrice:"",page:1})),className:"px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200"},a("above_10k")))),e.createElement("div",{className:"mb-2"},e.createElement("label",{className:"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"},a("date_range")||"Date Range"),e.createElement("select",{className:"w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white mb-2",defaultValue:"",onChange:t=>{const o=t.target.value,r=new Date;let l="",u=r.toISOString().split("T")[0];if(o==="today")l=u;else if(o==="yesterday"){const n=new Date(r);n.setDate(n.getDate()-1),l=u=n.toISOString().split("T")[0]}else if(o==="24h"){const n=new Date(r);n.setHours(n.getHours()-24),l=n.toISOString().split("T")[0]}else if(o==="7d"){const n=new Date(r);n.setDate(n.getDate()-7),l=n.toISOString().split("T")[0]}else if(o==="10d"){const n=new Date(r);n.setDate(n.getDate()-10),l=n.toISOString().split("T")[0]}else if(o==="30d"){const n=new Date(r);n.setDate(n.getDate()-30),l=n.toISOString().split("T")[0]}else{if(o==="custom")return;l=u=""}d(n=>({...n,startDate:l,endDate:u,page:1}))}},e.createElement("option",{value:""},a("any_time")),e.createElement("option",{value:"today"},a("today")),e.createElement("option",{value:"yesterday"},a("yesterday")),e.createElement("option",{value:"24h"},a("last_24_hours")),e.createElement("option",{value:"7d"},a("last_7_days")),e.createElement("option",{value:"10d"},a("last_10_days")),e.createElement("option",{value:"30d"},a("last_30_days")),e.createElement("option",{value:"custom"},a("custom_range"))),e.createElement("details",{className:"text-xs text-gray-500 dark:text-gray-400"},e.createElement("summary",{className:"cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"},a("custom_date_range")),e.createElement("div",{className:"flex gap-2 mt-2"},e.createElement("input",{type:"date",className:"w-1/2 border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white",value:s.startDate||"",onChange:t=>d(o=>({...o,startDate:t.target.value,page:1}))}),e.createElement("input",{type:"date",className:"w-1/2 border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white",value:s.endDate||"",onChange:t=>d(o=>({...o,endDate:t.target.value,page:1}))})))),e.createElement("div",{className:"mb-2"},e.createElement("label",{className:"block text-sm font-medium text-gray-700 mb-1"},a("category")),k&&N?.categories&&N.categories.length>0&&e.createElement("div",{className:"flex flex-wrap gap-1 mb-2"},e.createElement("span",{className:"text-xs text-gray-500"},a("your_preferences")||"Your preferences",":"),N.categories.map((t,o)=>e.createElement("span",{key:o,className:"px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full"},t))),e.createElement("select",{className:"w-full border rounded px-2 py-1",value:s.category||"",onChange:t=>d(o=>({...o,category:t.target.value,page:1}))},e.createElement("option",{value:""},"All Categories"),U.map(t=>e.createElement("option",{key:t.category_id||t.name,value:t.name},t.name)))),e.createElement("div",{className:"mb-2"},e.createElement("label",{className:"block text-sm font-medium text-gray-700 mb-1"},a("sort_by")),e.createElement("select",{className:"w-full border rounded px-2 py-1",value:s.sortBy||"",onChange:t=>d(o=>({...o,sortBy:t.target.value,page:1}))},e.createElement("option",{value:""},a("default")||"Default"),e.createElement("option",{value:"price_asc"},a("price_low_high")||"Price: Low to High"),e.createElement("option",{value:"price_desc"},a("price_high_low")||"Price: High to Low"),e.createElement("option",{value:"date_desc"},a("newest_first")||"Newest First"),e.createElement("option",{value:"date_asc"},a("oldest_first")||"Oldest First"))),e.createElement("div",{className:"flex gap-2 mt-2"},e.createElement("button",{className:"flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition",onClick:()=>{v(!1);const t=j(f),o=M(f);if(i.pathname==="/for-you"&&t&&o){const r=s.category?[s.category]:[];z.post("/profile/preferences/update",{userId:o,location:s.location,minPrice:s.minPrice,maxPrice:s.maxPrice,categories:r}).then(()=>{S({title:a("preferences_updated")||"Preferences Updated",description:a("for_you_synced")||"Your For You feed preferences have been saved."})}).catch(l=>{import.meta.env.DEV&&console.error("Failed to sync preferences",l)})}if(i.pathname==="/for-you"){const r=new URLSearchParams;s.category&&r.set("category",s.category),s.minPrice&&r.set("minPrice",s.minPrice),s.maxPrice&&r.set("maxPrice",s.maxPrice),s.location&&r.set("location",s.location);const l=r.toString();p(`/for-you${l?"?"+l:""}`)}}},a("apply")||"Apply"),e.createElement("button",{className:"flex-1 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition",onClick:()=>{d(t=>({...t,location:"",minPrice:"",maxPrice:"",priceRange:"",startDate:"",endDate:"",category:"",sortBy:"",page:1})),v(!1),i.pathname==="/for-you"&&p("/for-you")}},a("reset")||"Clear"))))),e.createElement("div",{className:"flex items-center gap-4"},h&&e.createElement(y,{to:"/tier-selection","aria-label":"Add Post",className:"relative group"},e.createElement("span",{className:"inline-flex items-center justify-center rounded-full border-2 border-blue-600 bg-gradient-to-br from-blue-400 to-blue-600 text-white w-12 h-12 text-3xl font-extrabold shadow-xl hover:scale-110 hover:shadow-2xl transition-all duration-200 ring-4 ring-blue-300 focus:ring-4 focus:ring-blue-400",style:{cursor:"pointer",zIndex:20},tabIndex:0,role:"button","aria-label":"Add Post"},"+"),e.createElement("span",{className:"absolute left-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none"},a("sell")||"Add Post")),e.createElement(y,{to:"/notifications","aria-label":a("notifications"),className:"relative group"},e.createElement("span",{className:"p-2 rounded-full hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white transition-colors inline-flex items-center justify-center"},e.createElement(re,{className:"text-white w-6 h-6"})),e.createElement("span",{className:"absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none"},a("notifications"))),e.createElement(y,{to:"/wishlist","aria-label":a("wishlist")||"Wishlist",className:"relative group"},e.createElement("span",{className:"p-2 rounded-full hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white transition-colors inline-flex items-center justify-center"},e.createElement(se,{className:"text-white w-6 h-6"})),e.createElement("span",{className:"absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none"},a("wishlist")||"Wishlist")),e.createElement(y,{to:"/recently-viewed","aria-label":a("recently_viewed")||"Recently Viewed",className:"relative group"},e.createElement("span",{className:"p-2 rounded-full hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white transition-colors inline-flex items-center justify-center"},e.createElement(ne,{className:"text-white w-6 h-6"})),e.createElement("span",{className:"absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none"},a("recently_viewed")||"Recently Viewed")),e.createElement("div",null,e.createElement(be,null)),e.createElement("button",{onClick:()=>W(!c),className:"p-2 rounded-full hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-white transition-colors","aria-label":a(c?"light_mode":"dark_mode"),title:a(c?"light_mode":"dark_mode")},c?e.createElement("span",{className:"text-yellow-300 text-xl"},"\u{1F31E}"):e.createElement("span",{className:"text-white text-xl"},"\u{1F319}"))))):e.createElement("div",{className:"h-14 bg-blue-600 w-full"}),T&&e.createElement("div",{className:"fixed inset-0 z-50",onClick:()=>g(!1)},e.createElement("div",{className:"fixed top-0 right-0 h-full w-80 max-w-full bg-white dark:bg-gray-800 shadow-2xl p-8 flex flex-col gap-4 animate-slideInRight ring-4 ring-blue-400 dark:ring-yellow-400 ring-opacity-80 z-50 overflow-y-auto pb-24",style:{transition:"transform 0.3s"},onClick:t=>t.stopPropagation()},e.createElement("button",{className:"absolute top-4 right-4 text-gray-500 hover:text-blue-600 dark:hover:text-yellow-400",onClick:()=>g(!1)},e.createElement("svg",{xmlns:"http://www.w3.org/2000/svg",className:"h-7 w-7",fill:"none",viewBox:"0 0 24 24",stroke:"currentColor"},e.createElement("path",{strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:2,d:"M6 18L18 6M6 6l12 12"}))),e.createElement("h2",{className:"text-2xl font-bold text-blue-600 dark:text-yellow-300 mb-4 drop-shadow-lg"},a("more_options")),A.filter(t=>!(h&&(t.key==="login"||t.key==="signup"))).map(t=>{const r=!h&&["chat","verification","feedback","complaints","dashboard","admin_panel"].includes(t.key);return e.createElement(y,{key:t.key,to:r?"#":t.path,className:`block px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-center text-base shadow transition-all duration-150 ${r?"opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800":""}`,onClick:l=>{r?(l.preventDefault(),l.stopPropagation(),S({description:a("login_required")||"Please login to access this feature",variant:"destructive"})):g(!1)},tabIndex:0},e.createElement("span",{className:"flex items-center justify-center gap-2"},r&&e.createElement(ie,{className:"w-4 h-4 text-gray-500"}),a(t.key)))}),h&&e.createElement("button",{className:"block w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-semibold text-center text-base shadow transition-colors duration-150",onClick:G},a("logout")||"Logout"),e.createElement("div",{className:"border-t border-gray-200 dark:border-gray-700 pt-4 mt-2"},e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400 mb-2 text-center"},"\u267F ",a("accessibility")||"Accessibility"),e.createElement("button",{className:`block w-full px-4 py-3 rounded-lg font-semibold text-center text-base shadow transition-all duration-150 ${m?"bg-green-500 text-white hover:bg-green-600":"bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"}`,onClick:()=>$(!m),title:m?"Switch to normal font size":"Increase font size for easier reading"},m?a("normal_size")||"\u{1F524} Normal Size":a("larger_text")||"\u{1F520} Larger Text",e.createElement("span",{className:"block text-xs font-normal opacity-75 mt-1"},m?a("using_large_fonts")||"Currently using large fonts":a("easier_to_read")||"Easier to read for everyone"))),e.createElement("button",{className:"mt-4 px-4 py-2 bg-blue-600 dark:bg-yellow-400 text-white dark:text-gray-900 rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-yellow-500 shadow transition-colors duration-150",onClick:()=>g(!1)},a("close"))),e.createElement("div",{className:"fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm"})),e.createElement("nav",{className:"fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg flex justify-between items-center px-2 py-1 animate-fadeIn",role:"navigation","aria-label":a("bottom_navigation")},e.createElement("div",{className:"flex flex-1 justify-evenly"},_.filter(t=>t.key!=="+Sell").slice(0,3).map(t=>e.createElement("button",{key:t.key,...F(a(t.key)),"aria-current":i.pathname===t.path?"page":void 0,onClick:t.key==="more"?o=>{o.preventDefault(),g(!0)}:()=>p(t.path),style:{background:"none",border:"none",outline:"none"}},e.createElement("span",{className:i.pathname===t.path?"text-blue-600 dark:text-blue-400 scale-110":"text-gray-500 dark:text-gray-300"},t.icon),e.createElement("span",{className:"text-xs mt-1 font-semibold",style:{fontSize:"0.85rem",position:"relative"}},a(t.key)),i.pathname===t.path&&e.createElement("span",{className:"block w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 mt-1 mx-auto animate-pulse"})))),h&&e.createElement("div",{className:"flex-none"},e.createElement("button",{"aria-label":a("sell")||"Sell",className:"bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-4xl shadow-lg hover:bg-blue-700 transition-all -translate-y-4 border-4 border-white dark:border-gray-900",onClick:()=>p("/tier-selection"),style:{zIndex:100}},"+")),e.createElement("div",{className:"flex flex-1 justify-evenly"},_.filter(t=>t.key!=="+Sell").slice(3).map(t=>e.createElement("button",{key:t.key,...F(a(t.key)),"aria-current":i.pathname===t.path?"page":void 0,onClick:t.key==="more"?o=>{o.preventDefault(),g(!0)}:()=>p(t.path),style:{background:"none",border:"none",outline:"none"}},e.createElement("span",{className:i.pathname===t.path?"text-blue-600 dark:text-blue-400 scale-110":"text-gray-500 dark:text-gray-300"},t.icon),e.createElement("span",{className:"text-xs mt-1 font-semibold",style:{fontSize:"0.85rem",position:"relative"}},a(t.key)),i.pathname===t.path&&e.createElement("span",{className:"block w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400 mt-1 mx-auto animate-pulse"}))))),e.createElement(fe,{isOpen:H,onClose:()=>P(!1)}))};var He=ve;export{He as default};
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  FiBell,
+  FiClock,
+  FiHelpCircle,
+  FiCheck,
+  FiFilter,
+  FiBookmark,
+  FiHome,
+  FiMapPin,
+  FiMonitor,
+  FiMenu,
+  FiLock,
+  FiMoon,
+  FiPlus,
+  FiSearch,
+  FiShoppingCart,
+  FiSmartphone,
+  FiStar,
+  FiSun,
+  FiTablet,
+  FiUser,
+  FiX,
+} from "react-icons/fi";
+import { useTranslation } from "react-i18next";
+import { useFilter, DEFAULT_FILTERS } from "@/context/FilterContext";
+import { useCart } from "@/context/CartContext";
+import { useLocation as useLocationContext } from "@/context/LocationContext";
+import { useAuth } from "@/context/AuthContext";
+import { fetchCategoriesCached } from "@/services/categoriesService";
+import { getSavedPostsMap, subscribeSavedPosts } from "@/utils/savedPosts";
+import LanguageSelector from "./LanguageSelector";
+import LocationSelector from "./LocationSelector";
+import { useToast } from "@/hooks/use-toast";
+
+const HIDDEN_PATHS = new Set(["/login", "/signup", "/forgot-password"]);
+const LOCATION_OPTIONS = [
+  "Any",
+  "Hyderabad",
+  "Bengaluru",
+  "Chennai",
+  "Mumbai",
+  "Delhi",
+  "Kolkata",
+  "Pune",
+];
+const LOCATION_OPTION_KEYS = {
+  Any: "any_location",
+  Hyderabad: "hyderabad",
+  Bengaluru: "bangalore",
+  Chennai: "chennai",
+  Mumbai: "mumbai",
+  Delhi: "delhi",
+  Kolkata: "kolkata",
+  Pune: "pune",
+};
+
+const BOTTOM_ITEMS = [
+  { key: "home", path: "/all-posts", icon: FiHome },
+  { key: "for_you", path: "/for-you", icon: FiStar },
+  { key: "feed", path: "/feed", icon: FiSearch },
+  { key: "rewards", path: "/rewards", icon: FiStar },
+  { key: "profile", path: "/profile", icon: FiUser },
+  { key: "more", path: "#", icon: FiMenu },
+];
+
+const DRAWER_EXTRA_ITEMS = [
+  { key: "chat", path: "/chat", icon: FiMenu, protected: true },
+  { key: "dashboard", path: "/dashboard", icon: FiMenu, protected: true },
+  { key: "nearby", path: "/nearby", icon: FiMapPin },
+  { key: "categories", path: "/categories", icon: FiFilter },
+  { key: "verification", path: "/verification", icon: FiUser, protected: true },
+  { key: "feedback", path: "/feedback", icon: FiMenu },
+  { key: "complaints", path: "/complaints", icon: FiMenu },
+  { key: "admin_panel", path: "/admin-panel", icon: FiMenu, protected: true },
+];
+const ADMIN_ACCESS_ROLES = new Set([
+  "admin",
+  "superadmin",
+  "moderator",
+  "risk",
+  "ops",
+]);
+const LAYOUT_STORAGE_KEY = "mhub_layout_preview_mode";
+const LAYOUT_PRESETS = [
+  {
+    key: "mobile",
+    labelKey: "mobile",
+    icon: FiSmartphone,
+    width: 390,
+    height: 844,
+  },
+  {
+    key: "tablet",
+    labelKey: "tablet",
+    icon: FiTablet,
+    width: 834,
+    height: 1112,
+  },
+  {
+    key: "desktop",
+    labelKey: "desktop",
+    icon: FiMonitor,
+    width: 1366,
+    height: 900,
+  },
+];
+
+const SEO_DEFAULTS = {
+  title: "MHub - Verified Marketplace",
+  description:
+    "MHub is a secure marketplace for buying and selling verified products with trust-first listings and local discovery.",
+  robots: "index,follow,max-image-preview:large",
+  image: "/pwa-512x512.png",
+};
+
+const SEO_NO_INDEX_PATH_PREFIXES = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/admin-panel",
+  "/dashboard",
+  "/profile",
+  "/cart",
+  "/payment",
+];
+
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(String(value || ""));
+  } catch {
+    return String(value || "");
+  }
+}
+
+function getStaticSeoForPath(pathname) {
+  if (pathname === "/all-posts" || pathname === "/") {
+    return {
+      title: "All Posts - MHub",
+      description:
+        "Browse verified listings across categories, locations, and price ranges on MHub.",
+    };
+  }
+
+  const byPath = {
+    "/home": {
+      title: "Home - MHub",
+      description:
+        "Discover trending verified listings and marketplace updates on MHub.",
+    },
+    "/categories": {
+      title: "Categories - MHub",
+      description:
+        "Explore product categories and browse listings with fast filters on MHub.",
+    },
+    "/nearby": {
+      title: "Nearby Listings - MHub",
+      description:
+        "Find verified listings near your location and compare local deals on MHub.",
+    },
+    "/public-wall": {
+      title: "Public Wall - MHub",
+      description:
+        "Browse public listing highlights and marketplace activity on MHub.",
+    },
+    "/search": {
+      title: "Search Listings - MHub",
+      description:
+        "Search verified products with category, location, and price filters on MHub.",
+    },
+    "/rewards": {
+      title: "Rewards - MHub",
+      description:
+        "Track rewards, referrals, and growth milestones in your MHub account.",
+    },
+    "/support": {
+      title: "Support - MHub",
+      description:
+        "Get help, policy guidance, and issue resolution support from the MHub team.",
+    },
+    "/t&c": {
+      title: "Terms and Conditions - MHub",
+      description:
+        "Read marketplace terms, responsibilities, and usage guidelines for MHub.",
+    },
+    "/privacy-policy": {
+      title: "Privacy Policy - MHub",
+      description:
+        "Review how MHub collects, uses, and protects your account and listing data.",
+    },
+    "/refund-policy": {
+      title: "Refund Policy - MHub",
+      description:
+        "Understand refund eligibility, timelines, and process rules on MHub.",
+    },
+    "/support-ticket-policy": {
+      title: "Support Ticket Policy - MHub",
+      description:
+        "Learn support ticket response expectations and escalation flow on MHub.",
+    },
+    "/login": {
+      title: "Login - MHub",
+      description:
+        "Sign in to access your verified marketplace account on MHub.",
+    },
+    "/signup": {
+      title: "Create Account - MHub",
+      description:
+        "Create your MHub account to post, buy, and manage listings securely.",
+    },
+  };
+
+  return byPath[pathname] || null;
+}
+
+function buildSeoMeta(pathname, search) {
+  const params = new URLSearchParams(search || "");
+  const base = getStaticSeoForPath(pathname) || {};
+  let title = base.title || SEO_DEFAULTS.title;
+  let description = base.description || SEO_DEFAULTS.description;
+
+  if (pathname === "/all-posts" || pathname === "/") {
+    const searchTerm = safeDecode(params.get("search")).trim();
+    const category = safeDecode(params.get("category")).trim();
+    const location = safeDecode(params.get("location")).trim();
+
+    const chunks = ["All Posts"];
+    if (searchTerm) chunks.push(`"${searchTerm}"`);
+    if (category) chunks.push(category);
+    if (location) chunks.push(location);
+
+    title = `${chunks.join(" | ")} - MHub`;
+    description = [
+      "Browse verified listings on MHub.",
+      searchTerm ? `Search: ${searchTerm}.` : "",
+      category ? `Category: ${category}.` : "",
+      location ? `Location: ${location}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  } else if (pathname.startsWith("/post/")) {
+    title = "Post Details - MHub";
+    description =
+      "View listing details, media, seller context, and trust signals for this MHub post.";
+  }
+
+  const noIndex = SEO_NO_INDEX_PATH_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix),
+  );
+
+  return {
+    title,
+    description,
+    robots: noIndex ? "noindex,nofollow" : SEO_DEFAULTS.robots,
+    image: SEO_DEFAULTS.image,
+  };
+}
+
+function upsertMeta(attribute, key, content) {
+  if (typeof document === "undefined") return;
+  if (!key || !content) return;
+
+  let node = document.head.querySelector(`meta[${attribute}="${key}"]`);
+  if (!node) {
+    node = document.createElement("meta");
+    node.setAttribute(attribute, key);
+    document.head.appendChild(node);
+  }
+  node.setAttribute("content", content);
+}
+
+function upsertCanonical(pathname, search) {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+  const origin = window.location.origin || "https://example.com";
+  const canonicalUrl = `${origin}${pathname}${search || ""}`;
+
+  let link = document.head.querySelector('link[rel="canonical"]');
+  if (!link) {
+    link = document.createElement("link");
+    link.setAttribute("rel", "canonical");
+    document.head.appendChild(link);
+  }
+  link.setAttribute("href", canonicalUrl);
+}
+
+function applySeoMeta(meta, pathname, search) {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+  const origin = window.location.origin || "https://example.com";
+  const pageUrl = `${origin}${pathname}${search || ""}`;
+
+  document.title = meta.title || SEO_DEFAULTS.title;
+
+  upsertMeta(
+    "name",
+    "description",
+    meta.description || SEO_DEFAULTS.description,
+  );
+  upsertMeta("name", "robots", meta.robots || SEO_DEFAULTS.robots);
+  upsertMeta("name", "theme-color", "#2563eb");
+
+  upsertMeta("property", "og:type", "website");
+  upsertMeta("property", "og:site_name", "MHub");
+  upsertMeta("property", "og:title", meta.title || SEO_DEFAULTS.title);
+  upsertMeta(
+    "property",
+    "og:description",
+    meta.description || SEO_DEFAULTS.description,
+  );
+  upsertMeta("property", "og:url", pageUrl);
+  upsertMeta("property", "og:image", meta.image || SEO_DEFAULTS.image);
+
+  upsertMeta("name", "twitter:card", "summary_large_image");
+  upsertMeta("name", "twitter:title", meta.title || SEO_DEFAULTS.title);
+  upsertMeta(
+    "name",
+    "twitter:description",
+    meta.description || SEO_DEFAULTS.description,
+  );
+  upsertMeta("name", "twitter:image", meta.image || SEO_DEFAULTS.image);
+
+  upsertCanonical(pathname, search);
+}
+
+function normalizeNumber(value) {
+  const parsed = Number.parseInt(String(value || ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : "";
+}
+
+function normalizeRole(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (!normalized) return "";
+  if (normalized === "super_admin") return "superadmin";
+  if (normalized === "administrator") return "admin";
+  if (normalized === "mod") return "moderator";
+  if (normalized === "operations") return "ops";
+  return normalized;
+}
+
+function buildAllPostsSearch(filters) {
+  const params = new URLSearchParams();
+
+  if (filters.search) params.set("search", filters.search);
+  if (filters.category && filters.category !== "All")
+    params.set("category", filters.category);
+  if (filters.location) params.set("location", filters.location);
+  if (filters.minPrice)
+    params.set("minPrice", normalizeNumber(filters.minPrice));
+  if (filters.maxPrice)
+    params.set("maxPrice", normalizeNumber(filters.maxPrice));
+  if (filters.priceRange && !filters.minPrice && !filters.maxPrice) {
+    const [minValue, maxValue] = String(filters.priceRange)
+      .split("-")
+      .map((value) => Number.parseInt(value, 10));
+    if (Number.isFinite(minValue) && minValue >= 0)
+      params.set("minPrice", String(minValue));
+    if (Number.isFinite(maxValue) && maxValue > 0)
+      params.set("maxPrice", String(maxValue));
+  }
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
+  if (filters.latestWindow) params.set("latestWindow", filters.latestWindow);
+  if (filters.sortBy) params.set("sortBy", filters.sortBy);
+
+  return params.toString();
+}
+
+function mergeFilterState(current, updates) {
+  return {
+    ...current,
+    ...updates,
+    search: String(updates.search ?? current.search ?? "").trim(),
+    category: updates.category ?? current.category ?? "All",
+    location:
+      updates.location === "Any"
+        ? ""
+        : (updates.location ?? current.location ?? ""),
+    minPrice: normalizeNumber(updates.minPrice ?? current.minPrice),
+    maxPrice: normalizeNumber(updates.maxPrice ?? current.maxPrice),
+    latestWindow: String(
+      updates.latestWindow ?? current.latestWindow ?? "",
+    ).trim(),
+    startDate: updates.startDate ?? current.startDate ?? "",
+    endDate: updates.endDate ?? current.endDate ?? "",
+    sortBy: updates.sortBy ?? current.sortBy ?? "",
+    page: 1,
+  };
+}
+
+export default function GreenNavbar() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const route = useLocation();
+  const { toast } = useToast();
+
+  const { filters, setFilters } = useFilter();
+  const { totalCount } = useCart();
+  const { user, logout, isAuthenticated: authIsAuthenticated } = useAuth();
+  const {
+    city,
+    area,
+    locality,
+    displayName,
+    loading: locationLoading,
+  } = useLocationContext();
+
+  const isAuthenticated = Boolean(authIsAuthenticated ?? user);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isLocationOpen, setIsLocationOpen] = useState(false);
+  const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const storedTheme = String(localStorage.getItem("mhub-theme") || "")
+      .trim()
+      .toLowerCase();
+    if (storedTheme === "dark") return true;
+    if (storedTheme === "light") return false;
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  });
+  const [isLargeFont, setIsLargeFont] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const raw = localStorage.getItem("largeFont");
+    if (raw == null) return false;
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+    try {
+      return Boolean(JSON.parse(raw));
+    } catch {
+      return false;
+    }
+  });
+  const [savedCount, setSavedCount] = useState(
+    () => Object.keys(getSavedPostsMap()).length,
+  );
+  const [layoutMode, setLayoutMode] = useState(() => {
+    if (typeof window === "undefined") return "desktop";
+    const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || "")
+      .trim()
+      .toLowerCase();
+    return LAYOUT_PRESETS.some((item) => item.key === stored)
+      ? stored
+      : "desktop";
+  });
+  const layoutMenuRef = useRef(null);
+  const [isSmallViewport, setIsSmallViewport] = useState(false);
+
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+  const [filterDraft, setFilterDraft] = useState(filters);
+  const [categories, setCategories] = useState([]);
+
+  const currentUserRole = useMemo(() => {
+    const roleFromUser = normalizeRole(user?.role);
+    if (roleFromUser) return roleFromUser;
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      return normalizeRole(storedUser?.role);
+    } catch {
+      return "";
+    }
+  }, [user?.role]);
+  const hasAdminPanelAccess = ADMIN_ACCESS_ROLES.has(currentUserRole);
+  const hideNavbar =
+    HIDDEN_PATHS.has(route.pathname) ||
+    route.pathname.startsWith("/reset-password");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchCategoriesCached();
+        if (cancelled) return;
+        setCategories(Array.isArray(list) ? list : []);
+      } catch {
+        if (cancelled) return;
+        setCategories([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    setSearchInput(filters.search || "");
+  }, [filters.search]);
+
+  useEffect(() => {
+    if (isFilterOpen) {
+      setFilterDraft(filters);
+    }
+  }, [isFilterOpen, filters]);
+
+  useEffect(() => {
+    const seoMeta = buildSeoMeta(route.pathname, route.search);
+    applySeoMeta(seoMeta, route.pathname, route.search);
+  }, [route.pathname, route.search]);
+
+  useEffect(() => {
+    setIsLayoutMenuOpen(false);
+  }, [route.pathname, route.search]);
+
+  useEffect(() => {
+    const onClickOutside = (event) => {
+      const clickedInLayout = layoutMenuRef.current?.contains(event.target);
+      if (!clickedInLayout) {
+        setIsLayoutMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const query = window.matchMedia("(max-width: 639px)");
+    const handleChange = (event) => setIsSmallViewport(event.matches);
+    handleChange(query);
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", handleChange);
+      return () => query.removeEventListener("change", handleChange);
+    }
+    query.addListener(handleChange);
+    return () => query.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    return subscribeSavedPosts((map) => {
+      setSavedCount(Object.keys(map || {}).length);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.setAttribute("data-layout-preview", layoutMode);
+    document.body?.setAttribute("data-layout-preview", layoutMode);
+    localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode);
+  }, [layoutMode]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.classList.toggle("dark", isDarkMode);
+    localStorage.setItem("mhub-theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.toggle("text-lg", isLargeFont);
+    document.body.style.fontSize = isLargeFont ? "18px" : "";
+    localStorage.setItem("largeFont", JSON.stringify(isLargeFont));
+  }, [isLargeFont]);
+
+  const locationLabel = useMemo(() => {
+    if (displayName) return displayName;
+    if (area) return area;
+    if (locality) return locality;
+    if (city) return city;
+    if (locationLoading)
+      return t("detecting_location") || "Detecting location...";
+    return t("location") || "Location";
+  }, [area, city, displayName, locality, locationLoading, t]);
+  const currentLayoutPreset = useMemo(
+    () =>
+      LAYOUT_PRESETS.find((item) => item.key === layoutMode) ||
+      LAYOUT_PRESETS[2],
+    [layoutMode],
+  );
+  const CurrentLayoutIcon = currentLayoutPreset.icon;
+  const hasSavedPosts = savedCount > 0;
+  const isPreviewMobile = layoutMode === "mobile";
+  const isPreviewTablet = layoutMode === "tablet";
+  const forceCompactUi = isPreviewMobile || isPreviewTablet;
+  const showAllIconsInPreview = forceCompactUi;
+  const showCompactHeader = forceCompactUi || isSmallViewport;
+  const mobileActionGridCols = isAuthenticated ? "grid-cols-5" : "grid-cols-4";
+
+  const handleToggleDarkMode = () => {
+    setIsDarkMode((value) => !value);
+  };
+
+  const handleToggleLargeFont = () => {
+    setIsLargeFont((value) => !value);
+  };
+
+  const applyFilterAndNavigate = (next) => {
+    const query = buildAllPostsSearch(next);
+    setFilters(next);
+    navigate(query ? `/all-posts?${query}` : "/all-posts");
+  };
+
+  const handleSearchSubmit = (event) => {
+    event?.preventDefault?.();
+    const next = mergeFilterState(filters, { search: searchInput });
+    applyFilterAndNavigate(next);
+  };
+
+  const handleSearchClear = () => {
+    setSearchInput("");
+    const next = mergeFilterState(filters, { search: "" });
+    applyFilterAndNavigate(next);
+  };
+
+  const handleApplyFilters = () => {
+    const next = mergeFilterState(filters, filterDraft);
+    setIsFilterOpen(false);
+    applyFilterAndNavigate(next);
+  };
+
+  const handleResetFilters = () => {
+    const reset = {
+      ...DEFAULT_FILTERS,
+      search: searchInput.trim(),
+    };
+    setFilterDraft(reset);
+    setIsFilterOpen(false);
+    applyFilterAndNavigate(reset);
+  };
+
+  const handleOpenProtected = (path) => {
+    if (isAuthenticated) {
+      navigate(path);
+      setIsDrawerOpen(false);
+      return;
+    }
+    toast({
+      title: t("login_required_title") || "Login required",
+      description: t("please_login_continue") || "Please login to continue.",
+      variant: "destructive",
+    });
+    navigate("/login", { state: { returnTo: path } });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      setIsDrawerOpen(false);
+      navigate("/login", { replace: true });
+    }
+  };
+
+  const handleDrawerItemClick = (item) => {
+    if (!item?.path) return;
+
+    if (item.path === "/admin-panel" && !isAuthenticated) {
+      handleOpenProtected(item.path);
+      return;
+    }
+
+    if (item.path === "/admin-panel" && !hasAdminPanelAccess) {
+      toast({
+        title: t("admin_access_required") || "Admin access required",
+        description:
+          t("no_admin_permission") ||
+          "You do not have permission to open Admin Panel.",
+        variant: "destructive",
+      });
+      setIsDrawerOpen(false);
+      return;
+    }
+
+    if (item.protected && !isAuthenticated) {
+      handleOpenProtected(item.path);
+      return;
+    }
+
+    navigate(item.path);
+    setIsDrawerOpen(false);
+  };
+
+  const handleLayoutModeChange = (modeKey) => {
+    const next = LAYOUT_PRESETS.find((item) => item.key === modeKey);
+    if (!next) return;
+
+    setLayoutMode(next.key);
+    setIsLayoutMenuOpen(false);
+    setIsDrawerOpen(false);
+
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        window.dispatchEvent(new Event("resize"));
+      });
+    }
+
+    toast({
+      title: `${t(next.labelKey) || next.key} ${t("layout_active") || "layout active"}`,
+      description:
+        t("responsive_preview_updated") ||
+        `Responsive preview updated (${next.width}x${next.height}).`,
+    });
+  };
+
+  if (hideNavbar) return null;
+
+  return (
+    <>
+            <header
+        className="sticky top-0 z-50 border-b border-blue-500/25 bg-blue-600/95 shadow-lg backdrop-blur"
+        aria-label={t("main_navigation") || "Main navigation"}
+        data-no-auto-translate="true"
+      >
+        <div className="mx-auto w-full max-w-[92rem] px-2 py-1 sm:px-3 sm:py-2 md:px-4">
+          {showCompactHeader ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Link
+                    to="/all-posts"
+                    className="flex items-center gap-2"
+                    aria-label={t("home") || "Home"}
+                  >
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-blue-600 shadow">
+                      <FiHome className="h-4 w-4" />
+                    </span>
+                    <span className="text-sm font-semibold text-white sm:text-base">
+                      {t("home") || "Home"}
+                    </span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsLocationOpen(true)}
+                    className="inline-flex h-8 max-w-[140px] items-center gap-1 rounded-full bg-white/15 px-2 text-[10px] font-semibold text-white shadow-sm hover:bg-white/25 sm:max-w-[220px] sm:text-xs"
+                    title={locationLabel}
+                  >
+                    <FiMapPin className="h-4 w-4" />
+                    <span className="truncate">{locationLabel}</span>
+                  </button>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-1 py-0.5 backdrop-blur">
+                  <LanguageSelector compact className="shrink-0 max-w-[86px]" />
+                  <button
+                    type="button"
+                    onClick={handleToggleDarkMode}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                    aria-label={
+                      isDarkMode
+                        ? t("light_mode") || "Switch to light mode"
+                        : t("dark_mode") || "Switch to dark mode"
+                    }
+                    title={
+                      isDarkMode
+                        ? t("light_mode") || "Switch to light mode"
+                        : t("dark_mode") || "Switch to dark mode"
+                    }
+                  >
+                    {isDarkMode ? (
+                      <FiSun className="h-4 w-4" />
+                    ) : (
+                      <FiMoon className="h-4 w-4" />
+                    )}
+                  </button>
+
+                  <div ref={layoutMenuRef} className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsLayoutMenuOpen((value) => !value)}
+                      aria-expanded={isLayoutMenuOpen}
+                      aria-haspopup="menu"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                      aria-label={`${t(currentLayoutPreset.labelKey) || currentLayoutPreset.key} ${
+                        t("layout") || "layout"
+                      }`}
+                      title={`${t(currentLayoutPreset.labelKey) || currentLayoutPreset.key} ${
+                        t("layout") || "layout"
+                      }`}
+                    >
+                      <CurrentLayoutIcon className="h-4 w-4" />
+                    </button>
+
+                    {isLayoutMenuOpen ? (
+                      showCompactHeader ? (
+                        <div className="fixed inset-0 z-[80]">
+                          <button
+                            type="button"
+                            aria-label={t("close") || "Close"}
+                            onClick={() => setIsLayoutMenuOpen(false)}
+                            className="absolute inset-0 bg-black/40"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white px-4 pb-6 pt-4 shadow-2xl">
+                            <div className="flex items-center justify-between pb-3">
+                              <h3 className="text-base font-semibold text-slate-800">
+                                {t("layout") || "Layout"}
+                              </h3>
+                              <button
+                                type="button"
+                                onClick={() => setIsLayoutMenuOpen(false)}
+                                className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+                              >
+                                <FiX className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="grid gap-2">
+                              {LAYOUT_PRESETS.map((preset) => {
+                                const Icon = preset.icon;
+                                const active = preset.key === layoutMode;
+                                return (
+                                  <button
+                                    key={preset.key}
+                                    type="button"
+                                    onClick={() => handleLayoutModeChange(preset.key)}
+                                    className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left ${
+                                      active
+                                        ? "border-blue-300 bg-blue-50 text-blue-700"
+                                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm">
+                                      <Icon className="h-4 w-4" />
+                                    </span>
+                                    <span className="flex flex-1 flex-col">
+                                      <span className="text-sm font-semibold">
+                                        {t(preset.labelKey) || preset.key}
+                                      </span>
+                                      <span className="text-[11px] font-normal text-slate-500">
+                                        {preset.width} x {preset.height}
+                                      </span>
+                                    </span>
+                                    {active ? <FiCheck className="h-4 w-4" /> : null}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="absolute right-0 top-full z-[70] mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                          {LAYOUT_PRESETS.map((preset) => {
+                            const Icon = preset.icon;
+                            const active = preset.key === layoutMode;
+                            return (
+                              <button
+                                key={preset.key}
+                                type="button"
+                                onClick={() => handleLayoutModeChange(preset.key)}
+                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                                  active
+                                    ? "bg-blue-50 font-semibold text-blue-700"
+                                    : "text-slate-700 hover:bg-slate-50"
+                                }`}
+                              >
+                                <Icon className="h-4 w-4" />
+                                <span className="flex flex-1 flex-col">
+                                  <span>{t(preset.labelKey) || preset.key}</span>
+                                  <span className="text-[11px] font-normal text-slate-500">
+                                    {preset.width} x {preset.height}
+                                  </span>
+                                </span>
+                                {active ? <FiCheck className="h-4 w-4" /> : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <form
+                onSubmit={handleSearchSubmit}
+                className="flex w-full items-center gap-2"
+              >
+                <div className="relative min-w-0 flex-1">
+                  <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="search"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder={
+                      t("search_placeholder") ||
+                      "Search products, brands and more"
+                    }
+                    className="h-8 w-full rounded-full border border-white/50 bg-white px-8 pr-8 text-[11px] text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-blue-300"
+                  />
+                  {searchInput ? (
+                    <button
+                      type="button"
+                      onClick={handleSearchClear}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-100"
+                      aria-label={t("clear_search") || "Clear search"}
+                    >
+                      <FiX className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(true)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-[11px] font-semibold text-white shadow-sm hover:bg-blue-500/80 sm:h-9 sm:w-auto sm:px-3 sm:justify-center"
+                >
+                  <FiFilter className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {t("filter") || "Filter"}
+                  </span>
+                </button>
+              </form>
+
+              <div className="relative">
+                <div
+                  className={`grid ${mobileActionGridCols} gap-2 rounded-2xl border border-white/10 bg-white/10 px-2 py-1.5 backdrop-blur`}
+                >
+                  {isAuthenticated ? (
+                    <Link
+                      to="/tier-selection"
+                      aria-label={t("add_post") || "Add post"}
+                      className="relative mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow"
+                      title={t("add_post") || "Add Post"}
+                    >
+                      <FiPlus className="h-4 w-4" />
+                      <span className="sr-only">{t("add_post") || "Add post"}</span>
+                    </Link>
+                  ) : null}
+
+                  <Link
+                    to="/notifications"
+                    className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                    aria-label={t("notifications") || "Notifications"}
+                    title={t("notifications") || "Notifications"}
+                  >
+                    <FiBell className="h-4 w-4" />
+                    <span className="sr-only">{t("notifications") || "Notifications"}</span>
+                  </Link>
+
+                  <Link
+                    to="/wishlist"
+                    className={`relative mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full ${
+                      route.pathname === "/wishlist"
+                        ? "bg-white text-blue-700"
+                        : hasSavedPosts
+                          ? "bg-emerald-300 text-blue-900"
+                          : "bg-white/10 text-white hover:bg-white/20"
+                    }`}
+                    aria-label={t("wishlist") || "Wishlist"}
+                    title={
+                      savedCount > 0
+                        ? `${savedCount} ${t("saved_posts") || "saved posts"}`
+                        : t("wishlist") || "Wishlist"
+                    }
+                  >
+                    <FiBookmark className="h-4 w-4" />
+                    {savedCount > 0 ? (
+                      <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
+                        {savedCount > 99 ? "99+" : savedCount}
+                      </span>
+                    ) : null}
+                    <span className="sr-only">{t("wishlist") || "Wishlist"}</span>
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    className="relative mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                    aria-label={t("cart") || "Cart"}
+                    title={t("cart") || "Cart"}
+                  >
+                    <FiShoppingCart className="h-4 w-4" />
+                    {totalCount > 0 ? (
+                      <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
+                        {totalCount > 99 ? "99+" : totalCount}
+                      </span>
+                    ) : null}
+                    <span className="sr-only">{t("cart") || "Cart"}</span>
+                  </Link>
+
+                  <Link
+                    to="/recently-viewed"
+                    className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                    aria-label={t("recently_viewed") || "Recently viewed"}
+                    title={t("recently_viewed") || "Recently viewed"}
+                  >
+                    <FiClock className="h-4 w-4" />
+                    <span className="sr-only">{t("recently_viewed") || "Recently viewed"}</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex w-full flex-wrap items-center gap-1 sm:gap-2 md:gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2 md:flex-none">
+                <Link
+                  to="/all-posts"
+                  className="flex items-center gap-2"
+                  aria-label={t("home") || "Home"}
+                >
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-white text-blue-600 shadow sm:h-10 sm:w-10">
+                    <FiHome className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
+                  </span>
+                  <span className="hidden text-3xl font-bold text-white md:inline">
+                    {t("home") || "Home"}
+                  </span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLocationOpen(true)}
+                  className="inline-flex h-6 max-w-[72px] items-center gap-0.5 rounded-xl bg-blue-500 px-1 text-[8px] font-semibold text-white hover:bg-blue-500/80 sm:h-10 sm:max-w-[180px] sm:gap-1 sm:px-2.5 sm:text-xs md:max-w-[240px] md:text-sm"
+                  title={locationLabel}
+                >
+                  <FiMapPin className="h-4 w-4" />
+                  <span className="truncate">{locationLabel}</span>
+                </button>
+              </div>
+
+              <form
+                onSubmit={handleSearchSubmit}
+                className="order-3 mt-0 flex w-full flex-1 items-center gap-1 sm:order-none sm:mt-0 sm:min-w-[260px] md:gap-2"
+              >
+                <div className="relative min-w-0 flex-1">
+                  <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="search"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder={
+                      t("search_placeholder") ||
+                      "Search products, brands and more"
+                    }
+                    className="h-6 w-full rounded-full border border-white/40 bg-white px-8 pr-8 text-[9px] text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-blue-300 sm:h-11 sm:px-10 sm:pr-10 sm:text-sm"
+                  />
+                  {searchInput ? (
+                    <button
+                      type="button"
+                      onClick={handleSearchClear}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-100"
+                      aria-label={t("clear_search") || "Clear search"}
+                    >
+                      <FiX className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(true)}
+                  className="inline-flex h-6 items-center gap-1 rounded-xl bg-blue-500 px-1 text-[9px] font-semibold text-white hover:bg-blue-500/80 sm:h-11 sm:px-3 sm:text-sm"
+                >
+                  <FiFilter className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {t("filter") || "Filter"}
+                  </span>
+                </button>
+              </form>
+
+              <div className="ml-0 flex min-w-0 flex-1 items-center justify-between gap-1 sm:ml-auto sm:flex-none sm:justify-end">
+                <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-0.5 overflow-x-auto pr-0.5 scrollbar-hide [&>*]:shrink-0 sm:flex-none sm:overflow-visible sm:pr-0 sm:gap-1.5">
+                  {isAuthenticated ? (
+                    <Link
+                      to="/tier-selection"
+                      aria-label={t("add_post") || "Add post"}
+                      className={`h-8 w-8 items-center justify-center rounded-full border-2 border-blue-300 bg-blue-500 text-white shadow hover:scale-105 sm:h-10 sm:w-10 ${
+                        showAllIconsInPreview
+                          ? "inline-flex"
+                          : "hidden md:inline-flex"
+                      }`}
+                      title={t("add_post") || "Add Post"}
+                    >
+                      <FiPlus className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </Link>
+                  ) : null}
+
+                  <Link
+                    to="/notifications"
+                    className={`h-8 w-8 items-center justify-center rounded-full text-white hover:bg-blue-500 sm:h-10 sm:w-10 ${
+                      showAllIconsInPreview
+                        ? "inline-flex"
+                        : "hidden lg:inline-flex"
+                    }`}
+                    aria-label={t("notifications") || "Notifications"}
+                  >
+                    <FiBell className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Link>
+
+                  <Link
+                    to="/wishlist"
+                    className={`relative h-8 w-8 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
+                      route.pathname === "/wishlist"
+                        ? "bg-blue-500 text-white"
+                        : hasSavedPosts
+                          ? "bg-emerald-300 text-blue-900"
+                          : "text-white hover:bg-blue-500"
+                    } ${showAllIconsInPreview ? "inline-flex" : "hidden lg:inline-flex"}`}
+                    aria-label={t("wishlist") || "Wishlist"}
+                    title={
+                      savedCount > 0
+                        ? `${savedCount} ${t("saved_posts") || "saved posts"}`
+                        : t("wishlist") || "Wishlist"
+                    }
+                  >
+                    <FiBookmark className="h-4 w-4 sm:h-5 sm:w-5" />
+                    {savedCount > 0 ? (
+                      <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
+                        {savedCount > 99 ? "99+" : savedCount}
+                      </span>
+                    ) : null}
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    className="relative inline-flex h-8 w-8 items-center justify-center rounded-full text-white hover:bg-blue-500 sm:h-10 sm:w-10"
+                    aria-label={t("cart") || "Cart"}
+                  >
+                    <FiShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                    {totalCount > 0 ? (
+                      <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
+                        {totalCount > 99 ? "99+" : totalCount}
+                      </span>
+                    ) : null}
+                  </Link>
+
+                  <Link
+                    to="/recently-viewed"
+                    className={`h-8 w-8 items-center justify-center rounded-full text-white hover:bg-blue-500 sm:h-10 sm:w-10 ${
+                      showAllIconsInPreview
+                        ? "inline-flex"
+                        : "hidden xl:inline-flex"
+                    }`}
+                    aria-label={t("recently_viewed") || "Recently viewed"}
+                  >
+                    <FiClock className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Link>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <LanguageSelector
+                    compact
+                    className={`shrink-0 ${
+                      forceCompactUi ? "inline-flex" : "lg:hidden"
+                    }`}
+                  />
+                  <LanguageSelector
+                    className={`shrink-0 ${
+                      forceCompactUi ? "hidden" : "hidden lg:block"
+                    }`}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleToggleDarkMode}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/30 bg-blue-500 text-white hover:bg-blue-500/80 sm:h-10 sm:w-10"
+                    aria-label={
+                      isDarkMode
+                        ? t("light_mode") || "Switch to light mode"
+                        : t("dark_mode") || "Switch to dark mode"
+                    }
+                    title={
+                      isDarkMode
+                        ? t("light_mode") || "Switch to light mode"
+                        : t("dark_mode") || "Switch to dark mode"
+                    }
+                  >
+                    {isDarkMode ? (
+                      <FiSun className="h-4 w-4 sm:h-5 sm:w-5" />
+                    ) : (
+                      <FiMoon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    )}
+                  </button>
+
+                  <div ref={layoutMenuRef} className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsLayoutMenuOpen((value) => !value)}
+                      aria-expanded={isLayoutMenuOpen}
+                      aria-haspopup="menu"
+                      className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-white/30 bg-blue-500 px-1.5 text-white hover:bg-blue-500/80 sm:h-10 sm:gap-1.5 sm:rounded-xl sm:px-2.5"
+                      aria-label={`${t(currentLayoutPreset.labelKey) || currentLayoutPreset.key} ${
+                        t("layout") || "layout"
+                      }`}
+                      title={`${t(currentLayoutPreset.labelKey) || currentLayoutPreset.key} ${
+                        t("layout") || "layout"
+                      }`}
+                    >
+                      <CurrentLayoutIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="hidden text-xs font-semibold md:inline">
+                        {t(currentLayoutPreset.labelKey) ||
+                          currentLayoutPreset.key}
+                      </span>
+                    </button>
+
+                    {isLayoutMenuOpen ? (
+                      <div className="absolute right-0 top-full z-[70] mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                        {LAYOUT_PRESETS.map((preset) => {
+                          const Icon = preset.icon;
+                          const active = preset.key === layoutMode;
+                          return (
+                            <button
+                              key={preset.key}
+                              type="button"
+                              onClick={() => handleLayoutModeChange(preset.key)}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                                active
+                                  ? "bg-blue-50 font-semibold text-blue-700"
+                                  : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span className="flex flex-1 flex-col">
+                                <span>{t(preset.labelKey) || preset.key}</span>
+                                <span className="text-[11px] font-normal text-slate-500">
+                                  {preset.width} x {preset.height}
+                                </span>
+                              </span>
+                              {active ? <FiCheck className="h-4 w-4" /> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {isFilterOpen ? (
+        <div
+          className="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 p-3"
+          onClick={() => setIsFilterOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-800">
+                {t("filter_products") || "Filter products"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(false)}
+                className="rounded p-1 text-slate-500 hover:bg-slate-100"
+                aria-label={t("close_filter") || "Close filter"}
+              >
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700">
+                {t("location") || "Location"}
+                <select
+                  className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                  value={filterDraft.location || ""}
+                  onChange={(event) =>
+                    setFilterDraft((prev) => ({
+                      ...prev,
+                      location: event.target.value,
+                    }))
+                  }
+                >
+                  {LOCATION_OPTIONS.map((option) => (
+                    <option key={option} value={option === "Any" ? "" : option}>
+                      {t(LOCATION_OPTION_KEYS[option]) || option}
+                    </option>
+                  ))}
+                  {city && !LOCATION_OPTIONS.includes(city) ? (
+                    <option value={city}>{city}</option>
+                  ) : null}
+                </select>
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  {t("min_price") || "Min price"}
+                  <input
+                    type="number"
+                    min="0"
+                    className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                    value={filterDraft.minPrice || ""}
+                    onChange={(event) =>
+                      setFilterDraft((prev) => ({
+                        ...prev,
+                        minPrice: event.target.value,
+                      }))
+                    }
+                    placeholder="0"
+                  />
+                </label>
+
+                <label className="block text-sm font-medium text-slate-700">
+                  {t("max_price") || "Max price"}
+                  <input
+                    type="number"
+                    min="0"
+                    className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                    value={filterDraft.maxPrice || ""}
+                    onChange={(event) =>
+                      setFilterDraft((prev) => ({
+                        ...prev,
+                        maxPrice: event.target.value,
+                      }))
+                    }
+                    placeholder="50000"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-sm font-medium text-slate-700">
+                  {t("start_date") || "Start date"}
+                  <input
+                    type="date"
+                    className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                    value={filterDraft.startDate || ""}
+                    onChange={(event) =>
+                      setFilterDraft((prev) => ({
+                        ...prev,
+                        startDate: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block text-sm font-medium text-slate-700">
+                  {t("end_date") || "End date"}
+                  <input
+                    type="date"
+                    className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                    value={filterDraft.endDate || ""}
+                    onChange={(event) =>
+                      setFilterDraft((prev) => ({
+                        ...prev,
+                        endDate: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <label className="block text-sm font-medium text-slate-700">
+                {t("category") || "Category"}
+                <select
+                  className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                  value={filterDraft.category || "All"}
+                  onChange={(event) =>
+                    setFilterDraft((prev) => ({
+                      ...prev,
+                      category: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="All">
+                    {t("all_categories") || "All Categories"}
+                  </option>
+                  {categories.map((category) => (
+                    <option
+                      key={category.category_id || category.id || category.name}
+                      value={category.name}
+                    >
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-medium text-slate-700">
+                {t("sort_by") || "Sort by"}
+                <select
+                  className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm"
+                  value={filterDraft.sortBy || ""}
+                  onChange={(event) =>
+                    setFilterDraft((prev) => ({
+                      ...prev,
+                      sortBy: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">{t("default") || "Default"}</option>
+                  <option value="price_asc">
+                    {t("price_low_high") || "Price: Low to high"}
+                  </option>
+                  <option value="price_desc">
+                    {t("price_high_low") || "Price: High to low"}
+                  </option>
+                  <option value="date_desc">
+                    {t("newest_first") || "Newest first"}
+                  </option>
+                  <option value="date_asc">
+                    {t("oldest_first") || "Oldest first"}
+                  </option>
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleApplyFilters}
+                className="h-10 flex-1 rounded-lg bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                {t("apply") || "Apply"}
+              </button>
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="h-10 flex-1 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                {t("reset") || "Reset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isDrawerOpen ? (
+        <div
+          className="fixed inset-0 z-[70]"
+          onClick={() => setIsDrawerOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/35" />
+          <aside
+            className="fixed right-0 top-0 z-[71] h-full w-[380px] max-w-[92vw] overflow-y-auto bg-white p-6 pb-10 shadow-2xl dark:bg-gray-900"
+            onClick={(event) => event.stopPropagation()}
+            data-no-auto-translate="true"
+          >
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(false)}
+              className="absolute right-5 top-5 rounded p-1 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white"
+              aria-label={t("close_menu") || "Close menu"}
+            >
+              <FiX className="h-6 w-6" />
+            </button>
+
+            <h2 className="mb-5 text-4xl font-bold tracking-tight text-slate-800 dark:text-white">
+              {t("more_options") || "More options"}
+            </h2>
+
+            <div className="space-y-3">
+              <p className="px-1 text-sm font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+                {t("extra_options") || "Extra options"}
+              </p>
+              {DRAWER_EXTRA_ITEMS.map((item) => {
+                const blockedForGuest =
+                  !isAuthenticated && Boolean(item.protected);
+                const blockedForRole =
+                  isAuthenticated &&
+                  item.path === "/admin-panel" &&
+                  !hasAdminPanelAccess;
+                const Icon = item.icon || FiMenu;
+                return (
+                  <button
+                    key={item.path}
+                    type="button"
+                    onClick={() => handleDrawerItemClick(item)}
+                    className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left text-[1.05rem] font-semibold transition-colors duration-150 ${
+                      blockedForRole
+                        ? "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                        : blockedForGuest
+                          ? "border-amber-200 bg-amber-50/70 text-slate-700 hover:bg-amber-100/80 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-slate-100 dark:hover:bg-amber-500/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <Icon
+                        className={`h-5 w-5 shrink-0 ${
+                          blockedForGuest
+                            ? "text-amber-500 dark:text-amber-300"
+                            : "text-slate-400 dark:text-slate-400"
+                        }`}
+                      />
+                      {t(item.key) || item.key}
+                    </span>
+                    {blockedForRole ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+                        <FiLock className="h-3.5 w-3.5 shrink-0" />
+                        {t("admin_only") || "Admin only"}
+                      </span>
+                    ) : null}
+                    {blockedForGuest ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/80 px-2 py-1 text-[11px] font-semibold text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">
+                        <FiLock className="h-3.5 w-3.5 shrink-0" />
+                        {t("login_required") || "Login"}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <p className="mb-2 text-center text-xs text-slate-500 dark:text-slate-400">
+                {t("accessibility") || "Accessibility"}
+              </p>
+              <button
+                type="button"
+                onClick={handleToggleDarkMode}
+                className={`mb-2 w-full rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
+                  isDarkMode
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {isDarkMode
+                  ? t("light_mode") || "Switch to light mode"
+                  : t("dark_mode") || "Switch to dark mode"}
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleLargeFont}
+                className={`w-full rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
+                  isLargeFont
+                    ? "bg-green-500 text-white hover:bg-green-600"
+                    : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {isLargeFont
+                  ? t("normal_size") || "Normal size"
+                  : t("larger_text") || "Larger text"}
+              </button>
+              <p className="mt-1 text-center text-xs text-slate-500 dark:text-slate-400">
+                {isLargeFont
+                  ? t("using_large_fonts") || "Currently using large fonts"
+                  : t("easier_to_read") || "Easier to read for everyone"}
+              </p>
+            </div>
+
+            <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="block w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[1.05rem] font-semibold text-red-600 transition-colors duration-150 hover:bg-red-100 dark:border-red-500/30 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
+                >
+                  {t("logout") || "Logout"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate("/login");
+                    setIsDrawerOpen(false);
+                  }}
+                  className="block w-full rounded-2xl bg-blue-600 px-4 py-3 text-[1.05rem] font-semibold text-white transition-colors duration-150 hover:bg-blue-700"
+                >
+                  {t("login") || "Login"}
+                </button>
+              )}
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-1 py-1.5 shadow-lg backdrop-blur"
+        aria-label={t("bottom_navigation") || "Bottom navigation"}
+        data-no-auto-translate="true"
+      >
+        <div className="mx-auto flex max-w-[92rem] items-center justify-between gap-1">
+          {BOTTOM_ITEMS.slice(0, 3).map((item) => {
+            const Icon = item.icon;
+            const active = route.pathname === item.path;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => navigate(item.path)}
+                className={`flex min-h-[52px] min-w-[56px] flex-1 flex-col items-center justify-center rounded-lg text-xs font-semibold transition ${
+                  active ? "text-blue-600" : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <Icon className="mb-1 h-4 w-4" />
+                <span>{t(item.key) || item.key}</span>
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() =>
+              isAuthenticated ? navigate("/tier-selection") : navigate("/login")
+            }
+            className="mx-0.5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg"
+            aria-label={t("sell") || "Sell"}
+          >
+            <FiPlus className="h-6 w-6" />
+          </button>
+
+          {BOTTOM_ITEMS.slice(3).map((item) => {
+            const Icon = item.icon;
+            const isMore = item.key === "more";
+            const active = !isMore && route.pathname === item.path;
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => {
+                  if (isMore) {
+                    setIsDrawerOpen(true);
+                    return;
+                  }
+                  navigate(item.path);
+                }}
+                className={`flex min-h-[52px] min-w-[56px] flex-1 flex-col items-center justify-center rounded-lg text-xs font-semibold transition ${
+                  active ? "text-blue-600" : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <Icon className="mb-1 h-4 w-4" />
+                <span>{t(item.key) || item.key}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <LocationSelector
+        isOpen={isLocationOpen}
+        onClose={() => setIsLocationOpen(false)}
+      />
+    </>
+  );
+}

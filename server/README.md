@@ -125,7 +125,10 @@ Last updated: 2026-02-27
 - `LAUNCH_EVIDENCE_LOG_MAX` (default `2000`)
 
 ## Supporting Docs
-- `docs/TEST_VALIDATION.md`
+- `docs/PHASE5_VALIDATION_EVIDENCE_2026-02-27.md`
+- `docs/TEST_CASES.md`
+- `docs/PERFORMANCE.md`
+- `docs/INCIDENT_RESPONSE.md`
 - `docs/waf-rules.md`
 - `docs/security-policy.md`
-- `docs/MONITORING_ALERTING_OWNERSHIP.md`
+- `docs/edge-caching-setup.md`

@@ -13,8 +13,8 @@ Checklist scope: ops and security controls
 - Result: PASS
 
 ## Item 2: Test-validation records
-- Doc: `server/docs/TEST_VALIDATION.md`
-- Evidence includes dated command/result table for server and client checks.
+- Doc: `server/docs/TEST_CASES.md`
+- Evidence includes dated command/result table for server and client checks in build logs and local runs.
 - Result: COMPLETE
 
 ## Item 3: Edge caching alignment
@@ -28,15 +28,15 @@ Checklist scope: ops and security controls
 ## Item 4: Security policy reconciliation
 - Docs:
   - `server/docs/security-policy.md`
-  - `docs/INCIDENT_RESPONSE.md`
-  - `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
+  - `server/docs/INCIDENT_RESPONSE.md`
+  - `server/docs/project/FEATURE_STATUS_REPORT.md`
 - Result: COMPLETE
 
 ## Item 5: Unified status reporting model
 - Docs:
-  - `FEATURE_STATUS_REPORT.md`
-  - `FEATURE_COMPLETION_MATRIX.md`
-  - `PRODUCTION_LAUNCH_ROADMAP.md`
+  - `server/docs/project/FEATURE_STATUS_REPORT.md`
+  - `server/docs/project/FEATURE_COMPLETION_MATRIX.md`
+  - `server/docs/project/PRODUCTION_LAUNCH_ROADMAP.md`
 - Result: COMPLETE
 
 ## Final Phase 5 Decision

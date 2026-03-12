@@ -25,7 +25,7 @@ const FeedPostCard = ({ post }) => {
         </div>
         <div className="flex items-center justify-end">
           <button
-            className="px-4 py-1 bg-blue-600 text-white rounded text-xs md:text-sm font-medium hover:bg-blue-700"
+            className="h-7 px-3 bg-blue-600 text-white rounded text-[10px] sm:h-8 sm:text-xs md:text-sm font-medium hover:bg-blue-700"
             onClick={() => navigate(`/post/${post.id || post.post_id}`, { state: { post } })}
           >
             View Details

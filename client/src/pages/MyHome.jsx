@@ -4,9 +4,16 @@ import e, {
   useMemo as h,
   useCallback as Ze,
 } from "react";
-import { Link as ne, useNavigate as Ge, useLocation as wt } from "react-router-dom";
+import {
+  Link as ne,
+  useNavigate as Ge,
+  useLocation as wt,
+} from "react-router-dom";
 import { useTranslation as Ve } from "react-i18next";
-import { translatePosts as We } from "@/utils/translateContent";
+import {
+  translatePosts as We,
+  translatePostsInstant as instantTranslatePosts,
+} from "@/utils/translateContent";
 import { Button as g } from "@/components/ui/button";
 import { Card as de, CardContent as ge } from "@/components/ui/card";
 import { Badge as me } from "@/components/ui/badge";
@@ -44,6 +51,14 @@ import {
 import { useToast as gt } from "@/hooks/use-toast";
 import { useAuth as mt } from "@/context/AuthContext";
 import { getAccessToken as ct, getUserId as ut } from "@/utils/authStorage";
+import {
+  buildSavedPostsMap,
+  extractSavedPostIds,
+  getSavedPostsMap,
+  replaceSavedPostIds,
+  setSavedPostStatus,
+  subscribeSavedPosts,
+} from "@/utils/savedPosts";
 import { resolveMediaUrl as meURL } from "@/lib/mediaUrl";
 import ShareLinkDialog from "@/components/ShareLinkDialog";
 import {
@@ -64,6 +79,32 @@ import {
 } from "@/components/ui/alert-dialog";
 import R from "@/services/api";
 import { getApiOriginBase as pt } from "@/lib/networkConfig";
+const setNestedValue = (t, s, r) => {
+    if (!t || typeof t != "object" || !s) return;
+    const o = String(s).split(".");
+    let a = t;
+    for (let i = 0; i < o.length - 1; i += 1) {
+      const l = o[i];
+      (!a[l] || typeof a[l] != "object") && (a[l] = {});
+      a = a[l];
+    }
+    a[o[o.length - 1]] = r;
+  },
+  restoreTranslatedPost = (t) => {
+    if (!t || typeof t != "object") return t;
+    const s = t._originalTranslations;
+    if (!s || typeof s != "object") return t;
+    const r = { ...t };
+    return (
+      Object.entries(s).forEach(([o, a]) => {
+        setNestedValue(r, o, a);
+      }),
+      typeof t._originalTitle == "string" && (r.title = t._originalTitle),
+      typeof t._originalDescription == "string" &&
+        (r.description = t._originalDescription),
+      r
+    );
+  };
 const vt = () => {
   const [p, pe] = n("active"),
     [c, w] = n(new Set()),
@@ -84,7 +125,7 @@ const vt = () => {
     [_, oe] = n(!1),
     [shareDialogOpen, setShareDialogOpen] = n(!1),
     [shareDialogUrl, setShareDialogUrl] = n(""),
-    [savedPosts, setSavedPosts] = n({}),
+    [savedPosts, setSavedPosts] = n(() => getSavedPostsMap()),
     b = Ge(),
     routeLoc = wt(),
     { toast: d } = gt(),
@@ -95,6 +136,16 @@ const vt = () => {
     H = ct(),
     Pe = !!(F && H),
     Se = pt(),
+    resolveMessage = Ze(
+      (t) => {
+        if (!t) return "";
+        if (typeof t === "string") return t;
+        const s = t.key ? l(t.key, t.params) : "";
+        if (typeof s == "string" && s && s !== t.key) return s;
+        return t.fallback || "";
+      },
+      [l],
+    ),
     Ie = (t) => {
       if (!t) return "/placeholder.svg";
       const s = t.image_url || t.imageUrl || t.thumbnail || t.image;
@@ -120,19 +171,33 @@ const vt = () => {
         L(!0);
         const r = F;
         if (!r || !H) {
-          t || (C("You must be logged in to view your posts."), L(!1));
+          t ||
+            (C({
+              key: "my_home_login_required",
+              fallback: "You must be logged in to view your posts.",
+            }),
+            L(!1));
           return;
         }
         try {
           const o = await R.get(`/posts/mine?userId=${r}`),
             a = Array.isArray(o?.posts) ? o.posts : Array.isArray(o) ? o : [];
           let i = a;
-          if (E !== "en" && a.length > 0)
-            try {
-              i = await We(a, E);
-            } catch {
-              i = a;
-            }
+          if (E !== "en" && a.length > 0) {
+            const instantTranslated = instantTranslatePosts(a, E);
+            const safeInstant = Array.isArray(instantTranslated)
+              ? instantTranslated
+              : a;
+            i = safeInstant;
+            t || k(safeInstant);
+            We(a, E)
+              .then((o) => {
+                t || (Array.isArray(o) && o.length > 0 ? k(o) : k(safeInstant));
+              })
+              .catch(() => {
+                t || k(safeInstant);
+              });
+          }
           t || (k(i), C(""));
         } catch (o) {
           if ((console.error("Fetch posts error:", o), !t)) {
@@ -140,8 +205,14 @@ const vt = () => {
             const a = Number(o?.status || o?.response?.status || 0);
             C(
               a === 401 || a === 403
-                ? "Your session expired. Please sign in again."
-                : "Could not load your listings. Please retry.",
+                ? {
+                    key: "session_expired",
+                    fallback: "Your session expired. Please sign in again.",
+                  }
+                : {
+                    key: "my_home_load_failed",
+                    fallback: "Could not load your listings. Please retry.",
+                  },
             );
           }
         } finally {
@@ -152,7 +223,52 @@ const vt = () => {
         t = !0;
       }
     );
-  }, [H, E, F, ye]);
+  }, [H, F, ye]);
+  ie(() => {
+    if (!Array.isArray(j) || j.length === 0) return;
+    let t = !1;
+    if (!E || E === "en") {
+      k((s) => (Array.isArray(s) ? s.map(restoreTranslatedPost) : s));
+      return;
+    }
+    const instantTranslated = instantTranslatePosts(j, E);
+    const safeInstant = Array.isArray(instantTranslated)
+      ? instantTranslated
+      : j;
+    k(safeInstant);
+    We(j, E)
+      .then((r) => {
+        t || (Array.isArray(r) && r.length > 0 ? k(r) : k(safeInstant));
+      })
+      .catch(() => {
+        t || k(safeInstant);
+      });
+    return () => {
+      t = !0;
+    };
+  }, [E]);
+  ie(() => subscribeSavedPosts(setSavedPosts), []);
+  const listError = resolveMessage(D);
+  ie(() => {
+    if (!Pe) return;
+    let t = !1;
+    (async () => {
+      try {
+        const s = F
+          ? await R.get("/wishlist", { params: { userId: F } })
+          : await R.get("/wishlist");
+        if (t) return;
+        const r = extractSavedPostIds(s);
+        replaceSavedPostIds(r);
+        setSavedPosts(buildSavedPostsMap(r));
+      } catch {
+        // Keep local fallback values.
+      }
+    })();
+    return () => {
+      t = !0;
+    };
+  }, [Pe, F]);
   ie(() => {
     const allowedTabs = new Set(["all", "active", "sold", "bought"]);
     const query = new URLSearchParams(routeLoc?.search || "");
@@ -172,11 +288,22 @@ const vt = () => {
       storedMarker = null;
     }
 
-    const markerCompletedAt = storedMarker?.completedAt ? Date.parse(String(storedMarker.completedAt)) : NaN;
-    const markerAgeMs = Number.isFinite(markerCompletedAt) ? Date.now() - markerCompletedAt : Number.POSITIVE_INFINITY;
-    const freshMarker = Number.isFinite(markerAgeMs) && markerAgeMs >= 0 && markerAgeMs <= 30 * 60 * 1000;
+    const markerCompletedAt = storedMarker?.completedAt
+      ? Date.parse(String(storedMarker.completedAt))
+      : NaN;
+    const markerAgeMs = Number.isFinite(markerCompletedAt)
+      ? Date.now() - markerCompletedAt
+      : Number.POSITIVE_INFINITY;
+    const freshMarker =
+      Number.isFinite(markerAgeMs) &&
+      markerAgeMs >= 0 &&
+      markerAgeMs <= 30 * 60 * 1000;
 
-    const focusTabCandidate = [stateFocusTab, queryFocusTab, storedMarker?.focusTab].find(
+    const focusTabCandidate = [
+      stateFocusTab,
+      queryFocusTab,
+      storedMarker?.focusTab,
+    ].find(
       (tabValue) => typeof tabValue == "string" && allowedTabs.has(tabValue),
     );
 
@@ -185,15 +312,20 @@ const vt = () => {
     }
 
     const shouldShowSaleToast =
-      Boolean(routeLoc?.state?.saleCompleted) || query.get("saleCompleted") === "1" || freshMarker;
+      Boolean(routeLoc?.state?.saleCompleted) ||
+      query.get("saleCompleted") === "1" ||
+      freshMarker;
 
     if (shouldShowSaleToast) {
-      const transactionId = routeLoc?.state?.transactionId || storedMarker?.transactionId || "";
+      const transactionId =
+        routeLoc?.state?.transactionId || storedMarker?.transactionId || "";
       d({
-        title: "Sale completed",
+        title: l("sale_completed") || "Sale completed",
         description: transactionId
-          ? `Listing moved to Sold. Transaction: ${transactionId}.`
-          : "Listing moved to Sold. You can find it in Sold tab.",
+          ? l("sale_completed_txn", { transactionId }) ||
+            `Listing moved to Sold. Transaction: ${transactionId}.`
+          : l("sale_completed_desc") ||
+            "Listing moved to Sold. You can find it in Sold tab.",
       });
       try {
         localStorage.removeItem("mhub:sale:lastCompleted");
@@ -268,14 +400,18 @@ const vt = () => {
     Le = (t) => {
       if (!Te(t.created_at || t.postedTime)) {
         d({
-          title: "Edit Not Available",
+          title: l("edit_not_available") || "Edit Not Available",
           description:
+            l("edit_time_limit") ||
             "Posts can only be edited within 5 minutes of publishing",
           variant: "destructive",
         });
         return;
       }
-      (d({ title: "Edit Post", description: "Opening editor for post" }),
+      (d({
+        title: l("edit_post") || "Edit Post",
+        description: l("opening_editor_for_post") || "Opening editor for post",
+      }),
         b(`/edit-post/${t.postId || t.post_id || t.id}`));
     },
     ze = (t) => {
@@ -298,16 +434,11 @@ const vt = () => {
         return;
       }
       const r = String(s),
-        m = !!savedPosts[r];
-      setSavedPosts((o) => ({ ...o, [r]: !m }));
+        m = !!savedPosts[r],
+        o = !m;
+      (setSavedPosts((a) => ({ ...a, [r]: o })), setSavedPostStatus(r, o));
       try {
-        if (m) {
-          await fetch(`${Se}/api/wishlist/${r}`, {
-            method: "DELETE",
-            credentials: "include",
-            headers: H ? { Authorization: `Bearer ${H}` } : {},
-          });
-        } else {
+        if (o) {
           await fetch(`${Se}/api/wishlist`, {
             method: "POST",
             credentials: "include",
@@ -317,12 +448,20 @@ const vt = () => {
             },
             body: JSON.stringify({ postId: r }),
           });
+        } else {
+          await fetch(`${Se}/api/wishlist/${r}`, {
+            method: "DELETE",
+            credentials: "include",
+            headers: H ? { Authorization: `Bearer ${H}` } : {},
+          });
         }
       } catch {
         (setSavedPosts((o) => ({ ...o, [r]: m })),
+          setSavedPostStatus(r, m),
           d({
-            title: "Save Failed",
-            description: "Unable to update saved status",
+            title: l("save_failed") || "Save Failed",
+            description:
+              l("save_status_update_failed") || "Unable to update saved status",
             variant: "destructive",
           }));
       }
@@ -336,14 +475,19 @@ const vt = () => {
           (await R.delete(`/posts/${T}`),
             k((t) => t.filter((s) => (s.postId || s.post_id || s.id) !== T)),
             d({
-              title: "Post Deleted",
-              description: "Post has been deleted successfully",
+              title: l("post_deleted") || "Post Deleted",
+              description:
+                l("post_deleted_success") ||
+                "Post has been deleted successfully",
             }));
         } catch (t) {
           (console.error("Delete error:", t),
             d({
-              title: "Delete Failed",
-              description: t.message || "Could not delete the post.",
+              title: l("delete_failed") || "Delete Failed",
+              description:
+                t.message ||
+                l("delete_failed_desc") ||
+                "Could not delete the post.",
               variant: "destructive",
             }));
         } finally {
@@ -354,8 +498,10 @@ const vt = () => {
       const t = new Set([...le, ...c]);
       (we(t),
         d({
-          title: "Posts Moved",
-          description: `${c.size} posts moved to Sale Undone`,
+          title: l("posts_moved") || "Posts Moved",
+          description:
+            l("posts_moved_count", { count: c.size }) ||
+            `${c.size} posts moved to Sale Undone`,
         }),
         w(new Set()),
         ee(!1),
@@ -364,8 +510,10 @@ const vt = () => {
     Ee = (t) => {
       if (le.has(t)) {
         d({
-          title: "Cannot Select",
-          description: "This post has already been moved to Sale Undone",
+          title: l("cannot_select") || "Cannot Select",
+          description:
+            l("already_moved_sale_undone") ||
+            "This post has already been moved to Sale Undone",
           variant: "destructive",
         });
         return;
@@ -384,8 +532,9 @@ const vt = () => {
     He = async () => {
       if (c.size === 0) {
         d({
-          title: "No Posts Selected",
-          description: "Please select posts to delete",
+          title: l("no_posts_selected") || "No Posts Selected",
+          description:
+            l("select_posts_delete") || "Please select posts to delete",
           variant: "destructive",
         });
         return;
@@ -409,19 +558,25 @@ const vt = () => {
           ? (oe(!1),
             $(!1),
             d({
-              title: "Posts Deleted",
-              description: `${r.length} posts have been deleted`,
+              title: l("posts_deleted") || "Posts Deleted",
+              description:
+                l("posts_deleted_count", { count: r.length }) ||
+                `${r.length} posts have been deleted`,
             }))
           : d({
-              title: "Partial Delete",
-              description: `${r.length} deleted, ${m} failed.`,
+              title: l("partial_delete") || "Partial Delete",
+              description:
+                l("partial_delete_count", { deleted: r.length, failed: m }) ||
+                `${r.length} deleted, ${m} failed.`,
               variant: "destructive",
             });
       } catch (t) {
         (console.error("Bulk delete error:", t),
           d({
-            title: "Delete Failed",
-            description: "Some posts could not be deleted",
+            title: l("delete_failed") || "Delete Failed",
+            description:
+              l("some_posts_delete_failed") ||
+              "Some posts could not be deleted",
             variant: "destructive",
           }));
       }
@@ -448,7 +603,7 @@ const vt = () => {
         ),
       )
     : Pe
-      ? D && u.length === 0
+      ? listError && u.length === 0
         ? e.createElement(
             "div",
             {
@@ -475,14 +630,14 @@ const vt = () => {
                     className:
                       "text-xl font-semibold text-gray-900 dark:text-white mb-2",
                   },
-                  "Listings unavailable",
+                  l("my_home_listings_unavailable") || "Listings unavailable",
                 ),
                 e.createElement(
                   "p",
                   {
                     className: "text-sm text-gray-600 dark:text-gray-300 mb-5",
                   },
-                  D,
+                  listError,
                 ),
                 e.createElement(
                   "div",
@@ -491,12 +646,12 @@ const vt = () => {
                     g,
                     { onClick: re },
                     e.createElement(he, { className: "w-4 h-4 mr-2" }),
-                    "Retry",
+                    l("retry") || "Retry",
                   ),
                   e.createElement(
                     g,
                     { variant: "outline", onClick: () => b("/all-posts") },
-                    "Browse Marketplace",
+                    l("browse_marketplace") || "Browse Marketplace",
                   ),
                 ),
               ),
@@ -725,7 +880,7 @@ const vt = () => {
             e.createElement(
               "div",
               { className: "max-w-4xl mx-auto px-4 pb-8" },
-              D
+              listError
                 ? e.createElement(
                     Ye,
                     {
@@ -733,8 +888,12 @@ const vt = () => {
                       className: "mb-4 bg-white/90 dark:bg-gray-900/90",
                     },
                     e.createElement(xe, { className: "h-4 w-4" }),
-                    e.createElement(Je, null, "Latest refresh failed"),
-                    e.createElement(Qe, null, D),
+                    e.createElement(
+                      Je,
+                      null,
+                      l("latest_refresh_failed") || "Latest refresh failed",
+                    ),
+                    e.createElement(Qe, null, listError),
                     e.createElement(
                       "div",
                       { className: "mt-3" },
@@ -742,7 +901,7 @@ const vt = () => {
                         g,
                         { size: "sm", onClick: re },
                         e.createElement(he, { className: "w-4 h-4 mr-2" }),
-                        "Retry",
+                        l("retry") || "Retry",
                       ),
                     ),
                   )
@@ -751,7 +910,7 @@ const vt = () => {
                 "div",
                 {
                   className:
-                    "w-full flex justify-center gap-2 py-2 mb-4 overflow-x-auto",
+                    "w-full flex justify-center gap-2 py-2 mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide",
                 },
                 [
                   {
@@ -882,7 +1041,7 @@ const vt = () => {
                       className:
                         "text-xs text-gray-500 dark:text-gray-400 mt-2",
                     },
-                    "Tip: ",
+                    (l("tip") || "Tip") + ": ",
                     l("bulk_selection_tip"),
                   ),
                 ),
@@ -949,7 +1108,15 @@ const vt = () => {
                   : Me.map((t) => {
                       const s =
                           String(t?.ownership || "").toLowerCase() === "bought",
-                        r = s ? "bought" : t.status || "active";
+                        r = s ? "bought" : t.status || "active",
+                        statusLabel =
+                          r === "active"
+                            ? l("active") || "Active"
+                            : r === "sold"
+                              ? l("sold") || "Sold"
+                              : r === "bought"
+                                ? l("bought") || "Bought"
+                                : r;
                       return e.createElement(
                         de,
                         {
@@ -977,7 +1144,7 @@ const vt = () => {
                               {
                                 className: `absolute top-3 left-3 ${r === "active" ? "bg-green-500" : r === "sold" ? "bg-blue-500" : r === "bought" ? "bg-purple-500" : "bg-gray-500"} text-white font-bold px-3 py-1 text-sm capitalize`,
                               },
-                              r,
+                              statusLabel,
                             ),
                             e.createElement(
                               "div",
@@ -1077,7 +1244,7 @@ const vt = () => {
                                     className:
                                       "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-mono text-xs px-2 py-1",
                                   },
-                                  "Post ID: ",
+                                  l("post_id_label") || "Post ID: ",
                                   t.postId || t.post_id || t.id,
                                 ),
                                 e.createElement(
@@ -1089,8 +1256,9 @@ const vt = () => {
                                           String(t.postId || t.post_id || t.id),
                                         ),
                                         d({
-                                          title: "Copied",
+                                          title: l("copied") || "Copied",
                                           description:
+                                            l("post_id_copied") ||
                                             "Post ID copied to clipboard",
                                         }));
                                     },
@@ -1142,23 +1310,30 @@ const vt = () => {
                               ),
                             e.createElement(
                               "div",
-                              { className: "flex gap-3" },
+                              {
+                                className:
+                                  "flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pb-1 scrollbar-hide sm:gap-2",
+                              },
                               e.createElement(
                                 g,
                                 {
                                   className:
-                                    "flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl py-3 text-base shadow flex items-center justify-center gap-2",
+                                    "shrink-0 min-w-[36px] h-8 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg px-2.5 text-[10px] sm:h-9 sm:min-w-[120px] sm:px-3 sm:text-xs shadow inline-flex items-center justify-center gap-1.5",
                                   onClick: () => je(t),
                                 },
                                 e.createElement(Xe, { className: "w-5 h-5" }),
-                                "View Details",
+                                e.createElement(
+                                  "span",
+                                  { className: "hidden sm:inline" },
+                                  l("view_details") || "View Details",
+                                ),
                               ),
                               e.createElement(
                                 g,
                                 {
                                   variant: "outline",
                                   className:
-                                    "border-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold rounded-xl py-3 px-4",
+                                    "shrink-0 h-8 border-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3",
                                   onClick: () => saveMyPost(t),
                                   title: l("save") || "Save",
                                 },
@@ -1178,7 +1353,7 @@ const vt = () => {
                                   {
                                     variant: "outline",
                                     className:
-                                      "border-2 border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold rounded-xl py-3 px-4",
+                                      "shrink-0 h-8 border-2 border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3",
                                     onClick: () =>
                                       ae(t.postId || t.post_id || t.id),
                                   },

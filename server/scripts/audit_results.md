@@ -1,18 +1,20 @@
 # Audit Results
 
-Last updated: 2026-02-27
+Last updated: 2026-03-12
 
 ## Purpose
 Tracks repository hardcoded-string audit findings for localization and content cleanup.
 
 ## Current Status
-- Raw scan artifacts exist and indicate remaining hardcoded strings in multiple client files.
-- This is a non-blocking baseline issue for optimization scope, but should be addressed in localization cleanup sprints.
+- Latest scan (2026-03-12) found `222` potential hardcoded strings across `53` files (227 files scanned).
+- Generated report: `server/scripts/hardcoded-strings-audit.generated.md`.
+- CI guard `npm run check:hardcoded-strings` blocks newly introduced hardcoded UI strings in added lines.
+- This remains a non-blocking localization backlog item for high-traffic screens.
 
 ## Action State
 - [ ] Execute phased i18n replacement for high-traffic pages first.
-- [ ] Re-run scan and publish reduced finding count.
-- [ ] Add CI warning gate for newly introduced hardcoded strings.
+- [x] Re-run scan and publish latest finding count (2026-03-12).
+- [x] Add CI warning gate for newly introduced hardcoded strings.
 
 ## Related Artifact
 - `server/scripts/hardcoded-strings-audit.md`

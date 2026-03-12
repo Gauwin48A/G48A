@@ -86,7 +86,7 @@ Enable the following managed rule groups:
 - [x] Set up rate limiting on auth endpoints (`strictLoginLimiter` + route login limiter)
 - [x] Enable bot protection (`wafRequestFilter` user-agent policy)
 - [x] Configure geo-blocking if needed (`WAF_BLOCKED_COUNTRIES`)
-- [x] Set up alerting for blocked requests (see `server/docs/MONITORING_ALERTING_OWNERSHIP.md`)
+- [x] Set up alerting for blocked requests (see `server/docs/security-policy.md`)
 - [x] Review logs weekly (ops ownership matrix cadence)
 
 ---
@@ -101,8 +101,8 @@ Enable the following managed rule groups:
    - Command: `npm run test:waf`
    - Result: PASS
 5. Alert ownership and runbook links:
-   - `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
-   - `docs/INCIDENT_RESPONSE.md`
+   - `server/docs/security-policy.md`
+   - `server/docs/INCIDENT_RESPONSE.md`
 
 ---
 

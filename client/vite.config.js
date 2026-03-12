@@ -13,7 +13,9 @@ const REALTIME_VENDOR_PACKAGES = new Set([
 const CORE_VENDOR_PACKAGES = new Set([
   'react',
   'react-dom',
+  'react-router',
   'react-router-dom',
+  '@remix-run/router',
   'scheduler'
 ]);
 const I18N_VENDOR_PACKAGES = new Set([
@@ -29,6 +31,18 @@ const NATIVE_VENDOR_PACKAGES = new Set([
   '@capacitor/core',
   '@capacitor/geolocation',
   '@capacitor-community/contacts'
+]);
+const FORM_VENDOR_PACKAGES = new Set([
+  'react-hook-form',
+  '@hookform/resolvers',
+  'zod'
+]);
+const HTTP_VENDOR_PACKAGES = new Set([
+  'axios'
+]);
+const DATE_VENDOR_PACKAGES = new Set([
+  'date-fns',
+  'dayjs'
 ]);
 
 function getNodeModulePackageName(id) {
@@ -46,9 +60,17 @@ function getNodeModulePackageName(id) {
 }
 
 function resolveVendorChunk(id) {
-  if (!id.includes('node_modules')) return undefined;
+  const normalizedId = String(id || '').replace(/\\/g, '/');
 
-  const packageName = getNodeModulePackageName(id);
+  // Keep app locales out of the main entry chunk.
+  if (normalizedId.includes('/src/locales/')) {
+    const localeFile = path.posix.basename(normalizedId, '.json');
+    return `locale-${localeFile}`;
+  }
+
+  if (!normalizedId.includes('/node_modules/')) return undefined;
+
+  const packageName = getNodeModulePackageName(normalizedId);
   if (!packageName) return undefined;
 
   if (CORE_VENDOR_PACKAGES.has(packageName)) {
@@ -75,7 +97,23 @@ function resolveVendorChunk(id) {
     return 'native-vendor';
   }
 
-  // Let Rollup decide for non-core dependencies so route-only libs can stay lazy.
+  if (FORM_VENDOR_PACKAGES.has(packageName)) {
+    return 'forms-vendor';
+  }
+
+  if (HTTP_VENDOR_PACKAGES.has(packageName)) {
+    return 'http-vendor';
+  }
+
+  if (DATE_VENDOR_PACKAGES.has(packageName)) {
+    return 'date-vendor';
+  }
+
+  if (packageName.startsWith('@radix-ui/')) {
+    return 'radix-vendor';
+  }
+
+  // Let Rollup decide for remaining dependencies so route-only libs can stay lazy.
   return undefined;
 }
 
@@ -121,6 +159,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
+    modulePreload: false,
     rollupOptions: {
       output: {
         manualChunks: resolveVendorChunk,

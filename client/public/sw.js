@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mhub-v1';
+const CACHE_NAME = 'mhub-v2';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
@@ -72,8 +72,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
         body: data.body || 'New notification',
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
+        icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
         vibrate: [100, 50, 100],
         data: { url: data.url || '/' },
         actions: [

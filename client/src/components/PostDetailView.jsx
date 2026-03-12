@@ -28,6 +28,13 @@ import {
 
 const PostDetailView = () => {
   const { t } = useTranslation();
+  const tr = (key, fallback) => {
+    const value = t(key);
+    if (typeof value !== "string" || !value.trim() || value === key) {
+      return fallback;
+    }
+    return value;
+  };
   const location = useLocation();
   const navigate = useNavigate();
   const { post, type } = location.state || {};
@@ -38,9 +45,11 @@ const PostDetailView = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Post not found</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            {tr("post_not_found", "Post not found")}
+          </h2>
           <Button onClick={() => navigate(-1)} className="bg-blue-500 hover:bg-blue-600">
-            Back to Posts
+            {tr("back_to_posts", "Back to Posts")}
           </Button>
         </div>
       </div>
@@ -62,9 +71,18 @@ const PostDetailView = () => {
   const handleShare = () => {
     const shareUrl = `${window.location.origin}/post/${post.postId}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
-      alert('Link copied to clipboard!');
+      alert(tr("link_copied", "Link copied to clipboard!"));
     });
   };
+
+  const statusLabel =
+    type === "active"
+      ? tr("active", "Active")
+      : type === "sold"
+        ? tr("sold", "Sold")
+        : type === "bought"
+          ? tr("purchased", "Purchased")
+          : tr("my_post", "My Post");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,7 +95,7 @@ const PostDetailView = () => {
             className="text-gray-700 hover:bg-gray-100"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My Posts
+            {tr("back_to_my_posts", "Back to My Posts")}
           </Button>
         </div>
 
@@ -111,9 +129,7 @@ const PostDetailView = () => {
                 )}
 
                 <Badge className="absolute top-4 left-4 bg-blue-500 text-white font-semibold">
-                  {type === 'active' ? 'Active' :
-                   type === 'sold' ? 'Sold' :
-                   type === 'bought' ? 'Purchased' : 'My Post'}
+                  {statusLabel}
                 </Badge>
 
                 {post.views && (
@@ -128,11 +144,13 @@ const PostDetailView = () => {
             {/* Description */}
             <Card className="shadow-lg border-0 rounded-2xl mt-6">
               <CardHeader>
-                <CardTitle className="text-gray-800">Description</CardTitle>
+                <CardTitle className="text-gray-800">
+                  {tr("description", "Description")}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 leading-relaxed">
-                  {post.description || "No description provided for this item."}
+                  {post.description || tr("no_description", "No description provided for this item.")}
                 </p>
               </CardContent>
             </Card>
@@ -145,7 +163,7 @@ const PostDetailView = () => {
               <CardHeader>
                 <CardTitle className="text-gray-800">{post.title}</CardTitle>
                 <div className="text-sm text-gray-500 font-mono">
-                  Post ID: {post.postId}
+                  {tr("post_id", "Post ID")}: {post.postId}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -162,22 +180,22 @@ const PostDetailView = () => {
 
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Condition</span>
+                    <span className="text-gray-500">{tr("condition", "Condition")}</span>
                     <Badge variant="outline">{post.condition}</Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Age</span>
+                    <span className="text-gray-500">{tr("age", "Age")}</span>
                     <span className="text-gray-800">{post.age}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Location</span>
+                    <span className="text-gray-500">{tr("location", "Location")}</span>
                     <div className="flex items-center space-x-1 text-gray-800">
                       <MapPin className="w-3 h-3" />
                       <span>{post.location}</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Posted</span>
+                    <span className="text-gray-500">{tr("posted", "Posted")}</span>
                     <div className="flex items-center space-x-1 text-gray-800">
                       <Calendar className="w-3 h-3" />
                       <span>{post.postedDate}</span>
@@ -190,15 +208,15 @@ const PostDetailView = () => {
                   <div className="grid grid-cols-3 gap-3 text-sm">
                     <div className="bg-blue-50 rounded-lg p-3 text-center">
                       <div className="font-semibold text-blue-600">{post.views || 0}</div>
-                      <div className="text-xs text-blue-500">Views</div>
+                      <div className="text-xs text-blue-500">{tr("views", "Views")}</div>
                     </div>
                     <div className="bg-red-50 rounded-lg p-3 text-center">
                       <div className="font-semibold text-red-600">{post.likes || 0}</div>
-                      <div className="text-xs text-red-500">Likes</div>
+                      <div className="text-xs text-red-500">{tr("likes", "Likes")}</div>
                     </div>
                     <div className="bg-green-50 rounded-lg p-3 text-center">
                       <div className="font-semibold text-green-600">{post.inquiries || 0}</div>
-                      <div className="text-xs text-green-500">Inquiries</div>
+                      <div className="text-xs text-green-500">{tr("inquiries", "Inquiries")}</div>
                     </div>
                   </div>
                 )}
@@ -211,17 +229,21 @@ const PostDetailView = () => {
                 type === 'sold' ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'
               }`}>
                 <CardHeader>
-                  <CardTitle className={`${
-                    type === 'sold' ? 'text-green-800' : 'text-orange-800'
-                  }`}>
-                    {type === 'sold' ? 'Sale Details' : 'Purchase Details'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">
-                      {type === 'sold' ? 'Buyer:' : 'Seller:'}
-                    </span>
+                <CardTitle className={`${
+                  type === 'sold' ? 'text-green-800' : 'text-orange-800'
+                }`}>
+                  {type === 'sold'
+                    ? tr("sale_details", "Sale Details")
+                    : tr("purchase_details", "Purchase Details")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
+                    {type === 'sold'
+                      ? `${tr("buyer", "Buyer")}:`
+                      : `${tr("seller", "Seller")}:`}
+                  </span>
                     <div className="text-right">
                       <div className="font-semibold">
                         {type === 'sold' ? post.buyerName : post.sellerName}
@@ -231,20 +253,22 @@ const PostDetailView = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">
-                      {type === 'sold' ? 'Sale Date:' : 'Purchase Date:'}
-                    </span>
-                    <span className="font-semibold">
-                      {type === 'sold' ? post.saleDate : post.purchaseDate}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Phone:</span>
-                    <span className="font-semibold">
-                      {type === 'sold' ? post.buyerPhone : post.sellerPhone}
-                    </span>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
+                    {type === 'sold'
+                      ? `${tr("sale_date", "Sale Date")}:`
+                      : `${tr("purchase_date", "Purchase Date")}:`}
+                  </span>
+                  <span className="font-semibold">
+                    {type === 'sold' ? post.saleDate : post.purchaseDate}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">{tr("phone", "Phone")}:</span>
+                  <span className="font-semibold">
+                    {type === 'sold' ? post.buyerPhone : post.sellerPhone}
+                  </span>
+                </div>
                 </CardContent>
               </Card>
             )}
@@ -258,7 +282,7 @@ const PostDetailView = () => {
                   onClick={() => setIsLiked(!isLiked)}
                 >
                   <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current text-red-500' : ''}`} />
-                  {isLiked ? 'Saved' : 'Save'}
+                  {isLiked ? tr("saved", "Saved") : tr("save", "Save")}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -266,7 +290,7 @@ const PostDetailView = () => {
                   onClick={handleShare}
                 >
                   <Share2 className="w-4 h-4 mr-2" />
-                  Share Post
+                  {tr("share_post", "Share Post")}
                 </Button>
               </CardContent>
             </Card>

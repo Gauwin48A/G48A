@@ -7,12 +7,23 @@ const {
   applyRewardDeltaInTransaction,
   afterCommitRewardMutation,
 } = require("../services/rewardsLedgerService");
+const {
+  applyReferralChainRewards,
+  CHAIN_MAX_DEPTH,
+} = require("../services/referralChainRewards");
+const {
+  calculateSaleRewardPoints,
+  hasPriorCompletedTransactions,
+} = require("../services/transactionRewardService");
 
 const DEFAULT_PENDING_SALES_LIMIT = 50;
 const MAX_PENDING_SALES_LIMIT = 200;
 const PENDING_SALES_CACHE_TTL_SECONDS = 15;
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const PENDING_SALE_STATUSES = ["pending_buyer_confirm", "initiated", "pending"];
+const FIRST_SALE_BONUS_POINTS = Number.parseInt(process.env.FIRST_SALE_BONUS_POINTS, 10) || 100;
+const FIRST_PURCHASE_BONUS_POINTS =
+  Number.parseInt(process.env.FIRST_PURCHASE_BONUS_POINTS, 10) || 50;
 
 let txSchemaCache = { value: null, expiresAt: 0 };
 
@@ -215,13 +226,6 @@ async function setTransactionStatus(client, schema, transactionId, candidates, o
   throw new Error("Could not update transaction status with available schema constraints");
 }
 
-function calculateSaleRewardPoints(saleAmount) {
-  const normalizedSaleAmount = Math.max(0, Number(saleAmount) || 0);
-  return {
-    sellerPoints: Math.floor(normalizedSaleAmount / 100),
-    buyerPoints: Math.floor(normalizedSaleAmount / 200),
-  };
-}
 
 const initiateSale = async (req, res) => {
   const sellerId = getUserId(req);
@@ -613,6 +617,7 @@ const confirmSale = async (req, res) => {
     const rewardPoints = calculateSaleRewardPoints(transaction.agreed_price);
     let sellerRewardChange = null;
     let buyerRewardChange = null;
+    const chainRewardChanges = [];
 
     if (rewardPoints.sellerPoints > 0) {
       sellerRewardChange = await applyRewardDeltaInTransaction({
@@ -636,6 +641,62 @@ const confirmSale = async (req, res) => {
       });
     }
 
+    const [sellerHasPrior, buyerHasPrior] = await Promise.all([
+      hasPriorCompletedTransactions(client, "seller_id", transaction.seller_id, rewardReferenceId),
+      hasPriorCompletedTransactions(client, "buyer_id", transaction.buyer_id, rewardReferenceId),
+    ]);
+
+    const bonusRewardChanges = [];
+    if (!sellerHasPrior && FIRST_SALE_BONUS_POINTS > 0) {
+      const bonus = await applyRewardDeltaInTransaction({
+        client,
+        userId: transaction.seller_id,
+        pointsDelta: FIRST_SALE_BONUS_POINTS,
+        action: "first_sale_bonus",
+        description: "Bonus for completing your first sale",
+        idempotencyKey: `sale:first:${transaction.seller_id}`,
+      });
+      if (bonus?.applied) {
+        bonusRewardChanges.push(bonus);
+      }
+    }
+
+    if (!buyerHasPrior && FIRST_PURCHASE_BONUS_POINTS > 0) {
+      const bonus = await applyRewardDeltaInTransaction({
+        client,
+        userId: transaction.buyer_id,
+        pointsDelta: FIRST_PURCHASE_BONUS_POINTS,
+        action: "first_purchase_bonus",
+        description: "Bonus for completing your first purchase",
+        idempotencyKey: `purchase:first:${transaction.buyer_id}`,
+      });
+      if (bonus?.applied) {
+        bonusRewardChanges.push(bonus);
+      }
+    }
+
+    if (!sellerHasPrior) {
+      const changes = await applyReferralChainRewards({
+        client,
+        subjectUserId: transaction.seller_id,
+        referenceId: rewardReferenceId,
+        eventKey: "sale_completed",
+        maxDepth: CHAIN_MAX_DEPTH,
+      });
+      chainRewardChanges.push(...changes);
+    }
+
+    if (!buyerHasPrior) {
+      const changes = await applyReferralChainRewards({
+        client,
+        subjectUserId: transaction.buyer_id,
+        referenceId: rewardReferenceId,
+        eventKey: "purchase_completed",
+        maxDepth: CHAIN_MAX_DEPTH,
+      });
+      chainRewardChanges.push(...changes);
+    }
+
     await client.query("COMMIT");
 
     cacheService.del(otpHashCacheKey(transactionId));
@@ -650,6 +711,16 @@ const confirmSale = async (req, res) => {
     if (buyerRewardChange?.applied) {
       afterCommitRewardMutation(buyerRewardChange);
     }
+    bonusRewardChanges.forEach((change) => {
+      if (change?.applied) {
+        afterCommitRewardMutation(change);
+      }
+    });
+    chainRewardChanges.forEach((change) => {
+      if (change?.applied) {
+        afterCommitRewardMutation(change);
+      }
+    });
 
     try {
       await runQuery(

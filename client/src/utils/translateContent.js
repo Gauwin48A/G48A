@@ -2,7 +2,10 @@ const CACHE_KEY = "mhub_translations_cache";
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 3000;
 const CACHE_PERSIST_DEBOUNCE_MS = 750;
-const MAX_TRANSLATE_CONCURRENCY = 4;
+const MAX_TRANSLATE_CONCURRENCY = 6;
+const RUNTIME_TRANSLATION_ENABLED =
+  String(import.meta.env.VITE_ENABLE_RUNTIME_TRANSLATION || "true").toLowerCase() !==
+  "false";
 
 const POST_TRANSLATABLE_PATHS = [
   "title",
@@ -20,6 +23,16 @@ const POST_TRANSLATABLE_PATHS = [
   "subtitle",
 ];
 
+function resolveTranslatablePaths(paths) {
+  if (!Array.isArray(paths) || paths.length === 0) {
+    return POST_TRANSLATABLE_PATHS;
+  }
+  const normalized = paths
+    .map((path) => String(path || "").trim())
+    .filter(Boolean);
+  return normalized.length > 0 ? normalized : POST_TRANSLATABLE_PATHS;
+}
+
 let translationCache = {};
 let cacheLoaded = false;
 let cacheDirty = false;
@@ -32,6 +45,13 @@ function canUseStorage() {
 
 function normalizeText(value) {
   return typeof value === "string" ? value : String(value ?? "");
+}
+
+function normalizeLanguage(value) {
+  return String(value || "en")
+    .trim()
+    .toLowerCase()
+    .split("-")[0];
 }
 
 function hashText(text) {
@@ -142,6 +162,22 @@ function getCachedTranslation(cacheKey) {
   return entry.text;
 }
 
+function hasCachedTranslation(cacheKey) {
+  loadCache();
+  const entry = translationCache[cacheKey];
+  if (!entry) {
+    return false;
+  }
+
+  if (!entry.timestamp || Date.now() - entry.timestamp > CACHE_EXPIRY) {
+    delete translationCache[cacheKey];
+    markCacheDirty();
+    return false;
+  }
+
+  return typeof entry.text === "string";
+}
+
 function setCachedTranslation(cacheKey, text) {
   loadCache();
   translationCache[cacheKey] = {
@@ -232,22 +268,31 @@ async function mapWithConcurrency(items, mapper, concurrency = MAX_TRANSLATE_CON
 export async function translateText(text, targetLang) {
   const originalText = normalizeText(text);
   const trimmedText = originalText.trim();
+  const normalizedTargetLang = normalizeLanguage(targetLang);
 
-  if (!trimmedText || targetLang === "en" || !isTranslatableText(trimmedText)) {
+  if (
+    !trimmedText ||
+    normalizedTargetLang === "en" ||
+    !isTranslatableText(trimmedText)
+  ) {
     return originalText;
   }
 
-  const cacheKey = getCacheKey(trimmedText, targetLang);
+  const cacheKey = getCacheKey(trimmedText, normalizedTargetLang);
   const cachedTranslation = getCachedTranslation(cacheKey);
   if (cachedTranslation) {
     return cachedTranslation;
+  }
+
+  if (!RUNTIME_TRANSLATION_ENABLED) {
+    return originalText;
   }
 
   if (pendingTranslations.has(cacheKey)) {
     return pendingTranslations.get(cacheKey);
   }
 
-  const translationTask = requestTranslation(trimmedText, targetLang)
+  const translationTask = requestTranslation(trimmedText, normalizedTargetLang)
     .then((translatedText) => {
       if (translatedText && translatedText !== trimmedText) {
         setCachedTranslation(cacheKey, translatedText);
@@ -268,14 +313,137 @@ export async function translateText(text, targetLang) {
   return translationTask;
 }
 
+export function translateTextFromCache(text, targetLang) {
+  const originalText = normalizeText(text);
+  const trimmedText = originalText.trim();
+  const normalizedTargetLang = normalizeLanguage(targetLang);
+
+  if (
+    !trimmedText ||
+    normalizedTargetLang === "en" ||
+    !isTranslatableText(trimmedText)
+  ) {
+    return originalText;
+  }
+
+  const cacheKey = getCacheKey(trimmedText, normalizedTargetLang);
+  return getCachedTranslation(cacheKey) ?? originalText;
+}
+
+export function isTextTranslationCached(text, targetLang) {
+  const originalText = normalizeText(text);
+  const trimmedText = originalText.trim();
+  const normalizedTargetLang = normalizeLanguage(targetLang);
+
+  if (
+    !trimmedText ||
+    normalizedTargetLang === "en" ||
+    !isTranslatableText(trimmedText)
+  ) {
+    return true;
+  }
+
+  const cacheKey = getCacheKey(trimmedText, normalizedTargetLang);
+  return hasCachedTranslation(cacheKey);
+}
+
 export async function translateBatch(texts, targetLang) {
+  const normalizedTargetLang = normalizeLanguage(targetLang);
+
   if (!Array.isArray(texts) || texts.length === 0) {
     return [];
   }
-  if (targetLang === "en") {
+
+  if (normalizedTargetLang === "en" || !RUNTIME_TRANSLATION_ENABLED) {
     return texts;
   }
-  return mapWithConcurrency(texts, (value) => translateText(value, targetLang));
+
+  const results = new Array(texts.length);
+  const uniqueTextToIndexes = new Map();
+
+  texts.forEach((value, index) => {
+    const originalText = normalizeText(value);
+    const trimmedText = originalText.trim();
+
+    if (!trimmedText || !isTranslatableText(trimmedText)) {
+      results[index] = originalText;
+      return;
+    }
+
+    const cached = translateTextFromCache(originalText, normalizedTargetLang);
+    if (cached !== originalText) {
+      results[index] = cached;
+      return;
+    }
+
+    if (!uniqueTextToIndexes.has(trimmedText)) {
+      uniqueTextToIndexes.set(trimmedText, []);
+    }
+    uniqueTextToIndexes.get(trimmedText).push(index);
+    results[index] = originalText;
+  });
+
+  const uniqueTexts = Array.from(uniqueTextToIndexes.keys());
+  if (uniqueTexts.length === 0) {
+    return results;
+  }
+
+  const translatedUniqueTexts = await mapWithConcurrency(
+    uniqueTexts,
+    (value) => translateText(value, normalizedTargetLang),
+  );
+
+  uniqueTexts.forEach((sourceText, idx) => {
+    const translatedValue = translatedUniqueTexts[idx] ?? sourceText;
+    const targetIndexes = uniqueTextToIndexes.get(sourceText) || [];
+    targetIndexes.forEach((targetIndex) => {
+      results[targetIndex] = translatedValue;
+    });
+  });
+
+  return results;
+}
+
+export function translatePostsInstant(posts, targetLang, options = {}) {
+  const normalizedTargetLang = normalizeLanguage(targetLang);
+  if (
+    !Array.isArray(posts) ||
+    posts.length === 0 ||
+    normalizedTargetLang === "en"
+  ) {
+    return Array.isArray(posts) ? posts : [];
+  }
+
+  const instantLookup = new Map();
+
+  return posts.map((post) => {
+    if (!post || typeof post !== "object") {
+      return post;
+    }
+
+    const translated = { ...post };
+    const originalMap = getPostOriginalMap(post);
+    const tasks = collectPostTranslationTasks(post, 0, originalMap, options);
+
+    tasks.forEach((task) => {
+      let cachedOrSource;
+      if (instantLookup.has(task.sourceValue)) {
+        cachedOrSource = instantLookup.get(task.sourceValue);
+      } else {
+        cachedOrSource = translateTextFromCache(
+          task.sourceValue,
+          normalizedTargetLang,
+        );
+        instantLookup.set(task.sourceValue, cachedOrSource);
+      }
+      setByPath(translated, task.path, cachedOrSource);
+    });
+
+    translated._originalTranslations = originalMap;
+    translated._originalTitle = originalMap.title ?? post?.title;
+    translated._originalDescription = originalMap.description ?? post?.description;
+    return translated;
+  });
 }
 
 function getPostOriginalMap(post) {
@@ -285,10 +453,11 @@ function getPostOriginalMap(post) {
   return {};
 }
 
-function collectPostTranslationTasks(post, postIndex, originalMap) {
+function collectPostTranslationTasks(post, postIndex, originalMap, options = {}) {
   const tasks = [];
+  const paths = resolveTranslatablePaths(options?.paths);
 
-  POST_TRANSLATABLE_PATHS.forEach((path) => {
+  paths.forEach((path) => {
     const currentValue = getByPath(post, path);
     const fallback = typeof currentValue === "string" ? currentValue : "";
     const sourceValue =
@@ -313,14 +482,56 @@ function collectPostTranslationTasks(post, postIndex, originalMap) {
   return tasks;
 }
 
-export async function translatePost(post, targetLang) {
-  if (!post || targetLang === "en") {
+export function arePostsTranslationsCached(posts, targetLang, options = {}) {
+  const normalizedTargetLang = normalizeLanguage(targetLang);
+  if (
+    !Array.isArray(posts) ||
+    posts.length === 0 ||
+    normalizedTargetLang === "en" ||
+    !RUNTIME_TRANSLATION_ENABLED
+  ) {
+    return true;
+  }
+
+  const lookup = new Map();
+  for (let postIndex = 0; postIndex < posts.length; postIndex += 1) {
+    const post = posts[postIndex];
+    const originalMap = getPostOriginalMap(post);
+    const tasks = collectPostTranslationTasks(post, postIndex, originalMap, options);
+
+    for (let index = 0; index < tasks.length; index += 1) {
+      const sourceValue = tasks[index].sourceValue;
+      if (lookup.has(sourceValue)) {
+        if (!lookup.get(sourceValue)) {
+          return false;
+        }
+        continue;
+      }
+
+      const isCached = isTextTranslationCached(sourceValue, normalizedTargetLang);
+      lookup.set(sourceValue, isCached);
+      if (!isCached) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+export async function translatePost(post, targetLang, options = {}) {
+  const normalizedTargetLang = normalizeLanguage(targetLang);
+  if (
+    !post ||
+    normalizedTargetLang === "en" ||
+    !RUNTIME_TRANSLATION_ENABLED
+  ) {
     return post;
   }
 
   const translated = { ...post };
   const originalMap = getPostOriginalMap(post);
-  const tasks = collectPostTranslationTasks(post, 0, originalMap);
+  const tasks = collectPostTranslationTasks(post, 0, originalMap, options);
 
   if (tasks.length === 0) {
     return post;
@@ -328,7 +539,7 @@ export async function translatePost(post, targetLang) {
 
   const translatedValues = await translateBatch(
     tasks.map((task) => task.sourceValue),
-    targetLang
+    normalizedTargetLang,
   );
 
   tasks.forEach((task, index) => {
@@ -343,9 +554,15 @@ export async function translatePost(post, targetLang) {
   return translated;
 }
 
-export async function translatePosts(posts, targetLang) {
-  if (!Array.isArray(posts) || posts.length === 0 || targetLang === "en") {
-    return posts;
+export async function translatePosts(posts, targetLang, options = {}) {
+  const normalizedTargetLang = normalizeLanguage(targetLang);
+  if (
+    !Array.isArray(posts) ||
+    posts.length === 0 ||
+    normalizedTargetLang === "en" ||
+    !RUNTIME_TRANSLATION_ENABLED
+  ) {
+    return Array.isArray(posts) ? posts : [];
   }
 
   const translatedPosts = posts.map((post) => ({ ...post }));
@@ -353,7 +570,9 @@ export async function translatePosts(posts, targetLang) {
   const tasks = [];
 
   posts.forEach((post, postIndex) => {
-    tasks.push(...collectPostTranslationTasks(post, postIndex, originalMaps[postIndex]));
+    tasks.push(
+      ...collectPostTranslationTasks(post, postIndex, originalMaps[postIndex], options),
+    );
   });
 
   if (tasks.length === 0) {
@@ -362,7 +581,7 @@ export async function translatePosts(posts, targetLang) {
 
   const translatedValues = await translateBatch(
     tasks.map((task) => task.sourceValue),
-    targetLang
+    normalizedTargetLang,
   );
 
   tasks.forEach((task, taskIndex) => {
@@ -398,9 +617,16 @@ export function clearTranslationCache() {
 }
 
 export default {
+  RUNTIME_TRANSLATION_ENABLED,
   translateText,
+  translateTextFromCache,
+  isTextTranslationCached,
   translateBatch,
   translatePost,
   translatePosts,
+  translatePostsInstant,
+  arePostsTranslationsCached,
   clearTranslationCache,
 };
+
+export { RUNTIME_TRANSLATION_ENABLED };

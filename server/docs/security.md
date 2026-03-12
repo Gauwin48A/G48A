@@ -13,7 +13,6 @@ Status: OPERATIONAL
 ## Evidence
 - `server/docs/waf-rules.md`
 - `server/docs/security-policy.md`
-- `server/docs/TEST_VALIDATION.md`
 - `server/docs/PHASE5_VALIDATION_EVIDENCE_2026-02-27.md`
 
 ## Validation
