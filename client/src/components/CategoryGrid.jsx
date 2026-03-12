@@ -10,7 +10,7 @@ const categories = [
 const CategoryGrid = () => (
   <section className="max-w-7xl mx-auto px-4 py-10" aria-label="Popular Categories">
     <h2 className="text-2xl font-bold mb-6 text-primary">Popular Categories</h2>
-    <div className="flex gap-6 overflow-x-auto">
+    <div className="flex gap-6 overflow-x-auto scrollbar-hide">
       {Array.isArray(categories) && categories.length > 0
         ? categories.map(cat => (
             <div

@@ -1,1 +1,524 @@
-import tt,{createContext as et,useContext as ot,useState as s,useEffect as P,useCallback as L,useRef as nt}from"react";import*as F from"../services/locationService";const N=300*1e3,at=1440*60*1e3,it=500,ct=600*1e3,st=import.meta.env.DEV,o=(...t)=>{st&&console.log(...t)},M=et(null);function ft(){const t=ot(M);if(!t)throw new Error("useLocation must be used within a LocationProvider");return t}async function D(t){try{const e=localStorage.getItem("userId"),b={...t,user_id:t.user_id||e||null,timezone:t.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone,last_active_at:t.last_active_at||new Date().toISOString()};return await F.sendLocation(b)}catch(e){return console.error("[LocationContext] Failed to send location to backend:",e),null}}function R(){try{const t=localStorage.getItem("mhub_location");if(t){const e=JSON.parse(t);if(e.timestamp&&Date.now()-e.timestamp<N)return o("[LocationContext] Using cached location:",e.city),e}}catch(t){console.error("[LocationContext] Failed to parse cached location:",t)}return null}function q(t){try{const e={...t,timestamp:Date.now()};localStorage.setItem("mhub_location",JSON.stringify(e)),o("[LocationContext] Location cached:",t.city)}catch(e){console.error("[LocationContext] Failed to cache location:",e)}}function G(){try{const t=localStorage.getItem("mhub_location_skipped");if(t){const e=JSON.parse(t);if(e.timestamp&&Date.now()-e.timestamp<at)return o("[LocationContext] User previously skipped location"),!0;localStorage.removeItem("mhub_location_skipped")}}catch(t){console.error("[LocationContext] Failed to check skip status:",t)}return!1}function rt(){try{localStorage.setItem("mhub_location_skipped",JSON.stringify({skipped:!0,timestamp:Date.now()})),o("[LocationContext] Skip preference saved for 24 hours")}catch(t){console.error("[LocationContext] Failed to save skip preference:",t)}}function lt(){localStorage.removeItem("mhub_location_skipped")}function ut(){localStorage.removeItem("mhub_manual_location")}function dt(t){try{const e={...t,isManual:!0,timestamp:Date.now()};localStorage.setItem("mhub_manual_location",JSON.stringify(e)),o("[LocationContext] Manual location saved:",t.city)}catch(e){console.error("[LocationContext] Failed to save manual location:",e)}}function U(){try{const t=localStorage.getItem("mhub_manual_location");if(t)return JSON.parse(t)}catch{console.warn("Failed to parse manual location")}return null}function Lt({children:t}){const e=U(),b=R(),r=e||b,w=!!r,[m,g]=s(w?{latitude:r.latitude,longitude:r.longitude,accuracy:r.accuracy}:null),[I,h]=s(r?.city||""),[k,C]=s(r?.state||""),[J,y]=s(r?.country||""),[z,v]=s(r?.displayName||""),[B,S]=s(r?.provider||""),[H,_]=s(r?.timestamp||null),[V,d]=s(!w),[K,x]=s(null),[$,p]=s(w),[Q,O]=s(!1),[E,T]=s(()=>G()),A=nt(!1),l=L(async(a={})=>{const i=a?.silent===!0;o("[LocationContext] ========================================"),o("[LocationContext] BANKING-GRADE CAPTURE STARTED"),i&&o("[LocationContext] Silent refresh mode enabled"),o("[LocationContext] Timestamp:",new Date().toISOString()),o("[LocationContext] ========================================"),i||(d(!0),x(null));try{const n=await F.getBestAvailableLocation({allowCache:!0,allowIpFallback:!0,cacheMaxAgeMs:N,requiredAccuracy:it}),c=String(n.provider||"browser_gps"),u=c==="ip_fallback"?"granted_via_ip":c.includes("cached")?"granted_cached":"granted",f=Date.now();return o("[LocationContext] \u2705 LOCATION CAPTURED!"),o("[LocationContext] City:",n.city),o("[LocationContext] Accuracy:",n.accuracy,"meters"),g({latitude:n.latitude,longitude:n.longitude,accuracy:n.accuracy}),h(n.city||""),C(n.state||""),y(n.country||""),v(n.displayName||""),S(c),_(f),p(!0),O(!1),i||d(!1),ut(),q({...n,provider:c,timestamp:f}),D({...n,provider:c,permission_status:u}),n}catch(n){console.warn("[LocationContext] Location capture failed:",n?.message||n);let c="Unable to get location";const u=(n?.message||"").toLowerCase();u.includes("denied")?(c="Location permission denied. Please enable in settings.",O(!0)):u.includes("timeout")?c="Location request timed out. Please try again.":(u.includes("https")||u.includes("secure"))&&(c="Web location requires HTTPS (or localhost in development)."),p(!1),i?console.warn("[LocationContext] Silent refresh failed:",c):(x(c),d(!1)),D({latitude:0,longitude:0,permission_status:u.includes("denied")?"denied":"error",provider:"none"})}},[]),W=L(()=>{o("[LocationContext] User initiated retry..."),A.current=!1,l()},[l]),X=L(()=>{o("[LocationContext] User skipped location (saved for 24 hours)"),d(!1),x(null),T(!0),rt()},[]),Y=L(()=>{o("[LocationContext] Clearing location data"),g(null),h(""),C(""),y(""),v(""),S(""),_(null),p(!1),localStorage.removeItem("mhub_location"),localStorage.removeItem("mhub_manual_location")},[]),Z=L(a=>{o("[LocationContext] Setting manual location:",a),g({latitude:a.latitude,longitude:a.longitude,accuracy:0}),h(a.city||""),C(a.state||""),y(a.country||""),v(a.city||""),S("manual"),_(Date.now()),p(!0),d(!1),x(null),dt(a),q({...a,provider:"manual"})},[]);P(()=>{if(A.current)return;if(A.current=!0,o("[LocationContext] Initializing..."),G()){o("[LocationContext] User skipped location within 24 hours, not prompting again"),d(!1),T(!0);return}const a=U(),i=a||R();i?(g({latitude:i.latitude,longitude:i.longitude,accuracy:i.accuracy}),h(i.city||""),C(i.state||""),y(i.country||""),v(i.displayName||""),S(i.provider||""),_(i.timestamp||null),p(!0),d(!1),a?o("[LocationContext] Manual location cache found, skipping background refresh."):(o("[LocationContext] Using cache, but requesting fresh location in background..."),setTimeout(()=>{l({silent:!0})},5e3))):l()},[l]),P(()=>{if(E||typeof window>"u"||typeof document>"u")return;const a=()=>{if(U())return;const f=R();(f?.timestamp?Date.now()-f.timestamp:Number.MAX_SAFE_INTEGER)>=N&&l({silent:!0})},i=setInterval(a,ct),n=()=>a(),c=()=>{document.visibilityState==="visible"&&a()};return window.addEventListener("focus",n),document.addEventListener("visibilitychange",c),()=>{clearInterval(i),window.removeEventListener("focus",n),document.removeEventListener("visibilitychange",c)}},[l,E]);const j={coords:m,latitude:m?.latitude||null,longitude:m?.longitude||null,accuracy:m?.accuracy||null,city:I,state:k,country:J,displayName:z,provider:B,lastUpdatedAt:H,loading:V,error:K,permissionGranted:$,permissionDenied:Q,requestLocation:l,retry:W,skipForNow:X,clearLocation:Y,setManualLocation:Z,enableLocation:()=>{lt(),T(!1),l()},hasLocation:!!m,userSkipped:E,locationString:I?`${I}${k?", "+k:""}`:"Location not set"};return tt.createElement(M.Provider,{value:j},t)}var gt=M;export{Lt as LocationProvider,gt as default,ft as useLocation};
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { getBestAvailableLocation, sendLocation } from "../services/locationService";
+
+const LOCATION_CACHE_TTL_MS = 5 * 60 * 1000;
+const AUTH_LOCATION_CACHE_TTL_MS = 60 * 1000;
+const SKIP_TTL_MS = 24 * 60 * 60 * 1000;
+const REQUIRED_ACCURACY_METERS = 100;
+const BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
+const DEBUG = import.meta.env.DEV;
+
+const log = (...args) => {
+  if (DEBUG) {
+    console.log(...args);
+  }
+};
+
+const LocationContext = createContext(null);
+
+export function useLocation() {
+  const context = useContext(LocationContext);
+  if (!context) {
+    throw new Error("useLocation must be used within a LocationProvider");
+  }
+  return context;
+}
+
+const readJson = (key) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeJson = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore storage failures
+  }
+};
+
+const isAuthenticatedSession = () => {
+  try {
+    return Boolean(
+      localStorage.getItem("authToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("authSession") === "true",
+    );
+  } catch {
+    return false;
+  }
+};
+
+const safeText = (value) => {
+  if (value === undefined || value === null) return "";
+  const normalized = String(value).trim();
+  return normalized.length ? normalized : "";
+};
+
+const normalizeLocation = (location) => {
+  if (!location || typeof location !== "object") return null;
+
+  const latitude = Number(location.latitude ?? location.lat);
+  const longitude = Number(location.longitude ?? location.lng);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+  const accuracy = Number(location.accuracy);
+
+  return {
+    latitude,
+    longitude,
+    accuracy: Number.isFinite(accuracy) ? accuracy : null,
+    city: safeText(location.city || location.address?.city),
+    state: safeText(location.state || location.address?.state),
+    country: safeText(location.country || location.address?.country),
+    area: safeText(location.area || location.address?.area),
+    locality: safeText(location.locality || location.address?.locality),
+    district: safeText(location.district || location.address?.district),
+    pincode: safeText(location.pincode || location.address?.pincode),
+    street: safeText(location.street || location.address?.street),
+    displayName: safeText(location.displayName || location.address?.displayName),
+    provider: safeText(location.provider || "browser_gps"),
+    speed: Number(location.speed) || 0,
+    timestamp: Number(location.timestamp) || Date.now(),
+  };
+};
+
+const getCachedLocation = () => {
+  const cached = readJson("mhub_location");
+  if (!cached?.timestamp) return null;
+  if (Date.now() - Number(cached.timestamp) > LOCATION_CACHE_TTL_MS) return null;
+  return normalizeLocation(cached);
+};
+
+const cacheLocation = (location) => {
+  writeJson("mhub_location", {
+    ...location,
+    timestamp: Date.now(),
+  });
+};
+
+const readManualLocation = () => {
+  const manual = readJson("mhub_manual_location");
+  return normalizeLocation(manual);
+};
+
+const saveManualLocation = (location) => {
+  writeJson("mhub_manual_location", {
+    ...location,
+    isManual: true,
+    timestamp: Date.now(),
+  });
+};
+
+const clearManualLocation = () => {
+  try {
+    localStorage.removeItem("mhub_manual_location");
+  } catch {
+    // ignore
+  }
+};
+
+const readSkipFlag = () => {
+  const payload = readJson("mhub_location_skipped");
+  if (!payload?.timestamp) return false;
+  const fresh = Date.now() - Number(payload.timestamp) < SKIP_TTL_MS;
+  if (!fresh) {
+    try {
+      localStorage.removeItem("mhub_location_skipped");
+    } catch {
+      // ignore
+    }
+  }
+  return fresh;
+};
+
+const writeSkipFlag = () => {
+  writeJson("mhub_location_skipped", {
+    skipped: true,
+    timestamp: Date.now(),
+  });
+};
+
+const clearSkipFlag = () => {
+  try {
+    localStorage.removeItem("mhub_location_skipped");
+  } catch {
+    // ignore
+  }
+};
+
+const buildLocationString = (location) => {
+  const parts = [];
+  const add = (value) => {
+    const text = safeText(value);
+    if (!text) return;
+    if (parts.some((part) => part.toLowerCase() === text.toLowerCase())) return;
+    parts.push(text);
+  };
+
+  add(location?.area || location?.locality || "");
+  add(location?.city || "");
+  add(location?.state || "");
+
+  return parts.join(", ");
+};
+
+const permissionStatusFromProvider = (provider) => {
+  const normalized = String(provider || "").toLowerCase();
+  if (normalized === "ip_fallback") return "granted_via_ip";
+  if (normalized.includes("cache")) return "granted_cached";
+  return "granted";
+};
+
+const sendLocationBestEffort = async (location) => {
+  try {
+    const userId = localStorage.getItem("userId");
+    const payload = {
+      ...location,
+      user_id: location.user_id || userId || null,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      permission_status:
+        location.permission_status || permissionStatusFromProvider(location.provider),
+      timezone:
+        location.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+      last_active_at: new Date().toISOString(),
+    };
+    await sendLocation(payload);
+  } catch (error) {
+    console.error("[LocationContext] Failed to send location to backend:", error);
+  }
+};
+
+export function LocationProvider({ children }) {
+  const manual = readManualLocation();
+  const cached = getCachedLocation();
+  const bootstrapLocation = manual || cached;
+
+  const [coords, setCoords] = useState(
+    bootstrapLocation
+      ? {
+          latitude: bootstrapLocation.latitude,
+          longitude: bootstrapLocation.longitude,
+          accuracy: bootstrapLocation.accuracy,
+        }
+      : null,
+  );
+  const [city, setCity] = useState(bootstrapLocation?.city || "");
+  const [state, setState] = useState(bootstrapLocation?.state || "");
+  const [country, setCountry] = useState(bootstrapLocation?.country || "");
+  const [area, setArea] = useState(bootstrapLocation?.area || "");
+  const [locality, setLocality] = useState(bootstrapLocation?.locality || "");
+  const [district, setDistrict] = useState(bootstrapLocation?.district || "");
+  const [pincode, setPincode] = useState(bootstrapLocation?.pincode || "");
+  const [street, setStreet] = useState(bootstrapLocation?.street || "");
+  const [displayName, setDisplayName] = useState(bootstrapLocation?.displayName || "");
+  const [provider, setProvider] = useState(bootstrapLocation?.provider || "");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(bootstrapLocation?.timestamp || null);
+
+  const [loading, setLoading] = useState(!bootstrapLocation);
+  const [error, setError] = useState(null);
+  const [permissionGranted, setPermissionGranted] = useState(Boolean(bootstrapLocation));
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [userSkipped, setUserSkipped] = useState(() => readSkipFlag());
+
+  const initializedRef = useRef(false);
+  const requestInFlightRef = useRef(null);
+
+  const setLocationState = useCallback((location) => {
+    const normalized = normalizeLocation(location);
+    if (!normalized) return null;
+
+    setCoords({
+      latitude: normalized.latitude,
+      longitude: normalized.longitude,
+      accuracy: normalized.accuracy,
+    });
+    setCity(normalized.city);
+    setState(normalized.state);
+    setCountry(normalized.country);
+    setArea(normalized.area);
+    setLocality(normalized.locality);
+    setDistrict(normalized.district);
+    setPincode(normalized.pincode);
+    setStreet(normalized.street);
+    setDisplayName(normalized.displayName || buildLocationString(normalized));
+    setProvider(normalized.provider);
+    setLastUpdatedAt(normalized.timestamp || Date.now());
+    setPermissionGranted(true);
+    setPermissionDenied(false);
+
+    return normalized;
+  }, []);
+
+  const requestLocation = useCallback(
+    async (options = {}) => {
+      const silent = options?.silent === true;
+      log("[LocationContext] Starting location capture", { silent });
+
+      if (requestInFlightRef.current) {
+        if (!silent) {
+          setLoading(true);
+          setError(null);
+        }
+        return requestInFlightRef.current;
+      }
+
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
+
+      const capturePromise = (async () => {
+        try {
+          const authenticated = isAuthenticatedSession();
+          const cacheMaxAgeMs = authenticated
+            ? AUTH_LOCATION_CACHE_TTL_MS
+            : LOCATION_CACHE_TTL_MS;
+          const location = await getBestAvailableLocation({
+            allowCache: true,
+            allowIpFallback: !authenticated,
+            cacheMaxAgeMs,
+            requiredAccuracy: REQUIRED_ACCURACY_METERS,
+          });
+
+          const normalized = setLocationState(location);
+          if (!normalized) {
+            throw new Error("Unable to normalize captured location");
+          }
+
+          clearManualLocation();
+          cacheLocation(normalized);
+          localStorage.setItem("mhub_user_city", normalized.city || normalized.area || "");
+
+          sendLocationBestEffort({
+            ...normalized,
+            provider: normalized.provider || "browser_gps",
+          });
+
+          if (!silent) {
+            setLoading(false);
+          }
+
+          return normalized;
+        } catch (captureError) {
+          const message = String(captureError?.message || "Unable to get location");
+          const lower = message.toLowerCase();
+          const denied = lower.includes("denied");
+
+          if (!silent) {
+            setError(
+              denied
+                ? "Location permission denied. Please enable in settings."
+                : message,
+            );
+            setLoading(false);
+          }
+
+          setPermissionGranted(false);
+          setPermissionDenied(denied);
+
+          sendLocationBestEffort({
+            latitude: 0,
+            longitude: 0,
+            provider: "none",
+            permission_status: denied ? "denied" : "error",
+          });
+
+          if (silent) {
+            log("[LocationContext] Silent refresh failed", message);
+          }
+
+          throw captureError;
+        }
+      })();
+
+      requestInFlightRef.current = capturePromise;
+      return capturePromise.finally(() => {
+        if (requestInFlightRef.current === capturePromise) {
+          requestInFlightRef.current = null;
+        }
+      });
+    },
+    [setLocationState],
+  );
+
+  const retry = useCallback(() => {
+    initializedRef.current = false;
+    return requestLocation();
+  }, [requestLocation]);
+
+  const skipForNow = useCallback(() => {
+    setLoading(false);
+    setError(null);
+    setUserSkipped(true);
+    writeSkipFlag();
+    log("[LocationContext] User skipped location prompt");
+  }, []);
+
+  const clearLocation = useCallback(() => {
+    setCoords(null);
+    setCity("");
+    setState("");
+    setCountry("");
+    setArea("");
+    setLocality("");
+    setDistrict("");
+    setPincode("");
+    setStreet("");
+    setDisplayName("");
+    setProvider("");
+    setLastUpdatedAt(null);
+    setPermissionGranted(false);
+    setPermissionDenied(false);
+
+    try {
+      localStorage.removeItem("mhub_location");
+      localStorage.removeItem("mhub_manual_location");
+      localStorage.removeItem("mhub_user_city");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const setManualLocation = useCallback(
+    (manualLocation) => {
+      const normalized = normalizeLocation({
+        ...manualLocation,
+        provider: "manual",
+        accuracy: Number(manualLocation?.accuracy) || 0,
+      });
+
+      if (!normalized) return;
+
+      setLocationState(normalized);
+      setLoading(false);
+      setError(null);
+
+      saveManualLocation(normalized);
+      cacheLocation(normalized);
+      localStorage.setItem("mhub_user_city", normalized.city || normalized.area || "");
+    },
+    [setLocationState],
+  );
+
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    log("[LocationContext] Initializing location context");
+
+    if (readSkipFlag()) {
+      setLoading(false);
+      setUserSkipped(true);
+      return;
+    }
+
+    const manualLocation = readManualLocation();
+    const cachedLocation = manualLocation || getCachedLocation();
+
+    if (cachedLocation) {
+      setLocationState(cachedLocation);
+      setLoading(false);
+
+      if (!manualLocation) {
+        setTimeout(() => {
+          requestLocation({ silent: true }).catch(() => {});
+        }, 5000);
+      }
+      return;
+    }
+
+    requestLocation().catch(() => {});
+  }, [requestLocation, setLocationState]);
+
+  useEffect(() => {
+    if (userSkipped || typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+
+    const refreshIfNeeded = () => {
+      if (readManualLocation()) return;
+      const cachedLocation = getCachedLocation();
+      const stale = !cachedLocation || Date.now() - Number(cachedLocation.timestamp || 0) >= LOCATION_CACHE_TTL_MS;
+      if (stale) {
+        requestLocation({ silent: true }).catch(() => {});
+      }
+    };
+
+    const interval = setInterval(refreshIfNeeded, BACKGROUND_REFRESH_MS);
+    const onFocus = () => refreshIfNeeded();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshIfNeeded();
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [requestLocation, userSkipped]);
+
+  const currentLocation = {
+    area,
+    locality,
+    city,
+    state,
+    country,
+  };
+
+  const value = {
+    coords,
+    latitude: coords?.latitude || null,
+    longitude: coords?.longitude || null,
+    accuracy: coords?.accuracy || null,
+    city,
+    state,
+    country,
+    area,
+    locality,
+    district,
+    pincode,
+    street,
+    displayName,
+    provider,
+    lastUpdatedAt,
+    loading,
+    error,
+    permissionGranted,
+    permissionDenied,
+    requestLocation,
+    retry,
+    skipForNow,
+    clearLocation,
+    setManualLocation,
+    enableLocation: () => {
+      clearSkipFlag();
+      setUserSkipped(false);
+      requestLocation().catch(() => {});
+    },
+    hasLocation: Boolean(coords),
+    userSkipped,
+    locationString: buildLocationString(currentLocation) || "Location not set",
+  };
+
+  return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
+}
+
+export default LocationContext;

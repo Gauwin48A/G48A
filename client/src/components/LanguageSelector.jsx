@@ -1,78 +1,180 @@
-﻿import React, { useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { FiChevronDown, FiGlobe } from "react-icons/fi";
+import { prefetchLanguage } from "@/i18n";
 
-const LANGUAGE_OPTIONS = [
-  { code: 'en', label: 'English' },
-  { code: 'hi', label: 'Hindi (\u0939\u093f\u0902\u0926\u0940)' },
-  { code: 'te', label: 'Telugu (\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41)' },
-  { code: 'ta', label: 'Tamil (\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD)' },
-  { code: 'kn', label: 'Kannada (\u0C95\u0CA8\u0CCD\u0CA8\u0CA1)' },
-  { code: 'mr', label: 'Marathi (\u092E\u0930\u093E\u0920\u0940)' },
-  { code: 'bn', label: 'Bengali (\u09AC\u09BE\u0982\u09B2\u09BE)' }
+const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "hi", label: "Hindi" },
+  { code: "te", label: "Telugu" },
+  { code: "ta", label: "Tamil" },
+  { code: "kn", label: "Kannada" },
+  { code: "mr", label: "Marathi" },
+  { code: "bn", label: "Bengali" },
 ];
 
-function normalizeLanguageCode(value) {
-  const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) {
-    return 'en';
-  }
-  return normalized.split('-')[0];
+function normalizeLangCode(code) {
+  const normalized = String(code || "").toLowerCase().trim();
+  if (!normalized) return "en";
+  const base = normalized.split("-")[0];
+  return LANGUAGES.some((lang) => lang.code === base) ? base : "en";
 }
 
-export default function LanguageSelector() {
-  const { i18n } = useTranslation();
-  const i18nLanguage = i18n?.language;
-  const i18nResolvedLanguage = i18n?.resolvedLanguage;
-  const canChangeLanguage = typeof i18n?.changeLanguage === 'function';
+export default function LanguageSelector({ className = "", compact = false }) {
+  const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const rootRef = useRef(null);
+  const hasWarmPrefetchedRef = useRef(false);
 
-  const currentLanguage = useMemo(
-    () => normalizeLanguageCode(i18nResolvedLanguage || i18nLanguage || 'en'),
-    [i18nLanguage, i18nResolvedLanguage]
+  const currentLanguageCode = i18n?.language || "en";
+  const selectedCode = useMemo(
+    () => normalizeLangCode(currentLanguageCode),
+    [currentLanguageCode],
   );
+  const [activeCode, setActiveCode] = useState(selectedCode);
+  useEffect(() => {
+    setActiveCode(selectedCode);
+  }, [selectedCode]);
+  const selectedLanguage =
+    LANGUAGES.find((lang) => lang.code === activeCode) || LANGUAGES[0];
 
   useEffect(() => {
-    const storedLanguage = normalizeLanguageCode(
-      localStorage.getItem('mhub_language') || localStorage.getItem('lang')
-    );
-    const nextLanguage = storedLanguage || currentLanguage || 'en';
+    const onDocumentClick = (event) => {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
 
-    if (nextLanguage !== currentLanguage && canChangeLanguage) {
-      void i18n.changeLanguage(nextLanguage);
-    }
+    const onEscape = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
 
-    document.documentElement.lang = nextLanguage;
-  }, [canChangeLanguage, currentLanguage, i18n]);
+    document.addEventListener("mousedown", onDocumentClick);
+    document.addEventListener("keydown", onEscape);
 
-  const handleLanguageChange = async (event) => {
-    const nextLanguage = normalizeLanguageCode(event.target.value);
-    if (!nextLanguage || nextLanguage === currentLanguage) {
+    return () => {
+      document.removeEventListener("mousedown", onDocumentClick);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open || hasWarmPrefetchedRef.current) {
       return;
     }
 
-    localStorage.setItem('mhub_language', nextLanguage);
-    localStorage.setItem('lang', nextLanguage);
-    if (canChangeLanguage) {
-      await i18n.changeLanguage(nextLanguage);
+    const schedule = () => {
+      hasWarmPrefetchedRef.current = true;
+      LANGUAGES.forEach((lang) => {
+        if (lang.code !== selectedCode) {
+          void prefetchLanguage(lang.code);
+        }
+      });
+    };
+
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(schedule, { timeout: 500 });
+      return () => window.cancelIdleCallback(idleId);
     }
-    document.documentElement.lang = nextLanguage;
+
+    const timer = setTimeout(schedule, 24);
+    return () => clearTimeout(timer);
+  }, [open, selectedCode]);
+
+  const handleChange = async (langCode) => {
+    const nextCode = normalizeLangCode(langCode);
+    if (nextCode === activeCode) {
+      setOpen(false);
+      return;
+    }
+
+    if (isSwitching) {
+      return;
+    }
+
+    setIsSwitching(true);
+    setOpen(false);
+    setActiveCode(nextCode);
+    try {
+      if (!i18n?.hasResourceBundle?.(nextCode, "translation")) {
+        void prefetchLanguage(nextCode);
+      }
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem("mhub_language", nextCode);
+        localStorage.setItem("lang", nextCode);
+      }
+      if (typeof i18n?.changeLanguage === "function") {
+        await i18n.changeLanguage(nextCode);
+      }
+    } catch {
+      setActiveCode(selectedCode);
+    } finally {
+      setIsSwitching(false);
+    }
   };
 
   return (
-    <label className="flex items-center gap-2" aria-label="Language selector" data-no-auto-translate="true">
-      <span role="img" aria-label="language icon" className="text-lg">
-        {'\uD83C\uDF10'}
-      </span>
-      <select
-        value={currentLanguage}
-        onChange={handleLanguageChange}
-        className="h-8 min-w-[132px] rounded-md border border-white/40 bg-white px-2 text-xs font-medium text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-white/70 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+    <div ref={rootRef} className={`relative ${className}`} data-no-auto-translate="true">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        disabled={isSwitching}
+        className={`rounded-full border border-white/30 bg-white/90 px-2 font-semibold text-slate-800 shadow-sm hover:bg-white ${
+          compact
+            ? "h-8 min-w-[56px] text-[11px] sm:h-9 sm:min-w-[90px] sm:text-sm"
+            : "h-11 min-w-[132px] text-sm"
+        }`}
       >
-        {LANGUAGE_OPTIONS.map((language) => (
-          <option key={language.code} value={language.code}>
-            {language.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="inline-flex w-full items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2 truncate">
+            <FiGlobe className="h-4 w-4 text-blue-600" />
+            <span className="truncate">
+              {compact ? selectedLanguage.code.toUpperCase() : selectedLanguage.label}
+            </span>
+          </span>
+          <FiChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+
+      {open ? (
+        <div
+          role="listbox"
+          className={`absolute right-0 z-[70] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ${
+            compact ? "w-40" : "w-48"
+          }`}
+        >
+          {LANGUAGES.map((lang) => {
+            const active = lang.code === activeCode;
+            return (
+              <button
+                key={lang.code}
+                type="button"
+                role="option"
+                aria-selected={active}
+                disabled={isSwitching}
+                onMouseEnter={() => prefetchLanguage(lang.code)}
+                onClick={() => handleChange(lang.code)}
+                className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                  active
+                    ? "bg-blue-50 font-semibold text-blue-700"
+                    : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <span>{lang.label}</span>
+                {active ? (
+                  <span className="text-xs">{t("selected") || "Selected"}</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }

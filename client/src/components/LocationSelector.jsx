@@ -1,1 +1,359 @@
-import e,{useState as l,useEffect as w,useRef as C}from"react";import{FiMapPin as L,FiX as M,FiSearch as F,FiNavigation as G,FiLoader as j,FiAlertCircle as E,FiCheckCircle as I}from"react-icons/fi";import{useLocation as S}from"@/context/LocationContext";import{useTranslation as _}from"react-i18next";const h=[{name:"Tenali",state:"Andhra Pradesh",lat:16.242,lng:80.6399},{name:"Guntur",state:"Andhra Pradesh",lat:16.3067,lng:80.4365},{name:"Vijayawada",state:"Andhra Pradesh",lat:16.5062,lng:80.648},{name:"Hyderabad",state:"Telangana",lat:17.385,lng:78.4867},{name:"Visakhapatnam",state:"Andhra Pradesh",lat:17.6868,lng:83.2185},{name:"Tirupati",state:"Andhra Pradesh",lat:13.6288,lng:79.4192},{name:"Rajahmundry",state:"Andhra Pradesh",lat:17.0005,lng:81.804},{name:"Kakinada",state:"Andhra Pradesh",lat:16.9891,lng:82.2475},{name:"Nellore",state:"Andhra Pradesh",lat:14.4426,lng:79.9865},{name:"Kurnool",state:"Andhra Pradesh",lat:15.8281,lng:78.0373},{name:"Mangalagiri",state:"Andhra Pradesh",lat:16.4307,lng:80.5682},{name:"Mumbai",state:"Maharashtra",lat:19.076,lng:72.8777},{name:"Delhi",state:"Delhi",lat:28.7041,lng:77.1025},{name:"Bangalore",state:"Karnataka",lat:12.9716,lng:77.5946},{name:"Chennai",state:"Tamil Nadu",lat:13.0827,lng:80.2707},{name:"Kolkata",state:"West Bengal",lat:22.5726,lng:88.3639}],$=({isOpen:i,onClose:d})=>{const{t:K}=_(),{city:x,setManualLocation:f}=S(),[n,P]=l(""),[y,b]=l(h.slice(0,10)),m=C(null),[g,u]=l(!1),[k,c]=l(null),[r,p]=l(null);w(()=>{i&&m.current&&setTimeout(()=>m.current?.focus(),100),i&&(u(!1),c(null),p(null))},[i]),w(()=>{if(n.trim()){const t=n.toLowerCase(),o=h.filter(s=>s.name.toLowerCase().includes(t)||s.state.toLowerCase().includes(t));b(o.slice(0,10))}else b(h.slice(0,10))},[n]);const U=async(t,o)=>{try{const s=`https://nominatim.openstreetmap.org/reverse?lat=${t}&lon=${o}&format=json&accept-language=en&zoom=18&addressdetails=1`,N=await fetch(s,{headers:{"User-Agent":"MHub/1.0 (marketplace app)"}});if(!N.ok)throw new Error("Geocoding failed");const v=await N.json(),a=v.address||{};return{city:a.village||a.suburb||a.neighbourhood||a.hamlet||a.locality||a.town||a.city||a.county||"Unknown",state:a.state||"",country:a.country||"India",displayName:v.display_name||"",district:a.county||a.state_district||""}}catch(s){return console.error("[LocationSelector] Geocoding failed:",s),null}},{requestLocation:A}=S(),D=async()=>{console.log("[LocationSelector] === STARTING SMART DETECTION ==="),u(!0),c(null),p(null);try{const t=await A();t?(console.log("[LocationSelector] Detection success:",t.city),p({...t,isManual:!1}),setTimeout(()=>{d()},1500)):c("Could not auto-detect location. Please search manually.")}catch(t){console.error("[LocationSelector] Detection error:",t),c(t.message||"Location detection failed.")}finally{u(!1)}},T=t=>{f&&f({city:t.name,state:t.state,latitude:t.lat,longitude:t.lng,isManual:!0}),localStorage.setItem("mhub_manual_location",JSON.stringify({city:t.name,state:t.state,latitude:t.lat,longitude:t.lng,isManual:!0,timestamp:Date.now()})),d()};return i?e.createElement("div",{className:"fixed inset-0 z-[9999] flex items-start justify-center pt-20 bg-black/50",onClick:d},e.createElement("div",{className:"bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden",onClick:t=>t.stopPropagation()},e.createElement("div",{className:"flex items-center justify-between px-4 py-3 bg-blue-600 text-white"},e.createElement("h2",{className:"font-semibold text-lg flex items-center gap-2"},e.createElement(L,{className:"w-5 h-5"}),"Select Location"),e.createElement("button",{onClick:d,className:"p-1 hover:bg-blue-500 rounded"},e.createElement(M,{className:"w-5 h-5"}))),e.createElement("div",{className:"p-4 border-b dark:border-gray-700 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20"},e.createElement("button",{onClick:D,disabled:g,className:`w-full flex items-center justify-center gap-2 py-4 rounded-lg font-medium transition ${g?"bg-gray-200 dark:bg-gray-700 text-gray-500 cursor-wait":"bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl"}`},g?e.createElement(e.Fragment,null,e.createElement(j,{className:"w-5 h-5 animate-spin"}),e.createElement("span",null,"Detecting GPS... (up to 60 sec)")):e.createElement(e.Fragment,null,e.createElement(G,{className:"w-5 h-5"}),e.createElement("span",null,"\u{1F6F0}\uFE0F Detect My Location (GPS)"))),k&&e.createElement("div",{className:"mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"},e.createElement("div",{className:"flex items-start gap-2"},e.createElement(E,{className:"w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"}),e.createElement("p",{className:"text-sm text-red-700 dark:text-red-400 whitespace-pre-line"},k))),r&&e.createElement("div",{className:"mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"},e.createElement("div",{className:"flex items-start gap-2"},e.createElement(I,{className:"w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"}),e.createElement("div",null,e.createElement("p",{className:"text-sm font-medium text-green-700 dark:text-green-400"},"\u2705 Location Detected: ",r.city),e.createElement("p",{className:"text-xs text-green-600 dark:text-green-500"},r.state,", ",r.country),e.createElement("p",{className:"text-xs text-green-500 dark:text-green-600 mt-1"},"\u{1F4CD} Accuracy: \xB1",Math.round(r.accuracy),"m | Coords: ",r.latitude.toFixed(4),", ",r.longitude.toFixed(4)))))),e.createElement("div",{className:"p-4 border-b dark:border-gray-700"},e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400 mb-2"},"Or select manually:"),e.createElement("div",{className:"relative"},e.createElement(F,{className:"absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"}),e.createElement("input",{ref:m,type:"text",placeholder:"Search for your city...",className:"w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:text-white",value:n,onChange:t=>P(t.target.value)}))),e.createElement("div",{className:"max-h-60 overflow-y-auto p-2"},e.createElement("p",{className:"px-2 py-1 text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold"},n?"Search Results":"Popular Cities"),y.length===0?e.createElement("p",{className:"px-4 py-6 text-center text-gray-500 dark:text-gray-400"},"No cities found. Try a different search."):y.map((t,o)=>e.createElement("button",{key:`${t.name}-${o}`,onClick:()=>T(t),className:"w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition text-left"},e.createElement(L,{className:"w-4 h-4 text-blue-500 flex-shrink-0"}),e.createElement("div",null,e.createElement("p",{className:"font-medium text-gray-800 dark:text-white"},t.name),e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400"},t.state))))),x&&e.createElement("div",{className:"px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t dark:border-gray-600"},e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400"},"Current location:"),e.createElement("p",{className:"text-sm font-medium text-gray-800 dark:text-white"},x)))):null};var V=$;export{V as default};
+﻿import React, { useEffect, useRef, useState } from "react";
+import {
+  FiAlertCircle,
+  FiCheckCircle,
+  FiLoader,
+  FiMapPin,
+  FiNavigation,
+  FiSearch,
+  FiX,
+} from "react-icons/fi";
+import { useLocation } from "@/context/LocationContext";
+
+const POPULAR_CITIES = [
+  { name: "Hyderabad", state: "Telangana", lat: 17.385, lng: 78.4867 },
+  { name: "Vijayawada", state: "Andhra Pradesh", lat: 16.5062, lng: 80.648 },
+  { name: "Bengaluru", state: "Karnataka", lat: 12.9716, lng: 77.5946 },
+  { name: "Chennai", state: "Tamil Nadu", lat: 13.0827, lng: 80.2707 },
+  { name: "Mumbai", state: "Maharashtra", lat: 19.076, lng: 72.8777 },
+  { name: "Delhi", state: "Delhi", lat: 28.7041, lng: 77.1025 },
+  { name: "Kolkata", state: "West Bengal", lat: 22.5726, lng: 88.3639 },
+  { name: "Pune", state: "Maharashtra", lat: 18.5204, lng: 73.8567 },
+];
+
+const safeText = (value) => {
+  if (value === undefined || value === null) return "";
+  const normalized = String(value).trim();
+  return normalized.length ? normalized : "";
+};
+
+const toSuggestion = (item) => {
+  const latitude = Number(item.lat);
+  const longitude = Number(item.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  const address = item.address || {};
+  const area =
+    safeText(address.neighbourhood) ||
+    safeText(address.suburb) ||
+    safeText(address.residential) ||
+    safeText(address.locality);
+  const city =
+    safeText(address.city) ||
+    safeText(address.town) ||
+    safeText(address.village) ||
+    safeText(address.municipality) ||
+    safeText(address.county);
+  const state = safeText(address.state);
+  const country = safeText(address.country);
+  const locality =
+    safeText(address.city_district) || safeText(address.county) || safeText(address.borough);
+
+  const title = area || city || safeText(item.display_name) || "Unknown location";
+  const subtitle = [city, state, country].filter(Boolean).join(", ");
+
+  return {
+    id: `${item.place_id}`,
+    title,
+    subtitle,
+    latitude,
+    longitude,
+    area,
+    locality,
+    city,
+    state,
+    country,
+    district: safeText(address.state_district) || safeText(address.county),
+    pincode: safeText(address.postcode),
+    street:
+      [safeText(address.house_number), safeText(address.road)].filter(Boolean).join(" ") ||
+      safeText(address.road),
+    displayName: safeText(item.display_name),
+  };
+};
+
+export default function LocationSelector({ isOpen, onClose }) {
+  const {
+    city,
+    area,
+    locality,
+    state,
+    country,
+    displayName,
+    setManualLocation,
+    requestLocation,
+  } = useLocation();
+
+  const searchInputRef = useRef(null);
+
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState(POPULAR_CITIES);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [error, setError] = useState(null);
+  const [detectedLocation, setDetectedLocation] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setError(null);
+    setDetectedLocation(null);
+    setIsSearching(false);
+    setIsDetecting(false);
+
+    if (!query.trim()) {
+      setResults(POPULAR_CITIES);
+    }
+
+    const timer = setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const trimmed = query.trim();
+    if (trimmed.length < 3) {
+      setResults(POPULAR_CITIES);
+      setIsSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const url =
+          "https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&accept-language=en&q=" +
+          encodeURIComponent(trimmed);
+
+        const response = await fetch(url, {
+          method: "GET",
+          signal: controller.signal,
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Search failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        const suggestions = Array.isArray(payload)
+          ? payload.map(toSuggestion).filter(Boolean)
+          : [];
+
+        setResults(suggestions);
+      } catch (searchError) {
+        if (searchError?.name !== "AbortError") {
+          setResults([]);
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [isOpen, query]);
+
+  const applyManualLocation = (location) => {
+    if (!location) return;
+
+    setManualLocation({
+      latitude: location.latitude,
+      longitude: location.longitude,
+      city: location.city || location.title || "",
+      state: location.state || "",
+      country: location.country || "",
+      area: location.area || "",
+      locality: location.locality || "",
+      district: location.district || "",
+      pincode: location.pincode || "",
+      street: location.street || "",
+      displayName: location.displayName || location.title || "",
+      isManual: true,
+    });
+
+    onClose?.();
+  };
+
+  const detectCurrentLocation = async () => {
+    setIsDetecting(true);
+    setError(null);
+    setDetectedLocation(null);
+
+    try {
+      const location = await requestLocation();
+      setDetectedLocation(location);
+      setTimeout(() => {
+        onClose?.();
+      }, 1200);
+    } catch (captureError) {
+      setError(
+        captureError?.message ||
+          "Unable to detect your exact location. Move near open sky and retry.",
+      );
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const currentLabel =
+    displayName || [area || locality || city, state, country].filter(Boolean).join(", ");
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/50 sm:items-start sm:pt-20"
+      onClick={onClose}
+    >
+      <div
+        className="mx-0 flex h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-gray-800 sm:mx-4 sm:h-auto sm:max-h-[calc(100dvh-6rem)] sm:max-w-md sm:rounded-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <FiMapPin className="h-5 w-5" />
+            Select Location
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded p-1 hover:bg-blue-500"
+            aria-label="Close location selector"
+          >
+            <FiX className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="border-b bg-gradient-to-r from-green-50 to-blue-50 p-4 dark:border-gray-700 dark:from-green-900/20 dark:to-blue-900/20">
+          <button
+            type="button"
+            onClick={detectCurrentLocation}
+            disabled={isDetecting}
+            className={`w-full rounded-lg py-4 font-medium transition ${
+              isDetecting
+                ? "cursor-wait bg-gray-200 text-gray-500 dark:bg-gray-700"
+                : "bg-green-500 text-white shadow-lg hover:bg-green-600"
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              {isDetecting ? <FiLoader className="h-5 w-5 animate-spin" /> : <FiNavigation className="h-5 w-5" />}
+              {isDetecting ? "Detecting exact GPS..." : "Detect My Exact Location"}
+            </span>
+          </button>
+
+          {error ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+              <div className="flex items-start gap-2">
+                <FiAlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
+                <p className="whitespace-pre-line text-sm text-red-700 dark:text-red-400">{error}</p>
+              </div>
+            </div>
+          ) : null}
+
+          {detectedLocation ? (
+            <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+              <div className="flex items-start gap-2">
+                <FiCheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+                <div>
+                  <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                    Location detected: {detectedLocation.displayName || detectedLocation.city}
+                  </p>
+                  <p className="text-xs text-green-600 dark:text-green-500">
+                    Accuracy: �{Math.round(Number(detectedLocation.accuracy) || 0)}m
+                  </p>
+                  <p className="mt-1 text-xs text-green-500 dark:text-green-600">
+                    {Number(detectedLocation.latitude).toFixed(6)},{" "}
+                    {Number(detectedLocation.longitude).toFixed(6)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="border-b p-4 dark:border-gray-700">
+          <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">Or search your area / colony:</p>
+          <div className="relative">
+            <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search area, colony, street, city"
+              className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          <p className="px-2 py-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+            {query.trim().length >= 3 ? "Area results" : "Popular cities"}
+          </p>
+
+          {isSearching ? (
+            <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">Searching...</div>
+          ) : results.length === 0 ? (
+            <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+              No matching locations found.
+            </div>
+          ) : (
+            results.map((item, index) => (
+              <button
+                key={item.id || `${item.name}-${index}`}
+                type="button"
+                onClick={() =>
+                  applyManualLocation({
+                    latitude: Number(item.latitude ?? item.lat),
+                    longitude: Number(item.longitude ?? item.lng),
+                    city: item.city || item.name,
+                    state: item.state || "",
+                    country: item.country || "India",
+                    area: item.area || "",
+                    locality: item.locality || "",
+                    district: item.district || "",
+                    pincode: item.pincode || "",
+                    street: item.street || "",
+                    displayName: item.displayName || item.title || item.name,
+                  })
+                }
+                className="w-full rounded-lg px-4 py-3 text-left transition hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                <div className="flex items-start gap-3">
+                  <FiMapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-gray-800 dark:text-white">
+                      {item.title || item.name}
+                    </p>
+                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                      {item.subtitle || item.state}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+
+        {currentLabel ? (
+          <div className="border-t bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Current location:</p>
+            <p className="truncate text-sm font-medium text-gray-800 dark:text-white">{currentLabel}</p>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}

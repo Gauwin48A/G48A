@@ -1,1 +1,39 @@
-import n,{createContext as s,useContext as a,useState as c,useMemo as l}from"react";const t=s(),u={search:"",category:"All",sortBy:"",location:"",minPrice:"",maxPrice:"",priceRange:"",startDate:"",endDate:""};function F({children:r}){const[e,o]=c(u),i=l(()=>({filters:e,setFilters:o}),[e]);return n.createElement(t.Provider,{value:i},r)}function d(){return a(t)}export{F as FilterProvider,d as useFilter};
+import React, { createContext, useContext, useMemo, useState } from "react";
+
+const FilterContext = createContext(null);
+
+export const DEFAULT_FILTERS = {
+  search: "",
+  category: "All",
+  sortBy: "",
+  latestWindow: "",
+  location: "",
+  minPrice: "",
+  maxPrice: "",
+  priceRange: "",
+  startDate: "",
+  endDate: "",
+  page: 1,
+};
+
+export function FilterProvider({ children }) {
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  const value = useMemo(
+    () => ({
+      filters,
+      setFilters,
+    }),
+    [filters],
+  );
+
+  return <FilterContext.Provider value={value}>{children}</FilterContext.Provider>;
+}
+
+export function useFilter() {
+  const context = useContext(FilterContext);
+  if (!context) {
+    throw new Error("useFilter must be used within FilterProvider");
+  }
+  return context;
+}

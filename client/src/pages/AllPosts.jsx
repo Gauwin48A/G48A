@@ -19,16 +19,36 @@ import {
   FaEllipsisV as To,
   FaChevronLeft as Lo,
   FaChevronRight as Co,
+  FaShoppingCart as Bo,
+  FaCartPlus as Mo,
+  FaTag as Vo,
+  FaBolt as zo,
+  FaClock as Ho,
+  FaMapMarkerAlt as Uo,
+  FaSyncAlt as Ko,
+  FaTimes as Jo,
 } from "react-icons/fa";
 import { useNavigate as Je, useLocation as Ke } from "react-router-dom";
 import { useFilter as We } from "@/context/FilterContext";
 import { useTranslation as Xe } from "react-i18next";
 import Ze from "@/components/BuyerInterestModal";
-import { translatePosts as Re } from "@/utils/translateContent";
+import {
+  translatePosts as Re,
+  translatePostsInstant as Ue,
+} from "@/utils/translateContent";
 import { useAuth as et } from "@/context/AuthContext";
+import { useCart as mt } from "@/context/CartContext";
 import A from "@/lib/api";
 import { getUserId as tt, isAuthenticated as rt } from "@/utils/authStorage";
 import { fetchCategoriesCached as at } from "@/services/categoriesService";
+import {
+  buildSavedPostsMap,
+  extractSavedPostIds,
+  getSavedPostsMap,
+  replaceSavedPostIds,
+  setSavedPostStatus,
+  subscribeSavedPosts,
+} from "@/utils/savedPosts";
 import pt from "@/components/ShareLinkDialog";
 import {
   normalizeMediaList as ctm,
@@ -37,6 +57,22 @@ import {
 const ve = 5,
   SHOW_POST_ID_CHIP = !0,
   D = "/placeholder.svg",
+  ALL_POSTS_TRANSLATE_PATHS = [
+    "title",
+    "description",
+    "category",
+    "category_name",
+    "location",
+    "city",
+    "area",
+    "state",
+    "summary",
+    "subtitle",
+    "brand",
+    "model",
+    "user.name",
+    "user.location",
+  ],
   st = {
     search: "",
     category: "All",
@@ -52,6 +88,10 @@ const ve = 5,
   ke = (s) => s?.post_id ?? s?.id ?? null,
   I = (s) => {
     if (s == null) return "";
+    if (typeof s === "object") {
+      const candidate = s.post_id ?? s.postId ?? s.id;
+      if (candidate != null) return String(candidate).trim();
+    }
     const c = String(s).trim();
     return c.length ? c : "";
   },
@@ -59,15 +99,44 @@ const ve = 5,
     const c = Number(s);
     return Number.isFinite(c) ? c : s || 0;
   },
-  nt = (s) => {
+  relativeTimeFormatters = new Map(),
+  getRelativeTimeFormatter = (s) => {
+    const c = String(s || "en").trim().toLowerCase();
+    const l = c || "en";
+    if (relativeTimeFormatters.has(l)) {
+      return relativeTimeFormatters.get(l);
+    }
+    if (typeof Intl > "u" || typeof Intl.RelativeTimeFormat > "u") {
+      relativeTimeFormatters.set(l, null);
+      return null;
+    }
+    try {
+      const t = new Intl.RelativeTimeFormat(l, { numeric: "always" });
+      return relativeTimeFormatters.set(l, t), t;
+    } catch {
+      const t = new Intl.RelativeTimeFormat("en", { numeric: "always" });
+      return relativeTimeFormatters.set(l, t), t;
+    }
+  },
+  nt = (s, c = "en") => {
     if (!s) return "";
-    const c = new Date(s);
-    if (Number.isNaN(c.getTime())) return "";
-    const l = Date.now() - c.getTime(),
-      t = Math.max(1, Math.floor(l / 6e4));
-    if (t < 60) return `${t}m ago`;
-    const m = Math.floor(t / 60);
-    return m < 24 ? `${m}h ago` : `${Math.floor(m / 24)}d ago`;
+    const l = new Date(s);
+    if (Number.isNaN(l.getTime())) return "";
+    const t = Date.now() - l.getTime(),
+      m = Math.max(1, Math.floor(t / 6e4)),
+      p = getRelativeTimeFormatter(c);
+    if (p)
+      return m < 60
+        ? p.format(-m, "minute")
+        : (() => {
+            const F = Math.floor(m / 60);
+            return F < 24
+              ? p.format(-F, "hour")
+              : p.format(-Math.floor(F / 24), "day");
+          })();
+    if (m < 60) return `${m}m ago`;
+    const F = Math.floor(m / 60);
+    return F < 24 ? `${F}h ago` : `${Math.floor(F / 24)}d ago`;
   },
   isDateOnlyValue = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || "")),
   normalizeLatestWindow = (s) => {
@@ -103,6 +172,32 @@ const ve = 5,
   Ne = (s) => {
     const c = collectPostImageUrls(s);
     return c[0] || D;
+  },
+  setNestedValue = (s, c, l) => {
+    if (!s || typeof s != "object" || !c) return;
+    const t = String(c).split(".");
+    let m = s;
+    for (let p = 0; p < t.length - 1; p += 1) {
+      const F = t[p];
+      (!m[F] || typeof m[F] != "object") && (m[F] = {});
+      m = m[F];
+    }
+    m[t[t.length - 1]] = l;
+  },
+  restoreTranslatedPost = (s) => {
+    if (!s || typeof s != "object") return s;
+    const c = s._originalTranslations;
+    if (!c || typeof c != "object") return s;
+    const l = { ...s };
+    return (
+      Object.entries(c).forEach(([t, m]) => {
+        setNestedValue(l, t, m);
+      }),
+      typeof s._originalTitle == "string" && (l.title = s._originalTitle),
+      typeof s._originalDescription == "string" &&
+        (l.description = s._originalDescription),
+      l
+    );
   },
   lt = (s, c) => {
     const l = new Map();
@@ -168,13 +263,60 @@ const ve = 5,
       [Ie, le] = g(!1),
       [G, ie] = g(null),
       [menuPostId, setMenuPostId] = g(null),
-      [savedPosts, setSavedPosts] = g({}),
+      [savedPosts, setSavedPosts] = g(() => getSavedPostsMap()),
       [shareDialogOpen, setShareDialogOpen] = g(!1),
       [shareDialogUrl, setShareDialogUrl] = g(""),
       [carouselIndexByPost, setCarouselIndexByPost] = g({}),
       de = k({}),
       carouselTrackRefs = k({}),
       C = N(() => rt($), [$]);
+    const {
+      addItem: addCartItem,
+      removeItem: removeCartItem,
+      isInCart: isInCartItem,
+    } = mt();
+    const [isLiveSyncing, setIsLiveSyncing] = g(!1),
+      [lastLiveSyncAt, setLastLiveSyncAt] = g(Date.now()),
+      [navStickyTop, setNavStickyTop] = g(68);
+    const languageRef = k(l);
+    const formatCurrency = x(
+      (e) => `\u20B9${ot(e).toLocaleString("en-IN")}`,
+      [],
+    );
+    const tr = x(
+      (key, fallback) => {
+        const value = s(key);
+        if (typeof value !== "string" || !value.trim() || value === key) {
+          return fallback;
+        }
+        return value;
+      },
+      [s],
+    );
+    w(() => {
+      languageRef.current = l;
+    }, [l]);
+    w(() => {
+      if (!Array.isArray(f) || f.length === 0) return;
+      let e = !1;
+      if (!l || l === "en") {
+        O((a) => (Array.isArray(a) ? a.map(restoreTranslatedPost) : a));
+        return;
+      }
+      const a = Ue(f, l, { paths: ALL_POSTS_TRANSLATE_PATHS });
+      O(a);
+      Re(f, l, { paths: ALL_POSTS_TRANSLATE_PATHS })
+        .then((o) => {
+          if (e) return;
+          Array.isArray(o) && o.length > 0 ? O(o) : O(a);
+        })
+        .catch(() => {
+          if (!e) O(a);
+        });
+      return () => {
+        e = !0;
+      };
+    }, [l]);
     (w(() => {
       const e = sessionStorage.getItem("allPostsScrollPosition");
       e &&
@@ -184,6 +326,28 @@ const ve = 5,
             sessionStorage.removeItem("allPostsScrollPosition"));
         });
     }, [f.length]),
+      w(() => subscribeSavedPosts(setSavedPosts), []),
+      w(() => {
+        if (!C) return;
+        let e = !1;
+        (async () => {
+          try {
+            const a = tt($);
+            const o = a
+              ? await A.get("/wishlist", { params: { userId: a } })
+              : await A.get("/wishlist");
+            if (e) return;
+            const n = extractSavedPostIds(o);
+            replaceSavedPostIds(n);
+            setSavedPosts(buildSavedPostsMap(n));
+          } catch {
+            // Keep the last known local saved state.
+          }
+        })();
+        return () => {
+          e = !0;
+        };
+      }, [C, $]),
       w(() => {
         let e = !0;
         return (
@@ -202,6 +366,26 @@ const ve = 5,
           }
         );
       }, []));
+    w(() => {
+      if (typeof window > "u" || typeof document > "u") return;
+      let e = null;
+      const a = () => {
+        const o = document.querySelector('nav[aria-label="main_navigation"]');
+        const n = Math.ceil(o?.getBoundingClientRect().height || 68);
+        setNavStickyTop(Math.max(56, n));
+      };
+      a();
+      window.addEventListener("resize", a);
+      const o = document.querySelector('nav[aria-label="main_navigation"]');
+      if (o && typeof window.ResizeObserver < "u") {
+        e = new window.ResizeObserver(a);
+        e.observe(o);
+      }
+      return () => {
+        window.removeEventListener("resize", a);
+        e?.disconnect();
+      };
+    }, []);
     const Le = {
         Electronics: "\u{1F4BB}",
         Mobiles: "\u{1F4F1}",
@@ -220,10 +404,18 @@ const ve = 5,
         Garden: "\u{1F33F}",
         "Pet Supplies": "\u{1F43E}",
       },
+      fallbackCategoryList = Object.keys(Le).map((e) => ({
+        name: e,
+        category_id: e,
+      })),
+      categoryList = h.length > 0 ? h : fallbackCategoryList,
       ce = N(
         () =>
-          h.reduce((e, a) => ((e[a.name] = a.category_id || a.name), e), {}),
-        [h],
+          categoryList.reduce(
+            (e, a) => ((e[a.name] = a.category_id || a.name), e),
+            {},
+          ),
+        [categoryList],
       ),
       Q = N(
         () =>
@@ -334,31 +526,52 @@ const ve = 5,
       ge = N(() => {
         const e = [];
         return (
-          t.search && e.push({ key: "search", label: `Search: ${t.search}` }),
+          t.search &&
+            e.push({
+              key: "search",
+              label: `${s("search") || "Search"}: ${t.search}`,
+            }),
           t.category &&
             t.category !== "All" &&
-            e.push({ key: "category", label: `Category: ${t.category}` }),
+            e.push({
+              key: "category",
+              label: `${s("category") || "Category"}: ${t.category}`,
+            }),
           t.location &&
-            e.push({ key: "location", label: `Location: ${t.location}` }),
+            e.push({
+              key: "location",
+              label: `${s("location") || "Location"}: ${t.location}`,
+            }),
           (t.minPrice || t.maxPrice) &&
             e.push({
               key: "price",
-              label: `Price: ${t.minPrice || "0"} - ${t.maxPrice || "any"}`,
+              label: `${s("price") || "Price"}: ${t.minPrice || "0"} - ${
+                t.maxPrice || (s("any") || "any")
+              }`,
             }),
           (t.startDate || t.endDate) &&
             e.push({
               key: "date",
-              label: `Date: ${t.startDate || "any"} to ${t.endDate || "any"}`,
+              label: `${s("date") || "Date"}: ${
+                t.startDate || (s("any") || "any")
+              } ${s("to") || "to"} ${t.endDate || (s("any") || "any")}`,
             }),
           latestWindow &&
             e.push({
               key: "latestWindow",
-              label: `Latest: ${latestWindow} posts`,
+              label: `${s("latest") || "Latest"}: ${latestWindow} ${
+                s("posts") || "posts"
+              }`,
             }),
-          t.sortBy && e.push({ key: "sortBy", label: `Sort: ${t.sortBy}` }),
+          t.sortBy &&
+            e.push({
+              key: "sortBy",
+              label: `${s("sort_by") || "Sort by"}: ${t.sortBy}`,
+            }),
           e
         );
       }, [
+        s,
         t.category,
         t.endDate,
         latestWindow,
@@ -461,34 +674,122 @@ const ve = 5,
               });
             }
             if (e !== P.current) return;
-            let p = Array.isArray(i.posts) ? i.posts : [];
-            if ((l && l !== "en" && (p = await Re(p, l)), e !== P.current))
-              return;
+            const p = Array.isArray(i.posts) ? i.posts : [];
             const F = latestWindow
               ? p.slice(0, latestWindow)
               : p;
-            (O(L === 1 ? F : (d) => lt(d, F)), z(null));
+            const activeLanguage = languageRef.current;
+            const translatedSeed =
+              activeLanguage && activeLanguage !== "en" && F.length > 0
+                ? Ue(F, activeLanguage, {
+                    paths: ALL_POSTS_TRANSLATE_PATHS,
+                  })
+                : F;
+            const safeTranslatedSeed = Array.isArray(translatedSeed)
+              ? translatedSeed
+              : F;
+            (O(L === 1 ? safeTranslatedSeed : (d) => lt(d, safeTranslatedSeed)),
+              z(null));
             const _ = {},
               Vt = {};
-            (F.forEach((d) => {
+            (safeTranslatedSeed.forEach((d) => {
               ((_[d.post_id || d.id] = d.likes || 0),
                 (Vt[d.post_id || d.id] = d.views_count || d.views || 0));
             }),
               se((d) => ({ ...d, ..._ })),
               oe((d) => ({ ...d, ...Vt })),
-              ee(latestWindow ? !1 : p.length === requestLimit));
+              ee(latestWindow ? !1 : p.length === requestLimit),
+              setLastLiveSyncAt(Date.now()));
+            if (activeLanguage && activeLanguage !== "en" && F.length > 0) {
+              Re(F, activeLanguage, {
+                paths: ALL_POSTS_TRANSLATE_PATHS,
+              })
+                .then((d) => {
+                  if (e !== P.current || !Array.isArray(d) || d.length === 0) {
+                    return;
+                  }
+                  const _t = new Map();
+                  d.forEach((me) => {
+                    const ge = ke(me);
+                    ge !== null && _t.set(String(ge), me);
+                  });
+                  O((me) =>
+                    Array.isArray(me)
+                      ? me.map((ge) => {
+                          const Le = ke(ge);
+                          if (Le === null) return ge;
+                          return _t.get(String(Le)) || ge;
+                        })
+                      : me,
+                  );
+                })
+                .catch(() => {});
+            }
           } catch (n) {
             if (n?.name === "AbortError" || e !== P.current) return;
             (z(n.message || "Failed to fetch posts"), O([]), ee(!1));
           } finally {
-            (v.current === a && (v.current = null), e === P.current && R(!1));
+            (v.current === a && (v.current = null),
+              e === P.current && (R(!1), setIsLiveSyncing(!1)));
           }
         })(),
         () => {
           (a.abort(), v.current === a && (v.current = null));
         }
       );
-    }, [be, l, L, Pe]),
+    }, [be, L, Pe]),
+      w(() => {
+        if (!Array.isArray(f) || f.length === 0) return;
+        let e = !1;
+        if (!l || l === "en") {
+          O((a) => (Array.isArray(a) ? a.map(restoreTranslatedPost) : a));
+          return;
+        }
+        const translatedSeed = Ue(f, l, {
+          paths: ALL_POSTS_TRANSLATE_PATHS,
+        });
+        const safeTranslatedSeed = Array.isArray(translatedSeed)
+          ? translatedSeed
+          : f;
+        const n = new Map();
+        safeTranslatedSeed.forEach((i) => {
+          const p = ke(i);
+          p !== null && n.set(String(p), i);
+        });
+        O((i) =>
+          Array.isArray(i)
+            ? i.map((p) => {
+                const F = ke(p);
+                if (F === null) return p;
+                return n.get(String(F)) || p;
+              })
+            : i,
+        );
+        Re(f, l, {
+          paths: ALL_POSTS_TRANSLATE_PATHS,
+        })
+          .then((a) => {
+            if (e || !Array.isArray(a) || a.length === 0) return;
+            const o = new Map();
+            a.forEach((n) => {
+              const i = ke(n);
+              i !== null && o.set(String(i), n);
+            });
+            O((n) =>
+              Array.isArray(n)
+                ? n.map((i) => {
+                    const p = ke(i);
+                    if (p === null) return i;
+                    return o.get(String(p)) || i;
+                  })
+                : n,
+            );
+          })
+          .catch(() => {});
+        return () => {
+          e = !0;
+        };
+      }, [l]),
       w(() => {
         T(1);
       }, [
@@ -519,6 +820,14 @@ const ve = 5,
         () => window.removeEventListener("scroll", e)
       );
     }, [J, C, latestWindow]);
+    w(() => {
+      if (latestWindow) return;
+      const e = setInterval(() => {
+        if (typeof document > "u" || document.hidden || E) return;
+        Ce((a) => a + 1);
+      }, 3e4);
+      return () => clearInterval(e);
+    }, [E, latestWindow]);
     const K = N(
         () =>
           !f || f.length === 0
@@ -667,18 +976,43 @@ const ve = 5,
             y("/login", { state: { returnTo: "/all-posts" } }));
           return;
         }
-        const o = !!savedPosts[a];
-        setSavedPosts((n) => ({ ...n, [a]: !o }));
+        const o = !!savedPosts[a],
+          n = !o;
+        (setSavedPosts((i) => ({ ...i, [a]: n })), setSavedPostStatus(a, n));
         try {
-          o
-            ? await A.delete(`/wishlist/${a}`)
-            : await A.post("/wishlist", { postId: a });
+          n
+            ? await A.post("/wishlist", { postId: a })
+            : await A.delete(`/wishlist/${a}`);
         } catch {
           (setSavedPosts((n) => ({ ...n, [a]: o })),
+            setSavedPostStatus(a, o),
             M(o ? "Failed to remove saved post" : "Failed to save post"),
             setTimeout(() => M(""), 2e3));
         }
       },
+      handleCartToggle = x(
+        (e) => {
+          const a = I(e?.post_id || e?.id);
+          if (!a) return;
+          if (isInCartItem(a)) {
+            removeCartItem(a);
+            M(s("removed") || "Removed from cart");
+          } else {
+            addCartItem({
+              id: a,
+              title: e?.title || s("title") || "Item",
+              price: e?.price || 0,
+              image: Ne(e),
+              seller:
+                e?.user?.name || e?.user_name || e?.username || "Unknown",
+              location: e?.location || e?.city || e?.area || "",
+            });
+            M(s("add_to_cart") || "Added to cart");
+          }
+          setTimeout(() => M(""), 2e3);
+        },
+        [addCartItem, isInCartItem, removeCartItem, s],
+      ),
       je = async (e) => {
         const a = I(e);
         if (!a) return;
@@ -714,156 +1048,198 @@ const ve = 5,
         return `${a}-${o}-${n}`;
       }, []),
       Fe = x(() => {
+        setIsLiveSyncing(!0);
         Ce((e) => e + 1);
       }, []);
     return r.createElement(
       "div",
       {
         className:
-          "bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300 pb-24",
+          "bg-gradient-to-b from-blue-50/40 via-white to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 min-h-screen transition-colors duration-300 pb-24",
       },
       r.createElement(
         "div",
         {
           className:
-            "w-full flex justify-center px-4 pt-2 pb-4 sticky top-[80px] z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm",
+            "w-full sticky z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-blue-100/70 dark:border-gray-800",
+          style: { top: `${navStickyTop}px` },
         },
         r.createElement(
           "div",
-          {
-            className:
-              "flex gap-2 md:gap-4 bg-gradient-to-r from-blue-100 via-white to-blue-100 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl shadow-lg py-3 px-3 md:px-6 items-center overflow-x-auto scrollbar-hide max-w-full",
-          },
+          { className: "w-full flex justify-center px-4 pt-2 pb-2" },
           r.createElement(
-            "button",
+            "div",
             {
-              onClick: Ee,
-              className: `flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[60px] ${j === "All" ? "bg-blue-600 text-white shadow-lg ring-2 ring-blue-400" : ""}`,
+              className:
+                "flex gap-1 md:gap-2 bg-gradient-to-r from-blue-50 via-white to-blue-50 dark:from-slate-900/40 dark:via-slate-900/30 dark:to-slate-900/40 rounded-2xl shadow-sm py-1 md:py-2 px-2 md:px-4 items-center overflow-x-auto scrollbar-hide max-w-[92rem] w-full border border-blue-100/60 dark:border-slate-800/60",
             },
-            r.createElement(
-              "span",
-              { className: "text-xl md:text-2xl mb-1" },
-              "\u{1F4E6}",
-            ),
-            r.createElement(
-              "span",
-              {
-                className: `font-semibold text-xs md:text-sm ${j === "All" ? "text-white" : "text-gray-700 dark:text-gray-300"}`,
-              },
-              s("all"),
-            ),
-          ),
-          h.map((e) =>
             r.createElement(
               "button",
               {
-                key: e.category_id || e.name,
-                onClick: () => $e(e.name),
-                className: `flex flex-col items-center cursor-pointer hover:scale-110 transition px-3 py-2 rounded-xl min-w-[70px] whitespace-nowrap ${j === e.name ? "bg-blue-600 text-white shadow-lg ring-2 ring-blue-400" : ""}`,
+                onClick: Ee,
+                className: `flex flex-col items-center cursor-pointer hover:scale-[1.03] transition px-2 py-1 rounded-lg min-w-[50px] sm:min-w-[56px] ${j === "All" ? "bg-blue-600 text-white shadow-lg ring-2 ring-blue-400" : ""}`,
               },
               r.createElement(
                 "span",
-                { className: "text-xl md:text-2xl mb-1" },
-                Le[e.name] || "\u{1F4E6}",
+                { className: "text-lg sm:text-xl md:text-2xl mb-0.5" },
+                "\u{1F4E6}",
               ),
               r.createElement(
                 "span",
                 {
-                  className: `font-semibold text-xs md:text-sm ${j === e.name ? "text-white" : "text-gray-700 dark:text-gray-300"}`,
+                  className: `font-semibold text-[10px] sm:text-xs md:text-sm ${j === "All" ? "text-white" : "text-gray-700 dark:text-gray-300"}`,
                 },
-                s(e.name.toLowerCase().replace(" ", "_")) || e.name,
+                s("all"),
+              ),
+            ),
+            categoryList.map((e) =>
+              r.createElement(
+                "button",
+                {
+                  key: e.category_id || e.name,
+                  onClick: () => $e(e.name),
+                  className: `flex flex-col items-center cursor-pointer hover:scale-[1.03] transition px-2 py-1 rounded-lg min-w-[54px] sm:min-w-[64px] whitespace-nowrap ${j === e.name ? "bg-blue-600 text-white shadow-lg ring-2 ring-blue-400" : ""}`,
+                },
+                r.createElement(
+                  "span",
+                  { className: "text-lg sm:text-xl md:text-2xl mb-0.5" },
+                  Le[e.name] || "\u{1F4E6}",
+                ),
+                r.createElement(
+                  "span",
+                  {
+                    className: `font-semibold text-[10px] sm:text-xs md:text-sm ${j === e.name ? "text-white" : "text-gray-700 dark:text-gray-300"}`,
+                  },
+                  s(e.name.toLowerCase().replace(" ", "_")) || e.name,
+                ),
               ),
             ),
           ),
         ),
-      ),
-      r.createElement(
-        "div",
-        { className: "w-full flex justify-center px-3" },
         r.createElement(
           "div",
+          { className: "w-full flex justify-center px-3 pb-2.5" },
+          r.createElement(
+            "div",
           {
             className:
-              "w-full max-w-5xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 rounded-xl p-3 md:p-4 mb-3",
+              "w-full max-w-[92rem] bg-white/95 dark:bg-slate-900/40 border border-blue-100/70 dark:border-slate-800/60 rounded-2xl p-2 sm:p-3.5 shadow-sm backdrop-blur-sm",
           },
           r.createElement(
             "div",
-            { className: "flex flex-wrap items-center gap-2" },
+            { className: "flex flex-col gap-2 sm:gap-3" },
             r.createElement(
-              u,
-              {
-                type: "button",
-                variant: "outline",
-                className: "h-8 border-blue-200 text-blue-700",
-                onClick: () => b({ minPrice: "", maxPrice: "1000" }),
-              },
-              "Under 1000",
+              "div",
+              { className: "flex items-center justify-between gap-3" },
+              r.createElement(
+                "div",
+                {
+                  className:
+                    "inline-flex items-center gap-2 text-[11px] sm:text-sm font-semibold text-blue-800 dark:text-blue-200",
+                },
+                r.createElement(zo, { className: "w-3.5 h-3.5" }),
+                tr("quick_filters", "Quick filters"),
+              ),
+              r.createElement(
+                "span",
+                {
+                  className:
+                    "hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 px-2.5 py-1 text-[11px] md:text-xs text-blue-700 dark:text-blue-300",
+                },
+                r.createElement(Ko, { className: "w-3 h-3" }),
+                `${tr("auto_refresh", "Auto refresh")}: 30s`,
+              ),
             ),
             r.createElement(
-              u,
-              {
-                type: "button",
-                variant: "outline",
-                className: "h-8 border-blue-200 text-blue-700",
-                onClick: () => b({ minPrice: "1000", maxPrice: "5000" }),
-              },
-              "1000-5000",
-            ),
-            r.createElement(
-              u,
-              {
-                type: "button",
-                variant: "outline",
-                className: `h-8 border-blue-200 ${latestWindow === 5 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "text-blue-700"}`,
-                onClick: () => jee(5),
-              },
-              "Latest 5",
-            ),
-            r.createElement(
-              u,
-              {
-                type: "button",
-                variant: "outline",
-                className: `h-8 border-blue-200 ${latestWindow === 10 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "text-blue-700"}`,
-                onClick: () => jee(10),
-              },
-              "Latest 10",
-            ),
-            r.createElement(
-              u,
-              {
-                type: "button",
-                variant: "outline",
-                className: "h-8 border-blue-200 text-blue-700",
-                onClick: () =>
-                  b({ startDate: ye, endDate: ye, latestWindow: "" }),
-              },
-              "Posted Today",
-            ),
-            Q &&
+              "div",
+              { className: "flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1" },
               r.createElement(
                 u,
                 {
                   type: "button",
                   variant: "outline",
-                  className: "h-8 border-blue-200 text-blue-700",
-                  onClick: () => b({ location: Q }),
+                  className:
+                    "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                  onClick: () => b({ minPrice: "", maxPrice: "1000" }),
                 },
-                "Near ",
-                Q,
+                r.createElement(Vo, { className: "w-3.5 h-3.5" }),
+                tr("under_1000", "Under 1000"),
               ),
-            ue &&
               r.createElement(
                 u,
                 {
                   type: "button",
-                  variant: "ghost",
+                  variant: "outline",
                   className:
-                    "h-8 text-red-600 hover:text-red-700 hover:bg-red-50",
-                  onClick: Y,
+                    "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                  onClick: () => b({ minPrice: "1000", maxPrice: "5000" }),
                 },
-                "Clear all filters",
+                r.createElement(Vo, { className: "w-3.5 h-3.5" }),
+                "1000-5000",
               ),
+              r.createElement(
+                u,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: `h-8 sm:h-9 rounded-full border-blue-200 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs ${latestWindow === 5 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                  onClick: () => jee(5),
+                },
+                r.createElement(Ho, { className: "w-3.5 h-3.5" }),
+                tr("latest_5", "Latest 5"),
+              ),
+              r.createElement(
+                u,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: `h-8 sm:h-9 rounded-full border-blue-200 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs ${latestWindow === 10 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                  onClick: () => jee(10),
+                },
+                r.createElement(Ho, { className: "w-3.5 h-3.5" }),
+                tr("latest_10", "Latest 10"),
+              ),
+              r.createElement(
+                u,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className:
+                    "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                  onClick: () =>
+                    b({ startDate: ye, endDate: ye, latestWindow: "" }),
+                },
+                r.createElement(zo, { className: "w-3.5 h-3.5" }),
+                tr("posted_today", "Posted Today"),
+              ),
+              Q &&
+                r.createElement(
+                  u,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className:
+                      "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                    onClick: () => b({ location: Q }),
+                  },
+                  r.createElement(Uo, { className: "w-3.5 h-3.5" }),
+                  `${tr("near", "Near")} `,
+                  Q,
+                ),
+              ue &&
+                r.createElement(
+                  u,
+                  {
+                    type: "button",
+                    variant: "ghost",
+                    className:
+                      "h-8 sm:h-9 rounded-full text-red-600 hover:text-red-700 hover:bg-red-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                    onClick: Y,
+                  },
+                  r.createElement(Jo, { className: "w-3.5 h-3.5" }),
+                  tr("clear_all_filters", "Clear all filters"),
+                ),
+            ),
           ),
           ge.length > 0 &&
             r.createElement(
@@ -878,16 +1254,17 @@ const ve = 5,
                     onClick: () => Te(e.key),
                     className:
                       "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-blue-200 dark:border-gray-700 text-xs text-blue-800 dark:text-blue-200",
-                    title: "Remove filter",
+                    title: tr("remove_filter", "Remove filter"),
                   },
                   r.createElement("span", null, e.label),
-                  r.createElement("span", { className: "font-semibold" }, "x"),
+                  r.createElement(Jo, { className: "w-3 h-3 font-semibold" }),
                 ),
               ),
             ),
         ),
       ),
-      r.createElement("div", { className: "h-4 md:h-6" }),
+      ),
+      r.createElement("div", { className: "h-2 md:h-3" }),
       r.createElement(
         "div",
         { className: "w-full flex justify-center" },
@@ -895,76 +1272,123 @@ const ve = 5,
           "div",
           {
             className:
-              "flex flex-col md:flex-row items-center justify-between px-3 md:px-8 py-6 md:py-8 bg-blue-100 dark:bg-gray-800 rounded-xl mb-8 shadow-lg w-full max-w-5xl relative overflow-hidden border border-blue-200 dark:border-gray-700 mt-0 md:mt-6",
+              "w-full max-w-[92rem] mb-4 md:mb-5 mt-0 md:mt-2",
           },
           r.createElement(
             "div",
-            { className: "flex flex-col gap-2 z-10 w-full md:w-auto" },
+            {
+              className:
+                "sm:hidden flex items-center justify-between gap-3 rounded-2xl border border-blue-200/70 bg-blue-100/80 px-3 py-2 shadow-sm",
+            },
             r.createElement(
-              "span",
-              {
-                className:
-                  "text-xl md:text-3xl font-bold text-blue-900 dark:text-blue-100 mb-1",
-              },
-              s("great_deals"),
-            ),
-            r.createElement(
-              "span",
-              {
-                className:
-                  "text-sm md:text-base text-blue-800 dark:text-blue-200 font-medium mb-2",
-              },
-              s("up_to_off"),
+              "div",
+              { className: "flex flex-col gap-1" },
+              r.createElement(
+                "span",
+                { className: "text-sm font-semibold text-blue-900" },
+                s("great_deals"),
+              ),
+              r.createElement(
+                "span",
+                { className: "text-[11px] text-blue-700" },
+                s("up_to_off"),
+              ),
             ),
             r.createElement(
               u,
               {
                 className:
-                  "bg-blue-600 text-white font-semibold px-5 md:px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition w-fit text-sm md:text-base",
+                  "bg-blue-600 text-white font-semibold px-3 py-1.5 rounded-full text-[11px] inline-flex items-center gap-1.5",
+                onClick: () => {
+                  const e = document.getElementById("all-posts-feed");
+                  e?.scrollIntoView({ behavior: "smooth", block: "start" });
+                },
               },
+              r.createElement(zo, { className: "w-3.5 h-3.5" }),
               s("shop_now"),
             ),
           ),
           r.createElement(
             "div",
-            { className: "mt-4 md:mt-0 md:ml-8 z-10" },
+            {
+              className:
+                "hidden sm:flex flex-col md:flex-row items-center justify-between px-3 md:px-6 lg:px-7 py-3 md:py-4 lg:py-5 bg-blue-100/80 dark:bg-slate-900/45 rounded-2xl shadow-md w-full relative overflow-hidden border border-blue-200/70 dark:border-slate-800/60",
+            },
             r.createElement(
               "div",
-              {
-                className:
-                  "w-24 h-16 md:w-32 md:h-24 bg-blue-200 dark:bg-blue-800 rounded-lg flex items-center justify-center",
-              },
+              { className: "flex flex-col gap-2 z-10 w-full md:w-auto" },
               r.createElement(
-                "svg",
+                "span",
                 {
-                  width: "64",
-                  height: "48",
-                  fill: "none",
-                  viewBox: "0 0 64 48",
+                  className:
+                    "text-base sm:text-lg md:text-2xl lg:text-3xl font-bold text-blue-900 dark:text-blue-100 mb-1",
                 },
-                r.createElement("rect", {
-                  width: "64",
-                  height: "48",
-                  rx: "8",
-                  fill: "#2563eb",
-                }),
+                s("great_deals"),
+              ),
+              r.createElement(
+                "span",
+                {
+                  className:
+                    "text-[11px] sm:text-sm md:text-base text-blue-800 dark:text-blue-200 font-medium mb-1.5",
+                },
+                s("up_to_off"),
+              ),
+              r.createElement(
+                u,
+                {
+                  className:
+                    "bg-blue-600 text-white font-semibold px-3 md:px-5 py-1.5 md:py-2 rounded-lg shadow hover:bg-blue-700 transition w-fit text-[11px] sm:text-sm md:text-base inline-flex items-center gap-1.5",
+                  onClick: () => {
+                    const e = document.getElementById("all-posts-feed");
+                    e?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  },
+                },
+                r.createElement(zo, { className: "w-3.5 h-3.5" }),
+                s("shop_now"),
               ),
             ),
+            r.createElement(
+              "div",
+              { className: "hidden sm:block mt-3 md:mt-0 md:ml-6 z-10" },
+              r.createElement(
+                "div",
+                {
+                  className:
+                    "w-16 h-12 sm:w-20 sm:h-14 md:w-28 md:h-20 bg-blue-200/80 dark:bg-blue-800/60 rounded-lg flex items-center justify-center",
+                },
+                r.createElement(
+                  "svg",
+                  {
+                    width: "64",
+                    height: "48",
+                    fill: "none",
+                    viewBox: "0 0 64 48",
+                  },
+                  r.createElement("rect", {
+                    width: "64",
+                    height: "48",
+                    rx: "8",
+                    fill: "#2563eb",
+                  }),
+                ),
+              ),
+            ),
+            r.createElement("div", {
+              className:
+                "absolute right-0 bottom-0 opacity-10 w-24 h-20 md:w-32 md:h-24 bg-blue-300 dark:bg-blue-700 rounded-bl-2xl",
+            }),
           ),
-          r.createElement("div", {
-            className:
-              "absolute right-0 bottom-0 opacity-10 w-32 h-24 md:w-40 md:h-32 bg-blue-300 dark:bg-blue-700 rounded-bl-2xl",
-          }),
         ),
       ),
-      r.createElement(
+      pe.length > 0 &&
+        r.createElement(
         "div",
-        { className: "w-full flex flex-col items-center mb-8" },
+        { className: "w-full flex flex-col items-center mb-6" },
         r.createElement(
           "h2",
           {
             className:
-              "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-5xl px-3 md:px-0",
+              "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-[92rem] px-3 md:px-0",
           },
           s("sponsored_deals"),
         ),
@@ -972,21 +1396,15 @@ const ve = 5,
           "div",
           {
             className:
-              "flex gap-4 md:gap-6 w-full max-w-5xl overflow-x-auto scrollbar-hide px-3 md:px-0",
+              "flex gap-4 md:gap-6 w-full max-w-[92rem] overflow-x-auto scrollbar-hide px-3 md:px-0 snap-x snap-mandatory",
           },
-          pe.length === 0
-            ? r.createElement(
-                "div",
-                { className: "text-center text-blue-400 dark:text-blue-300" },
-                s("no_sponsored_deals"),
-              )
-            : pe.map((e, a) =>
+          pe.map((e, a) =>
                 r.createElement(
                   S,
                   {
                     key: e.id || e._id || a,
                     className:
-                      "rounded-xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[140px] max-w-[160px] md:min-w-[200px] md:max-w-[220px] hover:scale-105 transition-transform duration-200",
+                      "rounded-xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[160px] max-w-[180px] md:min-w-[220px] md:max-w-[240px] hover:scale-[1.02] transition-transform duration-200 snap-start",
                   },
                   r.createElement("img", {
                     src: Ne(e),
@@ -1034,21 +1452,81 @@ const ve = 5,
       ),
       r.createElement(
         "div",
-        { className: "w-full flex flex-col items-center mb-10" },
+        { id: "all-posts-feed", className: "w-full flex flex-col items-center mb-8" },
         r.createElement(
-          "h2",
+          "div",
           {
             className:
-              "text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-300 mb-4 w-full max-w-5xl px-3 md:px-0",
+              "w-full max-w-[92rem] px-3 md:px-0 mb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-3",
           },
-          s("all_posts"),
+          r.createElement(
+            "div",
+            null,
+            r.createElement(
+              "h2",
+              {
+                className:
+                  "text-xl sm:text-2xl md:text-3xl font-bold text-blue-900 dark:text-blue-200 mb-1",
+              },
+              s("all_posts"),
+            ),
+          ),
+          r.createElement(
+            "div",
+            { className: "flex items-center gap-2.5" },
+            r.createElement(
+              "span",
+              {
+                className:
+                  "inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] sm:text-xs font-semibold text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+              },
+              r.createElement("span", {
+                className:
+                  "h-2 w-2 rounded-full bg-emerald-500 animate-pulse",
+              }),
+              s("live") || "Live",
+            ),
+            r.createElement(
+              "span",
+              {
+                className:
+                  "text-xs md:text-sm text-gray-500 dark:text-gray-400",
+              },
+              `${s("updated") || "Updated"} `,
+              nt(lastLiveSyncAt, l),
+            ),
+            r.createElement(
+              u,
+              {
+                type: "button",
+                variant: "outline",
+                className:
+                  "h-8 sm:h-9 rounded-full border-blue-200 text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1.5 text-[10px] sm:text-xs px-2.5 sm:px-3",
+                onClick: Fe,
+                disabled: E || isLiveSyncing,
+              },
+              r.createElement(Ko, {
+                className: `w-3.5 h-3.5 ${E || isLiveSyncing ? "animate-spin" : ""}`,
+              }),
+              r.createElement(
+                "span",
+                { className: "hidden sm:inline" },
+                s("refresh") || "Refresh",
+              ),
+            ),
+          ),
         ),
         r.createElement(
           "div",
           {
             className:
-              "flex flex-col gap-6 w-full max-w-5xl mx-auto px-2 md:px-0",
+              "w-full max-w-[92rem] mx-auto px-2 md:px-0",
           },
+          r.createElement(
+            "div",
+            {
+              className: "order-1 flex flex-col gap-6 w-full min-w-0",
+            },
           E
             ? Array.from({ length: 3 }).map((e, a) =>
                 r.createElement(
@@ -1184,10 +1662,11 @@ const ve = 5,
                       _ = String(e.description || ""),
                       d = Be === a,
                       Oe = _.length >= 120,
-                      he = nt(e.created_at || e.createdAt),
+                      he = nt(e.created_at || e.createdAt, l),
                       we = e.location || e.city || e.area || "",
                       imageList = collectPostImageUrls(e),
-                      activeImageIndex = getCarouselIndex(a, imageList.length);
+                      activeImageIndex = getCarouselIndex(a, imageList.length),
+                      inCart = isInCartItem(a);
                     return r.createElement(
                       S,
                       {
@@ -1197,17 +1676,47 @@ const ve = 5,
                         },
                         "data-post-id": a,
                         className:
-                          "rounded-2xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-xl transition-shadow",
+                          "rounded-2xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300",
                       },
                       r.createElement(
                         "div",
                         {
                           className:
-                            "flex items-start gap-3 px-4 pt-4 pb-2 relative",
+                            "px-3 pt-2.5 pb-2 border-b border-gray-100 dark:border-gray-700/70 sm:px-4",
+                        },
+                        r.createElement(
+                          "div",
+                          {
+                            className:
+                              "inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 px-2.5 py-1 sm:px-3 sm:py-1.5",
+                          },
+                          r.createElement(
+                            "span",
+                            {
+                              className:
+                                "text-[10px] sm:text-[11px] md:text-xs uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300",
+                            },
+                            s("price") || "Price",
+                          ),
+                          r.createElement(
+                            "span",
+                            {
+                              className:
+                                "text-sm sm:text-base font-bold text-emerald-800 dark:text-emerald-200",
+                            },
+                            formatCurrency(e.price),
+                          ),
+                        ),
+                      ),
+                      r.createElement(
+                        "div",
+                        {
+                          className:
+                            "flex items-start gap-3 px-3 pt-3 pb-3 relative sm:px-4",
                         },
                         r.createElement(
                           Ve,
-                          { className: "w-10 h-10" },
+                          { className: "w-9 h-9 sm:w-10 sm:h-10" },
                           r.createElement(
                             ze,
                             { className: "dark:bg-gray-700 dark:text-white" },
@@ -1224,7 +1733,7 @@ const ve = 5,
                               "span",
                               {
                                 className:
-                                  "font-semibold text-blue-900 dark:text-blue-200 text-base md:text-lg truncate",
+                                  "font-semibold text-blue-900 dark:text-blue-200 text-sm sm:text-base md:text-lg truncate",
                               },
                               o,
                             ),
@@ -1256,7 +1765,7 @@ const ve = 5,
                                 "span",
                                 {
                                   className:
-                                    "text-yellow-500 text-xs font-medium",
+                                    "text-yellow-500 text-[10px] sm:text-xs font-medium",
                                 },
                                 "\u2605 ",
                                 i.toFixed(1),
@@ -1266,7 +1775,7 @@ const ve = 5,
                             "div",
                             {
                               className:
-                                "mt-1 flex flex-wrap items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400",
+                                "mt-1 flex flex-wrap items-center gap-2 text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400",
                             },
                             r.createElement(
                               "span",
@@ -1283,7 +1792,7 @@ const ve = 5,
                                   className:
                                     "inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700",
                                 },
-                                "Posted ",
+                                `${s("posted") || "Posted"} `,
                                 he,
                               ),
                             we &&
@@ -1300,9 +1809,9 @@ const ve = 5,
                                 "span",
                                 {
                                   className:
-                                    "inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200",
+                                    "hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200",
                                 },
-                                "Post ID: ",
+                                `${s("post_id") || "Post ID"}: `,
                                 a,
                               ),
                           ),
@@ -1314,8 +1823,8 @@ const ve = 5,
                             onClick: () =>
                               setMenuPostId((t) => (t === a ? null : a)),
                             className:
-                              "absolute right-4 top-4 p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700",
-                            title: "More options",
+                              "absolute right-3 top-3 p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 sm:right-4 sm:top-4 sm:p-2",
+                            title: tr("more_options", "More options"),
                           },
                           r.createElement(To, { className: "w-4 h-4" }),
                         ),
@@ -1357,14 +1866,17 @@ const ve = 5,
                               {
                                 type: "button",
                                 onClick: () => {
-                                  (M("Report feature coming soon"),
+                                  (M(
+                                    s("report_feature_coming_soon") ||
+                                      "Report feature coming soon",
+                                  ),
                                     setTimeout(() => M(""), 2e3),
                                     setMenuPostId(null));
                                 },
                                 className:
                                   "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg",
                               },
-                              "Report",
+                              s("report") || "Report",
                             ),
                           ),
                       ),
@@ -1393,10 +1905,10 @@ const ve = 5,
                               },
                               r.createElement("img", {
                                 src: X,
-                                alt: `${e.title || "Post"} image ${_t + 1}`,
+                                alt: `${e.title || (s("post") || "Post")} ${s("image") || "image"} ${_t + 1}`,
                                 loading: "lazy",
                                 className:
-                                  "w-full h-[280px] md:h-[420px] object-cover object-center",
+                                  "w-full h-[200px] sm:h-[260px] md:h-[340px] object-cover object-center",
                                 onError: (Nt) => {
                                   Nt.currentTarget.src = D;
                                 },
@@ -1415,8 +1927,9 @@ const ve = 5,
                                 onClick: (X) =>
                                   moveCarousel(a, -1, imageList.length, X),
                                 className:
-                                  "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center",
-                                "aria-label": "Previous image",
+                                  "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8",
+                                "aria-label":
+                                  s("previous_image") || "Previous image",
                               },
                               r.createElement(Lo, { className: "w-3 h-3" }),
                             ),
@@ -1427,8 +1940,8 @@ const ve = 5,
                                 onClick: (X) =>
                                   moveCarousel(a, 1, imageList.length, X),
                                 className:
-                                  "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center",
-                                "aria-label": "Next image",
+                                  "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8",
+                                "aria-label": s("next_image") || "Next image",
                               },
                               r.createElement(Co, { className: "w-3 h-3" }),
                             ),
@@ -1458,7 +1971,7 @@ const ve = 5,
                                     scrollCarouselToIndex(a, _t, imageList.length);
                                   },
                                   className: `h-1.5 w-1.5 rounded-full transition-all ${_t === activeImageIndex ? "bg-white w-3" : "bg-white/50"}`,
-                                  "aria-label": `Go to image ${_t + 1}`,
+                                  "aria-label": `${s("go_to_image") || "Go to image"} ${_t + 1}`,
                                 }),
                               ),
                             ),
@@ -1468,7 +1981,7 @@ const ve = 5,
                         "div",
                         {
                           className:
-                            "px-4 py-3 text-gray-800 dark:text-gray-200 text-sm md:text-base",
+                            "px-3 py-2.5 text-gray-800 dark:text-gray-200 text-xs sm:text-sm md:text-base leading-relaxed sm:px-4 sm:py-3.5",
                         },
                         d || !Oe
                           ? _ ||
@@ -1501,16 +2014,19 @@ const ve = 5,
                         "div",
                         {
                           className:
-                            "flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 pb-4 pt-2 border-t border-gray-100 dark:border-gray-700",
+                            "px-3 pb-2.5 pt-2 border-t border-gray-100 dark:border-gray-700 sm:pb-3",
                         },
                         r.createElement(
                           "div",
-                          { className: "flex flex-wrap gap-4" },
+                          {
+                            className:
+                              "flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 scrollbar-hide sm:gap-2",
+                          },
                           r.createElement(
                             "button",
                             {
-                              className:
-                                "flex items-center gap-1 font-semibold focus:outline-none dark:text-gray-200",
+                                  className:
+                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
                               onClick: () => Me(a),
                             },
                             ae[a]
@@ -1521,27 +2037,36 @@ const ve = 5,
                                   className:
                                     "w-4 h-4 text-black dark:text-gray-300",
                                 }),
-                            " ",
-                            s("like"),
-                            " ",
-                            Ae[a] || 0,
+                            r.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              s("like") || "Like",
+                            ),
+                            r.createElement(
+                              "span",
+                              { className: "text-[10px] sm:text-xs" },
+                              Ae[a] || 0,
+                            ),
                           ),
                           r.createElement(
                             "button",
                             {
-                              className:
-                                "flex items-center gap-1 text-black dark:text-gray-200 font-semibold focus:outline-none",
+                                  className:
+                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
                               onClick: () => Ue(a),
                             },
                             r.createElement(Ge, { className: "w-4 h-4" }),
-                            " ",
-                            s("share"),
+                            r.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              s("share") || "Share",
+                            ),
                           ),
                           r.createElement(
                             "button",
                             {
-                              className:
-                                "flex items-center gap-1 text-gray-700 dark:text-gray-200 font-semibold focus:outline-none",
+                                  className:
+                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
                               onClick: () => toggleSave(a),
                             },
                             savedPosts[a]
@@ -1549,46 +2074,76 @@ const ve = 5,
                                   className: "w-4 h-4 text-blue-600",
                                 })
                               : r.createElement(Ro, { className: "w-4 h-4" }),
-                            " ",
-                            savedPosts[a]
-                              ? s("saved") || "Saved"
-                              : s("save") || "Save",
+                            r.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              savedPosts[a]
+                                ? s("saved") || "Saved"
+                                : s("save") || "Save",
+                            ),
                           ),
                           r.createElement(
                             "button",
                             {
-                              className:
-                                "flex items-center gap-1 text-green-600 dark:text-green-400 font-semibold focus:outline-none hover:text-green-700",
+                                  className:
+                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
                               onClick: () => {
                                 (ie(e), le(!0));
                               },
                             },
                             r.createElement(Ye, { className: "w-4 h-4" }),
-                            " ",
-                            s("interested") || "Interested",
+                            r.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              s("interested") || "Interested",
+                            ),
                           ),
                           r.createElement(
                             "span",
                             {
-                              className:
-                                "flex items-center gap-1 text-gray-500 dark:text-gray-400 font-semibold",
+                                  className:
+                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold",
                             },
                             r.createElement(Qe, { className: "w-4 h-4" }),
                             De[a] || 0,
                           ),
-                        ),
-                        r.createElement(
-                          u,
-                          {
-                            className:
-                              "bg-blue-600 text-white px-4 py-1 text-xs md:text-sm font-medium rounded",
-                            onClick: () => je(a),
-                          },
-                          s("view_details") || "View Details",
+                          r.createElement(
+                            u,
+                            {
+                              variant: "outline",
+                              className: `shrink-0 h-7 px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-medium rounded inline-flex items-center justify-center gap-1 ${inCart ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-blue-200 text-blue-700 hover:bg-blue-50"}`,
+                              onClick: () => handleCartToggle(e),
+                            },
+                            inCart
+                              ? r.createElement(Bo, { className: "w-4 h-4" })
+                              : r.createElement(Mo, { className: "w-4 h-4" }),
+                            r.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              inCart
+                                ? s("in_cart") || "In Cart"
+                                : s("add_to_cart") || "Add to Cart",
+                            ),
+                          ),
+                          r.createElement(
+                            u,
+                            {
+                              className:
+                                "shrink-0 h-7 bg-blue-600 text-white px-2.5 text-[10px] sm:h-8 sm:px-3 sm:text-xs font-medium rounded hover:bg-blue-700",
+                              onClick: () => je(a),
+                            },
+                            r.createElement(Qe, { className: "w-4 h-4" }),
+                            r.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              s("view_details") || "View Details",
+                            ),
+                          ),
                         ),
                       ),
                     );
                   }),
+          ),
         ),
         C &&
           H &&
@@ -1601,10 +2156,12 @@ const ve = 5,
             {
               type: "button",
               variant: "outline",
-              className: "mt-5 border-blue-300 text-blue-700",
+              className:
+                "mt-5 border-blue-300 text-blue-700 inline-flex items-center gap-1.5",
               onClick: J,
             },
-            "Load more posts",
+            r.createElement(zo, { className: "w-3.5 h-3.5" }),
+            s("load_more_posts") || "Load more posts",
           ),
         !C &&
           f.length > ve &&
@@ -1612,7 +2169,7 @@ const ve = 5,
             S,
             {
               className:
-                "w-full max-w-5xl mt-6 p-5 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30",
+                "w-full max-w-[92rem] mt-6 p-5 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30",
             },
             r.createElement(
               "div",
@@ -1640,9 +2197,11 @@ const ve = 5,
               r.createElement(
                 u,
                 {
-                  className: "bg-blue-600 text-white hover:bg-blue-700",
+                  className:
+                    "bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center gap-1.5",
                   onClick: () => y("/login"),
                 },
+                r.createElement(zo, { className: "w-3.5 h-3.5" }),
                 s("login") || "Login",
               ),
             ),
@@ -1656,7 +2215,6 @@ const ve = 5,
             },
             ne,
           ),
-      ),
       r.createElement(Ze, {
         isOpen: Ie,
         onClose: () => {
@@ -1671,7 +2229,8 @@ const ve = 5,
         url: shareDialogUrl,
         title: s("share") || "Share post",
       }),
-    );
+    ));
   };
 var Nt = it;
 export { Nt as default };
+

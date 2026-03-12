@@ -23,6 +23,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { getApiOriginBase } from "@/lib/networkConfig";
+import {
+  buildSavedPostsMap,
+  extractSavedPostIds,
+  getSavedPostsMap,
+  replaceSavedPostIds,
+  setSavedPostStatus,
+  subscribeSavedPosts,
+} from "@/utils/savedPosts";
 import ShareLinkDialog from "@/components/ShareLinkDialog";
 import {
   PageAuthGateState,
@@ -30,6 +38,7 @@ import {
   PageErrorState,
   PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
+import { useTranslatedPosts } from "@/hooks/useTranslatedContent";
 
 const getPostKey = (post) => post?.post_id ?? post?.id ?? null;
 
@@ -68,9 +77,10 @@ const MyFeedPage = () => {
   const [shareToast, setShareToast] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [menuPostId, setMenuPostId] = useState(null);
-  const [savedPosts, setSavedPosts] = useState({});
+  const [savedPosts, setSavedPosts] = useState(() => getSavedPostsMap());
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareDialogUrl, setShareDialogUrl] = useState("");
+  const { translatedPosts } = useTranslatedPosts(posts);
 
   const activeRequestIdRef = useRef(0);
   const fetchAbortControllerRef = useRef(null);
@@ -98,6 +108,34 @@ const MyFeedPage = () => {
     },
     [],
   );
+
+  useEffect(() => subscribeSavedPosts(setSavedPosts), []);
+
+  const syncSavedPosts = useCallback(async () => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    try {
+      const query = userId ? `?userId=${encodeURIComponent(String(userId))}` : "";
+      const response = await fetch(`${baseUrl}/api/wishlist${query}`, {
+        method: "GET",
+        credentials: "include",
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = await response.json();
+      const ids = extractSavedPostIds(payload);
+      replaceSavedPostIds(ids);
+      setSavedPosts(buildSavedPostsMap(ids));
+    } catch {
+      // Keep local state if sync fails.
+    }
+  }, [authToken, baseUrl, isLoggedIn, userId]);
 
   const showToast = useCallback((message) => {
     setShareToast(message);
@@ -205,6 +243,13 @@ const MyFeedPage = () => {
   }, [fetchPosts, isLoggedIn]);
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+    void syncSavedPosts();
+  }, [isLoggedIn, syncSavedPosts]);
+
+  useEffect(() => {
     if (!isLoggedIn || currentPage <= 1) {
       return;
     }
@@ -280,16 +325,12 @@ const MyFeedPage = () => {
 
     const key = String(postId);
     const isSaved = Boolean(savedPosts[key]);
-    setSavedPosts((prev) => ({ ...prev, [key]: !isSaved }));
+    const nextSaved = !isSaved;
+    (setSavedPosts((prev) => ({ ...prev, [key]: nextSaved })),
+      setSavedPostStatus(key, nextSaved));
 
     try {
-      if (isSaved) {
-        await fetch(`${baseUrl}/api/wishlist/${key}`, {
-          method: "DELETE",
-          credentials: "include",
-          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-        });
-      } else {
+      if (nextSaved) {
         await fetch(`${baseUrl}/api/wishlist`, {
           method: "POST",
           credentials: "include",
@@ -299,9 +340,16 @@ const MyFeedPage = () => {
           },
           body: JSON.stringify({ postId: key }),
         });
+      } else {
+        await fetch(`${baseUrl}/api/wishlist/${key}`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+        });
       }
     } catch {
       setSavedPosts((prev) => ({ ...prev, [key]: isSaved }));
+      setSavedPostStatus(key, isSaved);
       showToast(
         isSaved ? "Unable to remove saved post." : "Unable to save post.",
       );
@@ -329,7 +377,7 @@ const MyFeedPage = () => {
   };
 
   const handleViewDetails = (postId) => {
-    const postObj = posts.find((p) => p.id === postId || p.post_id === postId);
+    const postObj = translatedPosts.find((p) => p.id === postId || p.post_id === postId);
     navigate(`/feed/${postId}`, { state: { post: postObj } });
   };
 
@@ -500,7 +548,7 @@ const MyFeedPage = () => {
               }
             />
           ) : (
-            posts.map((post) => {
+            translatedPosts.map((post) => {
               const postId = post.post_id || post.id;
               const isExpanded = expandedPosts[postId];
               const description = post.description || "";
@@ -631,27 +679,26 @@ const MyFeedPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between px-5 py-3 border-t bg-gray-50 dark:bg-gray-800/50">
-                    <div className="flex gap-5 text-sm">
-                      <span className="flex items-center gap-1 text-red-500">
+                  <div className="px-3 py-2.5 border-t bg-gray-50 dark:bg-gray-800/50">
+                    <div className="flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2">
+                      <span className="inline-flex h-7 items-center gap-1 rounded-full bg-red-50 px-2 text-red-500">
                         <FaHeart /> {likeCounts[postId] || 0}
                       </span>
-                      <span className="flex items-center gap-1 text-gray-400">
+                      <span className="inline-flex h-7 items-center gap-1 rounded-full bg-gray-100 px-2 text-gray-500 dark:bg-gray-700 dark:text-gray-300">
                         <FaEye /> {viewCounts[postId] || 0}
                       </span>
-                    </div>
 
-                    <div className="flex gap-2">
                       <Button
                         variant="ghost"
-                        className="text-gray-500 hover:text-green-600 text-sm"
+                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-200 hover:text-green-600"
                         onClick={() => handleShare(postId)}
                       >
-                        <FaShare className="mr-1" /> {t("share") || "Share"}
+                        <FaShare className="mr-1" />
+                        <span className="hidden sm:inline">{t("share") || "Share"}</span>
                       </Button>
                       <Button
                         variant="ghost"
-                        className="text-gray-500 hover:text-green-600 text-sm"
+                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-200 hover:text-green-600"
                         onClick={() => toggleSaveMyFeed(postId)}
                       >
                         {savedPosts[String(postId)] ? (
@@ -659,16 +706,19 @@ const MyFeedPage = () => {
                         ) : (
                           <FaRegBookmark className="mr-1" />
                         )}
-                        {savedPosts[String(postId)]
-                          ? t("saved") || "Saved"
-                          : t("save") || "Save"}
+                        <span className="hidden sm:inline">
+                          {savedPosts[String(postId)]
+                            ? t("saved") || "Saved"
+                            : t("save") || "Save"}
+                        </span>
                       </Button>
                       <Button
                         variant="ghost"
-                        className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 font-medium text-sm"
+                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-green-600 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 font-medium"
                         onClick={() => handleViewDetails(postId)}
                       >
-                        {t("view") || "View"}
+                        <FaEye className="mr-1" />
+                        <span className="hidden sm:inline">{t("view") || "View"}</span>
                       </Button>
                     </div>
                   </div>

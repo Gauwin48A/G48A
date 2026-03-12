@@ -1,2 +1,584 @@
-import e,{useState as s,useEffect as ve}from"react";import{Button as a}from"@/components/ui/button";import{Card as ie,CardContent as oe,CardHeader as le,CardTitle as ne,CardDescription as he}from"@/components/ui/card";import{Input as de}from"@/components/ui/input";import{Badge as Ne}from"@/components/ui/badge";import{Alert as o,AlertDescription as l,AlertTitle as n}from"@/components/ui/alert";import{Separator as V}from"@/components/ui/separator";import{Shield as me,ShieldCheck as xe,ShieldX as ce,Copy as we,Eye as Ce,Smartphone as Ae,Key as ue,QrCode as ke,AlertTriangle as h,CheckCircle as N,ArrowLeft as Se,Loader2 as _,RefreshCw as Fe}from"lucide-react";import{useToast as Be}from"@/hooks/use-toast";import{useNavigate as Te}from"react-router-dom";import x from"@/services/api";import{PageAuthGateState as De,PageErrorState as Q,PageLoadingState as w}from"@/components/page-state/PageStateBlocks";const Ee=()=>{const{toast:u}=Be(),C=Te(),[m,p]=s(!1),[A,k]=s(!0),[pe,S]=s(!0),[I,j]=s(""),[F,M]=s(!1),[q,f]=s(""),[G,z]=s(""),[B,H]=s(!1),[U,d]=s(""),[Y,O]=s(""),[T,K]=s(!1),[X,i]=s(""),[J,W]=s(""),[g,D]=s(!1),[fe,E]=s(!1),[Z,b]=s(!1),[$,ge]=s(""),[L,P]=s([]),[be,c]=s(!1),[r,y]=s(""),R=localStorage.getItem("authToken")||localStorage.getItem("token"),ee=localStorage.getItem("userId")||localStorage.getItem("user_id");ve(()=>{te()},[]);const te=async()=>{if(!ee||!R){S(!1);return}S(!0),j("");try{const t=await x.get("/auth/2fa/status");p(!!t?.enabled),k(t?.available!==!1)}catch(t){console.error("Failed to check 2FA status:",t),p(!1),k(!1),j("Unable to load security settings right now. Please retry.")}finally{S(!1)}},se=async()=>{if(z(""),f(""),d(""),i(""),!A){f("Two-factor authentication is temporarily unavailable on this server.");return}M(!0);try{const t=await x.post("/auth/2fa/setup",{});if(!t?.qrCode)throw new Error("Unable to generate QR code. Please retry.");ge(t.qrCode),P([]),c(!1),D(!0),E(!0),b(!1),z("Setup started. Scan the QR code and verify to enable 2FA."),u({title:"Setup Started",description:"Scan the QR code with your authenticator app."})}catch(t){const v=t?.message||"Failed to start 2FA setup";String(v).toLowerCase().includes("unavailable")&&k(!1),f(v)}finally{M(!1)}},ae=async()=>{if(!r||r.length!==6){d("Please enter a valid 6-digit code.");return}H(!0),d(""),O("");try{const t=await x.post("/auth/2fa/verify",{code:r});t.success?(p(!0),D(!1),E(!1),P(Array.isArray(t.backupCodes)?t.backupCodes:[]),c(!0),O("2FA enabled successfully."),u({title:"2FA Enabled!",description:"Your account is now protected with 2FA."})):d(t.error||"Verification failed. Check the code and retry.")}catch(t){d(t?.message||"Verification failed. Please retry.")}finally{H(!1),y("")}},re=async()=>{if(!r||r.length!==6){i("Please enter a valid 6-digit code to disable 2FA.");return}K(!0),i(""),W("");try{const t=await x.post("/auth/2fa/disable",{code:r});t.success?(p(!1),b(!1),P([]),c(!1),W("Two-factor authentication has been disabled."),u({title:"2FA Disabled",description:"Two-factor authentication has been removed."})):i(t.error||"Failed to disable 2FA. Please retry.")}catch(t){i(t?.message||"Failed to disable 2FA. Please retry.")}finally{K(!1),y("")}},ye=()=>{const t=L.join(`
-`);navigator.clipboard.writeText(t),u({title:"Copied!",description:"Backup codes copied to clipboard"})};return!ee||!R?e.createElement("div",{className:"min-h-screen bg-gray-50 flex items-center justify-center p-4"},e.createElement("div",{className:"max-w-md w-full"},e.createElement(De,{title:"Authentication Required",description:"Please log in to access security settings.",marker:"auth-gate",primaryAction:e.createElement(a,{onClick:()=>C("/login",{state:{returnTo:"/security"}})},"Go to Login")}))):pe?e.createElement("div",{className:"min-h-screen bg-gradient-to-b from-emerald-50 to-white flex items-center justify-center p-4"},e.createElement(w,{title:"Loading security settings",description:"Checking your current 2FA status.",className:"max-w-md w-full",marker:"loading"})):e.createElement("div",{className:"min-h-screen bg-gradient-to-b from-emerald-50 to-white"},e.createElement("div",{className:"bg-emerald-600 text-white px-4 py-6"},e.createElement("div",{className:"max-w-4xl mx-auto"},e.createElement("button",{onClick:()=>C(-1),className:"flex items-center gap-2 text-emerald-100 hover:text-white mb-4"},e.createElement(Se,{className:"w-5 h-5"}),"Back"),e.createElement("div",{className:"flex items-center gap-3"},e.createElement(me,{className:"w-8 h-8"}),e.createElement("div",null,e.createElement("h1",{className:"text-2xl font-bold"},"Security Settings"),e.createElement("p",{className:"text-emerald-100"},"Protect your account with advanced security features"))))),e.createElement("div",{className:"max-w-4xl mx-auto p-4 space-y-6"},e.createElement(ie,null,e.createElement(le,null,e.createElement("div",{className:"flex items-center justify-between"},e.createElement("div",{className:"flex items-center gap-3"},m?e.createElement("div",{className:"p-2 rounded-full bg-emerald-100"},e.createElement(xe,{className:"w-6 h-6 text-emerald-600"})):e.createElement("div",{className:"p-2 rounded-full bg-amber-100"},e.createElement(ce,{className:"w-6 h-6 text-amber-600"})),e.createElement("div",null,e.createElement(ne,null,"Two-Factor Authentication"),e.createElement(he,null,"Add an extra layer of security to your account"))),e.createElement(Ne,{variant:m?"default":"secondary",className:m?"bg-emerald-500":""},m?"Enabled":"Disabled"))),e.createElement(oe,null,e.createElement("div",{className:"mb-6"},I&&e.createElement(o,{className:"bg-red-50 border-red-200 mb-4"},e.createElement(h,{className:"h-4 w-4 text-red-600"}),e.createElement(n,{className:"text-red-800"},"Could not refresh security status"),e.createElement(l,{className:"text-red-700"},e.createElement("div",{className:"space-y-3"},e.createElement("p",null,I),e.createElement(a,{variant:"outline",size:"sm",className:"border-red-300 text-red-700 hover:bg-red-100",onClick:te},"Retry")))),!A&&e.createElement(o,{className:"bg-red-50 border-red-200 mb-4"},e.createElement(h,{className:"h-4 w-4 text-red-600"}),e.createElement(n,{className:"text-red-800"},"2FA is temporarily unavailable"),e.createElement(l,{className:"text-red-700"},"The server has not enabled secure 2FA storage yet. Contact support/admin to enable it.")),m?e.createElement(o,{className:"bg-emerald-50 border-emerald-200"},e.createElement(N,{className:"h-4 w-4 text-emerald-600"}),e.createElement(n,{className:"text-emerald-800"},"Your account is protected"),e.createElement(l,{className:"text-emerald-700"},"You'll need to enter a code from your authenticator app when logging in.")):e.createElement(o,{className:"bg-amber-50 border-amber-200"},e.createElement(h,{className:"h-4 w-4 text-amber-600"}),e.createElement(n,{className:"text-amber-800"},"2FA is not enabled"),e.createElement(l,{className:"text-amber-700"},"Enable 2FA to add an extra layer of security to your account."))),G&&e.createElement(o,{className:"bg-emerald-50 border-emerald-200 mb-4"},e.createElement(N,{className:"h-4 w-4 text-emerald-600"}),e.createElement(n,{className:"text-emerald-800"},"Setup in progress"),e.createElement(l,{className:"text-emerald-700"},G)),Y&&e.createElement(o,{className:"bg-emerald-50 border-emerald-200 mb-4"},e.createElement(N,{className:"h-4 w-4 text-emerald-600"}),e.createElement(n,{className:"text-emerald-800"},"Verification successful"),e.createElement(l,{className:"text-emerald-700"},Y)),J&&e.createElement(o,{className:"bg-emerald-50 border-emerald-200 mb-4"},e.createElement(N,{className:"h-4 w-4 text-emerald-600"}),e.createElement(n,{className:"text-emerald-800"},"2FA disabled"),e.createElement(l,{className:"text-emerald-700"},J)),F&&!g&&e.createElement(w,{title:"Preparing 2FA setup",description:"Generating a secure QR code and setup token.",marker:"security-setup-loading",className:"mb-4"}),q&&!g&&e.createElement(Q,{title:"2FA setup unavailable",description:q,onRetry:se,retryLabel:"Retry setup",marker:"security-setup-error",className:"mb-4",secondaryAction:e.createElement(a,{variant:"outline","data-ux-action":"security_setup_dismiss_error",onClick:()=>f("")},"Dismiss")}),g&&fe&&e.createElement("div",{className:"space-y-6"},e.createElement(V,null),e.createElement("div",null,e.createElement("h3",{className:"font-semibold mb-2 flex items-center gap-2"},e.createElement(ke,{className:"w-5 h-5"}),"Step 1: Scan QR Code"),e.createElement("p",{className:"text-sm text-gray-600 mb-4"},"Open your authenticator app (Google Authenticator, Authy, etc.) and scan this QR code."),$&&e.createElement("div",{className:"flex justify-center p-4 bg-white rounded-lg border"},e.createElement("img",{src:$,alt:"2FA QR Code",className:"w-48 h-48"}))),e.createElement("div",null,e.createElement("h3",{className:"font-semibold mb-2 flex items-center gap-2"},e.createElement(Ae,{className:"w-5 h-5"}),"Step 2: Enter Verification Code"),B&&e.createElement(w,{title:"Verifying your code",description:"Checking the one-time code with the server.",marker:"security-verify-loading",className:"mb-4"}),U&&e.createElement(Q,{title:"2FA verification failed",description:U,onRetry:ae,retryLabel:"Retry verification",marker:"security-verify-error",className:"mb-4",secondaryAction:e.createElement(a,{variant:"outline","data-ux-action":"security_verify_clear_error",onClick:()=>d("")},"Clear error")}),e.createElement("p",{className:"text-sm text-gray-600 mb-4"},"Enter the 6-digit code from your authenticator app to complete setup."),e.createElement("div",{className:"flex gap-3"},e.createElement(de,{type:"text",placeholder:"000000",maxLength:6,value:r,onChange:t=>y(t.target.value.replace(/\D/g,"")),className:"max-w-32 text-center text-2xl tracking-widest font-mono"}),e.createElement(a,{onClick:ae,disabled:B||r.length!==6},B?e.createElement(_,{className:"w-4 h-4 animate-spin"}):"Verify & Enable"),e.createElement(a,{variant:"outline",onClick:()=>{D(!1),E(!1),d("")}},"Cancel")))),be&&L.length>0&&e.createElement("div",{className:"space-y-4"},e.createElement(V,null),e.createElement("div",null,e.createElement("h3",{className:"font-semibold mb-2 flex items-center gap-2"},e.createElement(ue,{className:"w-5 h-5"}),"Backup Codes"),e.createElement(o,{className:"bg-red-50 border-red-200 mb-4"},e.createElement(h,{className:"h-4 w-4 text-red-600"}),e.createElement(n,{className:"text-red-800"},"Save these codes!"),e.createElement(l,{className:"text-red-700"},"These codes can be used to access your account if you lose your authenticator. Store them safely.")),e.createElement("div",{className:"grid grid-cols-2 gap-2 p-4 bg-gray-100 rounded-lg font-mono text-sm"},L.map((t,v)=>e.createElement("div",{key:v,className:"bg-white px-3 py-2 rounded border"},t))),e.createElement("div",{className:"flex gap-2 mt-4"},e.createElement(a,{variant:"outline",onClick:ye},e.createElement(we,{className:"w-4 h-4 mr-2"})," Copy Codes"),e.createElement(a,{onClick:()=>c(!1)},"I've Saved My Codes")))),Z&&e.createElement("div",{className:"space-y-4"},e.createElement(V,null),e.createElement("div",null,e.createElement("h3",{className:"font-semibold mb-2 text-red-600"},"Disable Two-Factor Authentication"),T&&e.createElement(w,{title:"Disabling 2FA",description:"Verifying your code before disabling two-factor authentication.",marker:"security-disable-loading",className:"mb-4"}),X&&e.createElement(Q,{title:"Unable to disable 2FA",description:X,onRetry:re,retryLabel:"Retry disable",marker:"security-disable-error",className:"mb-4",secondaryAction:e.createElement(a,{variant:"outline","data-ux-action":"security_disable_clear_error",onClick:()=>i("")},"Clear error")}),e.createElement("p",{className:"text-sm text-gray-600 mb-4"},"Enter a code from your authenticator app to disable 2FA."),e.createElement("div",{className:"flex gap-3"},e.createElement(de,{type:"text",placeholder:"000000",maxLength:6,value:r,onChange:t=>y(t.target.value.replace(/\D/g,"")),className:"max-w-32 text-center text-2xl tracking-widest font-mono"}),e.createElement(a,{variant:"destructive",onClick:re,disabled:T||r.length!==6},T?e.createElement(_,{className:"w-4 h-4 animate-spin"}):"Disable 2FA"),e.createElement(a,{variant:"outline",onClick:()=>{b(!1),i("")}},"Cancel")))),!g&&!Z&&e.createElement("div",{className:"flex gap-3 mt-4"},m?e.createElement(e.Fragment,null,e.createElement(a,{variant:"outline",onClick:()=>c(!0)},e.createElement(ue,{className:"w-4 h-4 mr-2"})," View Backup Codes"),e.createElement(a,{variant:"destructive",onClick:()=>{b(!0),i("")}},e.createElement(ce,{className:"w-4 h-4 mr-2"})," Disable 2FA")):e.createElement(a,{onClick:se,disabled:F||!A,className:"bg-emerald-600 hover:bg-emerald-700"},F?e.createElement(_,{className:"w-4 h-4 mr-2 animate-spin"}):e.createElement(me,{className:"w-4 h-4 mr-2"}),"Enable 2FA")))),e.createElement(ie,null,e.createElement(le,null,e.createElement(ne,{className:"text-lg"},"Other Security Features")),e.createElement(oe,{className:"space-y-4"},e.createElement("div",{className:"flex items-center justify-between p-4 bg-gray-50 rounded-lg"},e.createElement("div",{className:"flex items-center gap-3"},e.createElement(Fe,{className:"w-5 h-5 text-gray-600"}),e.createElement("div",null,e.createElement("p",{className:"font-medium"},"Password"),e.createElement("p",{className:"text-sm text-gray-500"},"Last changed: Never"))),e.createElement(a,{variant:"outline",size:"sm",onClick:()=>C("/forgot-password")},"Change Password")),e.createElement("div",{className:"flex items-center justify-between p-4 bg-gray-50 rounded-lg"},e.createElement("div",{className:"flex items-center gap-3"},e.createElement(Ce,{className:"w-5 h-5 text-gray-600"}),e.createElement("div",null,e.createElement("p",{className:"font-medium"},"Login Activity"),e.createElement("p",{className:"text-sm text-gray-500"},"View recent login attempts"))),e.createElement(a,{variant:"outline",size:"sm",disabled:!0},"Coming Soon"))))))};var Ue=Ee;export{Ue as default};
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Clock3,
+  KeyRound,
+  Monitor,
+  RefreshCw,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
+} from "lucide-react";
+
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import api from "@/services/api";
+import {
+  PageEmptyState,
+  PageErrorState,
+  PageLoadingState,
+} from "@/components/page-state/PageStateBlocks";
+
+function formatDateTime(value) {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleString();
+}
+
+function maskIp(ipAddress) {
+  if (!ipAddress) return "Unknown";
+  const text = String(ipAddress).trim();
+  if (!text.includes(".")) return text;
+  const parts = text.split(".");
+  if (parts.length !== 4) return text;
+  return `${parts[0]}.${parts[1]}.x.x`;
+}
+
+function SessionCard({
+  session,
+  isRevoking,
+  onRevoke,
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <p className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <Monitor className="h-4 w-4 text-blue-600" />
+            {session.device_fingerprint || "Unknown device"}
+          </p>
+          <p className="text-xs text-slate-500">{session.user_agent || "Unknown user agent"}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onRevoke(session.session_id)}
+          disabled={isRevoking}
+          className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          {isRevoking ? "Revoking..." : "Revoke"}
+        </button>
+      </div>
+
+      <div className="mt-3 grid gap-1 text-xs text-slate-600 sm:grid-cols-2">
+        <p className="flex items-center gap-1.5">
+          <Clock3 className="h-3.5 w-3.5 text-slate-400" />
+          Last active: {formatDateTime(session.last_activity || session.created_at)}
+        </p>
+        <p>Created: {formatDateTime(session.created_at)}</p>
+        <p>Expires: {formatDateTime(session.expires_at)}</p>
+        <p>IP: {maskIp(session.ip_address)}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function SecuritySettings() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const auth = useAuth() || {};
+  const isAuthenticated = Boolean(auth.isAuthenticated ?? auth.user);
+  const loading = Boolean(auth.loading);
+
+  const [twoFaAvailable, setTwoFaAvailable] = useState(true);
+  const [twoFaEnabled, setTwoFaEnabled] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [statusError, setStatusError] = useState("");
+
+  const [setupLoading, setSetupLoading] = useState(false);
+  const [setupError, setSetupError] = useState("");
+  const [setupQrCode, setSetupQrCode] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [backupCodes, setBackupCodes] = useState([]);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
+
+  const [disableMode, setDisableMode] = useState(false);
+  const [disableCode, setDisableCode] = useState("");
+  const [disableLoading, setDisableLoading] = useState(false);
+  const [disableError, setDisableError] = useState("");
+
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState("");
+  const [revokingSessionId, setRevokingSessionId] = useState("");
+  const [revokeAllLoading, setRevokeAllLoading] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!isAuthenticated) {
+      navigate("/login", { replace: true, state: { returnTo: "/security" } });
+    }
+  }, [isAuthenticated, loading, navigate]);
+
+  const loadTwoFaStatus = useCallback(async () => {
+    setStatusLoading(true);
+    setStatusError("");
+    try {
+      const data = await api.get("/auth/2fa/status");
+      setTwoFaEnabled(Boolean(data?.enabled));
+      setTwoFaAvailable(data?.available !== false);
+    } catch (error) {
+      setStatusError(error?.message || "Failed to load 2FA status.");
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
+  const loadSessions = useCallback(async () => {
+    setSessionsLoading(true);
+    setSessionsError("");
+    try {
+      const data = await api.get("/auth/sessions?limit=25");
+      setSessions(Array.isArray(data?.sessions) ? data.sessions : []);
+    } catch (error) {
+      setSessionsError(error?.message || "Failed to load active sessions.");
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || loading) return;
+    void loadTwoFaStatus();
+    void loadSessions();
+  }, [isAuthenticated, loading, loadSessions, loadTwoFaStatus]);
+
+  const beginSetup = async () => {
+    setSetupLoading(true);
+    setSetupError("");
+    setVerifyError("");
+    setDisableError("");
+    setStatusError("");
+    try {
+      const data = await api.post("/auth/2fa/setup", {});
+      setSetupQrCode(data?.qrCode || "");
+      setBackupCodes([]);
+      setDisableMode(false);
+    } catch (error) {
+      setSetupError(error?.message || "Failed to start 2FA setup.");
+    } finally {
+      setSetupLoading(false);
+    }
+  };
+
+  const verifySetup = async () => {
+    if (verifyCode.length < 6) {
+      toast({ title: "Invalid code", description: "Enter a valid 6-digit authenticator code." });
+      return;
+    }
+
+    setVerifyLoading(true);
+    setVerifyError("");
+    setStatusError("");
+    try {
+      const data = await api.post("/auth/2fa/verify", { code: verifyCode });
+      setTwoFaEnabled(true);
+      setVerifyCode("");
+      setSetupQrCode("");
+      setBackupCodes(Array.isArray(data?.backupCodes) ? data.backupCodes : []);
+      toast({ title: "2FA enabled", description: "Two-factor authentication is now active." });
+      await loadTwoFaStatus();
+    } catch (error) {
+      setVerifyError(error?.message || "Failed to verify authenticator code.");
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const disableTwoFa = async () => {
+    if (disableCode.length < 6) {
+      toast({ title: "Invalid code", description: "Enter a valid 6-digit authenticator code." });
+      return;
+    }
+
+    setDisableLoading(true);
+    setDisableError("");
+    setStatusError("");
+    try {
+      await api.post("/auth/2fa/disable", { code: disableCode });
+      setTwoFaEnabled(false);
+      setDisableCode("");
+      setDisableMode(false);
+      setBackupCodes([]);
+      toast({ title: "2FA disabled", description: "Two-factor authentication has been disabled." });
+      await loadTwoFaStatus();
+    } catch (error) {
+      setDisableError(error?.message || "Failed to disable two-factor authentication.");
+    } finally {
+      setDisableLoading(false);
+    }
+  };
+
+  const revokeSession = async (sessionId) => {
+    setRevokingSessionId(sessionId);
+    setSessionsError("");
+    try {
+      await api.delete(`/auth/sessions/${sessionId}`);
+      setSessions((previous) => previous.filter((session) => session.session_id !== sessionId));
+      toast({ title: "Session revoked", description: "The selected session was revoked." });
+    } catch (error) {
+      setSessionsError(error?.message || "Failed to revoke session.");
+    } finally {
+      setRevokingSessionId("");
+    }
+  };
+
+  const revokeAllSessions = async () => {
+    setRevokeAllLoading(true);
+    setSessionsError("");
+    try {
+      await api.delete("/auth/sessions");
+      setSessions([]);
+      toast({ title: "All sessions revoked", description: "All active sessions were revoked." });
+    } catch (error) {
+      setSessionsError(error?.message || "Failed to revoke all sessions.");
+    } finally {
+      setRevokeAllLoading(false);
+    }
+  };
+
+  const statusBadge = useMemo(() => {
+    if (!twoFaAvailable) {
+      return "Unavailable";
+    }
+    return twoFaEnabled ? "Enabled" : "Disabled";
+  }, [twoFaAvailable, twoFaEnabled]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="w-full max-w-md px-4">
+          <PageLoadingState
+            title="Loading security settings..."
+            description="Checking authentication and security controls."
+            marker="security-settings-loading"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-md">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-blue-100">Security Center</p>
+              <h1 className="mt-1 text-2xl font-bold">Authentication & Session Control</h1>
+              <p className="mt-2 text-sm text-blue-100">
+                Manage two-factor authentication and active sessions for your account.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void loadTwoFaStatus();
+                void loadSessions();
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                Two-Factor Authentication
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Status: <span className="font-semibold text-slate-700">{statusBadge}</span>
+              </p>
+            </div>
+            {!twoFaEnabled ? (
+              <button
+                type="button"
+                onClick={beginSetup}
+                disabled={setupLoading || statusLoading || !twoFaAvailable}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <KeyRound className="h-4 w-4" />
+                {setupLoading ? "Preparing..." : "Enable 2FA"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setDisableMode((prev) => !prev);
+                  setSetupQrCode("");
+                  setBackupCodes([]);
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                {disableMode ? "Cancel Disable" : "Disable 2FA"}
+              </button>
+            )}
+          </div>
+
+          {statusError ? (
+            <div className="mt-4">
+              <PageErrorState
+                title="Two-factor status unavailable"
+                description={statusError}
+                onRetry={() => {
+                  void loadTwoFaStatus();
+                }}
+                retryLabel="Retry 2FA status"
+                marker="security-twofa-status-error"
+              />
+            </div>
+          ) : null}
+
+          {statusLoading ? (
+            <div className="mt-4">
+              <PageLoadingState
+                title="Checking 2FA status..."
+                description="Loading authenticator setup state."
+                marker="security-twofa-status-loading"
+              />
+            </div>
+          ) : null}
+
+          {setupLoading ? (
+            <div className="mt-4">
+              <PageLoadingState
+                title="Preparing authenticator setup..."
+                description="Generating QR code and setup details."
+                marker="security-setup-loading"
+              />
+            </div>
+          ) : null}
+
+          {setupError ? (
+            <div className="mt-4">
+              <PageErrorState
+                title="Could not start 2FA setup"
+                description={setupError}
+                marker="security-setup-error"
+                secondaryAction={
+                  <button
+                    type="button"
+                    data-ux-action="security_setup_dismiss_error"
+                    onClick={() => setSetupError("")}
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Dismiss
+                  </button>
+                }
+              />
+            </div>
+          ) : null}
+
+          {setupQrCode ? (
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="mb-2 text-sm font-semibold text-slate-700">Step 1: Scan QR code</p>
+              <div className="flex justify-center rounded-lg border border-slate-200 bg-white p-4">
+                <img src={setupQrCode} alt="2FA QR code" className="h-44 w-44" />
+              </div>
+              <p className="mt-4 text-sm font-semibold text-slate-700">Step 2: Verify code</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  value={verifyCode}
+                  onChange={(event) => setVerifyCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="Enter authenticator code"
+                  className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={verifySetup}
+                  disabled={verifyLoading}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {verifyLoading ? "Verifying..." : "Verify & Enable"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {verifyLoading ? (
+            <div className="mt-4">
+              <PageLoadingState
+                title="Verifying authenticator code..."
+                description="This takes only a moment."
+                marker="security-verify-loading"
+              />
+            </div>
+          ) : null}
+
+          {verifyError ? (
+            <div className="mt-4">
+              <PageErrorState
+                title="Could not verify code"
+                description={verifyError}
+                marker="security-verify-error"
+                secondaryAction={
+                  <button
+                    type="button"
+                    data-ux-action="security_verify_clear_error"
+                    onClick={() => setVerifyError("")}
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Dismiss
+                  </button>
+                }
+              />
+            </div>
+          ) : null}
+
+          {backupCodes.length > 0 ? (
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <p className="font-semibold text-amber-800">Backup codes (save these now)</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                {backupCodes.map((code) => (
+                  <div key={code} className="rounded border border-amber-300 bg-white px-2 py-1.5 font-mono">
+                    {code}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {disableMode ? (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-semibold text-red-700">Confirm disable using authenticator code</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  type="text"
+                  value={disableCode}
+                  onChange={(event) => setDisableCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="Enter code"
+                  className="w-56 rounded-lg border border-red-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                />
+                <button
+                  type="button"
+                  onClick={disableTwoFa}
+                  disabled={disableLoading}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {disableLoading ? "Disabling..." : "Disable 2FA"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {disableLoading ? (
+            <div className="mt-4">
+              <PageLoadingState
+                title="Disabling two-factor authentication..."
+                description="Updating account security settings."
+                marker="security-disable-loading"
+              />
+            </div>
+          ) : null}
+
+          {disableError ? (
+            <div className="mt-4">
+              <PageErrorState
+                title="Could not disable 2FA"
+                description={disableError}
+                marker="security-disable-error"
+                secondaryAction={
+                  <button
+                    type="button"
+                    data-ux-action="security_disable_clear_error"
+                    onClick={() => setDisableError("")}
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Dismiss
+                  </button>
+                }
+              />
+            </div>
+          ) : null}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                <Smartphone className="h-5 w-5 text-blue-600" />
+                Active Sessions
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Revoke sessions you do not recognize.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={revokeAllSessions}
+              disabled={revokeAllLoading || sessionsLoading || sessions.length === 0}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 className="h-4 w-4" />
+              {revokeAllLoading ? "Revoking..." : "Revoke All"}
+            </button>
+          </div>
+
+          {sessionsError ? (
+            <div className="mt-4">
+              <PageErrorState
+                title="Active sessions unavailable"
+                description={sessionsError}
+                onRetry={() => {
+                  void loadSessions();
+                }}
+                retryLabel="Retry sessions"
+                marker="security-sessions-error"
+              />
+            </div>
+          ) : null}
+
+          {sessionsLoading ? (
+            <div className="mt-4">
+              <PageLoadingState
+                title="Loading active sessions..."
+                description="Fetching signed-in devices."
+                marker="security-sessions-loading"
+              />
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="mt-4">
+              <PageEmptyState
+                title="No active sessions found"
+                description="You're currently signed in only on this device."
+                marker="security-sessions-empty"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void loadSessions();
+                    }}
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh Sessions
+                  </button>
+                }
+              />
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {sessions.map((session) => (
+                <SessionCard
+                  key={session.session_id}
+                  session={session}
+                  isRevoking={revokingSessionId === session.session_id}
+                  onRevoke={revokeSession}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}

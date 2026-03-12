@@ -11,13 +11,23 @@ import { activateDefenseMode, isAuthorizedHostname } from './utils/security';
 import { initErrorReporting } from './lib/errorReporting';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalContentTranslator from './components/GlobalContentTranslator';
+import AuthEventRouter from './components/AuthEventRouter';
 
 const App = React.lazy(() => import('./App.jsx'));
+const ROOT_INSTANCE_KEY = '__mhub_react_root__';
+const CONTAINER_ROOT_KEY = '__mhub_react_root_instance__';
+const BOOTSTRAP_STATE_KEY = '__mhub_bootstrap_state__';
+const BOOTSTRAP_LISTENER_FLAG = '__mhub_bootstrap_listeners_bound__';
+const ENABLE_RUNTIME_TRANSLATION =
+  String(import.meta.env.VITE_ENABLE_RUNTIME_TRANSLATION || 'false').toLowerCase() === 'true';
 
 const PRELOAD_RELOAD_KEY = 'mhub:vite-preload-reload-at';
 const PRELOAD_RELOAD_COOLDOWN_MS = 10 * 1000;
 const IMPORT_RELOAD_KEY = 'mhub:module-import-reload-at';
 const IMPORT_RELOAD_COOLDOWN_MS = 10 * 1000;
+const DOM_RELOAD_KEY = 'mhub:dom-recovery-reload-at';
+const DOM_RELOAD_COOLDOWN_MS = 7 * 1000;
+const RootMode = import.meta.env.DEV ? React.Fragment : React.StrictMode;
 
 function isRecoverableModuleError(message) {
   return /Failed to fetch dynamically imported module|Importing a module script failed|Outdated Optimize Dep/i.test(
@@ -25,10 +35,29 @@ function isRecoverableModuleError(message) {
   );
 }
 
+function isRecoverableDomError(message) {
+  return /Failed to execute ['"]removeChild['"] on ['"]Node['"]|The node to be removed is not a child of this node/i.test(
+    String(message || '')
+  );
+}
+
+function getBootstrapState() {
+  if (typeof window === 'undefined') {
+    return { runId: 0 };
+  }
+
+  if (!window[BOOTSTRAP_STATE_KEY]) {
+    window[BOOTSTRAP_STATE_KEY] = { runId: 0 };
+  }
+  return window[BOOTSTRAP_STATE_KEY];
+}
+
 activateDefenseMode();
 initErrorReporting();
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && !window[BOOTSTRAP_LISTENER_FLAG]) {
+  window[BOOTSTRAP_LISTENER_FLAG] = true;
+
   const reloadOnceWithinCooldown = (storageKey, cooldownMs, reasonLabel) => {
     const now = Date.now();
     const lastReloadAt = Number.parseInt(window.sessionStorage.getItem(storageKey) || '0', 10);
@@ -63,6 +92,11 @@ if (typeof window !== 'undefined') {
     const message = String(event?.error?.message || event?.message || '');
     if (isRecoverableModuleError(message)) {
       reloadOnceWithinCooldown(IMPORT_RELOAD_KEY, IMPORT_RELOAD_COOLDOWN_MS, 'module script failure detected');
+      return;
+    }
+
+    if (isRecoverableDomError(message)) {
+      reloadOnceWithinCooldown(DOM_RELOAD_KEY, DOM_RELOAD_COOLDOWN_MS, 'React DOM reconciliation mismatch detected');
     }
   });
 }
@@ -113,32 +147,62 @@ function renderApp(root) {
   if (typeof window !== 'undefined') {
     window.sessionStorage.removeItem(PRELOAD_RELOAD_KEY);
     window.sessionStorage.removeItem(IMPORT_RELOAD_KEY);
+    window.sessionStorage.removeItem(DOM_RELOAD_KEY);
   }
 
   root.render(
-    <React.StrictMode>
+    <RootMode>
       <QueryClientProvider client={queryClient}>
         <Suspense fallback={<LoadingScreen />}>
-          <BrowserRouter>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <ToastProvider>
               <ErrorBoundary>
-                <GlobalContentTranslator />
+                {ENABLE_RUNTIME_TRANSLATION ? <GlobalContentTranslator /> : null}
+                <AuthEventRouter />
                 <App />
               </ErrorBoundary>
             </ToastProvider>
           </BrowserRouter>
         </Suspense>
       </QueryClientProvider>
-    </React.StrictMode>
+    </RootMode>
   );
 }
 
 function renderBackendFailure(root, failure) {
   root.render(
-    <React.StrictMode>
+    <RootMode>
       <BackendUnavailableScreen failure={failure} />
-    </React.StrictMode>
+    </RootMode>
   );
+}
+
+function getOrCreateRoot() {
+  const container = document.getElementById('root');
+  if (!container) {
+    throw new Error('Root container not found');
+  }
+
+  if (container[CONTAINER_ROOT_KEY]) {
+    return container[CONTAINER_ROOT_KEY];
+  }
+
+  const globalWindow = typeof window !== 'undefined' ? window : null;
+  if (globalWindow && globalWindow[ROOT_INSTANCE_KEY]) {
+    return globalWindow[ROOT_INSTANCE_KEY];
+  }
+
+  const root = ReactDOM.createRoot(container);
+  container[CONTAINER_ROOT_KEY] = root;
+  if (globalWindow) {
+    globalWindow[ROOT_INSTANCE_KEY] = root;
+  }
+  return root;
 }
 
 if (!isAuthorizedHost && import.meta.env.MODE !== 'development') {
@@ -150,15 +214,30 @@ if (!isAuthorizedHost && import.meta.env.MODE !== 'development') {
     </div>
   `;
 } else {
-  const root = ReactDOM.createRoot(document.getElementById('root'));
+  const bootstrapState = getBootstrapState();
+  const runId = Number(bootstrapState.runId || 0) + 1;
+  bootstrapState.runId = runId;
+
+  const isCurrentRun = () => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+    const state = window[BOOTSTRAP_STATE_KEY];
+    return Boolean(state) && Number(state.runId) === runId;
+  };
+
+  const root = getOrCreateRoot();
   root.render(
-    <React.StrictMode>
+    <RootMode>
       <LoadingScreen />
-    </React.StrictMode>
+    </RootMode>
   );
 
   runBackendPreflight()
     .then((result) => {
+      if (!isCurrentRun()) {
+        return;
+      }
       if (!result.ok) {
         if (import.meta.env.DEV) {
           console.error('[bootstrap] backend preflight failed', result.failure);
@@ -169,6 +248,9 @@ if (!isAuthorizedHost && import.meta.env.MODE !== 'development') {
       renderApp(root);
     })
     .catch((error) => {
+      if (!isCurrentRun()) {
+        return;
+      }
       if (import.meta.env.DEV) {
         console.error('[bootstrap] backend preflight error', error);
       }
@@ -178,4 +260,30 @@ if (!isAuthorizedHost && import.meta.env.MODE !== 'development') {
         bodyText: error?.message || String(error)
       });
     });
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    const globalWindow = typeof window !== 'undefined' ? window : null;
+    const container = typeof document !== 'undefined' ? document.getElementById('root') : null;
+    const root = globalWindow?.[ROOT_INSTANCE_KEY] || container?.[CONTAINER_ROOT_KEY];
+
+    if (root?.unmount) {
+      try {
+        root.unmount();
+      } catch {
+        // noop: stale HMR roots can already be detached
+      }
+    }
+
+    if (globalWindow) {
+      delete globalWindow[ROOT_INSTANCE_KEY];
+      if (globalWindow[BOOTSTRAP_STATE_KEY]) {
+        globalWindow[BOOTSTRAP_STATE_KEY].runId = 0;
+      }
+    }
+    if (container && container[CONTAINER_ROOT_KEY]) {
+      delete container[CONTAINER_ROOT_KEY];
+    }
+  });
 }

@@ -16,6 +16,11 @@ import ie from "@/components/MakeOfferModal";
 import ne from "@/components/BargainActions";
 import Se from "@/components/ShareLinkDialog";
 import { getApiOriginBase as de } from "@/lib/networkConfig";
+import {
+  isSavedPostId,
+  setSavedPostStatus,
+  subscribeSavedPosts,
+} from "@/utils/savedPosts";
 import { resolveMediaUrl as cee } from "@/lib/mediaUrl";
 import {
   ArrowLeft as $,
@@ -40,6 +45,13 @@ import {
 } from "lucide-react";
 function we() {
   const { t: h } = oe(),
+    tr = (key, fallback) => {
+      const value = h(key);
+      if (typeof value !== "string" || !value.trim() || value === key) {
+        return fallback;
+      }
+      return value;
+    },
     { id: d } = Y(),
     y = ee(),
     [r, u] = i(y.state?.post || null),
@@ -100,7 +112,13 @@ function we() {
                       })()
                     : [],
                 T = { ...s, images: mediaList, seller: s.seller || {} };
-              (u(T), c(!1));
+              (u(T),
+                setSavedPost(
+                  Boolean(
+                    T?.is_saved || T?.saved || isSavedPostId(T?.post_id || T?.id || d),
+                  ),
+                ),
+                c(!1));
             } catch (a) {
               (console.error("Error fetching post data:", a),
                 N(a?.message || "Failed to load product"),
@@ -110,6 +128,14 @@ function we() {
           })(),
         m(0));
     }, [d, F]),
+    L(() => {
+      const t = String(r?.post_id || r?.id || d || "").trim();
+      if (!t) return;
+      setSavedPost(isSavedPostId(t));
+      return subscribeSavedPosts((a) => {
+        setSavedPost(Boolean(a?.[t]));
+      });
+    }, [d, r?.id, r?.post_id]),
     j)
   )
     return e.createElement(
@@ -262,14 +288,15 @@ function we() {
     toggleSavedPost = async () => {
       const t = r?.post_id || r?.id || d;
       if (!t) return;
-      const a = !savedPost;
-      setSavedPost(a);
+      const a = isSavedPostId(t),
+        s = !a;
+      (setSavedPost(s), setSavedPostStatus(t, s));
       try {
-        a
+        s
           ? await re.post("/api/wishlist", { postId: t })
           : await re.delete(`/api/wishlist/${t}`);
       } catch {
-        setSavedPost(!a);
+        (setSavedPost(a), setSavedPostStatus(t, a));
       }
     },
     K = [
@@ -382,7 +409,7 @@ function we() {
                   className:
                     "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
                 },
-                "Share link",
+                tr("share_link", "Share link"),
               ),
               e.createElement(
                 "button",
@@ -394,7 +421,9 @@ function we() {
                   className:
                     "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
                 },
-                savedPost ? "Remove from saved" : "Save post",
+                savedPost
+                  ? tr("remove_from_saved", "Remove from saved")
+                  : tr("save_post", "Save post"),
               ),
               e.createElement(
                 "button",
@@ -501,7 +530,8 @@ function we() {
             e.createElement(
               "div",
               {
-                className: "p-3 border-t dark:border-gray-700 overflow-x-auto",
+                className:
+                  "p-3 border-t dark:border-gray-700 overflow-x-auto scrollbar-hide",
               },
               e.createElement(
                 "div",
@@ -702,13 +732,16 @@ function we() {
                   "font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2",
               },
               e.createElement(x, { className: "w-5 h-5 text-blue-500" }),
-              " Description",
+              tr("description", "Description"),
             ),
             e.createElement(
               "p",
               { className: "text-gray-600 dark:text-gray-300 leading-relaxed" },
               r.description ||
-                "No description provided for this product. Contact the seller for more details.",
+                tr(
+                  "no_description",
+                  "No description provided for this product. Contact the seller for more details.",
+                ),
             ),
           ),
         ),
@@ -803,7 +836,7 @@ function we() {
                 "w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-5 text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all",
             },
             e.createElement(fe, { className: "w-6 h-6 mr-3" }),
-            "I'm Interested - Contact Seller",
+            tr("interested_contact_seller", "I'm Interested - Contact Seller"),
           ),
           e.createElement(
             l,
@@ -814,14 +847,17 @@ function we() {
                 "w-full border-2 border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-bold py-4 text-lg rounded-2xl transition-all",
             },
             e.createElement(ke, { className: "w-5 h-5 mr-2" }),
-            "Make an Offer",
+            tr("make_an_offer", "Make an Offer"),
           ),
           e.createElement(
             "p",
             {
               className: "text-center text-xs text-gray-500 dark:text-gray-400",
             },
-            "\u{1F512} Share your contact details securely with only this seller",
+            tr(
+              "secure_contact_details_hint",
+              "🔒 Share your contact details securely with only this seller",
+            ),
           ),
         ),
         e.createElement(
@@ -837,7 +873,7 @@ function we() {
             savedPost
               ? e.createElement(Xe, { className: "w-5 h-5 mr-2" })
               : e.createElement(We, { className: "w-5 h-5 mr-2" }),
-            savedPost ? "Saved" : "Save",
+            savedPost ? tr("saved", "Saved") : tr("save", "Save"),
           ),
           e.createElement(
             l,
@@ -853,7 +889,7 @@ function we() {
                 "py-3 rounded-xl font-medium border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300",
             },
             e.createElement(Qe, { className: "w-5 h-5 mr-2" }),
-            " Share",
+            tr("share", "Share"),
           ),
         ),
         e.createElement(
@@ -864,7 +900,7 @@ function we() {
               "w-full text-gray-400 hover:text-red-500 py-3 rounded-xl",
           },
           e.createElement(be, { className: "w-4 h-4 mr-2" }),
-          " Report this listing",
+          tr("report_listing", "Report this listing"),
         ),
         e.createElement("div", { className: "h-8" }),
       ),
@@ -879,7 +915,7 @@ function we() {
         open: shareDialogOpen,
         onOpenChange: setShareDialogOpen,
         url: shareUrl,
-        title: "Share post",
+        title: tr("share_post", "Share post"),
       }),
     ),
   );

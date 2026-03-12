@@ -5,10 +5,11 @@ Owners: Security Lead, Platform Engineering
 Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Linked Operational Docs
-- Incident response runbook: `docs/INCIDENT_RESPONSE.md`
-- Monitoring ownership evidence: `server/docs/MONITORING_ALERTING_OWNERSHIP.md`
-- Test validation matrix: `server/docs/TEST_VALIDATION.md`
-- Load and limiter evidence: `server/docs/LOAD_CAPACITY_REPORT.md`
+- Incident response runbook: `server/docs/INCIDENT_RESPONSE.md`
+- Ops evidence and status report: `server/docs/project/FEATURE_STATUS_REPORT.md`
+- Validation evidence: `server/docs/PHASE5_VALIDATION_EVIDENCE_2026-02-27.md`
+- Test case catalog: `server/docs/TEST_CASES.md`
+- Performance/load guidance: `server/docs/PERFORMANCE.md`
 
 ## Security Controls (Current)
 - WAF enforcement and request evidence headers.
@@ -39,8 +40,8 @@ Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
 ## Policy Sync Rule
 Any security control update must be reflected in:
-1. Incident runbook (`docs/INCIDENT_RESPONSE.md`).
-2. Monitoring ownership matrix (`server/docs/MONITORING_ALERTING_OWNERSHIP.md`).
-3. Validation evidence (`server/docs/TEST_VALIDATION.md`).
+1. Incident runbook (`server/docs/INCIDENT_RESPONSE.md`).
+2. Ops status + evidence (`server/docs/project/FEATURE_STATUS_REPORT.md`).
+3. Validation evidence (`server/docs/PHASE5_VALIDATION_EVIDENCE_2026-02-27.md`).
 in the same release cycle.
 

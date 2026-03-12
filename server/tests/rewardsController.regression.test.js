@@ -96,6 +96,49 @@ describe('rewardsController regression behavior', () => {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [] };
             }
+            if (text.includes("COUNT(*) FILTER (WHERE action = 'sale_completed'")) {
+                expect(values).toEqual([canonicalId]);
+                return {
+                    rows: [{
+                        sales_count: 0,
+                        purchases_count: 0,
+                        referrals_count: 0,
+                        posts_count: 0,
+                        visits_count: 0,
+                        sales_today: 0,
+                        purchases_today: 0,
+                        referrals_today: 0,
+                        posts_today: 0,
+                        visits_today: 0
+                    }]
+                };
+            }
+            if (text.includes('FROM user_streaks')) {
+                expect(values).toEqual([canonicalId]);
+                return { rows: [{ visit_streak: 4, post_streak: 2 }] };
+            }
+            if (text.includes('FROM profiles') && text.includes('avatar_url')) {
+                expect(values).toEqual([canonicalId]);
+                return { rows: [{ full_name: 'Alice Doe', phone: '9999999999', address: 'Test', avatar_url: 'avatar.png' }] };
+            }
+            if (text.includes('FROM posts') && text.includes('COUNT(*)::int AS total')) {
+                expect(values).toEqual([canonicalId]);
+                return { rows: [{ total: 1 }] };
+            }
+            if (text.includes("table_name = 'transactions'") && text.includes("column_name IN ('otp_hash'")) {
+                return { rows: [] };
+            }
+            if (text.includes('COUNT(DISTINCT user_id)') && text.includes('FROM transactions')) {
+                return { rows: [{ qualified: 0 }] };
+            }
+            if (text.includes("action LIKE 'referral_chain_%'")) {
+                expect(values).toEqual([canonicalId]);
+                return { rows: [{ total: 0 }] };
+            }
+            if (text.includes("action IN ('leaderboard_top_seller'")) {
+                expect(values).toEqual([canonicalId, 5]);
+                return { rows: [] };
+            }
             throw new Error(`Unexpected query: ${text}`);
         });
 

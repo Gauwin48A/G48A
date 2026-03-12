@@ -62,15 +62,15 @@ export default function PostCard({ post }) {
         )}
       </div>
 
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg">{title}</CardTitle>
+          <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
           <div className="text-right">
-            <p className="text-2xl font-bold text-green-600">{formatPrice(price)}</p>
+            <p className="text-lg sm:text-2xl font-bold text-green-600">{formatPrice(price)}</p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
+        <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-gray-600">
           <span>{brand}</span>
           <span>•</span>
           <span>{model}</span>
@@ -82,15 +82,15 @@ export default function PostCard({ post }) {
       </CardHeader>
 
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {/* Location */}
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-gray-600">
             <MapPin className="w-4 h-4" />
             <span>{location}</span>
           </div>
 
           {/* Time Info */}
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-[11px] sm:text-sm">
             <div className="flex items-center space-x-2 text-gray-600">
               <Clock className="w-4 h-4" />
               <span>Posted {formatDate(createdAt)}</span>
@@ -104,15 +104,15 @@ export default function PostCard({ post }) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-2 pt-2">
+          <div className="flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pt-2 scrollbar-hide sm:gap-2">
             <Button 
-              className="flex-1" 
+              className="flex-1 min-w-[96px] h-8 text-[11px] sm:h-9 sm:text-sm" 
               onClick={() => window.open(`tel:${contactNumber}`)}
             >
-              <Phone className="w-4 h-4 mr-2" />
+              <Phone className="w-4 h-4 mr-1 sm:mr-2" />
               Call
             </Button>
-            <Button variant="outline" className="flex-1">
+            <Button variant="outline" className="flex-1 min-w-[96px] h-8 text-[11px] sm:h-9 sm:text-sm">
               View Details
             </Button>
           </div>
@@ -121,4 +121,5 @@ export default function PostCard({ post }) {
     </Card>
   );
 }
+
 

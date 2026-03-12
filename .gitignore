@@ -25,7 +25,11 @@ yarn-error.log*
 /server/docs/artifacts/
 /server/tests/load/results/
 /server/backups/
-/docs/CONTINUOUS_IMPROVEMENT_REPORT.json
+/server/docs/project/CONTINUOUS_IMPROVEMENT_REPORT.json
+/server/docs/project/RELEASE_CLEANUP_CHECKLIST.json
+/server/docs/project/SAFE_E2E_IMPLEMENTATION_REPORT.json
+/server/docs/project/SAFE_E2E_IMPLEMENTATION_REPORT_REAL.json
+/server/docs/project/WORKTREE_RISK_REPORT.json
 /client/tmpclaude-*
 /client/stderr.txt
 /client/lint_log.txt

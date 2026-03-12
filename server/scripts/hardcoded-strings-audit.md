@@ -1,12 +1,14 @@
 # Hardcoded Strings Audit
 
-Last updated: 2026-02-27
+Last updated: 2026-03-12
 
 ## Summary
 This file records the hardcoded-string audit status for localization work.
 
 ## Status
-- Large number of hardcoded strings remain in client pages/components.
+- Latest scan (2026-03-12) found `222` potential hardcoded strings across `53` files (227 files scanned).
+- Generated report: `server/scripts/hardcoded-strings-audit.generated.md`.
+- CI guard `npm run check:hardcoded-strings` blocks newly introduced hardcoded UI strings in added lines.
 - Findings are tracked as localization backlog and are not blocking backend/runtime optimization completion.
 
 ## Recommended Next Steps

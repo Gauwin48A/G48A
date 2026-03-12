@@ -93,12 +93,12 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
 
           {/* Action Buttons */}
           {showActions && (
-            <div className="flex space-x-2 pt-2">
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap pt-2 scrollbar-hide">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onContact && onContact(post)}
-                className="flex-1"
+                className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
               >
                 <Phone className="w-4 h-4 mr-1" />
                 Contact
@@ -106,7 +106,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
               <Button
                 size="sm"
                 onClick={() => onBuy && onBuy(post.id)}
-                className="flex-1"
+                className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
                 disabled={post.status !== 'Active'}
               >
                 Buy Now

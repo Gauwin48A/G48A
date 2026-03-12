@@ -6,7 +6,12 @@ const {
 } = require("../services/tokenVerificationCache");
 const {
   getAccessTokenFromRequest: getAccessTokenFromRequest,
+  getBearerTokenFromHeader: getBearerTokenFromHeader,
 } = require("../utils/requestAuth");
+const {
+  isAccessTokenInvalidByPasswordChange,
+  isAccessTokenRevoked,
+} = require("../services/accessTokenPolicyService");
 const authDebugEnabled = process.env.AUTH_DEBUG === "true";
 const LOAD_TEST_SCENARIOS = new Set(["normal", "abuse", "authenticated"]);
 const RATE_LIMIT_CONTEXT_SYMBOL = Symbol("rate-limit-context");
@@ -34,6 +39,109 @@ const RATE_LIMIT_ALLOW_SIMULATED_IDS =
     ? process.env.NODE_ENV !== "production"
     : process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === "true";
 const READY_PATHS = new Set(["/health", "/api/health", "/api/ready"]);
+function verifyCandidateToken(token) {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return verifyToken(token, JWT_CONFIG.SECRET);
+  } catch {
+    return null;
+  }
+}
+
+function resolveVerifiedAuth(req) {
+  const cookieToken = req?.cookies?.accessToken || null;
+  const headerToken = getBearerTokenFromHeader(req?.headers?.authorization);
+
+  const preferredToken = getAccessTokenFromRequest(req, { preferCookie: true });
+  const preferredDecoded = verifyCandidateToken(preferredToken);
+  if (preferredDecoded) {
+    return {
+      token: preferredToken,
+      payload: preferredDecoded,
+    };
+  }
+
+  const alternateToken =
+    preferredToken === cookieToken ? headerToken : cookieToken;
+  if (!alternateToken || alternateToken === preferredToken) {
+    return null;
+  }
+
+  const alternateDecoded = verifyCandidateToken(alternateToken);
+  if (!alternateDecoded) {
+    return null;
+  }
+
+  return {
+    token: alternateToken,
+    payload: alternateDecoded,
+  };
+}
+
+async function resolveAuthState(req) {
+  const hasCookieToken = Boolean(req?.cookies?.accessToken);
+  const hasHeaderToken = Boolean(
+    getBearerTokenFromHeader(req?.headers?.authorization),
+  );
+
+  if (!hasCookieToken && !hasHeaderToken) {
+    return {
+      ok: false,
+      state: "anonymous",
+      token: null,
+      payload: null,
+    };
+  }
+
+  const verifiedAuth = resolveVerifiedAuth(req);
+  if (!verifiedAuth) {
+    return {
+      ok: false,
+      state: "invalid_token",
+      token: null,
+      payload: null,
+    };
+  }
+
+  try {
+    const revoked = await isAccessTokenRevoked(verifiedAuth.token);
+    if (revoked) {
+      return {
+        ok: false,
+        state: "revoked",
+        token: verifiedAuth.token,
+        payload: null,
+      };
+    }
+
+    const invalidByPasswordChange = await isAccessTokenInvalidByPasswordChange(
+      verifiedAuth.payload,
+    );
+    if (invalidByPasswordChange) {
+      return {
+        ok: false,
+        state: "password_changed",
+        token: verifiedAuth.token,
+        payload: null,
+      };
+    }
+  } catch (policyError) {
+    logger.warn("[AUTH] Access-token policy check failed, continuing request", {
+      message: policyError?.message,
+      path: req.path,
+    });
+  }
+
+  return {
+    ok: true,
+    state: "authenticated",
+    token: verifiedAuth.token,
+    payload: verifiedAuth.payload,
+  };
+}
 function getLoadScenario(req) {
   return String(req.headers["x-load-test-scenario"] || "").toLowerCase();
 }
@@ -105,27 +213,50 @@ exports.apiLimiter = rateLimit({
     retryAfter: "15 minutes",
   },
 });
-exports.authenticateToken = (req, res, next) => {
-  const token = getAccessTokenFromRequest(req);
-  if (!token) {
+exports.authenticateToken = async (req, res, next) => {
+  const authState = await resolveAuthState(req);
+  if (authState.state === "anonymous") {
     if (authDebugEnabled) {
       logger.info("[AUTH] No token for protected route:", req.path);
     }
     return res.status(401).json({ error: "Access denied. No token." });
   }
-  try {
-    const user = verifyToken(token, JWT_CONFIG.SECRET);
-    req.user = user;
-    return next();
-  } catch (err) {
-    logger.error(
-      "[AUTH] Token verify failed:",
-      err.message,
-      "| Path:",
-      req.path,
-    );
+
+  if (authState.state === "invalid_token") {
+    if (authDebugEnabled) {
+      logger.warn("[AUTH] Token verify failed | Path:", req.path);
+    }
     return res.status(401).json({ error: "Invalid or expired token." });
   }
+
+  if (authState.state === "revoked") {
+    return res
+      .status(401)
+      .json({ error: "Session revoked. Please login again." });
+  }
+
+  if (authState.state === "password_changed") {
+    return res
+      .status(401)
+      .json({ error: "Session expired due to password change. Please login again." });
+  }
+
+  req.user = authState.payload;
+  req.authToken = authState.token;
+  req.authState = authState.state;
+  return next();
+};
+exports.optionalAuthenticateToken = async (req, _res, next) => {
+  const authState = await resolveAuthState(req);
+  req.authState = authState.state;
+  if (authState.ok) {
+    req.user = authState.payload;
+    req.authToken = authState.token;
+  } else {
+    req.user = null;
+    req.authToken = null;
+  }
+  return next();
 };
 exports.sanitizeInput = (req, res, next) => {
   if (req.body) {

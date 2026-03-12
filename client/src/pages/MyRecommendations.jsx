@@ -14,6 +14,7 @@ import {
   Zap as te,
   LogIn as re,
   Filter as se,
+  Eye as viewIcon,
   Share2 as shareIcon,
   Bookmark as saveIcon,
   BookmarkCheck as savedIcon,
@@ -29,8 +30,23 @@ import { useTranslatedPosts as ne } from "../hooks/useTranslatedContent";
 import { useAuth as de } from "@/context/AuthContext";
 import { getAccessToken as me, getUserId as ue } from "@/utils/authStorage";
 import { getApiOriginBase as ce } from "@/lib/networkConfig";
+import {
+  buildSavedPostsMap,
+  extractSavedPostIds,
+  getSavedPostsMap,
+  replaceSavedPostIds,
+  setSavedPostStatus,
+  subscribeSavedPosts,
+} from "@/utils/savedPosts";
 const be = () => {
   const { t: m } = X(),
+    tr = (key, fallback) => {
+      const value = m(key);
+      if (typeof value !== "string" || !value.trim() || value === key) {
+        return fallback;
+      }
+      return value;
+    },
     u = Q(),
     { user: p, loading: M } = de(),
     N = me(),
@@ -48,7 +64,7 @@ const be = () => {
     [_, A] = i(!1),
     [G, D] = i(0),
     [menuPostId, setMenuPostId] = i(null),
-    [savedPosts, setSavedPosts] = i({}),
+    [savedPosts, setSavedPosts] = i(() => getSavedPostsMap()),
     [shareDialogOpen, setShareDialogOpen] = i(!1),
     [shareDialogUrl, setShareDialogUrl] = i(""),
     apiBase = I(() => ce(), []),
@@ -57,21 +73,21 @@ const be = () => {
     O = I(() => {
       const t = [];
       if (
-        (o && t.push(`Category: ${o}`),
-        s.location && t.push(`Location: ${s.location}`),
+        (o && t.push(`${tr("category", "Category")}: ${o}`),
+        s.location && t.push(`${tr("location", "Location")}: ${s.location}`),
         s.minPrice || s.maxPrice)
       ) {
         const r = s.minPrice || "0",
-          d = s.maxPrice || "Any";
-        t.push(`Budget: INR ${r} - ${d}`);
+          d = s.maxPrice || tr("any", "Any");
+        t.push(`${tr("budget", "Budget")}: INR ${r} - ${d}`);
       }
       return (
         t.length === 0 &&
-          (t.push("Recent browsing activity"),
-          t.push("Popular nearby listings")),
+          (t.push(tr("recent_browsing_activity", "Recent browsing activity")),
+          t.push(tr("popular_nearby_listings", "Popular nearby listings"))),
         t
       );
-    }, [s.location, s.maxPrice, s.minPrice, o]),
+    }, [m, s.location, s.maxPrice, s.minPrice, o]),
     ge = {
       Electronics: "\u{1F4F1}",
       Mobiles: "\u{1F4F1}",
@@ -95,10 +111,31 @@ const be = () => {
             minPrice: r.minPrice || "",
             maxPrice: r.maxPrice || "",
             date: r.date || "",
-          });
+        });
       } catch {}
     })();
   }, [b, n]),
+    w(() => subscribeSavedPosts(setSavedPosts), []),
+    w(() => {
+      if (!b) return;
+      let t = !1;
+      (async () => {
+        try {
+          const r = n
+            ? await $.get("/wishlist", { params: { userId: n } })
+            : await $.get("/wishlist");
+          if (t) return;
+          const d = extractSavedPostIds(r);
+          replaceSavedPostIds(d);
+          setSavedPosts(buildSavedPostsMap(d));
+        } catch {
+          // Keep local saved state fallback.
+        }
+      })();
+      return () => {
+        t = !0;
+      };
+    }, [b, n]),
     w(() => {
       (h(1), L(!0));
     }, [s, o]),
@@ -121,12 +158,12 @@ const be = () => {
             c = Array.isArray(d?.posts) ? d.posts : [];
           (x(g === 1 ? c : (a) => [...a, ...c]), L(c.length === 12), S(null));
         } catch {
-          (S("Failed to load recommendations"), g === 1 && x([]));
+          (S(tr("failed_load_recommendations", "Failed to load recommendations")), g === 1 && x([]));
         } finally {
           (C(!1), A(!1));
         }
       })();
-    }, [b, s, o, g, G, n]));
+    }, [b, s, o, g, G, n, m]));
   const K = (t) =>
       t ? (t.startsWith("http") ? t : `${ce()}${t}`) : "/placeholder.svg",
     V = J(
@@ -140,26 +177,35 @@ const be = () => {
         if (
           (o &&
             d.includes(String(o).toLowerCase()) &&
-            r.push(`Matches your selected category (${o}).`),
+            r.push(
+              (m("category_match_reason") || "Matches your selected category ({{value}}).")
+                .replace("{{value}}", o),
+            ),
           s.location &&
             c.includes(String(s.location).toLowerCase()) &&
-            r.push(`Located near your preferred area (${s.location}).`),
+            r.push(
+              (m("location_match_reason") || "Located near your preferred area ({{value}}).")
+                .replace("{{value}}", s.location),
+            ),
           (v > 0 || y > 0) && a > 0)
         ) {
           const Z = v === 0 || a >= v,
             q = y === 0 || a <= y;
-          Z && q && r.push("Within your preferred price range.");
+          Z && q && r.push(m("budget_match_reason") || "Within your preferred price range.");
         }
         return (
           (Number(t.views_count || 0) >= 10 ||
             Number(t.likes_count || 0) >= 5) &&
-            r.push("Getting strong engagement from other users."),
+            r.push(m("engagement_match_reason") || "Getting strong engagement from other users."),
           r.length === 0 &&
-            r.push("Based on your recent browsing and category interests."),
+            r.push(
+              m("browsing_interest_reason") ||
+                "Based on your recent browsing and category interests.",
+            ),
           r.slice(0, 3)
         );
       },
-      [s.location, s.maxPrice, s.minPrice, o],
+      [m, s.location, s.maxPrice, s.minPrice, o],
     ),
     handleSharePost = J(
       async (t) => {
@@ -190,17 +236,12 @@ const be = () => {
           return;
         }
         const d = String(r),
-          c = !!savedPosts[d];
-        setSavedPosts((a) => ({ ...a, [d]: !c }));
+          c = !!savedPosts[d],
+          a = !c;
+        (setSavedPosts((v) => ({ ...v, [d]: a })), setSavedPostStatus(d, a));
         setMenuPostId(null);
         try {
-          if (c) {
-            await fetch(`${apiBase}/api/wishlist/${d}`, {
-              method: "DELETE",
-              credentials: "include",
-              headers: N ? { Authorization: `Bearer ${N}` } : {},
-            });
-          } else {
+          if (a) {
             await fetch(`${apiBase}/api/wishlist`, {
               method: "POST",
               credentials: "include",
@@ -210,9 +251,15 @@ const be = () => {
               },
               body: JSON.stringify({ postId: d }),
             });
+          } else {
+            await fetch(`${apiBase}/api/wishlist/${d}`, {
+              method: "DELETE",
+              credentials: "include",
+              headers: N ? { Authorization: `Bearer ${N}` } : {},
+            });
           }
         } catch {
-          setSavedPosts((a) => ({ ...a, [d]: c }));
+          (setSavedPosts((v) => ({ ...v, [d]: c })), setSavedPostStatus(d, c));
         }
       },
       [N, b, savedPosts, u, apiBase],
@@ -284,15 +331,15 @@ const be = () => {
             e.createElement(
               "p",
               { className: "text-gray-300 text-center mb-8" },
-              "Sign in to view personalized recommendations curated just for you",
+              m("signin_recommendations_desc")||"Sign in to view personalized recommendations curated just for you",
             ),
             e.createElement(
               "div",
               { className: "space-y-3 mb-8" },
               [
-                { icon: R, text: "Personalized product picks" },
-                { icon: ee, text: "Based on your preferences" },
-                { icon: te, text: "Real-time updates" },
+                { icon: R, text: m("personalized_product_picks")||"Personalized product picks" },
+                { icon: ee, text: m("based_on_preferences")||"Based on your preferences" },
+                { icon: te, text: m("real_time_updates")||"Real-time updates" },
               ].map((t, r) =>
                 e.createElement(
                   "div",
@@ -328,7 +375,7 @@ const be = () => {
             e.createElement(
               "p",
               { className: "text-gray-400 text-center mt-6 text-sm" },
-              "Don't have an account?",
+              m("dont_have_account")||"Don't have an account?",
               " ",
               e.createElement(
                 "span",
@@ -375,12 +422,12 @@ const be = () => {
                     className:
                       "text-base font-bold text-blue-900 dark:text-blue-100",
                   },
-                  "Why you are seeing these recommendations",
+                  tr("why_seeing_recommendations", "Why you are seeing these recommendations"),
                 ),
                 e.createElement(
                   "p",
                   { className: "text-xs text-blue-700 dark:text-blue-200" },
-                  "Signals are updated from your filters and browsing activity.",
+                  m("signals_updated_from_activity")||"Signals are updated from your filters and browsing activity.",
                 ),
               ),
               e.createElement(
@@ -393,7 +440,7 @@ const be = () => {
                   onClick: () => F((t) => !t),
                 },
                 e.createElement(se, { className: "w-4 h-4 mr-2" }),
-                j ? "Hide signals" : "Show signals",
+                j ? tr("hide_signals", "Hide signals") : tr("show_signals", "Show signals"),
               ),
             ),
             j &&
@@ -428,7 +475,7 @@ const be = () => {
                       onClick: () => f(""),
                       disabled: !o,
                     },
-                    "Reset category filter",
+                    tr("reset_category_filter", "Reset category filter"),
                   ),
                   e.createElement(
                     l,
@@ -439,7 +486,7 @@ const be = () => {
                       className: "border-blue-300 text-blue-800",
                       onClick: () => u("/search?context=recommendations"),
                     },
-                    "Tune search filters",
+                    tr("tune_search_filters", "Tune search filters"),
                   ),
                   e.createElement(
                     l,
@@ -448,7 +495,7 @@ const be = () => {
                       size: "sm",
                       onClick: () => u("/all-posts"),
                     },
-                    "Browse all listings",
+                    tr("browse_all_listings", "Browse all listings"),
                   ),
                 ),
               ),
@@ -472,7 +519,7 @@ const be = () => {
                   className:
                     "text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2",
                 },
-                "Great Deals",
+                tr("great_deals", "Great Deals"),
               ),
               e.createElement(
                 "p",
@@ -480,7 +527,7 @@ const be = () => {
                   className:
                     "text-blue-700 dark:text-blue-200 mb-6 text-lg font-medium",
                 },
-                "Up to 50% off on selected items",
+                tr("up_to_off", "Up to 50% off on selected items"),
               ),
               e.createElement(
                 l,
@@ -488,7 +535,7 @@ const be = () => {
                   className:
                     "bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all",
                 },
-                "Shop Now",
+                m("shop_now")||"Shop Now",
               ),
             ),
             e.createElement("div", {
@@ -505,12 +552,12 @@ const be = () => {
                 className:
                   "text-lg font-bold text-gray-900 dark:text-white mb-2",
               },
-              "Sponsored Deals",
+              m("sponsored_deals")||"Sponsored Deals",
             ),
             e.createElement(
               "p",
               { className: "text-blue-500 dark:text-blue-400 text-sm" },
-              "No sponsored deals",
+              m("no_sponsored_deals")||"No sponsored deals",
             ),
           ),
           e.createElement(
@@ -519,7 +566,7 @@ const be = () => {
               className:
                 "text-2xl font-bold text-blue-700 dark:text-blue-300 mb-4",
             },
-            "All Posts",
+            m("all_posts")||"All Posts",
           ),
           B &&
             e.createElement(
@@ -540,7 +587,7 @@ const be = () => {
                     (h(1), D((t) => t + 1));
                   },
                 },
-                "Retry",
+                tr("retry", "Retry"),
               ),
             ),
           P
@@ -595,7 +642,7 @@ const be = () => {
                   e.createElement(
                     "p",
                     { className: "text-gray-500 dark:text-gray-400" },
-                    "Interact with more posts to get personalized picks!",
+                    m("interact_for_personalized_picks")||"Interact with more posts to get personalized picks!",
                   ),
                   e.createElement(
                     "div",
@@ -603,7 +650,7 @@ const be = () => {
                     e.createElement(
                       l,
                       { type: "button", onClick: () => u("/all-posts") },
-                      "Browse Listings",
+                      m("browse_listings")||"Browse Listings",
                     ),
                     e.createElement(
                       l,
@@ -612,7 +659,7 @@ const be = () => {
                         variant: "outline",
                         onClick: () => u("/categories"),
                       },
-                      "Explore Categories",
+                      m("explore_categories") || "Explore Categories",
                     ),
                     e.createElement(
                       l,
@@ -622,7 +669,7 @@ const be = () => {
                         onClick: () => f(""),
                         disabled: !o,
                       },
-                      "Reset Filters",
+                      m("reset_filters")||"Reset Filters",
                     ),
                   ),
                 )
@@ -686,7 +733,7 @@ const be = () => {
                               className:
                                 "mt-1 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:text-gray-200",
                             },
-                            "Post ID: ",
+                            `${m("post_id")||"Post ID"}: `,
                             r,
                           ),
                         ),
@@ -702,7 +749,7 @@ const be = () => {
                               className: "text-xs",
                               onClick: () => E((a) => (a === r ? null : r)),
                             },
-                            "Why this?",
+                            m("why_this")||"Why this?",
                           ),
                           e.createElement(
                             "button",
@@ -711,7 +758,7 @@ const be = () => {
                               onClick: () => openPostMenu(r),
                               className:
                                 "p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition",
-                              title: "More options",
+                              title: m("more_options")||"More options",
                             },
                             e.createElement(moreIcon, {
                               className:
@@ -786,7 +833,7 @@ const be = () => {
                               className:
                                 "text-gray-300 dark:text-gray-600 text-4xl font-bold absolute",
                             },
-                            "Image",
+                            m("image")||"Image",
                           ),
                       ),
                       e.createElement(
@@ -832,7 +879,7 @@ const be = () => {
                                 className:
                                   "text-xs font-semibold text-blue-900 dark:text-blue-200 mb-2",
                               },
-                              "Recommendation signals",
+                              m("recommendation_signals")||"Recommendation signals",
                             ),
                             e.createElement(
                               "ul",
@@ -854,7 +901,7 @@ const be = () => {
                           "div",
                           {
                             className:
-                              "mt-4 flex items-center justify-center flex-wrap gap-2",
+                              "mt-4 flex flex-nowrap items-center justify-start gap-1 overflow-x-auto whitespace-nowrap pb-1 scrollbar-hide sm:gap-2",
                           },
                           e.createElement(
                             l,
@@ -862,13 +909,18 @@ const be = () => {
                               type: "button",
                               size: "sm",
                               variant: "outline",
-                              className: "rounded-full",
+                              className:
+                                "shrink-0 h-8 rounded-full px-3 text-[11px] sm:text-xs",
                               onClick: () => handleSharePost(t),
                             },
                             e.createElement(shareIcon, {
                               className: "w-4 h-4 mr-1",
                             }),
-                            m("share") || "Share",
+                            e.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              m("share") || "Share",
+                            ),
                           ),
                           e.createElement(
                             l,
@@ -876,7 +928,8 @@ const be = () => {
                               type: "button",
                               size: "sm",
                               variant: "outline",
-                              className: "rounded-full",
+                              className:
+                                "shrink-0 h-8 rounded-full px-3 text-[11px] sm:text-xs",
                               onClick: () => toggleSavePost(t),
                             },
                             savedPosts[String(r)]
@@ -886,19 +939,29 @@ const be = () => {
                               : e.createElement(saveIcon, {
                                   className: "w-4 h-4 mr-1",
                                 }),
-                            savedPosts[String(r)]
-                              ? m("saved") || "Saved"
-                              : m("save") || "Save",
+                            e.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              savedPosts[String(r)]
+                                ? m("saved") || "Saved"
+                                : m("save") || "Save",
+                            ),
                           ),
                           e.createElement(
                             l,
                             {
                               type: "button",
                               size: "sm",
-                              className: "rounded-full",
+                              className:
+                                "shrink-0 h-8 rounded-full px-2 text-[11px] sm:px-3 sm:text-xs",
                               onClick: () => u(`/post/${r}`),
                             },
-                            m("view") || "View",
+                            e.createElement(viewIcon, { className: "w-4 h-4 mr-1" }),
+                            e.createElement(
+                              "span",
+                              { className: "hidden sm:inline" },
+                              m("view") || "View",
+                            ),
                           ),
                         ),
                       ),

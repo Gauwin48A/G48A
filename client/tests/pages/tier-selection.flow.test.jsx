@@ -5,6 +5,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter } from "react-router-dom";
 import TierSelection from "@/pages/TierSelection";
 
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 const hoisted = vi.hoisted(() => ({
   navigate: vi.fn(),
   apiPost: vi.fn(),
@@ -50,7 +55,7 @@ vi.mock("@/lib/api", () => ({
 
 function renderTierSelection() {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={routerFuture}>
       <TierSelection />
     </MemoryRouter>,
   );
