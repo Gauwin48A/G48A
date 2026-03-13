@@ -12,10 +12,19 @@ import { useTranslation } from 'react-i18next';
  */
 export default function NotificationPermission({ userId, onDismiss }) {
   const { t } = useTranslation();
+  const tr = (key, fallback) => t(key, { defaultValue: fallback });
     const [status, setStatus] = useState('idle'); // idle, requesting, granted, denied, not-configured
     const [showPrompt, setShowPrompt] = useState(false);
 
     useEffect(() => {
+        if (typeof window === "undefined") return;
+        const dismissed =
+            localStorage.getItem("notification_prompt_dismissed") === "true";
+        if (dismissed) {
+            setShowPrompt(false);
+            return;
+        }
+
         // Check if Firebase is configured
         if (!isFirebaseConfigured()) {
             setStatus('not-configured');
@@ -88,10 +97,13 @@ export default function NotificationPermission({ userId, onDismiss }) {
 
                     <div className="flex-1">
                         <h3 className="font-bold text-white mb-1">
-                            Never Miss a Deal! 🔔
+                            {tr("notification_prompt_title", "Never Miss a Deal!")}
                         </h3>
                         <p className="text-white/80 text-sm mb-3">
-                            Get instant alerts for new messages, price drops, and exclusive offers.
+                            {tr(
+                                "notification_prompt_desc",
+                                "Get instant alerts for new messages, price drops, and exclusive offers.",
+                            )}
                         </p>
 
                         <div className="flex gap-2">
@@ -103,12 +115,12 @@ export default function NotificationPermission({ userId, onDismiss }) {
                                 {status === 'requesting' ? (
                                     <>
                                         <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                                        Enabling...
+                                        {tr("notification_enabling", "Enabling...")}
                                     </>
                                 ) : (
                                     <>
                                         <Bell className="w-4 h-4" />
-                                        Enable
+                                        {tr("notification_enable", "Enable")}
                                     </>
                                 )}
                             </button>
@@ -117,7 +129,7 @@ export default function NotificationPermission({ userId, onDismiss }) {
                                 onClick={handleDismiss}
                                 className="px-4 py-2 text-white/80 hover:text-white font-medium transition-colors"
                             >
-                                Later
+                                {tr("notification_later", "Later")}
                             </button>
                         </div>
                     </div>
@@ -125,10 +137,14 @@ export default function NotificationPermission({ userId, onDismiss }) {
 
                 {status === 'denied' && (
                     <p className="mt-3 text-white/70 text-xs text-center">
-                        Notifications blocked. Enable them in your browser settings.
+                        {tr(
+                            "notification_blocked",
+                            "Notifications blocked. Enable them in your browser settings.",
+                        )}
                     </p>
                 )}
             </div>
         </div>
     );
 }
+

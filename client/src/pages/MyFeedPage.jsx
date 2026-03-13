@@ -680,7 +680,7 @@ const MyFeedPage = () => {
                   </div>
 
                   <div className="px-3 py-2.5 border-t bg-gray-50 dark:bg-gray-800/50">
-                    <div className="flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2">
+                    <div className="post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2">
                       <span className="inline-flex h-7 items-center gap-1 rounded-full bg-red-50 px-2 text-red-500">
                         <FaHeart /> {likeCounts[postId] || 0}
                       </span>

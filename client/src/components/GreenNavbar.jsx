@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiBell,
+  FiArrowLeft,
   FiClock,
   FiHelpCircle,
   FiCheck,
@@ -35,6 +36,7 @@ import LocationSelector from "./LocationSelector";
 import { useToast } from "@/hooks/use-toast";
 
 const HIDDEN_PATHS = new Set(["/login", "/signup", "/forgot-password"]);
+const BACK_BUTTON_HIDDEN_PATHS = new Set(["/", "/all-posts", "/home"]);
 const LOCATION_OPTIONS = [
   "Any",
   "Hyderabad",
@@ -68,6 +70,8 @@ const BOTTOM_ITEMS = [
 const DRAWER_EXTRA_ITEMS = [
   { key: "chat", path: "/chat", icon: FiMenu, protected: true },
   { key: "dashboard", path: "/dashboard", icon: FiMenu, protected: true },
+  { key: "my_reviews", path: "/reviews", icon: FiStar, protected: true },
+  { key: "my_offers", path: "/offers", icon: FiShoppingCart, protected: true },
   { key: "nearby", path: "/nearby", icon: FiMapPin },
   { key: "categories", path: "/categories", icon: FiFilter },
   { key: "verification", path: "/verification", icon: FiUser, protected: true },
@@ -414,6 +418,7 @@ export default function GreenNavbar() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
+  const [isCompactMenuOpen, setIsCompactMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window === "undefined") return false;
     const storedTheme = String(localStorage.getItem("mhub-theme") || "")
@@ -448,6 +453,7 @@ export default function GreenNavbar() {
       : "desktop";
   });
   const layoutMenuRef = useRef(null);
+  const compactMenuRef = useRef(null);
   const [isSmallViewport, setIsSmallViewport] = useState(false);
 
   const [searchInput, setSearchInput] = useState(filters.search || "");
@@ -468,6 +474,7 @@ export default function GreenNavbar() {
   const hideNavbar =
     HIDDEN_PATHS.has(route.pathname) ||
     route.pathname.startsWith("/reset-password");
+  const showBackButton = !BACK_BUTTON_HIDDEN_PATHS.has(route.pathname);
 
   useEffect(() => {
     let cancelled = false;
@@ -504,13 +511,26 @@ export default function GreenNavbar() {
 
   useEffect(() => {
     setIsLayoutMenuOpen(false);
+    setIsCompactMenuOpen(false);
   }, [route.pathname, route.search]);
 
   useEffect(() => {
     const onClickOutside = (event) => {
       const clickedInLayout = layoutMenuRef.current?.contains(event.target);
-      if (!clickedInLayout) {
+      const clickedInMenu =
+        typeof event.target?.closest === "function"
+          ? event.target.closest('[data-layout-menu="true"]')
+          : null;
+      const clickedInCompact = compactMenuRef.current?.contains(event.target);
+      const clickedInCompactMenu =
+        typeof event.target?.closest === "function"
+          ? event.target.closest('[data-compact-menu="true"]')
+          : null;
+      if (!clickedInLayout && !clickedInMenu) {
         setIsLayoutMenuOpen(false);
+      }
+      if (!clickedInCompact && !clickedInCompactMenu) {
+        setIsCompactMenuOpen(false);
       }
     };
 
@@ -579,7 +599,6 @@ export default function GreenNavbar() {
   const forceCompactUi = isPreviewMobile || isPreviewTablet;
   const showAllIconsInPreview = forceCompactUi;
   const showCompactHeader = forceCompactUi || isSmallViewport;
-  const mobileActionGridCols = isAuthenticated ? "grid-cols-5" : "grid-cols-4";
 
   const handleToggleDarkMode = () => {
     setIsDarkMode((value) => !value);
@@ -646,6 +665,14 @@ export default function GreenNavbar() {
     }
   };
 
+  const handleBackNavigation = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/all-posts");
+  };
+
   const handleDrawerItemClick = (item) => {
     if (!item?.path) return;
 
@@ -671,6 +698,28 @@ export default function GreenNavbar() {
       return;
     }
 
+    if (item.key === "my_reviews") {
+      const resolvedUserId =
+        user?.id ||
+        user?.user_id ||
+        localStorage.getItem("userId") ||
+        localStorage.getItem("user_id");
+      if (!resolvedUserId) {
+        toast({
+          title: t("unable_open_reviews") || "Unable to open reviews",
+          description:
+            t("user_id_missing_refresh") ||
+            "User ID is missing. Refresh your profile and try again.",
+          variant: "destructive",
+        });
+        setIsDrawerOpen(false);
+        return;
+      }
+      navigate(`/reviews/${resolvedUserId}`);
+      setIsDrawerOpen(false);
+      return;
+    }
+
     navigate(item.path);
     setIsDrawerOpen(false);
   };
@@ -681,6 +730,7 @@ export default function GreenNavbar() {
 
     setLayoutMode(next.key);
     setIsLayoutMenuOpen(false);
+    setIsCompactMenuOpen(false);
     setIsDrawerOpen(false);
 
     if (typeof window !== "undefined") {
@@ -697,6 +747,17 @@ export default function GreenNavbar() {
     });
   };
 
+  const handleCycleLayout = () => {
+    const currentIndex = LAYOUT_PRESETS.findIndex(
+      (preset) => preset.key === layoutMode,
+    );
+    const nextPreset =
+      currentIndex === -1
+        ? LAYOUT_PRESETS[0]
+        : LAYOUT_PRESETS[(currentIndex + 1) % LAYOUT_PRESETS.length];
+    handleLayoutModeChange(nextPreset.key);
+  };
+
   if (hideNavbar) return null;
 
   return (
@@ -709,17 +770,28 @@ export default function GreenNavbar() {
         <div className="mx-auto w-full max-w-[92rem] px-2 py-1 sm:px-3 sm:py-2 md:px-4">
           {showCompactHeader ? (
             <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-nowrap items-center justify-between gap-1">
                 <div className="flex min-w-0 items-center gap-2">
+                  {showBackButton ? (
+                    <button
+                      type="button"
+                      onClick={handleBackNavigation}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-white shadow-sm hover:bg-white/25"
+                      aria-label={t("back") || "Back"}
+                      title={t("back") || "Back"}
+                    >
+                      <FiArrowLeft className="h-4 w-4" />
+                    </button>
+                  ) : null}
                   <Link
                     to="/all-posts"
                     className="flex items-center gap-2"
                     aria-label={t("home") || "Home"}
                   >
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-blue-600 shadow">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white text-blue-600 shadow">
                       <FiHome className="h-4 w-4" />
                     </span>
-                    <span className="text-sm font-semibold text-white sm:text-base">
+                    <span className="hidden text-sm font-semibold text-white sm:inline sm:text-base">
                       {t("home") || "Home"}
                     </span>
                   </Link>
@@ -727,7 +799,7 @@ export default function GreenNavbar() {
                   <button
                     type="button"
                     onClick={() => setIsLocationOpen(true)}
-                    className="inline-flex h-8 max-w-[140px] items-center gap-1 rounded-full bg-white/15 px-2 text-[10px] font-semibold text-white shadow-sm hover:bg-white/25 sm:max-w-[220px] sm:text-xs"
+                    className="inline-flex h-7 max-w-[120px] items-center gap-1 rounded-full bg-white/15 px-1.5 text-[10px] font-semibold text-white shadow-sm hover:bg-white/25 sm:max-w-[200px] sm:px-2 sm:text-xs"
                     title={locationLabel}
                   >
                     <FiMapPin className="h-4 w-4" />
@@ -736,69 +808,81 @@ export default function GreenNavbar() {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-1 py-0.5 backdrop-blur">
-                  <LanguageSelector compact className="shrink-0 max-w-[86px]" />
-                  <button
-                    type="button"
-                    onClick={handleToggleDarkMode}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20"
-                    aria-label={
-                      isDarkMode
-                        ? t("light_mode") || "Switch to light mode"
-                        : t("dark_mode") || "Switch to dark mode"
-                    }
-                    title={
-                      isDarkMode
-                        ? t("light_mode") || "Switch to light mode"
-                        : t("dark_mode") || "Switch to dark mode"
-                    }
-                  >
-                    {isDarkMode ? (
-                      <FiSun className="h-4 w-4" />
-                    ) : (
-                      <FiMoon className="h-4 w-4" />
-                    )}
-                  </button>
-
-                  <div ref={layoutMenuRef} className="relative shrink-0">
+                  <div ref={compactMenuRef} className="relative">
                     <button
                       type="button"
-                      onClick={() => setIsLayoutMenuOpen((value) => !value)}
-                      aria-expanded={isLayoutMenuOpen}
+                      onClick={() => setIsCompactMenuOpen((value) => !value)}
+                      aria-expanded={isCompactMenuOpen}
                       aria-haspopup="menu"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20"
-                      aria-label={`${t(currentLayoutPreset.labelKey) || currentLayoutPreset.key} ${
-                        t("layout") || "layout"
-                      }`}
-                      title={`${t(currentLayoutPreset.labelKey) || currentLayoutPreset.key} ${
-                        t("layout") || "layout"
-                      }`}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                      aria-label={t("quick_settings") || "Quick settings"}
+                      title={t("quick_settings") || "Quick settings"}
                     >
-                      <CurrentLayoutIcon className="h-4 w-4" />
+                      <FiMenu className="h-4 w-4" />
                     </button>
 
-                    {isLayoutMenuOpen ? (
-                      showCompactHeader ? (
-                        <div className="fixed inset-0 z-[80]">
-                          <button
-                            type="button"
-                            aria-label={t("close") || "Close"}
-                            onClick={() => setIsLayoutMenuOpen(false)}
-                            className="absolute inset-0 bg-black/40"
-                          />
-                          <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white px-4 pb-6 pt-4 shadow-2xl">
-                            <div className="flex items-center justify-between pb-3">
-                              <h3 className="text-base font-semibold text-slate-800">
-                                {t("layout") || "Layout"}
-                              </h3>
-                              <button
-                                type="button"
-                                onClick={() => setIsLayoutMenuOpen(false)}
-                                className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
-                              >
-                                <FiX className="h-4 w-4" />
-                              </button>
+                    {isCompactMenuOpen ? (
+                      <div className="fixed inset-0 z-[80]" data-compact-menu="true">
+                        <button
+                          type="button"
+                          aria-label={t("close") || "Close"}
+                          onClick={() => setIsCompactMenuOpen(false)}
+                          className="absolute inset-0 bg-black/40"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white px-4 pb-6 pt-4 shadow-2xl">
+                          <div className="flex items-center justify-between pb-3">
+                            <h3 className="text-base font-semibold text-slate-800">
+                              {t("quick_settings") || "Quick settings"}
+                            </h3>
+                            <button
+                              type="button"
+                              onClick={() => setIsCompactMenuOpen(false)}
+                              className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+                            >
+                              <FiX className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-3">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-800">
+                                  {t("language") || "Language"}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {t("choose_language") || "Choose your preferred language"}
+                                </p>
+                              </div>
+                              <LanguageSelector compact className="shrink-0 max-w-[84px]" />
                             </div>
+
+                            <button
+                              type="button"
+                              onClick={handleToggleDarkMode}
+                              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-3 text-left"
+                            >
+                              <div>
+                                <p className="text-sm font-semibold text-slate-800">
+                                  {isDarkMode
+                                    ? t("light_mode") || "Light mode"
+                                    : t("dark_mode") || "Dark mode"}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {t("theme") || "Theme"}
+                                </p>
+                              </div>
+                              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
+                                {isDarkMode ? (
+                                  <FiSun className="h-4 w-4 text-amber-500" />
+                                ) : (
+                                  <FiMoon className="h-4 w-4 text-slate-700" />
+                                )}
+                              </span>
+                            </button>
+
                             <div className="grid gap-2">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {t("layout") || "Layout"}
+                              </p>
                               {LAYOUT_PRESETS.map((preset) => {
                                 const Icon = preset.icon;
                                 const active = preset.key === layoutMode;
@@ -831,35 +915,7 @@ export default function GreenNavbar() {
                             </div>
                           </div>
                         </div>
-                      ) : (
-                        <div className="absolute right-0 top-full z-[70] mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                          {LAYOUT_PRESETS.map((preset) => {
-                            const Icon = preset.icon;
-                            const active = preset.key === layoutMode;
-                            return (
-                              <button
-                                key={preset.key}
-                                type="button"
-                                onClick={() => handleLayoutModeChange(preset.key)}
-                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                                  active
-                                    ? "bg-blue-50 font-semibold text-blue-700"
-                                    : "text-slate-700 hover:bg-slate-50"
-                                }`}
-                              >
-                                <Icon className="h-4 w-4" />
-                                <span className="flex flex-1 flex-col">
-                                  <span>{t(preset.labelKey) || preset.key}</span>
-                                  <span className="text-[11px] font-normal text-slate-500">
-                                    {preset.width} x {preset.height}
-                                  </span>
-                                </span>
-                                {active ? <FiCheck className="h-4 w-4" /> : null}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -867,7 +923,7 @@ export default function GreenNavbar() {
 
               <form
                 onSubmit={handleSearchSubmit}
-                className="flex w-full items-center gap-2"
+                className="flex w-full items-center gap-1"
               >
                 <div className="relative min-w-0 flex-1">
                   <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -879,7 +935,7 @@ export default function GreenNavbar() {
                       t("search_placeholder") ||
                       "Search products, brands and more"
                     }
-                    className="h-8 w-full rounded-full border border-white/50 bg-white px-8 pr-8 text-[11px] text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-blue-300"
+                    className="h-8 w-full rounded-full border border-white/50 bg-white px-8 pr-8 text-[10px] text-slate-800 outline-none ring-0 placeholder:text-slate-400 focus:border-blue-300 sm:h-9 sm:text-xs"
                   />
                   {searchInput ? (
                     <button
@@ -896,7 +952,7 @@ export default function GreenNavbar() {
                 <button
                   type="button"
                   onClick={() => setIsFilterOpen(true)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-[11px] font-semibold text-white shadow-sm hover:bg-blue-500/80 sm:h-9 sm:w-auto sm:px-3 sm:justify-center"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-white shadow-sm hover:bg-blue-500/80 sm:h-9 sm:w-auto sm:px-3 sm:justify-center"
                 >
                   <FiFilter className="h-4 w-4" />
                   <span className="hidden sm:inline">
@@ -905,87 +961,116 @@ export default function GreenNavbar() {
                 </button>
               </form>
 
-              <div className="relative">
-                <div
-                  className={`grid ${mobileActionGridCols} gap-2 rounded-2xl border border-white/10 bg-white/10 px-2 py-1.5 backdrop-blur`}
-                >
-                  {isAuthenticated ? (
+              <div className="relative w-full">
+                <div className="relative flex w-full items-center gap-2 overflow-x-auto rounded-full border border-white/15 bg-white/10 px-2 py-1 backdrop-blur scrollbar-hide">
+                  <div className="flex min-w-max items-center gap-2">
+                    {isAuthenticated ? (
+                      <Link
+                        to="/tier-selection"
+                        aria-label={t("add_post") || "Add post"}
+                        className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-blue-600 shadow sm:h-9 sm:w-9"
+                        title={t("add_post") || "Add Post"}
+                      >
+                        <FiPlus className="h-4 w-4" />
+                        <span className="sr-only">{t("add_post") || "Add post"}</span>
+                      </Link>
+                    ) : null}
+
                     <Link
-                      to="/tier-selection"
-                      aria-label={t("add_post") || "Add post"}
-                      className="relative mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-blue-600 shadow"
-                      title={t("add_post") || "Add Post"}
+                      to="/notifications"
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:h-9 sm:w-9"
+                      aria-label={t("notifications") || "Notifications"}
+                      title={t("notifications") || "Notifications"}
                     >
-                      <FiPlus className="h-4 w-4" />
-                      <span className="sr-only">{t("add_post") || "Add post"}</span>
+                      <FiBell className="h-4 w-4" />
+                      <span className="sr-only">{t("notifications") || "Notifications"}</span>
                     </Link>
-                  ) : null}
 
-                  <Link
-                    to="/notifications"
-                    className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
-                    aria-label={t("notifications") || "Notifications"}
-                    title={t("notifications") || "Notifications"}
-                  >
-                    <FiBell className="h-4 w-4" />
-                    <span className="sr-only">{t("notifications") || "Notifications"}</span>
-                  </Link>
+                    <Link
+                      to="/wishlist"
+                      className={`relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full sm:h-9 sm:w-9 ${
+                        route.pathname === "/wishlist"
+                          ? "bg-white text-blue-700"
+                          : hasSavedPosts
+                            ? "bg-emerald-300 text-blue-900"
+                            : "bg-white/10 text-white hover:bg-white/20"
+                      }`}
+                      aria-label={t("wishlist") || "Wishlist"}
+                      title={
+                        savedCount > 0
+                          ? `${savedCount} ${t("saved_posts") || "saved posts"}`
+                          : t("wishlist") || "Wishlist"
+                      }
+                    >
+                      <FiBookmark className="h-4 w-4" />
+                      {savedCount > 0 ? (
+                        <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
+                          {savedCount > 99 ? "99+" : savedCount}
+                        </span>
+                      ) : null}
+                      <span className="sr-only">{t("wishlist") || "Wishlist"}</span>
+                    </Link>
 
-                  <Link
-                    to="/wishlist"
-                    className={`relative mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full ${
-                      route.pathname === "/wishlist"
-                        ? "bg-white text-blue-700"
-                        : hasSavedPosts
-                          ? "bg-emerald-300 text-blue-900"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                    }`}
-                    aria-label={t("wishlist") || "Wishlist"}
-                    title={
-                      savedCount > 0
-                        ? `${savedCount} ${t("saved_posts") || "saved posts"}`
-                        : t("wishlist") || "Wishlist"
-                    }
-                  >
-                    <FiBookmark className="h-4 w-4" />
-                    {savedCount > 0 ? (
-                      <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
-                        {savedCount > 99 ? "99+" : savedCount}
+                    <Link
+                      to="/cart"
+                      className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:h-9 sm:w-9"
+                      aria-label={t("cart") || "Cart"}
+                      title={t("cart") || "Cart"}
+                    >
+                      <FiShoppingCart className="h-4 w-4" />
+                      {totalCount > 0 ? (
+                        <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
+                          {totalCount > 99 ? "99+" : totalCount}
+                        </span>
+                      ) : null}
+                      <span className="sr-only">{t("cart") || "Cart"}</span>
+                    </Link>
+
+                    <Link
+                      to="/recently-viewed"
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:h-9 sm:w-9"
+                      aria-label={t("recently_viewed") || "Recently viewed"}
+                      title={t("recently_viewed") || "Recently viewed"}
+                    >
+                      <FiClock className="h-4 w-4" />
+                      <span className="sr-only">{t("recently_viewed") || "Recently viewed"}</span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={handleCycleLayout}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:h-9 sm:w-9"
+                      aria-label={`${t("layout") || "Layout"}: ${
+                        t(currentLayoutPreset.labelKey) ||
+                        currentLayoutPreset.key
+                      }`}
+                      title={`${t(currentLayoutPreset.labelKey) || currentLayoutPreset.key} ${
+                        t("layout") || "layout"
+                      }`}
+                    >
+                      <CurrentLayoutIcon className="h-4 w-4" />
+                      <span className="sr-only">
+                        {t("layout") || "Layout"}
                       </span>
-                    ) : null}
-                    <span className="sr-only">{t("wishlist") || "Wishlist"}</span>
-                  </Link>
-
-                  <Link
-                    to="/cart"
-                    className="relative mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
-                    aria-label={t("cart") || "Cart"}
-                    title={t("cart") || "Cart"}
-                  >
-                    <FiShoppingCart className="h-4 w-4" />
-                    {totalCount > 0 ? (
-                      <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-emerald-300 px-1 text-center text-[10px] font-bold text-blue-900">
-                        {totalCount > 99 ? "99+" : totalCount}
-                      </span>
-                    ) : null}
-                    <span className="sr-only">{t("cart") || "Cart"}</span>
-                  </Link>
-
-                  <Link
-                    to="/recently-viewed"
-                    className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
-                    aria-label={t("recently_viewed") || "Recently viewed"}
-                    title={t("recently_viewed") || "Recently viewed"}
-                  >
-                    <FiClock className="h-4 w-4" />
-                    <span className="sr-only">{t("recently_viewed") || "Recently viewed"}</span>
-                  </Link>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex w-full flex-wrap items-center gap-1 sm:gap-2 md:gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2 md:flex-none">
+                {showBackButton ? (
+                  <button
+                    type="button"
+                    onClick={handleBackNavigation}
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-white/20 text-white shadow-sm hover:bg-white/30 sm:h-10 sm:w-10"
+                    aria-label={t("back") || "Back"}
+                    title={t("back") || "Back"}
+                  >
+                    <FiArrowLeft className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
+                  </button>
+                ) : null}
                 <Link
                   to="/all-posts"
                   className="flex items-center gap-2"
@@ -1186,7 +1271,10 @@ export default function GreenNavbar() {
                     </button>
 
                     {isLayoutMenuOpen ? (
-                      <div className="absolute right-0 top-full z-[70] mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                      <div
+                        className="absolute right-0 top-full z-[70] mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+                        data-layout-menu="true"
+                      >
                         {LAYOUT_PRESETS.map((preset) => {
                           const Icon = preset.icon;
                           const active = preset.key === layoutMode;
@@ -1525,6 +1613,41 @@ export default function GreenNavbar() {
               </p>
             </div>
 
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+                {t("layout") || "Layout"}
+              </p>
+              <div className="grid gap-2">
+                {LAYOUT_PRESETS.map((preset) => {
+                  const Icon = preset.icon;
+                  const active = preset.key === layoutMode;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() => handleLayoutModeChange(preset.key)}
+                      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                        active
+                          ? "border-blue-300 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="flex flex-1 flex-col">
+                        <span>{t(preset.labelKey) || preset.key}</span>
+                        <span className="text-[11px] font-normal text-slate-500">
+                          {preset.width} x {preset.height}
+                        </span>
+                      </span>
+                      {active ? <FiCheck className="h-4 w-4" /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
               {isAuthenticated ? (
                 <button
@@ -1621,3 +1744,4 @@ export default function GreenNavbar() {
     </>
   );
 }
+

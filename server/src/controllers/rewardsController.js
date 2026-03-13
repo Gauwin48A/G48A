@@ -493,7 +493,9 @@ exports.getRewardsByUser = async (req, res) => {
               SELECT
                 COUNT(*) FILTER (WHERE action = 'sale_completed')::int AS sales_count,
                 COUNT(*) FILTER (WHERE action = 'purchase_completed')::int AS purchases_count,
-                COUNT(*) FILTER (WHERE action = 'referral_bonus')::int AS referrals_count,
+                COUNT(*) FILTER (
+                  WHERE action IN ('referral_bonus', 'qualified_referral_bonus')
+                )::int AS referrals_count,
                 COUNT(*) FILTER (WHERE action = 'post_daily')::int AS posts_count,
                 COUNT(*) FILTER (WHERE action = 'visit_daily')::int AS visits_count,
                 COUNT(*) FILTER (
@@ -505,7 +507,7 @@ exports.getRewardsByUser = async (req, res) => {
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS purchases_today,
                 COUNT(*) FILTER (
-                  WHERE action = 'referral_bonus'
+                  WHERE action IN ('referral_bonus', 'qualified_referral_bonus')
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS referrals_today
                 ,

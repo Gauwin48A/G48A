@@ -431,9 +431,99 @@ const removeFromHistory = async (req, res) => {
   }
 };
 
+const getViewersForPost = async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const postId = parseOptionalString(req.params?.postId);
+  if (!postId) {
+    return res.status(400).json({ error: "Post ID is required" });
+  }
+
+  try {
+    const postCheck = await runQuery(
+      "SELECT user_id FROM posts WHERE post_id = $1",
+      [postId],
+    );
+    if (postCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    if (String(postCheck.rows[0].user_id) !== String(userId)) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const schema = await getRecentlyViewedSchema();
+    if (!schema.tableExists) {
+      return res.json({
+        viewers: [],
+        total: 0,
+        warning: "recently_viewed table is missing",
+      });
+    }
+
+    const limit = parsePositiveInt(req.query?.limit, 200, 1000);
+    const viewedAtExpr = hasColumn(schema, "viewed_at")
+      ? "rv.viewed_at"
+      : hasColumn(schema, "created_at")
+        ? "rv.created_at"
+        : "NULL::timestamp AS viewed_at";
+    const viewCountExpr = hasColumn(schema, "view_count")
+      ? "rv.view_count"
+      : "NULL::int AS view_count";
+    const orderExpr = hasColumn(schema, "viewed_at")
+      ? "rv.viewed_at"
+      : hasColumn(schema, "created_at")
+        ? "rv.created_at"
+        : "rv.user_id";
+
+    const result = await runQuery(
+      `
+        SELECT
+          rv.user_id AS viewer_id,
+          ${viewCountExpr},
+          ${viewedAtExpr},
+          COALESCE(
+            NULLIF(to_jsonb(pr)->>'full_name',''),
+            NULLIF(to_jsonb(u)->>'username',''),
+            NULLIF(u.email,''),
+            'User'
+          ) AS viewer_name,
+          u.email,
+          COALESCE(
+            NULLIF(to_jsonb(u)->>'phone_number',''),
+            NULLIF(to_jsonb(u)->>'phone',''),
+            NULLIF(to_jsonb(pr)->>'phone','')
+          ) AS phone
+        FROM recently_viewed rv
+        JOIN users u ON u.user_id::text = rv.user_id::text
+        LEFT JOIN profiles pr ON pr.user_id::text = u.user_id::text
+        WHERE rv.post_id::text = $1
+        ORDER BY ${orderExpr} DESC
+        LIMIT $2
+      `,
+      [String(postId), limit],
+    );
+
+    return res.json({
+      viewers: result.rows,
+      total: result.rows.length,
+      limit,
+    });
+  } catch (error) {
+    logger.error("[RecentlyViewed] Fetch viewers error:", error);
+    if (shouldRefreshSchema(error)) {
+      await getRecentlyViewedSchema(true);
+    }
+    return res.status(500).json({ error: "Failed to fetch viewers" });
+  }
+};
+
 module.exports = {
   addRecentlyViewed,
   getRecentlyViewed,
   clearHistory,
   removeFromHistory,
+  getViewersForPost,
 };

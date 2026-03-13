@@ -32,6 +32,7 @@ const NATIVE_ACCURACY_RETRY_THRESHOLD_METERS = 120;
 const NATIVE_SECOND_FIX_DELAY_MS = 1200;
 const STRICT_REQUIRED_ACCURACY_METERS = 100;
 const DEFAULT_REQUIRED_ACCURACY_METERS = STRICT_REQUIRED_ACCURACY_METERS;
+const DEFAULT_COARSE_REQUIRED_ACCURACY_METERS = 1500;
 const DEFAULT_CACHE_MAX_AGE_MS = 15 * 60 * 1e3;
 const RUNTIME_CACHE_MAX_AGE_MS = 45e3;
 const RUNTIME_CACHE_RELAXED_FACTOR = 1.35;
@@ -46,6 +47,17 @@ const REVERSE_GEOCODE_CACHE_TTL_MS = 30 * 60 * 1e3;
 const REVERSE_GEOCODE_TIMEOUT_MS = 3500;
 const REVERSE_GEOCODE_ROUNDING_DIGITS = 4;
 const COORD_PRECISION_DIGITS = 7;
+const POI_CACHE_TTL_MS = 30 * 60 * 1e3;
+const POI_LOOKUP_TIMEOUT_MS = 3500;
+const GOOGLE_PLACES_API_KEY = String(
+  import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+).trim();
+const GOOGLE_PLACES_RADIUS_METERS = 60;
+const LOCATION_POI_PROVIDER = String(
+  import.meta.env.VITE_LOCATION_POI_PROVIDER || "auto",
+)
+  .trim()
+  .toLowerCase();
 const LOCAL_DEV_BACKEND_ORIGINS = [
   "http://localhost:5001",
   "http://localhost:5000",
@@ -54,6 +66,8 @@ const DEBUG = import.meta.env.DEV;
 let runtimeBestLocation = null;
 const reverseGeocodeCache = new Map();
 const reverseGeocodeInFlight = new Map();
+const poiLookupCache = new Map();
+const poiLookupInFlight = new Map();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const debugLog = (...args) => {
   if (DEBUG) {
@@ -395,6 +409,12 @@ const normalizeLocationShape = (loc, defaults = {}) => {
       loc.address?.locality ||
       "",
     locality: loc.locality || loc.address?.locality || "",
+    placeName:
+      loc.placeName ||
+      loc.poiName ||
+      loc.address?.placeName ||
+      loc.address?.poiName ||
+      "",
     district: loc.district || loc.address?.district || "",
     pincode: loc.pincode || loc.address?.pincode || "",
     displayName: loc.displayName || loc.address?.displayName || "",
@@ -614,6 +634,20 @@ const firstNonEmptyText = (...values) => {
   }
   return "";
 };
+const normalizePlaceName = (value) => {
+  const text = toCleanText(value);
+  if (!text) return "";
+  return text.replace(/\s+/g, " ").trim();
+};
+const buildPoiCacheKey = (lat, lng) =>
+  `${Number(lat).toFixed(REVERSE_GEOCODE_ROUNDING_DIGITS)}:${Number(lng).toFixed(
+    REVERSE_GEOCODE_ROUNDING_DIGITS,
+  )}`;
+const pickInformativeName = (items = [], matcher) => {
+  if (!Array.isArray(items)) return "";
+  const match = items.find((item) => matcher(String(item?.type || "")));
+  return normalizePlaceName(match?.name);
+};
 const pushUniquePart = (parts, value) => {
   const normalized = toCleanText(value);
   if (!normalized) return;
@@ -626,6 +660,18 @@ const pushUniquePart = (parts, value) => {
 };
 const parseNominatimAddress = (data = {}) => {
   const address = data?.address || {};
+  const poiName = firstNonEmptyText(
+    data?.namedetails?.name,
+    data?.namedetails?.short_name,
+    data?.namedetails?.official_name,
+    data?.extratags?.name,
+    data?.name,
+    address.amenity,
+    address.building,
+    address.shop,
+    address.tourism,
+    address.leisure,
+  );
 
   const houseNumber = toCleanText(address.house_number);
   const road = firstNonEmptyText(
@@ -693,11 +739,25 @@ const parseNominatimAddress = (data = {}) => {
     area: area || "",
     street: street || "",
     locality: locality || "",
+    poiName: poiName,
     displayName: compactDisplay || fallbackDisplay || "Unknown Location",
     rawDisplayName: fallbackDisplay || "",
   };
 };
 const parseBigDataCloudAddress = (data = {}) => {
+  const informative = Array.isArray(data?.localityInfo?.informative)
+    ? data.localityInfo.informative
+    : [];
+  const poiName = firstNonEmptyText(
+    pickInformativeName(informative, (type) =>
+      /point|poi|landmark|building|campus|school|college|university|hospital/i.test(
+        type,
+      ),
+    ),
+    pickInformativeName(informative, (type) =>
+      /mall|market|stadium|station|office|park/i.test(type),
+    ),
+  );
   const street = firstNonEmptyText(
     data?.localityInfo?.informative?.find(
       (item) => String(item?.type || "").toLowerCase() === "street",
@@ -729,6 +789,7 @@ const parseBigDataCloudAddress = (data = {}) => {
     area: area || "",
     street: street || "",
     locality: firstNonEmptyText(data?.locality),
+    poiName: poiName,
     displayName: displayParts.join(", ") || city || "Unknown Location",
     rawDisplayName: firstNonEmptyText(data?.locality, data?.city),
   };
@@ -755,6 +816,7 @@ const mergeAddressResults = (primary = null, secondary = null) => {
 
   const merged = {
     source: [primary.source, secondary.source].filter(Boolean).join("+"),
+    poiName: firstNonEmptyText(primary.poiName, secondary.poiName),
     street: firstNonEmptyText(primary.street, secondary.street),
     area: firstNonEmptyText(primary.area, secondary.area),
     locality: firstNonEmptyText(primary.locality, secondary.locality),
@@ -770,6 +832,7 @@ const mergeAddressResults = (primary = null, secondary = null) => {
   };
 
   const displayParts = [];
+  pushUniquePart(displayParts, merged.poiName);
   pushUniquePart(displayParts, merged.street);
   pushUniquePart(displayParts, merged.area);
   pushUniquePart(displayParts, merged.city || merged.locality);
@@ -885,6 +948,92 @@ const resolveAddress = async (lat, lng) => {
     };
   }
 };
+const shouldUseGooglePlaces = () => {
+  if (!GOOGLE_PLACES_API_KEY) return false;
+  if (LOCATION_POI_PROVIDER === "google") return true;
+  if (LOCATION_POI_PROVIDER === "auto") return true;
+  return false;
+};
+const fetchGooglePlacesNearest = async (lat, lng) => {
+  if (!shouldUseGooglePlaces()) return null;
+  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${GOOGLE_PLACES_RADIUS_METERS}&key=${GOOGLE_PLACES_API_KEY}`;
+  const response = await fetchWithTimeout(url, {}, POI_LOOKUP_TIMEOUT_MS);
+  if (!response.ok) {
+    throw new Error(`Google Places failed (${response.status})`);
+  }
+  const data = await response.json();
+  if (data?.status && data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+    throw new Error(`Google Places error: ${data.status}`);
+  }
+  const results = Array.isArray(data?.results) ? data.results : [];
+  if (!results.length) return null;
+  let best = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  results.forEach((item) => {
+    const location = item?.geometry?.location;
+    const placeLat = Number(location?.lat);
+    const placeLng = Number(location?.lng);
+    if (!isValidCoordinates(placeLat, placeLng)) return;
+    const distance = getDistanceInMeters(lat, lng, placeLat, placeLng);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = item;
+    }
+  });
+  if (!best) return null;
+  return {
+    name: normalizePlaceName(best?.name),
+    vicinity: normalizePlaceName(best?.vicinity),
+    distanceMeters: bestDistance,
+  };
+};
+const resolvePoiName = async (lat, lng, addressData = null) => {
+  const cacheKey = buildPoiCacheKey(lat, lng);
+  const cached = poiLookupCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp <= POI_CACHE_TTL_MS) {
+    return cached.value || "";
+  }
+
+  const inFlight = poiLookupInFlight.get(cacheKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const lookupRequest = (async () => {
+    let poiName = normalizePlaceName(addressData?.poiName);
+    try {
+      const googleResult = await fetchGooglePlacesNearest(lat, lng);
+      const googleName = normalizePlaceName(googleResult?.name);
+      if (googleName) {
+        poiName = googleName;
+      }
+    } catch (error) {
+      debugLog(
+        "POI lookup failed, falling back to reverse geocode:",
+        error?.message || error,
+      );
+    }
+
+    poiLookupCache.set(cacheKey, { timestamp: Date.now(), value: poiName });
+    return poiName;
+  })().finally(() => {
+    poiLookupInFlight.delete(cacheKey);
+  });
+
+  poiLookupInFlight.set(cacheKey, lookupRequest);
+  return lookupRequest;
+};
+const composeDisplayName = (placeName, addressData = null) => {
+  const baseName = normalizePlaceName(
+    addressData?.displayName || addressData?.formatted || "",
+  );
+  const safePlaceName = normalizePlaceName(placeName);
+  if (!safePlaceName) return baseName || "Unknown Location";
+  if (baseName && baseName.toLowerCase().includes(safePlaceName.toLowerCase())) {
+    return baseName;
+  }
+  return [safePlaceName, baseName].filter(Boolean).join(", ");
+};
 const getNativePositionWithSampling = async () => {
   const samples = [];
   const firstFix = await Geolocation.getCurrentPosition(GEO_OPTIONS);
@@ -971,6 +1120,13 @@ export const getCurrentLocation = async () => {
     const normalizedLat = roundCoordinate(latitude);
     const normalizedLng = roundCoordinate(longitude);
     const addressData = await resolveAddress(normalizedLat, normalizedLng);
+    const placeName = await resolvePoiName(normalizedLat, normalizedLng, addressData);
+    const displayName = composeDisplayName(placeName, addressData);
+    const enrichedAddress = {
+      ...addressData,
+      placeName: placeName || addressData?.poiName || "",
+      displayName: displayName,
+    };
     const location = {
       latitude: normalizedLat,
       longitude: normalizedLng,
@@ -978,16 +1134,17 @@ export const getCurrentLocation = async () => {
       lng: normalizedLng,
       accuracy: accuracy,
       speed: speed || 0,
-      address: addressData,
-      city: addressData.city,
-      state: addressData.state,
-      country: addressData.country,
-      area: addressData.area || addressData.locality || "",
-      locality: addressData.locality || "",
-      district: addressData.district || "",
-      pincode: addressData.pincode || "",
-      street: addressData.street || "",
-      displayName: addressData.displayName,
+      address: enrichedAddress,
+      city: enrichedAddress.city,
+      state: enrichedAddress.state,
+      country: enrichedAddress.country,
+      area: enrichedAddress.area || enrichedAddress.locality || "",
+      locality: enrichedAddress.locality || "",
+      district: enrichedAddress.district || "",
+      pincode: enrichedAddress.pincode || "",
+      street: enrichedAddress.street || "",
+      placeName: enrichedAddress.placeName || "",
+      displayName: enrichedAddress.displayName,
       provider: provider,
       timestamp: Date.now(),
     };
@@ -1011,13 +1168,20 @@ export const getBestAvailableLocation = async (options = {}) => {
     allowCache: allowCache = true,
     allowIpFallback: allowIpFallback = true,
     cacheMaxAgeMs: cacheMaxAgeMs = DEFAULT_CACHE_MAX_AGE_MS,
+    strictAccuracy: strictAccuracy = true,
   } = options;
 
   const parsedRequiredAccuracy = Number(requiredAccuracy);
+  const accuracyCeiling = strictAccuracy
+    ? STRICT_REQUIRED_ACCURACY_METERS
+    : Number.POSITIVE_INFINITY;
+  const fallbackAccuracy = strictAccuracy
+    ? STRICT_REQUIRED_ACCURACY_METERS
+    : DEFAULT_COARSE_REQUIRED_ACCURACY_METERS;
   const effectiveRequiredAccuracy =
     Number.isFinite(parsedRequiredAccuracy) && parsedRequiredAccuracy > 0
-      ? Math.min(parsedRequiredAccuracy, STRICT_REQUIRED_ACCURACY_METERS)
-      : STRICT_REQUIRED_ACCURACY_METERS;
+      ? Math.min(parsedRequiredAccuracy, accuracyCeiling)
+      : fallbackAccuracy;
 
   const allowRuntimeOrDiskCache = allowCache;
   const allowIpFallbackForSession = allowIpFallback;

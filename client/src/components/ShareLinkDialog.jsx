@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useId } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -20,10 +21,12 @@ import {
 } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 
-function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" }) {
+function ShareLinkDialog({ open, onOpenChange, url = "", title = "" }) {
+  const { t } = useTranslation();
+  const tr = (key, fallback) => t(key, { defaultValue: fallback });
   const [copied, setCopied] = useState(false);
   const copyResetTimerRef = useRef(null);
-  const inputRef = useRef(null);
+  const inputId = useId();
   const canUseNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
   const safeUrl = useMemo(() => {
     if (typeof url === "string") return url.trim();
@@ -34,15 +37,25 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
     return "";
   }, [url]);
   const encodedUrl = useMemo(() => encodeURIComponent(safeUrl), [safeUrl]);
+  const resolvedTitle = title || tr("share_link_title", "Share link");
+  const resolvedDescription = tr(
+    "share_link_description",
+    "Share this post with a clean link and quick options.",
+  );
 
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
+      const inputEl = typeof document !== "undefined" ? document.getElementById(inputId) : null;
+      if (inputEl && typeof inputEl.focus === "function") {
+        inputEl.focus();
+        if (typeof inputEl.select === "function") {
+          inputEl.select();
+        }
+      }
     }, 120);
     return () => clearTimeout(timer);
-  }, [open]);
+  }, [open, inputId]);
 
   useEffect(() => () => {
     if (copyResetTimerRef.current) {
@@ -67,7 +80,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
   const handleNativeShare = async () => {
     if (!safeUrl || !canUseNativeShare) return;
     try {
-      await navigator.share({ title, url: safeUrl });
+      await navigator.share({ title: resolvedTitle, url: safeUrl });
     } catch {
       // Ignore cancellation/errors from native share sheet.
     }
@@ -89,7 +102,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
     } else if (platform === "x") {
       shareUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}`;
     } else if (platform === "email") {
-      shareUrl = `mailto:?subject=${encodeURIComponent(title)}&body=${encodedUrl}`;
+      shareUrl = `mailto:?subject=${encodeURIComponent(resolvedTitle)}&body=${encodedUrl}`;
     }
 
     if (shareUrl) {
@@ -105,24 +118,25 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
               <Link2 className="w-4 h-4" />
             </span>
-            {title}
+            {resolvedTitle}
           </DialogTitle>
           <DialogDescription className="text-slate-600 dark:text-slate-300">
-            Share this post with a clean link and quick options.
+            {resolvedDescription}
           </DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-5 space-y-5">
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
-              Public Link
+              {tr("public_link", "Public Link")}
             </p>
             <div className="flex flex-col sm:flex-row items-stretch gap-2">
               <Input
-                ref={inputRef}
+                id={inputId}
                 value={safeUrl}
                 readOnly
                 onFocus={(event) => event.target.select()}
+                autoFocus
                 className="font-mono text-xs sm:text-sm h-11 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100"
               />
               <Button
@@ -136,11 +150,16 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
                 ) : (
                   <Copy className="w-4 h-4 mr-1.5" />
                 )}
-                {copied ? "Copied" : "Copy Link"}
+                {copied
+                  ? tr("copied", "Copied")
+                  : tr("copy_link", "Copy Link")}
               </Button>
             </div>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              Tip: link is selected automatically for fast sharing.
+              {tr(
+                "share_link_tip",
+                "Tip: link is selected automatically for fast sharing.",
+              )}
             </p>
           </div>
 
@@ -153,7 +172,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
               disabled={!safeUrl}
             >
               <MessageCircle className="w-4 h-4 mr-2 text-emerald-600" />
-              WhatsApp
+              {tr("share_whatsapp", "WhatsApp")}
             </Button>
             <Button
               type="button"
@@ -163,7 +182,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
               disabled={!safeUrl}
             >
               <Send className="w-4 h-4 mr-2 text-sky-600" />
-              Telegram
+              {tr("share_telegram", "Telegram")}
             </Button>
             <Button
               type="button"
@@ -173,7 +192,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
               disabled={!safeUrl}
             >
               <FaXTwitter className="w-4 h-4 mr-2" />
-              X
+              {tr("share_x", "X")}
             </Button>
             <Button
               type="button"
@@ -183,7 +202,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
               disabled={!safeUrl}
             >
               <Mail className="w-4 h-4 mr-2 text-violet-600" />
-              Email
+              {tr("share_email", "Email")}
             </Button>
           </div>
 
@@ -196,7 +215,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
               className="h-11 border-slate-300 dark:border-slate-700"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Open Post
+              {tr("open_post", "Open Post")}
             </Button>
             {canUseNativeShare ? (
               <Button
@@ -207,7 +226,7 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
                 className="h-11 border-slate-300 dark:border-slate-700"
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                More Share Options
+                {tr("more_share_options", "More Share Options")}
               </Button>
             ) : null}
           </div>
@@ -218,3 +237,4 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "Share link" })
 }
 
 export default ShareLinkDialog;
+
