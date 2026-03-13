@@ -1,1 +1,1179 @@
-import e,{useState as i,useEffect as q,useMemo as F}from"react";import{useTranslation as le}from"react-i18next";import{Button as f}from"@/components/ui/button";import{Input as _}from"@/components/ui/input";import{Label as g}from"@/components/ui/label";import{Card as v,CardContent as w,CardDescription as M,CardHeader as E,CardTitle as O}from"@/components/ui/card";import{Textarea as ie}from"@/components/ui/textarea";import{Badge as y}from"@/components/ui/badge";import{useToast as ne}from"@/hooks/use-toast";import{AlertCircle as N,FileText as de,Clock as $,CheckCircle as n,ArrowLeft as me,ArrowUp as pe,Shield as H,MessageSquare as ce,Send as ge,AlertTriangle as ue,Sparkles as be,ChevronRight as Y}from"lucide-react";import{Link as J,useNavigate as xe}from"react-router-dom";import{useAuth as he}from"@/context/AuthContext";import{getApiOriginBase as fe}from"@/lib/networkConfig";const ve=()=>{const{t:r}=le(),{toast:d}=ne(),S=xe(),{user:I}=he(),T=F(()=>fe(),[]),m=F(()=>!!(I||localStorage.getItem("authToken")||localStorage.getItem("token")),[I]),[W,V]=i(!1),[L,A]=i(!1),[a,D]=i({sellerId:"",postId:"",secretCode:"",complaintType:"transaction",description:""}),[G,B]=i([]),[j,u]=i(null),[K,k]=i(!1),[b,Q]=i(""),[P,X]=i(""),x=(t,s)=>{const l=String(t||"").trim();if(!l)return s;const o=l.toLowerCase();return o.includes("unauthorized")||o.includes("token")||o.includes("login")?"Please sign in again and retry this action.":o.includes("network")||o.includes("timeout")||o.includes("failed to fetch")?"Support services are temporarily unreachable. Please retry shortly.":o.includes("required")||o.includes("invalid")||o.includes("validation")?"Some required complaint details are missing or invalid. Please review the form.":o.includes("not found")||o.includes("post")?"We could not match the provided listing details. Verify Post ID and try again.":s},Z=t=>{const s=t?.complaint_id||t?.id||t?.ticket_id||t?.reference_id||t?.reference||t?.complaint?.complaint_id||t?.complaint?.id||"";return s?String(s):""};q(()=>{const t=()=>{V(window.scrollY>300)};return window.addEventListener("scroll",t),()=>window.removeEventListener("scroll",t)},[]);const R=()=>{window.scrollTo({top:0,behavior:"smooth"})},h=()=>{if(!m)return;k(!0);const t=localStorage.getItem("authToken")||localStorage.getItem("token");t&&!localStorage.getItem("authToken")&&localStorage.setItem("authToken",t),fetch(`${T}/api/complaints/my`,{headers:t?{Authorization:`Bearer ${t}`}:{},credentials:"include"}).then(s=>s.json()).then(s=>{s.complaints&&Array.isArray(s.complaints)?(B(s.complaints),u(null)):Array.isArray(s)?(B(s),u(null)):u(x(s.error,"Unable to load complaints right now.")),k(!1)}).catch(s=>{u(x(s.message,"Unable to load complaints right now.")),k(!1)})};q(()=>{m&&h()},[m]);const p=t=>{const{name:s,value:l}=t.target;D(o=>({...o,[s]:l}))},ee=async()=>{if(b)try{await navigator.clipboard.writeText(b),d({title:"Reference Copied",description:"Use this ID if you need to follow up with support."})}catch{d({title:"Unable to Copy",description:"Please copy the reference manually.",variant:"destructive"})}},te=async t=>{if(t.preventDefault(),!m){S("/login",{state:{returnTo:"/complaints"}});return}if(!a.postId||!a.description){d({title:"Missing Details",description:"Post ID and issue details are required before submission.",variant:"destructive"});return}A(!0);try{const s=localStorage.getItem("authToken")||localStorage.getItem("token");s&&!localStorage.getItem("authToken")&&localStorage.setItem("authToken",s);const l=await fetch(`${T}/api/complaints`,{method:"POST",headers:{"Content-Type":"application/json",...s?{Authorization:`Bearer ${s}`}:{}},credentials:"include",body:JSON.stringify({seller_id:a.sellerId||void 0,post_id:a.postId,complaint_type:a.complaintType,description:a.description,secret_code:a.secretCode||void 0})}),o=await l.json();if(l.ok){const c=Z(o);Q(c||"Pending assignment"),X(new Date().toISOString()),d({title:"Complaint Received",description:c?`Reference ID: ${c}. We will review this within 24-48 hours.`:o.message||"Your complaint was received. You can track status in My Complaints."}),D({sellerId:"",postId:"",secretCode:"",complaintType:"transaction",description:""}),h()}else d({title:"Could Not Submit Complaint",description:x(o.error,"Please review details and retry."),variant:"destructive"})}catch(s){d({title:"Submission Unavailable",description:x(s.message,"Support services are unreachable right now."),variant:"destructive"})}finally{A(!1)}},C=t=>String(t||"open").toLowerCase(),re=t=>{switch(C(t)){case"triage":case"investigating":return"bg-yellow-500/20 text-yellow-400 border-yellow-500/30";case"resolved":case"closed":return"bg-green-500/20 text-green-400 border-green-500/30";case"rejected":return"bg-red-500/20 text-red-400 border-red-500/30";default:return"bg-blue-500/20 text-blue-400 border-blue-500/30"}},se=t=>{switch(C(t)){case"triage":case"investigating":return e.createElement($,{className:"w-4 h-4"});case"resolved":case"closed":return e.createElement(n,{className:"w-4 h-4"});default:return e.createElement(N,{className:"w-4 h-4"})}},oe=t=>{const s=C(t);return s.charAt(0).toUpperCase()+s.slice(1)},ae=t=>{if(!t)return"-";const s=new Date(t);return Number.isNaN(s.getTime())?String(t):s.toLocaleDateString()},z=G;return m?e.createElement("div",{className:"bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative",style:{minHeight:"100vh",paddingBottom:"120px"}},e.createElement("div",{className:"absolute inset-0 pointer-events-none"},e.createElement("div",{className:"absolute top-20 left-10 w-72 h-72 bg-red-500/10 dark:bg-red-500/20 rounded-full blur-3xl animate-pulse"}),e.createElement("div",{className:"absolute bottom-20 right-10 w-96 h-96 bg-orange-500/10 dark:bg-orange-500/20 rounded-full blur-3xl animate-pulse delay-1000"}),e.createElement("div",{className:"absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/5 dark:bg-yellow-500/10 rounded-full blur-3xl"})),e.createElement("div",{className:"relative max-w-lg mx-auto p-4 sm:p-6 space-y-6"},e.createElement("div",{className:"text-center pt-8"},e.createElement("button",{onClick:()=>S("/"),className:"inline-flex items-center text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-200 mb-8 group transition-all"},e.createElement(me,{className:"w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform"}),r("back_to_home")),e.createElement("div",{className:"inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-red-400 to-orange-600 shadow-2xl shadow-red-500/30 mb-6"},e.createElement(ue,{className:"w-10 h-10 text-white"})),e.createElement("h1",{className:"text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3"},r("file_a")," ",e.createElement("span",{className:"bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent"},r("complaint"))),e.createElement("p",{className:"text-red-700 dark:text-red-200 text-lg max-w-md mx-auto"},r("report_issues_support"))),e.createElement("div",{className:"flex flex-wrap justify-center gap-3"},e.createElement(y,{className:"bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/20 dark:border-red-500/30 px-4 py-2 rounded-full backdrop-blur-sm"},e.createElement(H,{className:"w-4 h-4 mr-2"})," ",r("secure_confidential")),e.createElement(y,{className:"bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/20 dark:border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm"},e.createElement($,{className:"w-4 h-4 mr-2"})," ",r("24_48h_response")),e.createElement(y,{className:"bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm"},e.createElement(ce,{className:"w-4 h-4 mr-2"})," ",r("fair_resolution"))),e.createElement(v,{className:"shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95"},e.createElement(E,{className:"bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white p-8"},e.createElement(O,{className:"flex items-center space-x-3 text-2xl"},e.createElement("div",{className:"w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm"},e.createElement(N,{className:"w-6 h-6"})),e.createElement("span",null,r("submit_new_complaint"))),e.createElement(M,{className:"text-red-100 text-base mt-2"},r("provide_details_issue"))),e.createElement(w,{className:"p-8"},e.createElement("form",{onSubmit:te,className:"space-y-6"},e.createElement("div",{className:"grid sm:grid-cols-2 gap-6"},e.createElement("div",null,e.createElement(g,{htmlFor:"sellerId",className:"text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block"},r("seller_id")||"Seller ID"),e.createElement(_,{id:"sellerId",name:"sellerId",value:a.sellerId,onChange:p,placeholder:"e.g., USER123456",className:"h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"})),e.createElement("div",null,e.createElement(g,{htmlFor:"postId",className:"text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block"},r("post_id")||"Post ID"," *"),e.createElement(_,{id:"postId",name:"postId",value:a.postId,onChange:p,placeholder:"e.g., POST001",className:"h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors",required:!0}))),e.createElement("div",null,e.createElement("div",null,e.createElement(g,{htmlFor:"secretCode",className:"text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block"},r("transaction_code")),e.createElement(_,{id:"secretCode",name:"secretCode",value:a.secretCode,onChange:p,placeholder:"e.g., ABC123",className:"h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors"}))),e.createElement("div",null,e.createElement(g,{htmlFor:"complaintType",className:"text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block"},r("complaint_type")),e.createElement("select",{id:"complaintType",name:"complaintType",value:a.complaintType,onChange:p,className:"w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors px-4 bg-white"},e.createElement("option",{value:"transaction"},"\u{1F4B3} ",r("transaction_issue")),e.createElement("option",{value:"quality"},"\u{1F4E6} ",r("product_quality")),e.createElement("option",{value:"communication"},"\u{1F4AC} ",r("communication_problem")),e.createElement("option",{value:"fraud"},"\u26A0\uFE0F ",r("suspected_fraud")),e.createElement("option",{value:"delivery"},"\u{1F69A} ",r("delivery_issue")),e.createElement("option",{value:"other"},"\u2753 ",r("other")))),e.createElement("div",null,e.createElement(g,{htmlFor:"description",className:"text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block"},r("description")," *"),e.createElement(ie,{id:"description",name:"description",value:a.description,onChange:p,placeholder:r("describe_issue_detail"),rows:5,className:"text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors resize-none",required:!0})),e.createElement(f,{type:"submit",disabled:L,className:"w-full h-16 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 rounded-2xl shadow-xl shadow-red-500/30 transition-all hover:shadow-red-500/50 hover:scale-[1.02]"},L?e.createElement("span",{className:"flex items-center gap-3"},e.createElement("div",{className:"w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"}),r("submitting")):e.createElement("span",{className:"flex items-center gap-2"},e.createElement(ge,{className:"w-6 h-6"}),r("submit_complaint")))))),b&&e.createElement(v,{className:"shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden"},e.createElement(w,{className:"p-5"},e.createElement("p",{className:"text-sm text-blue-800 dark:text-blue-300 mb-1"},"Latest complaint reference"),e.createElement("p",{className:"font-mono text-lg font-bold text-blue-900 dark:text-blue-200"},b),P&&e.createElement("p",{className:"text-xs text-blue-700 dark:text-blue-300 mt-1"},"Submitted ",new Date(P).toLocaleString()),e.createElement("div",{className:"flex flex-wrap gap-2 mt-3"},e.createElement(f,{type:"button",variant:"outline",className:"border-blue-300 text-blue-800",onClick:ee},"Copy reference"),e.createElement(f,{type:"button",className:"bg-blue-600 hover:bg-blue-700 text-white",onClick:h},"Refresh complaint status")))),e.createElement(v,{className:"shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95"},e.createElement(E,{className:"bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6"},e.createElement(O,{className:"flex items-center space-x-3 text-xl"},e.createElement(de,{className:"w-6 h-6"}),e.createElement("span",null,r("my_complaints"))),e.createElement(M,{className:"text-purple-100"},r("track_status"))),e.createElement(w,{className:"p-6"},K?e.createElement("div",{className:"text-center py-8"},e.createElement("div",{className:"w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4"}),e.createElement("p",{className:"text-gray-500 dark:text-gray-400"},r("loading_complaints"))):j?e.createElement("div",{className:"text-center py-8"},e.createElement("p",{className:"text-red-500 dark:text-red-400 mb-3"},j),e.createElement(f,{type:"button",variant:"outline",onClick:h},"Retry")):z.length===0?e.createElement("div",{className:"text-center py-12"},e.createElement("div",{className:"w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4"},e.createElement(N,{className:"w-8 h-8 text-gray-400"})),e.createElement("p",{className:"text-gray-500 dark:text-gray-400 text-lg"},r("no_complaints_yet")),e.createElement("p",{className:"text-gray-400 dark:text-gray-500 text-sm mt-1"},r("completed_your_complaints_here"))):e.createElement("div",{className:"space-y-4"},z.map(t=>{const s=t.complaint_id||t.id||t._id,l=t.complaint_type||t.type||"other",o=t.post_id||t.postId||"-",c=t.created_at||t.submittedDate||null,U=t.admin_response||t.adminResponse||"";return e.createElement("div",{key:s,className:"bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all"},e.createElement("div",{className:"flex items-start justify-between mb-3"},e.createElement("div",null,e.createElement("h4",{className:"font-bold text-gray-900 dark:text-white text-lg"},l),e.createElement("p",{className:"text-sm text-gray-500 dark:text-gray-400 font-mono"},"ID: ",s)),e.createElement(y,{className:re(t.status)},e.createElement("div",{className:"flex items-center gap-1"},se(t.status),e.createElement("span",null,oe(t.status))))),e.createElement("div",{className:"grid grid-cols-2 gap-4 mb-3 text-sm"},e.createElement("div",{className:"flex items-center gap-2"},e.createElement("span",{className:"text-gray-500"},"Post ID:"),e.createElement("span",{className:"font-medium"},o)),e.createElement("div",{className:"flex items-center gap-2"},e.createElement("span",{className:"text-gray-500"},"Submitted:"),e.createElement("span",{className:"font-medium"},ae(c)))),e.createElement("p",{className:"text-gray-700 dark:text-gray-300 text-sm mb-3"},t.description),U&&e.createElement("div",{className:"bg-green-50 border border-green-200 rounded-xl p-4"},e.createElement("p",{className:"text-sm font-semibold text-green-800 mb-1 flex items-center gap-2"},e.createElement(n,{className:"w-4 h-4"}),r("admin_response"),":"),e.createElement("p",{className:"text-sm text-green-700"},U)))})))),e.createElement(v,{className:"shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-200 dark:border-yellow-700"},e.createElement(w,{className:"p-6"},e.createElement("div",{className:"flex items-start gap-4"},e.createElement("div",{className:"w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0"},e.createElement(N,{className:"w-6 h-6 text-yellow-600"})),e.createElement("div",null,e.createElement("h3",{className:"font-bold text-yellow-800 dark:text-yellow-300 text-lg mb-3"},"\u{1F4CB} ",r("important_guidelines")),e.createElement("ul",{className:"space-y-2 text-yellow-700 dark:text-yellow-400"},e.createElement("li",{className:"flex items-start gap-2"},e.createElement(n,{className:"w-4 h-4 mt-1 flex-shrink-0"}),e.createElement("span",null,r("provide_accurate_ids"))),e.createElement("li",{className:"flex items-start gap-2"},e.createElement(n,{className:"w-4 h-4 mt-1 flex-shrink-0"}),e.createElement("span",null,r("include_transaction_details"))),e.createElement("li",{className:"flex items-start gap-2"},e.createElement(n,{className:"w-4 h-4 mt-1 flex-shrink-0"}),e.createElement("span",null,r("response_time_24_48"))),e.createElement("li",{className:"flex items-start gap-2"},e.createElement(n,{className:"w-4 h-4 mt-1 flex-shrink-0"}),e.createElement("span",null,r("keep_evidence"))))))))),W&&e.createElement("button",{onClick:R,className:"fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-full shadow-2xl shadow-red-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"},e.createElement(pe,{className:"w-6 h-6"}))):e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-red-600 via-orange-600 to-amber-600",style:{paddingBottom:"120px"}},e.createElement("div",{className:"pt-16 pb-12 px-6 text-center"},e.createElement("div",{className:"w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center shadow-2xl"},e.createElement(H,{className:"w-12 h-12 text-white"})),e.createElement("h1",{className:"text-4xl font-bold text-white mb-3"},r("complaints")||"Complaints"),e.createElement("p",{className:"text-white/80 text-lg max-w-md mx-auto"},r("complaints_login_desc")||"Need to report an issue? Please login to file a complaint.")),e.createElement("div",{className:"max-w-lg mx-auto px-6 space-y-4"},e.createElement(J,{to:"/login",className:"block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"},e.createElement("div",{className:"flex items-center gap-4"},e.createElement("div",{className:"w-14 h-14 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg"},e.createElement(n,{className:"w-7 h-7 text-white"})),e.createElement("div",{className:"flex-1"},e.createElement("h3",{className:"text-xl font-bold text-gray-900"},r("login")||"Login"),e.createElement("p",{className:"text-gray-500 text-sm"},r("login_desc")||"Already have an account? Sign in here")),e.createElement(Y,{className:"w-6 h-6 text-gray-400"}))),e.createElement(J,{to:"/signup",className:"block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300"},e.createElement("div",{className:"flex items-center gap-4"},e.createElement("div",{className:"w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shadow-lg"},e.createElement(be,{className:"w-7 h-7 text-white"})),e.createElement("div",{className:"flex-1"},e.createElement("h3",{className:"text-xl font-bold text-white"},r("signup")||"Create Account"),e.createElement("p",{className:"text-white/70 text-sm"},r("signup_desc")||"New user? Join us in just a few steps")),e.createElement(Y,{className:"w-6 h-6 text-white/60"})))))};var je=ve;export{je as default};
+import e, { useState as i, useEffect as q, useMemo as F } from "react";
+import { useTranslation as le } from "react-i18next";
+import { Button as f } from "@/components/ui/button";
+import { Input as _ } from "@/components/ui/input";
+import { Label as g } from "@/components/ui/label";
+import {
+  Card as v,
+  CardContent as w,
+  CardDescription as M,
+  CardHeader as E,
+  CardTitle as O,
+} from "@/components/ui/card";
+import { Textarea as ie } from "@/components/ui/textarea";
+import { Badge as y } from "@/components/ui/badge";
+import { useToast as ne } from "@/hooks/use-toast";
+import {
+  AlertCircle as N,
+  FileText as de,
+  Clock as $,
+  CheckCircle as n,
+  ArrowLeft as me,
+  ArrowUp as pe,
+  Shield as H,
+  MessageSquare as ce,
+  Send as ge,
+  AlertTriangle as ue,
+  Sparkles as be,
+  ChevronRight as Y,
+} from "lucide-react";
+import { Link as J, useNavigate as xe } from "react-router-dom";
+import { useAuth as he } from "@/context/AuthContext";
+import { getApiOriginBase as fe } from "@/lib/networkConfig";
+const ve = () => {
+  const { t: r } = le(),
+    tr = (t, s, l = {}) => r(t, { defaultValue: s, ...l }),
+    { toast: d } = ne(),
+    S = xe(),
+    { user: I } = he(),
+    T = F(() => fe(), []),
+    m = F(
+      () =>
+        !!(
+          I ||
+          localStorage.getItem("authToken") ||
+          localStorage.getItem("token")
+        ),
+      [I],
+    ),
+    [W, V] = i(!1),
+    [L, A] = i(!1),
+    [a, D] = i({
+      sellerId: "",
+      postId: "",
+      secretCode: "",
+      complaintType: "transaction",
+      description: "",
+    }),
+    [G, B] = i([]),
+    [j, u] = i(null),
+    [K, k] = i(!1),
+    [b, Q] = i(""),
+    [P, X] = i(""),
+    x = (t, s) => {
+      const l = String(t || "").trim();
+      if (!l) return s;
+      const o = l.toLowerCase();
+      return o.includes("unauthorized") ||
+        o.includes("token") ||
+        o.includes("login")
+        ? tr(
+            "please_sign_in_again",
+            "Please sign in again and retry this action.",
+          )
+        : o.includes("network") ||
+            o.includes("timeout") ||
+            o.includes("failed to fetch")
+          ? tr(
+              "complaint_service_unreachable",
+              "Support services are temporarily unreachable. Please retry shortly.",
+            )
+          : o.includes("required") ||
+              o.includes("invalid") ||
+              o.includes("validation")
+            ? tr(
+                "complaint_missing_details",
+                "Some required complaint details are missing or invalid. Please review the form.",
+              )
+            : o.includes("not found") || o.includes("post")
+              ? tr(
+                  "complaint_listing_not_found",
+                  "We could not match the provided listing details. Verify Post ID and try again.",
+                )
+              : s;
+    },
+    Z = (t) => {
+      const s =
+        t?.complaint_id ||
+        t?.id ||
+        t?.ticket_id ||
+        t?.reference_id ||
+        t?.reference ||
+        t?.complaint?.complaint_id ||
+        t?.complaint?.id ||
+        "";
+      return s ? String(s) : "";
+    };
+  q(() => {
+    const t = () => {
+      V(window.scrollY > 300);
+    };
+    return (
+      window.addEventListener("scroll", t),
+      () => window.removeEventListener("scroll", t)
+    );
+  }, []);
+  const R = () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    h = () => {
+      if (!m) return;
+      k(!0);
+      const t =
+        localStorage.getItem("authToken") || localStorage.getItem("token");
+      t &&
+        !localStorage.getItem("authToken") &&
+        localStorage.setItem("authToken", t),
+        fetch(`${T}/api/complaints/my`, {
+          headers: t ? { Authorization: `Bearer ${t}` } : {},
+          credentials: "include",
+        })
+          .then((s) => s.json())
+          .then((s) => {
+            s.complaints && Array.isArray(s.complaints)
+              ? (B(s.complaints), u(null))
+              : Array.isArray(s)
+                ? (B(s), u(null))
+                : u(
+                    x(
+                      s.error,
+                      tr(
+                        "complaints_load_failed",
+                        "Unable to load complaints right now.",
+                      ),
+                    ),
+                  ),
+              k(!1);
+          })
+          .catch((s) => {
+            u(
+              x(
+                s.message,
+                tr(
+                  "complaints_load_failed",
+                  "Unable to load complaints right now.",
+                ),
+              ),
+            ),
+            k(!1);
+          });
+    };
+  q(() => {
+    m && h();
+  }, [m]);
+  const p = (t) => {
+      const { name: s, value: l } = t.target;
+      D((o) => ({ ...o, [s]: l }));
+    },
+    ee = async () => {
+      if (b)
+        try {
+          await navigator.clipboard.writeText(b),
+            d({
+              title: tr("reference_copied_title", "Reference Copied"),
+              description: tr(
+                "reference_copied_desc",
+                "Use this ID if you need to follow up with support.",
+              ),
+            });
+        } catch {
+          d({
+            title: tr("copy_reference_failed_title", "Unable to Copy"),
+            description: tr(
+              "copy_reference_failed_desc",
+              "Please copy the reference manually.",
+            ),
+            variant: "destructive",
+          });
+        }
+    },
+    te = async (t) => {
+      if ((t.preventDefault(), !m)) {
+        S("/login", { state: { returnTo: "/complaints" } });
+        return;
+      }
+      if (!a.postId || !a.description) {
+        d({
+          title: tr("missing_details_title", "Missing Details"),
+          description: tr(
+            "complaint_missing_details_desc",
+            "Post ID and issue details are required before submission.",
+          ),
+          variant: "destructive",
+        });
+        return;
+      }
+      A(!0);
+      try {
+        const s =
+          localStorage.getItem("authToken") || localStorage.getItem("token");
+        s &&
+          !localStorage.getItem("authToken") &&
+          localStorage.setItem("authToken", s);
+        const l = await fetch(`${T}/api/complaints`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(s ? { Authorization: `Bearer ${s}` } : {}),
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              seller_id: a.sellerId || void 0,
+              post_id: a.postId,
+              complaint_type: a.complaintType,
+              description: a.description,
+              secret_code: a.secretCode || void 0,
+            }),
+          }),
+          o = await l.json();
+        if (l.ok) {
+          const c = Z(o);
+          Q(c || tr("pending_assignment", "Pending assignment")),
+            X(new Date().toISOString()),
+            d({
+              title: tr("complaint_received_title", "Complaint Received"),
+              description: c
+                ? tr(
+                    "complaint_reference_desc",
+                    "Reference ID: {{id}}. We will review this within 24-48 hours.",
+                    { id: c },
+                  )
+                : o.message ||
+                  tr(
+                    "complaint_received_desc",
+                    "Your complaint was received. You can track status in My Complaints.",
+                  ),
+            }),
+            D({
+              sellerId: "",
+              postId: "",
+              secretCode: "",
+              complaintType: "transaction",
+              description: "",
+            }),
+            h();
+        } else
+          d({
+            title: tr(
+              "complaint_submit_failed_title",
+              "Could Not Submit Complaint",
+            ),
+            description: x(
+              o.error,
+              tr(
+                "complaint_submit_failed_desc",
+                "Please review details and retry.",
+              ),
+            ),
+            variant: "destructive",
+          });
+      } catch (s) {
+        d({
+          title: tr(
+            "complaint_submission_unavailable_title",
+            "Submission Unavailable",
+          ),
+          description: x(
+            s.message,
+            tr(
+              "complaint_submission_unavailable_desc",
+              "Support services are unreachable right now.",
+            ),
+          ),
+          variant: "destructive",
+        });
+      } finally {
+        A(!1);
+      }
+    },
+    C = (t) => String(t || "open").toLowerCase(),
+    re = (t) => {
+      switch (C(t)) {
+        case "triage":
+        case "investigating":
+          return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+        case "resolved":
+        case "closed":
+          return "bg-green-500/20 text-green-400 border-green-500/30";
+        case "rejected":
+          return "bg-red-500/20 text-red-400 border-red-500/30";
+        default:
+          return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      }
+    },
+    se = (t) => {
+      switch (C(t)) {
+        case "triage":
+        case "investigating":
+          return e.createElement($, { className: "w-4 h-4" });
+        case "resolved":
+        case "closed":
+          return e.createElement(n, { className: "w-4 h-4" });
+        default:
+          return e.createElement(N, { className: "w-4 h-4" });
+      }
+    },
+    oe = (t) => {
+      const s = C(t);
+      switch (s) {
+        case "triage":
+          return tr("status_triage", "Triage");
+        case "investigating":
+          return tr("status_investigating", "Investigating");
+        case "resolved":
+          return tr("status_resolved", "Resolved");
+        case "closed":
+          return tr("status_closed", "Closed");
+        case "rejected":
+          return tr("status_rejected", "Rejected");
+        default:
+          return tr("status_open", "Open");
+      }
+    },
+    ye = (t) => {
+      const s = String(t || "other").toLowerCase();
+      switch (s) {
+        case "transaction":
+          return tr("transaction_issue", "Transaction Issue");
+        case "quality":
+          return tr("product_quality", "Product Quality");
+        case "communication":
+          return tr("communication_problem", "Communication Problem");
+        case "fraud":
+          return tr("suspected_fraud", "Suspected Fraud");
+        case "delivery":
+          return tr("delivery_issue", "Delivery Issue");
+        default:
+          return tr("other", "Other");
+      }
+    },
+    ae = (t) => {
+      if (!t) return "-";
+      const s = new Date(t);
+      return Number.isNaN(s.getTime()) ? String(t) : s.toLocaleDateString();
+    },
+    z = G;
+  return m
+    ? e.createElement(
+        "div",
+        {
+          className:
+            "bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative",
+          style: { minHeight: "100vh", paddingBottom: "120px" },
+        },
+        e.createElement(
+          "div",
+          { className: "absolute inset-0 pointer-events-none" },
+          e.createElement("div", {
+            className:
+              "absolute top-20 left-10 w-72 h-72 bg-red-500/10 dark:bg-red-500/20 rounded-full blur-3xl animate-pulse",
+          }),
+          e.createElement("div", {
+            className:
+              "absolute bottom-20 right-10 w-96 h-96 bg-orange-500/10 dark:bg-orange-500/20 rounded-full blur-3xl animate-pulse delay-1000",
+          }),
+          e.createElement("div", {
+            className:
+              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/5 dark:bg-yellow-500/10 rounded-full blur-3xl",
+          }),
+        ),
+        e.createElement(
+          "div",
+          { className: "relative max-w-lg mx-auto p-4 sm:p-6 space-y-6" },
+          e.createElement(
+            "div",
+            { className: "text-center pt-8" },
+            e.createElement(
+              "button",
+              {
+                onClick: () => S("/"),
+                className:
+                  "inline-flex items-center text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-200 mb-8 group transition-all",
+              },
+              e.createElement(me, {
+                className:
+                  "w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform",
+              }),
+              r("back_to_home"),
+            ),
+            e.createElement(
+              "div",
+              {
+                className:
+                  "inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-red-400 to-orange-600 shadow-2xl shadow-red-500/30 mb-6",
+              },
+              e.createElement(ue, { className: "w-10 h-10 text-white" }),
+            ),
+            e.createElement(
+              "h1",
+              {
+                className:
+                  "text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3",
+              },
+              r("file_a"),
+              " ",
+              e.createElement(
+                "span",
+                {
+                  className:
+                    "bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent",
+                },
+                r("complaint"),
+              ),
+            ),
+            e.createElement(
+              "p",
+              {
+                className:
+                  "text-red-700 dark:text-red-200 text-lg max-w-md mx-auto",
+              },
+              r("report_issues_support"),
+            ),
+          ),
+          e.createElement(
+            "div",
+            { className: "flex flex-wrap justify-center gap-3" },
+            e.createElement(
+              y,
+              {
+                className:
+                  "bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/20 dark:border-red-500/30 px-4 py-2 rounded-full backdrop-blur-sm",
+              },
+              e.createElement(H, { className: "w-4 h-4 mr-2" }),
+              " ",
+              r("secure_confidential"),
+            ),
+            e.createElement(
+              y,
+              {
+                className:
+                  "bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/20 dark:border-yellow-500/30 px-4 py-2 rounded-full backdrop-blur-sm",
+              },
+              e.createElement($, { className: "w-4 h-4 mr-2" }),
+              " ",
+              r("24_48h_response"),
+            ),
+            e.createElement(
+              y,
+              {
+                className:
+                  "bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm",
+              },
+              e.createElement(ce, { className: "w-4 h-4 mr-2" }),
+              " ",
+              r("fair_resolution"),
+            ),
+          ),
+          e.createElement(
+            v,
+            {
+              className:
+                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95",
+            },
+            e.createElement(
+              E,
+              {
+                className:
+                  "bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white p-8",
+              },
+              e.createElement(
+                O,
+                { className: "flex items-center space-x-3 text-2xl" },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm",
+                  },
+                  e.createElement(N, { className: "w-6 h-6" }),
+                ),
+                e.createElement("span", null, r("submit_new_complaint")),
+              ),
+              e.createElement(
+                M,
+                { className: "text-red-100 text-base mt-2" },
+                r("provide_details_issue"),
+              ),
+            ),
+            e.createElement(
+              w,
+              { className: "p-8" },
+              e.createElement(
+                "form",
+                { onSubmit: te, className: "space-y-6" },
+                e.createElement(
+                  "div",
+                  { className: "grid sm:grid-cols-2 gap-6" },
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      g,
+                      {
+                        htmlFor: "sellerId",
+                        className:
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
+                      },
+                      r("seller_id") || "Seller ID",
+                    ),
+                    e.createElement(_, {
+                      id: "sellerId",
+                      name: "sellerId",
+                      value: a.sellerId,
+                      onChange: p,
+                      placeholder: tr(
+                        "user_id_placeholder",
+                        "e.g., USER123456",
+                      ),
+                      className:
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors",
+                    }),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      g,
+                      {
+                        htmlFor: "postId",
+                        className:
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
+                      },
+                      r("post_id") || "Post ID",
+                      " *",
+                    ),
+                    e.createElement(_, {
+                      id: "postId",
+                      name: "postId",
+                      value: a.postId,
+                      onChange: p,
+                      placeholder: tr(
+                        "post_id_placeholder",
+                        "e.g., POST001",
+                      ),
+                      className:
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors",
+                      required: !0,
+                    }),
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      g,
+                      {
+                        htmlFor: "secretCode",
+                        className:
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
+                      },
+                      r("transaction_code"),
+                    ),
+                    e.createElement(_, {
+                      id: "secretCode",
+                      name: "secretCode",
+                      value: a.secretCode,
+                      onChange: p,
+                      placeholder: tr(
+                        "transaction_id_placeholder",
+                        "e.g., ABC123",
+                      ),
+                      className:
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors",
+                    }),
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    g,
+                    {
+                      htmlFor: "complaintType",
+                      className:
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
+                    },
+                    r("complaint_type"),
+                  ),
+                  e.createElement(
+                    "select",
+                    {
+                      id: "complaintType",
+                      name: "complaintType",
+                      value: a.complaintType,
+                      onChange: p,
+                      className:
+                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors px-4 bg-white",
+                    },
+                    e.createElement(
+                      "option",
+                      { value: "transaction" },
+                      "\uD83D\uDCB3 ",
+                      r("transaction_issue"),
+                    ),
+                    e.createElement(
+                      "option",
+                      { value: "quality" },
+                      "\uD83D\uDCE6 ",
+                      r("product_quality"),
+                    ),
+                    e.createElement(
+                      "option",
+                      { value: "communication" },
+                      "\uD83D\uDCAC ",
+                      r("communication_problem"),
+                    ),
+                    e.createElement(
+                      "option",
+                      { value: "fraud" },
+                      "\u26A0\uFE0F ",
+                      r("suspected_fraud"),
+                    ),
+                    e.createElement(
+                      "option",
+                      { value: "delivery" },
+                      "\uD83D\uDE9A ",
+                      r("delivery_issue"),
+                    ),
+                    e.createElement(
+                      "option",
+                      { value: "other" },
+                      "\u2753 ",
+                      r("other"),
+                    ),
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    g,
+                    {
+                      htmlFor: "description",
+                      className:
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
+                    },
+                    r("description"),
+                    " *",
+                  ),
+                  e.createElement(ie, {
+                    id: "description",
+                    name: "description",
+                    value: a.description,
+                    onChange: p,
+                    placeholder: r("describe_issue_detail"),
+                    rows: 5,
+                    className:
+                      "text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors resize-none",
+                    required: !0,
+                  }),
+                ),
+                e.createElement(
+                  f,
+                  {
+                    type: "submit",
+                    disabled: L,
+                    className:
+                      "w-full h-16 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 rounded-2xl shadow-xl shadow-red-500/30 transition-all hover:shadow-red-500/50 hover:scale-[1.02]",
+                  },
+                  L
+                    ? e.createElement(
+                        "span",
+                        { className: "flex items-center gap-3" },
+                        e.createElement("div", {
+                          className:
+                            "w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin",
+                        }),
+                        r("submitting"),
+                      )
+                    : e.createElement(
+                        "span",
+                        { className: "flex items-center gap-2" },
+                        e.createElement(ge, { className: "w-6 h-6" }),
+                        r("submit_complaint"),
+                      ),
+                ),
+              ),
+            ),
+          ),
+          b &&
+            e.createElement(
+              v,
+              {
+                className:
+                  "shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden",
+              },
+              e.createElement(
+                w,
+                { className: "p-5" },
+                e.createElement(
+                  "p",
+                  {
+                    className: "text-sm text-blue-800 dark:text-blue-300 mb-1",
+                  },
+                  tr(
+                    "latest_complaint_reference",
+                    "Latest complaint reference",
+                  ),
+                ),
+                e.createElement(
+                  "p",
+                  {
+                    className:
+                      "font-mono text-lg font-bold text-blue-900 dark:text-blue-200",
+                  },
+                  b,
+                ),
+                P &&
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-xs text-blue-700 dark:text-blue-300 mt-1",
+                    },
+                    tr("submitted", "Submitted"),
+                    " ",
+                    new Date(P).toLocaleString(),
+                  ),
+                e.createElement(
+                  "div",
+                  { className: "flex flex-wrap gap-2 mt-3" },
+                  e.createElement(
+                    f,
+                    {
+                      type: "button",
+                      variant: "outline",
+                      className: "border-blue-300 text-blue-800",
+                      onClick: ee,
+                    },
+                    tr("copy_reference", "Copy reference"),
+                  ),
+                  e.createElement(
+                    f,
+                    {
+                      type: "button",
+                      className: "bg-blue-600 hover:bg-blue-700 text-white",
+                      onClick: h,
+                    },
+                    tr("refresh_complaint_status", "Refresh complaint status"),
+                  ),
+                ),
+              ),
+            ),
+          e.createElement(
+            v,
+            {
+              className:
+                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95",
+            },
+            e.createElement(
+              E,
+              {
+                className:
+                  "bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-6",
+              },
+              e.createElement(
+                O,
+                { className: "flex items-center space-x-3 text-xl" },
+                e.createElement(de, { className: "w-6 h-6" }),
+                e.createElement("span", null, r("my_complaints")),
+              ),
+              e.createElement(
+                M,
+                { className: "text-purple-100" },
+                r("track_status"),
+              ),
+            ),
+            e.createElement(
+              w,
+              { className: "p-6" },
+              K
+                ? e.createElement(
+                    "div",
+                    { className: "text-center py-8" },
+                    e.createElement("div", {
+                      className:
+                        "w-10 h-10 border-4 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto mb-4",
+                    }),
+                    e.createElement(
+                      "p",
+                      { className: "text-gray-500 dark:text-gray-400" },
+                      r("loading_complaints"),
+                    ),
+                  )
+                : j
+                  ? e.createElement(
+                      "div",
+                      { className: "text-center py-8" },
+                      e.createElement(
+                        "p",
+                        { className: "text-red-500 dark:text-red-400 mb-3" },
+                        j,
+                      ),
+                      e.createElement(
+                        f,
+                        { type: "button", variant: "outline", onClick: h },
+                        tr("retry", "Retry"),
+                      ),
+                    )
+                  : z.length === 0
+                    ? e.createElement(
+                        "div",
+                        { className: "text-center py-12" },
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4",
+                          },
+                          e.createElement(N, {
+                            className: "w-8 h-8 text-gray-400",
+                          }),
+                        ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-gray-500 dark:text-gray-400 text-lg",
+                          },
+                          r("no_complaints_yet"),
+                        ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-gray-400 dark:text-gray-500 text-sm mt-1",
+                          },
+                          r("completed_your_complaints_here"),
+                        ),
+                      )
+                    : e.createElement(
+                        "div",
+                        { className: "space-y-4" },
+                        z.map((t) => {
+                          const s = t.complaint_id || t.id || t._id,
+                            l = t.complaint_type || t.type || "other",
+                            o = t.post_id || t.postId || "-",
+                            c = t.created_at || t.submittedDate || null,
+                            U = t.admin_response || t.adminResponse || "";
+                          return e.createElement(
+                            "div",
+                            {
+                              key: s,
+                              className:
+                                "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all",
+                            },
+                            e.createElement(
+                              "div",
+                              {
+                                className:
+                                  "flex items-start justify-between mb-3",
+                              },
+                              e.createElement(
+                                "div",
+                                null,
+                                e.createElement(
+                                  "h4",
+                                  {
+                                    className:
+                                      "font-bold text-gray-900 dark:text-white text-lg",
+                                  },
+                                  ye(l),
+                                ),
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-sm text-gray-500 dark:text-gray-400 font-mono",
+                                  },
+                                  tr("complaint_id", "Complaint ID"),
+                                  ": ",
+                                  s,
+                                ),
+                              ),
+                              e.createElement(
+                                y,
+                                { className: re(t.status) },
+                                e.createElement(
+                                  "div",
+                                  { className: "flex items-center gap-1" },
+                                  se(t.status),
+                                  e.createElement("span", null, oe(t.status)),
+                                ),
+                              ),
+                            ),
+                            e.createElement(
+                              "div",
+                              {
+                                className:
+                                  "grid grid-cols-2 gap-4 mb-3 text-sm",
+                              },
+                              e.createElement(
+                                "div",
+                                { className: "flex items-center gap-2" },
+                                e.createElement(
+                                  "span",
+                                  { className: "text-gray-500" },
+                                  tr("post_id", "Post ID"),
+                                  ":",
+                                ),
+                                e.createElement(
+                                  "span",
+                                  { className: "font-medium" },
+                                  o,
+                                ),
+                              ),
+                              e.createElement(
+                                "div",
+                                { className: "flex items-center gap-2" },
+                                e.createElement(
+                                  "span",
+                                  { className: "text-gray-500" },
+                                  tr("submitted", "Submitted"),
+                                  ":",
+                                ),
+                                e.createElement(
+                                  "span",
+                                  { className: "font-medium" },
+                                  ae(c),
+                                ),
+                              ),
+                            ),
+                            e.createElement(
+                              "p",
+                              {
+                                className:
+                                  "text-gray-700 dark:text-gray-300 text-sm mb-3",
+                              },
+                              t.description,
+                            ),
+                            U &&
+                              e.createElement(
+                                "div",
+                                {
+                                  className:
+                                    "bg-green-50 border border-green-200 rounded-xl p-4",
+                                },
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-sm font-semibold text-green-800 mb-1 flex items-center gap-2",
+                                  },
+                                  e.createElement(n, { className: "w-4 h-4" }),
+                                  r("admin_response"),
+                                  ":",
+                                ),
+                                e.createElement(
+                                  "p",
+                                  { className: "text-sm text-green-700" },
+                                  U,
+                                ),
+                              ),
+                          );
+                        }),
+                      ),
+            ),
+          ),
+          e.createElement(
+            v,
+            {
+              className:
+                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-200 dark:border-yellow-700",
+            },
+            e.createElement(
+              w,
+              { className: "p-6" },
+              e.createElement(
+                "div",
+                { className: "flex items-start gap-4" },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0",
+                  },
+                  e.createElement(N, { className: "w-6 h-6 text-yellow-600" }),
+                ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "h3",
+                    {
+                      className:
+                        "font-bold text-yellow-800 dark:text-yellow-300 text-lg mb-3",
+                    },
+                    "\uD83D\uDCCB ",
+                    r("important_guidelines"),
+                  ),
+                  e.createElement(
+                    "ul",
+                    {
+                      className:
+                        "space-y-2 text-yellow-700 dark:text-yellow-400",
+                    },
+                    e.createElement(
+                      "li",
+                      { className: "flex items-start gap-2" },
+                      e.createElement(n, {
+                        className: "w-4 h-4 mt-1 flex-shrink-0",
+                      }),
+                      e.createElement("span", null, r("provide_accurate_ids")),
+                    ),
+                    e.createElement(
+                      "li",
+                      { className: "flex items-start gap-2" },
+                      e.createElement(n, {
+                        className: "w-4 h-4 mt-1 flex-shrink-0",
+                      }),
+                      e.createElement(
+                        "span",
+                        null,
+                        r("include_transaction_details"),
+                      ),
+                    ),
+                    e.createElement(
+                      "li",
+                      { className: "flex items-start gap-2" },
+                      e.createElement(n, {
+                        className: "w-4 h-4 mt-1 flex-shrink-0",
+                      }),
+                      e.createElement("span", null, r("response_time_24_48")),
+                    ),
+                    e.createElement(
+                      "li",
+                      { className: "flex items-start gap-2" },
+                      e.createElement(n, {
+                        className: "w-4 h-4 mt-1 flex-shrink-0",
+                      }),
+                      e.createElement("span", null, r("keep_evidence")),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        W &&
+          e.createElement(
+            "button",
+            {
+              onClick: R,
+              className:
+                "fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-full shadow-2xl shadow-red-500/40 flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce",
+            },
+            e.createElement(pe, { className: "w-6 h-6" }),
+          ),
+      )
+    : e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen bg-gradient-to-br from-red-600 via-orange-600 to-amber-600",
+          style: { paddingBottom: "120px" },
+        },
+        e.createElement(
+          "div",
+          { className: "pt-16 pb-12 px-6 text-center" },
+          e.createElement(
+            "div",
+            {
+              className:
+                "w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center shadow-2xl",
+            },
+            e.createElement(H, { className: "w-12 h-12 text-white" }),
+          ),
+          e.createElement(
+            "h1",
+            { className: "text-4xl font-bold text-white mb-3" },
+            r("complaints") || "Complaints",
+          ),
+          e.createElement(
+            "p",
+            { className: "text-white/80 text-lg max-w-md mx-auto" },
+            r("complaints_login_desc") ||
+              "Need to report an issue? Please login to file a complaint.",
+          ),
+        ),
+        e.createElement(
+          "div",
+          { className: "max-w-lg mx-auto px-6 space-y-4" },
+          e.createElement(
+            J,
+            {
+              to: "/login",
+              className:
+                "block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300",
+            },
+            e.createElement(
+              "div",
+              { className: "flex items-center gap-4" },
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "w-14 h-14 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg",
+                },
+                e.createElement(n, { className: "w-7 h-7 text-white" }),
+              ),
+              e.createElement(
+                "div",
+                { className: "flex-1" },
+                e.createElement(
+                  "h3",
+                  { className: "text-xl font-bold text-gray-900" },
+                  r("login") || "Login",
+                ),
+                e.createElement(
+                  "p",
+                  { className: "text-gray-500 text-sm" },
+                  r("login_desc") || "Already have an account? Sign in here",
+                ),
+              ),
+              e.createElement(Y, { className: "w-6 h-6 text-gray-400" }),
+            ),
+          ),
+          e.createElement(
+            J,
+            {
+              to: "/signup",
+              className:
+                "block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300",
+            },
+            e.createElement(
+              "div",
+              { className: "flex items-center gap-4" },
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "w-14 h-14 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shadow-lg",
+                },
+                e.createElement(be, { className: "w-7 h-7 text-white" }),
+              ),
+              e.createElement(
+                "div",
+                { className: "flex-1" },
+                e.createElement(
+                  "h3",
+                  { className: "text-xl font-bold text-white" },
+                  r("signup") || "Create Account",
+                ),
+                e.createElement(
+                  "p",
+                  { className: "text-white/70 text-sm" },
+                  r("signup_desc") || "New user? Join us in just a few steps",
+                ),
+              ),
+              e.createElement(Y, { className: "w-6 h-6 text-white/60" }),
+            ),
+          ),
+        ),
+      );
+};
+var je = ve;
+export { je as default };

@@ -36,7 +36,7 @@ import LocationSelector from "./LocationSelector";
 import { useToast } from "@/hooks/use-toast";
 
 const HIDDEN_PATHS = new Set(["/login", "/signup", "/forgot-password"]);
-const BACK_BUTTON_HIDDEN_PATHS = new Set(["/", "/all-posts", "/home"]);
+const BACK_BUTTON_HIDDEN_PATHS = new Set([]);
 const LOCATION_OPTIONS = [
   "Any",
   "Hyderabad",

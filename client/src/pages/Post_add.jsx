@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
-import { addTextPost } from '../lib/api';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { addTextPost } from "../lib/api";
 
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 const PostAdd = () => {
   const { t } = useTranslation();
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -16,22 +16,22 @@ const PostAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description.trim()) {
-      setError('Description is required');
+      setError("Description is required");
       return;
     }
     if (description.length < 5 || description.length > 500) {
-      setError('Description must be 5-500 characters.');
+      setError("Description must be 5-500 characters.");
       return;
     }
     setLoading(true);
     setError(null);
     try {
       await addTextPost({ description });
-      toast({ title: 'Post published!' });
-      setDescription('');
-      navigate('/feed');
+      toast({ title: "Post published!" });
+      setDescription("");
+      navigate("/feed");
     } catch (err) {
-      setError('Failed to publish post');
+      setError("Failed to publish post");
     } finally {
       setLoading(false);
     }
@@ -46,11 +46,15 @@ const PostAdd = () => {
           rows={5}
           placeholder="Enter your post description..."
           value={description}
-          onChange={e => setDescription(e.target.value)}
+          onChange={(e) => setDescription(e.target.value)}
         />
         {error && <div className="text-red-500">{error}</div>}
-        <Button type="submit" disabled={loading} className="bg-blue-600 text-white">
-          {loading ? 'Publishing...' : 'Publish'}
+        <Button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white"
+        >
+          {loading ? "Publishing..." : "Publish"}
         </Button>
       </form>
     </div>

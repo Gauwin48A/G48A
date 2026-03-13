@@ -1,1 +1,507 @@
-import e,{useCallback as P,useEffect as J,useMemo as K,useState as n}from"react";import{getChannelById as Q,createChannelPost as X,followChannel as Y}from"../lib/api";import{Link as V,useParams as Z}from"react-router-dom";import{ArrowLeft as T,Image as $,Loader2 as U,RefreshCw as R,Users as ee,Video as te}from"lucide-react";import{useTranslation as ae}from"react-i18next";import{useToast as oe}from"@/hooks/use-toast";import re from"@/components/EmptyState";import{Button as x}from"@/components/ui/button";import{Card as m,CardContent as c}from"@/components/ui/card";import{Input as se}from"@/components/ui/input";import{Textarea as ne}from"@/components/ui/textarea";const le=()=>{const{t}=ae(),{toast:p}=oe(),{channelId:A,id:M}=Z(),i=A||M,[o,f]=n(null),[F,y]=n([]),[O,v]=n(!0),[_,I]=n(!1),[w,B]=n(""),[b,D]=n(""),[u,j]=n("text"),[h,q]=n(!1),[N,E]=n(!1),[C,d]=n(null),L=P(a=>{const r=a?.data??a,s=r?.channel||r||null,l=String(localStorage.getItem("userId")||"");f(s),q(!!r?.isOwner||s?.owner_id&&String(s.owner_id)===l),y(Array.isArray(r?.posts)?r.posts:Array.isArray(s?.posts)?s.posts:[])},[]),g=P(async()=>{if(!i){d(t("something_went_wrong")||"Failed to load channel"),f(null),y([]),v(!1);return}v(!0),d(null);try{const a=await Q(i);L(a)}catch(a){import.meta.env.DEV&&console.error("Failed to fetch channel:",a),d(a?.message||t("something_went_wrong")||"Failed to load channel"),f(null),y([])}finally{v(!1)}},[L,i,t]);J(()=>{g()},[g]);const S=K(()=>[...F].sort((a,r)=>{const s=new Date(r.created_at||0).getTime(),l=new Date(a.created_at||0).getTime();return s-l}),[F]),z=async a=>{if(a.preventDefault(),!(!i||_)){if(u==="text"&&!w.trim()){p({title:t("validation_error")||"Validation Error",description:t("enter_description")||"Enter a description before posting.",variant:"destructive"});return}if((u==="image"||u==="video")&&!b.trim()&&!w.trim()){p({title:t("validation_error")||"Validation Error",description:t("media_or_description_required")||"Add media URL or description.",variant:"destructive"});return}I(!0),d(null);try{await X(i,{description:w,type:u,media_url:b}),B(""),D(""),await g(),p({title:t("success")||"Success",description:t("post_created")||"Channel post created successfully."})}catch(r){import.meta.env.DEV&&console.error("Failed to create channel post:",r);const s=r?.message||t("something_went_wrong")||"Failed to post";d(s),p({title:t("error")||"Error",description:s,variant:"destructive"})}finally{I(!1)}}},W=async()=>{if(!(!i||N||h)){E(!0),d(null);try{const a=await Y(i),r=a?.data??a,s=String(r?.action||"").toLowerCase();s==="followed"||s==="unfollowed"?f(l=>{if(!l)return l;const G=!!l.is_following,k=s==="followed",H=Number.parseInt(l.follower_count,10)||0;return{...l,is_following:k,follower_count:Math.max(0,H+(k===G?0:k?1:-1))}}):await g()}catch(a){import.meta.env.DEV&&console.error("Failed to toggle follow:",a);const r=a?.message||t("something_went_wrong")||"Failed to update follow state";d(r),p({title:t("error")||"Error",description:r,variant:"destructive"})}finally{E(!1)}}};return O?e.createElement("div",{className:"container mx-auto max-w-4xl p-4 sm:p-6"},e.createElement("div",{className:"space-y-3"},[1,2,3].map(a=>e.createElement(m,{key:a,className:"animate-pulse"},e.createElement(c,{className:"p-4"},e.createElement("div",{className:"mb-2 h-5 w-52 rounded bg-gray-200 dark:bg-gray-700"}),e.createElement("div",{className:"h-4 w-full rounded bg-gray-200 dark:bg-gray-700"})))))):o?e.createElement("div",{className:"container mx-auto max-w-4xl p-4 sm:p-6"},e.createElement("div",{className:"mb-4 flex items-center gap-3"},e.createElement(V,{to:"/channels",className:"inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"},e.createElement(T,{className:"h-4 w-4"}),t("back")||"Back")),e.createElement(m,{className:"mb-5"},e.createElement(c,{className:"flex flex-col gap-4 p-4 sm:flex-row sm:items-start"},e.createElement("div",{className:"flex items-center gap-3"},o.logo_url||o.profile_pic?e.createElement("img",{src:o.logo_url||o.profile_pic,alt:"logo",className:"h-16 w-16 rounded-full object-cover"}):e.createElement("div",{className:"flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-700"},e.createElement(ee,{className:"h-7 w-7"})),e.createElement("div",null,e.createElement("h1",{className:"text-xl font-bold text-gray-900 dark:text-white"},o.name),e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400"},t("owner")||"Owner",": ",o.owner_name||o.owner_id||"-"),e.createElement("p",{className:"text-xs text-gray-400"},t("followers")||"Followers",": ",o.follower_count||0))),!h&&e.createElement(x,{type:"button",onClick:W,disabled:N,className:"sm:ml-auto",variant:o.is_following?"outline":"default"},N?e.createElement("span",{className:"inline-flex items-center gap-2"},e.createElement(U,{className:"h-4 w-4 animate-spin"}),t("loading")||"Loading..."):o.is_following?t("unfollow")||"Unfollow":t("follow")||"Follow"))),(o.bio||o.description)&&e.createElement(m,{className:"mb-5"},e.createElement(c,{className:"p-4 text-sm text-gray-600 dark:text-gray-300"},o.bio||o.description)),C&&e.createElement("div",{className:"mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"},C),h&&e.createElement(m,{className:"mb-6"},e.createElement(c,{className:"p-4"},e.createElement("h2",{className:"mb-3 text-lg font-semibold text-gray-900 dark:text-white"},t("create_post")||"Create Post"),e.createElement("form",{onSubmit:z,className:"space-y-3"},e.createElement(ne,{className:"min-h-[90px]",placeholder:t("description_placeholder")||"Write a description",value:w,onChange:a=>B(a.target.value)}),e.createElement(se,{placeholder:t("media_url_optional")||"Media URL (optional)",value:b,onChange:a=>D(a.target.value)}),e.createElement("select",{className:"w-full rounded-md border border-input bg-background px-3 py-2 text-sm",value:u,onChange:a=>j(a.target.value)},e.createElement("option",{value:"text"},t("text_type")||"Text"),e.createElement("option",{value:"image"},t("image_type")||"Image"),e.createElement("option",{value:"video"},t("video_type")||"Video")),e.createElement(x,{type:"submit",disabled:_},_?e.createElement("span",{className:"inline-flex items-center gap-2"},e.createElement(U,{className:"h-4 w-4 animate-spin"}),t("publishing")||"Publishing..."):t("post_button")||"Post")))),e.createElement("div",null,e.createElement("h3",{className:"mb-3 text-lg font-semibold text-gray-900 dark:text-white"},t("channel_posts")||"Posts"),S.length===0?e.createElement(re,{type:"posts",title:t("no_posts")||"No posts yet",message:h?t("start_posting")||"Create the first post for this channel.":t("check_back_later")||"Check back later for updates."}):e.createElement("ul",{className:"space-y-3"},S.map(a=>e.createElement("li",{key:a.post_id},e.createElement(m,null,e.createElement(c,{className:"p-4"},a.description&&e.createElement("p",{className:"mb-2 whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-100"},a.description),a.image_url&&e.createElement("a",{href:a.image_url,target:"_blank",rel:"noopener noreferrer",className:"mb-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"},e.createElement($,{className:"h-4 w-4"}),t("view_image")||"View image"),a.video_url&&e.createElement("a",{href:a.video_url,target:"_blank",rel:"noopener noreferrer",className:"mb-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"},e.createElement(te,{className:"h-4 w-4"}),t("view_video")||"View video"),e.createElement("p",{className:"text-xs text-gray-400"},new Date(a.created_at).toLocaleString())))))))):e.createElement("div",{className:"container mx-auto max-w-3xl p-4 sm:p-6"},e.createElement(m,null,e.createElement(c,{className:"flex flex-col items-center gap-3 p-8 text-center"},e.createElement("p",{className:"text-sm text-red-600"},C||t("something_went_wrong")||"Failed to load channel"),e.createElement("div",{className:"flex flex-wrap justify-center gap-2"},e.createElement(x,{variant:"outline",className:"gap-2",onClick:g},e.createElement(R,{className:"h-4 w-4"}),t("retry")||"Retry"),e.createElement(V,{to:"/channels"},e.createElement(x,{className:"gap-2"},e.createElement(T,{className:"h-4 w-4"}),t("back")||"Back"))))))};var ve=le;export{ve as default};
+import e, {
+  useCallback as P,
+  useEffect as J,
+  useMemo as K,
+  useState as n,
+} from "react";
+import {
+  getChannelById as Q,
+  createChannelPost as X,
+  followChannel as Y,
+} from "../lib/api";
+import { Link as V, useParams as Z } from "react-router-dom";
+import {
+  ArrowLeft as T,
+  Image as $,
+  Loader2 as U,
+  RefreshCw as R,
+  Users as ee,
+  Video as te,
+} from "lucide-react";
+import { useTranslation as ae } from "react-i18next";
+import { useToast as oe } from "@/hooks/use-toast";
+import re from "@/components/EmptyState";
+import { Button as x } from "@/components/ui/button";
+import { Card as m, CardContent as c } from "@/components/ui/card";
+import { Input as se } from "@/components/ui/input";
+import { Textarea as ne } from "@/components/ui/textarea";
+const le = () => {
+  const { t } = ae(),
+    { toast: p } = oe(),
+    { channelId: A, id: M } = Z(),
+    i = A || M,
+    [o, f] = n(null),
+    [F, y] = n([]),
+    [O, v] = n(!0),
+    [_, I] = n(!1),
+    [w, B] = n(""),
+    [b, D] = n(""),
+    [u, j] = n("text"),
+    [h, q] = n(!1),
+    [N, E] = n(!1),
+    [C, d] = n(null),
+    L = P((a) => {
+      const r = a?.data ?? a,
+        s = r?.channel || r || null,
+        l = String(localStorage.getItem("userId") || "");
+      f(s),
+        q(!!r?.isOwner || (s?.owner_id && String(s.owner_id) === l)),
+        y(
+          Array.isArray(r?.posts)
+            ? r.posts
+            : Array.isArray(s?.posts)
+              ? s.posts
+              : [],
+        );
+    }, []),
+    g = P(async () => {
+      if (!i) {
+        d(t("something_went_wrong") || "Failed to load channel"),
+          f(null),
+          y([]),
+          v(!1);
+        return;
+      }
+      v(!0), d(null);
+      try {
+        const a = await Q(i);
+        L(a);
+      } catch (a) {
+        import.meta.env.DEV && console.error("Failed to fetch channel:", a),
+          d(
+            a?.message || t("something_went_wrong") || "Failed to load channel",
+          ),
+          f(null),
+          y([]);
+      } finally {
+        v(!1);
+      }
+    }, [L, i, t]);
+  J(() => {
+    g();
+  }, [g]);
+  const S = K(
+      () =>
+        [...F].sort((a, r) => {
+          const s = new Date(r.created_at || 0).getTime(),
+            l = new Date(a.created_at || 0).getTime();
+          return s - l;
+        }),
+      [F],
+    ),
+    z = async (a) => {
+      if ((a.preventDefault(), !(!i || _))) {
+        if (u === "text" && !w.trim()) {
+          p({
+            title: t("validation_error") || "Validation Error",
+            description:
+              t("enter_description") || "Enter a description before posting.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if ((u === "image" || u === "video") && !b.trim() && !w.trim()) {
+          p({
+            title: t("validation_error") || "Validation Error",
+            description:
+              t("media_or_description_required") ||
+              "Add media URL or description.",
+            variant: "destructive",
+          });
+          return;
+        }
+        I(!0), d(null);
+        try {
+          await X(i, { description: w, type: u, media_url: b }),
+            B(""),
+            D(""),
+            await g(),
+            p({
+              title: t("success") || "Success",
+              description:
+                t("post_created") || "Channel post created successfully.",
+            });
+        } catch (r) {
+          import.meta.env.DEV &&
+            console.error("Failed to create channel post:", r);
+          const s = r?.message || t("something_went_wrong") || "Failed to post";
+          d(s),
+            p({
+              title: t("error") || "Error",
+              description: s,
+              variant: "destructive",
+            });
+        } finally {
+          I(!1);
+        }
+      }
+    },
+    W = async () => {
+      if (!(!i || N || h)) {
+        E(!0), d(null);
+        try {
+          const a = await Y(i),
+            r = a?.data ?? a,
+            s = String(r?.action || "").toLowerCase();
+          s === "followed" || s === "unfollowed"
+            ? f((l) => {
+                if (!l) return l;
+                const G = !!l.is_following,
+                  k = s === "followed",
+                  H = Number.parseInt(l.follower_count, 10) || 0;
+                return {
+                  ...l,
+                  is_following: k,
+                  follower_count: Math.max(0, H + (k === G ? 0 : k ? 1 : -1)),
+                };
+              })
+            : await g();
+        } catch (a) {
+          import.meta.env.DEV && console.error("Failed to toggle follow:", a);
+          const r =
+            a?.message ||
+            t("something_went_wrong") ||
+            "Failed to update follow state";
+          d(r),
+            p({
+              title: t("error") || "Error",
+              description: r,
+              variant: "destructive",
+            });
+        } finally {
+          E(!1);
+        }
+      }
+    };
+  return O
+    ? e.createElement(
+        "div",
+        { className: "container mx-auto max-w-4xl p-4 sm:p-6" },
+        e.createElement(
+          "div",
+          { className: "space-y-3" },
+          [1, 2, 3].map((a) =>
+            e.createElement(
+              m,
+              { key: a, className: "animate-pulse" },
+              e.createElement(
+                c,
+                { className: "p-4" },
+                e.createElement("div", {
+                  className:
+                    "mb-2 h-5 w-52 rounded bg-gray-200 dark:bg-gray-700",
+                }),
+                e.createElement("div", {
+                  className: "h-4 w-full rounded bg-gray-200 dark:bg-gray-700",
+                }),
+              ),
+            ),
+          ),
+        ),
+      )
+    : o
+      ? e.createElement(
+          "div",
+          { className: "container mx-auto max-w-4xl p-4 sm:p-6" },
+          e.createElement(
+            "div",
+            { className: "mb-4 flex items-center gap-3" },
+            e.createElement(
+              V,
+              {
+                to: "/channels",
+                className:
+                  "inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300",
+              },
+              e.createElement(T, { className: "h-4 w-4" }),
+              t("back") || "Back",
+            ),
+          ),
+          e.createElement(
+            m,
+            { className: "mb-5" },
+            e.createElement(
+              c,
+              {
+                className: "flex flex-col gap-4 p-4 sm:flex-row sm:items-start",
+              },
+              e.createElement(
+                "div",
+                { className: "flex items-center gap-3" },
+                o.logo_url || o.profile_pic
+                  ? e.createElement("img", {
+                      src: o.logo_url || o.profile_pic,
+                      alt: "logo",
+                      className: "h-16 w-16 rounded-full object-cover",
+                    })
+                  : e.createElement(
+                      "div",
+                      {
+                        className:
+                          "flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-700",
+                      },
+                      e.createElement(ee, { className: "h-7 w-7" }),
+                    ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "h1",
+                    {
+                      className:
+                        "text-xl font-bold text-gray-900 dark:text-white",
+                    },
+                    o.name,
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-xs text-gray-500 dark:text-gray-400" },
+                    t("owner") || "Owner",
+                    ": ",
+                    o.owner_name || o.owner_id || "-",
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-xs text-gray-400" },
+                    t("followers") || "Followers",
+                    ": ",
+                    o.follower_count || 0,
+                  ),
+                ),
+              ),
+              !h &&
+                e.createElement(
+                  x,
+                  {
+                    type: "button",
+                    onClick: W,
+                    disabled: N,
+                    className: "sm:ml-auto",
+                    variant: o.is_following ? "outline" : "default",
+                  },
+                  N
+                    ? e.createElement(
+                        "span",
+                        { className: "inline-flex items-center gap-2" },
+                        e.createElement(U, {
+                          className: "h-4 w-4 animate-spin",
+                        }),
+                        t("loading") || "Loading...",
+                      )
+                    : o.is_following
+                      ? t("unfollow") || "Unfollow"
+                      : t("follow") || "Follow",
+                ),
+            ),
+          ),
+          (o.bio || o.description) &&
+            e.createElement(
+              m,
+              { className: "mb-5" },
+              e.createElement(
+                c,
+                { className: "p-4 text-sm text-gray-600 dark:text-gray-300" },
+                o.bio || o.description,
+              ),
+            ),
+          C &&
+            e.createElement(
+              "div",
+              {
+                className:
+                  "mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700",
+              },
+              C,
+            ),
+          h &&
+            e.createElement(
+              m,
+              { className: "mb-6" },
+              e.createElement(
+                c,
+                { className: "p-4" },
+                e.createElement(
+                  "h2",
+                  {
+                    className:
+                      "mb-3 text-lg font-semibold text-gray-900 dark:text-white",
+                  },
+                  t("create_post") || "Create Post",
+                ),
+                e.createElement(
+                  "form",
+                  { onSubmit: z, className: "space-y-3" },
+                  e.createElement(ne, {
+                    className: "min-h-[90px]",
+                    placeholder:
+                      t("description_placeholder") || "Write a description",
+                    value: w,
+                    onChange: (a) => B(a.target.value),
+                  }),
+                  e.createElement(se, {
+                    placeholder:
+                      t("media_url_optional") || "Media URL (optional)",
+                    value: b,
+                    onChange: (a) => D(a.target.value),
+                  }),
+                  e.createElement(
+                    "select",
+                    {
+                      className:
+                        "w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+                      value: u,
+                      onChange: (a) => j(a.target.value),
+                    },
+                    e.createElement(
+                      "option",
+                      { value: "text" },
+                      t("text_type") || "Text",
+                    ),
+                    e.createElement(
+                      "option",
+                      { value: "image" },
+                      t("image_type") || "Image",
+                    ),
+                    e.createElement(
+                      "option",
+                      { value: "video" },
+                      t("video_type") || "Video",
+                    ),
+                  ),
+                  e.createElement(
+                    x,
+                    { type: "submit", disabled: _ },
+                    _
+                      ? e.createElement(
+                          "span",
+                          { className: "inline-flex items-center gap-2" },
+                          e.createElement(U, {
+                            className: "h-4 w-4 animate-spin",
+                          }),
+                          t("publishing") || "Publishing...",
+                        )
+                      : t("post_button") || "Post",
+                  ),
+                ),
+              ),
+            ),
+          e.createElement(
+            "div",
+            null,
+            e.createElement(
+              "h3",
+              {
+                className:
+                  "mb-3 text-lg font-semibold text-gray-900 dark:text-white",
+              },
+              t("channel_posts") || "Posts",
+            ),
+            S.length === 0
+              ? e.createElement(re, {
+                  type: "posts",
+                  title: t("no_posts") || "No posts yet",
+                  message: h
+                    ? t("start_posting") ||
+                      "Create the first post for this channel."
+                    : t("check_back_later") || "Check back later for updates.",
+                })
+              : e.createElement(
+                  "ul",
+                  { className: "space-y-3" },
+                  S.map((a) =>
+                    e.createElement(
+                      "li",
+                      { key: a.post_id },
+                      e.createElement(
+                        m,
+                        null,
+                        e.createElement(
+                          c,
+                          { className: "p-4" },
+                          a.description &&
+                            e.createElement(
+                              "p",
+                              {
+                                className:
+                                  "mb-2 whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-100",
+                              },
+                              a.description,
+                            ),
+                          a.image_url &&
+                            e.createElement(
+                              "a",
+                              {
+                                href: a.image_url,
+                                target: "_blank",
+                                rel: "noopener noreferrer",
+                                className:
+                                  "mb-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline",
+                              },
+                              e.createElement($, { className: "h-4 w-4" }),
+                              t("view_image") || "View image",
+                            ),
+                          a.video_url &&
+                            e.createElement(
+                              "a",
+                              {
+                                href: a.video_url,
+                                target: "_blank",
+                                rel: "noopener noreferrer",
+                                className:
+                                  "mb-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline",
+                              },
+                              e.createElement(te, { className: "h-4 w-4" }),
+                              t("view_video") || "View video",
+                            ),
+                          e.createElement(
+                            "p",
+                            { className: "text-xs text-gray-400" },
+                            new Date(a.created_at).toLocaleString(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+          ),
+        )
+      : e.createElement(
+          "div",
+          { className: "container mx-auto max-w-3xl p-4 sm:p-6" },
+          e.createElement(
+            m,
+            null,
+            e.createElement(
+              c,
+              { className: "flex flex-col items-center gap-3 p-8 text-center" },
+              e.createElement(
+                "p",
+                { className: "text-sm text-red-600" },
+                C || t("something_went_wrong") || "Failed to load channel",
+              ),
+              e.createElement(
+                "div",
+                { className: "flex flex-wrap justify-center gap-2" },
+                e.createElement(
+                  x,
+                  { variant: "outline", className: "gap-2", onClick: g },
+                  e.createElement(R, { className: "h-4 w-4" }),
+                  t("retry") || "Retry",
+                ),
+                e.createElement(
+                  V,
+                  { to: "/channels" },
+                  e.createElement(
+                    x,
+                    { className: "gap-2" },
+                    e.createElement(T, { className: "h-4 w-4" }),
+                    t("back") || "Back",
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+};
+var ve = le;
+export { ve as default };

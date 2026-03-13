@@ -76,7 +76,9 @@ export default function Categories() {
       setCategories(Array.isArray(list) ? list : []);
     } catch {
       setCategories([]);
-      setError(t("categories_load_failed") || "Unable to load categories right now.");
+      setError(
+        t("categories_load_failed") || "Unable to load categories right now.",
+      );
     } finally {
       setLoading(false);
     }
@@ -94,8 +96,13 @@ export default function Categories() {
 
     return categories.filter((category) => {
       const categoryName = String(category.name || "").toLowerCase();
-      const categoryDescription = String(category.description || "").toLowerCase();
-      return categoryName.includes(normalized) || categoryDescription.includes(normalized);
+      const categoryDescription = String(
+        category.description || "",
+      ).toLowerCase();
+      return (
+        categoryName.includes(normalized) ||
+        categoryDescription.includes(normalized)
+      );
     });
   }, [categories, searchQuery]);
 
@@ -164,7 +171,9 @@ export default function Categories() {
 
         {error ? (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
-            <p className="mb-3 text-sm text-red-700 dark:text-red-300">{error}</p>
+            <p className="mb-3 text-sm text-red-700 dark:text-red-300">
+              {error}
+            </p>
             <Button
               type="button"
               variant="outline"
@@ -195,10 +204,12 @@ export default function Categories() {
         {!loading && filteredCategories.length === 0 ? (
           <Card className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-center dark:border-blue-900 dark:bg-blue-950/30">
             <h2 className="mb-2 text-lg font-semibold text-blue-900 dark:text-blue-200">
-              {t("no_categories_match_search") || "No categories match your search"}
+              {t("no_categories_match_search") ||
+                "No categories match your search"}
             </h2>
             <p className="mb-4 text-sm text-blue-700 dark:text-blue-300">
-              {t("try_broader_keyword") || "Try a broader keyword or reset the search."}
+              {t("try_broader_keyword") ||
+                "Try a broader keyword or reset the search."}
             </p>
             <Button
               type="button"
@@ -224,7 +235,12 @@ export default function Categories() {
 
                 return (
                   <Card
-                    key={category.category_id || category.id || category.name || index}
+                    key={
+                      category.category_id ||
+                      category.id ||
+                      category.name ||
+                      index
+                    }
                     onClick={() => handleCategorySelect(category.name)}
                     className="group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl dark:border-gray-700"
                   >

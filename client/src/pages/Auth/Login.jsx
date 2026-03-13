@@ -1,5 +1,787 @@
-import t,{useState as c}from"react";import{Button as N}from"@/components/ui/button";import{Input as y}from"@/components/ui/input";import{Label as b}from"@/components/ui/label";import{Card as z,CardContent as R,CardHeader as ee,CardTitle as te,CardDescription as re}from"@/components/ui/card";import{Tabs as oe,TabsContent as X,TabsList as se,TabsTrigger as H}from"@/components/ui/tabs";import{useToast as ae}from"@/hooks/use-toast";import{useNavigate as ne,Link as ie,useLocation as le}from"react-router-dom";import{Shield as de,Mail as ce,Phone as ue,Eye as ge,EyeOff as pe,AlertCircle as M}from"lucide-react";import{getDeviceId as me}from"@/utils/device";import{getBestAvailableLocation as he,captureLocation as j}from"@/services/locationService";import{useTranslation as fe}from"react-i18next";import v from"@/services/api";import{useAuth as ye}from"@/context/AuthContext";const C=String(import.meta.env.VITE_ENABLE_PHONE_OTP_LOGIN||"").toLowerCase()==="true",be=()=>{const{t:r}=fe(),x=ne(),I=le(),{toast:i}=ae(),{login:Qe,refreshAuth:Je,setUser:W}=ye(),[u,g]=c(!1),[L,G]=c(!1),[p,O]=c({identifier:"",password:""}),[d,T]=c({phone:"",otp:""}),[h,E]=c(!1),[_,q]=c(""),[U,A]=c(!1),[w,l]=c(""),S=e=>({status:e?.status??e?.response?.status??null,data:e?.data??e?.response?.data??{},message:e?.message||e?.response?.data?.error||e?.response?.data?.message||""}),P=(e,o)=>{const s=e?.status,n=String(e?.data?.code||e?.data?.errorCode||"").toLowerCase(),a=String(e?.data?.error||e?.data?.message||e?.message||"").toLowerCase();return s===429||a.includes("too many")||a.includes("rate limit")?"Too many sign-in attempts detected. Please wait a few minutes and retry.":s===423||a.includes("locked")?"Your account is temporarily locked. Use Forgot Password or retry later.":s===401||a.includes("invalid credential")||a.includes("wrong password")||a.includes("incorrect password")||a.includes("user not found")?"Credentials did not match. Verify your identifier and password.":n==="risk_challenge_required"||a.includes("otp")||e?.data?.challengeType==="otp"?e?.data?.message||"Additional verification is required to complete login.":a.includes("network")||a.includes("fetch")||a.includes("timeout")?"Login service is temporarily unreachable. Please retry shortly.":o||e?.data?.error||e?.data?.message||e?.message||r("login_failed")||"Login failed"},f=e=>{const o=e?.id??e?.user_id??null;return o==null||o===""?null:String(o)},k=e=>{if(!e||typeof e!="object")return;localStorage.setItem("user",JSON.stringify(e));const o=f(e);o&&localStorage.setItem("userId",o),W(e)},D=e=>{e?.token&&(localStorage.setItem("authToken",e.token),localStorage.removeItem("token"),e.refreshToken&&localStorage.setItem("refreshToken",e.refreshToken),e.user&&k(e.user))},F=()=>{const e=new URLSearchParams(I.search).get("returnTo"),s=I.state?.returnTo||e||"/all-posts";return typeof s=="string"&&s.startsWith("/")?s:"/all-posts"},$=async e=>Qe(e),V=async(e=null)=>{try{const o=await v.get("/profile");localStorage.setItem("userProfile",JSON.stringify(o));const s=f(e),n=f(o),a={...e||{},...o||{},id:s??n??e?.id??o?.id??o?.user_id??null,user_id:o?.user_id??e?.user_id??e?.id??null};k(a)}catch(o){if(import.meta.env.DEV&&console.error("Failed to fetch profile after login",o),e){k(e);return}try{const s=await v.get("/auth/me");k(s)}catch(s){import.meta.env.DEV&&console.error("Failed to fetch /auth/me after login",s)}}},J=async()=>{try{const e=await Promise.race([he({allowCache:!0,allowIpFallback:!0,requiredAccuracy:1500,strictAccuracy:!1}),new Promise(s=>setTimeout(()=>s(null),2500))]);if(!e)return null;return{lat:e.latitude??e.lat,lng:e.longitude??e.lng,accuracy:e.accuracy??null,provider:e.provider||"browser_gps"}}catch(e){return import.meta.env.DEV&&console.warn("[LOGIN] Location capture skipped",e),null}},K=async e=>{if(e.preventDefault(),l(""),!p.identifier||!p.password){const o=r("identifier_password_required")||"Email/phone/username and password are required";l(o),i({title:r("validation_error")||"Validation Error",description:o,variant:"destructive"});return}if(h&&(!_||_.length<4)){const o=r("enter_authenticator_code")||"Please enter your authenticator code.";l(o),i({title:"OTP Required",description:o,variant:"destructive"});return}g(!0);try{const o=await J(),s=me(),n={identifier:p.identifier,password:p.password,deviceId:s};o&&o.lat!=null&&o.lng!=null&&(n.lat=o.lat,n.lng=o.lng,n.locationAccuracy=o.accuracy,n.locationProvider=o.provider);h&&(n.otp=_);const a=await $(n);if(a&&a.requireOtp){E(!0);const B=a.message||"Additional verification is required to complete login.";l(B),i({title:"Security Check",description:B});return;}if(a&&a.success){await Je(),E(!1),q("");const m=f(a.user)||localStorage.getItem("userId");m&&j(m).catch(()=>{}),i({title:r("login_successful")||"Login Successful",description:r("welcome_back_msg")||"Welcome back!"}),l(""),x(F(),{replace:!0});return;}const m=a?.error||r("login_failed")||"Login failed";l(m);const Z=m.toLowerCase().includes("location permission");i({title:Z?"Security Block":"Sign-in Failed",description:m,variant:"destructive"})}catch(o){import.meta.env.DEV&&console.error("Login Error:",o);const s=S(o),n=s.data?.code||s.data?.errorCode;if(s.status===202&&s.data?.requireOtp||s.status===401&&n==="RISK_CHALLENGE_REQUIRED"||s.data?.challengeType==="otp"){E(!0);const B=s.data?.message||"Additional verification is required to complete login.";l(B),i({title:"Security Check",description:B});return}const m=P(s,r("login_failed")||"Login failed");l(m);const Z=m.toLowerCase().includes("location permission");i({title:Z?"Security Block":"Sign-in Failed",description:m,variant:"destructive"})}finally{g(!1)}},Q=async()=>{if(l(""),!C){i({title:r("coming_soon")||"Coming Soon",description:r("phone_otp_coming_soon")||"Phone OTP login will be enabled soon."});return}const e=/^[6-9]\d{9}$/;if(!d.phone||!e.test(d.phone)){const o=r("invalid_phone_desc")||"Please enter a valid 10-digit phone number starting with 6-9.";l(o),i({title:r("invalid_phone_number")||"Invalid Phone Number",description:o,variant:"destructive"});return}g(!0);try{await v.post("/auth/send-otp",{phone:d.phone}),A(!0),i({title:r("otp_sent")||"OTP Sent",description:r("check_phone_otp")||"Check your phone for the verification code"})}catch(o){const s=S(o),n=P(s,r("could_not_send_otp")||"Could not send OTP");l(n),i({title:r("network_error")||"Error",description:n,variant:"destructive"})}finally{g(!1)}},Y=async e=>{if(e.preventDefault(),l(""),!C){i({title:r("coming_soon")||"Coming Soon",description:r("phone_otp_coming_soon")||"Phone OTP login will be enabled soon."});return}const o=/^\d{4,8}$/;if(!d.otp||!o.test(d.otp)){const s=r("otp_valid_desc")||"Please enter a valid OTP.";l(s),i({title:r("invalid_otp")||"Invalid OTP",description:s,variant:"destructive"});return}g(!0);try{const s=await v.post("/auth/verify-otp",{phone:d.phone,otp:d.otp});D(s),await Je(),await V(s.user||null);const n=f(s.user)||localStorage.getItem("userId");n&&j(n).catch(()=>{}),i({title:r("login_successful")||"Login Successful",description:r("welcome_back_msg")||"Welcome back!"}),l(""),A(!1),T(a=>({...a,otp:""})),x(F(),{replace:!0})}catch(s){const n=S(s),a=P(n,r("could_not_verify_otp")||"Could not verify OTP");l(a),i({title:r("network_error")||"Error",description:a,variant:"destructive"})}finally{g(!1)}};return t.createElement("div",{className:"min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300"},t.createElement("div",{className:"w-full max-w-md space-y-8"},t.createElement("div",{className:"text-center"},t.createElement("div",{className:"flex justify-center mb-6"},t.createElement("div",{className:"w-16 h-16 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg"},t.createElement(de,{className:"h-8 w-8 text-white"}))),t.createElement("h2",{className:"text-3xl font-bold text-gray-900 dark:text-white mb-2"},r("welcome_back")||"Welcome Back"),t.createElement("p",{className:"text-gray-600 dark:text-gray-300"},r("sign_in_to_account")||"Sign in to your account")),t.createElement(z,{className:"shadow-2xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800"},t.createElement(ee,{className:"bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-8"},t.createElement(te,{className:"text-2xl font-bold"},r("sign_in")||"Sign In"),t.createElement(re,{className:"text-sky-100"},r("choose_login_method")||"Choose your preferred login method")),t.createElement(R,{className:"p-8"},t.createElement(oe,{defaultValue:"email",className:"w-full"},t.createElement(se,{className:"grid w-full grid-cols-2 mb-8 bg-gray-100 dark:bg-gray-700 rounded-xl p-1"},t.createElement(H,{value:"email",className:"rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200"},t.createElement(ce,{className:"w-4 h-4"}),t.createElement("span",null,r("email")||"Email")),t.createElement(H,{value:"phone",disabled:!C,className:"rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200"},t.createElement(ue,{className:"w-4 h-4"}),t.createElement("span",null,r("phone")||"Phone"))),t.createElement(X,{value:"email"},t.createElement("form",{onSubmit:K,className:"space-y-6"},t.createElement("div",null,t.createElement(b,{htmlFor:"email",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},r("email_phone_username")||"Email / Phone / Username"),t.createElement(y,{id:"email",type:"text",required:!0,value:p.identifier,onChange:e=>O(o=>({...o,identifier:e.target.value})),className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl",placeholder:r("email_phone_username_placeholder")||"Enter your email, phone, or username"}),t.createElement("p",{className:"mt-2 text-xs text-gray-500 dark:text-gray-400"},r("login_identifier_help")||"Use the same email, phone, or username used during signup.")),t.createElement("div",null,t.createElement(b,{htmlFor:"password",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},r("password")||"Password"),t.createElement("div",{className:"relative mt-2"},t.createElement(y,{id:"password",type:L?"text":"password",required:!0,value:p.password,onChange:e=>O(o=>({...o,password:e.target.value})),className:"h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12",placeholder:r("password_placeholder")||"Enter your password"}),t.createElement(N,{type:"button",variant:"ghost",size:"sm",className:"absolute right-2 top-1/2 transform -translate-y-1/2",onClick:()=>G(!L)},L?t.createElement(pe,{className:"w-4 h-4"}):t.createElement(ge,{className:"w-4 h-4"})))),t.createElement("p",{className:"text-sm text-gray-600 dark:text-gray-400"},r("dont_have_account")||"Don't have an account?"," ",t.createElement("span",{className:"text-blue-600 dark:text-blue-400 cursor-pointer hover:underline",onClick:()=>x("/signup")},r("sign_up_here")||"Sign up here")),t.createElement("div",{className:"text-right"},t.createElement(ie,{to:"/forgot-password",className:"text-sm text-blue-600 dark:text-blue-400 hover:underline"},r("forgot_password")||"Forgot Password?")),w&&t.createElement("div",{className:"rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2"},t.createElement(M,{className:"w-4 h-4 mt-0.5 flex-shrink-0"}),t.createElement("span",null,w)),h&&t.createElement("div",{className:"animate-in fade-in slide-in-from-top-4 duration-300"},t.createElement(b,{htmlFor:"challenge-otp",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},r("security_code")||"Security Code"),t.createElement(y,{id:"challenge-otp",type:"text",value:_,onChange:e=>q(e.target.value),className:"mt-2 h-12 border-2 border-orange-300 focus:border-orange-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest bg-orange-50",placeholder:"\u2022 \u2022 \u2022 \u2022 \u2022 \u2022",maxLength:6,autoFocus:!0}),t.createElement("p",{className:"text-xs text-orange-600 mt-1"},r("enter_authenticator_code")||"Enter your authenticator code to continue.")),t.createElement(N,{type:"submit",disabled:u,className:`w-full h-12 rounded-xl text-lg font-semibold ${h?"bg-orange-500 hover:bg-orange-600":"bg-gradient-to-r from-sky-500 to-blue-600"}`},u?r("verifying")||"Verifying...":h?r("verify_login")||"Verify Login":r("sign_in")||"Sign In"))),t.createElement(X,{value:"phone"},C?t.createElement("div",{className:"space-y-6"},t.createElement("div",null,t.createElement(b,{htmlFor:"phone",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},r("phone")||"Phone Number"),t.createElement(y,{id:"phone",type:"tel",required:!0,value:d.phone,onChange:e=>T(o=>({...o,phone:e.target.value})),className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl",placeholder:r("phone_placeholder")||"+91 XXXXXXXXXX"})),t.createElement("p",{className:"text-sm text-gray-600 dark:text-gray-400"},r("dont_have_account")||"Don't have an account?"," ",t.createElement("span",{className:"text-blue-600 dark:text-blue-400 cursor-pointer hover:underline",onClick:()=>x("/signup")},r("sign_up_here")||"Sign up here")),w&&t.createElement("div",{className:"rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2"},t.createElement(M,{className:"w-4 h-4 mt-0.5 flex-shrink-0"}),t.createElement("span",null,w)),U?t.createElement("form",{onSubmit:Y,className:"space-y-6"},t.createElement("div",null,t.createElement(b,{htmlFor:"otp",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},r("enter_otp")||"Enter OTP"),t.createElement(y,{id:"otp",type:"text",required:!0,value:d.otp,onChange:e=>T(o=>({...o,otp:e.target.value})),className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest",placeholder:r("otp_placeholder")||"123456",maxLength:6})),t.createElement(N,{type:"submit",disabled:u,className:"w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"},u?r("logging_in")||"Logging In...":r("verify_sign_in")||"Verify & Sign In")):t.createElement(N,{onClick:Q,disabled:u,className:"w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold"},u?r("loading")||"Loading...":r("send_otp")||"Send OTP")):t.createElement("div",{className:"rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-center space-y-2"},t.createElement("h3",{className:"text-lg font-semibold text-gray-800 dark:text-gray-200"},r("phone_otp")||"Phone OTP"),t.createElement("p",{className:"text-sm text-gray-600 dark:text-gray-400"},r("phone_otp_coming_soon")||"Phone OTP login will be enabled soon."))))))))};var qe=be;export{qe as default};
-
-
-
-
+import t, { useState as c } from "react";
+import { Button as N } from "@/components/ui/button";
+import { Input as y } from "@/components/ui/input";
+import { Label as b } from "@/components/ui/label";
+import {
+  Card as z,
+  CardContent as R,
+  CardHeader as ee,
+  CardTitle as te,
+  CardDescription as re,
+} from "@/components/ui/card";
+import {
+  Tabs as oe,
+  TabsContent as X,
+  TabsList as se,
+  TabsTrigger as H,
+} from "@/components/ui/tabs";
+import { useToast as ae } from "@/hooks/use-toast";
+import {
+  useNavigate as ne,
+  Link as ie,
+  useLocation as le,
+} from "react-router-dom";
+import {
+  Shield as de,
+  Mail as ce,
+  Phone as ue,
+  Eye as ge,
+  EyeOff as pe,
+  AlertCircle as M,
+} from "lucide-react";
+import { getDeviceId as me } from "@/utils/device";
+import {
+  getBestAvailableLocation as he,
+  captureLocation as j,
+} from "@/services/locationService";
+import { useTranslation as fe } from "react-i18next";
+import v from "@/services/api";
+import { useAuth as ye } from "@/context/AuthContext";
+const C =
+    String(import.meta.env.VITE_ENABLE_PHONE_OTP_LOGIN || "").toLowerCase() ===
+    "true",
+  be = () => {
+    const { t: r } = fe(),
+      x = ne(),
+      I = le(),
+      { toast: i } = ae(),
+      { login: Qe, refreshAuth: Je, setUser: W } = ye(),
+      [u, g] = c(!1),
+      [L, G] = c(!1),
+      [p, O] = c({ identifier: "", password: "" }),
+      [d, T] = c({ phone: "", otp: "" }),
+      [h, E] = c(!1),
+      [_, q] = c(""),
+      [U, A] = c(!1),
+      [w, l] = c(""),
+      S = (e) => ({
+        status: e?.status ?? e?.response?.status ?? null,
+        data: e?.data ?? e?.response?.data ?? {},
+        message:
+          e?.message ||
+          e?.response?.data?.error ||
+          e?.response?.data?.message ||
+          "",
+      }),
+      P = (e, o) => {
+        const s = e?.status,
+          n = String(e?.data?.code || e?.data?.errorCode || "").toLowerCase(),
+          a = String(
+            e?.data?.error || e?.data?.message || e?.message || "",
+          ).toLowerCase();
+        return s === 429 || a.includes("too many") || a.includes("rate limit")
+          ? "Too many sign-in attempts detected. Please wait a few minutes and retry."
+          : s === 423 || a.includes("locked")
+            ? "Your account is temporarily locked. Use Forgot Password or retry later."
+            : s === 401 ||
+                a.includes("invalid credential") ||
+                a.includes("wrong password") ||
+                a.includes("incorrect password") ||
+                a.includes("user not found")
+              ? "Credentials did not match. Verify your identifier and password."
+              : n === "risk_challenge_required" ||
+                  a.includes("otp") ||
+                  e?.data?.challengeType === "otp"
+                ? e?.data?.message ||
+                  "Additional verification is required to complete login."
+                : a.includes("network") ||
+                    a.includes("fetch") ||
+                    a.includes("timeout")
+                  ? "Login service is temporarily unreachable. Please retry shortly."
+                  : o ||
+                    e?.data?.error ||
+                    e?.data?.message ||
+                    e?.message ||
+                    r("login_failed") ||
+                    "Login failed";
+      },
+      f = (e) => {
+        const o = e?.id ?? e?.user_id ?? null;
+        return o == null || o === "" ? null : String(o);
+      },
+      k = (e) => {
+        if (!e || typeof e != "object") return;
+        localStorage.setItem("user", JSON.stringify(e));
+        const o = f(e);
+        o && localStorage.setItem("userId", o), W(e);
+      },
+      D = (e) => {
+        e?.token &&
+          (localStorage.setItem("authToken", e.token),
+          localStorage.removeItem("token"),
+          e.refreshToken &&
+            localStorage.setItem("refreshToken", e.refreshToken),
+          e.user && k(e.user));
+      },
+      F = () => {
+        const e = new URLSearchParams(I.search).get("returnTo"),
+          s = I.state?.returnTo || e || "/all-posts";
+        return typeof s == "string" && s.startsWith("/") ? s : "/all-posts";
+      },
+      $ = async (e) => Qe(e),
+      V = async (e = null) => {
+        try {
+          const o = await v.get("/profile");
+          localStorage.setItem("userProfile", JSON.stringify(o));
+          const s = f(e),
+            n = f(o),
+            a = {
+              ...(e || {}),
+              ...(o || {}),
+              id: s ?? n ?? e?.id ?? o?.id ?? o?.user_id ?? null,
+              user_id: o?.user_id ?? e?.user_id ?? e?.id ?? null,
+            };
+          k(a);
+        } catch (o) {
+          if (
+            (import.meta.env.DEV &&
+              console.error("Failed to fetch profile after login", o),
+            e)
+          ) {
+            k(e);
+            return;
+          }
+          try {
+            const s = await v.get("/auth/me");
+            k(s);
+          } catch (s) {
+            import.meta.env.DEV &&
+              console.error("Failed to fetch /auth/me after login", s);
+          }
+        }
+      },
+      J = async () => {
+        try {
+          const e = await Promise.race([
+            he({
+              allowCache: !0,
+              allowIpFallback: !0,
+              requiredAccuracy: 1500,
+              strictAccuracy: !1,
+            }),
+            new Promise((s) => setTimeout(() => s(null), 2500)),
+          ]);
+          if (!e) return null;
+          return {
+            lat: e.latitude ?? e.lat,
+            lng: e.longitude ?? e.lng,
+            accuracy: e.accuracy ?? null,
+            provider: e.provider || "browser_gps",
+          };
+        } catch (e) {
+          return (
+            import.meta.env.DEV &&
+              console.warn("[LOGIN] Location capture skipped", e),
+            null
+          );
+        }
+      },
+      K = async (e) => {
+        if ((e.preventDefault(), l(""), !p.identifier || !p.password)) {
+          const o =
+            r("identifier_password_required") ||
+            "Email/phone/username and password are required";
+          l(o),
+            i({
+              title: r("validation_error") || "Validation Error",
+              description: o,
+              variant: "destructive",
+            });
+          return;
+        }
+        if (h && (!_ || _.length < 4)) {
+          const o =
+            r("enter_authenticator_code") ||
+            "Please enter your authenticator code.";
+          l(o),
+            i({
+              title: "OTP Required",
+              description: o,
+              variant: "destructive",
+            });
+          return;
+        }
+        g(!0);
+        try {
+          const o = await J(),
+            s = me(),
+            n = { identifier: p.identifier, password: p.password, deviceId: s };
+          o &&
+            o.lat != null &&
+            o.lng != null &&
+            ((n.lat = o.lat),
+            (n.lng = o.lng),
+            (n.locationAccuracy = o.accuracy),
+            (n.locationProvider = o.provider));
+          h && (n.otp = _);
+          const a = await $(n);
+          if (a && a.requireOtp) {
+            E(!0);
+            const B =
+              a.message ||
+              "Additional verification is required to complete login.";
+            l(B), i({ title: "Security Check", description: B });
+            return;
+          }
+          if (a && a.success) {
+            await Je(), E(!1), q("");
+            const m = f(a.user) || localStorage.getItem("userId");
+            m && j(m).catch(() => {}),
+              i({
+                title: r("login_successful") || "Login Successful",
+                description: r("welcome_back_msg") || "Welcome back!",
+              }),
+              l(""),
+              x(F(), { replace: !0 });
+            return;
+          }
+          const m = a?.error || r("login_failed") || "Login failed";
+          l(m);
+          const Z = m.toLowerCase().includes("location permission");
+          i({
+            title: Z ? "Security Block" : "Sign-in Failed",
+            description: m,
+            variant: "destructive",
+          });
+        } catch (o) {
+          import.meta.env.DEV && console.error("Login Error:", o);
+          const s = S(o),
+            n = s.data?.code || s.data?.errorCode;
+          if (
+            (s.status === 202 && s.data?.requireOtp) ||
+            (s.status === 401 && n === "RISK_CHALLENGE_REQUIRED") ||
+            s.data?.challengeType === "otp"
+          ) {
+            E(!0);
+            const B =
+              s.data?.message ||
+              "Additional verification is required to complete login.";
+            l(B), i({ title: "Security Check", description: B });
+            return;
+          }
+          const m = P(s, r("login_failed") || "Login failed");
+          l(m);
+          const Z = m.toLowerCase().includes("location permission");
+          i({
+            title: Z ? "Security Block" : "Sign-in Failed",
+            description: m,
+            variant: "destructive",
+          });
+        } finally {
+          g(!1);
+        }
+      },
+      Q = async () => {
+        if ((l(""), !C)) {
+          i({
+            title: r("coming_soon") || "Coming Soon",
+            description:
+              r("phone_otp_coming_soon") ||
+              "Phone OTP login will be enabled soon.",
+          });
+          return;
+        }
+        const e = /^[6-9]\d{9}$/;
+        if (!d.phone || !e.test(d.phone)) {
+          const o =
+            r("invalid_phone_desc") ||
+            "Please enter a valid 10-digit phone number starting with 6-9.";
+          l(o),
+            i({
+              title: r("invalid_phone_number") || "Invalid Phone Number",
+              description: o,
+              variant: "destructive",
+            });
+          return;
+        }
+        g(!0);
+        try {
+          await v.post("/auth/send-otp", { phone: d.phone }),
+            A(!0),
+            i({
+              title: r("otp_sent") || "OTP Sent",
+              description:
+                r("check_phone_otp") ||
+                "Check your phone for the verification code",
+            });
+        } catch (o) {
+          const s = S(o),
+            n = P(s, r("could_not_send_otp") || "Could not send OTP");
+          l(n),
+            i({
+              title: r("network_error") || "Error",
+              description: n,
+              variant: "destructive",
+            });
+        } finally {
+          g(!1);
+        }
+      },
+      Y = async (e) => {
+        if ((e.preventDefault(), l(""), !C)) {
+          i({
+            title: r("coming_soon") || "Coming Soon",
+            description:
+              r("phone_otp_coming_soon") ||
+              "Phone OTP login will be enabled soon.",
+          });
+          return;
+        }
+        const o = /^\d{4,8}$/;
+        if (!d.otp || !o.test(d.otp)) {
+          const s = r("otp_valid_desc") || "Please enter a valid OTP.";
+          l(s),
+            i({
+              title: r("invalid_otp") || "Invalid OTP",
+              description: s,
+              variant: "destructive",
+            });
+          return;
+        }
+        g(!0);
+        try {
+          const s = await v.post("/auth/verify-otp", {
+            phone: d.phone,
+            otp: d.otp,
+          });
+          D(s), await Je(), await V(s.user || null);
+          const n = f(s.user) || localStorage.getItem("userId");
+          n && j(n).catch(() => {}),
+            i({
+              title: r("login_successful") || "Login Successful",
+              description: r("welcome_back_msg") || "Welcome back!",
+            }),
+            l(""),
+            A(!1),
+            T((a) => ({ ...a, otp: "" })),
+            x(F(), { replace: !0 });
+        } catch (s) {
+          const n = S(s),
+            a = P(n, r("could_not_verify_otp") || "Could not verify OTP");
+          l(a),
+            i({
+              title: r("network_error") || "Error",
+              description: a,
+              variant: "destructive",
+            });
+        } finally {
+          g(!1);
+        }
+      };
+    return t.createElement(
+      "div",
+      {
+        className:
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300",
+      },
+      t.createElement(
+        "div",
+        { className: "w-full max-w-md space-y-8" },
+        t.createElement(
+          "div",
+          { className: "text-center" },
+          t.createElement(
+            "div",
+            { className: "flex justify-center mb-6" },
+            t.createElement(
+              "div",
+              {
+                className:
+                  "w-16 h-16 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg",
+              },
+              t.createElement(de, { className: "h-8 w-8 text-white" }),
+            ),
+          ),
+          t.createElement(
+            "h2",
+            {
+              className:
+                "text-3xl font-bold text-gray-900 dark:text-white mb-2",
+            },
+            r("welcome_back") || "Welcome Back",
+          ),
+          t.createElement(
+            "p",
+            { className: "text-gray-600 dark:text-gray-300" },
+            r("sign_in_to_account") || "Sign in to your account",
+          ),
+        ),
+        t.createElement(
+          z,
+          {
+            className:
+              "shadow-2xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800",
+          },
+          t.createElement(
+            ee,
+            {
+              className:
+                "bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-8",
+            },
+            t.createElement(
+              te,
+              { className: "text-2xl font-bold" },
+              r("sign_in") || "Sign In",
+            ),
+            t.createElement(
+              re,
+              { className: "text-sky-100" },
+              r("choose_login_method") || "Choose your preferred login method",
+            ),
+          ),
+          t.createElement(
+            R,
+            { className: "p-8" },
+            t.createElement(
+              oe,
+              { defaultValue: "email", className: "w-full" },
+              t.createElement(
+                se,
+                {
+                  className:
+                    "grid w-full grid-cols-2 mb-8 bg-gray-100 dark:bg-gray-700 rounded-xl p-1",
+                },
+                t.createElement(
+                  H,
+                  {
+                    value: "email",
+                    className:
+                      "rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200",
+                  },
+                  t.createElement(ce, { className: "w-4 h-4" }),
+                  t.createElement("span", null, r("email") || "Email"),
+                ),
+                t.createElement(
+                  H,
+                  {
+                    value: "phone",
+                    disabled: !C,
+                    className:
+                      "rounded-lg flex items-center space-x-2 dark:data-[state=active]:bg-gray-600 dark:text-gray-200",
+                  },
+                  t.createElement(ue, { className: "w-4 h-4" }),
+                  t.createElement("span", null, r("phone") || "Phone"),
+                ),
+              ),
+              t.createElement(
+                X,
+                { value: "email" },
+                t.createElement(
+                  "form",
+                  { onSubmit: K, className: "space-y-6" },
+                  t.createElement(
+                    "div",
+                    null,
+                    t.createElement(
+                      b,
+                      {
+                        htmlFor: "email",
+                        className:
+                          "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                      },
+                      r("email_phone_username") || "Email / Phone / Username",
+                    ),
+                    t.createElement(y, {
+                      id: "email",
+                      type: "text",
+                      required: !0,
+                      value: p.identifier,
+                      onChange: (e) =>
+                        O((o) => ({ ...o, identifier: e.target.value })),
+                      className:
+                        "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl",
+                      placeholder:
+                        r("email_phone_username_placeholder") ||
+                        "Enter your email, phone, or username",
+                    }),
+                    t.createElement(
+                      "p",
+                      {
+                        className:
+                          "mt-2 text-xs text-gray-500 dark:text-gray-400",
+                      },
+                      r("login_identifier_help") ||
+                        "Use the same email, phone, or username used during signup.",
+                    ),
+                  ),
+                  t.createElement(
+                    "div",
+                    null,
+                    t.createElement(
+                      b,
+                      {
+                        htmlFor: "password",
+                        className:
+                          "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                      },
+                      r("password") || "Password",
+                    ),
+                    t.createElement(
+                      "div",
+                      { className: "relative mt-2" },
+                      t.createElement(y, {
+                        id: "password",
+                        type: L ? "text" : "password",
+                        required: !0,
+                        value: p.password,
+                        onChange: (e) =>
+                          O((o) => ({ ...o, password: e.target.value })),
+                        className:
+                          "h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12",
+                        placeholder:
+                          r("password_placeholder") || "Enter your password",
+                      }),
+                      t.createElement(
+                        N,
+                        {
+                          type: "button",
+                          variant: "ghost",
+                          size: "sm",
+                          className:
+                            "absolute right-2 top-1/2 transform -translate-y-1/2",
+                          onClick: () => G(!L),
+                        },
+                        L
+                          ? t.createElement(pe, { className: "w-4 h-4" })
+                          : t.createElement(ge, { className: "w-4 h-4" }),
+                      ),
+                    ),
+                  ),
+                  t.createElement(
+                    "p",
+                    { className: "text-sm text-gray-600 dark:text-gray-400" },
+                    r("dont_have_account") || "Don't have an account?",
+                    " ",
+                    t.createElement(
+                      "span",
+                      {
+                        className:
+                          "text-blue-600 dark:text-blue-400 cursor-pointer hover:underline",
+                        onClick: () => x("/signup"),
+                      },
+                      r("sign_up_here") || "Sign up here",
+                    ),
+                  ),
+                  t.createElement(
+                    "div",
+                    { className: "text-right" },
+                    t.createElement(
+                      ie,
+                      {
+                        to: "/forgot-password",
+                        className:
+                          "text-sm text-blue-600 dark:text-blue-400 hover:underline",
+                      },
+                      r("forgot_password") || "Forgot Password?",
+                    ),
+                  ),
+                  w &&
+                    t.createElement(
+                      "div",
+                      {
+                        className:
+                          "rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2",
+                      },
+                      t.createElement(M, {
+                        className: "w-4 h-4 mt-0.5 flex-shrink-0",
+                      }),
+                      t.createElement("span", null, w),
+                    ),
+                  h &&
+                    t.createElement(
+                      "div",
+                      {
+                        className:
+                          "animate-in fade-in slide-in-from-top-4 duration-300",
+                      },
+                      t.createElement(
+                        b,
+                        {
+                          htmlFor: "challenge-otp",
+                          className:
+                            "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                        },
+                        r("security_code") || "Security Code",
+                      ),
+                      t.createElement(y, {
+                        id: "challenge-otp",
+                        type: "text",
+                        value: _,
+                        onChange: (e) => q(e.target.value),
+                        className:
+                          "mt-2 h-12 border-2 border-orange-300 focus:border-orange-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest bg-orange-50",
+                        placeholder:
+                          "\u2022 \u2022 \u2022 \u2022 \u2022 \u2022",
+                        maxLength: 6,
+                        autoFocus: !0,
+                      }),
+                      t.createElement(
+                        "p",
+                        { className: "text-xs text-orange-600 mt-1" },
+                        r("enter_authenticator_code") ||
+                          "Enter your authenticator code to continue.",
+                      ),
+                    ),
+                  t.createElement(
+                    N,
+                    {
+                      type: "submit",
+                      disabled: u,
+                      className: `w-full h-12 rounded-xl text-lg font-semibold ${h ? "bg-orange-500 hover:bg-orange-600" : "bg-gradient-to-r from-sky-500 to-blue-600"}`,
+                    },
+                    u
+                      ? r("verifying") || "Verifying..."
+                      : h
+                        ? r("verify_login") || "Verify Login"
+                        : r("sign_in") || "Sign In",
+                  ),
+                ),
+              ),
+              t.createElement(
+                X,
+                { value: "phone" },
+                C
+                  ? t.createElement(
+                      "div",
+                      { className: "space-y-6" },
+                      t.createElement(
+                        "div",
+                        null,
+                        t.createElement(
+                          b,
+                          {
+                            htmlFor: "phone",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          r("phone") || "Phone Number",
+                        ),
+                        t.createElement(y, {
+                          id: "phone",
+                          type: "tel",
+                          required: !0,
+                          value: d.phone,
+                          onChange: (e) =>
+                            T((o) => ({ ...o, phone: e.target.value })),
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl",
+                          placeholder:
+                            r("phone_placeholder") || "+91 XXXXXXXXXX",
+                        }),
+                      ),
+                      t.createElement(
+                        "p",
+                        {
+                          className: "text-sm text-gray-600 dark:text-gray-400",
+                        },
+                        r("dont_have_account") || "Don't have an account?",
+                        " ",
+                        t.createElement(
+                          "span",
+                          {
+                            className:
+                              "text-blue-600 dark:text-blue-400 cursor-pointer hover:underline",
+                            onClick: () => x("/signup"),
+                          },
+                          r("sign_up_here") || "Sign up here",
+                        ),
+                      ),
+                      w &&
+                        t.createElement(
+                          "div",
+                          {
+                            className:
+                              "rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2",
+                          },
+                          t.createElement(M, {
+                            className: "w-4 h-4 mt-0.5 flex-shrink-0",
+                          }),
+                          t.createElement("span", null, w),
+                        ),
+                      U
+                        ? t.createElement(
+                            "form",
+                            { onSubmit: Y, className: "space-y-6" },
+                            t.createElement(
+                              "div",
+                              null,
+                              t.createElement(
+                                b,
+                                {
+                                  htmlFor: "otp",
+                                  className:
+                                    "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                                },
+                                r("enter_otp") || "Enter OTP",
+                              ),
+                              t.createElement(y, {
+                                id: "otp",
+                                type: "text",
+                                required: !0,
+                                value: d.otp,
+                                onChange: (e) =>
+                                  T((o) => ({ ...o, otp: e.target.value })),
+                                className:
+                                  "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-sky-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest",
+                                placeholder: r("otp_placeholder") || "123456",
+                                maxLength: 6,
+                              }),
+                            ),
+                            t.createElement(
+                              N,
+                              {
+                                type: "submit",
+                                disabled: u,
+                                className:
+                                  "w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold",
+                              },
+                              u
+                                ? r("logging_in") || "Logging In..."
+                                : r("verify_sign_in") || "Verify & Sign In",
+                            ),
+                          )
+                        : t.createElement(
+                            N,
+                            {
+                              onClick: Q,
+                              disabled: u,
+                              className:
+                                "w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 rounded-xl text-lg font-semibold",
+                            },
+                            u
+                              ? r("loading") || "Loading..."
+                              : r("send_otp") || "Send OTP",
+                          ),
+                    )
+                  : t.createElement(
+                      "div",
+                      {
+                        className:
+                          "rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-center space-y-2",
+                      },
+                      t.createElement(
+                        "h3",
+                        {
+                          className:
+                            "text-lg font-semibold text-gray-800 dark:text-gray-200",
+                        },
+                        r("phone_otp") || "Phone OTP",
+                      ),
+                      t.createElement(
+                        "p",
+                        {
+                          className: "text-sm text-gray-600 dark:text-gray-400",
+                        },
+                        r("phone_otp_coming_soon") ||
+                          "Phone OTP login will be enabled soon.",
+                      ),
+                    ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  };
+var qe = be;
+export { qe as default };

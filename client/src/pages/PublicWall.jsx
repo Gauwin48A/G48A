@@ -1,1 +1,819 @@
-import e,{useState as g,useEffect as V,useCallback as I,useMemo as _}from"react";import{Card as i,CardContent as n,CardDescription as f,CardHeader as v,CardTitle as p}from"@/components/ui/card";import{Badge as j}from"@/components/ui/badge";import{Button as y}from"@/components/ui/button";import{Alert as q,AlertDescription as G,AlertTitle as O}from"@/components/ui/alert";import{Trophy as U,Star as N,Medal as J,Crown as $,Shield as P,TrendingUp as K,AlertTriangle as D,RefreshCw as L}from"lucide-react";import{useTranslation as Q}from"react-i18next";import{getApiOriginBase as X}from"@/lib/networkConfig";const Y=s=>String(s||"").replace(/\/+$/,""),C=Y(X()),Z=C.endsWith("/api")?`${C}/publicwall`:`${C}/api/publicwall`,l=s=>{const a=Number(s||0);return Number.isFinite(a)?a:0},R=s=>{const a=Number(s?.status||s?.response?.status||0);return a===401||a===403?"This session cannot access public wall insights right now.":"Public wall data is temporarily unavailable. Please retry."},ee=s=>{switch(s){case"Gold":return e.createElement($,{className:"w-5 h-5 text-yellow-500"});case"Silver":return e.createElement(J,{className:"w-5 h-5 text-gray-400"});case"Bronze":return e.createElement(U,{className:"w-5 h-5 text-amber-600"});default:return e.createElement(N,{className:"w-5 h-5 text-gray-400"})}},te=s=>{switch(s){case"Gold":return"bg-yellow-100 text-yellow-800 border-yellow-300";case"Silver":return"bg-gray-100 text-gray-800 border-gray-300";case"Bronze":return"bg-amber-100 text-amber-800 border-amber-300";default:return"bg-blue-100 text-blue-800 border-blue-300"}},re=()=>{const{t:s}=Q(),[a,E]=g([]),[m,M]=g([]),[h,H]=g([]),[c,B]=g(""),[A,T]=g(!0),[W,w]=g(0),x=a.length>0||m.length>0||h.length>0,S=I(async t=>{T(!0);try{const r=await fetch(Z,{signal:t});if(!r.ok){let d={};try{d=await r.json()}catch{d={}}throw new Error(d?.error||`Request failed with status ${r.status}`)}const o=await r.json();E(Array.isArray(o?.topSellers)?o.topSellers:[]),M(Array.isArray(o?.topBuyers)?o.topBuyers:[]),H(Array.isArray(o?.topUsers)?o.topUsers:[]),B("")}catch(r){if(r?.name==="AbortError")return;B(R(r))}finally{T(!1)}},[]);V(()=>{const t=new AbortController;return S(t.signal),()=>{t.abort()}},[S,W]);const b=_(()=>{const t=a.reduce((u,k)=>u+l(k.sales),0),r=m.length,o=a.reduce((u,k)=>u+l(k.coins),0),d=[...a,...m],z=d.filter(u=>!!u.verified).length,F=d.length>0?Math.round(z/d.length*100):0;return{totalSales:t,activeBuyers:r,totalVolume:o,verificationRate:F}},[m,a]);return A&&!x?e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800"},e.createElement("div",{className:"max-w-7xl mx-auto px-4 py-8 space-y-6"},[1,2,3].map(t=>e.createElement(i,{key:t,className:"animate-pulse rounded-3xl"},e.createElement(n,{className:"p-8 space-y-4"},e.createElement("div",{className:"h-6 w-56 bg-gray-200 dark:bg-gray-700 rounded"}),e.createElement("div",{className:"h-4 w-full bg-gray-200 dark:bg-gray-700 rounded"}),e.createElement("div",{className:"h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"})))))):e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800"},e.createElement("div",{className:"max-w-7xl mx-auto px-4 py-8"},e.createElement("div",{className:"mb-8 text-center"},e.createElement("div",{className:"flex items-center justify-center space-x-4 mb-4"},e.createElement("div",{className:"w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center"},e.createElement(U,{className:"w-8 h-8 text-white"})),e.createElement("div",null,e.createElement("h1",{className:"text-4xl font-bold text-gray-900 dark:text-white"},"Public Wall"),e.createElement("p",{className:"text-gray-600 dark:text-gray-300 text-lg"},"Celebrating top performance from the community"))),e.createElement("div",{className:"bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-2xl p-6 inline-block"},e.createElement("h2",{className:"text-2xl font-bold mb-2"},"Monthly Champions"),e.createElement("p",{className:"text-sky-100"},"Recognition for trusted, high-quality marketplace activity"))),c&&x?e.createElement(q,{variant:"destructive",className:"mb-6 bg-white/90"},e.createElement(D,{className:"h-4 w-4"}),e.createElement(O,null,"Latest refresh failed"),e.createElement(G,null,c," Showing last available snapshot."),e.createElement("div",{className:"mt-3"},e.createElement(y,{size:"sm",onClick:()=>w(t=>t+1)},e.createElement(L,{className:"h-4 w-4 mr-2"}),"Retry"))):null,c&&!x?e.createElement(i,{className:"max-w-2xl mx-auto mb-8 border-red-200"},e.createElement(n,{className:"p-8 text-center"},e.createElement("div",{className:"w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 text-red-600 flex items-center justify-center"},e.createElement(D,{className:"w-6 h-6"})),e.createElement("h3",{className:"text-xl font-semibold text-gray-900 dark:text-white mb-2"},"Public wall unavailable"),e.createElement("p",{className:"text-gray-600 dark:text-gray-300 mb-4"},c),e.createElement("div",{className:"flex flex-wrap justify-center gap-2"},e.createElement(y,{onClick:()=>w(t=>t+1)},e.createElement(L,{className:"h-4 w-4 mr-2"}),"Retry"),e.createElement(y,{variant:"outline",onClick:()=>window.location.assign("/all-posts")},"Browse Marketplace")))):null,!A&&!c&&!x?e.createElement(i,{className:"max-w-2xl mx-auto mb-8 border-dashed border-2 border-blue-200"},e.createElement(n,{className:"p-8 text-center space-y-3"},e.createElement("h3",{className:"text-xl font-semibold text-gray-900 dark:text-white"},"No public wall data yet"),e.createElement("p",{className:"text-gray-600 dark:text-gray-300"},"Complete trusted sales and purchases to appear in upcoming rankings."),e.createElement("div",{className:"flex flex-wrap justify-center gap-2"},e.createElement(y,{onClick:()=>w(t=>t+1)},"Refresh"),e.createElement(y,{variant:"outline",onClick:()=>window.location.assign("/rewards")},s("rewards")||"Rewards")))):null,x?e.createElement("div",{className:"grid grid-cols-1 lg:grid-cols-3 gap-8"},e.createElement(i,{className:"shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800"},e.createElement(v,{className:"bg-gradient-to-r from-green-500 to-emerald-600 text-white text-center py-8"},e.createElement("div",{className:"w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"},e.createElement(K,{className:"w-8 h-8 text-white"})),e.createElement(p,{className:"text-2xl font-bold"},"Top Sellers"),e.createElement(f,{className:"text-green-100 text-lg"},"Outstanding sales performance")),e.createElement(n,{className:"p-8"},a.length===0?e.createElement("p",{className:"text-sm text-gray-500 text-center"},"No seller leaderboard data available yet."):e.createElement("div",{className:"space-y-6"},a.map((t,r)=>e.createElement("div",{key:t.id||`${t.name}-${r}`,className:"flex items-center space-x-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl"},e.createElement("div",{className:"flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-lg"},r+1),e.createElement("div",{className:"flex-1"},e.createElement("div",{className:"flex items-center space-x-2"},e.createElement("h4",{className:"font-bold text-gray-900 dark:text-white"},t.name||"Unknown seller"),t.verified?e.createElement(P,{className:"w-4 h-4 text-green-600"}):null),e.createElement("div",{className:"flex items-center space-x-2 mt-1"},e.createElement(j,{className:`border ${te(t.rank)}`},e.createElement("div",{className:"flex items-center space-x-1"},ee(t.rank),e.createElement("span",null,t.rank||"Rising"))),e.createElement("div",{className:"flex items-center space-x-1"},e.createElement(N,{className:"w-4 h-4 text-yellow-500 fill-current"}),e.createElement("span",{className:"text-sm font-medium"},l(t.rating).toFixed(1)))),e.createElement("div",{className:"text-sm text-gray-600 mt-1"},l(t.sales)," sales | ",l(t.coins)," coins"))))))),e.createElement(i,{className:"shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800"},e.createElement(v,{className:"bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-8"},e.createElement("div",{className:"w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"},e.createElement(N,{className:"w-8 h-8 text-white"})),e.createElement(p,{className:"text-2xl font-bold"},"Top Buyers"),e.createElement(f,{className:"text-blue-100 text-lg"},"Most active purchasers")),e.createElement(n,{className:"p-8"},m.length===0?e.createElement("p",{className:"text-sm text-gray-500 text-center"},"No buyer leaderboard data available yet."):e.createElement("div",{className:"space-y-6"},m.map((t,r)=>e.createElement("div",{key:t.id||`${t.name}-${r}`,className:"flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl"},e.createElement("div",{className:"flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white font-bold text-lg"},r+1),e.createElement("div",{className:"flex-1"},e.createElement("div",{className:"flex items-center space-x-2"},e.createElement("h4",{className:"font-bold text-gray-900 dark:text-white"},t.name||"Unknown buyer"),t.verified?e.createElement(P,{className:"w-4 h-4 text-blue-600"}):null),e.createElement("div",{className:"flex items-center space-x-1 mt-1"},e.createElement(N,{className:"w-4 h-4 text-yellow-500 fill-current"}),e.createElement("span",{className:"text-sm font-medium"},l(t.rating).toFixed(1))),e.createElement("div",{className:"text-sm text-gray-600 dark:text-gray-400 mt-1"},l(t.purchases)," purchases | ",l(t.coins)," coins"))))))),e.createElement(i,{className:"shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800"},e.createElement(v,{className:"bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-center py-8"},e.createElement("div",{className:"w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"},e.createElement($,{className:"w-8 h-8 text-white"})),e.createElement(p,{className:"text-2xl font-bold"},"Top Users"),e.createElement(f,{className:"text-cyan-100 text-lg"},"Highest coin earners")),e.createElement(n,{className:"p-8"},h.length===0?e.createElement("p",{className:"text-sm text-gray-500 text-center"},"No user leaderboard data available yet."):e.createElement("div",{className:"space-y-6"},h.map((t,r)=>e.createElement("div",{key:t.id||`${t.name}-${r}`,className:"flex items-center space-x-4 p-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl"},e.createElement("div",{className:"flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg"},r+1),e.createElement("div",{className:"flex-1"},e.createElement("h4",{className:"font-bold text-gray-900 dark:text-white"},t.name||"Community member"),e.createElement(j,{className:"bg-cyan-100 text-cyan-800 border-cyan-300 mt-1"},"Level ",l(t.level)),e.createElement("div",{className:"text-sm text-gray-600 dark:text-gray-400 mt-1"},l(t.totalCoins)," coins | ",t.badge||"Rising member")))))))):null,x?e.createElement(i,{className:"mt-8 shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800"},e.createElement(v,{className:"bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-8"},e.createElement(p,{className:"text-2xl font-bold"},"This Month's Snapshot"),e.createElement(f,{className:"text-sky-100 text-lg"},"Live summary from current leaderboard data")),e.createElement(n,{className:"p-8"},e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-4 gap-6"},e.createElement("div",{className:"text-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl"},e.createElement("div",{className:"text-3xl font-bold text-green-600 dark:text-green-400"},b.totalSales),e.createElement("div",{className:"text-gray-600 dark:text-gray-300 font-medium"},"Total Sales")),e.createElement("div",{className:"text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl"},e.createElement("div",{className:"text-3xl font-bold text-blue-600 dark:text-blue-400"},b.activeBuyers),e.createElement("div",{className:"text-gray-600 dark:text-gray-300 font-medium"},"Active Buyers")),e.createElement("div",{className:"text-center p-6 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl"},e.createElement("div",{className:"text-3xl font-bold text-cyan-600 dark:text-cyan-400"},b.totalVolume),e.createElement("div",{className:"text-gray-600 dark:text-gray-300 font-medium"},"Coin Volume")),e.createElement("div",{className:"text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl"},e.createElement("div",{className:"text-3xl font-bold text-yellow-600 dark:text-yellow-400"},b.verificationRate,"%"),e.createElement("div",{className:"text-gray-600 dark:text-gray-300 font-medium"},"Verified Rate"))))):null))};var xe=re;export{xe as default};
+import e, {
+  useState as g,
+  useEffect as V,
+  useCallback as I,
+  useMemo as _,
+} from "react";
+import {
+  Card as i,
+  CardContent as n,
+  CardDescription as f,
+  CardHeader as v,
+  CardTitle as p,
+} from "@/components/ui/card";
+import { Badge as j } from "@/components/ui/badge";
+import { Button as y } from "@/components/ui/button";
+import {
+  Alert as q,
+  AlertDescription as G,
+  AlertTitle as O,
+} from "@/components/ui/alert";
+import {
+  Trophy as U,
+  Star as N,
+  Medal as J,
+  Crown as $,
+  Shield as P,
+  TrendingUp as K,
+  AlertTriangle as D,
+  RefreshCw as L,
+} from "lucide-react";
+import { useTranslation as Q } from "react-i18next";
+import { getApiOriginBase as X } from "@/lib/networkConfig";
+const Y = (s) => String(s || "").replace(/\/+$/, ""),
+  C = Y(X()),
+  Z = C.endsWith("/api") ? `${C}/publicwall` : `${C}/api/publicwall`,
+  l = (s) => {
+    const a = Number(s || 0);
+    return Number.isFinite(a) ? a : 0;
+  },
+  R = (s) => {
+    const a = Number(s?.status || s?.response?.status || 0);
+    return a === 401 || a === 403
+      ? "This session cannot access public wall insights right now."
+      : "Public wall data is temporarily unavailable. Please retry.";
+  },
+  ee = (s) => {
+    switch (s) {
+      case "Gold":
+        return e.createElement($, { className: "w-5 h-5 text-yellow-500" });
+      case "Silver":
+        return e.createElement(J, { className: "w-5 h-5 text-gray-400" });
+      case "Bronze":
+        return e.createElement(U, { className: "w-5 h-5 text-amber-600" });
+      default:
+        return e.createElement(N, { className: "w-5 h-5 text-gray-400" });
+    }
+  },
+  te = (s) => {
+    switch (s) {
+      case "Gold":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "Silver":
+        return "bg-gray-100 text-gray-800 border-gray-300";
+      case "Bronze":
+        return "bg-amber-100 text-amber-800 border-amber-300";
+      default:
+        return "bg-blue-100 text-blue-800 border-blue-300";
+    }
+  },
+  re = () => {
+    const { t: s } = Q(),
+      [a, E] = g([]),
+      [m, M] = g([]),
+      [h, H] = g([]),
+      [c, B] = g(""),
+      [A, T] = g(!0),
+      [W, w] = g(0),
+      x = a.length > 0 || m.length > 0 || h.length > 0,
+      S = I(async (t) => {
+        T(!0);
+        try {
+          const r = await fetch(Z, { signal: t });
+          if (!r.ok) {
+            let d = {};
+            try {
+              d = await r.json();
+            } catch {
+              d = {};
+            }
+            throw new Error(
+              d?.error || `Request failed with status ${r.status}`,
+            );
+          }
+          const o = await r.json();
+          E(Array.isArray(o?.topSellers) ? o.topSellers : []),
+            M(Array.isArray(o?.topBuyers) ? o.topBuyers : []),
+            H(Array.isArray(o?.topUsers) ? o.topUsers : []),
+            B("");
+        } catch (r) {
+          if (r?.name === "AbortError") return;
+          B(R(r));
+        } finally {
+          T(!1);
+        }
+      }, []);
+    V(() => {
+      const t = new AbortController();
+      return (
+        S(t.signal),
+        () => {
+          t.abort();
+        }
+      );
+    }, [S, W]);
+    const b = _(() => {
+      const t = a.reduce((u, k) => u + l(k.sales), 0),
+        r = m.length,
+        o = a.reduce((u, k) => u + l(k.coins), 0),
+        d = [...a, ...m],
+        z = d.filter((u) => !!u.verified).length,
+        F = d.length > 0 ? Math.round((z / d.length) * 100) : 0;
+      return {
+        totalSales: t,
+        activeBuyers: r,
+        totalVolume: o,
+        verificationRate: F,
+      };
+    }, [m, a]);
+    return A && !x
+      ? e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-7xl mx-auto px-4 py-8 space-y-6" },
+            [1, 2, 3].map((t) =>
+              e.createElement(
+                i,
+                { key: t, className: "animate-pulse rounded-3xl" },
+                e.createElement(
+                  n,
+                  { className: "p-8 space-y-4" },
+                  e.createElement("div", {
+                    className: "h-6 w-56 bg-gray-200 dark:bg-gray-700 rounded",
+                  }),
+                  e.createElement("div", {
+                    className:
+                      "h-4 w-full bg-gray-200 dark:bg-gray-700 rounded",
+                  }),
+                  e.createElement("div", {
+                    className: "h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded",
+                  }),
+                ),
+              ),
+            ),
+          ),
+        )
+      : e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-7xl mx-auto px-4 py-8" },
+            e.createElement(
+              "div",
+              { className: "mb-8 text-center" },
+              e.createElement(
+                "div",
+                {
+                  className: "flex items-center justify-center space-x-4 mb-4",
+                },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center",
+                  },
+                  e.createElement(U, { className: "w-8 h-8 text-white" }),
+                ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "h1",
+                    {
+                      className:
+                        "text-4xl font-bold text-gray-900 dark:text-white",
+                    },
+                    "Public Wall",
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-gray-600 dark:text-gray-300 text-lg" },
+                    "Celebrating top performance from the community",
+                  ),
+                ),
+              ),
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-2xl p-6 inline-block",
+                },
+                e.createElement(
+                  "h2",
+                  { className: "text-2xl font-bold mb-2" },
+                  "Monthly Champions",
+                ),
+                e.createElement(
+                  "p",
+                  { className: "text-sky-100" },
+                  "Recognition for trusted, high-quality marketplace activity",
+                ),
+              ),
+            ),
+            c && x
+              ? e.createElement(
+                  q,
+                  { variant: "destructive", className: "mb-6 bg-white/90" },
+                  e.createElement(D, { className: "h-4 w-4" }),
+                  e.createElement(O, null, "Latest refresh failed"),
+                  e.createElement(
+                    G,
+                    null,
+                    c,
+                    " Showing last available snapshot.",
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "mt-3" },
+                    e.createElement(
+                      y,
+                      { size: "sm", onClick: () => w((t) => t + 1) },
+                      e.createElement(L, { className: "h-4 w-4 mr-2" }),
+                      "Retry",
+                    ),
+                  ),
+                )
+              : null,
+            c && !x
+              ? e.createElement(
+                  i,
+                  { className: "max-w-2xl mx-auto mb-8 border-red-200" },
+                  e.createElement(
+                    n,
+                    { className: "p-8 text-center" },
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 text-red-600 flex items-center justify-center",
+                      },
+                      e.createElement(D, { className: "w-6 h-6" }),
+                    ),
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-xl font-semibold text-gray-900 dark:text-white mb-2",
+                      },
+                      "Public wall unavailable",
+                    ),
+                    e.createElement(
+                      "p",
+                      { className: "text-gray-600 dark:text-gray-300 mb-4" },
+                      c,
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "flex flex-wrap justify-center gap-2" },
+                      e.createElement(
+                        y,
+                        { onClick: () => w((t) => t + 1) },
+                        e.createElement(L, { className: "h-4 w-4 mr-2" }),
+                        "Retry",
+                      ),
+                      e.createElement(
+                        y,
+                        {
+                          variant: "outline",
+                          onClick: () => window.location.assign("/all-posts"),
+                        },
+                        "Browse Marketplace",
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+            !A && !c && !x
+              ? e.createElement(
+                  i,
+                  {
+                    className:
+                      "max-w-2xl mx-auto mb-8 border-dashed border-2 border-blue-200",
+                  },
+                  e.createElement(
+                    n,
+                    { className: "p-8 text-center space-y-3" },
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-xl font-semibold text-gray-900 dark:text-white",
+                      },
+                      "No public wall data yet",
+                    ),
+                    e.createElement(
+                      "p",
+                      { className: "text-gray-600 dark:text-gray-300" },
+                      "Complete trusted sales and purchases to appear in upcoming rankings.",
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "flex flex-wrap justify-center gap-2" },
+                      e.createElement(
+                        y,
+                        { onClick: () => w((t) => t + 1) },
+                        "Refresh",
+                      ),
+                      e.createElement(
+                        y,
+                        {
+                          variant: "outline",
+                          onClick: () => window.location.assign("/rewards"),
+                        },
+                        s("rewards") || "Rewards",
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+            x
+              ? e.createElement(
+                  "div",
+                  { className: "grid grid-cols-1 lg:grid-cols-3 gap-8" },
+                  e.createElement(
+                    i,
+                    {
+                      className:
+                        "shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800",
+                    },
+                    e.createElement(
+                      v,
+                      {
+                        className:
+                          "bg-gradient-to-r from-green-500 to-emerald-600 text-white text-center py-8",
+                      },
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4",
+                        },
+                        e.createElement(K, { className: "w-8 h-8 text-white" }),
+                      ),
+                      e.createElement(
+                        p,
+                        { className: "text-2xl font-bold" },
+                        "Top Sellers",
+                      ),
+                      e.createElement(
+                        f,
+                        { className: "text-green-100 text-lg" },
+                        "Outstanding sales performance",
+                      ),
+                    ),
+                    e.createElement(
+                      n,
+                      { className: "p-8" },
+                      a.length === 0
+                        ? e.createElement(
+                            "p",
+                            { className: "text-sm text-gray-500 text-center" },
+                            "No seller leaderboard data available yet.",
+                          )
+                        : e.createElement(
+                            "div",
+                            { className: "space-y-6" },
+                            a.map((t, r) =>
+                              e.createElement(
+                                "div",
+                                {
+                                  key: t.id || `${t.name}-${r}`,
+                                  className:
+                                    "flex items-center space-x-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl",
+                                },
+                                e.createElement(
+                                  "div",
+                                  {
+                                    className:
+                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-lg",
+                                  },
+                                  r + 1,
+                                ),
+                                e.createElement(
+                                  "div",
+                                  { className: "flex-1" },
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className: "flex items-center space-x-2",
+                                    },
+                                    e.createElement(
+                                      "h4",
+                                      {
+                                        className:
+                                          "font-bold text-gray-900 dark:text-white",
+                                      },
+                                      t.name || "Unknown seller",
+                                    ),
+                                    t.verified
+                                      ? e.createElement(P, {
+                                          className: "w-4 h-4 text-green-600",
+                                        })
+                                      : null,
+                                  ),
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className:
+                                        "flex items-center space-x-2 mt-1",
+                                    },
+                                    e.createElement(
+                                      j,
+                                      { className: `border ${te(t.rank)}` },
+                                      e.createElement(
+                                        "div",
+                                        {
+                                          className:
+                                            "flex items-center space-x-1",
+                                        },
+                                        ee(t.rank),
+                                        e.createElement(
+                                          "span",
+                                          null,
+                                          t.rank || "Rising",
+                                        ),
+                                      ),
+                                    ),
+                                    e.createElement(
+                                      "div",
+                                      {
+                                        className:
+                                          "flex items-center space-x-1",
+                                      },
+                                      e.createElement(N, {
+                                        className:
+                                          "w-4 h-4 text-yellow-500 fill-current",
+                                      }),
+                                      e.createElement(
+                                        "span",
+                                        { className: "text-sm font-medium" },
+                                        l(t.rating).toFixed(1),
+                                      ),
+                                    ),
+                                  ),
+                                  e.createElement(
+                                    "div",
+                                    { className: "text-sm text-gray-600 mt-1" },
+                                    l(t.sales),
+                                    " sales | ",
+                                    l(t.coins),
+                                    " coins",
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                    ),
+                  ),
+                  e.createElement(
+                    i,
+                    {
+                      className:
+                        "shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800",
+                    },
+                    e.createElement(
+                      v,
+                      {
+                        className:
+                          "bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-8",
+                      },
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4",
+                        },
+                        e.createElement(N, { className: "w-8 h-8 text-white" }),
+                      ),
+                      e.createElement(
+                        p,
+                        { className: "text-2xl font-bold" },
+                        "Top Buyers",
+                      ),
+                      e.createElement(
+                        f,
+                        { className: "text-blue-100 text-lg" },
+                        "Most active purchasers",
+                      ),
+                    ),
+                    e.createElement(
+                      n,
+                      { className: "p-8" },
+                      m.length === 0
+                        ? e.createElement(
+                            "p",
+                            { className: "text-sm text-gray-500 text-center" },
+                            "No buyer leaderboard data available yet.",
+                          )
+                        : e.createElement(
+                            "div",
+                            { className: "space-y-6" },
+                            m.map((t, r) =>
+                              e.createElement(
+                                "div",
+                                {
+                                  key: t.id || `${t.name}-${r}`,
+                                  className:
+                                    "flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl",
+                                },
+                                e.createElement(
+                                  "div",
+                                  {
+                                    className:
+                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white font-bold text-lg",
+                                  },
+                                  r + 1,
+                                ),
+                                e.createElement(
+                                  "div",
+                                  { className: "flex-1" },
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className: "flex items-center space-x-2",
+                                    },
+                                    e.createElement(
+                                      "h4",
+                                      {
+                                        className:
+                                          "font-bold text-gray-900 dark:text-white",
+                                      },
+                                      t.name || "Unknown buyer",
+                                    ),
+                                    t.verified
+                                      ? e.createElement(P, {
+                                          className: "w-4 h-4 text-blue-600",
+                                        })
+                                      : null,
+                                  ),
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className:
+                                        "flex items-center space-x-1 mt-1",
+                                    },
+                                    e.createElement(N, {
+                                      className:
+                                        "w-4 h-4 text-yellow-500 fill-current",
+                                    }),
+                                    e.createElement(
+                                      "span",
+                                      { className: "text-sm font-medium" },
+                                      l(t.rating).toFixed(1),
+                                    ),
+                                  ),
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className:
+                                        "text-sm text-gray-600 dark:text-gray-400 mt-1",
+                                    },
+                                    l(t.purchases),
+                                    " purchases | ",
+                                    l(t.coins),
+                                    " coins",
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                    ),
+                  ),
+                  e.createElement(
+                    i,
+                    {
+                      className:
+                        "shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800",
+                    },
+                    e.createElement(
+                      v,
+                      {
+                        className:
+                          "bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-center py-8",
+                      },
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4",
+                        },
+                        e.createElement($, { className: "w-8 h-8 text-white" }),
+                      ),
+                      e.createElement(
+                        p,
+                        { className: "text-2xl font-bold" },
+                        "Top Users",
+                      ),
+                      e.createElement(
+                        f,
+                        { className: "text-cyan-100 text-lg" },
+                        "Highest coin earners",
+                      ),
+                    ),
+                    e.createElement(
+                      n,
+                      { className: "p-8" },
+                      h.length === 0
+                        ? e.createElement(
+                            "p",
+                            { className: "text-sm text-gray-500 text-center" },
+                            "No user leaderboard data available yet.",
+                          )
+                        : e.createElement(
+                            "div",
+                            { className: "space-y-6" },
+                            h.map((t, r) =>
+                              e.createElement(
+                                "div",
+                                {
+                                  key: t.id || `${t.name}-${r}`,
+                                  className:
+                                    "flex items-center space-x-4 p-4 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl",
+                                },
+                                e.createElement(
+                                  "div",
+                                  {
+                                    className:
+                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg",
+                                  },
+                                  r + 1,
+                                ),
+                                e.createElement(
+                                  "div",
+                                  { className: "flex-1" },
+                                  e.createElement(
+                                    "h4",
+                                    {
+                                      className:
+                                        "font-bold text-gray-900 dark:text-white",
+                                    },
+                                    t.name || "Community member",
+                                  ),
+                                  e.createElement(
+                                    j,
+                                    {
+                                      className:
+                                        "bg-cyan-100 text-cyan-800 border-cyan-300 mt-1",
+                                    },
+                                    "Level ",
+                                    l(t.level),
+                                  ),
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className:
+                                        "text-sm text-gray-600 dark:text-gray-400 mt-1",
+                                    },
+                                    l(t.totalCoins),
+                                    " coins | ",
+                                    t.badge || "Rising member",
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                    ),
+                  ),
+                )
+              : null,
+            x
+              ? e.createElement(
+                  i,
+                  {
+                    className:
+                      "mt-8 shadow-xl border-0 rounded-3xl overflow-hidden dark:bg-gray-800",
+                  },
+                  e.createElement(
+                    v,
+                    {
+                      className:
+                        "bg-gradient-to-r from-sky-500 to-blue-600 text-white text-center py-8",
+                    },
+                    e.createElement(
+                      p,
+                      { className: "text-2xl font-bold" },
+                      "This Month's Snapshot",
+                    ),
+                    e.createElement(
+                      f,
+                      { className: "text-sky-100 text-lg" },
+                      "Live summary from current leaderboard data",
+                    ),
+                  ),
+                  e.createElement(
+                    n,
+                    { className: "p-8" },
+                    e.createElement(
+                      "div",
+                      { className: "grid grid-cols-1 md:grid-cols-4 gap-6" },
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "text-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl",
+                        },
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-3xl font-bold text-green-600 dark:text-green-400",
+                          },
+                          b.totalSales,
+                        ),
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-gray-600 dark:text-gray-300 font-medium",
+                          },
+                          "Total Sales",
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl",
+                        },
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-3xl font-bold text-blue-600 dark:text-blue-400",
+                          },
+                          b.activeBuyers,
+                        ),
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-gray-600 dark:text-gray-300 font-medium",
+                          },
+                          "Active Buyers",
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "text-center p-6 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl",
+                        },
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-3xl font-bold text-cyan-600 dark:text-cyan-400",
+                          },
+                          b.totalVolume,
+                        ),
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-gray-600 dark:text-gray-300 font-medium",
+                          },
+                          "Coin Volume",
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-gray-700 dark:to-gray-700 rounded-2xl",
+                        },
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-3xl font-bold text-yellow-600 dark:text-yellow-400",
+                          },
+                          b.verificationRate,
+                          "%",
+                        ),
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "text-gray-600 dark:text-gray-300 font-medium",
+                          },
+                          "Verified Rate",
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+          ),
+        );
+  };
+var xe = re;
+export { xe as default };

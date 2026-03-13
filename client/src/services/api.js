@@ -2,6 +2,7 @@ import axios from "axios";
 import { getDeviceId } from "@/utils/device";
 import { getApiRootUrl } from "@/lib/networkConfig";
 import { normalizeMediaList, resolveMediaUrl } from "@/lib/mediaUrl";
+import { applyResponseGuard } from "@/lib/responseGuards";
 import { mapAuthError } from "@/utils/authErrorMapper";
 import { logAuthDiagnostic } from "@/services/authDiagnostics";
 const getCurrentApiRootUrl = () => {
@@ -382,7 +383,11 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 api.interceptors.response.use(
-  (response) => normalizeApiMediaPayload(response.data),
+  (response) =>
+    applyResponseGuard(
+      response?.config?.url,
+      normalizeApiMediaPayload(response.data),
+    ),
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;

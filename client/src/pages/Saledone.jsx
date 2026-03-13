@@ -29,6 +29,8 @@ import api from "@/services/api";
 
 const SaleDone = () => {
   const { t } = useTranslation();
+  const tr = (key, fallback, options = {}) =>
+    t(key, { defaultValue: fallback, ...options });
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -60,51 +62,72 @@ const SaleDone = () => {
     () => [
       {
         key: "listing",
-        label: "Listing Live",
-        hint: "Buyer discovers post",
+        label: tr("sale_step_listing", "Listing Live"),
+        hint: tr("sale_step_listing_hint", "Buyer discovers post"),
       },
       {
         key: "offer",
-        label: "Deal Agreed",
-        hint: "Price and terms finalized",
+        label: tr("sale_step_offer", "Deal Agreed"),
+        hint: tr("sale_step_offer_hint", "Price and terms finalized"),
       },
       {
         key: "handover",
-        label: "Payment/Handover",
-        hint: "Both parties complete exchange",
+        label: tr("sale_step_handover", "Payment/Handover"),
+        hint: tr("sale_step_handover_hint", "Both parties complete exchange"),
       },
       {
         key: "confirm",
-        label: "Dual Confirmation",
-        hint: "Buyer verifies OTP",
+        label: tr("sale_step_confirm", "Dual Confirmation"),
+        hint: tr("sale_step_confirm_hint", "Buyer verifies OTP"),
       },
       {
         key: "complete",
-        label: "Sale Completed",
-        hint: "Post moves to Sold",
+        label: tr("sale_step_complete", "Sale Completed"),
+        hint: tr("sale_step_complete_hint", "Post moves to Sold"),
       },
     ],
-    [],
+    [tr],
   );
 
   const toSafeMessage = (error, fallback) => {
     const status = Number(error?.status || error?.response?.status || 0);
-    const message = String(error?.message || error?.data?.error || "").toLowerCase();
+    const message = String(
+      error?.message || error?.data?.error || "",
+    ).toLowerCase();
 
-    if (status === 401 || message.includes("authentication") || message.includes("login")) {
-      return "Please sign in again and retry this action.";
+    if (
+      status === 401 ||
+      message.includes("authentication") ||
+      message.includes("login")
+    ) {
+      return tr(
+        "please_sign_in_again",
+        "Please sign in again and retry this action.",
+      );
     }
     if (status === 403) {
-      return "You are not authorized for this sale action.";
+      return tr(
+        "sale_not_authorized",
+        "You are not authorized for this sale action.",
+      );
     }
     if (status === 404 || message.includes("not found")) {
-      return "Record not found. Verify Post ID / Transaction ID and retry.";
+      return tr(
+        "sale_record_not_found",
+        "Record not found. Verify Post ID / Transaction ID and retry.",
+      );
     }
     if (message.includes("otp") && message.includes("expired")) {
-      return "OTP expired. Seller must initiate a new sale.";
+      return tr("sale_otp_expired", "OTP expired. Seller must initiate a new sale.");
     }
-    if (message.includes("schema") || message.includes("missing sale columns")) {
-      return "Backend sale schema is incomplete. Please run pending migrations.";
+    if (
+      message.includes("schema") ||
+      message.includes("missing sale columns")
+    ) {
+      return tr(
+        "sale_schema_incomplete",
+        "Backend sale schema is incomplete. Please run pending migrations.",
+      );
     }
     return error?.message || fallback;
   };
@@ -138,7 +161,12 @@ const SaleDone = () => {
       } catch (error) {
         if (!cancelled) {
           setPendingSales([]);
-          setPendingError(toSafeMessage(error, "Could not load pending sales."));
+          setPendingError(
+            toSafeMessage(
+              error,
+              tr("pending_sales_load_failed", "Could not load pending sales."),
+            ),
+          );
         }
       } finally {
         if (!cancelled) {
@@ -157,12 +185,22 @@ const SaleDone = () => {
 
     const postId = String(sellerForm.postId || "").trim();
     const buyerId = String(sellerForm.buyerId || "").trim();
-    const agreedPrice = Number(sellerForm.saleAmount);
+    const agreedPrice = Number(
+      String(sellerForm.saleAmount || "").replace(/,/g, "").trim(),
+    );
 
-    if (!postId || !buyerId || !Number.isFinite(agreedPrice) || agreedPrice <= 0) {
+    if (
+      !postId ||
+      !buyerId ||
+      !Number.isFinite(agreedPrice) ||
+      agreedPrice <= 0
+    ) {
       toast({
-        title: "Incomplete details",
-        description: "Post ID, Buyer ID and valid sale amount are required.",
+        title: tr("missing_details_title", "Missing details"),
+        description: tr(
+          "sale_incomplete_details_desc",
+          "Post ID, Buyer ID and valid sale amount are required.",
+        ),
         variant: "destructive",
       });
       return;
@@ -176,25 +214,38 @@ const SaleDone = () => {
         agreedPrice,
       });
 
-      const tx = payload?.transaction || {};
-      setInitiatedSale(tx);
+      const tx = payload?.transaction || payload?.data?.transaction || payload || {};
+      const transactionId = String(
+        tx.transactionId || tx.transaction_id || tx.id || payload?.transactionId || "",
+      );
+      const normalizedTx = {
+        ...tx,
+        transactionId,
+      };
+      setInitiatedSale(normalizedTx);
       setBuyerForm((prev) => ({
         ...prev,
-        transactionId: String(tx.transactionId || prev.transactionId || ""),
+        transactionId: transactionId || prev.transactionId || "",
       }));
       setActiveTab("buyer");
       setRefreshTick((prev) => prev + 1);
 
       toast({
-        title: "Sale Initiated",
+        title: tr("sale_initiated_title", "Sale Initiated"),
         description:
           payload?.instructions ||
-          "Transaction created. Share transaction id and OTP with buyer.",
+          tr(
+            "sale_initiated_desc",
+            "Transaction created. Share transaction id and OTP with buyer.",
+          ),
       });
     } catch (error) {
       toast({
-        title: "Could not initiate sale",
-        description: toSafeMessage(error, "Please try again."),
+        title: tr("sale_initiate_failed_title", "Could not initiate sale"),
+        description: toSafeMessage(
+          error,
+          tr("sale_initiate_failed_desc", "Please try again."),
+        ),
         variant: "destructive",
       });
     } finally {
@@ -210,8 +261,11 @@ const SaleDone = () => {
 
     if (!transactionId || !otp) {
       toast({
-        title: "Missing details",
-        description: "Transaction ID and OTP are required.",
+        title: tr("missing_details_title", "Missing details"),
+        description: tr(
+          "sale_confirm_missing_desc",
+          "Transaction ID and OTP are required.",
+        ),
         variant: "destructive",
       });
       return;
@@ -220,8 +274,10 @@ const SaleDone = () => {
     setIsConfirming(true);
     try {
       const payload = await api.post("/sale/confirm", { transactionId, otp });
-      const tx = payload?.transaction || {};
-      const normalizedTransactionId = String(tx.transactionId || tx.transaction_id || transactionId || "");
+      const tx = payload?.transaction || payload?.data?.transaction || payload || {};
+      const normalizedTransactionId = String(
+        tx.transactionId || tx.transaction_id || transactionId || "",
+      );
       const normalizedTx = {
         ...tx,
         transactionId: normalizedTransactionId,
@@ -243,15 +299,21 @@ const SaleDone = () => {
       }
 
       toast({
-        title: "Sale Confirmed",
+        title: tr("sale_confirmed", "Sale Confirmed"),
         description:
           payload?.message ||
-          "Sale completed. Listing is moved to Sold and will show in My Home > Sold.",
+          tr(
+            "sale_confirmed_desc",
+            "Sale completed. Listing is moved to Sold and will show in My Home > Sold.",
+          ),
       });
     } catch (error) {
       toast({
-        title: "Sale confirmation failed",
-        description: toSafeMessage(error, "Please verify OTP and retry."),
+        title: tr("sale_confirm_failed_title", "Sale confirmation failed"),
+        description: toSafeMessage(
+          error,
+          tr("sale_confirm_failed_desc", "Please verify OTP and retry."),
+        ),
         variant: "destructive",
       });
     } finally {
@@ -295,11 +357,14 @@ const SaleDone = () => {
               </h2>
 
               <p className="text-gray-600 text-lg mb-6">
-                {t("both_verified") || "Buyer verification completed. Post moved to Sold."}
+                {t("both_verified") ||
+                  "Buyer verification completed. Post moved to Sold."}
               </p>
 
               <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-left mb-8">
-                <p className="text-sm text-green-700 font-semibold">Transaction ID</p>
+                <p className="text-sm text-green-700 font-semibold">
+                  {tr("transaction_id", "Transaction ID")}
+                </p>
                 <p className="font-mono text-green-900 break-all">
                   {completedSale.transactionId || "-"}
                 </p>
@@ -332,7 +397,12 @@ const SaleDone = () => {
       className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-green-900 dark:to-emerald-900 relative"
       style={{ minHeight: "100vh", paddingBottom: "120px" }}
     >
-      <PageHeader transparent={true} backTo="/profile" className="text-white" title="" />
+      <PageHeader
+        transparent={true}
+        backTo="/profile"
+        className="text-white"
+        title=""
+      />
 
       <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
         <div className="text-center pt-4">
@@ -346,8 +416,10 @@ const SaleDone = () => {
             </span>
           </h1>
           <p className="text-green-700 dark:text-green-200 text-lg max-w-md mx-auto">
-            {t("complete_dual_verification") ||
-              "Use real transaction ID + OTP to complete sale."}
+            {tr(
+              "sale_complete_desc",
+              "Use real transaction ID + OTP to complete sale.",
+            )}
           </p>
         </div>
 
@@ -374,13 +446,19 @@ const SaleDone = () => {
               {t("dual_verification_process") || "Dual Verification Process"}
             </CardTitle>
             <CardDescription className="text-green-100 text-base mt-2">
-              {t("dual_verification_desc") ||
-                "Seller initiates sale. Buyer confirms with OTP."}
+              {tr(
+                "sale_dual_verification_desc",
+                "Seller initiates sale. Buyer confirms with OTP.",
+              )}
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-8 space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 dark:bg-gray-700 rounded-2xl p-1.5 h-14">
                 <TabsTrigger
                   value="seller"
@@ -399,38 +477,56 @@ const SaleDone = () => {
               <TabsContent value="seller" className="space-y-6">
                 <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
                   <p className="text-sm text-green-800 font-medium">
-                    Enter seller details to create a real pending transaction.
+                    {tr(
+                      "seller_details_hint",
+                      "Enter seller details to create a real pending transaction.",
+                    )}
                   </p>
                 </div>
 
                 <form onSubmit={handleInitiateSale} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="sellerPostId" className="text-sm font-bold mb-2 block">
-                        Post ID
+                      <Label
+                        htmlFor="sellerPostId"
+                        className="text-sm font-bold mb-2 block"
+                      >
+                        {tr("post_id", "Post ID")}
                       </Label>
                       <Input
                         id="sellerPostId"
                         value={sellerForm.postId}
                         onChange={(event) =>
-                          setSellerForm((prev) => ({ ...prev, postId: event.target.value }))
+                          setSellerForm((prev) => ({
+                            ...prev,
+                            postId: event.target.value,
+                          }))
                         }
-                        placeholder="e.g., 126"
+                        placeholder={tr("post_id_example", "e.g., 126")}
                         className="h-12"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="sellerBuyerId" className="text-sm font-bold mb-2 block">
-                        Buyer User ID
+                      <Label
+                        htmlFor="sellerBuyerId"
+                        className="text-sm font-bold mb-2 block"
+                      >
+                        {tr("buyer_user_id", "Buyer User ID")}
                       </Label>
                       <Input
                         id="sellerBuyerId"
                         value={sellerForm.buyerId}
                         onChange={(event) =>
-                          setSellerForm((prev) => ({ ...prev, buyerId: event.target.value }))
+                          setSellerForm((prev) => ({
+                            ...prev,
+                            buyerId: event.target.value,
+                          }))
                         }
-                        placeholder="Buyer account ID"
+                        placeholder={tr(
+                          "buyer_user_id_placeholder",
+                          "Buyer account ID",
+                        )}
                         className="h-12"
                         required
                       />
@@ -438,7 +534,10 @@ const SaleDone = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="sellerAmount" className="text-sm font-bold mb-2 block">
+                    <Label
+                      htmlFor="sellerAmount"
+                      className="text-sm font-bold mb-2 block"
+                    >
                       {t("sale_amount") || "Sale Amount"} (INR)
                     </Label>
                     <Input
@@ -447,9 +546,12 @@ const SaleDone = () => {
                       min="1"
                       value={sellerForm.saleAmount}
                       onChange={(event) =>
-                        setSellerForm((prev) => ({ ...prev, saleAmount: event.target.value }))
+                        setSellerForm((prev) => ({
+                          ...prev,
+                          saleAmount: event.target.value,
+                        }))
                       }
-                      placeholder="e.g., 50000"
+                      placeholder={tr("eg_50000", "e.g., 50000")}
                       className="h-12"
                       required
                     />
@@ -461,28 +563,42 @@ const SaleDone = () => {
                     className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-600"
                   >
                     {isInitiating
-                      ? t("verifying") || "Initiating..."
-                      : t("initiate_sale_confirmation") || "Initiate Sale"}
+                      ? tr("sale_initiating", "Initiating...")
+                      : tr("initiate_sale", "Initiate Sale")}
                   </Button>
                 </form>
 
                 {initiatedSale && (
                   <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-2">
-                    <p className="text-sm font-semibold text-blue-800">Transaction created</p>
+                    <p className="text-sm font-semibold text-blue-800">
+                      {tr("transaction_created", "Transaction created")}
+                    </p>
                     <p className="text-sm text-blue-700 break-all">
-                      Transaction ID: <span className="font-mono">{initiatedSale.transactionId}</span>
+                      {tr("transaction_id", "Transaction ID")}:{" "}
+                      <span className="font-mono">
+                        {initiatedSale.transactionId}
+                      </span>
                     </p>
                     {initiatedSale.secretOTP ? (
                       <p className="text-sm text-blue-700">
-                        OTP to share with buyer: <span className="font-mono font-bold">{initiatedSale.secretOTP}</span>
+                        {tr("otp_to_share_with_buyer", "OTP to share with buyer")}:{" "}
+                        <span className="font-mono font-bold">
+                          {initiatedSale.secretOTP}
+                        </span>
                       </p>
                     ) : (
                       <p className="text-sm text-blue-700">
-                        OTP sent to buyer notification channel. Ask buyer to use received OTP.
+                        {tr(
+                          "otp_sent_to_buyer",
+                          "OTP sent to buyer notification channel. Ask buyer to use received OTP.",
+                        )}
                       </p>
                     )}
                     {initiatedSale.otpExpiresIn && (
-                      <p className="text-xs text-blue-600">Expires in: {initiatedSale.otpExpiresIn}</p>
+                      <p className="text-xs text-blue-600">
+                        {tr("expires_in", "Expires in")}:{" "}
+                        {initiatedSale.otpExpiresIn}
+                      </p>
                     )}
                   </div>
                 )}
@@ -491,38 +607,57 @@ const SaleDone = () => {
               <TabsContent value="buyer" className="space-y-6">
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                   <p className="text-sm text-blue-800 font-medium">
-                    Buyer confirms using Transaction ID + OTP from seller.
+                    {tr(
+                      "buyer_confirm_hint",
+                      "Buyer confirms using Transaction ID + OTP from seller.",
+                    )}
                   </p>
                 </div>
 
                 <form onSubmit={handleConfirmSale} className="space-y-6">
                   <div>
-                    <Label htmlFor="buyerTransactionId" className="text-sm font-bold mb-2 block">
-                      Transaction ID
-                    </Label>
-                    <Input
-                      id="buyerTransactionId"
-                      value={buyerForm.transactionId}
+                      <Label
+                        htmlFor="buyerTransactionId"
+                        className="text-sm font-bold mb-2 block"
+                      >
+                      {tr("transaction_id", "Transaction ID")}
+                      </Label>
+                      <Input
+                        id="buyerTransactionId"
+                        value={buyerForm.transactionId}
                       onChange={(event) =>
-                        setBuyerForm((prev) => ({ ...prev, transactionId: event.target.value }))
+                        setBuyerForm((prev) => ({
+                          ...prev,
+                          transactionId: event.target.value,
+                        }))
                       }
-                      placeholder="Paste transaction id"
+                      placeholder={tr(
+                        "transaction_id_placeholder",
+                        "e.g., ABC123",
+                      )}
                       className="h-12"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="buyerOtp" className="text-sm font-bold mb-2 block">
-                      <KeyRound className="w-4 h-4 inline mr-1" /> OTP
-                    </Label>
-                    <Input
-                      id="buyerOtp"
-                      value={buyerForm.otp}
+                      <Label
+                        htmlFor="buyerOtp"
+                        className="text-sm font-bold mb-2 block"
+                      >
+                      <KeyRound className="w-4 h-4 inline mr-1" />{" "}
+                      {tr("otp", "OTP")}
+                      </Label>
+                      <Input
+                        id="buyerOtp"
+                        value={buyerForm.otp}
                       onChange={(event) =>
-                        setBuyerForm((prev) => ({ ...prev, otp: event.target.value }))
+                        setBuyerForm((prev) => ({
+                          ...prev,
+                          otp: event.target.value,
+                        }))
                       }
-                      placeholder="Enter OTP"
+                      placeholder={tr("enter_otp", "Enter OTP")}
                       className="h-12"
                       required
                     />
@@ -543,54 +678,68 @@ const SaleDone = () => {
 
             <Card className="border border-gray-200 dark:border-gray-700">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Pending sales for your account</CardTitle>
+                <CardTitle className="text-base">
+                  {tr("pending_sales_title", "Pending sales for your account")}
+                </CardTitle>
                 <CardDescription>
-                  Pick a pending transaction to auto-fill buyer confirmation.
+                  {tr(
+                    "pending_sales_desc",
+                    "Pick a pending transaction to auto-fill buyer confirmation.",
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingLoading ? (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <RefreshCw className="w-4 h-4 animate-spin" /> Loading pending sales...
+                    <RefreshCw className="w-4 h-4 animate-spin" />{" "}
+                    {tr("pending_sales_loading", "Loading pending sales...")}
                   </div>
                 ) : pendingError ? (
                   <p className="text-sm text-red-600">{pendingError}</p>
                 ) : pendingSales.length === 0 ? (
-                  <p className="text-sm text-gray-500">No pending sales right now.</p>
+                  <p className="text-sm text-gray-500">
+                    {tr("pending_sales_empty", "No pending sales right now.")}
+                  </p>
                 ) : (
                   pendingSales.map((sale, index) => {
                     const transactionId =
-                      sale?.transaction_id || sale?.transactionId || sale?.id || index;
+                      sale?.transaction_id ||
+                      sale?.transactionId ||
+                      sale?.id ||
+                      index;
                     return (
-                    <div
-                      key={transactionId}
-                      className="rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-3"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800 break-all">
-                          {sale.post_title || "Untitled post"}
-                        </p>
-                        <p className="text-xs text-gray-500 break-all font-mono">
-                          {transactionId}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setBuyerForm((prev) => ({
-                            ...prev,
-                            transactionId: String(
-                              sale?.transaction_id || sale?.transactionId || "",
-                            ),
-                          }));
-                          setActiveTab("buyer");
-                        }}
+                      <div
+                        key={transactionId}
+                        className="rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-3"
                       >
-                        Use
-                      </Button>
-                    </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800 break-all">
+                            {sale.post_title ||
+                              tr("untitled_post", "Untitled post")}
+                          </p>
+                          <p className="text-xs text-gray-500 break-all font-mono">
+                            {transactionId}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setBuyerForm((prev) => ({
+                              ...prev,
+                              transactionId: String(
+                                sale?.transaction_id ||
+                                  sale?.transactionId ||
+                                  "",
+                              ),
+                            }));
+                            setActiveTab("buyer");
+                          }}
+                        >
+                          {tr("use", "Use")}
+                        </Button>
+                      </div>
                     );
                   })
                 )}

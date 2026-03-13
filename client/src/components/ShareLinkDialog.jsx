@@ -66,7 +66,24 @@ function ShareLinkDialog({ open, onOpenChange, url = "", title = "" }) {
   const handleCopy = async () => {
     if (!safeUrl) return;
     try {
-      await navigator.clipboard.writeText(safeUrl);
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(safeUrl);
+      } else if (typeof document !== "undefined") {
+        const textarea = document.createElement("textarea");
+        textarea.value = safeUrl;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        if (!copied) {
+          throw new Error("copy_failed");
+        }
+      } else {
+        throw new Error("copy_unavailable");
+      }
       setCopied(true);
       if (copyResetTimerRef.current) {
         clearTimeout(copyResetTimerRef.current);

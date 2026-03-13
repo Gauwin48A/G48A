@@ -156,7 +156,7 @@ const Ve = 5,
     const languageRef = w(m);
     T(
       () => () => {
-        (p.current && p.current.abort(), b.current && clearTimeout(b.current));
+        p.current && p.current.abort(), b.current && clearTimeout(b.current);
       },
       [],
     );
@@ -198,13 +198,13 @@ const Ve = 5,
     const y = D(
       async (t = !1) => {
         const r = v.current + 1;
-        ((v.current = r), (A.current = !0));
+        (v.current = r), (A.current = !0);
         const s = t ? 1 : f;
         p.current && p.current.abort();
         const a = new AbortController();
         p.current = a;
         try {
-          (V(!0), s === 1 && H(null), C(""));
+          V(!0), s === 1 && H(null), C("");
           const l = t ? Date.now() : G.current;
           t && (G.current = l);
           const P = `${L}/api/feed?page=${s}&limit=${F}`,
@@ -224,28 +224,36 @@ const Ve = 5,
                   paths: FEED_TRANSLATE_PATHS,
                 })
               : sourcePosts;
-          const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(sourcePosts) ? sourcePosts : []);
-          if (
-            r !== v.current
-          )
-            return;
-          t || s === 1 ? (u(safeTranslatedSeed), q(1)) : u((d) => qe(d, safeTranslatedSeed));
+          const safeTranslatedSeed = Array.isArray(translatedSeed)
+            ? translatedSeed
+            : Array.isArray(sourcePosts)
+              ? sourcePosts
+              : [];
+          if (r !== v.current) return;
+          t || s === 1
+            ? (u(safeTranslatedSeed), q(1))
+            : u((d) => qe(d, safeTranslatedSeed));
           const $ = {},
             U = {};
-          (Array.isArray(safeTranslatedSeed) &&
+          Array.isArray(safeTranslatedSeed) &&
             safeTranslatedSeed.forEach((d) => {
               const re = d.post_id || d.id;
-              (($[re] = d.likes || 0), (U[re] = d.views_count || d.views || 0));
+              ($[re] = d.likes || 0), (U[re] = d.views_count || d.views || 0);
             }),
             J((d) => (t ? $ : { ...d, ...$ })),
             he((d) => (t ? U : { ...d, ...U })),
-            M(safeTranslatedSeed.length === F));
-          if (activeLanguage && activeLanguage !== "en" && sourcePosts.length > 0) {
+            M(safeTranslatedSeed.length === F);
+          if (
+            activeLanguage &&
+            activeLanguage !== "en" &&
+            sourcePosts.length > 0
+          ) {
             $e(sourcePosts, activeLanguage, {
               paths: FEED_TRANSLATE_PATHS,
             })
               .then((d) => {
-                if (r !== v.current || !Array.isArray(d) || d.length === 0) return;
+                if (r !== v.current || !Array.isArray(d) || d.length === 0)
+                  return;
                 const _ = new Map();
                 d.forEach((re) => {
                   const ce = de(re);
@@ -269,13 +277,13 @@ const Ve = 5,
             ? (C("Unable to load more posts right now. Please retry."), M(!1))
             : H("Unable to load the feed right now. Please retry.");
         } finally {
-          (p.current === a && (p.current = null),
-            r === v.current && ((A.current = !1), V(!1)));
+          p.current === a && (p.current = null),
+            r === v.current && ((A.current = !1), V(!1));
         }
       },
       [L, f, F],
     );
-    (T(() => {
+    T(() => {
       y(!0);
     }, [y]),
       T(() => {
@@ -288,7 +296,11 @@ const Ve = 5,
         const translatedSeed = instantTranslatePosts(n, m, {
           paths: FEED_TRANSLATE_PATHS,
         });
-        const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(n) ? n : []);
+        const safeTranslatedSeed = Array.isArray(translatedSeed)
+          ? translatedSeed
+          : Array.isArray(n)
+            ? n
+            : [];
         const s = new Map();
         Array.isArray(safeTranslatedSeed) &&
           safeTranslatedSeed.forEach((a) => {
@@ -329,15 +341,15 @@ const Ve = 5,
       }, [m]),
       T(() => {
         f > 1 && y(!1);
-      }, [f]));
+      }, [f]);
     const be = () => {
-        (window.scrollTo({ top: 0, behavior: "smooth" }), y(!0));
+        window.scrollTo({ top: 0, behavior: "smooth" }), y(!0);
       },
       X = () => {
-        (window.scrollTo({ top: 0, behavior: "smooth" }), y(!0));
+        window.scrollTo({ top: 0, behavior: "smooth" }), y(!0);
       },
       we = () => {
-        (C(""), M(!0), y(!1));
+        C(""), M(!0), y(!1);
       },
       Z = D(() => {
         A.current || !E || ((A.current = !0), q((t) => t + 1));
@@ -361,24 +373,24 @@ const Ve = 5,
         window.addEventListener("scroll", t, { passive: !0 }),
         t(),
         () => {
-          (window.removeEventListener("scroll", t), (S.current = !1));
+          window.removeEventListener("scroll", t), (S.current = !1);
         }
       );
     }, [Z, h]);
     const R = D((t) => {
-        (Q(t),
+        Q(t),
           b.current && clearTimeout(b.current),
           (b.current = setTimeout(() => {
-            (Q(""), (b.current = null));
-          }, 2e3)));
+            Q(""), (b.current = null);
+          }, 2e3));
       }, []),
       ee = (t) => {
         ue((r) => ({ ...r, [t]: !r[t] }));
       },
       ve = async (t) => {
         const r = I[t];
-        (ge((s) => ({ ...s, [t]: !s[t] })),
-          J((s) => ({ ...s, [t]: (s[t] || 0) + (r ? -1 : 1) })));
+        ge((s) => ({ ...s, [t]: !s[t] })),
+          J((s) => ({ ...s, [t]: (s[t] || 0) + (r ? -1 : 1) }));
         try {
           await fetch(`${L}/api/posts/${t}/like`, {
             method: "POST",
@@ -390,7 +402,7 @@ const Ve = 5,
         const r = de(t);
         if (r === null) return;
         const s = `${window.location.origin}/feed/${r}`;
-        (setShareDialogUrl(s), setShareDialogOpen(!0));
+        setShareDialogUrl(s), setShareDialogOpen(!0);
         try {
           await fetch(`${L}/api/posts/${r}/share`, {
             method: "POST",
@@ -408,7 +420,7 @@ const Ve = 5,
         const s = String(r),
           a = !!savedPosts[s],
           l = !a;
-        (setSavedPosts((P) => ({ ...P, [s]: l })), setSavedPostStatus(s, l));
+        setSavedPosts((P) => ({ ...P, [s]: l })), setSavedPostStatus(s, l);
         try {
           l
             ? await fetch(`${L}/api/wishlist`, {
@@ -422,18 +434,18 @@ const Ve = 5,
                 credentials: "include",
               });
         } catch {
-          (setSavedPosts((P) => ({ ...P, [s]: a })),
+          setSavedPosts((P) => ({ ...P, [s]: a })),
             setSavedPostStatus(s, a),
-            R(a ? "Failed to remove saved post" : "Failed to save post"));
+            R(a ? "Failed to remove saved post" : "Failed to save post");
         }
       },
       ke = (t) => {
         const r = n.find((s) => s.id === t || s.post_id === t);
-        (fetch(`${L}/api/posts/${t}/view`, {
+        fetch(`${L}/api/posts/${t}/view`, {
           method: "POST",
           credentials: "include",
         }).catch(() => {}),
-          g(`/feed/${t}`, { state: { post: r } }));
+          g(`/feed/${t}`, { state: { post: r } });
       },
       Ne = (t) => {
         if (!t) return "";
@@ -721,7 +733,8 @@ const Ve = 5,
                             onClick: () =>
                               g("/login", { state: { returnTo: "/feed" } }),
                           },
-                          o("login_to_share_updates") || "Log in to share updates",
+                          o("login_to_share_updates") ||
+                            "Log in to share updates",
                         ),
                   })
                 : (h ? n : n.slice(0, Ve)).map((t) => {
@@ -819,7 +832,7 @@ const Ve = 5,
                             {
                               type: "button",
                               onClick: () => {
-                                (ye(r), setMenuPostId(null));
+                                ye(r), setMenuPostId(null);
                               },
                               className:
                                 "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
@@ -831,7 +844,7 @@ const Ve = 5,
                             {
                               type: "button",
                               onClick: () => {
-                                (toggleSaveFeed(r), setMenuPostId(null));
+                                toggleSaveFeed(r), setMenuPostId(null);
                               },
                               className:
                                 "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
@@ -845,11 +858,11 @@ const Ve = 5,
                             {
                               type: "button",
                               onClick: () => {
-                                (R(
+                                R(
                                   o("report_feature_coming_soon") ||
                                     "Report feature coming soon",
                                 ),
-                                  setMenuPostId(null));
+                                  setMenuPostId(null);
                               },
                               className:
                                 "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg",
@@ -920,12 +933,12 @@ const Ve = 5,
                           className:
                             "px-3 py-2.5 border-t bg-gray-50 dark:bg-gray-800/50",
                         },
-                          e.createElement(
-                            "div",
-                            {
-                              className:
-                                "post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2",
-                            },
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2",
+                          },
                           e.createElement(
                             "button",
                             {
@@ -1074,4 +1087,3 @@ const Ve = 5,
   };
 var ot = ze;
 export { ot as default };
-

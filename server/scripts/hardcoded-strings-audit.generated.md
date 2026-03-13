@@ -1,6 +1,6 @@
 # Hardcoded Strings Audit (Generated)
 
-Generated: 2026-03-12
+Generated: 2026-03-13
 
 Source root: C:\Users\laksh\GITHUB\AG\Mhub\client\src
 
@@ -66,17 +66,8 @@ Source root: C:\Users\laksh\GITHUB\AG\Mhub\client\src
 - L233 [Attr (aria-label)]: "Close location selector"
 - L295 [Attr (placeholder)]: "Search area, colony, street, city"
 
-## components\PostDetailView.jsx (10 issues)
-- L41 [Text]: "Post not found"
-- L131 [Text]: "Description"
-- L165 [Text]: "Condition"
-- L169 [Text]: "Age"
-- L173 [Text]: "Location"
-- L180 [Text]: "Posted"
-- L193 [Text]: "Views"
-- L197 [Text]: "Likes"
-- L201 [Text]: "Inquiries"
-- L243 [Text]: "Phone:"
+## components\PageHeader.jsx (1 issues)
+- L58 [Attr (aria-label)]: "Go back"
 
 ## components\PostFeed.jsx (1 issues)
 - L30 [Text]: "Image"
@@ -114,140 +105,68 @@ Source root: C:\Users\laksh\GITHUB\AG\Mhub\client\src
 ## components\ui\pagination.jsx (1 issues)
 - L11 [Attr (aria-label)]: "pagination"
 
-## pages\AddPost.jsx (6 issues)
-- L1 [Text]: "=5&&t.title.trim().length"
-- L1 [Text]: "=20&&t.description.trim().length"
-- L1 [Text]: "0&&b.length"
-- L1 [Text]: "100)&&(r.title="Title is required (5-100 chars)."),t.category||(r.category="Category is required."),(!t.brand||t.brand.length"
-- L1 [Text]: "=200&&l.status"
-- L1 [Attr (title)]: "Title is required (5-100 chars)."
+## pages\AddPost.jsx (3 issues)
+- L204 [Text]: "= 5 && t.title.trim().length"
+- L257 [Text]: "0 && b.length"
+- L385 [Text]: "= 200 && l.status"
 
 ## pages\AllPosts.jsx (2 issues)
-- L369 [Attr (aria-label)]: "main_navigation"
-- L375 [Attr (aria-label)]: "main_navigation"
+- L398 [Attr (aria-label)]: "main_navigation"
+- L404 [Attr (aria-label)]: "main_navigation"
 
-## pages\Auth\SignUp.jsx (1 issues)
-- L1 [Text]: "]/.test(t)&&r++,r"
-
-## pages\BuyerView.jsx (3 issues)
-- L1 [Text]: "a?a==="0-25000"?r"
-- L1 [Text]: "25e3&&r"
-- L1 [Text]: "5e4&&r"
+## pages\BuyerView.jsx (2 issues)
+- L67 [Text]: "25e3 && r"
+- L69 [Text]: "5e4 && r"
 
 ## pages\Cart.jsx (2 issues)
 - L91 [Attr (aria-label)]: "Decrease quantity"
 - L102 [Attr (aria-label)]: "Increase quantity"
 
-## pages\CreateChannelPage.jsx (1 issues)
-- L1 [Text]: "!l.trim()||!o.trim()?a("channel_name_and_category_required")||"Channel name and category are required.":l.trim().length"
+## pages\EditPost.jsx (8 issues)
+- L199 [Text]: "Edit Listing"
+- L210 [Text]: "Title"
+- L223 [Text]: "Description"
+- L236 [Text]: "Price (INR)"
+- L250 [Text]: "Status"
+- L258 [Text]: "Active"
+- L259 [Text]: "Sold"
+- L265 [Text]: "Location"
 
-## pages\EditPost.jsx (11 issues)
-- L159 [Text]: "Login required"
-- L160 [Text]: "Sign in to edit your listing."
-- L186 [Text]: "Edit Listing"
-- L197 [Text]: "Title"
-- L210 [Text]: "Description"
-- L223 [Text]: "Price (INR)"
-- L237 [Text]: "Status"
-- L245 [Text]: "Active"
-- L246 [Text]: "Sold"
-- L252 [Text]: "Location"
-- L266 [Text]: "Cancel"
-
-## pages\FeedPostAdd.jsx (3 issues)
-- L72 [Text]: "Create Text Post"
-- L77 [Text]: "Description *"
-- L83 [Attr (placeholder)]: "Write your update here..."
+## pages\FeedPostAdd.jsx (2 issues)
+- L92 [Text]: "Create Text Post"
+- L108 [Attr (placeholder)]: "Write your update here..."
 
 ## pages\GetVerified.jsx (2 issues)
-- L136 [Text]: "Date of Birth"
-- L131 [Attr (placeholder)]: "XXXX"
+- L159 [Text]: "Date of Birth"
+- L154 [Attr (placeholder)]: "XXXX"
 
-## pages\index.jsx (28 issues)
-- L21 [Text]: "Trusted"
-- L47 [Text]: "Aadhaar Verified"
-- L48 [Text]: "All sellers verified with government ID for maximum trust"
-- L54 [Text]: "Dual Confirmation"
-- L55 [Text]: "Both buyer and seller must confirm sales to prevent fraud"
-- L61 [Text]: "Rewards System"
-- L62 [Text]: "Earn points and badges for successful transactions"
-- L86 [Text]: "Easy Listing"
-- L98 [Text]: "Verified Community"
-- L110 [Text]: "Ranking System"
-- L126 [Text]: "Verified Users"
-- L130 [Text]: "Successful Sales"
-- L134 [Text]: "Cities Covered"
-- L137 [Text]: "₹5Cr+"
-- L138 [Text]: "Transaction Value"
-- L173 [Text]: "MobileMart"
-- L179 [Text]: "Quick Links"
-- L181 [Text]: "About Us"
-- L182 [Text]: "Contact"
-- L183 [Text]: "Help Center"
-- L187 [Text]: "Legal"
-- L189 [Text]: "Terms of Service"
-- L190 [Text]: "Privacy Policy"
-- L191 [Text]: "Security"
-- L195 [Text]: "Connect"
-- L197 [Text]: "support@mobilemart.com"
-- L199 [Text]: "Follow us on social media"
-- L204 [Text]: "&copy; 2024 MobileMart. All rights reserved."
+## pages\index.jsx (18 issues)
+- L26 [Text]: "Trusted"
+- L61 [Text]: "Aadhaar Verified"
+- L70 [Text]: "Dual Confirmation"
+- L79 [Text]: "Rewards System"
+- L106 [Text]: "Easy Listing"
+- L119 [Text]: "Verified Community"
+- L131 [Text]: "Ranking System"
+- L150 [Text]: "Verified Users"
+- L156 [Text]: "Successful Sales"
+- L160 [Text]: "Cities Covered"
+- L166 [Text]: "Transaction Value"
+- L210 [Text]: "MobileMart"
+- L217 [Text]: "Quick Links"
+- L237 [Text]: "Legal"
+- L257 [Text]: "Connect"
+- L259 [Text]: "support@mobilemart.com"
+- L261 [Text]: "Follow us on social media"
+- L266 [Text]: "&copy; 2024 MobileMart. All rights reserved."
 
 ## pages\MyFeedPage.jsx (2 issues)
-- L507 [Attr (title)]: "Unable to load your feed"
-- L593 [Attr (title)]: "More options"
+- L511 [Attr (title)]: "Unable to load your feed"
+- L597 [Attr (title)]: "More options"
 
 ## pages\MyHome.jsx (2 issues)
-- L382 [Text]: "y ? 1 : -1) : i"
-- L391 [Text]: "(new Date() - new Date(t)) / (1e3 * 60)"
-
-## pages\Offers.jsx (13 issues)
-- L175 [Text]: "Login required"
-- L197 [Text]: "Price Negotiations"
-- L199 [Text]: "Manage your offers and counter-offers"
-- L236 [Text]: "Unable to load offers"
-- L240 [Text]: "Retry"
-- L242 [Text]: "Browse posts"
-- L250 [Text]: "No offers yet"
-- L257 [Text]: "Refresh"
-- L295 [Text]: "Original Price"
-- L301 [Text]: "Offered Price"
-- L333 [Text]: "Accept"
-- L342 [Text]: "Reject"
-- L348 [Attr (placeholder)]: "Counter"
-
-## pages\Payments\PaymentPage.jsx (12 issues)
-- L178 [Text]: "Login required"
-- L195 [Text]: "Loading payment details..."
-- L202 [Text]: "Unable to load payment details"
-- L238 [Text]: "Upgrade Membership"
-- L273 [Text]: "Scan using GPay, PhonePe, or Paytm"
-- L279 [Text]: "Transaction ID (UTR)"
-- L306 [Text]: "How it works"
-- L316 [Text]: "Payment History"
-- L323 [Text]: "Loading history..."
-- L344 [Text]: "No payments yet."
-- L272 [Attr (alt)]: "Scan to Pay"
-- L284 [Attr (placeholder)]: "Enter UTR"
-
-## pages\PostCard.jsx (1 issues)
-- L83 [Text]: "Warranty:"
-
-## pages\PostDetails.jsx (3 issues)
-- L39 [Text]: "Loading post..."
-- L41 [Text]: "Post not found."
-- L62 [Text]: "Back"
-
-## pages\PostDetailView.jsx (9 issues)
-- L37 [Text]: "Loading..."
-- L41 [Text]: "Post not found"
-- L42 [Text]: "Back to All Posts"
-- L49 [Text]: "Back"
-- L56 [Text]: "No Image"
-- L63 [Text]: "Category:"
-- L64 [Text]: "Status:"
-- L70 [Text]: "Description:"
-- L70 [Text]: "No description"
+- L393 [Text]: "y ? 1 : -1) : i"
+- L402 [Text]: "(new Date() - new Date(t)) / (1e3 * 60)"
 
 ## pages\Post_add.jsx (2 issues)
 - L42 [Text]: "Add New Text Post"
@@ -261,54 +180,25 @@ Source root: C:\Users\laksh\GITHUB\AG\Mhub\client\src
 - L50 [Attr (title)]: "Refund Policy"
 - L51 [Attr (title)]: "Rules and process for payment refunds, including premium feature and entitlement transactions."
 
-## pages\RewardsPage.jsx (11 issues)
-- L94 [Text]: "Loading rewards..."
-- L114 [Text]: "My Rewards"
-- L117 [Text]: "Total Points"
-- L119 [Text]: "Your referral code:"
-- L126 [Text]: "No direct referrals yet"
-- L138 [Text]: "No indirect referrals yet"
-- L150 [Text]: "Reward History"
-- L152 [Text]: "No reward history yet"
-- L158 [Text]: "Points"
-- L159 [Text]: "Reason"
-- L160 [Text]: "Date"
+## pages\Rewards.jsx (1 issues)
+- L519 [Text]: "maxStreak"
 
-## pages\Saledone.jsx (11 issues)
-- L296 [Text]: "Transaction ID"
-- L465 [Text]: "Transaction created"
-- L511 [Text]: "OTP"
-- L540 [Text]: "Pending sales for your account"
-- L548 [Text]: "Loading pending sales..."
-- L553 [Text]: "No pending sales right now."
-- L412 [Attr (placeholder)]: "e.g., 126"
-- L427 [Attr (placeholder)]: "Buyer account ID"
-- L446 [Attr (placeholder)]: "e.g., 50000"
-- L503 [Attr (placeholder)]: "Paste transaction id"
-- L519 [Attr (placeholder)]: "Enter OTP"
-
-## pages\SecuritySettings.jsx (21 issues)
-- L269 [Text]: "Security Center"
-- L270 [Text]: "Authentication & Session Control"
-- L382 [Text]: "Step 1: Scan QR code"
-- L386 [Text]: "Step 2: Verify code"
-- L439 [Text]: "Backup codes (save these now)"
-- L452 [Text]: "Confirm disable using authenticator code"
-- L254 [Attr (title)]: "Loading security settings..."
-- L329 [Attr (title)]: "Two-factor status unavailable"
-- L343 [Attr (title)]: "Checking 2FA status..."
-- L353 [Attr (title)]: "Preparing authenticator setup..."
-- L363 [Attr (title)]: "Could not start 2FA setup"
-- L384 [Attr (alt)]: "2FA QR code"
-- L392 [Attr (placeholder)]: "Enter authenticator code"
-- L410 [Attr (title)]: "Verifying authenticator code..."
-- L420 [Attr (title)]: "Could not verify code"
-- L458 [Attr (placeholder)]: "Enter code"
-- L476 [Attr (title)]: "Disabling two-factor authentication..."
-- L486 [Attr (title)]: "Could not disable 2FA"
-- L529 [Attr (title)]: "Active sessions unavailable"
-- L543 [Attr (title)]: "Loading active sessions..."
-- L551 [Attr (title)]: "No active sessions found"
+## pages\SecuritySettings.jsx (15 issues)
+- L275 [Attr (title)]: "Loading security settings..."
+- L358 [Attr (title)]: "Two-factor status unavailable"
+- L372 [Attr (title)]: "Checking 2FA status..."
+- L382 [Attr (title)]: "Preparing authenticator setup..."
+- L392 [Attr (title)]: "Could not start 2FA setup"
+- L417 [Attr (alt)]: "2FA QR code"
+- L433 [Attr (placeholder)]: "Enter authenticator code"
+- L451 [Attr (title)]: "Verifying authenticator code..."
+- L461 [Attr (title)]: "Could not verify code"
+- L510 [Attr (placeholder)]: "Enter code"
+- L528 [Attr (title)]: "Disabling two-factor authentication..."
+- L538 [Attr (title)]: "Could not disable 2FA"
+- L583 [Attr (title)]: "Active sessions unavailable"
+- L597 [Attr (title)]: "Loading active sessions..."
+- L605 [Attr (title)]: "No active sessions found"
 
 ## pages\SupportTicketPolicy.jsx (2 issues)
 - L50 [Attr (title)]: "Support Ticket Policy"
@@ -318,21 +208,17 @@ Source root: C:\Users\laksh\GITHUB\AG\Mhub\client\src
 - L50 [Attr (title)]: "Terms & Conditions"
 - L51 [Attr (title)]: "These terms govern access and use of marketplace, support, and premium module features."
 
-## pages\TierSelection.jsx (2 issues)
-- L187 [Text]: "Upgrade failed"
-- L297 [Text]: "Secure payments | Priority support | Instant activation"
-
 ## services\categoriesService.js (1 issues)
 - L1 [Text]: "0&&Date.now()-cachedAt"
 
 ## services\locationService.js (1 issues)
-- L425 [Text]: "now - entry.timestamp"
+- L445 [Text]: "now - entry.timestamp"
 
 ## utils\security.js (2 issues)
 - L1 [Text]: "Security Alert"
 - L1 [Text]: "\n          This application is not authorized to run on this domain.\n          Please access MHub through the official website.\n"
 
 ---
-Files scanned: 227
-Files with issues: 53
-Total potential hardcoded strings: 222
+Files scanned: 231
+Files with issues: 44
+Total potential hardcoded strings: 126

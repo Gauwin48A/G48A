@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   Check,
@@ -20,72 +21,63 @@ import { useToast } from "@/hooks/use-toast";
 const tierPlans = [
   {
     key: "basic",
-    name: "Basic",
-    subtitle: "Pay-As-You-Go",
+    nameKey: "basic",
+    subtitleKey: "pay_as_you_go",
     price: "Rs49",
-    period: "/post",
+    periodKey: "per_post",
     icon: Clock,
     color: "bg-gray-100 border-gray-200",
     buttonClass: "bg-gray-600 hover:bg-gray-700",
     features: [
-      { text: "1 single post", included: true },
-      { text: "15 days visibility", included: true },
-      { text: "Standard reach", included: true },
-      { text: "Priority support", included: false },
-      { text: "Verified badge", included: false },
+      { key: "one_single_post", included: true },
+      { key: "fifteen_days", included: true },
+      { key: "standard_reach", included: true },
+      { key: "priority_support", included: false },
+      { key: "verified_badge", included: false },
     ],
   },
   {
     key: "silver",
-    name: "Silver Seller",
-    subtitle: "Semi-Pro",
+    nameKey: "silver_seller",
+    subtitleKey: "semi_pro",
     price: "Rs499",
-    period: "/6 months",
+    periodKey: "per_6_months",
     icon: Shield,
     color: "bg-blue-50 border-blue-200",
     buttonClass: "bg-blue-600 hover:bg-blue-700",
     popular: true,
     features: [
-      { text: "1 post per day", included: true },
-      { text: "25 days visibility", included: true },
-      { text: "Medium priority reach", included: true },
-      { text: "Verified badge", included: true },
-      { text: "Priority support", included: false },
+      { key: "one_post_per_day", included: true },
+      { key: "twentyfive_days", included: true },
+      { key: "medium_priority_reach", included: true },
+      { key: "verified_badge", included: true },
+      { key: "priority_support", included: false },
     ],
   },
   {
     key: "premium",
-    name: "Premium",
-    subtitle: "Top seller",
+    nameKey: "premium",
+    subtitleKey: "top_seller",
     price: "Rs999",
-    period: "/year",
+    periodKey: "per_year",
     icon: Crown,
     color: "bg-gradient-to-br from-gray-900 to-gray-800 border-yellow-500",
     textColor: "text-white",
     buttonClass: "bg-yellow-500 hover:bg-yellow-400 text-black",
     featured: true,
     features: [
-      { text: "Unlimited posts", included: true },
-      { text: "45 days visibility", included: true },
-      { text: "Top feed priority", included: true },
-      { text: "Verified badge + crown", included: true },
-      { text: "Premium support 24/7", included: true },
+      { key: "unlimited_posts", included: true },
+      { key: "fortyfive_days", included: true },
+      { key: "top_feed_priority", included: true },
+      { key: "verified_badge_crown", included: true },
+      { key: "premium_support_247", included: true },
     ],
   },
 ];
 
-function planCtaLabel(planKey) {
-  if (planKey === "basic") {
-    return "Buy 1 Post Credit";
-  }
-  if (planKey === "silver") {
-    return "Get Silver Access";
-  }
-  return "Go Premium";
-}
-
 export default function TierSelection() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [processingTier, setProcessingTier] = useState(null);
   const [activatedTier, setActivatedTier] = useState(null);
@@ -97,8 +89,21 @@ export default function TierSelection() {
       return "";
     }
     const selectedPlan = tierPlans.find((plan) => plan.key === activatedTier);
-    return selectedPlan?.name || activatedTier;
-  }, [activatedTier]);
+    if (!selectedPlan) {
+      return activatedTier;
+    }
+    return t(selectedPlan.nameKey);
+  }, [activatedTier, t]);
+
+  const planCtaLabel = (planKey) => {
+    if (planKey === "basic") {
+      return t("tier_cta_basic");
+    }
+    if (planKey === "silver") {
+      return t("tier_cta_silver");
+    }
+    return t("tier_cta_premium");
+  };
 
   const upgradeTier = async (tierKey) => {
     const userId = getUserId();
@@ -115,9 +120,11 @@ export default function TierSelection() {
     try {
       await api.post("/users/upgrade-tier", { tier: tierKey });
       setActivatedTier(tierKey);
+      const selectedPlan = tierPlans.find((plan) => plan.key === tierKey);
+      const planLabel = selectedPlan ? t(selectedPlan.nameKey) : tierKey;
       toast({
-        title: "Plan Activated",
-        description: `Your ${tierKey} plan is active now.`,
+        title: t("tier_plan_activated_title"),
+        description: t("tier_plan_activated_desc", { plan: planLabel }),
       });
       setTimeout(() => {
         navigate(`/categories?tier=${encodeURIComponent(tierKey)}`);
@@ -126,10 +133,10 @@ export default function TierSelection() {
       const errorMessage =
         requestError?.response?.data?.error ||
         requestError?.message ||
-        "Failed to upgrade. Please try again.";
+        t("tier_upgrade_failed_fallback");
       setError(errorMessage);
       toast({
-        title: "Upgrade Failed",
+        title: t("upgrade_failed"),
         description: errorMessage,
         variant: "destructive",
       });
@@ -154,16 +161,19 @@ export default function TierSelection() {
           </div>
         </div>
         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
-          Choose Your Selling Power
+          {t("choose_your_selling_power")}
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Unlock higher visibility and sell faster with stronger plans.
+          {t("selling_power_subtitle")}
         </p>
       </div>
 
       {processingTier && (
-        <p className="max-w-md mx-auto mb-6 text-center text-sm text-blue-700" marker="loading">
-          Upgrading your plan. Please wait...
+        <p
+          className="max-w-md mx-auto mb-6 text-center text-sm text-blue-700"
+          marker="loading"
+        >
+          {t("tier_upgrading_plan")}
         </p>
       )}
 
@@ -171,7 +181,7 @@ export default function TierSelection() {
         <div className="max-w-md mx-auto mb-8 p-4 bg-green-100 border border-green-300 rounded-xl text-center">
           <Sparkles className="w-8 h-8 text-green-600 mx-auto mb-2" />
           <p className="text-green-800 font-semibold">
-            {activatedTierLabel} activated. Redirecting to post creation...
+            {t("tier_activated_redirect", { plan: activatedTierLabel })}
           </p>
         </div>
       )}
@@ -184,13 +194,17 @@ export default function TierSelection() {
           <div className="flex items-start gap-3 text-left">
             <AlertTriangle className="w-5 h-5 text-red-700 mt-0.5" />
             <div className="flex-1">
-              <p className="text-red-900 font-semibold">Upgrade failed</p>
+              <p className="text-red-900 font-semibold">{t("upgrade_failed")}</p>
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           </div>
           <div className="mt-4 flex items-center justify-center gap-2">
-            <Button size="sm" onClick={onRetry} disabled={!lastAttemptedTier || Boolean(processingTier)}>
-              Retry
+            <Button
+              size="sm"
+              onClick={onRetry}
+              disabled={!lastAttemptedTier || Boolean(processingTier)}
+            >
+              {t("retry")}
             </Button>
             <Button
               size="sm"
@@ -198,7 +212,7 @@ export default function TierSelection() {
               className="border-red-300 text-red-800 hover:bg-red-200"
               onClick={() => setError(null)}
             >
-              Dismiss
+              {t("dismiss")}
             </Button>
           </div>
         </div>
@@ -218,13 +232,13 @@ export default function TierSelection() {
               {plan.popular && (
                 <div className="absolute top-0 right-0">
                   <Badge className="bg-blue-600 text-white rounded-none rounded-bl-xl px-4 py-1 font-bold">
-                    Popular
+                    {t("popular")}
                   </Badge>
                 </div>
               )}
               {plan.featured && (
                 <div className="absolute top-0 left-0 right-0 bg-yellow-500 text-black text-center py-1 font-bold text-sm">
-                  BEST VALUE
+                  {t("best_value")}
                 </div>
               )}
               <CardHeader className={plan.featured ? "pt-10" : ""}>
@@ -234,41 +248,57 @@ export default function TierSelection() {
                       plan.featured ? "bg-yellow-400/20" : "bg-gray-100"
                     }`}
                   >
-                    <Icon className={`w-6 h-6 ${plan.featured ? "text-yellow-400" : "text-blue-600"}`} />
+                    <Icon
+                      className={`w-6 h-6 ${plan.featured ? "text-yellow-400" : "text-blue-600"}`}
+                    />
                   </div>
                   <div>
-                    <CardTitle className={`text-xl font-bold ${plan.textColor || "text-gray-900"}`}>
-                      {plan.name}
+                    <CardTitle
+                      className={`text-xl font-bold ${plan.textColor || "text-gray-900"}`}
+                    >
+                      {t(plan.nameKey)}
                     </CardTitle>
-                    <p className={`text-sm ${plan.featured ? "text-yellow-400" : "text-gray-500"}`}>
-                      {plan.subtitle}
+                    <p
+                      className={`text-sm ${plan.featured ? "text-yellow-400" : "text-gray-500"}`}
+                    >
+                      {t(plan.subtitleKey)}
                     </p>
                   </div>
                 </div>
                 <div className="mt-4 flex items-baseline">
-                  <span className={`text-4xl font-extrabold tracking-tight ${plan.textColor || "text-gray-900"}`}>
+                  <span
+                    className={`text-4xl font-extrabold tracking-tight ${plan.textColor || "text-gray-900"}`}
+                  >
                     {plan.price}
                   </span>
-                  <span className={`ml-1 text-lg ${plan.featured ? "text-gray-400" : "text-gray-500"}`}>
-                    {plan.period}
+                  <span
+                    className={`ml-1 text-lg ${plan.featured ? "text-gray-400" : "text-gray-500"}`}
+                  >
+                    {t(plan.periodKey)}
                   </span>
                 </div>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature) => (
-                    <li key={feature.text} className="flex items-center">
+                    <li key={feature.key} className="flex items-center">
                       {feature.included ? (
-                        <Check className={`w-5 h-5 mr-3 flex-shrink-0 ${plan.featured ? "text-yellow-400" : "text-green-500"}`} />
+                        <Check
+                          className={`w-5 h-5 mr-3 flex-shrink-0 ${plan.featured ? "text-yellow-400" : "text-green-500"}`}
+                        />
                       ) : (
-                        <span className="w-5 h-5 mr-3 flex-shrink-0 text-gray-300">-</span>
+                        <span className="w-5 h-5 mr-3 flex-shrink-0 text-gray-300">
+                          -
+                        </span>
                       )}
                       <span
                         className={`${
-                          feature.included ? plan.textColor || "text-gray-700" : "text-gray-400 line-through"
+                          feature.included
+                            ? plan.textColor || "text-gray-700"
+                            : "text-gray-400 line-through"
                         }`}
                       >
-                        {feature.text}
+                        {t(feature.key)}
                       </span>
                     </li>
                   ))}
@@ -281,7 +311,7 @@ export default function TierSelection() {
                   {isProcessing ? (
                     <span className="flex items-center justify-center">
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Processing...
+                      {t("processing")}
                     </span>
                   ) : (
                     planCtaLabel(plan.key)
@@ -294,7 +324,9 @@ export default function TierSelection() {
       </div>
 
       <div className="max-w-4xl mx-auto mt-16 text-center">
-        <p className="text-gray-500 text-sm">Secure payments | Priority support | Instant activation</p>
+        <p className="text-gray-500 text-sm">
+          {t("secure_payments")} | {t("priority_support")} | {t("instant_activation")}
+        </p>
       </div>
     </div>
   );

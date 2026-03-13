@@ -193,7 +193,8 @@ export default function Support() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
-  const tr = (key, fallback, options = {}) => t(key, { defaultValue: fallback, ...options });
+  const tr = (key, fallback, options = {}) =>
+    t(key, { defaultValue: fallback, ...options });
   const [visibleArticles, setVisibleArticles] = useState(ARTICLE_BATCH_SIZE);
   const [walletVersion, setWalletVersion] = useState(0);
   const [bannerMessage, setBannerMessage] = useState("");
@@ -232,13 +233,13 @@ export default function Support() {
     (reason) => {
       const rawReason = String(reason || "").trim();
       if (!rawReason) {
-        return tr("support_wallet_activity","Wallet activity");
+        return tr("support_wallet_activity", "Wallet activity");
       }
       if (rawReason === "Welcome bonus") {
-        return tr("support_txn_welcome_bonus","Welcome bonus");
+        return tr("support_txn_welcome_bonus", "Welcome bonus");
       }
       if (rawReason === "Daily reward") {
-        return tr("support_txn_daily_reward","Daily reward");
+        return tr("support_txn_daily_reward", "Daily reward");
       }
       if (rawReason.startsWith("Unlocked module:")) {
         const moduleId = rawReason.split(":")[1]?.trim();
@@ -374,15 +375,18 @@ export default function Support() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-2xl font-bold md:text-3xl">
-                {tr("support_page_title","Medication & Support")}
+                {tr("support_page_title", "Medication & Support")}
               </h1>
               <p className="mt-1 text-sm text-blue-100 md:text-base">
-                {tr("support_page_subtitle","Disease Library + premium support modules unlocked using coins.")}
+                {tr(
+                  "support_page_subtitle",
+                  "Disease Library + premium support modules unlocked using coins.",
+                )}
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold">
               <ShieldCheck className="h-4 w-4" />
-              {tr("support_safe_workflow","Safe, structured support workflow")}
+              {tr("support_safe_workflow", "Safe, structured support workflow")}
             </div>
           </div>
         </div>
@@ -398,24 +402,27 @@ export default function Support() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Coins className="h-5 w-5 text-amber-500" />
-                {tr("support_wallet_title","Coins Wallet")}
+                {tr("support_wallet_title", "Coins Wallet")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {!loggedIn ? (
                 <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-4 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
                   <p className="font-semibold">
-                    {tr("login_to_continue","Login to continue")}
+                    {tr("login_to_continue", "Login to continue")}
                   </p>
                   <p className="mt-1">
-                    {tr("support_wallet_login_desc","Your coins wallet is available after login. Premium modules unlock using wallet credits.")}
+                    {tr(
+                      "support_wallet_login_desc",
+                      "Your coins wallet is available after login. Premium modules unlock using wallet credits.",
+                    )}
                   </p>
                   <Button
                     type="button"
                     className="mt-3 bg-blue-600 text-white hover:bg-blue-700"
                     onClick={requireLogin}
                   >
-                    {tr("login_to_continue","Login to continue")}
+                    {tr("login_to_continue", "Login to continue")}
                   </Button>
                 </div>
               ) : (
@@ -423,13 +430,13 @@ export default function Support() {
                   <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/25 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                        {tr("support_available_balance","Available Balance")}
+                        {tr("support_available_balance", "Available Balance")}
                       </p>
                       <p className="text-2xl font-bold text-amber-900 dark:text-amber-200">
                         {(wallet?.balance ?? 0).toLocaleString(
                           i18n.resolvedLanguage || i18n.language || "en",
                         )}{" "}
-                        {tr("coins","coins")}
+                        {tr("coins", "coins")}
                       </p>
                     </div>
                     <Button
@@ -438,16 +445,21 @@ export default function Support() {
                       className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-transparent dark:text-amber-200"
                       onClick={handleClaimDaily}
                     >
-                      {tr("support_claim_daily","Claim Daily +20",{ amount: 20 })}
+                      {tr("support_claim_daily", "Claim Daily +20", {
+                        amount: 20,
+                      })}
                     </Button>
                   </div>
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      {tr("support_recent_transactions","Recent Transactions")}
+                      {tr("support_recent_transactions", "Recent Transactions")}
                     </p>
                     {transactions.length === 0 ? (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {tr("support_no_wallet_activity","No wallet activity yet.")}
+                        {tr(
+                          "support_no_wallet_activity",
+                          "No wallet activity yet.",
+                        )}
                       </p>
                     ) : (
                       transactions.map((entry) => (
@@ -488,18 +500,24 @@ export default function Support() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Sparkles className="h-5 w-5 text-blue-600" />
-                {tr("support_premium_access_title","Premium Access")}
+                {tr("support_premium_access_title", "Premium Access")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
               <p>
-                {tr("support_premium_access_desc_1","Premium modules are locked by default and can be unlocked with credits from your wallet.")}
+                {tr(
+                  "support_premium_access_desc_1",
+                  "Premium modules are locked by default and can be unlocked with credits from your wallet.",
+                )}
               </p>
               <p>
-                {tr("support_premium_access_desc_2","New users get a welcome wallet, then can claim daily credits and spend on modules they need.")}
+                {tr(
+                  "support_premium_access_desc_2",
+                  "New users get a welcome wallet, then can claim daily credits and spend on modules they need.",
+                )}
               </p>
               <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
-                {tr("login_to_continue","Login to continue")}
+                {tr("login_to_continue", "Login to continue")}
               </div>
             </CardContent>
           </Card>
@@ -509,7 +527,7 @@ export default function Support() {
           <div className="mb-3 flex items-center gap-2">
             <HeartPulse className="h-5 w-5 text-blue-600" />
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              {tr("support_premium_modules_title","Premium Modules")}
+              {tr("support_premium_modules_title", "Premium Modules")}
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
@@ -529,11 +547,11 @@ export default function Support() {
                       </CardTitle>
                       {unlocked ? (
                         <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-                          {tr("support_unlocked","Unlocked")}
+                          {tr("support_unlocked", "Unlocked")}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="border-blue-200">
-                          {module.cost} {tr("coins","coins")}
+                          {module.cost} {tr("coins", "coins")}
                         </Badge>
                       )}
                     </div>
@@ -546,7 +564,7 @@ export default function Support() {
                       <div className="space-y-3 rounded-xl border border-dashed border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/30">
                         <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
                           <Lock className="mr-1 inline h-4 w-4" />
-                          {tr("login_to_continue","Login to continue")}
+                          {tr("login_to_continue", "Login to continue")}
                         </p>
                         <Button
                           type="button"
@@ -554,7 +572,7 @@ export default function Support() {
                           className="w-full bg-blue-600 text-white hover:bg-blue-700"
                           onClick={requireLogin}
                         >
-                          {tr("login_to_continue","Login to continue")}
+                          {tr("login_to_continue", "Login to continue")}
                         </Button>
                       </div>
                     ) : unlocked ? (
@@ -565,7 +583,10 @@ export default function Support() {
                         disabled
                       >
                         <ShieldCheck className="mr-1 h-4 w-4" />
-                        {tr("support_module_unlocked_button","Module unlocked")}
+                        {tr(
+                          "support_module_unlocked_button",
+                          "Module unlocked",
+                        )}
                       </Button>
                     ) : (
                       <div className="space-y-2">
@@ -581,7 +602,10 @@ export default function Support() {
                         </Button>
                         {!canUnlock ? (
                           <p className="text-xs text-rose-600 dark:text-rose-400">
-                            {tr("support_not_enough_coins_hint","Not enough coins. Claim daily coins to continue.")}
+                            {tr(
+                              "support_not_enough_coins_hint",
+                              "Not enough coins. Claim daily coins to continue.",
+                            )}
                           </p>
                         ) : null}
                       </div>
@@ -597,7 +621,7 @@ export default function Support() {
           <div className="mb-3 flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-blue-600" />
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              {tr("support_disease_library_title","Disease Library")}
+              {tr("support_disease_library_title", "Disease Library")}
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -648,7 +672,7 @@ export default function Support() {
                   )
                 }
               >
-                {tr("support_load_more_articles","Load more articles")}
+                {tr("support_load_more_articles", "Load more articles")}
               </Button>
             </div>
           ) : null}
@@ -657,7 +681,7 @@ export default function Support() {
         <Card className="border-blue-100 dark:border-gray-700">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">
-              {tr("support_legal_policies","Legal Policies")}
+              {tr("support_legal_policies", "Legal Policies")}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2 md:grid-cols-2">
@@ -665,28 +689,28 @@ export default function Support() {
               to="/t&c"
               className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
-              {tr("terms_conditions","Terms & Conditions")}
+              {tr("terms_conditions", "Terms & Conditions")}
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
               to="/privacy-policy"
               className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
-              {tr("privacy_policy","Privacy Policy")}
+              {tr("privacy_policy", "Privacy Policy")}
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
               to="/refund-policy"
               className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
-              {tr("refund_policy","Refund Policy")}
+              {tr("refund_policy", "Refund Policy")}
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
               to="/support-ticket-policy"
               className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
-              {tr("support_ticket_policy","Support Ticket Policy")}
+              {tr("support_ticket_policy", "Support Ticket Policy")}
               <ChevronRight className="h-4 w-4" />
             </Link>
           </CardContent>

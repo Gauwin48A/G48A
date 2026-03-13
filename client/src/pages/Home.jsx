@@ -1,1 +1,901 @@
-import e,{useEffect as ce,useState as u,useCallback as w,useRef as I,useMemo as F}from"react";import{Button as d}from"@/components/ui/button";import{Badge as C}from"@/components/ui/badge";import{Card as ue}from"@/components/ui/card";import{Avatar as ge,AvatarFallback as pe}from"@/components/ui/avatar";import{RefreshCw as xe,TrendingUp as q,Sparkles as J,Clock as fe,Eye as be,Heart as he,MapPin as ye,ChevronRight as W,Zap as ve,ShoppingBag as Z,AlertTriangle as Ne,CheckCircle2 as ke}from"lucide-react";import{useNavigate as we}from"react-router-dom";import{useTranslation as Ce}from"react-i18next";import{useFilter as _e}from"@/context/FilterContext";import S from"@/lib/api";import{fetchCategoriesCached as Be}from"@/services/categoriesService";import{resolveMediaUrl as MeURL}from"@/lib/mediaUrl";const Ae=3e3,Pe=20,D="/placeholder.svg",Ie={search:"",category:"All",sortBy:"",location:"",minPrice:"",maxPrice:"",priceRange:"",startDate:"",endDate:""},Fe=o=>{let a=o%2147483647;return a<=0&&(a+=2147483646),()=>(a=a*16807%2147483647,(a-1)/2147483646)},Se=(o,a)=>{const s=Fe(a),m=[...o];for(let l=m.length-1;l>0;l-=1){const N=Math.floor(s()*(l+1));[m[l],m[N]]=[m[N],m[l]]}return m},De=()=>{const{t:o}=Ce(),a=we(),{filters:s,setFilters:m}=_e(),[l,N]=u([]),[T,K]=u([]),[Q,X]=u([]),[R,E]=u(!0),[j,L]=u(null),[M,$]=u(!1),[_,ee]=u(null),[U,te]=u(null),h=I(!1),g=I(null),y=I(0),re=F(()=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}),[]),ae=F(()=>!!s.search||!!s.location||!!s.minPrice||!!s.maxPrice||!!s.startDate||!!s.endDate||!!s.sortBy||!!(s.category&&s.category!=="All"),[s.category,s.endDate,s.location,s.maxPrice,s.minPrice,s.search,s.sortBy,s.startDate]),v=F(()=>{let t=null;try{t=JSON.parse(localStorage.getItem("user")||"null")}catch{t=null}const r=localStorage.getItem("authToken")||localStorage.getItem("token"),i=String(t?.id??t?.user_id??localStorage.getItem("userId")??""),c=!!((t?.name||t?.full_name||t?.username)&&(t?.email||t?.phone||t?.phone_number)),n=String(t?.verification_status||t?.kyc_status||t?.kycStatus||t?.verificationStatus||"").toLowerCase(),f=!!(t?.is_verified||t?.verified||t?.kyc_verified||n==="approved"||n==="verified"||n==="completed"),p=Number(t?.posts_count??t?.post_count??0),A=!!(i&&l.some(b=>String(b?.author_id??b?.user_id??b?.seller_id??b?.userId??"")===i)),P=p>0||localStorage.getItem("mhub:first-post-created")==="true"||A,k=[{key:"profile",label:"Complete profile basics",done:c,action:()=>a("/profile")},{key:"verification",label:"Finish verification",done:f,action:()=>a("/verification")},{key:"first_post",label:"Publish your first listing",done:P,action:()=>a("/add-post")}],Y=k.filter(b=>b.done).length;return{isLoggedIn:!!r,items:k,completedCount:Y,totalCount:k.length,remainingCount:k.length-Y}},[l,a]),se=v.isLoggedIn&&v.remainingCount>0,x=w((t,r)=>{import.meta.env.DEV&&console.error(t,r)},[]),B=w(async(t=!1)=>{if(h.current&&!t)return;const r=++y.current;L(null);try{t&&($(!0),h.current=!0,g.current&&clearTimeout(g.current),g.current=setTimeout(()=>{h.current=!1,g.current=null},Ae));const i=Date.now(),c=await S.get("/feed/dynamic",{params:{refresh:"true",limit:Pe,seed:i,_t:i}});if(r!==y.current)return;const n=c?.data??c,f=Array.isArray(n?.posts)?n.posts:[],p=Se(f,i);if(N(p),ee(n?.feedMeta||null),te(new Date),p.length>0){const A=p.map(P=>P.post_id).filter(Boolean);S.post("/feed/impression",{postIds:A}).catch(()=>{})}}catch(i){x("Feed fetch error:",i),r===y.current&&L("Failed to load your feed. Please try again.")}finally{r===y.current&&(E(!1),$(!1))}},[x]),z=w(async()=>{try{const t=await S.get("/feed/trending"),r=t?.data??t;K(Array.isArray(r?.posts)?r.posts:[])}catch(t){x("Trending fetch error:",t)}},[x]),O=w(async()=>{try{const t=await Be();X(Array.isArray(t)?t.slice(0,8):[])}catch(t){x("Categories fetch error:",t)}},[x]);ce(()=>(E(!0),B(),z(),O(),()=>{y.current+=1,g.current&&(clearTimeout(g.current),g.current=null)}),[B,z,O]);const G=()=>{h.current||B(!0)},oe=()=>{a("/all-posts?sortBy=views_count&sortOrder=desc")},le=()=>{m(Ie),a("/all-posts")},ne=t=>t?new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(t):"\u20B9 --",ie=t=>{if(!t)return D;if(Array.isArray(t)&&t.length>0)return MeURL(t[0],D);if(typeof t=="string")try{const r=JSON.parse(t);return Array.isArray(r)?MeURL(r[0],D):MeURL(t,D)}catch{return MeURL(t,D)}return D},V=t=>{const r=Number(t);return!Number.isFinite(r)||r<=0?ne(t):re.format(r)},H=t=>{const r=new Date(t);if(Number.isNaN(r.getTime()))return"";const c=Math.max(0,new Date-r),n=Math.floor(c/6e4),f=Math.floor(c/36e5),p=Math.floor(c/864e5);return n<60?`${n}m`:f<24?`${f}h`:`${p}d`},de=t=>t&&ie(t)||D,me=t=>{switch(t){case"fresh":return e.createElement(C,{className:"bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs"},e.createElement(ve,{className:"h-3 w-3 mr-1"}),"New");case"exploration":return e.createElement(C,{className:"bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs"},e.createElement(J,{className:"h-3 w-3 mr-1"}),"Discover");default:return null}};return j?e.createElement("div",{className:"min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900 p-4"},e.createElement(Ne,{className:"h-16 w-16 text-red-500 mb-4"}),e.createElement("h2",{className:"text-xl font-bold text-gray-900 dark:text-white mb-2"},"Something went wrong"),e.createElement("p",{className:"text-gray-500 mb-6 text-center"},j),e.createElement("div",{className:"flex flex-wrap items-center justify-center gap-2"},e.createElement(d,{onClick:G,className:"bg-blue-600 hover:bg-blue-700"},"Reload Page"),e.createElement(d,{type:"button",variant:"outline",onClick:()=>a("/all-posts")},"Open All Posts"))):e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24"},e.createElement("div",{className:"sticky top-0 z-50 bg-gradient-to-r from-white/95 via-gray-50/95 to-white/95 dark:from-slate-900/95 dark:via-gray-900/95 dark:to-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/10"},e.createElement("div",{className:"max-w-6xl mx-auto px-4 py-4"},e.createElement("div",{className:"flex items-center justify-between"},e.createElement("div",null,e.createElement("h1",{className:"text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"},o("for_you")||"For You"),e.createElement("p",{className:"text-sm text-gray-600 dark:text-gray-400"},_?`${_.freshCount} ${o("fresh")||"fresh"} \u2022 ${_.explorationCount} ${o("discover")||"discoveries"}`:o("personalized_feed")||"Personalized feed")),e.createElement("div",{className:"flex items-center gap-2"},e.createElement(d,{variant:"ghost",size:"icon",onClick:G,disabled:M||h.current,className:`text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl ${M?"animate-spin":""}`},e.createElement(xe,{className:"h-5 w-5"})),U&&e.createElement("span",{className:"text-xs text-gray-500 dark:text-gray-500"},H(U)))))),e.createElement("div",{className:"px-4 pt-4"},e.createElement("div",{className:"max-w-6xl mx-auto flex flex-wrap gap-2"},e.createElement(d,{type:"button",variant:"outline",className:"border-blue-200 text-blue-700",onClick:()=>a("/search?context=all-posts")},"Search Listings"),e.createElement(d,{type:"button",variant:"outline",className:"border-blue-200 text-blue-700",onClick:()=>a("/categories")},"Categories"),e.createElement(d,{type:"button",variant:"outline",className:"border-blue-200 text-blue-700",onClick:()=>a("/all-posts")},"Browse All"))),ae&&e.createElement("div",{className:"px-4 pt-3"},e.createElement("div",{className:"max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2"},e.createElement("p",{className:"text-sm text-amber-800 dark:text-amber-300"},"Browse filters are active from previous pages and may hide some listings."),e.createElement(d,{type:"button",variant:"outline",className:"border-amber-300 text-amber-800 w-fit",onClick:le},"Clear filters"))),se&&e.createElement("div",{className:"px-4 pt-3"},e.createElement("div",{className:"max-w-6xl mx-auto rounded-xl border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/20 p-4"},e.createElement("div",{className:"flex flex-col md:flex-row md:items-center md:justify-between gap-2"},e.createElement("div",null,e.createElement("p",{className:"text-sm font-semibold text-sky-900 dark:text-sky-200"},"Getting started checklist"),e.createElement("p",{className:"text-xs text-sky-700 dark:text-sky-300"},"Complete onboarding essentials to build trust and discoverability.")),e.createElement(C,{className:"w-fit bg-sky-600 text-white"},v.completedCount,"/",v.totalCount," complete")),e.createElement("div",{className:"mt-3 grid gap-2 md:grid-cols-3"},v.items.map(t=>e.createElement("button",{key:t.key,type:"button",onClick:t.action,className:`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${t.done?"border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300":"border-sky-200 bg-white text-sky-900 hover:border-sky-400 dark:border-sky-800 dark:bg-slate-900/40 dark:text-sky-200"}`},e.createElement("span",{className:"flex items-center justify-between gap-2"},e.createElement("span",null,t.label),t.done?e.createElement(ke,{className:"h-4 w-4"}):e.createElement(W,{className:"h-4 w-4"}))))))),e.createElement("div",{className:"px-4 py-4 overflow-x-auto"},e.createElement("div",{className:"flex gap-2 min-w-max"},e.createElement("button",{onClick:()=>a("/all-posts"),className:"px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/25 flex items-center gap-2"},e.createElement(Z,{className:"h-4 w-4"}),"All Posts"),Q.map(t=>e.createElement("button",{key:t.category_id||t.id,onClick:()=>a(`/all-posts?category=${t.category_id||t.id}`),className:"px-4 py-2 bg-gray-100 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-700/60 hover:text-gray-900 dark:hover:text-white transition-all border border-gray-200 dark:border-gray-700/50"},t.name)))),T.length>0&&e.createElement("div",{className:"px-4 mb-6"},e.createElement("div",{className:"flex items-center justify-between mb-3"},e.createElement("h2",{className:"text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"},e.createElement(q,{className:"h-5 w-5 text-orange-400"}),o("trending_now")||"Trending Now"),e.createElement("button",{onClick:oe,className:"text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"},o("view_all")||"View All"," ",e.createElement(W,{className:"h-4 w-4"}))),e.createElement("div",{className:"flex gap-3 overflow-x-auto pb-2 scrollbar-hide"},T.map((t,r)=>e.createElement("div",{key:t.post_id,onClick:()=>a(`/post/${t.post_id}`),className:"flex-shrink-0 w-40 bg-white dark:bg-gray-800/60 rounded-xl p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-all border border-gray-200 dark:border-gray-700/50 shadow-sm"},e.createElement("div",{className:"flex items-center gap-2 mb-2"},e.createElement("span",{className:"text-orange-400 font-bold text-lg"},"#",r+1),e.createElement(q,{className:"h-4 w-4 text-orange-400"})),e.createElement("p",{className:"text-gray-900 dark:text-white text-sm font-medium truncate"},t.title),e.createElement("p",{className:"text-emerald-400 font-bold text-sm mt-1"},V(t.price)))))),e.createElement("div",{className:"px-4"},e.createElement("div",{className:"flex items-center justify-between mb-4"},e.createElement("h2",{className:"text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"},e.createElement(J,{className:"h-5 w-5 text-purple-400"}),o("your_feed")||"Your Feed")),R?e.createElement("div",{className:"flex flex-col items-center justify-center h-64 gap-4"},e.createElement("div",{className:"relative"},e.createElement("div",{className:"w-16 h-16 border-4 border-blue-500/30 rounded-full"}),e.createElement("div",{className:"absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"})),e.createElement("p",{className:"text-gray-600 dark:text-gray-400"},o("loading_personalized_feed")||"Loading your personalized feed...")):l.length===0?e.createElement("div",{className:"text-center py-16"},e.createElement("div",{className:"w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6"},e.createElement(Z,{className:"h-12 w-12 text-blue-400"})),e.createElement("h3",{className:"text-2xl font-bold text-gray-900 dark:text-white mb-3"},o("no_posts_yet")||"No Posts Yet"),e.createElement("p",{className:"text-gray-500 dark:text-gray-400 mb-8"},o("be_first_to_post")||"Be the first to post something amazing!"),e.createElement("div",{className:"flex flex-wrap justify-center gap-2"},e.createElement(d,{onClick:()=>a("/tier-selection"),className:"bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl"},o("create_post")||"Create Post"),e.createElement(d,{type:"button",variant:"outline",className:"rounded-2xl px-6 py-6",onClick:()=>a("/all-posts")},"Browse All Posts"))):e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"},l.map(t=>e.createElement(ue,{key:t.post_id,className:"group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 border-gray-200 dark:border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl shadow-sm",onClick:()=>a(`/post/${t.post_id}`)},e.createElement("div",{className:"relative aspect-[4/3] overflow-hidden"},e.createElement("img",{src:de(t.images),alt:t.title,className:"w-full h-full object-cover group-hover:scale-110 transition-transform duration-500",onError:r=>{r.target.src=D}}),e.createElement("div",{className:"absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"}),e.createElement("div",{className:"absolute top-3 left-3"},me(t.feed_phase)),e.createElement("div",{className:"absolute bottom-3 left-3"},e.createElement("p",{className:"text-2xl font-bold text-gray-900 dark:text-white drop-shadow-lg"},V(t.price))),e.createElement("div",{className:"absolute bottom-3 right-3 flex gap-2"},e.createElement("span",{className:"bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs flex items-center gap-1"},e.createElement(be,{className:"h-3 w-3"}),t.views_count||0),e.createElement("span",{className:"bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs flex items-center gap-1"},e.createElement(he,{className:"h-3 w-3"}),t.likes_count||0))),e.createElement("div",{className:"p-4"},t.category_name&&e.createElement(C,{className:"mb-2 bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs"},t.category_name),e.createElement("h3",{className:"text-gray-900 dark:text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"},t.title),t.author_name&&e.createElement("div",{className:"flex items-center gap-2 mb-3"},e.createElement(ge,{className:"h-6 w-6 bg-gradient-to-br from-purple-500 to-pink-500"},e.createElement(pe,{className:"text-white text-xs font-bold"},t.author_name.charAt(0).toUpperCase())),e.createElement("span",{className:"text-sm text-gray-400 truncate"},t.author_name)),e.createElement("div",{className:"flex items-center justify-between text-sm"},e.createElement("span",{className:"flex items-center gap-1 text-gray-500 dark:text-gray-400"},e.createElement(ye,{className:"h-3.5 w-3.5"}),t.location||"Unknown"),e.createElement("span",{className:"flex items-center gap-1 text-gray-400 dark:text-gray-500"},e.createElement(fe,{className:"h-3.5 w-3.5"}),H(t.created_at)))))))))};var He=De;export{He as default};
+import e, {
+  useEffect as ce,
+  useState as u,
+  useCallback as w,
+  useRef as I,
+  useMemo as F,
+} from "react";
+import { Button as d } from "@/components/ui/button";
+import { Badge as C } from "@/components/ui/badge";
+import { Card as ue } from "@/components/ui/card";
+import { Avatar as ge, AvatarFallback as pe } from "@/components/ui/avatar";
+import {
+  RefreshCw as xe,
+  TrendingUp as q,
+  Sparkles as J,
+  Clock as fe,
+  Eye as be,
+  Heart as he,
+  MapPin as ye,
+  ChevronRight as W,
+  Zap as ve,
+  ShoppingBag as Z,
+  AlertTriangle as Ne,
+  CheckCircle2 as ke,
+} from "lucide-react";
+import { useNavigate as we } from "react-router-dom";
+import { useTranslation as Ce } from "react-i18next";
+import { useFilter as _e } from "@/context/FilterContext";
+import S from "@/lib/api";
+import { fetchCategoriesCached as Be } from "@/services/categoriesService";
+import { resolveMediaUrl as MeURL } from "@/lib/mediaUrl";
+const Ae = 3e3,
+  Pe = 20,
+  D = "/placeholder.svg",
+  Ie = {
+    search: "",
+    category: "All",
+    sortBy: "",
+    location: "",
+    minPrice: "",
+    maxPrice: "",
+    priceRange: "",
+    startDate: "",
+    endDate: "",
+  },
+  Fe = (o) => {
+    let a = o % 2147483647;
+    return (
+      a <= 0 && (a += 2147483646),
+      () => ((a = (a * 16807) % 2147483647), (a - 1) / 2147483646)
+    );
+  },
+  Se = (o, a) => {
+    const s = Fe(a),
+      m = [...o];
+    for (let l = m.length - 1; l > 0; l -= 1) {
+      const N = Math.floor(s() * (l + 1));
+      [m[l], m[N]] = [m[N], m[l]];
+    }
+    return m;
+  },
+  De = () => {
+    const { t: o } = Ce(),
+      a = we(),
+      { filters: s, setFilters: m } = _e(),
+      [l, N] = u([]),
+      [T, K] = u([]),
+      [Q, X] = u([]),
+      [R, E] = u(!0),
+      [j, L] = u(null),
+      [M, $] = u(!1),
+      [_, ee] = u(null),
+      [U, te] = u(null),
+      h = I(!1),
+      g = I(null),
+      y = I(0),
+      re = F(
+        () =>
+          new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 0,
+          }),
+        [],
+      ),
+      ae = F(
+        () =>
+          !!s.search ||
+          !!s.location ||
+          !!s.minPrice ||
+          !!s.maxPrice ||
+          !!s.startDate ||
+          !!s.endDate ||
+          !!s.sortBy ||
+          !!(s.category && s.category !== "All"),
+        [
+          s.category,
+          s.endDate,
+          s.location,
+          s.maxPrice,
+          s.minPrice,
+          s.search,
+          s.sortBy,
+          s.startDate,
+        ],
+      ),
+      v = F(() => {
+        let t = null;
+        try {
+          t = JSON.parse(localStorage.getItem("user") || "null");
+        } catch {
+          t = null;
+        }
+        const r =
+            localStorage.getItem("authToken") || localStorage.getItem("token"),
+          i = String(
+            t?.id ?? t?.user_id ?? localStorage.getItem("userId") ?? "",
+          ),
+          c = !!(
+            (t?.name || t?.full_name || t?.username) &&
+            (t?.email || t?.phone || t?.phone_number)
+          ),
+          n = String(
+            t?.verification_status ||
+              t?.kyc_status ||
+              t?.kycStatus ||
+              t?.verificationStatus ||
+              "",
+          ).toLowerCase(),
+          f = !!(
+            t?.is_verified ||
+            t?.verified ||
+            t?.kyc_verified ||
+            n === "approved" ||
+            n === "verified" ||
+            n === "completed"
+          ),
+          p = Number(t?.posts_count ?? t?.post_count ?? 0),
+          A = !!(
+            i &&
+            l.some(
+              (b) =>
+                String(
+                  b?.author_id ?? b?.user_id ?? b?.seller_id ?? b?.userId ?? "",
+                ) === i,
+            )
+          ),
+          P =
+            p > 0 ||
+            localStorage.getItem("mhub:first-post-created") === "true" ||
+            A,
+          k = [
+            {
+              key: "profile",
+              label: "Complete profile basics",
+              done: c,
+              action: () => a("/profile"),
+            },
+            {
+              key: "verification",
+              label: "Finish verification",
+              done: f,
+              action: () => a("/verification"),
+            },
+            {
+              key: "first_post",
+              label: "Publish your first listing",
+              done: P,
+              action: () => a("/add-post"),
+            },
+          ],
+          Y = k.filter((b) => b.done).length;
+        return {
+          isLoggedIn: !!r,
+          items: k,
+          completedCount: Y,
+          totalCount: k.length,
+          remainingCount: k.length - Y,
+        };
+      }, [l, a]),
+      se = v.isLoggedIn && v.remainingCount > 0,
+      x = w((t, r) => {
+        import.meta.env.DEV && console.error(t, r);
+      }, []),
+      B = w(
+        async (t = !1) => {
+          if (h.current && !t) return;
+          const r = ++y.current;
+          L(null);
+          try {
+            t &&
+              ($(!0),
+              (h.current = !0),
+              g.current && clearTimeout(g.current),
+              (g.current = setTimeout(() => {
+                (h.current = !1), (g.current = null);
+              }, Ae)));
+            const i = Date.now(),
+              c = await S.get("/feed/dynamic", {
+                params: { refresh: "true", limit: Pe, seed: i, _t: i },
+              });
+            if (r !== y.current) return;
+            const n = c?.data ?? c,
+              f = Array.isArray(n?.posts) ? n.posts : [],
+              p = Se(f, i);
+            if ((N(p), ee(n?.feedMeta || null), te(new Date()), p.length > 0)) {
+              const A = p.map((P) => P.post_id).filter(Boolean);
+              S.post("/feed/impression", { postIds: A }).catch(() => {});
+            }
+          } catch (i) {
+            x("Feed fetch error:", i),
+              r === y.current &&
+                L("Failed to load your feed. Please try again.");
+          } finally {
+            r === y.current && (E(!1), $(!1));
+          }
+        },
+        [x],
+      ),
+      z = w(async () => {
+        try {
+          const t = await S.get("/feed/trending"),
+            r = t?.data ?? t;
+          K(Array.isArray(r?.posts) ? r.posts : []);
+        } catch (t) {
+          x("Trending fetch error:", t);
+        }
+      }, [x]),
+      O = w(async () => {
+        try {
+          const t = await Be();
+          X(Array.isArray(t) ? t.slice(0, 8) : []);
+        } catch (t) {
+          x("Categories fetch error:", t);
+        }
+      }, [x]);
+    ce(
+      () => (
+        E(!0),
+        B(),
+        z(),
+        O(),
+        () => {
+          (y.current += 1),
+            g.current && (clearTimeout(g.current), (g.current = null));
+        }
+      ),
+      [B, z, O],
+    );
+    const G = () => {
+        h.current || B(!0);
+      },
+      oe = () => {
+        a("/all-posts?sortBy=views_count&sortOrder=desc");
+      },
+      le = () => {
+        m(Ie), a("/all-posts");
+      },
+      ne = (t) =>
+        t
+          ? new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              maximumFractionDigits: 0,
+            }).format(t)
+          : "\u20B9 --",
+      ie = (t) => {
+        if (!t) return D;
+        if (Array.isArray(t) && t.length > 0) return MeURL(t[0], D);
+        if (typeof t == "string")
+          try {
+            const r = JSON.parse(t);
+            return Array.isArray(r) ? MeURL(r[0], D) : MeURL(t, D);
+          } catch {
+            return MeURL(t, D);
+          }
+        return D;
+      },
+      V = (t) => {
+        const r = Number(t);
+        return !Number.isFinite(r) || r <= 0 ? ne(t) : re.format(r);
+      },
+      H = (t) => {
+        const r = new Date(t);
+        if (Number.isNaN(r.getTime())) return "";
+        const c = Math.max(0, new Date() - r),
+          n = Math.floor(c / 6e4),
+          f = Math.floor(c / 36e5),
+          p = Math.floor(c / 864e5);
+        return n < 60 ? `${n}m` : f < 24 ? `${f}h` : `${p}d`;
+      },
+      de = (t) => (t && ie(t)) || D,
+      me = (t) => {
+        switch (t) {
+          case "fresh":
+            return e.createElement(
+              C,
+              {
+                className:
+                  "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs",
+              },
+              e.createElement(ve, { className: "h-3 w-3 mr-1" }),
+              "New",
+            );
+          case "exploration":
+            return e.createElement(
+              C,
+              {
+                className:
+                  "bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs",
+              },
+              e.createElement(J, { className: "h-3 w-3 mr-1" }),
+              "Discover",
+            );
+          default:
+            return null;
+        }
+      };
+    return j
+      ? e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900 p-4",
+          },
+          e.createElement(Ne, { className: "h-16 w-16 text-red-500 mb-4" }),
+          e.createElement(
+            "h2",
+            {
+              className: "text-xl font-bold text-gray-900 dark:text-white mb-2",
+            },
+            "Something went wrong",
+          ),
+          e.createElement(
+            "p",
+            { className: "text-gray-500 mb-6 text-center" },
+            j,
+          ),
+          e.createElement(
+            "div",
+            { className: "flex flex-wrap items-center justify-center gap-2" },
+            e.createElement(
+              d,
+              { onClick: G, className: "bg-blue-600 hover:bg-blue-700" },
+              "Reload Page",
+            ),
+            e.createElement(
+              d,
+              {
+                type: "button",
+                variant: "outline",
+                onClick: () => a("/all-posts"),
+              },
+              "Open All Posts",
+            ),
+          ),
+        )
+      : e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24",
+          },
+          e.createElement(
+            "div",
+            {
+              className:
+                "sticky top-0 z-50 bg-gradient-to-r from-white/95 via-gray-50/95 to-white/95 dark:from-slate-900/95 dark:via-gray-900/95 dark:to-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/10",
+            },
+            e.createElement(
+              "div",
+              { className: "max-w-6xl mx-auto px-4 py-4" },
+              e.createElement(
+                "div",
+                { className: "flex flex-wrap items-center justify-between gap-3" },
+                e.createElement(
+                  "div",
+                  { className: "min-w-0" },
+                  e.createElement(
+                    "h1",
+                    {
+                      className:
+                        "text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent truncate",
+                    },
+                    o("for_you") || "For You",
+                  ),
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-sm text-gray-600 dark:text-gray-400 truncate",
+                    },
+                    _
+                      ? `${_.freshCount} ${o("fresh") || "fresh"} \u2022 ${_.explorationCount} ${o("discover") || "discoveries"}`
+                      : o("personalized_feed") || "Personalized feed",
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  { className: "flex items-center gap-2" },
+                  e.createElement(
+                    d,
+                    {
+                      variant: "ghost",
+                      size: "icon",
+                      onClick: G,
+                      disabled: M || h.current,
+                      className: `text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl ${M ? "animate-spin" : ""}`,
+                    },
+                    e.createElement(xe, { className: "h-5 w-5" }),
+                  ),
+                  U &&
+                    e.createElement(
+                      "span",
+                      { className: "text-xs text-gray-500 dark:text-gray-500" },
+                      H(U),
+                    ),
+                ),
+              ),
+            ),
+          ),
+          e.createElement(
+            "div",
+            { className: "px-4 pt-4" },
+            e.createElement(
+              "div",
+              { className: "max-w-6xl mx-auto flex flex-wrap gap-2" },
+              e.createElement(
+                d,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: "border-blue-200 text-blue-700",
+                  onClick: () => a("/search?context=all-posts"),
+                },
+                "Search Listings",
+              ),
+              e.createElement(
+                d,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: "border-blue-200 text-blue-700",
+                  onClick: () => a("/categories"),
+                },
+                "Categories",
+              ),
+              e.createElement(
+                d,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: "border-blue-200 text-blue-700",
+                  onClick: () => a("/all-posts"),
+                },
+                "Browse All",
+              ),
+            ),
+          ),
+          ae &&
+            e.createElement(
+              "div",
+              { className: "px-4 pt-3" },
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2",
+                },
+                e.createElement(
+                  "p",
+                  { className: "text-sm text-amber-800 dark:text-amber-300" },
+                  "Browse filters are active from previous pages and may hide some listings.",
+                ),
+                e.createElement(
+                  d,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className: "border-amber-300 text-amber-800 w-fit",
+                    onClick: le,
+                  },
+                  "Clear filters",
+                ),
+              ),
+            ),
+          se &&
+            e.createElement(
+              "div",
+              { className: "px-4 pt-3" },
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "max-w-6xl mx-auto rounded-xl border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/20 p-4",
+                },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "flex flex-col md:flex-row md:items-center md:justify-between gap-2",
+                  },
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-sm font-semibold text-sky-900 dark:text-sky-200",
+                      },
+                      "Getting started checklist",
+                    ),
+                    e.createElement(
+                      "p",
+                      { className: "text-xs text-sky-700 dark:text-sky-300" },
+                      "Complete onboarding essentials to build trust and discoverability.",
+                    ),
+                  ),
+                  e.createElement(
+                    C,
+                    { className: "w-fit bg-sky-600 text-white" },
+                    v.completedCount,
+                    "/",
+                    v.totalCount,
+                    " complete",
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  { className: "mt-3 grid gap-2 md:grid-cols-3" },
+                  v.items.map((t) =>
+                    e.createElement(
+                      "button",
+                      {
+                        key: t.key,
+                        type: "button",
+                        onClick: t.action,
+                        className: `w-full rounded-lg border px-3 py-2 text-left text-sm transition ${t.done ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300" : "border-sky-200 bg-white text-sky-900 hover:border-sky-400 dark:border-sky-800 dark:bg-slate-900/40 dark:text-sky-200"}`,
+                      },
+                      e.createElement(
+                        "span",
+                        {
+                          className: "flex items-center justify-between gap-2",
+                        },
+                        e.createElement("span", null, t.label),
+                        t.done
+                          ? e.createElement(ke, { className: "h-4 w-4" })
+                          : e.createElement(W, { className: "h-4 w-4" }),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          e.createElement(
+            "div",
+            { className: "px-4 py-4 overflow-x-auto" },
+            e.createElement(
+              "div",
+              { className: "flex gap-2 min-w-max" },
+              e.createElement(
+                "button",
+                {
+                  onClick: () => a("/all-posts"),
+                  className:
+                    "px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/25 flex items-center gap-2",
+                },
+                e.createElement(Z, { className: "h-4 w-4" }),
+                "All Posts",
+              ),
+              Q.map((t) =>
+                e.createElement(
+                  "button",
+                  {
+                    key: t.category_id || t.id,
+                    onClick: () =>
+                      a(`/all-posts?category=${t.category_id || t.id}`),
+                    className:
+                      "px-4 py-2 bg-gray-100 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-700/60 hover:text-gray-900 dark:hover:text-white transition-all border border-gray-200 dark:border-gray-700/50",
+                  },
+                  t.name,
+                ),
+              ),
+            ),
+          ),
+          T.length > 0 &&
+            e.createElement(
+              "div",
+              { className: "px-4 mb-6" },
+              e.createElement(
+                "div",
+                { className: "flex items-center justify-between mb-3" },
+                e.createElement(
+                  "h2",
+                  {
+                    className:
+                      "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2",
+                  },
+                  e.createElement(q, { className: "h-5 w-5 text-orange-400" }),
+                  o("trending_now") || "Trending Now",
+                ),
+                e.createElement(
+                  "button",
+                  {
+                    onClick: oe,
+                    className:
+                      "text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1",
+                  },
+                  o("view_all") || "View All",
+                  " ",
+                  e.createElement(W, { className: "h-4 w-4" }),
+                ),
+              ),
+              e.createElement(
+                "div",
+                { className: "flex gap-3 overflow-x-auto pb-2 scrollbar-hide" },
+                T.map((t, r) =>
+                  e.createElement(
+                    "div",
+                    {
+                      key: t.post_id,
+                      onClick: () => a(`/post/${t.post_id}`),
+                      className:
+                        "flex-shrink-0 w-40 bg-white dark:bg-gray-800/60 rounded-xl p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-all border border-gray-200 dark:border-gray-700/50 shadow-sm",
+                    },
+                    e.createElement(
+                      "div",
+                      { className: "flex items-center gap-2 mb-2" },
+                      e.createElement(
+                        "span",
+                        { className: "text-orange-400 font-bold text-lg" },
+                        "#",
+                        r + 1,
+                      ),
+                      e.createElement(q, {
+                        className: "h-4 w-4 text-orange-400",
+                      }),
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-gray-900 dark:text-white text-sm font-medium truncate",
+                      },
+                      t.title,
+                    ),
+                    e.createElement(
+                      "p",
+                      { className: "text-emerald-400 font-bold text-sm mt-1" },
+                      V(t.price),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          e.createElement(
+            "div",
+            { className: "px-4" },
+            e.createElement(
+              "div",
+              { className: "flex items-center justify-between mb-4" },
+              e.createElement(
+                "h2",
+                {
+                  className:
+                    "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2",
+                },
+                e.createElement(J, { className: "h-5 w-5 text-purple-400" }),
+                o("your_feed") || "Your Feed",
+              ),
+            ),
+            R
+              ? e.createElement(
+                  "div",
+                  {
+                    className:
+                      "flex flex-col items-center justify-center h-64 gap-4",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "relative" },
+                    e.createElement("div", {
+                      className:
+                        "w-16 h-16 border-4 border-blue-500/30 rounded-full",
+                    }),
+                    e.createElement("div", {
+                      className:
+                        "absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin",
+                    }),
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-gray-600 dark:text-gray-400" },
+                    o("loading_personalized_feed") ||
+                      "Loading your personalized feed...",
+                  ),
+                )
+              : l.length === 0
+                ? e.createElement(
+                    "div",
+                    { className: "text-center py-16" },
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6",
+                      },
+                      e.createElement(Z, {
+                        className: "h-12 w-12 text-blue-400",
+                      }),
+                    ),
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-2xl font-bold text-gray-900 dark:text-white mb-3",
+                      },
+                      o("no_posts_yet") || "No Posts Yet",
+                    ),
+                    e.createElement(
+                      "p",
+                      { className: "text-gray-500 dark:text-gray-400 mb-8" },
+                      o("be_first_to_post") ||
+                        "Be the first to post something amazing!",
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "flex flex-wrap justify-center gap-2" },
+                      e.createElement(
+                        d,
+                        {
+                          onClick: () => a("/tier-selection"),
+                          className:
+                            "bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl",
+                        },
+                        o("create_post") || "Create Post",
+                      ),
+                      e.createElement(
+                        d,
+                        {
+                          type: "button",
+                          variant: "outline",
+                          className: "rounded-2xl px-6 py-6",
+                          onClick: () => a("/all-posts"),
+                        },
+                        "Browse All Posts",
+                      ),
+                    ),
+                  )
+                : e.createElement(
+                    "div",
+                    {
+                      className:
+                        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+                    },
+                    l.map((t) =>
+                      e.createElement(
+                        ue,
+                        {
+                          key: t.post_id,
+                          className:
+                            "group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 border-gray-200 dark:border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl shadow-sm",
+                          onClick: () => a(`/post/${t.post_id}`),
+                        },
+                        e.createElement(
+                          "div",
+                          {
+                            className: "relative aspect-[4/3] overflow-hidden",
+                          },
+                          e.createElement("img", {
+                            src: de(t.images),
+                            alt: t.title,
+                            className:
+                              "w-full h-full object-cover group-hover:scale-110 transition-transform duration-500",
+                            onError: (r) => {
+                              r.target.src = D;
+                            },
+                          }),
+                          e.createElement("div", {
+                            className:
+                              "absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent",
+                          }),
+                          e.createElement(
+                            "div",
+                            { className: "absolute top-3 left-3" },
+                            me(t.feed_phase),
+                          ),
+                          e.createElement(
+                            "div",
+                            { className: "absolute bottom-3 left-3" },
+                            e.createElement(
+                              "p",
+                              {
+                                className:
+                                  "text-2xl font-bold text-gray-900 dark:text-white drop-shadow-lg",
+                              },
+                              V(t.price),
+                            ),
+                          ),
+                          e.createElement(
+                            "div",
+                            {
+                              className: "absolute bottom-3 right-3 flex gap-2",
+                            },
+                            e.createElement(
+                              "span",
+                              {
+                                className:
+                                  "bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs flex items-center gap-1",
+                              },
+                              e.createElement(be, { className: "h-3 w-3" }),
+                              t.views_count || 0,
+                            ),
+                            e.createElement(
+                              "span",
+                              {
+                                className:
+                                  "bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs flex items-center gap-1",
+                              },
+                              e.createElement(he, { className: "h-3 w-3" }),
+                              t.likes_count || 0,
+                            ),
+                          ),
+                        ),
+                        e.createElement(
+                          "div",
+                          { className: "p-4" },
+                          t.category_name &&
+                            e.createElement(
+                              C,
+                              {
+                                className:
+                                  "mb-2 bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs",
+                              },
+                              t.category_name,
+                            ),
+                          e.createElement(
+                            "h3",
+                            {
+                              className:
+                                "text-gray-900 dark:text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors",
+                            },
+                            t.title,
+                          ),
+                          t.author_name &&
+                            e.createElement(
+                              "div",
+                              { className: "flex items-center gap-2 mb-3" },
+                              e.createElement(
+                                ge,
+                                {
+                                  className:
+                                    "h-6 w-6 bg-gradient-to-br from-purple-500 to-pink-500",
+                                },
+                                e.createElement(
+                                  pe,
+                                  { className: "text-white text-xs font-bold" },
+                                  t.author_name.charAt(0).toUpperCase(),
+                                ),
+                              ),
+                              e.createElement(
+                                "span",
+                                { className: "text-sm text-gray-400 truncate" },
+                                t.author_name,
+                              ),
+                            ),
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "flex items-center justify-between text-sm",
+                            },
+                            e.createElement(
+                              "span",
+                              {
+                                className:
+                                  "flex items-center gap-1 text-gray-500 dark:text-gray-400",
+                              },
+                              e.createElement(ye, { className: "h-3.5 w-3.5" }),
+                              t.location || "Unknown",
+                            ),
+                            e.createElement(
+                              "span",
+                              {
+                                className:
+                                  "flex items-center gap-1 text-gray-400 dark:text-gray-500",
+                              },
+                              e.createElement(fe, { className: "h-3.5 w-3.5" }),
+                              H(t.created_at),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        );
+  };
+var He = De;
+export { He as default };

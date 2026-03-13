@@ -1,1 +1,868 @@
-import e,{useState as m,useEffect as z,useRef as S,useMemo as W,useCallback as x}from"react";import{Button as u}from"@/components/ui/button";import{Input as me}from"@/components/ui/input";import{Avatar as ue,AvatarFallback as fe,AvatarImage as ge}from"@/components/ui/avatar";import{Badge as pe}from"@/components/ui/badge";import{MessageCircle as E,Send as Ie,ArrowLeft as ve,Search as Se,Wifi as Ue,WifiOff as Be,AlertCircle as Me,RotateCcw as Te,Compass as je}from"lucide-react";import{useNavigate as Ae}from"react-router-dom";import Y from"../lib/api";import{socket as r}from"../lib/socket";const ze=()=>{const N=Ae(),[L,U]=m([]),[n,G]=m(null),[$,y]=m([]),[B,J]=m(""),[he,Ne]=m(!0),[O,P]=m(!1),[Q,be]=m(""),[_e,X]=m(!1),[Z,D]=m(""),[R,F]=m(""),[w,b]=m(r.connected?"connected":"connecting"),ee=S(null),[ye,M]=m(!1),[xe,T]=m(null),[se,te]=m(new Set),V=S(null),ne=S(0),C=S(null),j=S(0),p=W(()=>{const s=localStorage.getItem("userId"),t=Number.parseInt(s||"",10);return Number.isNaN(t)?null:t},[]);z(()=>{C.current=n},[n]),z(()=>{ee.current?.scrollIntoView({behavior:"smooth"})},[$]);const re=x(async()=>{try{const s=await Y.get("/chat/conversations"),t=s?.data??s;U(Array.isArray(t?.conversations)?t.conversations:[])}catch(s){import.meta.env.DEV&&console.error("Failed to fetch conversations:",s)}finally{Ne(!1)}},[]),q=x(async s=>{const t=++j.current;X(!0),D("");try{const a=await Y.get(`/chat/conversations/${s}`);if(t!==j.current)return;const f=a?.data??a;y(Array.isArray(f?.messages)?f.messages:[])}catch(a){import.meta.env.DEV&&console.error("Failed to fetch messages:",a),t===j.current&&(y([]),D("Unable to load this conversation right now."))}finally{t===j.current&&X(!1)}},[]);z(()=>{re()},[re]),z(()=>{if(!p)return;r.connected?b("connected"):(b("connecting"),r.connect()),r.emit("join_room",`user_${p}`);const s=i=>{const l=C.current,d=i?.conversation_id,o=i?.message;l?.conversation_id===d&&o&&y(c=>{const h=o.id??o.message_id;return h&&c.some(_=>(_.id??_.message_id)===h)?c:[...c,o]}),d&&U(c=>{const h=c.findIndex(A=>A.conversation_id===d);if(h===-1)return c;const _=c[h],ce={..._,last_message:o?.content??_.last_message,last_message_time:o?.created_at??_.last_message_time,unread_count:l?.conversation_id===d?0:(Number(_.unread_count)||0)+1};if(h===0){const A=[...c];return A[0]=ce,A}return[ce,...c.slice(0,h),...c.slice(h+1)]})},t=i=>{const l=C.current,d=Number.parseInt(l?.other_user_id,10),o=Number.parseInt(i?.user_id,10);(!Number.isNaN(d)&&!Number.isNaN(o)?d===o:String(l?.other_user_id)===String(i?.user_id))&&(M(!0),T(i?.username||"Someone"),clearTimeout(V.current),V.current=setTimeout(()=>{M(!1),T(null)},3e3))},a=i=>{const l=C.current,d=Number.parseInt(l?.other_user_id,10),o=Number.parseInt(i?.user_id,10);(!Number.isNaN(d)&&!Number.isNaN(o)?d===o:String(l?.other_user_id)===String(i?.user_id))&&(M(!1),T(null))},f=i=>{const l=Number.parseInt(i?.user_id,10);te(d=>{const o=new Set(d);return o.add(Number.isNaN(l)?i?.user_id:l),o})},v=i=>{const l=Number.parseInt(i?.user_id,10),d=Number.isNaN(l)?i?.user_id:l;te(o=>{const c=new Set(o);return c.delete(d),c})},g=i=>{const l=C.current;i?.conversation_id===l?.conversation_id&&y(d=>d.map(o=>({...o,is_read:!0})))},I=()=>{b("connected")},ie=()=>{b("offline")},le=()=>{b("reconnecting")},de=()=>{b("offline")};return r.on("new_message",s),r.on("user_typing",t),r.on("user_stopped_typing",a),r.on("user_online",f),r.on("user_offline",v),r.on("messages_read",g),r.on("connect",I),r.on("disconnect",ie),r.on("reconnect_attempt",le),r.on("connect_error",de),()=>{r.off("new_message",s),r.off("user_typing",t),r.off("user_stopped_typing",a),r.off("user_online",f),r.off("user_offline",v),r.off("messages_read",g),r.off("connect",I),r.off("disconnect",ie),r.off("reconnect_attempt",le),r.off("connect_error",de),clearTimeout(V.current)}},[p]);const we=x(s=>{const t=s.target.value;if(J(t),!n)return;const a=Date.now();t.trim()&&a-ne.current>1e3&&(r.emit("typing",{conversation_id:n.conversation_id,receiver_id:n.other_user_id}),ne.current=a),t.trim()||r.emit("stopped_typing",{conversation_id:n.conversation_id,receiver_id:n.other_user_id})},[n]),H=x(async()=>{const s=B.trim();if(!(!s||!n||O)){P(!0),F("");try{const t=await Y.post("/chat/send",{receiverId:n.other_user_id,postId:n.post_id,content:s}),a=t?.data??t,f=typeof a?.message=="object"?a.message:a?.data||null;y(v=>{const g=f?.id??f?.message_id;return g&&v.some(I=>(I.id??I.message_id)===g)?v:[...v,f||{sender_id:p,content:s,created_at:new Date().toISOString(),sender_username:"You"}]}),U(v=>v.map(g=>g.conversation_id===n.conversation_id?{...g,last_message:s,last_message_time:new Date().toISOString()}:g)),J("")}catch(t){import.meta.env.DEV&&console.error("Failed to send message:",t),F("Message failed to send. Check your connection and retry.")}finally{P(!1)}}},[p,B,n,O]),Ce=x(s=>{G(s),M(!1),T(null),F(""),D(""),y([]),q(s.conversation_id),U(t=>t.map(a=>a.conversation_id===s.conversation_id?{...a,unread_count:0}:a))},[q]),k=Q.trim().toLowerCase(),oe=W(()=>k?L.filter(s=>[s.other_name,s.other_username,s.post_title,s.last_message].filter(Boolean).join(" ").toLowerCase().includes(k)):L,[L,k]),K=W(()=>{const s=Number.parseInt(n?.other_user_id,10);return Number.isNaN(s)?null:s},[n]),ke=K!==null&&(se.has(K)||se.has(String(K))),ae=x(s=>{if(!s)return"";const t=new Date(s);return Number.isNaN(t.getTime())?"":t.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"})},[]);return he?e.createElement("div",{className:"min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center"},e.createElement("div",{className:"animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"})):e.createElement("div",{className:"min-h-screen bg-gray-50 dark:bg-gray-900"},e.createElement("div",{className:"bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-6"},e.createElement("div",{className:"max-w-4xl mx-auto flex items-center gap-4"},e.createElement(u,{variant:"ghost",size:"icon",className:"text-white",onClick:()=>N(-1)},e.createElement(ve,{className:"w-6 h-6"})),e.createElement("div",null,e.createElement("h1",{className:"text-2xl font-bold text-white flex items-center gap-2"},e.createElement(E,{className:"w-6 h-6"})," Messages"),e.createElement("p",{className:"text-blue-100"},"Chat with buyers and sellers")))),!(w==="connected")&&e.createElement("div",{className:"bg-amber-50 border-b border-amber-200 px-4 py-3"},e.createElement("div",{className:"max-w-4xl mx-auto flex items-center justify-between gap-3 text-amber-800"},e.createElement("div",{className:"flex items-center gap-2 text-sm"},w==="offline"?e.createElement(Be,{className:"w-4 h-4"}):e.createElement(Ue,{className:"w-4 h-4"}),e.createElement("span",null,w==="reconnecting"?"Reconnecting to chat service...":w==="offline"?"Realtime chat disconnected. You can still retry sending manually.":"Connecting to chat service...")),e.createElement(u,{type:"button",size:"sm",variant:"outline",className:"border-amber-300 text-amber-800",onClick:()=>{b("connecting"),r.connect()}},"Reconnect"))),e.createElement("div",{className:"max-w-4xl mx-auto px-4 py-6"},e.createElement("div",{className:"bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden",style:{height:"calc(100vh - 240px)"}},e.createElement("div",{className:"flex h-full"},e.createElement("div",{className:`w-full md:w-1/3 border-r dark:border-gray-700 flex flex-col ${n?"hidden md:flex":"flex"}`},e.createElement("div",{className:"p-4 border-b dark:border-gray-700"},e.createElement("div",{className:"relative"},e.createElement(Se,{className:"absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"}),e.createElement(me,{placeholder:"Search conversations...",value:Q,onChange:s=>be(s.target.value),className:"pl-10"}))),e.createElement("div",{className:"flex-1 overflow-y-auto"},oe.length===0?e.createElement("div",{className:"p-8 text-center text-gray-500"},e.createElement(E,{className:"w-12 h-12 mx-auto mb-4 opacity-50"}),e.createElement("p",null,k?"No matching conversations":"No conversations yet"),!k&&e.createElement("p",{className:"text-sm"},"Start chatting by inquiring on a post"),e.createElement("div",{className:"mt-4 flex flex-wrap justify-center gap-2"},e.createElement(u,{type:"button",size:"sm",onClick:()=>N("/all-posts")},"Browse Listings"),e.createElement(u,{type:"button",size:"sm",variant:"outline",onClick:()=>N("/my-recommendations")},"Find Recommendations"))):oe.map(s=>e.createElement("div",{key:s.conversation_id,onClick:()=>Ce(s),className:`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 border-b dark:border-gray-700 transition ${n?.conversation_id===s.conversation_id?"bg-blue-50 dark:bg-gray-700":""}`},e.createElement("div",{className:"flex items-center gap-3"},e.createElement(ue,null,e.createElement(ge,{src:s.other_avatar}),e.createElement(fe,null,s.other_name?.[0]||s.other_username?.[0]||"U")),e.createElement("div",{className:"flex-1 min-w-0"},e.createElement("div",{className:"flex justify-between items-center"},e.createElement("h3",{className:"font-semibold text-gray-900 dark:text-white truncate"},s.other_name||s.other_username),e.createElement("span",{className:"text-xs text-gray-500"},ae(s.last_message_time))),e.createElement("p",{className:"text-sm text-gray-500 truncate"},s.last_message),s.post_title&&e.createElement(pe,{variant:"secondary",className:"text-xs mt-1"},s.post_title)),s.unread_count>0&&e.createElement(pe,{className:"bg-blue-600"},s.unread_count)))))),e.createElement("div",{className:`flex-1 flex flex-col ${n?"flex":"hidden md:flex"}`},n?e.createElement(e.Fragment,null,e.createElement("div",{className:"p-4 border-b dark:border-gray-700 flex items-center gap-3"},e.createElement(u,{variant:"ghost",size:"icon",className:"md:hidden",onClick:()=>G(null)},e.createElement(ve,{className:"w-5 h-5"})),e.createElement(ue,null,e.createElement(ge,{src:n.other_avatar}),e.createElement(fe,null,n.other_name?.[0]||"U")),e.createElement("div",{className:"flex-1"},e.createElement("h3",{className:"font-semibold"},n.other_name||n.other_username),e.createElement("p",{className:"text-sm text-gray-500"},n.post_title?`Re: ${n.post_title} | `:"",ke?"Online":"Offline"))),e.createElement("div",{className:"flex-1 overflow-y-auto p-4 space-y-4"},_e?e.createElement("div",{className:"h-full flex items-center justify-center"},e.createElement("div",{className:"animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"})):Z?e.createElement("div",{className:"rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"},e.createElement("p",{className:"font-medium"},Z),e.createElement("div",{className:"mt-3"},e.createElement(u,{type:"button",size:"sm",className:"bg-red-600 hover:bg-red-700 text-white",onClick:()=>q(n.conversation_id)},"Retry"))):$.length===0?e.createElement("div",{className:"h-full flex items-center justify-center"},e.createElement("div",{className:"text-center text-gray-500 max-w-sm"},e.createElement(E,{className:"w-12 h-12 mx-auto mb-3 opacity-50"}),e.createElement("p",{className:"font-medium text-gray-700 dark:text-gray-300"},"No messages yet"),e.createElement("p",{className:"text-sm mt-1"},"Start the conversation to close this deal faster."),e.createElement("div",{className:"mt-4 flex flex-wrap justify-center gap-2"},n.post_id?e.createElement(u,{type:"button",size:"sm",variant:"outline",onClick:()=>N(`/post/${n.post_id}`)},"View Listing"):null,e.createElement(u,{type:"button",size:"sm",onClick:()=>N("/all-posts")},"Explore Listings")))):$.map((s,t)=>e.createElement("div",{key:s.id||s.message_id||`${s.sender_id}-${s.created_at}-${t}`,className:`flex ${Number.parseInt(s.sender_id,10)===p?"justify-end":"justify-start"}`},e.createElement("div",{className:`max-w-[70%] rounded-2xl px-4 py-2 ${Number.parseInt(s.sender_id,10)===p?"bg-blue-600 text-white rounded-br-sm":"bg-gray-100 dark:bg-gray-700 rounded-bl-sm"}`},e.createElement("p",null,s.content),e.createElement("p",{className:`text-xs mt-1 ${Number.parseInt(s.sender_id,10)===p?"text-blue-100":"text-gray-500"}`},ae(s.created_at))))),ye&&e.createElement("p",{className:"text-xs text-gray-500"},xe||"Someone"," is typing..."),e.createElement("div",{ref:ee})),e.createElement("div",{className:"p-4 border-t dark:border-gray-700"},R&&e.createElement("div",{className:"mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700 flex items-center justify-between gap-2"},e.createElement("span",{className:"flex items-center gap-1"},e.createElement(Me,{className:"w-3.5 h-3.5"}),R),e.createElement(u,{type:"button",size:"sm",variant:"outline",className:"h-7 px-2 border-red-300 text-red-700",onClick:H},e.createElement(Te,{className:"w-3 h-3 mr-1"}),"Retry")),e.createElement("div",{className:"flex gap-2"},e.createElement(me,{placeholder:"Type a message...",value:B,onChange:we,onKeyDown:s=>{s.key==="Enter"&&!s.shiftKey&&(s.preventDefault(),H())},className:"flex-1"}),e.createElement(u,{onClick:H,disabled:O||!B.trim()||w==="offline",className:"bg-blue-600 hover:bg-blue-700"},e.createElement(Ie,{className:"w-5 h-5"}))))):e.createElement("div",{className:"flex-1 flex items-center justify-center"},e.createElement("div",{className:"text-center text-gray-500"},e.createElement(E,{className:"w-16 h-16 mx-auto mb-4 opacity-50"}),e.createElement("p",{className:"text-lg"},"Select a conversation to start chatting"),e.createElement("div",{className:"mt-4 flex flex-wrap justify-center gap-2"},e.createElement(u,{type:"button",size:"sm",onClick:()=>N("/all-posts")},"Browse Listings"),e.createElement(u,{type:"button",size:"sm",variant:"outline",onClick:()=>N("/my-recommendations")},e.createElement(je,{className:"w-4 h-4 mr-1"}),"Find Matches")))))))))};var Ye=ze;export{Ye as default};
+import e, {
+  useState as m,
+  useEffect as z,
+  useRef as S,
+  useMemo as W,
+  useCallback as x,
+} from "react";
+import { Button as u } from "@/components/ui/button";
+import { Input as me } from "@/components/ui/input";
+import {
+  Avatar as ue,
+  AvatarFallback as fe,
+  AvatarImage as ge,
+} from "@/components/ui/avatar";
+import { Badge as pe } from "@/components/ui/badge";
+import {
+  MessageCircle as E,
+  Send as Ie,
+  ArrowLeft as ve,
+  Search as Se,
+  Wifi as Ue,
+  WifiOff as Be,
+  AlertCircle as Me,
+  RotateCcw as Te,
+  Compass as je,
+} from "lucide-react";
+import { useNavigate as Ae } from "react-router-dom";
+import Y from "../lib/api";
+import { socket as r } from "../lib/socket";
+const ze = () => {
+  const N = Ae(),
+    [L, U] = m([]),
+    [n, G] = m(null),
+    [$, y] = m([]),
+    [B, J] = m(""),
+    [he, Ne] = m(!0),
+    [O, P] = m(!1),
+    [Q, be] = m(""),
+    [_e, X] = m(!1),
+    [Z, D] = m(""),
+    [R, F] = m(""),
+    [w, b] = m(r.connected ? "connected" : "connecting"),
+    ee = S(null),
+    [ye, M] = m(!1),
+    [xe, T] = m(null),
+    [se, te] = m(new Set()),
+    V = S(null),
+    ne = S(0),
+    C = S(null),
+    j = S(0),
+    p = W(() => {
+      const s = localStorage.getItem("userId"),
+        t = Number.parseInt(s || "", 10);
+      return Number.isNaN(t) ? null : t;
+    }, []);
+  z(() => {
+    C.current = n;
+  }, [n]),
+    z(() => {
+      ee.current?.scrollIntoView({ behavior: "smooth" });
+    }, [$]);
+  const re = x(async () => {
+      try {
+        const s = await Y.get("/chat/conversations"),
+          t = s?.data ?? s;
+        U(Array.isArray(t?.conversations) ? t.conversations : []);
+      } catch (s) {
+        import.meta.env.DEV &&
+          console.error("Failed to fetch conversations:", s);
+      } finally {
+        Ne(!1);
+      }
+    }, []),
+    q = x(async (s) => {
+      const t = ++j.current;
+      X(!0), D("");
+      try {
+        const a = await Y.get(`/chat/conversations/${s}`);
+        if (t !== j.current) return;
+        const f = a?.data ?? a;
+        y(Array.isArray(f?.messages) ? f.messages : []);
+      } catch (a) {
+        import.meta.env.DEV && console.error("Failed to fetch messages:", a),
+          t === j.current &&
+            (y([]), D("Unable to load this conversation right now."));
+      } finally {
+        t === j.current && X(!1);
+      }
+    }, []);
+  z(() => {
+    re();
+  }, [re]),
+    z(() => {
+      if (!p) return;
+      r.connected ? b("connected") : (b("connecting"), r.connect()),
+        r.emit("join_room", `user_${p}`);
+      const s = (i) => {
+          const l = C.current,
+            d = i?.conversation_id,
+            o = i?.message;
+          l?.conversation_id === d &&
+            o &&
+            y((c) => {
+              const h = o.id ?? o.message_id;
+              return h && c.some((_) => (_.id ?? _.message_id) === h)
+                ? c
+                : [...c, o];
+            }),
+            d &&
+              U((c) => {
+                const h = c.findIndex((A) => A.conversation_id === d);
+                if (h === -1) return c;
+                const _ = c[h],
+                  ce = {
+                    ..._,
+                    last_message: o?.content ?? _.last_message,
+                    last_message_time: o?.created_at ?? _.last_message_time,
+                    unread_count:
+                      l?.conversation_id === d
+                        ? 0
+                        : (Number(_.unread_count) || 0) + 1,
+                  };
+                if (h === 0) {
+                  const A = [...c];
+                  return (A[0] = ce), A;
+                }
+                return [ce, ...c.slice(0, h), ...c.slice(h + 1)];
+              });
+        },
+        t = (i) => {
+          const l = C.current,
+            d = Number.parseInt(l?.other_user_id, 10),
+            o = Number.parseInt(i?.user_id, 10);
+          (!Number.isNaN(d) && !Number.isNaN(o)
+            ? d === o
+            : String(l?.other_user_id) === String(i?.user_id)) &&
+            (M(!0),
+            T(i?.username || "Someone"),
+            clearTimeout(V.current),
+            (V.current = setTimeout(() => {
+              M(!1), T(null);
+            }, 3e3)));
+        },
+        a = (i) => {
+          const l = C.current,
+            d = Number.parseInt(l?.other_user_id, 10),
+            o = Number.parseInt(i?.user_id, 10);
+          (!Number.isNaN(d) && !Number.isNaN(o)
+            ? d === o
+            : String(l?.other_user_id) === String(i?.user_id)) &&
+            (M(!1), T(null));
+        },
+        f = (i) => {
+          const l = Number.parseInt(i?.user_id, 10);
+          te((d) => {
+            const o = new Set(d);
+            return o.add(Number.isNaN(l) ? i?.user_id : l), o;
+          });
+        },
+        v = (i) => {
+          const l = Number.parseInt(i?.user_id, 10),
+            d = Number.isNaN(l) ? i?.user_id : l;
+          te((o) => {
+            const c = new Set(o);
+            return c.delete(d), c;
+          });
+        },
+        g = (i) => {
+          const l = C.current;
+          i?.conversation_id === l?.conversation_id &&
+            y((d) => d.map((o) => ({ ...o, is_read: !0 })));
+        },
+        I = () => {
+          b("connected");
+        },
+        ie = () => {
+          b("offline");
+        },
+        le = () => {
+          b("reconnecting");
+        },
+        de = () => {
+          b("offline");
+        };
+      return (
+        r.on("new_message", s),
+        r.on("user_typing", t),
+        r.on("user_stopped_typing", a),
+        r.on("user_online", f),
+        r.on("user_offline", v),
+        r.on("messages_read", g),
+        r.on("connect", I),
+        r.on("disconnect", ie),
+        r.on("reconnect_attempt", le),
+        r.on("connect_error", de),
+        () => {
+          r.off("new_message", s),
+            r.off("user_typing", t),
+            r.off("user_stopped_typing", a),
+            r.off("user_online", f),
+            r.off("user_offline", v),
+            r.off("messages_read", g),
+            r.off("connect", I),
+            r.off("disconnect", ie),
+            r.off("reconnect_attempt", le),
+            r.off("connect_error", de),
+            clearTimeout(V.current);
+        }
+      );
+    }, [p]);
+  const we = x(
+      (s) => {
+        const t = s.target.value;
+        if ((J(t), !n)) return;
+        const a = Date.now();
+        t.trim() &&
+          a - ne.current > 1e3 &&
+          (r.emit("typing", {
+            conversation_id: n.conversation_id,
+            receiver_id: n.other_user_id,
+          }),
+          (ne.current = a)),
+          t.trim() ||
+            r.emit("stopped_typing", {
+              conversation_id: n.conversation_id,
+              receiver_id: n.other_user_id,
+            });
+      },
+      [n],
+    ),
+    H = x(async () => {
+      const s = B.trim();
+      if (!(!s || !n || O)) {
+        P(!0), F("");
+        try {
+          const t = await Y.post("/chat/send", {
+              receiverId: n.other_user_id,
+              postId: n.post_id,
+              content: s,
+            }),
+            a = t?.data ?? t,
+            f = typeof a?.message == "object" ? a.message : a?.data || null;
+          y((v) => {
+            const g = f?.id ?? f?.message_id;
+            return g && v.some((I) => (I.id ?? I.message_id) === g)
+              ? v
+              : [
+                  ...v,
+                  f || {
+                    sender_id: p,
+                    content: s,
+                    created_at: new Date().toISOString(),
+                    sender_username: "You",
+                  },
+                ];
+          }),
+            U((v) =>
+              v.map((g) =>
+                g.conversation_id === n.conversation_id
+                  ? {
+                      ...g,
+                      last_message: s,
+                      last_message_time: new Date().toISOString(),
+                    }
+                  : g,
+              ),
+            ),
+            J("");
+        } catch (t) {
+          import.meta.env.DEV && console.error("Failed to send message:", t),
+            F("Message failed to send. Check your connection and retry.");
+        } finally {
+          P(!1);
+        }
+      }
+    }, [p, B, n, O]),
+    Ce = x(
+      (s) => {
+        G(s),
+          M(!1),
+          T(null),
+          F(""),
+          D(""),
+          y([]),
+          q(s.conversation_id),
+          U((t) =>
+            t.map((a) =>
+              a.conversation_id === s.conversation_id
+                ? { ...a, unread_count: 0 }
+                : a,
+            ),
+          );
+      },
+      [q],
+    ),
+    k = Q.trim().toLowerCase(),
+    oe = W(
+      () =>
+        k
+          ? L.filter((s) =>
+              [s.other_name, s.other_username, s.post_title, s.last_message]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+                .includes(k),
+            )
+          : L,
+      [L, k],
+    ),
+    K = W(() => {
+      const s = Number.parseInt(n?.other_user_id, 10);
+      return Number.isNaN(s) ? null : s;
+    }, [n]),
+    ke = K !== null && (se.has(K) || se.has(String(K))),
+    ae = x((s) => {
+      if (!s) return "";
+      const t = new Date(s);
+      return Number.isNaN(t.getTime())
+        ? ""
+        : t.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    }, []);
+  return he
+    ? e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center",
+        },
+        e.createElement("div", {
+          className:
+            "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600",
+        }),
+      )
+    : e.createElement(
+        "div",
+        { className: "min-h-screen bg-gray-50 dark:bg-gray-900" },
+        e.createElement(
+          "div",
+          {
+            className: "bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-6",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-4xl mx-auto flex items-center gap-4" },
+            e.createElement(
+              u,
+              {
+                variant: "ghost",
+                size: "icon",
+                className: "text-white",
+                onClick: () => N(-1),
+              },
+              e.createElement(ve, { className: "w-6 h-6" }),
+            ),
+            e.createElement(
+              "div",
+              null,
+              e.createElement(
+                "h1",
+                {
+                  className:
+                    "text-2xl font-bold text-white flex items-center gap-2",
+                },
+                e.createElement(E, { className: "w-6 h-6" }),
+                " Messages",
+              ),
+              e.createElement(
+                "p",
+                { className: "text-blue-100" },
+                "Chat with buyers and sellers",
+              ),
+            ),
+          ),
+        ),
+        !(w === "connected") &&
+          e.createElement(
+            "div",
+            { className: "bg-amber-50 border-b border-amber-200 px-4 py-3" },
+            e.createElement(
+              "div",
+              {
+                className:
+                  "max-w-4xl mx-auto flex items-center justify-between gap-3 text-amber-800",
+              },
+              e.createElement(
+                "div",
+                { className: "flex items-center gap-2 text-sm" },
+                w === "offline"
+                  ? e.createElement(Be, { className: "w-4 h-4" })
+                  : e.createElement(Ue, { className: "w-4 h-4" }),
+                e.createElement(
+                  "span",
+                  null,
+                  w === "reconnecting"
+                    ? "Reconnecting to chat service..."
+                    : w === "offline"
+                      ? "Realtime chat disconnected. You can still retry sending manually."
+                      : "Connecting to chat service...",
+                ),
+              ),
+              e.createElement(
+                u,
+                {
+                  type: "button",
+                  size: "sm",
+                  variant: "outline",
+                  className: "border-amber-300 text-amber-800",
+                  onClick: () => {
+                    b("connecting"), r.connect();
+                  },
+                },
+                "Reconnect",
+              ),
+            ),
+          ),
+        e.createElement(
+          "div",
+          { className: "max-w-4xl mx-auto px-4 py-6" },
+          e.createElement(
+            "div",
+            {
+              className:
+                "bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden",
+              style: { height: "calc(100vh - 240px)" },
+            },
+            e.createElement(
+              "div",
+              { className: "flex h-full" },
+              e.createElement(
+                "div",
+                {
+                  className: `w-full md:w-1/3 border-r dark:border-gray-700 flex flex-col ${n ? "hidden md:flex" : "flex"}`,
+                },
+                e.createElement(
+                  "div",
+                  { className: "p-4 border-b dark:border-gray-700" },
+                  e.createElement(
+                    "div",
+                    { className: "relative" },
+                    e.createElement(Se, {
+                      className:
+                        "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400",
+                    }),
+                    e.createElement(me, {
+                      placeholder: "Search conversations...",
+                      value: Q,
+                      onChange: (s) => be(s.target.value),
+                      className: "pl-10",
+                    }),
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  { className: "flex-1 overflow-y-auto" },
+                  oe.length === 0
+                    ? e.createElement(
+                        "div",
+                        { className: "p-8 text-center text-gray-500" },
+                        e.createElement(E, {
+                          className: "w-12 h-12 mx-auto mb-4 opacity-50",
+                        }),
+                        e.createElement(
+                          "p",
+                          null,
+                          k
+                            ? "No matching conversations"
+                            : "No conversations yet",
+                        ),
+                        !k &&
+                          e.createElement(
+                            "p",
+                            { className: "text-sm" },
+                            "Start chatting by inquiring on a post",
+                          ),
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "mt-4 flex flex-wrap justify-center gap-2",
+                          },
+                          e.createElement(
+                            u,
+                            {
+                              type: "button",
+                              size: "sm",
+                              onClick: () => N("/all-posts"),
+                            },
+                            "Browse Listings",
+                          ),
+                          e.createElement(
+                            u,
+                            {
+                              type: "button",
+                              size: "sm",
+                              variant: "outline",
+                              onClick: () => N("/my-recommendations"),
+                            },
+                            "Find Recommendations",
+                          ),
+                        ),
+                      )
+                    : oe.map((s) =>
+                        e.createElement(
+                          "div",
+                          {
+                            key: s.conversation_id,
+                            onClick: () => Ce(s),
+                            className: `p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 border-b dark:border-gray-700 transition ${n?.conversation_id === s.conversation_id ? "bg-blue-50 dark:bg-gray-700" : ""}`,
+                          },
+                          e.createElement(
+                            "div",
+                            { className: "flex items-center gap-3" },
+                            e.createElement(
+                              ue,
+                              null,
+                              e.createElement(ge, { src: s.other_avatar }),
+                              e.createElement(
+                                fe,
+                                null,
+                                s.other_name?.[0] ||
+                                  s.other_username?.[0] ||
+                                  "U",
+                              ),
+                            ),
+                            e.createElement(
+                              "div",
+                              { className: "flex-1 min-w-0" },
+                              e.createElement(
+                                "div",
+                                {
+                                  className:
+                                    "flex justify-between items-center",
+                                },
+                                e.createElement(
+                                  "h3",
+                                  {
+                                    className:
+                                      "font-semibold text-gray-900 dark:text-white truncate",
+                                  },
+                                  s.other_name || s.other_username,
+                                ),
+                                e.createElement(
+                                  "span",
+                                  { className: "text-xs text-gray-500" },
+                                  ae(s.last_message_time),
+                                ),
+                              ),
+                              e.createElement(
+                                "p",
+                                { className: "text-sm text-gray-500 truncate" },
+                                s.last_message,
+                              ),
+                              s.post_title &&
+                                e.createElement(
+                                  pe,
+                                  {
+                                    variant: "secondary",
+                                    className: "text-xs mt-1",
+                                  },
+                                  s.post_title,
+                                ),
+                            ),
+                            s.unread_count > 0 &&
+                              e.createElement(
+                                pe,
+                                { className: "bg-blue-600" },
+                                s.unread_count,
+                              ),
+                          ),
+                        ),
+                      ),
+                ),
+              ),
+              e.createElement(
+                "div",
+                {
+                  className: `flex-1 flex flex-col ${n ? "flex" : "hidden md:flex"}`,
+                },
+                n
+                  ? e.createElement(
+                      e.Fragment,
+                      null,
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "p-4 border-b dark:border-gray-700 flex items-center gap-3",
+                        },
+                        e.createElement(
+                          u,
+                          {
+                            variant: "ghost",
+                            size: "icon",
+                            className: "md:hidden",
+                            onClick: () => G(null),
+                          },
+                          e.createElement(ve, { className: "w-5 h-5" }),
+                        ),
+                        e.createElement(
+                          ue,
+                          null,
+                          e.createElement(ge, { src: n.other_avatar }),
+                          e.createElement(fe, null, n.other_name?.[0] || "U"),
+                        ),
+                        e.createElement(
+                          "div",
+                          { className: "flex-1" },
+                          e.createElement(
+                            "h3",
+                            { className: "font-semibold" },
+                            n.other_name || n.other_username,
+                          ),
+                          e.createElement(
+                            "p",
+                            { className: "text-sm text-gray-500" },
+                            n.post_title ? `Re: ${n.post_title} | ` : "",
+                            ke ? "Online" : "Offline",
+                          ),
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "flex-1 overflow-y-auto p-4 space-y-4" },
+                        _e
+                          ? e.createElement(
+                              "div",
+                              {
+                                className:
+                                  "h-full flex items-center justify-center",
+                              },
+                              e.createElement("div", {
+                                className:
+                                  "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600",
+                              }),
+                            )
+                          : Z
+                            ? e.createElement(
+                                "div",
+                                {
+                                  className:
+                                    "rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700",
+                                },
+                                e.createElement(
+                                  "p",
+                                  { className: "font-medium" },
+                                  Z,
+                                ),
+                                e.createElement(
+                                  "div",
+                                  { className: "mt-3" },
+                                  e.createElement(
+                                    u,
+                                    {
+                                      type: "button",
+                                      size: "sm",
+                                      className:
+                                        "bg-red-600 hover:bg-red-700 text-white",
+                                      onClick: () => q(n.conversation_id),
+                                    },
+                                    "Retry",
+                                  ),
+                                ),
+                              )
+                            : $.length === 0
+                              ? e.createElement(
+                                  "div",
+                                  {
+                                    className:
+                                      "h-full flex items-center justify-center",
+                                  },
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className:
+                                        "text-center text-gray-500 max-w-sm",
+                                    },
+                                    e.createElement(E, {
+                                      className:
+                                        "w-12 h-12 mx-auto mb-3 opacity-50",
+                                    }),
+                                    e.createElement(
+                                      "p",
+                                      {
+                                        className:
+                                          "font-medium text-gray-700 dark:text-gray-300",
+                                      },
+                                      "No messages yet",
+                                    ),
+                                    e.createElement(
+                                      "p",
+                                      { className: "text-sm mt-1" },
+                                      "Start the conversation to close this deal faster.",
+                                    ),
+                                    e.createElement(
+                                      "div",
+                                      {
+                                        className:
+                                          "mt-4 flex flex-wrap justify-center gap-2",
+                                      },
+                                      n.post_id
+                                        ? e.createElement(
+                                            u,
+                                            {
+                                              type: "button",
+                                              size: "sm",
+                                              variant: "outline",
+                                              onClick: () =>
+                                                N(`/post/${n.post_id}`),
+                                            },
+                                            "View Listing",
+                                          )
+                                        : null,
+                                      e.createElement(
+                                        u,
+                                        {
+                                          type: "button",
+                                          size: "sm",
+                                          onClick: () => N("/all-posts"),
+                                        },
+                                        "Explore Listings",
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : $.map((s, t) =>
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      key:
+                                        s.id ||
+                                        s.message_id ||
+                                        `${s.sender_id}-${s.created_at}-${t}`,
+                                      className: `flex ${Number.parseInt(s.sender_id, 10) === p ? "justify-end" : "justify-start"}`,
+                                    },
+                                    e.createElement(
+                                      "div",
+                                      {
+                                        className: `max-w-[70%] rounded-2xl px-4 py-2 ${Number.parseInt(s.sender_id, 10) === p ? "bg-blue-600 text-white rounded-br-sm" : "bg-gray-100 dark:bg-gray-700 rounded-bl-sm"}`,
+                                      },
+                                      e.createElement("p", null, s.content),
+                                      e.createElement(
+                                        "p",
+                                        {
+                                          className: `text-xs mt-1 ${Number.parseInt(s.sender_id, 10) === p ? "text-blue-100" : "text-gray-500"}`,
+                                        },
+                                        ae(s.created_at),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ye &&
+                          e.createElement(
+                            "p",
+                            { className: "text-xs text-gray-500" },
+                            xe || "Someone",
+                            " is typing...",
+                          ),
+                        e.createElement("div", { ref: ee }),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "p-4 border-t dark:border-gray-700" },
+                        R &&
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700 flex items-center justify-between gap-2",
+                            },
+                            e.createElement(
+                              "span",
+                              { className: "flex items-center gap-1" },
+                              e.createElement(Me, { className: "w-3.5 h-3.5" }),
+                              R,
+                            ),
+                            e.createElement(
+                              u,
+                              {
+                                type: "button",
+                                size: "sm",
+                                variant: "outline",
+                                className:
+                                  "h-7 px-2 border-red-300 text-red-700",
+                                onClick: H,
+                              },
+                              e.createElement(Te, {
+                                className: "w-3 h-3 mr-1",
+                              }),
+                              "Retry",
+                            ),
+                          ),
+                        e.createElement(
+                          "div",
+                          { className: "flex gap-2" },
+                          e.createElement(me, {
+                            placeholder: "Type a message...",
+                            value: B,
+                            onChange: we,
+                            onKeyDown: (s) => {
+                              s.key === "Enter" &&
+                                !s.shiftKey &&
+                                (s.preventDefault(), H());
+                            },
+                            className: "flex-1",
+                          }),
+                          e.createElement(
+                            u,
+                            {
+                              onClick: H,
+                              disabled: O || !B.trim() || w === "offline",
+                              className: "bg-blue-600 hover:bg-blue-700",
+                            },
+                            e.createElement(Ie, { className: "w-5 h-5" }),
+                          ),
+                        ),
+                      ),
+                    )
+                  : e.createElement(
+                      "div",
+                      { className: "flex-1 flex items-center justify-center" },
+                      e.createElement(
+                        "div",
+                        { className: "text-center text-gray-500" },
+                        e.createElement(E, {
+                          className: "w-16 h-16 mx-auto mb-4 opacity-50",
+                        }),
+                        e.createElement(
+                          "p",
+                          { className: "text-lg" },
+                          "Select a conversation to start chatting",
+                        ),
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "mt-4 flex flex-wrap justify-center gap-2",
+                          },
+                          e.createElement(
+                            u,
+                            {
+                              type: "button",
+                              size: "sm",
+                              onClick: () => N("/all-posts"),
+                            },
+                            "Browse Listings",
+                          ),
+                          e.createElement(
+                            u,
+                            {
+                              type: "button",
+                              size: "sm",
+                              variant: "outline",
+                              onClick: () => N("/my-recommendations"),
+                            },
+                            e.createElement(je, { className: "w-4 h-4 mr-1" }),
+                            "Find Matches",
+                          ),
+                        ),
+                      ),
+                    ),
+              ),
+            ),
+          ),
+        ),
+      );
+};
+var Ye = ze;
+export { Ye as default };

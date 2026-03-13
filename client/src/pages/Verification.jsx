@@ -1,1 +1,616 @@
-import e,{useEffect as $,useMemo as z,useState as o}from"react";import{Link as v,useNavigate as G}from"react-router-dom";import{Shield as L,Upload as N,CreditCard as V,FileText as y}from"lucide-react";import{Button as l}from"@/components/ui/button";import{Input as u}from"@/components/ui/input";import{Label as c}from"@/components/ui/label";import{Card as S,CardContent as T,CardDescription as U,CardHeader as K,CardTitle as j}from"@/components/ui/card";import{useToast as J}from"@/hooks/use-toast";import{useTranslation as Q}from"react-i18next";import Z from"@/components/AadhaarOtpVerify";import{useAuth as R}from"@/context/AuthContext";import P from"@/lib/api";import{getAccessToken as ee,getUserId as ae}from"@/utils/authStorage";const te=()=>{const _=G(),{toast:n}=J(),{t:a}=Q(),{user:g,loading:f}=R(),[q,k]=o(!0),[C,w]=o(!1),[Y,p]=o(!1),[I,F]=o(""),[H,O]=o(0),[m,B]=o({aadhaarNumber:"",panNumber:""}),[s,M]=o({aadhaarXml:null,aadhaarImage:null,panImage:null}),D=ee(),A=ae(g),b=z(()=>!!(g||D&&A),[g,A,D]);$(()=>{if(f)return;if(!b){k(!1);return}let t=!1;return(async()=>{try{const r=await P.get("/users/kyc/status"),i=r?.data??r,X=String(i?.status||"").toUpperCase();t||(F(""),p(X==="APPROVED"||X==="VERIFIED"),(i?.aadhaar_number||i?.pan_number)&&B(h=>({...h,aadhaarNumber:i?.aadhaar_number||h.aadhaarNumber,panNumber:i?.pan_number||h.panNumber})))}catch(r){import.meta.env.DEV&&console.error("[Verification] Failed to fetch KYC status:",r),t||F(r?.message||"Failed to load verification status.")}finally{t||k(!1)}})(),()=>{t=!0}},[f,b,H]);const E=t=>{const{name:d,value:r}=t.target;B(i=>({...i,[d]:r}))},x=t=>d=>{const r=d.target.files?.[0];if(r){if(t==="aadhaarXml"&&!r.name.endsWith(".xml")){n({title:a("invalid_file"),description:a("upload_valid_xml"),variant:"destructive"});return}if((t==="aadhaarImage"||t==="panImage")&&!r.type.startsWith("image/")){n({title:a("invalid_file"),description:a("upload_valid_image"),variant:"destructive"});return}M(i=>({...i,[t]:r})),n({title:a("file_uploaded"),description:a("document_uploaded")||"Document uploaded successfully"})}},W=async()=>{if(!b){_("/login",{state:{returnTo:"/verification"}});return}if(!m.aadhaarNumber||!m.panNumber){n({title:a("incomplete_form")||"Incomplete form",description:a("enter_aadhaar_pan")||"Aadhaar and PAN are required.",variant:"destructive"});return}if(!s.aadhaarImage){n({title:a("missing_document")||"Missing document",description:a("aadhaar_image_required")||"Front ID image is required for KYC.",variant:"destructive"});return}w(!0);try{const t=new FormData;t.append("aadhaar_number",m.aadhaarNumber),t.append("pan_number",m.panNumber),t.append("kyc_front",s.aadhaarImage),s.panImage&&t.append("kyc_back",s.panImage);const d=await P.post("/users/kyc/submit",t,{headers:{"Content-Type":"multipart/form-data"}}),r=d?.data??d,i=String(r?.status||"").toUpperCase();p(i==="APPROVED"||i==="VERIFIED"),n({title:a("verification_submitted")||"Verification submitted",description:r?.message||a("verification_under_review")||"Your KYC request is under review."}),_("/profile")}catch(t){n({title:a("error")||"Error",description:t.message||"Failed to save",variant:"destructive"})}finally{w(!1)}};return f||q?e.createElement("div",{className:"min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]"},e.createElement("div",{className:"text-center"},e.createElement("div",{className:"w-16 h-16 border-4 border-[#96C2DB] border-t-transparent rounded-full animate-spin mx-auto mb-4"}),e.createElement("p",{className:"text-gray-300"},a("loading")||"Loading..."))):b?e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]",style:{paddingBottom:"120px"}},e.createElement("div",{className:"max-w-2xl mx-auto px-4 py-8"},e.createElement("div",{className:"text-center mb-8"},e.createElement("div",{className:"w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#96C2DB] to-blue-600 flex items-center justify-center shadow-lg"},e.createElement(L,{className:"w-8 h-8 text-white"})),e.createElement("h1",{className:"text-3xl font-bold text-white mb-1"},a("identity_verification")||"Identity Verification"),e.createElement("p",{className:"text-gray-400"},a("aadhaar_subtitle"))),e.createElement(S,{className:"shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800"},e.createElement(K,{className:"bg-gradient-to-r from-[#96C2DB] to-blue-600 text-white"},e.createElement(j,{className:"text-xl"},a("identity_verification")||"Identity Verification"),e.createElement(U,{className:"text-blue-100"},a("enter_aadhaar_pan"))),e.createElement(T,{className:"p-8"},I&&e.createElement("div",{className:"mb-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-4 flex flex-wrap items-center justify-between gap-2"},e.createElement("p",{className:"text-sm text-red-700 dark:text-red-300"},I),e.createElement(l,{type:"button",variant:"outline",onClick:()=>O(t=>t+1)},"Retry")),e.createElement("div",{className:"space-y-6"},e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-2 gap-6"},e.createElement("div",null,e.createElement(c,{htmlFor:"aadhaarNumber",className:"text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300"},e.createElement(V,{className:"w-4 h-4"}),e.createElement("span",null,a("aadhaar_number"))),e.createElement(u,{id:"aadhaarNumber",name:"aadhaarNumber",type:"text",value:m.aadhaarNumber,onChange:E,className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl",placeholder:a("enter_aadhaar")||"XXXX XXXX XXXX",maxLength:"14"}),e.createElement("div",{className:"mt-4"},e.createElement(Z,{onVerified:()=>p(!0),onError:()=>p(!1)}),Y&&e.createElement("div",{className:"text-green-600 dark:text-green-400 text-sm mt-2"},a("aadhaar_verified_success")||"Aadhaar verified successfully"))),e.createElement("div",null,e.createElement(c,{htmlFor:"panNumber",className:"text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300"},e.createElement(V,{className:"w-4 h-4"}),e.createElement("span",null,a("pan_number"))),e.createElement(u,{id:"panNumber",name:"panNumber",type:"text",value:m.panNumber,onChange:t=>E({...t,target:{...t.target,name:t.target.name,value:String(t.target.value||"").toUpperCase()}}),className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl",placeholder:a("enter_pan")||"ABCDE1234F",maxLength:"10",style:{textTransform:"uppercase"}}))),e.createElement("div",{className:"space-y-4"},e.createElement("div",{className:"border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600"},e.createElement(c,{className:"text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300"},e.createElement(y,{className:"w-4 h-4"}),e.createElement("span",null,a("aadhaar_xml"))),e.createElement("div",{className:"text-center"},e.createElement(N,{className:"mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500"}),e.createElement(u,{id:"aadhaarXml",type:"file",accept:".xml",onChange:x("aadhaarXml"),className:"sr-only"}),e.createElement(l,{type:"button",variant:"outline",onClick:()=>document.getElementById("aadhaarXml")?.click()},a("choose_file")),s.aadhaarXml&&e.createElement("p",{className:"text-sm text-green-600 mt-2 font-medium"},s.aadhaarXml.name))),e.createElement("div",{className:"border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600"},e.createElement(c,{className:"text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300"},e.createElement(y,{className:"w-4 h-4"}),e.createElement("span",null,a("aadhaar_image"))),e.createElement("div",{className:"text-center"},e.createElement(N,{className:"mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500"}),e.createElement(u,{id:"aadhaarImage",type:"file",accept:"image/*",onChange:x("aadhaarImage"),className:"sr-only"}),e.createElement(l,{type:"button",variant:"outline",onClick:()=>document.getElementById("aadhaarImage")?.click()},a("choose_image")),s.aadhaarImage&&e.createElement("p",{className:"text-sm text-green-600 mt-2 font-medium"},s.aadhaarImage.name))),e.createElement("div",{className:"border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600"},e.createElement(c,{className:"text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300"},e.createElement(y,{className:"w-4 h-4"}),e.createElement("span",null,a("pan_image"))),e.createElement("div",{className:"text-center"},e.createElement(N,{className:"mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500"}),e.createElement(u,{id:"panImage",type:"file",accept:"image/*",onChange:x("panImage"),className:"sr-only"}),e.createElement(l,{type:"button",variant:"outline",onClick:()=>document.getElementById("panImage")?.click()},a("choose_image")),s.panImage&&e.createElement("p",{className:"text-sm text-green-600 mt-2 font-medium"},s.panImage.name)))),e.createElement(l,{type:"button",onClick:W,className:"w-full py-6 text-white bg-[#96C2DB] dark:bg-blue-600 hover:bg-blue-500 transition-colors duration-300 text-lg font-semibold rounded-xl",disabled:C},C?`${a("saving")||"Saving"}...`:a("save_verification_details")||"Submit Verification")))),e.createElement("div",{className:"text-center text-sm mt-6"},e.createElement("span",{className:"text-gray-400"},a("already_have_account")," "),e.createElement(v,{to:"/login",className:"text-blue-400 hover:text-blue-300 font-medium hover:underline"},a("sign_in_here"))))):e.createElement("div",{className:"min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4"},e.createElement(S,{className:"max-w-md w-full shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800"},e.createElement(K,{className:"text-center py-8 bg-gradient-to-r from-blue-600 to-blue-700"},e.createElement("div",{className:"w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center"},e.createElement(L,{className:"w-8 h-8 text-white"})),e.createElement(j,{className:"text-2xl text-white"},a("identity_verification")||"Identity Verification"),e.createElement(U,{className:"text-blue-100"},a("aadhaar_subtitle"))),e.createElement(T,{className:"p-8 text-center"},e.createElement("p",{className:"text-gray-600 dark:text-gray-300 mb-6"},a("please_login_verify")),e.createElement("div",{className:"flex flex-col gap-3"},e.createElement(v,{to:"/login"},e.createElement(l,{className:"w-full bg-[#96C2DB] hover:bg-blue-500 text-white"},"Login")),e.createElement(v,{to:"/signup"},e.createElement(l,{variant:"outline",className:"w-full dark:text-white"},"Create Account"))))))};var fe=te;export{fe as default};
+import e, { useEffect as $, useMemo as z, useState as o } from "react";
+import { Link as v, useNavigate as G } from "react-router-dom";
+import {
+  Shield as L,
+  Upload as N,
+  CreditCard as V,
+  FileText as y,
+} from "lucide-react";
+import { Button as l } from "@/components/ui/button";
+import { Input as u } from "@/components/ui/input";
+import { Label as c } from "@/components/ui/label";
+import {
+  Card as S,
+  CardContent as T,
+  CardDescription as U,
+  CardHeader as K,
+  CardTitle as j,
+} from "@/components/ui/card";
+import { useToast as J } from "@/hooks/use-toast";
+import { useTranslation as Q } from "react-i18next";
+import Z from "@/components/AadhaarOtpVerify";
+import { useAuth as R } from "@/context/AuthContext";
+import P from "@/lib/api";
+import { getAccessToken as ee, getUserId as ae } from "@/utils/authStorage";
+const te = () => {
+  const _ = G(),
+    { toast: n } = J(),
+    { t: a } = Q(),
+    { user: g, loading: f } = R(),
+    [q, k] = o(!0),
+    [C, w] = o(!1),
+    [Y, p] = o(!1),
+    [I, F] = o(""),
+    [H, O] = o(0),
+    [m, B] = o({ aadhaarNumber: "", panNumber: "" }),
+    [s, M] = o({ aadhaarXml: null, aadhaarImage: null, panImage: null }),
+    D = ee(),
+    A = ae(g),
+    b = z(() => !!(g || (D && A)), [g, A, D]);
+  $(() => {
+    if (f) return;
+    if (!b) {
+      k(!1);
+      return;
+    }
+    let t = !1;
+    return (
+      (async () => {
+        try {
+          const r = await P.get("/users/kyc/status"),
+            i = r?.data ?? r,
+            X = String(i?.status || "").toUpperCase();
+          t ||
+            (F(""),
+            p(X === "APPROVED" || X === "VERIFIED"),
+            (i?.aadhaar_number || i?.pan_number) &&
+              B((h) => ({
+                ...h,
+                aadhaarNumber: i?.aadhaar_number || h.aadhaarNumber,
+                panNumber: i?.pan_number || h.panNumber,
+              })));
+        } catch (r) {
+          import.meta.env.DEV &&
+            console.error("[Verification] Failed to fetch KYC status:", r),
+            t || F(r?.message || "Failed to load verification status.");
+        } finally {
+          t || k(!1);
+        }
+      })(),
+      () => {
+        t = !0;
+      }
+    );
+  }, [f, b, H]);
+  const E = (t) => {
+      const { name: d, value: r } = t.target;
+      B((i) => ({ ...i, [d]: r }));
+    },
+    x = (t) => (d) => {
+      const r = d.target.files?.[0];
+      if (r) {
+        if (t === "aadhaarXml" && !r.name.endsWith(".xml")) {
+          n({
+            title: a("invalid_file"),
+            description: a("upload_valid_xml"),
+            variant: "destructive",
+          });
+          return;
+        }
+        if (
+          (t === "aadhaarImage" || t === "panImage") &&
+          !r.type.startsWith("image/")
+        ) {
+          n({
+            title: a("invalid_file"),
+            description: a("upload_valid_image"),
+            variant: "destructive",
+          });
+          return;
+        }
+        M((i) => ({ ...i, [t]: r })),
+          n({
+            title: a("file_uploaded"),
+            description:
+              a("document_uploaded") || "Document uploaded successfully",
+          });
+      }
+    },
+    W = async () => {
+      if (!b) {
+        _("/login", { state: { returnTo: "/verification" } });
+        return;
+      }
+      if (!m.aadhaarNumber || !m.panNumber) {
+        n({
+          title: a("incomplete_form") || "Incomplete form",
+          description:
+            a("enter_aadhaar_pan") || "Aadhaar and PAN are required.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!s.aadhaarImage) {
+        n({
+          title: a("missing_document") || "Missing document",
+          description:
+            a("aadhaar_image_required") ||
+            "Front ID image is required for KYC.",
+          variant: "destructive",
+        });
+        return;
+      }
+      w(!0);
+      try {
+        const t = new FormData();
+        t.append("aadhaar_number", m.aadhaarNumber),
+          t.append("pan_number", m.panNumber),
+          t.append("kyc_front", s.aadhaarImage),
+          s.panImage && t.append("kyc_back", s.panImage);
+        const d = await P.post("/users/kyc/submit", t, {
+            headers: { "Content-Type": "multipart/form-data" },
+          }),
+          r = d?.data ?? d,
+          i = String(r?.status || "").toUpperCase();
+        p(i === "APPROVED" || i === "VERIFIED"),
+          n({
+            title: a("verification_submitted") || "Verification submitted",
+            description:
+              r?.message ||
+              a("verification_under_review") ||
+              "Your KYC request is under review.",
+          }),
+          _("/profile");
+      } catch (t) {
+        n({
+          title: a("error") || "Error",
+          description: t.message || "Failed to save",
+          variant: "destructive",
+        });
+      } finally {
+        w(!1);
+      }
+    };
+  return f || q
+    ? e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]",
+        },
+        e.createElement(
+          "div",
+          { className: "text-center" },
+          e.createElement("div", {
+            className:
+              "w-16 h-16 border-4 border-[#96C2DB] border-t-transparent rounded-full animate-spin mx-auto mb-4",
+          }),
+          e.createElement(
+            "p",
+            { className: "text-gray-300" },
+            a("loading") || "Loading...",
+          ),
+        ),
+      )
+    : b
+      ? e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]",
+            style: { paddingBottom: "120px" },
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-2xl mx-auto px-4 py-8" },
+            e.createElement(
+              "div",
+              { className: "text-center mb-8" },
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#96C2DB] to-blue-600 flex items-center justify-center shadow-lg",
+                },
+                e.createElement(L, { className: "w-8 h-8 text-white" }),
+              ),
+              e.createElement(
+                "h1",
+                { className: "text-3xl font-bold text-white mb-1" },
+                a("identity_verification") || "Identity Verification",
+              ),
+              e.createElement(
+                "p",
+                { className: "text-gray-400" },
+                a("aadhaar_subtitle"),
+              ),
+            ),
+            e.createElement(
+              S,
+              {
+                className:
+                  "shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800",
+              },
+              e.createElement(
+                K,
+                {
+                  className:
+                    "bg-gradient-to-r from-[#96C2DB] to-blue-600 text-white",
+                },
+                e.createElement(
+                  j,
+                  { className: "text-xl" },
+                  a("identity_verification") || "Identity Verification",
+                ),
+                e.createElement(
+                  U,
+                  { className: "text-blue-100" },
+                  a("enter_aadhaar_pan"),
+                ),
+              ),
+              e.createElement(
+                T,
+                { className: "p-8" },
+                I &&
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "mb-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-4 flex flex-wrap items-center justify-between gap-2",
+                    },
+                    e.createElement(
+                      "p",
+                      { className: "text-sm text-red-700 dark:text-red-300" },
+                      I,
+                    ),
+                    e.createElement(
+                      l,
+                      {
+                        type: "button",
+                        variant: "outline",
+                        onClick: () => O((t) => t + 1),
+                      },
+                      "Retry",
+                    ),
+                  ),
+                e.createElement(
+                  "div",
+                  { className: "space-y-6" },
+                  e.createElement(
+                    "div",
+                    { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        c,
+                        {
+                          htmlFor: "aadhaarNumber",
+                          className:
+                            "text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300",
+                        },
+                        e.createElement(V, { className: "w-4 h-4" }),
+                        e.createElement("span", null, a("aadhaar_number")),
+                      ),
+                      e.createElement(u, {
+                        id: "aadhaarNumber",
+                        name: "aadhaarNumber",
+                        type: "text",
+                        value: m.aadhaarNumber,
+                        onChange: E,
+                        className:
+                          "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl",
+                        placeholder: a("enter_aadhaar") || "XXXX XXXX XXXX",
+                        maxLength: "14",
+                      }),
+                      e.createElement(
+                        "div",
+                        { className: "mt-4" },
+                        e.createElement(Z, {
+                          onVerified: () => p(!0),
+                          onError: () => p(!1),
+                        }),
+                        Y &&
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "text-green-600 dark:text-green-400 text-sm mt-2",
+                            },
+                            a("aadhaar_verified_success") ||
+                              "Aadhaar verified successfully",
+                          ),
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        c,
+                        {
+                          htmlFor: "panNumber",
+                          className:
+                            "text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300",
+                        },
+                        e.createElement(V, { className: "w-4 h-4" }),
+                        e.createElement("span", null, a("pan_number")),
+                      ),
+                      e.createElement(u, {
+                        id: "panNumber",
+                        name: "panNumber",
+                        type: "text",
+                        value: m.panNumber,
+                        onChange: (t) =>
+                          E({
+                            ...t,
+                            target: {
+                              ...t.target,
+                              name: t.target.name,
+                              value: String(t.target.value || "").toUpperCase(),
+                            },
+                          }),
+                        className:
+                          "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl",
+                        placeholder: a("enter_pan") || "ABCDE1234F",
+                        maxLength: "10",
+                        style: { textTransform: "uppercase" },
+                      }),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "space-y-4" },
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600",
+                      },
+                      e.createElement(
+                        c,
+                        {
+                          className:
+                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300",
+                        },
+                        e.createElement(y, { className: "w-4 h-4" }),
+                        e.createElement("span", null, a("aadhaar_xml")),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-center" },
+                        e.createElement(N, {
+                          className:
+                            "mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500",
+                        }),
+                        e.createElement(u, {
+                          id: "aadhaarXml",
+                          type: "file",
+                          accept: ".xml",
+                          onChange: x("aadhaarXml"),
+                          className: "sr-only",
+                        }),
+                        e.createElement(
+                          l,
+                          {
+                            type: "button",
+                            variant: "outline",
+                            onClick: () =>
+                              document.getElementById("aadhaarXml")?.click(),
+                          },
+                          a("choose_file"),
+                        ),
+                        s.aadhaarXml &&
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-green-600 mt-2 font-medium",
+                            },
+                            s.aadhaarXml.name,
+                          ),
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600",
+                      },
+                      e.createElement(
+                        c,
+                        {
+                          className:
+                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300",
+                        },
+                        e.createElement(y, { className: "w-4 h-4" }),
+                        e.createElement("span", null, a("aadhaar_image")),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-center" },
+                        e.createElement(N, {
+                          className:
+                            "mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500",
+                        }),
+                        e.createElement(u, {
+                          id: "aadhaarImage",
+                          type: "file",
+                          accept: "image/*",
+                          onChange: x("aadhaarImage"),
+                          className: "sr-only",
+                        }),
+                        e.createElement(
+                          l,
+                          {
+                            type: "button",
+                            variant: "outline",
+                            onClick: () =>
+                              document.getElementById("aadhaarImage")?.click(),
+                          },
+                          a("choose_image"),
+                        ),
+                        s.aadhaarImage &&
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-green-600 mt-2 font-medium",
+                            },
+                            s.aadhaarImage.name,
+                          ),
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-gray-800 border-[#96C2DB] dark:border-blue-600",
+                      },
+                      e.createElement(
+                        c,
+                        {
+                          className:
+                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300",
+                        },
+                        e.createElement(y, { className: "w-4 h-4" }),
+                        e.createElement("span", null, a("pan_image")),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-center" },
+                        e.createElement(N, {
+                          className:
+                            "mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500",
+                        }),
+                        e.createElement(u, {
+                          id: "panImage",
+                          type: "file",
+                          accept: "image/*",
+                          onChange: x("panImage"),
+                          className: "sr-only",
+                        }),
+                        e.createElement(
+                          l,
+                          {
+                            type: "button",
+                            variant: "outline",
+                            onClick: () =>
+                              document.getElementById("panImage")?.click(),
+                          },
+                          a("choose_image"),
+                        ),
+                        s.panImage &&
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-green-600 mt-2 font-medium",
+                            },
+                            s.panImage.name,
+                          ),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    l,
+                    {
+                      type: "button",
+                      onClick: W,
+                      className:
+                        "w-full py-6 text-white bg-[#96C2DB] dark:bg-blue-600 hover:bg-blue-500 transition-colors duration-300 text-lg font-semibold rounded-xl",
+                      disabled: C,
+                    },
+                    C
+                      ? `${a("saving") || "Saving"}...`
+                      : a("save_verification_details") || "Submit Verification",
+                  ),
+                ),
+              ),
+            ),
+            e.createElement(
+              "div",
+              { className: "text-center text-sm mt-6" },
+              e.createElement(
+                "span",
+                { className: "text-gray-400" },
+                a("already_have_account"),
+                " ",
+              ),
+              e.createElement(
+                v,
+                {
+                  to: "/login",
+                  className:
+                    "text-blue-400 hover:text-blue-300 font-medium hover:underline",
+                },
+                a("sign_in_here"),
+              ),
+            ),
+          ),
+        )
+      : e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4",
+          },
+          e.createElement(
+            S,
+            {
+              className:
+                "max-w-md w-full shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800",
+            },
+            e.createElement(
+              K,
+              {
+                className:
+                  "text-center py-8 bg-gradient-to-r from-blue-600 to-blue-700",
+              },
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center",
+                },
+                e.createElement(L, { className: "w-8 h-8 text-white" }),
+              ),
+              e.createElement(
+                j,
+                { className: "text-2xl text-white" },
+                a("identity_verification") || "Identity Verification",
+              ),
+              e.createElement(
+                U,
+                { className: "text-blue-100" },
+                a("aadhaar_subtitle"),
+              ),
+            ),
+            e.createElement(
+              T,
+              { className: "p-8 text-center" },
+              e.createElement(
+                "p",
+                { className: "text-gray-600 dark:text-gray-300 mb-6" },
+                a("please_login_verify"),
+              ),
+              e.createElement(
+                "div",
+                { className: "flex flex-col gap-3" },
+                e.createElement(
+                  v,
+                  { to: "/login" },
+                  e.createElement(
+                    l,
+                    {
+                      className:
+                        "w-full bg-[#96C2DB] hover:bg-blue-500 text-white",
+                    },
+                    "Login",
+                  ),
+                ),
+                e.createElement(
+                  v,
+                  { to: "/signup" },
+                  e.createElement(
+                    l,
+                    { variant: "outline", className: "w-full dark:text-white" },
+                    "Create Account",
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+};
+var fe = te;
+export { fe as default };

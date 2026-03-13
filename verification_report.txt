@@ -1,0 +1,69 @@
+=== Translation Readiness Report ===
+
+Base Language (EN): 1932 keys
+
+[HI] Translated: 89%
+Total Keys: 1933
+Untranslated (English): 213 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   advanced_flagging_tools: "Advanced Flagging Tools"
+   agree_to_terms_prefix: "Agree To Terms Prefix"
+
+[TE] Translated: 89%
+Total Keys: 1933
+Untranslated (English): 211 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   aadhaar_image_required: "Aadhaar Image Required"
+   advanced_flagging_tools: "Advanced Flagging Tools"
+   agree_to_terms_prefix: "Agree To Terms Prefix"
+   and: "And"
+   approve: "Approve"
+
+[TA] Translated: 85%
+Total Keys: 1937
+Untranslated (English): 285 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_number_label: "Aadhaar Number"
+   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"
+
+[KN] Translated: 85%
+Total Keys: 1961
+Untranslated (English): 285 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_number_label: "Aadhaar Number"
+   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"
+
+[MR] Translated: 85%
+Total Keys: 1961
+Untranslated (English): 285 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_number_label: "Aadhaar Number"
+   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"
+
+[BN] Translated: 85%
+Total Keys: 1975
+Untranslated (English): 285 keys
+Missing Keys: 0 (Key synced)
+   Examples of Untranslated:
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_number_label: "Aadhaar Number"
+   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"

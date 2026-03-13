@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "../../services/api";
 import { Button } from "@/components/ui/button";
 import TransactionStepper from "@/components/TransactionStepper";
@@ -10,12 +11,15 @@ const normalizePayload = (payload) => payload?.data ?? payload ?? null;
 
 const normalizeConfig = (raw) => {
   const payload = normalizePayload(raw) || {};
-  const tiers = payload?.tiers && typeof payload.tiers === "object" ? payload.tiers : {};
+  const tiers =
+    payload?.tiers && typeof payload.tiers === "object" ? payload.tiers : {};
   return {
     upi_id: payload?.upi_id || "",
     merchant_name: payload?.merchant_name || "Mhub Merchant",
     tiers,
-    instructions: Array.isArray(payload?.instructions) ? payload.instructions : [],
+    instructions: Array.isArray(payload?.instructions)
+      ? payload.instructions
+      : [],
   };
 };
 
@@ -26,12 +30,59 @@ const normalizeHistory = (raw) => {
   return [];
 };
 
+const PAYMENT_STEPS = [
+  {
+    key: "discover",
+    labelKey: "payment_step_select_plan",
+    labelFallback: "Select Plan",
+    hintKey: "payment_step_select_plan_hint",
+    hintFallback: "Choose membership tier",
+  },
+  {
+    key: "pay",
+    labelKey: "payment_step_pay",
+    labelFallback: "Pay",
+    hintKey: "payment_step_pay_hint",
+    hintFallback: "Scan UPI or app link",
+  },
+  {
+    key: "submit",
+    labelKey: "payment_step_submit",
+    labelFallback: "Submit UTR",
+    hintKey: "payment_step_submit_hint",
+    hintFallback: "Provide transaction ID",
+  },
+  {
+    key: "verify",
+    labelKey: "payment_step_verify",
+    labelFallback: "Verification",
+    hintKey: "payment_step_verify_hint",
+    hintFallback: "Team validates payment",
+  },
+  {
+    key: "active",
+    labelKey: "payment_step_active",
+    labelFallback: "Membership Active",
+    hintKey: "payment_step_active_hint",
+    hintFallback: "Tier updated on approval",
+  },
+];
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, fallback, options = {}) =>
+      t(key, { defaultValue: fallback, ...options }),
+    [t],
+  );
 
   const userId = useMemo(() => getUserId(user), [user]);
-  const loggedIn = useMemo(() => isAuthenticated(user) || Boolean(userId), [user, userId]);
+  const loggedIn = useMemo(
+    () => isAuthenticated(user) || Boolean(userId),
+    [user, userId],
+  );
 
   const [paymentConfig, setPaymentConfig] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState("silver");
@@ -48,6 +99,16 @@ const PaymentPage = () => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
 
+  const localizedSteps = useMemo(
+    () =>
+      PAYMENT_STEPS.map((step) => ({
+        ...step,
+        label: tr(step.labelKey, step.labelFallback),
+        hint: tr(step.hintKey, step.hintFallback),
+      })),
+    [tr],
+  );
+
   const loadConfig = async () => {
     setConfigLoading(true);
     setConfigError("");
@@ -57,15 +118,21 @@ const PaymentPage = () => {
       const normalized = normalizeConfig(response);
       setPaymentConfig(normalized);
       if (!normalized.tiers || Object.keys(normalized.tiers).length === 0) {
-        setConfigError("No payment plans are available right now.");
+        setConfigError(
+          tr("payment_no_plans", "No payment plans are available right now."),
+        );
       }
     } catch (error) {
       setPaymentConfig(null);
       const status = Number(error?.status || error?.response?.status || 0);
       setConfigError(
         status === 401 || status === 403
-          ? "Please sign in to continue payments."
-          : error?.response?.data?.error || "Failed to load payment details.",
+          ? tr(
+              "payment_sign_in_continue",
+              "Please sign in to continue payments.",
+            )
+          : error?.response?.data?.error ||
+              tr("payment_load_failed", "Failed to load payment details."),
       );
     } finally {
       setConfigLoading(false);
@@ -84,8 +151,15 @@ const PaymentPage = () => {
       const status = Number(error?.status || error?.response?.status || 0);
       setHistoryError(
         status === 401 || status === 403
-          ? "Please sign in to view payment history."
-          : error?.response?.data?.error || "Failed to load payment history.",
+          ? tr(
+              "payment_history_sign_in",
+              "Please sign in to view payment history.",
+            )
+          : error?.response?.data?.error ||
+              tr(
+                "payment_history_load_failed",
+                "Failed to load payment history.",
+              ),
       );
     } finally {
       setHistoryLoading(false);
@@ -103,7 +177,10 @@ const PaymentPage = () => {
     loadHistory();
   }, [loggedIn]);
 
-  const plans = useMemo(() => Object.keys(paymentConfig?.tiers || {}), [paymentConfig]);
+  const plans = useMemo(
+    () => Object.keys(paymentConfig?.tiers || {}),
+    [paymentConfig],
+  );
 
   useEffect(() => {
     if (plans.length && !plans.includes(selectedPlan)) {
@@ -112,17 +189,6 @@ const PaymentPage = () => {
   }, [plans, selectedPlan]);
 
   const selectedTier = paymentConfig?.tiers?.[selectedPlan];
-
-  const steps = useMemo(
-    () => [
-      { key: "discover", label: "Select Plan", hint: "Choose membership tier" },
-      { key: "pay", label: "Pay", hint: "Scan UPI or app link" },
-      { key: "submit", label: "Submit UTR", hint: "Provide transaction ID" },
-      { key: "verify", label: "Verification", hint: "Team validates payment" },
-      { key: "active", label: "Membership Active", hint: "Tier updated on approval" },
-    ],
-    [],
-  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -133,12 +199,23 @@ const PaymentPage = () => {
     }
 
     if (!selectedTier) {
-      setSubmitState({ loading: false, message: "", error: "Please select a valid plan." });
+      setSubmitState({
+        loading: false,
+        message: "",
+        error: tr("payment_select_plan", "Please select a valid plan."),
+      });
       return;
     }
 
     if (!transactionId.trim()) {
-      setSubmitState({ loading: false, message: "", error: "Transaction ID is required." });
+      setSubmitState({
+        loading: false,
+        message: "",
+        error: tr(
+          "payment_transaction_required",
+          "Transaction ID is required.",
+        ),
+      });
       return;
     }
 
@@ -153,7 +230,9 @@ const PaymentPage = () => {
       const payload = normalizePayload(response) || {};
       setSubmitState({
         loading: false,
-        message: payload?.message || "Payment submitted successfully.",
+        message:
+          payload?.message ||
+          tr("payment_submit_success", "Payment submitted successfully."),
         error: "",
       });
       setTransactionId("");
@@ -165,8 +244,9 @@ const PaymentPage = () => {
         message: "",
         error:
           status === 401 || status === 403
-            ? "Please sign in to submit payment."
-            : error?.response?.data?.error || "Submission failed.",
+            ? tr("payment_sign_in_submit", "Please sign in to submit payment.")
+            : error?.response?.data?.error ||
+              tr("payment_submit_failed", "Submission failed."),
       });
     }
   };
@@ -175,16 +255,23 @@ const PaymentPage = () => {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-          <h2 className="text-lg font-semibold text-amber-800 mb-2">Login required</h2>
+          <h2 className="text-lg font-semibold text-amber-800 mb-2">
+            {tr("login_required", "Login required")}
+          </h2>
           <p className="text-sm text-amber-700 mb-4">
-            Sign in to view membership plans and submit payment confirmations.
+            {tr(
+              "payment_login_desc",
+              "Sign in to view membership plans and submit payment confirmations.",
+            )}
           </p>
           <Button
             type="button"
             className="bg-amber-600 hover:bg-amber-700 text-white"
-            onClick={() => navigate("/login", { state: { returnTo: "/payment" } })}
+            onClick={() =>
+              navigate("/login", { state: { returnTo: "/payment" } })
+            }
           >
-            Go to Login
+            {tr("go_to_login", "Go to Login")}
           </Button>
         </div>
       </div>
@@ -192,28 +279,44 @@ const PaymentPage = () => {
   }
 
   if (configLoading) {
-    return <div className="p-6 text-center">Loading payment details...</div>;
+    return (
+      <div className="p-6 text-center">
+        {tr("payment_loading_details", "Loading payment details...")}
+      </div>
+    );
   }
 
   if (!paymentConfig || configError) {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-          <h2 className="text-lg font-semibold text-red-700 mb-2">Unable to load payment details</h2>
+          <h2 className="text-lg font-semibold text-red-700 mb-2">
+            {tr("payment_unable_to_load", "Unable to load payment details")}
+          </h2>
           <p className="text-sm text-red-600 mb-4">
-            {configError || "Payment details are unavailable right now."}
+            {configError ||
+              tr(
+                "payment_unavailable",
+                "Payment details are unavailable right now.",
+              )}
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" className="bg-red-600 hover:bg-red-700 text-white" onClick={loadConfig}>
-              Retry
+            <Button
+              type="button"
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={loadConfig}
+            >
+              {tr("retry", "Retry")}
             </Button>
             {(configError || "").toLowerCase().includes("sign in") && (
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/login", { state: { returnTo: "/payment" } })}
+                onClick={() =>
+                  navigate("/login", { state: { returnTo: "/payment" } })
+                }
               >
-                Go to Login
+                {tr("go_to_login", "Go to Login")}
               </Button>
             )}
           </div>
@@ -231,11 +334,13 @@ const PaymentPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 pb-24 space-y-6">
-      <TransactionStepper steps={steps} currentStep={2} />
+      <TransactionStepper steps={localizedSteps} currentStep={2} />
 
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-4">Upgrade Membership</h1>
+          <h1 className="text-2xl font-bold mb-4">
+            {tr("payment_upgrade_title", "Upgrade Membership")}
+          </h1>
 
           <div className="mb-6 grid grid-cols-3 gap-2">
             {plans.map((plan) => (
@@ -256,54 +361,86 @@ const PaymentPage = () => {
 
           {selectedTier ? (
             <div className="mb-6 p-4 bg-blue-50 rounded border border-blue-100">
-              <h3 className="font-bold text-lg capitalize">{selectedPlan} Plan</h3>
+              <h3 className="font-bold text-lg capitalize">
+                {tr("payment_selected_plan", "{{plan}} Plan", {
+                  plan: selectedPlan,
+                })}
+              </h3>
               <p className="text-gray-600 mb-2">{selectedTier.description}</p>
-              <div className="text-3xl font-bold text-blue-700">Rs {selectedTier.amount}</div>
+              <div className="text-3xl font-bold text-blue-700">
+                {tr("payment_amount_rupees", "Rs {{amount}}", {
+                  amount: selectedTier.amount,
+                })}
+              </div>
             </div>
           ) : (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded">
               <p className="text-sm text-amber-700">
-                Selected plan data is unavailable. Please choose another plan.
+                {tr(
+                  "payment_selected_plan_unavailable",
+                  "Selected plan data is unavailable. Please choose another plan.",
+                )}
               </p>
             </div>
           )}
 
           <div className="flex flex-col items-center mb-6">
-            <img src={qrCode} alt="Scan to Pay" className="border p-2 rounded mb-2" />
-            <p className="text-sm text-gray-500">Scan using GPay, PhonePe, or Paytm</p>
+            <img
+              src={qrCode}
+              alt={tr("payment_scan_to_pay", "Scan to Pay")}
+              className="border p-2 rounded mb-2"
+            />
+            <p className="text-sm text-gray-500">
+              {tr(
+                "payment_scan_instructions",
+                "Scan using GPay, PhonePe, or Paytm",
+              )}
+            </p>
             <p className="text-xs text-gray-400 mt-1">{paymentConfig.upi_id}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Transaction ID (UTR)</label>
+              <label className="block text-sm font-medium mb-1">
+                {tr("payment_transaction_label", "Transaction ID (UTR)")}
+              </label>
               <input
                 type="text"
                 value={transactionId}
                 onChange={(event) => setTransactionId(event.target.value)}
-                placeholder="Enter UTR"
+                placeholder={tr("payment_transaction_placeholder", "Enter UTR")}
                 className="w-full p-2 border rounded"
                 required
                 minLength={6}
               />
             </div>
 
-            {submitState.error && <div className="text-red-500 text-sm">{submitState.error}</div>}
-            {submitState.message && <div className="text-green-600 text-sm">{submitState.message}</div>}
+            {submitState.error && (
+              <div className="text-red-500 text-sm">{submitState.error}</div>
+            )}
+            {submitState.message && (
+              <div className="text-green-600 text-sm">
+                {submitState.message}
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={submitState.loading || !selectedTier}
               className="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 transition disabled:opacity-60"
             >
-              {submitState.loading ? "Verifying..." : "Submit Payment"}
+              {submitState.loading
+                ? tr("payment_verifying", "Verifying...")
+                : tr("payment_submit", "Submit Payment")}
             </button>
           </form>
         </div>
 
         <div className="space-y-6">
           <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="font-bold mb-3">How it works</h3>
+            <h3 className="font-bold mb-3">
+              {tr("payment_how_it_works", "How it works")}
+            </h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               {(paymentConfig.instructions || []).map((instruction, index) => (
                 <li key={index}>{instruction}</li>
@@ -313,47 +450,78 @@ const PaymentPage = () => {
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold">Payment History</h3>
-              <Button type="button" variant="outline" size="sm" onClick={loadHistory}>
-                Refresh
+              <h3 className="font-bold">
+                {tr("payment_history_title", "Payment History")}
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={loadHistory}
+              >
+                {tr("refresh", "Refresh")}
               </Button>
             </div>
 
             {historyLoading ? (
-              <p className="text-gray-500 text-sm">Loading history...</p>
+              <p className="text-gray-500 text-sm">
+                {tr("payment_history_loading", "Loading history...")}
+              </p>
             ) : historyError ? (
               <div className="rounded border border-red-200 bg-red-50 p-3">
                 <p className="text-sm text-red-600 mb-2">{historyError}</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" className="bg-red-600 hover:bg-red-700 text-white" size="sm" onClick={loadHistory}>
-                    Retry
+                  <Button
+                    type="button"
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    size="sm"
+                    onClick={loadHistory}
+                  >
+                    {tr("retry", "Retry")}
                   </Button>
                   {historyError.toLowerCase().includes("sign in") && (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate("/login", { state: { returnTo: "/payment" } })}
+                      onClick={() =>
+                        navigate("/login", { state: { returnTo: "/payment" } })
+                      }
                     >
-                      Go to Login
+                      {tr("go_to_login", "Go to Login")}
                     </Button>
                   )}
                 </div>
               </div>
             ) : history.length === 0 ? (
-              <p className="text-gray-400 text-sm">No payments yet.</p>
+              <p className="text-gray-400 text-sm">
+                {tr("payment_history_empty", "No payments yet.")}
+              </p>
             ) : (
               <div className="space-y-3">
                 {history.map((payment) => (
-                  <div key={payment.id} className="flex justify-between items-center p-3 border-b last:border-0">
+                  <div
+                    key={payment.id}
+                    className="flex justify-between items-center p-3 border-b last:border-0"
+                  >
                     <div>
-                      <div className="font-medium capitalize">{payment.plan_purchased} Plan</div>
+                      <div className="font-medium capitalize">
+                        {tr("payment_plan_label", "{{plan}} Plan", {
+                          plan: payment.plan_purchased,
+                        })}
+                      </div>
                       <div className="text-xs text-gray-500">
-                        {payment.created_at ? new Date(payment.created_at).toLocaleDateString() : "-"}
+                        {payment.created_at
+                          ? new Date(payment.created_at).toLocaleDateString()
+                          : "-"}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">Rs {payment.amount}</div>
+                      <div className="font-bold">
+                        {tr("payment_amount_rupees", "Rs {{amount}}", {
+                          amount: payment.amount,
+                        })}
+                      </div>
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${
                           payment.status === "verified"
@@ -363,7 +531,7 @@ const PaymentPage = () => {
                               : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {payment.status}
+                        {tr(`payment_status_${payment.status}`, payment.status)}
                       </span>
                     </div>
                   </div>

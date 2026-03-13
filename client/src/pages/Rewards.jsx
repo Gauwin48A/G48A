@@ -3,6 +3,7 @@ import e, {
   useEffect as E,
   useMemo as K,
   useCallback as W,
+  useRef as ye,
 } from "react";
 import {
   Card as l,
@@ -39,9 +40,14 @@ import {
 } from "lucide-react";
 import ne from "../lib/api";
 import { buildApiPath } from "@/lib/networkConfig";
-import { getAccessToken, getUserId } from "@/utils/authStorage";
+import {
+  getAccessToken,
+  getUserId,
+  isAuthenticated,
+} from "@/utils/authStorage";
 import { useTranslation as me } from "react-i18next";
 import { useToast as ge } from "@/hooks/use-toast";
+import { getInitials } from "@/lib/userDisplay";
 import { Link as z } from "react-router-dom";
 import { useAuth as xe } from "@/context/AuthContext";
 const fe = () => {
@@ -61,12 +67,31 @@ const fe = () => {
     [leaderboardCountdown, setLeaderboardCountdown] = n(""),
     [rewardLog, setRewardLog] = n([]),
     [rewardLogLoading, setRewardLogLoading] = n(!1),
+    [showMoreStats, setShowMoreStats] = n(!1),
+    [showAllChallenges, setShowAllChallenges] = n(!1),
     [sseStatus, setSseStatus] = n("connecting"),
     [lastSseUpdate, setLastSseUpdate] = n(""),
-    { t: a } = me(), tr = (key, fallback, options = {}) => a(key, { defaultValue: fallback, ...options }),
+    [sseFallbackActive, setSseFallbackActive] = n(!1),
+    sseFallbackTimerRef = ye(null),
+    refreshAttemptedRef = ye(false),
+    { t: a } = me(),
+    tr = (key, fallback, options = {}) =>
+      a(key, { defaultValue: fallback, ...options }),
     { toast: G } = ge(),
-    { user: j } = xe(),
-    d = K(() => !!(j || getAccessToken()), [j]),
+    { user: j, refreshAuth: refreshAuthFromContext } = xe(),
+    d = K(() => isAuthenticated(j), [j]),
+    attemptAuthRefresh = W(async () => {
+      if (!refreshAuthFromContext || refreshAttemptedRef.current) {
+        return false;
+      }
+      refreshAttemptedRef.current = true;
+      try {
+        const refreshed = await refreshAuthFromContext();
+        return Boolean(refreshed);
+      } catch {
+        return false;
+      }
+    }, [refreshAuthFromContext]),
     resolveMessage = W(
       (t) => {
         if (!t) return "";
@@ -91,10 +116,13 @@ const fe = () => {
             publicWall?.topBuyers?.length ||
             publicWall?.topUsers?.length,
         ),
+        referralLedgerStatus: r?.referralLedger?.status || "unknown",
+        referralLedgerOk: r?.referralLedger?.status === "ok",
         sseStatus,
+        sseFallbackActive,
         lastSseUpdate,
       }),
-      [r, publicWall, sseStatus, lastSseUpdate],
+      [r, publicWall, sseStatus, sseFallbackActive, lastSseUpdate],
     ),
     formatCountdown = W(
       (t) => {
@@ -102,7 +130,7 @@ const fe = () => {
         const s = new Date(t).getTime();
         if (Number.isNaN(s)) return "";
         const f = s - Date.now();
-        if (f <= 0) return tr("expired","Expired");
+        if (f <= 0) return tr("expired", "Expired");
         const u = Math.ceil(f / 6e4);
         const h = Math.floor(u / 60);
         const p = u % 60;
@@ -116,22 +144,31 @@ const fe = () => {
       [a],
     ),
     p = W(
-      async ({ silent: t = !1 } = {}) => {
+      async ({ silent: t = !1, allowRetry: retry = !0 } = {}) => {
         if (!d) {
-          (x({
+          x({
             key: "rewards_login_required",
             fallback: "You must be logged in to view rewards.",
           }),
-            g(!1));
+            g(!1);
           return;
         }
         const s = getUserId(j);
-        (t || g(!0), x(null));
+        t || g(!0), x(null);
         try {
-          const endpoint = s ? "/rewards?userId=".concat(encodeURIComponent(s)) : "/rewards";
+          const endpoint = s
+            ? "/rewards?userId=".concat(encodeURIComponent(s))
+            : "/rewards";
           const u = await ne.get(endpoint);
           u && (M(u.user || null), U(u.referralChain || []));
         } catch (u) {
+          const status = u?.status ?? u?.response?.status ?? null;
+          if (retry && (status === 401 || status === 403)) {
+            const refreshed = await attemptAuthRefresh();
+            if (refreshed) {
+              return p({ silent: t, allowRetry: false });
+            }
+          }
           t ||
             x({
               key: "rewards_fetch_failed",
@@ -141,41 +178,81 @@ const fe = () => {
           t || g(!1);
         }
       },
-      [d],
+      [d, j, attemptAuthRefresh],
     );
   const errorMessage = resolveMessage(B);
-  (E(() => {
+  E(() => {
     if (!d) {
-      (x({
+      x({
         key: "rewards_login_required",
         fallback: "You must be logged in to view rewards.",
       }),
-        g(!1));
+        g(!1);
       return;
     }
     p({ silent: !1 });
   }, [d, D, p]),
     E(() => {
+      refreshAttemptedRef.current = false;
+    }, [j]),
+    E(() => {
       if (!d) return;
+      if (
+        typeof window === "undefined" ||
+        typeof window.EventSource === "undefined"
+      ) {
+        setSseStatus("unsupported");
+        setSseFallbackActive(true);
+        return;
+      }
       setSseStatus("connecting");
-      const t = new EventSource(buildApiPath("/rewards/stream"), { withCredentials: !0 }),
+      setSseFallbackActive(false);
+      const t = new EventSource(buildApiPath("/rewards/stream"), {
+          withCredentials: !0,
+        }),
         s = () => {
           setLastSseUpdate(new Date().toISOString());
           p({ silent: !0 });
         };
       t.onopen = () => {
         setSseStatus("connected");
+        setSseFallbackActive(false);
       };
       return (
         t.addEventListener("reward_update", s),
         (t.onerror = () => {
           setSseStatus("disconnected");
+          setSseFallbackActive(true);
         }),
         () => {
-          (t.removeEventListener("reward_update", s), t.close());
+          t.removeEventListener("reward_update", s), t.close();
         }
       );
-    }, [d, p]));
+    }, [d, p]);
+  E(() => {
+    if (!d || !sseFallbackActive) {
+      if (sseFallbackTimerRef.current) {
+        clearInterval(sseFallbackTimerRef.current);
+        sseFallbackTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (sseFallbackTimerRef.current) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLastSseUpdate(new Date().toISOString());
+      p({ silent: !0 });
+    }, 30000);
+
+    sseFallbackTimerRef.current = interval;
+    return () => {
+      clearInterval(interval);
+      sseFallbackTimerRef.current = null;
+    };
+  }, [d, sseFallbackActive, p]);
   E(() => {
     if (!d) return;
     let t = !0;
@@ -257,21 +334,21 @@ const fe = () => {
     };
   }, [r?.leaderboard?.nextPayoutAt, formatCountdown]);
   const y = (t, s) => {
-      (navigator.clipboard.writeText(t),
+      navigator.clipboard.writeText(t),
         G({
-          title: tr("copied","Copied!"),
+          title: tr("copied", "Copied!"),
           description: s || t,
-        }));
+        });
     },
     h = () => {
       const t = `${window.location.origin}/signup?ref=${r?.referralCode}`;
       navigator.share
         ? navigator.share({
-            title: tr("join_mhub","Join MHub!"),
-            text: tr("use_my_referral_code","Use my referral code"),
+            title: tr("join_mhub", "Join MHub!"),
+            text: tr("use_my_referral_code", "Use my referral code"),
             url: t,
           })
-        : y(t, tr("referral_link","Referral link"));
+        : y(t, tr("referral_link", "Referral link"));
     };
   if (!d)
     return e.createElement(
@@ -359,7 +436,7 @@ const fe = () => {
       e.createElement(
         "div",
         { className: "text-center p-8" },
-        e.createElement("div", { className: "text-6xl mb-4" }, "\u{1F615}"),
+        e.createElement("div", { className: "text-6xl mb-4" }, "\uD83D\uDE15"),
         e.createElement(
           "p",
           { className: "text-red-500 text-xl mb-4" },
@@ -371,7 +448,7 @@ const fe = () => {
           e.createElement(
             o,
             { onClick: () => S((t) => t + 1) },
-            tr("try_again","Try Again"),
+            tr("try_again", "Try Again"),
           ),
           e.createElement(
             o,
@@ -380,7 +457,7 @@ const fe = () => {
               variant: "outline",
               onClick: () => window.location.assign("/all-posts"),
             },
-            tr("browse_listings","Browse Listings"),
+            tr("browse_listings", "Browse Listings"),
           ),
         ),
       ),
@@ -401,12 +478,15 @@ const fe = () => {
         e.createElement(
           "h2",
           { className: "text-xl font-bold text-slate-800 mb-2" },
-          tr("rewards_profile_unavailable","Rewards profile unavailable"),
+          tr("rewards_profile_unavailable", "Rewards profile unavailable"),
         ),
         e.createElement(
           "p",
           { className: "text-sm text-slate-600 mb-5" },
-          tr("rewards_profile_unavailable_desc","We could not load your rewards profile. Retry or continue browsing."),
+          tr(
+            "rewards_profile_unavailable_desc",
+            "We could not load your rewards profile. Retry or continue browsing.",
+          ),
         ),
         e.createElement(
           "div",
@@ -414,7 +494,7 @@ const fe = () => {
           e.createElement(
             o,
             { type: "button", onClick: () => S((t) => t + 1) },
-            tr("retry","Retry"),
+            tr("retry", "Retry"),
           ),
           e.createElement(
             o,
@@ -423,7 +503,7 @@ const fe = () => {
               variant: "outline",
               onClick: () => window.location.assign("/all-posts"),
             },
-            tr("browse_listings","Browse Listings"),
+            tr("browse_listings", "Browse Listings"),
           ),
         ),
       ),
@@ -444,34 +524,51 @@ const fe = () => {
     diagnosticsItems = [
       {
         key: "referrals",
-        label: tr("referral_engine","Referral engine"),
+        label: tr("referral_engine", "Referral engine"),
         ok: diagnostics.referralCode,
       },
       {
         key: "secret_code",
-        label: tr("secret_code","Secret code"),
+        label: tr("secret_code", "Secret code"),
         ok: diagnostics.secretCode,
       },
       {
         key: "progress",
-        label: tr("progress","Progress"),
+        label: tr("progress", "Progress"),
         ok: diagnostics.progress,
       },
       {
+        key: "referral_ledger",
+        label: tr("referral_ledger", "Referral ledger"),
+        ok: diagnostics.referralLedgerOk,
+        hint:
+          diagnostics.referralLedgerStatus === "ok"
+            ? tr("ledger_ok", "Matched")
+            : diagnostics.referralLedgerStatus === "mismatch"
+              ? tr("ledger_mismatch", "Mismatch")
+              : tr("ledger_unavailable", "Unavailable"),
+      },
+      {
         key: "leaderboard",
-        label: tr("leaderboard","Leaderboard"),
+        label: tr("leaderboard", "Leaderboard"),
         ok: diagnostics.leaderboard,
       },
       {
         key: "sse",
-        label: tr("live_updates","Live updates"),
-        ok: diagnostics.sseStatus === "connected",
+        label: tr("live_updates", "Live updates"),
+        ok:
+          diagnostics.sseStatus === "connected" ||
+          diagnostics.sseFallbackActive,
         hint:
           diagnostics.sseStatus === "connected"
-            ? tr("live_connected","Connected")
-            : diagnostics.sseStatus === "connecting"
-              ? tr("connecting","Connecting")
-              : tr("offline","Offline"),
+            ? tr("live_connected", "Connected")
+            : diagnostics.sseFallbackActive
+              ? tr("live_polling", "Polling fallback")
+              : diagnostics.sseStatus === "connecting"
+                ? tr("connecting", "Connecting")
+                : diagnostics.sseStatus === "unsupported"
+                  ? tr("live_unsupported", "Unsupported")
+                  : tr("offline", "Offline"),
       },
     ],
     w =
@@ -483,58 +580,66 @@ const fe = () => {
     Y = [
       {
         key: "share",
-        label: tr("share_referral_code","Share your referral code"),
+        label: tr("share_referral_code", "Share your referral code"),
         done: !!r.referralCode,
         hint: r.referralCode
-          ? `${tr("code","Code")} ${r.referralCode}`
-          : tr("generate_from_referral_card","Generate from referral card"),
+          ? `${tr("code", "Code")} ${r.referralCode}`
+          : tr("generate_from_referral_card", "Generate from referral card"),
       },
       {
         key: "invite",
-        label: tr("invite_one_friend","Invite at least 1 friend"),
+        label: tr("invite_one_friend", "Invite at least 1 friend"),
         done: Number(r.totalReferrals || 0) > 0,
-        hint:
-          tr("rewards_invited_count",`${Number(r.totalReferrals || 0)} invited`,{
+        hint: tr(
+          "rewards_invited_count",
+          `${Number(r.totalReferrals || 0)} invited`,
+          {
             count: Number(r.totalReferrals || 0),
-          }),
+          },
+        ),
       },
       {
         key: "qualify",
-        label: tr("get_qualified_referral","Get 1 qualified referral"),
+        label: tr("get_qualified_referral", "Get 1 qualified referral"),
         done: qualifiedReferrals > 0,
-        hint:
-          tr("rewards_qualified_count",`${qualifiedReferrals} qualified`,{
-            count: qualifiedReferrals,
-          }),
+        hint: tr("rewards_qualified_count", `${qualifiedReferrals} qualified`, {
+          count: qualifiedReferrals,
+        }),
       },
       {
         key: "level",
-        label: tr("reach_next_level","Reach next level"),
+        label: tr("reach_next_level", "Reach next level"),
         done: c === 0,
         hint:
           c === 0
-            ? tr("rewards_levelup_ready","Level-up ready")
-            : tr("rewards_xp_remaining",`${c} XP remaining`,{ count: c }),
+            ? tr("rewards_levelup_ready", "Level-up ready")
+            : tr("rewards_xp_remaining", `${c} XP remaining`, { count: c }),
       },
     ],
     J = [
       {
         key: "step1",
-        title: tr("share_code","Share code"),
-        detail:
-          tr("share_code_detail","Send your referral link or code to trusted buyers/sellers."),
+        title: tr("share_code", "Share code"),
+        detail: tr(
+          "share_code_detail",
+          "Send your referral link or code to trusted buyers/sellers.",
+        ),
       },
       {
         key: "step2",
-        title: tr("friend_signs_up","Friend signs up"),
-        detail:
-          tr("friend_signs_up_detail","Rewards are tracked when signup uses your referral code."),
+        title: tr("friend_signs_up", "Friend signs up"),
+        detail: tr(
+          "friend_signs_up_detail",
+          "Rewards are tracked when signup uses your referral code.",
+        ),
       },
       {
         key: "step3",
-        title: tr("first_successful_trade","First successful trade"),
-        detail:
-          tr("first_successful_trade_detail","You earn qualified referral rewards after a verified trade."),
+        title: tr("first_successful_trade", "First successful trade"),
+        detail: tr(
+          "first_successful_trade_detail",
+          "You earn qualified referral rewards after a verified trade.",
+        ),
       },
     ],
     activityStats = r.activityStats || {},
@@ -545,77 +650,82 @@ const fe = () => {
     lastLeaderboardPayout = r.leaderboard?.lastPayoutAt || "",
     dailyChallenges = [
       {
-        title: tr("invite_a_friend","Invite a friend"),
+        title: tr("invite_a_friend", "Invite a friend"),
         reward: 50,
         completed: Number(activityStats.referralsToday || 0) > 0,
       },
       {
-        title: tr("visit_today","Visit today"),
+        title: tr("visit_today", "Visit today"),
         reward: 2,
         completed: Number(activityStats.visitsToday || 0) > 0,
       },
       {
-        title: tr("post_today","Post today"),
+        title: tr("post_today", "Post today"),
         reward: 5,
         completed: Number(activityStats.postsToday || 0) > 0,
       },
       {
-        title: tr("make_a_sale","Make a sale"),
-        rewardLabel:
-          tr("reward_varies_by_sale","Varies by sale value"),
+        title: tr("make_a_sale", "Make a sale"),
+        rewardLabel: tr("reward_varies_by_sale", "Varies by sale value"),
         completed: Number(activityStats.salesToday || 0) > 0,
       },
       {
-        title: tr("complete_purchase","Complete a purchase"),
-        rewardLabel:
-          tr("reward_varies_by_purchase","Varies by purchase value"),
+        title: tr("complete_purchase", "Complete a purchase"),
+        rewardLabel: tr(
+          "reward_varies_by_purchase",
+          "Varies by purchase value",
+        ),
         completed: Number(activityStats.purchasesToday || 0) > 0,
       },
       {
-        title: tr("reach_next_level","Reach next level"),
+        title: tr("reach_next_level", "Reach next level"),
         reward: 25,
         completed: c === 0,
       },
     ],
+    visibleChallenges = showAllChallenges
+      ? dailyChallenges
+      : dailyChallenges.slice(0, 3),
     milestones = [
       {
-        icon: "\u{1F3AF}",
-        title: tr("first_sale","First Sale"),
+        icon: "\uD83C\uDFAF",
+        title: tr("first_sale", "First Sale"),
         unlocked: Number(activityStats.salesCount || 0) > 0,
       },
       {
-        icon: "\u{1F9E9}",
-        title: tr("profile_completed","Profile Completed"),
+        icon: "\uD83E\uDDE9",
+        title: tr("profile_completed", "Profile Completed"),
         unlocked: Boolean(r.profileComplete),
       },
       {
-        icon: "\u{1F4DD}",
-        title: tr("first_post","First Post"),
+        icon: "\uD83D\uDCDD",
+        title: tr("first_post", "First Post"),
         unlocked: Boolean(r.hasPosted),
       },
       {
-        icon: "\u{1F465}",
-        title: tr("five_referrals","5 Referrals"),
+        icon: "\uD83D\uDC65",
+        title: tr("five_referrals", "5 Referrals"),
         unlocked: Number(activityStats.referralsCount || 0) >= 5,
       },
       {
-        icon: "\u{1F525}",
-        title: tr("seven_day_streak","7 Day Streak"),
-        unlocked: Math.max(Number(r.visitStreak || 0), Number(r.postStreak || 0)) >= 7,
+        icon: "\uD83D\uDD25",
+        title: tr("seven_day_streak", "7 Day Streak"),
+        unlocked:
+          Math.max(Number(r.visitStreak || 0), Number(r.postStreak || 0)) >= 7,
       },
       {
-        icon: "\u{1F48E}",
-        title: tr("premium_user","Premium User"),
+        icon: "\uD83D\uDC8E",
+        title: tr("premium_user", "Premium User"),
         unlocked: r.rank === "Gold" || r.rank === "Platinum",
       },
       {
         icon: "\u2B50",
-        title: tr("top_seller","Top Seller"),
+        title: tr("top_seller", "Top Seller"),
         unlocked: Number(activityStats.salesCount || 0) >= 5,
       },
       {
-        icon: "\u{1F3C6}",
-        title: tr("gold_rank","Gold Rank"),
+        icon: "\uD83C\uDFC6",
+        title: tr("gold_rank", "Gold Rank"),
         unlocked: r.rank === "Gold" || r.rank === "Platinum",
       },
     ],
@@ -627,7 +737,46 @@ const fe = () => {
       Gold: "from-yellow-400 to-yellow-600",
       Platinum: "from-cyan-400 to-cyan-600",
       Diamond: "from-purple-400 to-pink-500",
-    };
+    },
+    primaryStats = [
+      {
+        key: "coins",
+        label: a("total_coins"),
+        value: r.totalCoins,
+        icon: ee,
+        accent: "from-yellow-400 to-orange-500",
+      },
+      {
+        key: "referrals",
+        label: a("total_referrals"),
+        value: r.totalReferrals,
+        icon: _,
+        accent: "from-blue-400 to-blue-600",
+      },
+      {
+        key: "streak",
+        label: a("visit_streak") || a("day_streak"),
+        value: visitStreak,
+        icon: te,
+        accent: "from-emerald-400 to-green-600",
+      },
+    ],
+    secondaryStats = [
+      {
+        key: "qualified",
+        label: a("qualified_referrals") || a("verified_refs"),
+        value: qualifiedReferrals,
+        icon: ae,
+        accent: "from-purple-400 to-purple-600",
+      },
+      {
+        key: "milestones",
+        label: tr("milestones", "Milestones"),
+        value: `${milestoneUnlockedCount}/${milestones.length}`,
+        icon: Q,
+        accent: "from-amber-400 to-yellow-600",
+      },
+    ];
   return e.createElement(
     "div",
     {
@@ -659,7 +808,7 @@ const fe = () => {
           },
           e.createElement(
             "div",
-            { className: "flex items-center gap-5" },
+            { className: "flex items-center gap-5 min-w-0" },
             e.createElement(
               "div",
               { className: "relative" },
@@ -671,10 +820,7 @@ const fe = () => {
                   {
                     className: `text-2xl font-bold text-white bg-gradient-to-br ${$[r.rank] || "from-blue-500 to-indigo-600"}`,
                   },
-                  r.name
-                    ?.split(" ")
-                    .map((t) => t[0])
-                    .join("") || "U",
+                  getInitials(r?.name, "U"),
                 ),
               ),
               e.createElement(
@@ -688,10 +834,14 @@ const fe = () => {
             ),
             e.createElement(
               "div",
-              null,
+              { className: "min-w-0" },
               e.createElement(
                 "h1",
-                { className: "text-2xl md:text-3xl font-bold text-white mb-1" },
+                {
+                  className:
+                    "text-2xl md:text-3xl font-bold text-white mb-1 truncate",
+                  title: r.name,
+                },
                 r.name,
               ),
               e.createElement(
@@ -709,7 +859,7 @@ const fe = () => {
                 e.createElement(
                   m,
                   { className: "bg-white/20 text-white border-0" },
-                  tr("level","Level"),
+                  tr("level", "Level"),
                   " ",
                   r.level,
                 ),
@@ -722,7 +872,7 @@ const fe = () => {
             e.createElement(
               "div",
               { className: "flex justify-between text-white/80 text-sm mb-2" },
-              e.createElement("span", null, tr("xp_progress","XP Progress")),
+              e.createElement("span", null, tr("xp_progress", "XP Progress")),
               e.createElement("span", null, r.xpCurrent, " / ", r.xpRequired),
             ),
             e.createElement(
@@ -738,7 +888,18 @@ const fe = () => {
               "p",
               { className: "text-white/60 text-xs mt-1" },
               Math.round(r.xpRequired - r.xpCurrent),
-              ` ${tr("xp_to_next_level","XP to next level")}`,
+              ` ${tr("xp_to_next_level", "XP to next level")}`,
+            ),
+            e.createElement(
+              o,
+              {
+                type: "button",
+                onClick: h,
+                className:
+                  "mt-3 w-full bg-white/90 text-indigo-600 hover:bg-white font-semibold",
+              },
+              e.createElement(T, { className: "w-4 h-4 mr-2" }),
+              tr("invite_friends", "Invite friends"),
             ),
           ),
         ),
@@ -746,39 +907,119 @@ const fe = () => {
     ),
     e.createElement(
       "div",
-      { className: "max-w-5xl mx-auto px-4 -mt-8 mb-8 relative z-10" },
+      {
+        className:
+          "max-w-5xl mx-auto px-4 mt-8 -translate-y-8 mb-8 relative z-10",
+      },
       e.createElement(
         "div",
-        { className: "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4" },
+        { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
         e.createElement(
           l,
           {
             className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1",
+              "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
           },
           e.createElement(
+            b,
+            null,
+            e.createElement(
+              v,
+              { className: "flex items-center gap-2" },
+              e.createElement(te, { className: "w-5 h-5 text-indigo-600" }),
+              " ",
+              tr("stats", "Stats"),
+            ),
+          ),
+          e.createElement(
             i,
-            { className: "p-4 sm:p-5 text-center" },
+            { className: "space-y-4" },
+            e.createElement(
+              "div",
+              { className: "grid grid-cols-3 gap-3" },
+              primaryStats.map((t) =>
+                e.createElement(
+                  "div",
+                  {
+                    key: t.key,
+                    className:
+                      "rounded-xl bg-slate-50 dark:bg-slate-900/30 p-3 text-center",
+                  },
+                  e.createElement(
+                    "div",
+                    {
+                      className: `mx-auto mb-2 h-9 w-9 rounded-lg bg-gradient-to-br ${t.accent} flex items-center justify-center`,
+                    },
+                    e.createElement(t.icon, {
+                      className: "w-4 h-4 text-white",
+                    }),
+                  ),
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-lg font-bold text-slate-800 dark:text-white",
+                    },
+                    t.value,
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-xs text-slate-500" },
+                    t.label,
+                  ),
+                ),
+              ),
+            ),
             e.createElement(
               "div",
               {
-                className:
-                  "w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center",
+                className: `grid grid-cols-2 gap-3 ${showMoreStats ? "" : "hidden"}`,
               },
-              e.createElement(ee, { className: "w-6 h-6 text-white" }),
+              secondaryStats.map((t) =>
+                e.createElement(
+                  "div",
+                  {
+                    key: t.key,
+                    className:
+                      "rounded-xl bg-slate-50 dark:bg-slate-900/30 p-3 text-center",
+                  },
+                  e.createElement(
+                    "div",
+                    {
+                      className: `mx-auto mb-2 h-9 w-9 rounded-lg bg-gradient-to-br ${t.accent} flex items-center justify-center`,
+                    },
+                    e.createElement(t.icon, {
+                      className: "w-4 h-4 text-white",
+                    }),
+                  ),
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-lg font-bold text-slate-800 dark:text-white",
+                    },
+                    t.value,
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-xs text-slate-500" },
+                    t.label,
+                  ),
+                ),
+              ),
             ),
             e.createElement(
-              "p",
+              o,
               {
+                type: "button",
+                variant: "ghost",
                 className:
-                  "text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white",
+                  "w-full text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+                onClick: () => setShowMoreStats((t) => !t),
               },
-              r.totalCoins,
-            ),
-            e.createElement(
-              "p",
-              { className: "text-sm text-gray-500" },
-              a("total_coins"),
+              showMoreStats
+                ? tr("show_less_stats", "Show fewer stats")
+                : tr("show_more_stats", "Show more stats"),
             ),
           ),
         ),
@@ -786,139 +1027,142 @@ const fe = () => {
           l,
           {
             className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1",
+              "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
           },
           e.createElement(
-            i,
-            { className: "p-4 sm:p-5 text-center" },
+            b,
+            null,
             e.createElement(
-              "div",
-              {
-                className:
-                  "w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center",
-              },
-              e.createElement(_, { className: "w-6 h-6 text-white" }),
-            ),
-            e.createElement(
-              "p",
-              {
-                className:
-                  "text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white",
-              },
-              r.totalReferrals,
-            ),
-            e.createElement(
-              "p",
-              { className: "text-sm text-gray-500" },
-              a("total_referrals"),
+              v,
+              { className: "flex items-center gap-2" },
+              e.createElement(A, { className: "w-5 h-5 text-indigo-600" }),
+              " ",
+              tr("your_codes", "Your codes"),
             ),
           ),
-        ),
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1",
-          },
           e.createElement(
             i,
-            { className: "p-4 sm:p-5 text-center" },
+            { className: "space-y-4" },
             e.createElement(
               "div",
               {
                 className:
-                  "w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center",
+                  "rounded-xl border border-indigo-100 bg-indigo-50/80 px-4 py-3 dark:border-indigo-900/40 dark:bg-indigo-900/20",
               },
-              e.createElement(te, { className: "w-6 h-6 text-white" }),
-            ),
-            e.createElement(
-              "p",
-              {
-                className:
-                  "text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white",
-              },
-              visitStreak,
-            ),
-            e.createElement(
-              "p",
-              { className: "text-sm text-gray-500" },
-              a("visit_streak") || a("day_streak"),
-              " \u{1F525}",
-            ),
-          ),
-        ),
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1",
-          },
-          e.createElement(
-            i,
-            { className: "p-4 sm:p-5 text-center" },
-            e.createElement(
-              "div",
-              {
-                className:
-                  "w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center",
-              },
-              e.createElement(ae, { className: "w-6 h-6 text-white" }),
-            ),
-            e.createElement(
-              "p",
-              {
-                className:
-                  "text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white",
-              },
-              qualifiedReferrals,
-            ),
-            e.createElement(
-              "p",
-              { className: "text-sm text-gray-500" },
-              a("qualified_referrals") || a("verified_refs"),
-            ),
-          ),
-        ),
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1",
-          },
-          e.createElement(
-            i,
-            { className: "p-4 sm:p-5 text-center" },
-            e.createElement(
-              "div",
-              {
-                className:
-                  "w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center",
-              },
-              e.createElement(ae, { className: "w-6 h-6 text-white" }),
-            ),
-            e.createElement(
-              "p",
-              {
-                className:
-                  "text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white",
-              },
-              milestoneUnlockedCount,
-              "/",
-              milestones.length,
-            ),
-            e.createElement(
-              "p",
-              { className: "text-sm text-gray-500" },
-              tr("milestones", "Milestones"),
-            ),
-            nextMilestone &&
+              e.createElement(
+                "div",
+                { className: "flex items-center justify-between" },
+                e.createElement(
+                  "p",
+                  {
+                    className:
+                      "text-sm font-semibold text-indigo-700 dark:text-indigo-200",
+                  },
+                  a("your_referral_code"),
+                ),
+                e.createElement(
+                  o,
+                  {
+                    variant: "ghost",
+                    size: "sm",
+                    className:
+                      "text-indigo-600 hover:bg-indigo-100 dark:text-indigo-200 dark:hover:bg-indigo-900/40",
+                    onClick: () =>
+                      y(r.referralCode, tr("referral_code", "Referral code")),
+                  },
+                  e.createElement(H, { className: "w-4 h-4" }),
+                ),
+              ),
               e.createElement(
                 "p",
-                { className: "text-xs text-gray-400 mt-1" },
-                tr("next_milestone","Next milestone"),
-                ": ",
-                nextMilestone.title,
+                {
+                  className:
+                    "mt-2 text-2xl font-bold text-indigo-700 dark:text-indigo-200 tracking-wider",
+                },
+                r.referralCode,
               ),
+              e.createElement(
+                "p",
+                {
+                  className:
+                    "text-xs text-indigo-600/80 dark:text-indigo-200/80 mt-1",
+                },
+                a("share_earn_coins", { amount: 50 }),
+              ),
+            ),
+            e.createElement(
+              "div",
+              {
+                className:
+                  "rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-900/20",
+              },
+              e.createElement(
+                "div",
+                { className: "flex items-center justify-between" },
+                e.createElement(
+                  "p",
+                  {
+                    className:
+                      "text-sm font-semibold text-amber-700 dark:text-amber-200",
+                  },
+                  a("daily_secret_code"),
+                ),
+                e.createElement(
+                  o,
+                  {
+                    variant: "ghost",
+                    size: "sm",
+                    className:
+                      "text-amber-600 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/40",
+                    onClick: () =>
+                      y(r.dailySecretCode, tr("secret_code", "Secret code")),
+                  },
+                  e.createElement(H, { className: "w-4 h-4" }),
+                ),
+              ),
+              e.createElement(
+                "p",
+                {
+                  className:
+                    "mt-2 text-2xl font-bold text-amber-700 dark:text-amber-200 tracking-wider",
+                },
+                r.dailySecretCode,
+              ),
+              e.createElement(
+                "p",
+                {
+                  className:
+                    "text-xs text-amber-600/80 dark:text-amber-200/80 mt-1",
+                },
+                a("required_for_sale"),
+              ),
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "mt-2 flex items-center gap-2 text-amber-600/90 dark:text-amber-200/80",
+                },
+                e.createElement(re, { className: "w-4 h-4" }),
+                e.createElement(
+                  "span",
+                  { className: "text-xs" },
+                  secretCountdown
+                    ? `${tr("expires_in", "Expires in")} ${secretCountdown}`
+                    : tr("expires_in_12h_30m", "Expires soon"),
+                ),
+              ),
+            ),
+            e.createElement(
+              o,
+              {
+                type: "button",
+                className:
+                  "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold",
+                onClick: h,
+              },
+              e.createElement(T, { className: "w-4 h-4 mr-2" }),
+              tr("share_referral_link_now", "Share referral link now"),
+            ),
           ),
         ),
       ),
@@ -938,19 +1182,24 @@ const fe = () => {
             { className: "flex items-center justify-between mb-2" },
             e.createElement(
               "p",
-              { className: "text-sm font-semibold text-slate-700 dark:text-slate-200" },
-              tr("rewards_diagnostics","Rewards diagnostics"),
+              {
+                className:
+                  "text-sm font-semibold text-slate-700 dark:text-slate-200",
+              },
+              tr("rewards_diagnostics", "Rewards diagnostics"),
             ),
             e.createElement(
               "span",
               {
-                className: `text-xs font-semibold ${diagnostics.sseStatus === "connected" ? "text-emerald-600" : "text-amber-600"}`,
+                className: `text-xs font-semibold ${diagnostics.sseStatus === "connected" ? "text-emerald-600" : diagnostics.sseFallbackActive || diagnostics.sseStatus === "connecting" ? "text-amber-600" : "text-rose-600"}`,
               },
               diagnostics.sseStatus === "connected"
-                ? tr("live_connected","Live connected")
-                : diagnostics.sseStatus === "connecting"
-                  ? tr("connecting","Connecting")
-                  : tr("offline","Offline"),
+                ? tr("live_connected", "Connected")
+                : diagnostics.sseFallbackActive
+                  ? tr("live_polling", "Polling fallback")
+                  : diagnostics.sseStatus === "connecting"
+                    ? tr("connecting", "Connecting")
+                    : tr("offline", "Offline"),
             ),
           ),
           e.createElement(
@@ -973,7 +1222,7 @@ const fe = () => {
             e.createElement(
               "p",
               { className: "mt-2 text-xs text-slate-500 dark:text-slate-400" },
-              tr("last_update","Last update"),
+              tr("last_update", "Last update"),
               ": ",
               new Date(lastSseUpdate).toLocaleString(),
             ),
@@ -983,394 +1232,20 @@ const fe = () => {
       "div",
       { className: "max-w-5xl mx-auto px-4 pb-12" },
       e.createElement(
-        "div",
-        { className: "grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8" },
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
-          },
-          e.createElement(
-            b,
-            null,
-            e.createElement(
-              v,
-              { className: "flex items-center gap-2" },
-              e.createElement(P, { className: "w-5 h-5 text-indigo-600" }),
-              ` ${tr("progress_tracker","Progress Tracker")}`,
-            ),
-          ),
-          e.createElement(
-            i,
-            { className: "space-y-3" },
-            Y.map((t) =>
-              e.createElement(
-                "div",
-                {
-                  key: t.key,
-                  className: `flex items-center justify-between rounded-xl border px-3 py-2 ${t.done ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-900/20" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/30"}`,
-                },
-                e.createElement(
-                  "div",
-                  { className: "flex items-center gap-2" },
-                  t.done
-                    ? e.createElement(ie, {
-                        className: "w-4 h-4 text-emerald-600",
-                      })
-                    : e.createElement(oe, {
-                        className: "w-4 h-4 text-slate-400",
-                      }),
-                  e.createElement(
-                    "div",
-                    null,
-                    e.createElement(
-                      "p",
-                      {
-                        className: `text-sm font-medium ${t.done ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200"}`,
-                      },
-                      t.label,
-                    ),
-                    e.createElement(
-                      "p",
-                      {
-                        className: "text-xs text-slate-500 dark:text-slate-400",
-                      },
-                      t.hint,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            e.createElement(
-              "div",
-              { className: "pt-1" },
-              e.createElement(
-                o,
-                {
-                  type: "button",
-                  variant: "outline",
-                  className: "w-full",
-                  onClick: () => {
-                    if (w === "earn_xp") {
-                      window.location.assign("/all-posts");
-                      return;
-                    }
-                    if (w === "qualify_referral") {
-                      h();
-                      return;
-                    }
-                    window.location.assign("/my-home");
-                  },
-                },
-                w === "earn_xp"
-                  ? tr("earn_xp_through_activity","Earn XP through activity")
-                  : w === "qualify_referral"
-                    ? tr("share_referral_link_now","Share referral link now")
-                    : tr("review_account_activity","Review account activity"),
-                e.createElement(de, { className: "w-4 h-4 ml-2" }),
-              ),
-            ),
-          ),
-        ),
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
-          },
-          e.createElement(
-            b,
-            null,
-            e.createElement(
-              v,
-              { className: "flex items-center gap-2" },
-              e.createElement(ae, { className: "w-5 h-5 text-indigo-600" }),
-              ` ${tr("milestone_overview","Milestones Overview")}`,
-            ),
-          ),
-          e.createElement(
-            i,
-            { className: "space-y-4" },
-            e.createElement(
-              "div",
-              {
-                className:
-                  "flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 px-4 py-3",
-              },
-              e.createElement(
-                "div",
-                null,
-                e.createElement(
-                  "p",
-                  {
-                    className:
-                      "text-sm font-semibold text-slate-800 dark:text-white",
-                  },
-                  tr("milestones_unlocked","Milestones unlocked"),
-                ),
-                e.createElement(
-                  "p",
-                  { className: "text-xs text-slate-500 dark:text-slate-400" },
-                  tr(
-                    "milestone_progress_hint",
-                    "Keep inviting to reach the next level.",
-                  ),
-                ),
-              ),
-              e.createElement(
-                "span",
-                {
-                  className:
-                    "inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-3 py-1 text-xs font-semibold dark:bg-indigo-900/40 dark:text-indigo-200",
-                },
-                milestoneUnlockedCount,
-                "/",
-                milestones.length,
-              ),
-            ),
-            nextMilestone &&
-              e.createElement(
-                "div",
-                {
-                  className:
-                    "rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-900/20 dark:text-indigo-200",
-                },
-                e.createElement(
-                  "p",
-                  { className: "font-semibold" },
-                  tr("next_milestone","Next milestone"),
-                ),
-                e.createElement(
-                  "p",
-                  { className: "text-xs opacity-80" },
-                  nextMilestone.title,
-                ),
-              ),
-            e.createElement(
-              o,
-              {
-                type: "button",
-                className:
-                  "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold",
-                onClick: h,
-              },
-              e.createElement(T, { className: "w-4 h-4 mr-2" }),
-              tr("invite_friends_now","Invite friends now"),
-            ),
-          ),
-        ),
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
-          },
-          e.createElement(
-            b,
-            null,
-            e.createElement(
-              v,
-              { className: "flex items-center gap-2" },
-              e.createElement(_, { className: "w-5 h-5 text-indigo-600" }),
-              ` ${tr("referral_playbook","Referral Playbook")}`,
-            ),
-          ),
-          e.createElement(
-            i,
-            { className: "space-y-3" },
-            J.map((t, s) =>
-              e.createElement(
-                "div",
-                {
-                  key: t.key,
-                  className:
-                    "flex items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2",
-                },
-                e.createElement(
-                  m,
-                  { className: "bg-indigo-600 text-white mt-0.5" },
-                  s + 1,
-                ),
-                e.createElement(
-                  "div",
-                  null,
-                  e.createElement(
-                    "p",
-                    {
-                      className:
-                        "text-sm font-semibold text-slate-800 dark:text-slate-100",
-                    },
-                    t.title,
-                  ),
-                  e.createElement(
-                    "p",
-                    { className: "text-xs text-slate-500 dark:text-slate-400" },
-                    t.detail,
-                  ),
-                ),
-              ),
-            ),
-            e.createElement(
-              o,
-              {
-                type: "button",
-                variant: "outline",
-                className: "w-full",
-                onClick: h,
-              },
-              e.createElement(T, { className: "w-4 h-4 mr-2" }),
-              ` ${tr("share_referral_to_start","Share referral to start")}`,
-            ),
-          ),
-        ),
-      ),
-      e.createElement(
-        "div",
-        { className: "grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" },
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-gradient-to-br from-indigo-600 to-purple-700 border-0 shadow-xl overflow-hidden relative",
-          },
-          e.createElement("div", {
-            className:
-              "absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2",
-          }),
-          e.createElement(
-            i,
-            { className: "p-6 relative z-10" },
-            e.createElement(
-              "div",
-              { className: "flex items-center justify-between mb-4" },
-              e.createElement(
-                "h3",
-                {
-                  className:
-                    "text-lg font-semibold text-white flex items-center gap-2",
-                },
-                e.createElement(A, { className: "w-5 h-5" }),
-                " ",
-                a("your_referral_code"),
-              ),
-              e.createElement(
-                o,
-                {
-                  variant: "ghost",
-                  size: "sm",
-                  className: "text-white hover:bg-white/20",
-                  onClick: () =>
-                    y(r.referralCode, tr("referral_code","Referral code")),
-                },
-                e.createElement(H, { className: "w-4 h-4" }),
-              ),
-            ),
-            e.createElement(
-              "div",
-              {
-                className: "text-4xl font-bold text-white mb-4 tracking-wider",
-              },
-              r.referralCode,
-            ),
-            e.createElement(
-              "p",
-              { className: "text-white/70 text-sm mb-4" },
-              a("share_earn_coins", { amount: 50 }),
-            ),
-            e.createElement(
-              o,
-              {
-                onClick: h,
-                className:
-                  "w-full bg-white text-indigo-600 hover:bg-white/90 font-bold",
-              },
-              e.createElement(T, { className: "w-4 h-4 mr-2" }),
-              " ",
-              a("share_now"),
-            ),
-          ),
-        ),
-        e.createElement(
-          l,
-          {
-            className:
-              "bg-gradient-to-br from-amber-500 to-orange-600 border-0 shadow-xl overflow-hidden relative",
-          },
-          e.createElement("div", {
-            className:
-              "absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2",
-          }),
-          e.createElement(
-            i,
-            { className: "p-6 relative z-10" },
-            e.createElement(
-              "div",
-              { className: "flex items-center justify-between mb-4" },
-              e.createElement(
-                "h3",
-                {
-                  className:
-                    "text-lg font-semibold text-white flex items-center gap-2",
-                },
-                e.createElement(le, { className: "w-5 h-5" }),
-                " ",
-                a("daily_secret_code"),
-              ),
-              e.createElement(
-                o,
-                {
-                  variant: "ghost",
-                  size: "sm",
-                  className: "text-white hover:bg-white/20",
-                  onClick: () =>
-                    y(r.dailySecretCode, tr("secret_code","Secret code")),
-                },
-                e.createElement(H, { className: "w-4 h-4" }),
-              ),
-            ),
-            e.createElement(
-              "div",
-              {
-                className: "text-4xl font-bold text-white mb-4 tracking-wider",
-              },
-              r.dailySecretCode,
-            ),
-            e.createElement(
-              "p",
-              { className: "text-white/70 text-sm mb-2" },
-              a("required_for_sale"),
-            ),
-            e.createElement(
-              "div",
-              { className: "flex items-center gap-2 text-white/80" },
-              e.createElement(re, { className: "w-4 h-4" }),
-              e.createElement(
-                "span",
-                { className: "text-sm" },
-                secretCountdown
-                  ? `${tr("expires_in","Expires in")} ${secretCountdown}`
-                  : tr("expires_in_12h_30m","Expires soon"),
-              ),
-            ),
-          ),
-        ),
-      ),
-      e.createElement(
         Z,
         { value: V, onValueChange: q, className: "w-full" },
         e.createElement(
           O,
           {
             className:
-              "w-full flex bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-lg mb-6",
+              "w-full flex gap-2 overflow-x-auto bg-white dark:bg-gray-800 rounded-2xl p-1 shadow-lg mb-6 scrollbar-hide",
           },
           e.createElement(
             k,
             {
               value: "overview",
               className:
-                "flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
             a("overview"),
           ),
@@ -1379,7 +1254,7 @@ const fe = () => {
             {
               value: "referrals",
               className:
-                "flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
             a("referrals"),
           ),
@@ -1388,7 +1263,7 @@ const fe = () => {
             {
               value: "milestones",
               className:
-                "flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
             a("milestones"),
           ),
@@ -1397,9 +1272,9 @@ const fe = () => {
             {
               value: "leaderboard",
               className:
-                "flex-1 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white py-3 font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
-            tr("leaderboard","Leaderboard"),
+            tr("leaderboard", "Leaderboard"),
           ),
         ),
         e.createElement(
@@ -1422,13 +1297,241 @@ const fe = () => {
                   { className: "flex items-center gap-2" },
                   e.createElement(P, { className: "w-5 h-5 text-indigo-600" }),
                   " ",
+                  tr("progress_overview", "Progress overview"),
+                ),
+              ),
+              e.createElement(
+                i,
+                { className: "space-y-4" },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/30",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between mb-2" },
+                    e.createElement(
+                      "span",
+                      { className: "text-sm font-semibold text-slate-700" },
+                      tr("xp_progress", "XP Progress"),
+                    ),
+                    e.createElement(
+                      "span",
+                      { className: "text-sm text-slate-600" },
+                      r.xpCurrent,
+                      " / ",
+                      r.xpRequired,
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden",
+                    },
+                    e.createElement("div", {
+                      className:
+                        "h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full",
+                      style: { width: `${X}%` },
+                    }),
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-xs text-slate-500 mt-2" },
+                    c === 0
+                      ? tr("rewards_levelup_ready", "Level-up ready")
+                      : tr("rewards_xp_remaining", `${c} XP remaining`, {
+                          count: c,
+                        }),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "mt-3 flex items-center justify-between" },
+                    e.createElement(
+                      "span",
+                      { className: "text-xs text-slate-500" },
+                      tr("streak_progress", "Streak progress"),
+                    ),
+                    e.createElement(
+                      "span",
+                      { className: "text-xs text-slate-600 font-semibold" },
+                      maxStreak,
+                      " / ",
+                      nextStreakTarget,
+                      " ",
+                      tr("days", "days"),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "mt-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden",
+                    },
+                    e.createElement("div", {
+                      className:
+                        "h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full",
+                      style: { width: `${streakProgress}%` },
+                    }),
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-white/60 dark:bg-slate-900/10",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between mb-1" },
+                    e.createElement(
+                      "span",
+                      { className: "text-sm font-semibold text-slate-700" },
+                      tr("milestones", "Milestones"),
+                    ),
+                    e.createElement(
+                      "span",
+                      { className: "text-sm text-slate-600 font-semibold" },
+                      milestoneUnlockedCount,
+                      "/",
+                      milestones.length,
+                    ),
+                  ),
+                  nextMilestone
+                    ? e.createElement(
+                        "p",
+                        { className: "text-xs text-slate-500" },
+                        tr("next_milestone", "Next milestone"),
+                        ": ",
+                        nextMilestone.title,
+                      )
+                    : e.createElement(
+                        "p",
+                        { className: "text-xs text-slate-500" },
+                        tr("all_milestones_unlocked", "All milestones unlocked"),
+                      ),
+                ),
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "rounded-xl border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/30",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between mb-2" },
+                    e.createElement(
+                      "span",
+                      {
+                        className:
+                          "text-sm font-semibold text-slate-700 dark:text-slate-200",
+                      },
+                      tr("progress_tracker", "Progress Tracker"),
+                    ),
+                    e.createElement(
+                      m,
+                      { className: "bg-indigo-100 text-indigo-700" },
+                      `${Y.filter((t) => t.done).length}/${Y.length}`,
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "space-y-2" },
+                    Y.map((t) =>
+                      e.createElement(
+                        "div",
+                        { key: t.key, className: "flex items-start gap-2" },
+                        t.done
+                          ? e.createElement(ie, {
+                              className: "w-4 h-4 text-emerald-600 mt-0.5",
+                            })
+                          : e.createElement(oe, {
+                              className: "w-4 h-4 text-slate-400 mt-0.5",
+                            }),
+                        e.createElement(
+                          "div",
+                          null,
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm font-medium text-slate-700 dark:text-slate-200",
+                            },
+                            t.label,
+                          ),
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-xs text-slate-500 dark:text-slate-400",
+                            },
+                            t.hint,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                e.createElement(
+                  o,
+                  {
+                    type: "button",
+                    className:
+                      "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold",
+                    onClick: () => {
+                      if (w === "earn_xp") {
+                        window.location.assign("/all-posts");
+                        return;
+                      }
+                      if (w === "qualify_referral") {
+                        h();
+                        return;
+                      }
+                      window.location.assign("/my-home");
+                    },
+                  },
+                  w === "earn_xp"
+                    ? tr("earn_xp_through_activity", "Earn XP through activity")
+                    : w === "qualify_referral"
+                      ? tr("share_referral_link_now", "Share referral link now")
+                      : tr("review_account_activity", "Review account activity"),
+                  e.createElement(de, { className: "w-4 h-4 ml-2" }),
+                ),
+                e.createElement(
+                  o,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className: "w-full",
+                    onClick: () => q("milestones"),
+                  },
+                  tr("view_milestones", "View milestones"),
+                ),
+              ),
+            ),
+            e.createElement(
+              l,
+              {
+                className:
+                  "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
+              },
+              e.createElement(
+                b,
+                null,
+                e.createElement(
+                  v,
+                  { className: "flex items-center gap-2" },
+                  e.createElement(P, { className: "w-5 h-5 text-indigo-600" }),
+                  " ",
                   a("daily_challenges"),
                 ),
               ),
               e.createElement(
                 i,
                 { className: "space-y-4" },
-                dailyChallenges.map((t, s) =>
+                visibleChallenges.map((t, s) =>
                   e.createElement(
                     "div",
                     {
@@ -1478,6 +1581,20 @@ const fe = () => {
                     ),
                   ),
                 ),
+                dailyChallenges.length > 3 &&
+                  e.createElement(
+                    o,
+                    {
+                      type: "button",
+                      variant: "ghost",
+                      className:
+                        "w-full text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+                      onClick: () => setShowAllChallenges((t) => !t),
+                    },
+                    showAllChallenges
+                      ? tr("show_less_challenges", "Show fewer challenges")
+                      : tr("show_all_challenges", "View all challenges"),
+                  ),
               ),
             ),
             e.createElement(
@@ -1494,7 +1611,7 @@ const fe = () => {
                   { className: "flex items-center gap-2" },
                   e.createElement(te, { className: "w-5 h-5 text-indigo-600" }),
                   " ",
-                  tr("streaks_and_chain_rewards","Streaks & Chain Rewards"),
+                  tr("streaks_and_chain_rewards", "Streaks & Chain Rewards"),
                 ),
               ),
               e.createElement(
@@ -1512,14 +1629,14 @@ const fe = () => {
                     e.createElement(
                       "span",
                       { className: "text-sm font-semibold text-slate-700" },
-                      tr("visit_streak","Visit streak"),
+                      tr("visit_streak", "Visit streak"),
                     ),
                     e.createElement(
                       "span",
                       { className: "text-sm text-slate-600" },
                       visitStreak,
                       " ",
-                      tr("days","days"),
+                      tr("days", "days"),
                     ),
                   ),
                   e.createElement(
@@ -1528,14 +1645,14 @@ const fe = () => {
                     e.createElement(
                       "span",
                       { className: "text-sm font-semibold text-slate-700" },
-                      tr("post_streak","Post streak"),
+                      tr("post_streak", "Post streak"),
                     ),
                     e.createElement(
                       "span",
                       { className: "text-sm text-slate-600" },
                       postStreak,
                       " ",
-                      tr("days","days"),
+                      tr("days", "days"),
                     ),
                   ),
                   e.createElement(
@@ -1570,7 +1687,7 @@ const fe = () => {
                     e.createElement(
                       "span",
                       { className: "text-sm font-semibold text-slate-700" },
-                      tr("chain_rewards_earned","Chain rewards earned"),
+                      tr("chain_rewards_earned", "Chain rewards earned"),
                     ),
                     e.createElement(
                       "span",
@@ -1587,7 +1704,7 @@ const fe = () => {
                     e.createElement(
                       "span",
                       { className: "text-sm font-semibold text-slate-700" },
-                      tr("chain_rewards_potential","Potential chain rewards"),
+                      tr("chain_rewards_potential", "Potential chain rewards"),
                     ),
                     e.createElement(
                       "span",
@@ -1615,7 +1732,7 @@ const fe = () => {
                   { className: "flex items-center gap-2" },
                   e.createElement(A, { className: "w-5 h-5 text-indigo-600" }),
                   " ",
-                  tr("recent_rewards","Recent rewards"),
+                  tr("recent_rewards", "Recent rewards"),
                 ),
               ),
               e.createElement(
@@ -1625,7 +1742,7 @@ const fe = () => {
                   ? e.createElement(
                       "p",
                       { className: "text-sm text-slate-500" },
-                      tr("reward_log_loading","Loading reward activity..."),
+                      tr("reward_log_loading", "Loading reward activity..."),
                     )
                   : rewardLogItems.length
                     ? e.createElement(
@@ -1648,7 +1765,9 @@ const fe = () => {
                                   className:
                                     "text-sm font-semibold text-slate-800 dark:text-slate-100",
                                 },
-                                t.description || t.action || a("reward_log_action"),
+                                t.description ||
+                                  t.action ||
+                                  a("reward_log_action"),
                               ),
                               e.createElement(
                                 "p",
@@ -1669,7 +1788,7 @@ const fe = () => {
                     : e.createElement(
                         "p",
                         { className: "text-sm text-slate-500" },
-                        tr("reward_log_empty","No reward activity yet."),
+                        tr("reward_log_empty", "No reward activity yet."),
                       ),
               ),
             ),
@@ -1679,151 +1798,219 @@ const fe = () => {
           C,
           { value: "referrals" },
           e.createElement(
-            l,
-            {
-              className:
-                "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
-            },
+            "div",
+            { className: "space-y-6" },
             e.createElement(
-              b,
-              null,
+              l,
+              {
+                className:
+                  "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
+              },
               e.createElement(
-                v,
-                { className: "flex items-center gap-2" },
-                e.createElement(_, { className: "w-5 h-5 text-indigo-600" }),
-                " ",
-                a("your_referrals"),
-                " (",
-                N.length,
-                ")",
+                b,
+                null,
+                e.createElement(
+                  v,
+                  { className: "flex items-center gap-2" },
+                  e.createElement(_, { className: "w-5 h-5 text-indigo-600" }),
+                  ` ${tr("referral_playbook", "Referral Playbook")}`,
+                ),
+              ),
+              e.createElement(
+                i,
+                { className: "space-y-3" },
+                J.map((t, s) =>
+                  e.createElement(
+                    "div",
+                    {
+                      key: t.key,
+                      className:
+                        "flex items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2",
+                    },
+                    e.createElement(
+                      m,
+                      { className: "bg-indigo-600 text-white mt-0.5" },
+                      s + 1,
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "p",
+                        {
+                          className:
+                            "text-sm font-semibold text-slate-800 dark:text-slate-100",
+                        },
+                        t.title,
+                      ),
+                      e.createElement(
+                        "p",
+                        {
+                          className:
+                            "text-xs text-slate-500 dark:text-slate-400",
+                        },
+                        t.detail,
+                      ),
+                    ),
+                  ),
+                ),
+                e.createElement(
+                  o,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className: "w-full",
+                    onClick: h,
+                  },
+                  e.createElement(T, { className: "w-4 h-4 mr-2" }),
+                  ` ${tr("share_referral_to_start", "Share referral to start")}`,
+                ),
               ),
             ),
             e.createElement(
-              i,
-              null,
-              N.length === 0
-                ? e.createElement(
-                    "div",
-                    { className: "text-center py-12" },
-                    e.createElement(
+              l,
+              {
+                className:
+                  "bg-white dark:bg-gray-800 border-0 shadow-xl rounded-2xl",
+              },
+              e.createElement(
+                b,
+                null,
+                e.createElement(
+                  v,
+                  { className: "flex items-center gap-2" },
+                  e.createElement(_, { className: "w-5 h-5 text-indigo-600" }),
+                  " ",
+                  a("your_referrals"),
+                  " (",
+                  N.length,
+                  ")",
+                ),
+              ),
+              e.createElement(
+                i,
+                null,
+                N.length === 0
+                  ? e.createElement(
                       "div",
-                      { className: "text-6xl mb-4" },
-                      "\u{1F465}",
-                    ),
-                    e.createElement(
-                      "p",
-                      { className: "text-gray-500 mb-4" },
-                      a("no_referrals_yet"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "flex flex-wrap justify-center gap-2" },
-                      e.createElement(
-                        o,
-                        {
-                          onClick: h,
-                          className:
-                            "bg-gradient-to-r from-indigo-500 to-purple-600",
-                        },
-                        e.createElement(T, { className: "w-4 h-4 mr-2" }),
-                        " ",
-                        a("share_your_code"),
-                      ),
-                      e.createElement(
-                        o,
-                        {
-                          type: "button",
-                          variant: "outline",
-                          onClick: () => window.location.assign("/all-posts"),
-                        },
-                        tr("browse_listings","Browse Listings"),
-                      ),
-                    ),
-                  )
-                : e.createElement(
-                    "div",
-                    { className: "space-y-3" },
-                    N.map((t, s) =>
+                      { className: "text-center py-12" },
                       e.createElement(
                         "div",
-                        {
-                          key: t.id,
-                          className: `flex items-center justify-between p-4 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition ${t.type === "direct" ? "bg-green-50 dark:bg-green-900/20" : "bg-blue-50 dark:bg-blue-900/20"}`,
-                        },
+                        { className: "text-6xl mb-4" },
+                        "\uD83D\uDC65",
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "text-gray-500 mb-4" },
+                        a("no_referrals_yet"),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "flex flex-wrap justify-center gap-2" },
+                        e.createElement(
+                          o,
+                          {
+                            onClick: h,
+                            className:
+                              "bg-gradient-to-r from-indigo-500 to-purple-600",
+                          },
+                          e.createElement(T, { className: "w-4 h-4 mr-2" }),
+                          " ",
+                          a("share_your_code"),
+                        ),
+                        e.createElement(
+                          o,
+                          {
+                            type: "button",
+                            variant: "outline",
+                            onClick: () => window.location.assign("/all-posts"),
+                          },
+                          tr("browse_listings", "Browse Listings"),
+                        ),
+                      ),
+                    )
+                  : e.createElement(
+                      "div",
+                      { className: "space-y-3" },
+                      N.map((t, s) =>
                         e.createElement(
                           "div",
-                          { className: "flex items-center gap-3" },
+                          {
+                            key: t.id,
+                            className: `flex items-center justify-between p-4 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition ${t.type === "direct" ? "bg-green-50 dark:bg-green-900/20" : "bg-blue-50 dark:bg-blue-900/20"}`,
+                          },
                           e.createElement(
-                            I,
-                            { className: "h-10 w-10" },
+                            "div",
+                            { className: "flex items-center gap-3" },
                             e.createElement(
-                              L,
-                              {
-                                className: `text-white font-bold ${t.type === "direct" ? "bg-gradient-to-br from-green-500 to-emerald-600" : "bg-gradient-to-br from-blue-500 to-indigo-600"}`,
-                              },
-                              t.name
-                                ?.split(" ")
-                                .map((f) => f[0])
-                                .join("") || "?",
+                              I,
+                              { className: "h-10 w-10" },
+                              e.createElement(
+                                L,
+                                {
+                                  className: `text-white font-bold ${t.type === "direct" ? "bg-gradient-to-br from-green-500 to-emerald-600" : "bg-gradient-to-br from-blue-500 to-indigo-600"}`,
+                                },
+                                getInitials(t?.name, "?"),
+                              ),
+                            ),
+                            e.createElement(
+                              "div",
+                              null,
+                              e.createElement(
+                                "p",
+                                {
+                                  className:
+                                    "font-semibold text-gray-800 dark:text-white",
+                                },
+                                t.name,
+                              ),
+                              e.createElement(
+                                "div",
+                                {
+                                  className:
+                                    "flex items-center gap-2 text-xs text-gray-500",
+                                },
+                                e.createElement(
+                                  "span",
+                                  null,
+                                  `${tr("joined", "Joined")} `,
+                                  t.joinDate,
+                                ),
+                                t.type === "indirect" &&
+                                  t.depth &&
+                                  e.createElement(
+                                    "span",
+                                    { className: "text-blue-500" },
+                                    `${"\u2022"} ${tr("level", "Level")} `,
+                                    t.depth,
+                                  ),
+                              ),
                             ),
                           ),
                           e.createElement(
                             "div",
-                            null,
+                            { className: "flex flex-col items-end gap-1" },
                             e.createElement(
-                              "p",
+                              m,
                               {
-                                className:
-                                  "font-semibold text-gray-800 dark:text-white",
+                                className: `font-bold ${t.type === "direct" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`,
                               },
-                              t.name,
+                              `${tr("potential", "Potential")} +${t.coins} ${tr("coins", "coins")}`,
                             ),
                             e.createElement(
-                              "div",
+                              "span",
                               {
-                                className:
-                                  "flex items-center gap-2 text-xs text-gray-500",
+                                className: `text-xs ${t.type === "direct" ? "text-green-600" : "text-blue-600"}`,
                               },
-                              e.createElement(
-                                "span",
-                                null,
-                                `${tr("joined","Joined")} `,
-                                t.joinDate,
-                              ),
-                              t.type === "indirect" &&
-                                t.depth &&
-                                e.createElement(
-                                  "span",
-                                  { className: "text-blue-500" },
-                                  `${"\u2022"} ${tr("level","Level")} `,
-                                  t.depth,
-                                ),
+                              t.type === "direct"
+                                ? tr("direct", "Direct")
+                                : tr("indirect", "Indirect"),
                             ),
-                          ),
-                        ),
-                        e.createElement(
-                          "div",
-                          { className: "flex flex-col items-end gap-1" },
-                          e.createElement(
-                            m,
-                            {
-                              className: `font-bold ${t.type === "direct" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`,
-                            },
-                            `${tr("potential","Potential")} +${t.coins} ${tr("coins","coins")}`,
-                          ),
-                          e.createElement(
-                            "span",
-                            {
-                              className: `text-xs ${t.type === "direct" ? "text-green-600" : "text-blue-600"}`,
-                            },
-                            t.type === "direct"
-                              ? tr("direct","Direct")
-                              : tr("indirect","Indirect"),
                           ),
                         ),
                       ),
                     ),
-                  ),
+              ),
             ),
           ),
         ),
@@ -1843,7 +2030,7 @@ const fe = () => {
                 v,
                 { className: "flex items-center gap-2" },
                 e.createElement(Q, { className: "w-5 h-5 text-yellow-500" }),
-                ` ${tr("milestones_achievements","Milestones & Achievements")}`,
+                ` ${tr("milestones_achievements", "Milestones & Achievements")}`,
               ),
             ),
             e.createElement(
@@ -1878,7 +2065,7 @@ const fe = () => {
                           className:
                             "bg-yellow-400 text-yellow-900 text-xs mt-2",
                         },
-                        tr("unlocked","Unlocked!"),
+                        tr("unlocked", "Unlocked!"),
                       ),
                   ),
                 ),
@@ -1906,7 +2093,7 @@ const fe = () => {
                   { className: "flex items-center gap-2" },
                   e.createElement(R, { className: "w-5 h-5 text-yellow-500" }),
                   " ",
-                  tr("weekly_leaderboard","Weekly Leaderboard"),
+                  tr("weekly_leaderboard", "Weekly Leaderboard"),
                 ),
               ),
               e.createElement(
@@ -1918,19 +2105,19 @@ const fe = () => {
                   e.createElement(
                     m,
                     { className: "bg-indigo-100 text-indigo-700" },
-                    tr("next_payout","Next payout"),
+                    tr("next_payout", "Next payout"),
                     ": ",
                     leaderboardCountdown
                       ? leaderboardCountdown
                       : nextLeaderboardPayout
                         ? new Date(nextLeaderboardPayout).toLocaleString()
-                        : tr("unknown","Unknown"),
+                        : tr("unknown", "Unknown"),
                   ),
                   lastLeaderboardPayout
                     ? e.createElement(
                         m,
                         { className: "bg-emerald-100 text-emerald-700" },
-                        tr("last_payout","Last payout"),
+                        tr("last_payout", "Last payout"),
                         ": ",
                         new Date(lastLeaderboardPayout).toLocaleDateString(),
                       )
@@ -1939,7 +2126,10 @@ const fe = () => {
                 e.createElement(
                   "p",
                   { className: "text-xs text-slate-500" },
-                  tr("leaderboard_payout_notice","Payouts are processed weekly via background jobs. If jobs are paused, payouts may be delayed."),
+                  tr(
+                    "leaderboard_payout_notice",
+                    "Payouts are processed weekly via background jobs. If jobs are paused, payouts may be delayed.",
+                  ),
                 ),
               ),
             ),
@@ -1958,9 +2148,11 @@ const fe = () => {
                   e.createElement(
                     v,
                     { className: "flex items-center gap-2" },
-                    e.createElement(se, { className: "w-5 h-5 text-indigo-600" }),
+                    e.createElement(se, {
+                      className: "w-5 h-5 text-indigo-600",
+                    }),
                     " ",
-                    tr("top_sellers","Top Sellers"),
+                    tr("top_sellers", "Top Sellers"),
                   ),
                 ),
                 e.createElement(
@@ -1970,7 +2162,7 @@ const fe = () => {
                     ? e.createElement(
                         "p",
                         { className: "text-sm text-slate-500" },
-                        tr("loading","Loading..."),
+                        tr("loading", "Loading..."),
                       )
                     : publicWall.topSellers?.length
                       ? e.createElement(
@@ -1998,13 +2190,13 @@ const fe = () => {
                                     className:
                                       "text-sm font-semibold text-slate-800 dark:text-slate-100",
                                   },
-                                  t.name || tr("user","User"),
+                                  t.name || tr("user", "User"),
                                 ),
                               ),
                               e.createElement(
                                 "div",
                                 { className: "text-sm text-slate-600" },
-                                tr("sales","Sales"),
+                                tr("sales", "Sales"),
                                 ": ",
                                 t.sales ?? 0,
                               ),
@@ -2014,7 +2206,7 @@ const fe = () => {
                       : e.createElement(
                           "p",
                           { className: "text-sm text-slate-500" },
-                          tr("no_leaderboard_data","No leaderboard data yet."),
+                          tr("no_leaderboard_data", "No leaderboard data yet."),
                         ),
                 ),
               ),
@@ -2030,9 +2222,11 @@ const fe = () => {
                   e.createElement(
                     v,
                     { className: "flex items-center gap-2" },
-                    e.createElement(se, { className: "w-5 h-5 text-emerald-600" }),
+                    e.createElement(se, {
+                      className: "w-5 h-5 text-emerald-600",
+                    }),
                     " ",
-                    tr("top_buyers","Top Buyers"),
+                    tr("top_buyers", "Top Buyers"),
                   ),
                 ),
                 e.createElement(
@@ -2042,7 +2236,7 @@ const fe = () => {
                     ? e.createElement(
                         "p",
                         { className: "text-sm text-slate-500" },
-                        tr("loading","Loading..."),
+                        tr("loading", "Loading..."),
                       )
                     : publicWall.topBuyers?.length
                       ? e.createElement(
@@ -2061,7 +2255,9 @@ const fe = () => {
                                 { className: "flex items-center gap-2" },
                                 e.createElement(
                                   m,
-                                  { className: "bg-emerald-50 text-emerald-600" },
+                                  {
+                                    className: "bg-emerald-50 text-emerald-600",
+                                  },
                                   t.rank || `#${s + 1}`,
                                 ),
                                 e.createElement(
@@ -2070,13 +2266,13 @@ const fe = () => {
                                     className:
                                       "text-sm font-semibold text-slate-800 dark:text-slate-100",
                                   },
-                                  t.name || tr("user","User"),
+                                  t.name || tr("user", "User"),
                                 ),
                               ),
                               e.createElement(
                                 "div",
                                 { className: "text-sm text-slate-600" },
-                                tr("purchases","Purchases"),
+                                tr("purchases", "Purchases"),
                                 ": ",
                                 t.purchases ?? 0,
                               ),
@@ -2086,7 +2282,7 @@ const fe = () => {
                       : e.createElement(
                           "p",
                           { className: "text-sm text-slate-500" },
-                          tr("no_leaderboard_data","No leaderboard data yet."),
+                          tr("no_leaderboard_data", "No leaderboard data yet."),
                         ),
                 ),
               ),
@@ -2105,7 +2301,7 @@ const fe = () => {
                   { className: "flex items-center gap-2" },
                   e.createElement(ae, { className: "w-5 h-5 text-indigo-600" }),
                   " ",
-                  tr("payout_history","Payout history"),
+                  tr("payout_history", "Payout history"),
                 ),
               ),
               e.createElement(
@@ -2134,8 +2330,8 @@ const fe = () => {
                               },
                               t.description ||
                                 (t.action === "leaderboard_top_seller"
-                                  ? tr("top_seller_reward","Top seller reward")
-                                  : tr("top_buyer_reward","Top buyer reward")),
+                                  ? tr("top_seller_reward", "Top seller reward")
+                                  : tr("top_buyer_reward", "Top buyer reward")),
                             ),
                             e.createElement(
                               "p",
@@ -2159,7 +2355,7 @@ const fe = () => {
                   : e.createElement(
                       "p",
                       { className: "text-sm text-slate-500" },
-                      tr("no_payout_history","No leaderboard payouts yet."),
+                      tr("no_payout_history", "No leaderboard payouts yet."),
                     ),
               ),
             ),
@@ -2171,4 +2367,3 @@ const fe = () => {
 };
 var Te = fe;
 export { Te as default };
-

@@ -268,6 +268,40 @@ async function getChainEarnedPoints(userId) {
   }
 }
 
+async function getReferralLedgerSnapshot(userId) {
+  try {
+    const result = await runQuery(
+      `
+        SELECT
+          COUNT(*) FILTER (WHERE action = 'qualified_referral_bonus')::int AS qualified_bonus_entries,
+          COUNT(*) FILTER (WHERE action LIKE 'referral_chain_%')::int AS chain_reward_entries,
+          MAX(created_at) FILTER (
+            WHERE action = 'qualified_referral_bonus' OR action LIKE 'referral_chain_%'
+          ) AS last_referral_reward_at
+        FROM reward_log
+        WHERE user_id::text = $1
+      `,
+      [userId],
+    );
+
+    const row = result.rows[0] || {};
+    return {
+      qualifiedBonusEntries: toInt(row.qualified_bonus_entries, 0),
+      chainRewardEntries: toInt(row.chain_reward_entries, 0),
+      lastReferralRewardAt: row.last_referral_reward_at || null,
+      hasError: false,
+    };
+  } catch (error) {
+    logger.warn("[Rewards] Failed to load referral ledger snapshot", { message: error.message });
+    return {
+      qualifiedBonusEntries: 0,
+      chainRewardEntries: 0,
+      lastReferralRewardAt: null,
+      hasError: true,
+    };
+  }
+}
+
 async function getLeaderboardHistory(userId, limit = 5) {
   try {
     const result = await runQuery(
@@ -613,9 +647,10 @@ exports.getRewardsByUser = async (req, res) => {
           chainData.directReferrals.map((row) => row.user_id),
           txSchema,
         );
-        const [chainEarnedPoints, leaderboardHistory] = await Promise.all([
+        const [chainEarnedPoints, leaderboardHistory, referralLedgerSnapshot] = await Promise.all([
           getChainEarnedPoints(userId),
           getLeaderboardHistory(userId, 5),
+          getReferralLedgerSnapshot(userId),
         ]);
         const nextLeaderboardPayoutAt = getNextWeeklyLeaderboardPayoutIso();
         const lastLeaderboardPayoutAt = leaderboardHistory[0]?.created_at || null;
@@ -627,6 +662,13 @@ exports.getRewardsByUser = async (req, res) => {
             parseOptionalString(profileRow.avatar_url),
         );
         const hasPosted = Number(postsCountResult?.rows?.[0]?.total || 0) > 0;
+        const referralLedgerMatches =
+          referralLedgerSnapshot.qualifiedBonusEntries === qualifiedDirectReferrals;
+        const referralLedgerStatus = referralLedgerSnapshot.hasError
+          ? "unavailable"
+          : referralLedgerMatches
+            ? "ok"
+            : "mismatch";
 
         const userPayload = {
           id: userRow.user_id || userId,
@@ -657,6 +699,14 @@ exports.getRewardsByUser = async (req, res) => {
             nextPayoutAt: nextLeaderboardPayoutAt,
             lastPayoutAt: lastLeaderboardPayoutAt,
             history: leaderboardHistory,
+          },
+          referralLedger: {
+            qualifiedReferralCount: qualifiedDirectReferrals,
+            qualifiedBonusEntries: referralLedgerSnapshot.qualifiedBonusEntries,
+            chainRewardEntries: referralLedgerSnapshot.chainRewardEntries,
+            lastReferralRewardAt: referralLedgerSnapshot.lastReferralRewardAt,
+            matchesQualifiedReferrals: referralLedgerMatches,
+            status: referralLedgerStatus,
           },
           dailySecretCodeExpiresAt: getNextIstMidnightIso(),
         };

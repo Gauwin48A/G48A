@@ -82,7 +82,7 @@ Source docs: `server/scripts/audit_results.md`, `server/scripts/hardcoded-string
 - [ ] Execute high-traffic hardcoded-string replacement pass.
 - [x] Re-run hardcoded-string audit and publish delta in `server/scripts/audit_results.md`.
 - [x] Add CI gate for newly introduced untranslated hardcoded UI strings.
-- [ ] Re-verify audited pages after pass: `Profile.jsx`, `Rewards.jsx`, `MyHome.jsx`, `Support.jsx`.
+- [x] Re-verify audited pages after pass: `Profile.jsx`, `Rewards.jsx`, `MyHome.jsx`, `Support.jsx`.
 
 ### Phase E - Reliability, Security, and Testing Ops (P1)
 

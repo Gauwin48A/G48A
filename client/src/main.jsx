@@ -9,6 +9,7 @@ import './index.css';
 import { ToastProvider } from '@/hooks/use-toast';
 import { activateDefenseMode, isAuthorizedHostname } from './utils/security';
 import { initErrorReporting } from './lib/errorReporting';
+import { warnIfFirebaseMisconfigured } from './lib/firebase';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalContentTranslator from './components/GlobalContentTranslator';
 import AuthEventRouter from './components/AuthEventRouter';
@@ -54,6 +55,7 @@ function getBootstrapState() {
 
 activateDefenseMode();
 initErrorReporting();
+warnIfFirebaseMisconfigured();
 
 if (typeof window !== 'undefined' && !window[BOOTSTRAP_LISTENER_FLAG]) {
   window[BOOTSTRAP_LISTENER_FLAG] = true;

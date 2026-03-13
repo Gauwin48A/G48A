@@ -1,34 +1,39 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-import { useTranslation } from 'react-i18next';
-import { getApiOriginBase } from '@/lib/networkConfig';
+import { useTranslation } from "react-i18next";
+import { getApiOriginBase } from "@/lib/networkConfig";
 
 const FeedPostAdd = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    description: '',
+    description: "",
   });
   const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateFields = () => {
     const errors = {};
-    if (!formData.description || formData.description.length < 5 || formData.description.length > 500) errors.description = 'Description is required (5-500 chars).';
+    if (
+      !formData.description ||
+      formData.description.length < 5 ||
+      formData.description.length > 500
+    )
+      errors.description = "Description is required (5-500 chars).";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -38,24 +43,35 @@ const FeedPostAdd = () => {
     setIsLoading(true);
     try {
       const baseUrl = getApiOriginBase();
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem("authToken");
       const res = await fetch(`${baseUrl}/api/feed/add`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ description: formData.description })
+        body: JSON.stringify({ description: formData.description }),
       });
       const result = await res.json();
       if (res.ok) {
-        toast({ title: 'Feed Post Created', description: 'Your text post has been published.' });
-        navigate('/feed');
+        toast({
+          title: "Feed Post Created",
+          description: "Your text post has been published.",
+        });
+        navigate("/feed");
       } else {
-        toast({ title: 'Error', description: result.error || 'Failed to create feed post.', variant: 'destructive' });
+        toast({
+          title: "Error",
+          description: result.error || "Failed to create feed post.",
+          variant: "destructive",
+        });
       }
     } catch (err) {
-      toast({ title: 'Error', description: err.message || 'Failed to create feed post.', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: err.message || "Failed to create feed post.",
+        variant: "destructive",
+      });
     }
     setIsLoading(false);
   };
@@ -63,7 +79,11 @@ const FeedPostAdd = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
       <div className="max-w-2xl mx-auto px-4 py-8 pb-40">
-        <Button onClick={() => navigate('/feed')} variant="outline" className="mb-4">
+        <Button
+          onClick={() => navigate("/feed")}
+          variant="outline"
+          className="mb-4"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Feed
         </Button>
@@ -74,7 +94,12 @@ const FeedPostAdd = () => {
           <CardContent className="p-8">
             <div className="space-y-8">
               <div>
-                <Label htmlFor="description" className="text-sm font-semibold text-gray-700">Description *</Label>
+                <Label
+                  htmlFor="description"
+                  className="text-sm font-semibold text-gray-700"
+                >
+                  Description *
+                </Label>
                 <Textarea
                   id="description"
                   name="description"
@@ -86,10 +111,18 @@ const FeedPostAdd = () => {
                   maxLength={500}
                   minLength={5}
                 />
-                {formErrors.description && <div className="text-red-500 text-xs mt-1">{formErrors.description}</div>}
+                {formErrors.description && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {formErrors.description}
+                  </div>
+                )}
               </div>
-              <Button onClick={handleSubmit} className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700" disabled={isLoading}>
-                {isLoading ? 'Publishing...' : 'Publish Post'}
+              <Button
+                onClick={handleSubmit}
+                className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700"
+                disabled={isLoading}
+              >
+                {isLoading ? "Publishing..." : "Publish Post"}
               </Button>
             </div>
           </CardContent>
@@ -100,4 +133,3 @@ const FeedPostAdd = () => {
 };
 
 export default FeedPostAdd;
-
