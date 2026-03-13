@@ -74,7 +74,9 @@ const EditPost = () => {
         });
       } catch (fetchError) {
         if (cancelled) return;
-        setError(normalizeErrorMessage(fetchError, "Unable to load listing details."));
+        setError(
+          normalizeErrorMessage(fetchError, "Unable to load listing details."),
+        );
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -144,7 +146,10 @@ const EditPost = () => {
       setError(normalizeErrorMessage(saveError, "Unable to save changes."));
       toast({
         title: "Update failed",
-        description: normalizeErrorMessage(saveError, "Unable to save changes."),
+        description: normalizeErrorMessage(
+          saveError,
+          "Unable to save changes.",
+        ),
         variant: "destructive",
       });
     } finally {
@@ -156,12 +161,20 @@ const EditPost = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
-          <h2 className="text-xl font-bold text-amber-800 mb-2">Login required</h2>
-          <p className="text-sm text-amber-700 mb-4">Sign in to edit your listing.</p>
+          <h2 className="text-xl font-bold text-amber-800 mb-2">
+            Login required
+          </h2>
+          <p className="text-sm text-amber-700 mb-4">
+            Sign in to edit your listing.
+          </p>
           <Button
             type="button"
             className="bg-amber-600 hover:bg-amber-700 text-white"
-            onClick={() => navigate("/login", { state: { returnTo: `/edit-post/${postId || ""}` } })}
+            onClick={() =>
+              navigate("/login", {
+                state: { returnTo: `/edit-post/${postId || ""}` },
+              })
+            }
           >
             Go to Login
           </Button>
@@ -260,10 +273,20 @@ const EditPost = () => {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
-                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate("/my-home")}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/my-home")}
+                >
+                  Cancel
+                </Button>
               </div>
             </form>
           </CardContent>

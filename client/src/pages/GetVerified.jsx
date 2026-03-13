@@ -1,48 +1,53 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Upload, CheckCircle, AlertCircle, Award } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 const GetVerified = () => {
   const { t } = useTranslation();
   const [verificationData, setVerificationData] = useState({
-    fullName: '',
-    aadhaarNumber: '',
-    dateOfBirth: '',
-    address: ''
+    fullName: "",
+    aadhaarNumber: "",
+    dateOfBirth: "",
+    address: "",
   });
   const [aadhaarFile, setAadhaarFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState('pending'); // pending, verified, rejected
+  const [verificationStatus, setVerificationStatus] = useState("pending"); // pending, verified, rejected
   const { toast } = useToast();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setVerificationData(prev => ({
+    setVerificationData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
-    if (file && file.name.endsWith('.xml')) {
+    if (file && file.name.endsWith(".xml")) {
       setAadhaarFile(file);
       toast({
-        title: t('file_uploaded'),
-        description: t('aadhaar_xml') + " " + t('success')
+        title: t("file_uploaded"),
+        description: t("aadhaar_xml") + " " + t("success"),
       });
     } else if (file) {
       toast({
-        title: t('invalid_file'),
-        description: t('upload_valid_xml'),
-        variant: "destructive"
+        title: t("invalid_file"),
+        description: t("upload_valid_xml"),
+        variant: "destructive",
       });
     }
   };
@@ -51,9 +56,9 @@ const GetVerified = () => {
     e.preventDefault();
     if (!aadhaarFile) {
       toast({
-        title: t('error'),
-        description: t('aadhaar_verification_required'),
-        variant: "destructive"
+        title: t("error"),
+        description: t("aadhaar_verification_required"),
+        variant: "destructive",
       });
       return;
     }
@@ -63,19 +68,37 @@ const GetVerified = () => {
     // Simulate verification process
     setTimeout(() => {
       setIsUploading(false);
-      setVerificationStatus('verified');
+      setVerificationStatus("verified");
       toast({
-        title: t('success'),
-        description: t('aadhaar_verified_success')
+        title: t("success"),
+        description: t("aadhaar_verified_success"),
       });
     }, 3000);
   };
 
   const benefits = [
-    { icon: Shield, title: t('verified'), description: t('verification_details') || "Display verified status on your profile" },
-    { icon: Award, title: t('rewards'), description: t('points') || "Gain buyer and seller confidence" },
-    { icon: CheckCircle, title: t('top_deals'), description: t('personalized_posts') || "Your posts appear higher in search" },
-    { icon: Upload, title: t('rewards'), description: t('points') || "Earn bonus points for transactions" }
+    {
+      icon: Shield,
+      title: t("verified"),
+      description:
+        t("verification_details") || "Display verified status on your profile",
+    },
+    {
+      icon: Award,
+      title: t("rewards"),
+      description: t("points") || "Gain buyer and seller confidence",
+    },
+    {
+      icon: CheckCircle,
+      title: t("top_deals"),
+      description:
+        t("personalized_posts") || "Your posts appear higher in search",
+    },
+    {
+      icon: Upload,
+      title: t("rewards"),
+      description: t("points") || "Earn bonus points for transactions",
+    },
   ];
 
   return (
@@ -85,8 +108,10 @@ const GetVerified = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('get_aadhaar_verified')}</h1>
-          <p className="text-gray-600">{t('aadhaar_subtitle')}</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {t("get_aadhaar_verified")}
+          </h1>
+          <p className="text-gray-600">{t("aadhaar_subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -95,17 +120,15 @@ const GetVerified = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Shield className="w-5 h-5 text-green-600" />
-                <span>{t('aadhaar_verification_title')}</span>
+                <span>{t("aadhaar_verification_title")}</span>
               </CardTitle>
-              <CardDescription>
-                {t('aadhaar_upload_desc')}
-              </CardDescription>
+              <CardDescription>{t("aadhaar_upload_desc")}</CardDescription>
             </CardHeader>
             <CardContent>
-              {verificationStatus === 'pending' && (
+              {verificationStatus === "pending" && (
                 <form onSubmit={handleSubmitVerification} className="space-y-4">
                   <div>
-                    <Label htmlFor="fullName">{t('full_name_aadhaar')}</Label>
+                    <Label htmlFor="fullName">{t("full_name_aadhaar")}</Label>
                     <Input
                       id="fullName"
                       name="fullName"
@@ -118,7 +141,7 @@ const GetVerified = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="aadhaarNumber">{t('aadhaar_last_4')}</Label>
+                    <Label htmlFor="aadhaarNumber">{t("aadhaar_last_4")}</Label>
                     <Input
                       id="aadhaarNumber"
                       name="aadhaarNumber"
@@ -148,8 +171,11 @@ const GetVerified = () => {
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
                     <div className="text-center">
                       <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <Label htmlFor="aadhaarFile" className="block text-sm font-medium mb-2">
-                        {t('upload_aadhaar_xml')}
+                      <Label
+                        htmlFor="aadhaarFile"
+                        className="block text-sm font-medium mb-2"
+                      >
+                        {t("upload_aadhaar_xml")}
                       </Label>
                       <Input
                         id="aadhaarFile"
@@ -164,9 +190,14 @@ const GetVerified = () => {
                         </p>
                       )}
                       <p className="text-xs text-gray-500 mt-2">
-                        {t('download_xml_from')}{' '}
-                        <a href="https://resident.uidai.gov.in/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          {t('uidai_website')}
+                        {t("download_xml_from")}{" "}
+                        <a
+                          href="https://resident.uidai.gov.in/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {t("uidai_website")}
                         </a>
                       </p>
                     </div>
@@ -177,19 +208,21 @@ const GetVerified = () => {
                     className="w-full"
                     disabled={isUploading}
                   >
-                    {isUploading ? t('verifying') : t('submit_verification')}
+                    {isUploading ? t("verifying") : t("submit_verification")}
                   </Button>
                 </form>
               )}
 
-              {verificationStatus === 'verified' && (
+              {verificationStatus === "verified" && (
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-green-600">{t('verification_complete')}</h3>
-                    <p className="text-gray-600">{t('aadhaar_success_msg')}</p>
+                    <h3 className="font-semibold text-lg text-green-600">
+                      {t("verification_complete")}
+                    </h3>
+                    <p className="text-gray-600">{t("aadhaar_success_msg")}</p>
                   </div>
                   <Badge className="bg-green-600">
                     <Shield className="w-3 h-3 mr-1" />
@@ -204,8 +237,8 @@ const GetVerified = () => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>{t('verification_benefits')}</CardTitle>
-                <CardDescription>{t('why_get_verified')}</CardDescription>
+                <CardTitle>{t("verification_benefits")}</CardTitle>
+                <CardDescription>{t("why_get_verified")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -218,7 +251,9 @@ const GetVerified = () => {
                         </div>
                         <div>
                           <h3 className="font-medium">{benefit.title}</h3>
-                          <p className="text-sm text-gray-600">{benefit.description}</p>
+                          <p className="text-sm text-gray-600">
+                            {benefit.description}
+                          </p>
                         </div>
                       </div>
                     );
@@ -232,9 +267,11 @@ const GetVerified = () => {
                 <div className="flex items-start space-x-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-medium text-amber-800">{t('privacy_security')}</h3>
+                    <h3 className="font-medium text-amber-800">
+                      {t("privacy_security")}
+                    </h3>
                     <p className="text-sm text-amber-700 mt-1">
-                      {t('privacy_desc')}
+                      {t("privacy_desc")}
                     </p>
                   </div>
                 </div>

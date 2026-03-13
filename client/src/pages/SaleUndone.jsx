@@ -30,6 +30,7 @@ import { getAccessToken as se } from "@/utils/authStorage";
 import oe from "../components/TransactionStepper";
 const ae = () => {
   const { t } = ee(),
+    tr = (r, o, a = {}) => t(r, { defaultValue: o, ...a }),
     { toast: c } = R(),
     L = Z(),
     [j, A] = s(!1),
@@ -41,41 +42,80 @@ const ae = () => {
     [C, m] = s(""),
     [H, z] = s(0),
     E = [
-      { key: "listed", label: "Listed", hint: "Post was active previously" },
-      { key: "sold", label: "Marked Sold", hint: "Sale was recorded" },
-      { key: "issue", label: "Issue Found", hint: "Deal did not complete" },
+      {
+        key: "listed",
+        label: tr("sale_undone_step_listed", "Listed"),
+        hint: tr("sale_undone_step_listed_hint", "Post was active previously"),
+      },
+      {
+        key: "sold",
+        label: tr("sale_undone_step_sold", "Marked Sold"),
+        hint: tr("sale_undone_step_sold_hint", "Sale was recorded"),
+      },
+      {
+        key: "issue",
+        label: tr("sale_undone_step_issue", "Issue Found"),
+        hint: tr("sale_undone_step_issue_hint", "Deal did not complete"),
+      },
       {
         key: "undo",
-        label: "Undo Request",
-        hint: "Reason and notes submitted",
+        label: tr("sale_undone_step_request", "Undo Request"),
+        hint: tr("sale_undone_step_request_hint", "Reason and notes submitted"),
       },
       {
         key: "reactivated",
-        label: "Reactivated",
-        hint: "Listing returns to market",
+        label: tr("sale_undone_step_reactivated", "Reactivated"),
+        hint: tr("sale_undone_step_reactivated_hint", "Listing returns to market"),
       },
     ],
     S = re("/transactions/undone"),
     $ = (r, o, a = 0) => {
       const i = String(r || "").toLowerCase();
-      if (a === 401 || i.includes("unauthorized") || i.includes("token") || i.includes("login")) {
-        return "Please sign in again and retry this action.";
+      if (
+        a === 401 ||
+        i.includes("unauthorized") ||
+        i.includes("token") ||
+        i.includes("login")
+      ) {
+        return tr(
+          "please_sign_in_again",
+          "Please sign in again and retry this action.",
+        );
       }
       if (a === 403 || i.includes("only reactivate your own")) {
-        return "You can reactivate only your own sold posts. Check the Post ID and login account.";
+        return tr(
+          "sale_undone_not_owner",
+          "You can reactivate only your own sold posts. Check the Post ID and login account.",
+        );
       }
       if (a === 404 || i.includes("not found")) {
-        return "We could not find that listing. Verify the Post ID from My Home and try again.";
+        return tr(
+          "sale_undone_not_found",
+          "We could not find that listing. Verify the Post ID from My Home and try again.",
+        );
       }
       if (a === 400 && i.includes("already active")) {
-        return "This post is already active.";
+        return tr(
+          "sale_undone_already_active",
+          "This post is already active.",
+        );
       }
-      if (i.includes("network") || i.includes("timeout") || i.includes("fetch")) {
-        return "The service is temporarily unavailable. Please try again in a moment.";
+      if (
+        i.includes("network") ||
+        i.includes("timeout") ||
+        i.includes("fetch")
+      ) {
+        return tr(
+          "service_temporarily_unavailable",
+          "The service is temporarily unavailable. Please try again in a moment.",
+        );
       }
       return o;
     };
-  const Y = () => se() || localStorage.getItem("authToken") || localStorage.getItem("token"),
+  const Y = () =>
+      se() ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("token"),
     ce = (r) => {
       const o = String(r || "").trim();
       if (!o) return "";
@@ -99,11 +139,33 @@ const ae = () => {
             const t = await g.json();
             return Array.isArray(t) ? t : [];
           }
-          if ((a = new Error("Failed to load reactivation history."), a.status = Number(g.status || 0), g.status !== 404 && g.status !== 405)) throw a;
+          if (
+            ((a = new Error(
+              tr(
+                "reactivation_history_load_failed",
+                "Failed to load reactivation history.",
+              ),
+            )),
+            (a.status = Number(g.status || 0)),
+            g.status !== 404 && g.status !== 405)
+          )
+            throw a;
         } catch (g) {
-          if (a = g, !(Number(g?.status || 0) === 404 || Number(g?.status || 0) === 405)) throw g;
+          if (
+            ((a = g),
+            !(Number(g?.status || 0) === 404 || Number(g?.status || 0) === 405))
+          )
+            throw g;
         }
-      throw a || new Error("Failed to load reactivation history.");
+      throw (
+        a ||
+        new Error(
+          tr(
+            "reactivation_history_load_failed",
+            "Failed to load reactivation history.",
+          ),
+        )
+      );
     };
   T(() => {
     const r = () => {
@@ -123,14 +185,26 @@ const ae = () => {
         m("");
         const o = Y();
         if (!o) {
-          (m("Login required to load reactivation history."), _(!1));
+          m(
+            tr(
+              "login_required_to_load_history",
+              "Login required to load reactivation history.",
+            ),
+          ),
+            _(!1);
           return;
         }
         const a = await le(o);
         U(a);
       } catch (o) {
-        (console.error("Failed to fetch undone posts:", o),
-          m(o.message || "Failed to load reactivation history."));
+        console.error("Failed to fetch undone posts:", o),
+          m(
+            o.message ||
+              tr(
+                "reactivation_history_load_failed",
+                "Failed to load reactivation history.",
+              ),
+          );
       } finally {
         _(!1);
       }
@@ -141,16 +215,22 @@ const ae = () => {
         a = ce(n.postId);
       if ((r.preventDefault(), !a)) {
         c({
-          title: "Post ID Required",
-          description: "Enter the listing Post ID to continue.",
+          title: tr("post_id_required_title", "Post ID Required"),
+          description: tr(
+            "post_id_required_desc",
+            "Enter the listing Post ID to continue.",
+          ),
           variant: "destructive",
         });
         return;
       }
       if (!o) {
         c({
-          title: "Login required",
-          description: "Please login again to reactivate posts.",
+          title: tr("login_required_title", "Login required"),
+          description: tr(
+            "login_required_reactivate_desc",
+            "Please login again to reactivate posts.",
+          ),
           variant: "destructive",
         });
         L("/login", { state: { returnTo: "/saleundone" } });
@@ -194,34 +274,42 @@ const ae = () => {
           }
           const I = await E.json().catch(() => ({}));
           if (E.status === 404 || E.status === 405) continue;
-          const P = new Error(I.error || I.message || "Failed to update post status");
+          const P = new Error(
+            I.error || I.message || "Failed to update post status",
+          );
           P.status = Number(E.status || 0);
           throw P;
         }
         if (!g) throw new Error("Failed to update post status");
         if (g.ok)
-          (N(!0),
+          N(!0),
             c({
-              title: "\u2705 Post Reactivated",
-              description: "Your post is now available for sale again",
-            }));
+              title: tr("post_reactivated_title", "Post Reactivated!"),
+              description: tr(
+                "post_reactivated_desc",
+                "Your post is now available for sale again",
+              ),
+            });
       } catch (i) {
-        (console.error("Sale undone error:", i),
+        console.error("Sale undone error:", i),
           c({
-            title: "Action Failed",
+            title: tr("action_failed", "Action Failed"),
             description: $(
               i.message,
-              "We couldn't reactivate this post. Please retry shortly.",
+              tr(
+                "reactivation_failed_desc",
+                "We couldn't reactivate this post. Please retry shortly.",
+              ),
               i.status,
             ),
             variant: "destructive",
-          }));
+          });
       } finally {
         w(!1);
       }
     },
     W = () => {
-      (d({ postId: "", reason: "", description: "" }), N(!1));
+      d({ postId: "", reason: "", description: "" }), N(!1);
     };
   return F
     ? e.createElement(
@@ -276,12 +364,16 @@ const ae = () => {
                   className:
                     "text-4xl font-black bg-gradient-to-r from-orange-600 to-red-700 bg-clip-text text-transparent mb-4",
                 },
-                "\u{1F504} Post Reactivated!",
+                "\uD83D\uDD04 ",
+                tr("post_reactivated_title", "Post Reactivated!"),
               ),
               e.createElement(
                 "p",
                 { className: "text-gray-600 text-xl mb-8 max-w-md mx-auto" },
-                "Your post is now active and visible to potential buyers again.",
+                tr(
+                  "post_reactivated_success_desc",
+                  "Your post is now active and visible to potential buyers again.",
+                ),
               ),
               e.createElement(
                 "div",
@@ -301,12 +393,12 @@ const ae = () => {
                     e.createElement(
                       "p",
                       { className: "text-lg font-bold text-orange-700" },
-                      "Active",
+                      tr("active", "Active"),
                     ),
                     e.createElement(
                       "p",
                       { className: "text-sm text-gray-500" },
-                      "Post Status",
+                      tr("post_status", "Post Status"),
                     ),
                   ),
                   e.createElement("div", {
@@ -321,12 +413,12 @@ const ae = () => {
                     e.createElement(
                       "p",
                       { className: "text-lg font-bold text-green-700" },
-                      "Visible",
+                      tr("visible", "Visible"),
                     ),
                     e.createElement(
                       "p",
                       { className: "text-sm text-gray-500" },
-                      "To Buyers",
+                      tr("to_buyers", "To Buyers"),
                     ),
                   ),
                 ),
@@ -334,25 +426,25 @@ const ae = () => {
               e.createElement(
                 "div",
                 { className: "flex flex-col sm:flex-row gap-4 justify-center" },
-                e.createElement(
-                  p,
-                  {
-                    variant: "outline",
-                    onClick: W,
-                    className:
-                      "border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl px-8 py-3 font-semibold",
-                  },
-                  "Reactivate Another",
-                ),
-                e.createElement(
-                  p,
-                  {
-                    className:
-                      "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl px-8 py-3 font-semibold shadow-lg",
-                    onClick: () => L("/my-home"),
-                  },
-                  "Go to My Home",
-                ),
+                  e.createElement(
+                    p,
+                    {
+                      variant: "outline",
+                      onClick: W,
+                      className:
+                        "border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl px-8 py-3 font-semibold",
+                    },
+                    tr("reactivate_another", "Reactivate Another"),
+                  ),
+                  e.createElement(
+                    p,
+                    {
+                      className:
+                        "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl px-8 py-3 font-semibold shadow-lg",
+                      onClick: () => L("/my-home"),
+                    },
+                    tr("go_to_my_home", "Go to My Home"),
+                  ),
               ),
             ),
           ),
@@ -407,7 +499,7 @@ const ae = () => {
                 className:
                   "text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3",
               },
-              "\u{1F504} ",
+              "\uD83D\uDD04 ",
               e.createElement(
                 "span",
                 {
@@ -595,7 +687,7 @@ const ae = () => {
                       className:
                         "text-sm text-gray-500 dark:text-gray-400 mt-2",
                     },
-                    "\u{1F4A1} ",
+                    "\uD83D\uDCA1 ",
                     t("post_id_hint"),
                   ),
                 ),
@@ -776,7 +868,7 @@ const ae = () => {
                           variant: "outline",
                           onClick: () => z((r) => r + 1),
                         },
-                        "Retry",
+                        tr("retry", "Retry"),
                       ),
                     )
                   : k.length === 0
@@ -852,13 +944,17 @@ const ae = () => {
                                     className:
                                       "text-sm text-gray-500 dark:text-gray-400",
                                   },
-                                  r.reason || "No reason specified",
+                                  r.reason ||
+                                    tr(
+                                      "no_reason_specified",
+                                      "No reason specified",
+                                    ),
                                 ),
                               ),
                               e.createElement(
                                 l,
                                 { className: "bg-green-100 text-green-700" },
-                                "Active",
+                                tr("active", "Active"),
                               ),
                             ),
                           ),

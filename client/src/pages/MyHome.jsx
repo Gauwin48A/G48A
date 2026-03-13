@@ -129,7 +129,9 @@ const vt = () => {
     b = Ge(),
     routeLoc = wt(),
     { toast: d } = gt(),
-    { t: l, i18n: Ae } = Ve(), tr = (key, fallback, options = {}) => l(key, { defaultValue: fallback, ...options }),
+    { t: l, i18n: Ae } = Ve(),
+    tr = (key, fallback, options = {}) =>
+      l(key, { defaultValue: fallback, ...options }),
     { user: _e } = mt(),
     E = Ae.language || "en",
     F = ut(_e),
@@ -320,11 +322,14 @@ const vt = () => {
       const transactionId =
         routeLoc?.state?.transactionId || storedMarker?.transactionId || "";
       d({
-        title: tr("sale_completed","Sale completed"),
+        title: tr("sale_completed", "Sale completed"),
         description: transactionId
           ? l("sale_completed_txn", { transactionId }) ||
             `Listing moved to Sold. Transaction: ${transactionId}.`
-          : tr("sale_completed_desc","Listing moved to Sold. You can find it in Sold tab."),
+          : tr(
+              "sale_completed_desc",
+              "Listing moved to Sold. You can find it in Sold tab.",
+            ),
       });
       try {
         localStorage.removeItem("mhub:sale:lastCompleted");
@@ -399,30 +404,32 @@ const vt = () => {
     Le = (t) => {
       if (!Te(t.created_at || t.postedTime)) {
         d({
-          title: tr("edit_not_available","Edit Not Available"),
-          description:
-            tr("edit_time_limit","Posts can only be edited within 5 minutes of publishing"),
+          title: tr("edit_not_available", "Edit Not Available"),
+          description: tr(
+            "edit_time_limit",
+            "Posts can only be edited within 5 minutes of publishing",
+          ),
           variant: "destructive",
         });
         return;
       }
-      (d({
-        title: tr("edit_post","Edit Post"),
-        description: tr("opening_editor_for_post","Opening editor for post"),
+      d({
+        title: tr("edit_post", "Edit Post"),
+        description: tr("opening_editor_for_post", "Opening editor for post"),
       }),
-        b(`/edit-post/${t.postId || t.post_id || t.id}`));
+        b(`/edit-post/${t.postId || t.post_id || t.id}`);
     },
     ze = (t) => {
       const s = t.postId || t.post_id || t.id;
       if (!s) return;
       const r = `${window.location.origin}/post/${s}`;
-      (setShareDialogUrl(r),
+      setShareDialogUrl(r),
         setShareDialogOpen(!0),
         fetch(`${Se}/api/posts/${s}/share`, {
           method: "POST",
           credentials: "include",
           headers: H ? { Authorization: `Bearer ${H}` } : {},
-        }).catch(() => {}));
+        }).catch(() => {});
     },
     saveMyPost = async (t) => {
       const s = t.postId || t.post_id || t.id;
@@ -434,7 +441,7 @@ const vt = () => {
       const r = String(s),
         m = !!savedPosts[r],
         o = !m;
-      (setSavedPosts((a) => ({ ...a, [r]: o })), setSavedPostStatus(r, o));
+      setSavedPosts((a) => ({ ...a, [r]: o })), setSavedPostStatus(r, o);
       try {
         if (o) {
           await fetch(`${Se}/api/wishlist`, {
@@ -454,67 +461,73 @@ const vt = () => {
           });
         }
       } catch {
-        (setSavedPosts((o) => ({ ...o, [r]: m })),
+        setSavedPosts((o) => ({ ...o, [r]: m })),
           setSavedPostStatus(r, m),
           d({
-            title: tr("save_failed","Save Failed"),
-            description:
-              tr("save_status_update_failed","Unable to update saved status"),
+            title: tr("save_failed", "Save Failed"),
+            description: tr(
+              "save_status_update_failed",
+              "Unable to update saved status",
+            ),
             variant: "destructive",
-          }));
+          });
       }
     },
     ae = (t) => {
-      (te(t), B(!0));
+      te(t), B(!0);
     },
     Ue = async () => {
       if (T)
         try {
-          (await R.delete(`/posts/${T}`),
+          await R.delete(`/posts/${T}`),
             k((t) => t.filter((s) => (s.postId || s.post_id || s.id) !== T)),
             d({
-              title: tr("post_deleted","Post Deleted"),
-              description:
-                tr("post_deleted_success","Post has been deleted successfully"),
-            }));
+              title: tr("post_deleted", "Post Deleted"),
+              description: tr(
+                "post_deleted_success",
+                "Post has been deleted successfully",
+              ),
+            });
         } catch (t) {
-          (console.error("Delete error:", t),
+          console.error("Delete error:", t),
             d({
-              title: tr("delete_failed","Delete Failed"),
+              title: tr("delete_failed", "Delete Failed"),
               description:
                 t.message ||
-                tr("delete_failed_desc","Could not delete the post."),
+                tr("delete_failed_desc", "Could not delete the post."),
               variant: "destructive",
-            }));
+            });
         } finally {
-          (te(null), B(!1));
+          te(null), B(!1);
         }
     },
     $e = () => {
       const t = new Set([...le, ...c]);
-      (we(t),
+      we(t),
         d({
-          title: tr("posts_moved","Posts Moved"),
+          title: tr("posts_moved", "Posts Moved"),
           description:
             l("posts_moved_count", { count: c.size }) ||
             `${c.size} posts moved to Sale Undone`,
         }),
         w(new Set()),
         ee(!1),
-        b("/saleundone"));
+        b("/saleundone");
     },
     Ee = (t) => {
       if (le.has(t)) {
         d({
-          title: tr("cannot_select","Cannot Select"),
-          description:
-            tr("already_moved_sale_undone","This post has already been moved to Sale Undone"),
+          title: tr("cannot_select", "Cannot Select"),
+          description: tr(
+            "already_moved_sale_undone",
+            "This post has already been moved to Sale Undone",
+          ),
           variant: "destructive",
         });
         return;
       }
       const s = new Set(c);
-      (s.has(t) ? s.delete(t) : s.add(t), w(s));
+      s.has(t) ? s.delete(t) : s.add(t), w(s);
     },
     Fe = () => {
       if (_) w(new Set());
@@ -527,9 +540,11 @@ const vt = () => {
     He = async () => {
       if (c.size === 0) {
         d({
-          title: tr("no_posts_selected","No Posts Selected"),
-          description:
-            tr("select_posts_delete","Please select posts to delete"),
+          title: tr("no_posts_selected", "No Posts Selected"),
+          description: tr(
+            "select_posts_delete",
+            "Please select posts to delete",
+          ),
           variant: "destructive",
         });
         return;
@@ -543,36 +558,38 @@ const vt = () => {
           m = s.length - r.length;
         if (r.length > 0) {
           const o = new Set(r);
-          (k((a) => a.filter((i) => !o.has(i.postId || i.post_id || i.id))),
+          k((a) => a.filter((i) => !o.has(i.postId || i.post_id || i.id))),
             w((a) => {
               const i = new Set(a);
-              return (r.forEach((y) => i.delete(y)), i);
-            }));
+              return r.forEach((y) => i.delete(y)), i;
+            });
         }
         m === 0
           ? (oe(!1),
             $(!1),
             d({
-              title: tr("posts_deleted","Posts Deleted"),
+              title: tr("posts_deleted", "Posts Deleted"),
               description:
                 l("posts_deleted_count", { count: r.length }) ||
                 `${r.length} posts have been deleted`,
             }))
           : d({
-              title: tr("partial_delete","Partial Delete"),
+              title: tr("partial_delete", "Partial Delete"),
               description:
                 l("partial_delete_count", { deleted: r.length, failed: m }) ||
                 `${r.length} deleted, ${m} failed.`,
               variant: "destructive",
             });
       } catch (t) {
-        (console.error("Bulk delete error:", t),
+        console.error("Bulk delete error:", t),
           d({
-            title: tr("delete_failed","Delete Failed"),
-            description:
-              tr("some_posts_delete_failed","Some posts could not be deleted"),
+            title: tr("delete_failed", "Delete Failed"),
+            description: tr(
+              "some_posts_delete_failed",
+              "Some posts could not be deleted",
+            ),
             variant: "destructive",
-          }));
+          });
       }
     };
   return Ne
@@ -624,7 +641,7 @@ const vt = () => {
                     className:
                       "text-xl font-semibold text-gray-900 dark:text-white mb-2",
                   },
-                  tr("my_home_listings_unavailable","Listings unavailable"),
+                  tr("my_home_listings_unavailable", "Listings unavailable"),
                 ),
                 e.createElement(
                   "p",
@@ -640,12 +657,12 @@ const vt = () => {
                     g,
                     { onClick: re },
                     e.createElement(he, { className: "w-4 h-4 mr-2" }),
-                    tr("retry","Retry"),
+                    tr("retry", "Retry"),
                   ),
                   e.createElement(
                     g,
                     { variant: "outline", onClick: () => b("/all-posts") },
-                    tr("browse_marketplace","Browse Marketplace"),
+                    tr("browse_marketplace", "Browse Marketplace"),
                   ),
                 ),
               ),
@@ -713,7 +730,10 @@ const vt = () => {
             ),
             e.createElement(
               "div",
-              { className: "max-w-4xl mx-auto px-4 -mt-8 mb-6 relative z-10" },
+              {
+                className:
+                  "max-w-4xl mx-auto px-4 mt-8 -translate-y-8 mb-6 relative z-10",
+              },
               e.createElement(
                 "div",
                 { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
@@ -885,7 +905,7 @@ const vt = () => {
                     e.createElement(
                       Je,
                       null,
-                      tr("latest_refresh_failed","Latest refresh failed"),
+                      tr("latest_refresh_failed", "Latest refresh failed"),
                     ),
                     e.createElement(Qe, null, listError),
                     e.createElement(
@@ -895,7 +915,7 @@ const vt = () => {
                         g,
                         { size: "sm", onClick: re },
                         e.createElement(he, { className: "w-4 h-4 mr-2" }),
-                        tr("retry","Retry"),
+                        tr("retry", "Retry"),
                       ),
                     ),
                   )
@@ -938,7 +958,7 @@ const vt = () => {
                       key: t.tab,
                       className: `flex-1 min-w-0 px-2 py-2 rounded-xl font-bold text-sm shadow-lg border-2 border-blue-300 dark:border-gray-600 focus:outline-none transition-all duration-150 ${p === t.tab ? `${t.color} text-white scale-105 drop-shadow-xl border-2 border-blue-700` : "bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-700"}`,
                       onClick: () => {
-                        (pe(t.tab), A(1));
+                        pe(t.tab), A(1);
                       },
                     },
                     t.label,
@@ -1035,11 +1055,11 @@ const vt = () => {
                       className:
                         "text-xs text-gray-500 dark:text-gray-400 mt-2",
                     },
-                    (tr("tip","Tip")) + ": ",
+                    tr("tip", "Tip") + ": ",
                     l("bulk_selection_tip"),
                   ),
                 ),
-              
+
               e.createElement(
                 "div",
                 { className: "w-full flex flex-col gap-6 pb-24 pt-20" },
@@ -1082,11 +1102,11 @@ const vt = () => {
                         r = s ? "bought" : t.status || "active",
                         statusLabel =
                           r === "active"
-                            ? tr("active","Active")
+                            ? tr("active", "Active")
                             : r === "sold"
-                              ? tr("sold","Sold")
+                              ? tr("sold", "Sold")
                               : r === "bought"
-                                ? tr("bought","Bought")
+                                ? tr("bought", "Bought")
                                 : r;
                       return e.createElement(
                         de,
@@ -1104,8 +1124,8 @@ const vt = () => {
                             e.createElement("img", {
                               src: Ie(t),
                               onError: (m) => {
-                                ((m.target.onerror = null),
-                                  (m.target.src = "/placeholder.svg"));
+                                (m.target.onerror = null),
+                                  (m.target.src = "/placeholder.svg");
                               },
                               alt: t.title,
                               className: "w-full h-40 md:h-48 object-cover",
@@ -1154,32 +1174,6 @@ const vt = () => {
                                     }),
                                     l("edit_post"),
                                   ),
-                                  e.createElement(
-                                    V,
-                                    { onClick: () => ze(t) },
-                                    e.createElement(st, {
-                                      className: "w-4 h-4 mr-2",
-                                    }),
-                                    l("share_post"),
-                                  ),
-                                  e.createElement(
-                                    V,
-                                    { onClick: () => saveMyPost(t) },
-                                    savedPosts[
-                                      String(t.postId || t.post_id || t.id)
-                                    ]
-                                      ? e.createElement(savedMarkIcon, {
-                                          className: "w-4 h-4 mr-2",
-                                        })
-                                      : e.createElement(saveMarkIcon, {
-                                          className: "w-4 h-4 mr-2",
-                                        }),
-                                    savedPosts[
-                                      String(t.postId || t.post_id || t.id)
-                                    ]
-                                      ? tr("saved","Saved")
-                                      : tr("save","Save"),
-                                  ),
                                   !s &&
                                     e.createElement(
                                       V,
@@ -1215,22 +1209,24 @@ const vt = () => {
                                     className:
                                       "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-mono text-xs px-2 py-1",
                                   },
-                                  tr("post_id_label","Post ID: "),
+                                  tr("post_id_label", "Post ID: "),
                                   t.postId || t.post_id || t.id,
                                 ),
                                 e.createElement(
                                   "button",
                                   {
                                     onClick: (m) => {
-                                      (m.stopPropagation(),
+                                      m.stopPropagation(),
                                         navigator.clipboard.writeText(
                                           String(t.postId || t.post_id || t.id),
                                         ),
                                         d({
-                                          title: tr("copied","Copied"),
-                                          description:
-                                            tr("post_id_copied","Post ID copied to clipboard"),
-                                        }));
+                                          title: tr("copied", "Copied"),
+                                          description: tr(
+                                            "post_id_copied",
+                                            "Post ID copied to clipboard",
+                                          ),
+                                        });
                                     },
                                     className:
                                       "text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20",
@@ -1295,27 +1291,8 @@ const vt = () => {
                                 e.createElement(
                                   "span",
                                   { className: "hidden sm:inline" },
-                                  tr("view_details","View Details"),
+                                  tr("view_details", "View Details"),
                                 ),
-                              ),
-                              e.createElement(
-                                g,
-                                {
-                                  variant: "outline",
-                                  className:
-                                    "shrink-0 h-8 border-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3",
-                                  onClick: () => saveMyPost(t),
-                                  title: tr("save","Save"),
-                                },
-                                savedPosts[
-                                  String(t.postId || t.post_id || t.id)
-                                ]
-                                  ? e.createElement(savedMarkIcon, {
-                                      className: "w-5 h-5",
-                                    })
-                                  : e.createElement(saveMarkIcon, {
-                                      className: "w-5 h-5",
-                                    }),
                               ),
                               !s &&
                                 e.createElement(
@@ -1512,7 +1489,7 @@ const vt = () => {
               open: shareDialogOpen,
               onOpenChange: setShareDialogOpen,
               url: shareDialogUrl,
-              title: tr("share_post","Share post"),
+              title: tr("share_post", "Share post"),
             }),
           )
       : e.createElement(
@@ -1623,5 +1600,3 @@ const vt = () => {
 };
 var zt = vt;
 export { zt as default };
-
-

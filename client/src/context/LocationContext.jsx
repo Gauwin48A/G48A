@@ -13,6 +13,7 @@ const AUTH_LOCATION_CACHE_TTL_MS = 60 * 1000;
 const SKIP_TTL_MS = 24 * 60 * 60 * 1000;
 const REQUIRED_ACCURACY_METERS = 100;
 const BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
+const LOCATION_CAPTURE_TIMEOUT_MS = 25 * 1000;
 const DEBUG = import.meta.env.DEV;
 
 const log = (...args) => {
@@ -20,6 +21,20 @@ const log = (...args) => {
     console.log(...args);
   }
 };
+
+const withTimeout = (promise, timeoutMs, message) =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const error = new Error(message || "Location request timed out.");
+      error.name = "LocationTimeoutError";
+      reject(error);
+    }, timeoutMs);
+
+    promise
+      .then((value) => resolve(value))
+      .catch((error) => reject(error))
+      .finally(() => clearTimeout(timer));
+  });
 
 const LocationContext = createContext(null);
 
@@ -293,12 +308,16 @@ export function LocationProvider({ children }) {
           const cacheMaxAgeMs = authenticated
             ? AUTH_LOCATION_CACHE_TTL_MS
             : LOCATION_CACHE_TTL_MS;
-          const location = await getBestAvailableLocation({
-            allowCache: true,
-            allowIpFallback: !authenticated,
-            cacheMaxAgeMs,
-            requiredAccuracy: REQUIRED_ACCURACY_METERS,
-          });
+          const location = await withTimeout(
+            getBestAvailableLocation({
+              allowCache: true,
+              allowIpFallback: !authenticated,
+              cacheMaxAgeMs,
+              requiredAccuracy: REQUIRED_ACCURACY_METERS,
+            }),
+            LOCATION_CAPTURE_TIMEOUT_MS,
+            "Location request timed out. You can continue without location.",
+          );
 
           const normalized = setLocationState(location);
           if (!normalized) {
@@ -369,6 +388,8 @@ export function LocationProvider({ children }) {
   const skipForNow = useCallback(() => {
     setLoading(false);
     setError(null);
+    setPermissionGranted(false);
+    setPermissionDenied(false);
     setUserSkipped(true);
     writeSkipFlag();
     log("[LocationContext] User skipped location prompt");

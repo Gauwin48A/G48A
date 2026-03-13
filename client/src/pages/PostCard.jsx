@@ -1,11 +1,18 @@
-import React from 'react';
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MapPin, Clock, Eye, Shield, Phone } from "lucide-react";
+import { getInitials } from "@/lib/userDisplay";
 
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
   const { t } = useTranslation();
@@ -19,7 +26,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
           className="w-full h-full object-cover"
         />
         <div className="absolute top-2 right-2">
-          <Badge variant={post.status === 'Active' ? 'default' : 'secondary'}>
+          <Badge variant={post.status === "Active" ? "default" : "secondary"}>
             {post.status}
           </Badge>
         </div>
@@ -47,15 +54,13 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
           <div className="flex items-center space-x-2">
             <Avatar className="h-6 w-6">
               <AvatarFallback className="text-xs">
-                {post.sellerName
-                  .split(' ')
-                  .map(word => word[0])
-                  .join('')
-                  .toUpperCase()}
+                {getInitials(post?.sellerName, "U", { uppercase: true })}
               </AvatarFallback>
             </Avatar>
             <span className="text-sm">{post.sellerName}</span>
-            {post.sellerVerified && <Shield className="w-3 h-3 text-green-600" />}
+            {post.sellerVerified && (
+              <Shield className="w-3 h-3 text-green-600" />
+            )}
             <Badge variant="outline" className="text-xs">
               {post.sellerRank}
             </Badge>
@@ -70,18 +75,25 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
           <div className="flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center space-x-1">
               <Eye className="w-4 h-4" />
-              <span>{post.views} {t("views") || "views"}</span>
+              <span>
+                {post.views} {t("views") || "views"}
+              </span>
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="w-4 h-4" />
-              <span>{post.daysLeft} {t("days") || "days"} {t("remaining") || "remaining"}</span>
+              <span>
+                {post.daysLeft} {t("days") || "days"}{" "}
+                {t("remaining") || "remaining"}
+              </span>
             </div>
           </div>
 
           {/* Warranty */}
           <div className="flex items-center space-x-2 text-sm">
             <span className="font-medium">{t("warranty") || "Warranty"}:</span>
-            <Badge variant={post.warranty === 'Active' ? 'default' : 'secondary'}>
+            <Badge
+              variant={post.warranty === "Active" ? "default" : "secondary"}
+            >
               {post.warranty}
             </Badge>
           </div>
@@ -100,13 +112,17 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
                 onClick={() => onContact && onContact(post)}
                 className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
               >
-                <Phone className="w-4 h-4 mr-1" />{t("contact") || "Contact"}</Button>
+                <Phone className="w-4 h-4 mr-1" />
+                {t("contact") || "Contact"}
+              </Button>
               <Button
                 size="sm"
                 onClick={() => onBuy && onBuy(post.id)}
                 className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
-                disabled={post.status !== 'Active'}
-              >{t("buy_now") || "Buy Now"}</Button>
+                disabled={post.status !== "Active"}
+              >
+                {t("buy_now") || "Buy Now"}
+              </Button>
             </div>
           )}
         </div>
@@ -116,9 +132,3 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
 };
 
 export default PostCard;
-
-
-
-
-
-

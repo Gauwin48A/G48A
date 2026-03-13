@@ -8,7 +8,7 @@ import en from "../locales/en.json";
 import { LANGUAGES, getLanguageByCode } from "../constants/languages";
 
 // Bump when locale files change to invalidate i18next localStorage cache.
-const TRANSLATION_VERSION = "v1.0.6";
+const TRANSLATION_VERSION = "v1.0.9";
 const PRIORITY_PRELOAD_LANGUAGES = ["en", "hi", "te", "ta", "kn", "mr", "bn"];
 const I18N_INIT_STARTED_FLAG = "__MHUB_I18N_INIT_STARTED__";
 const I18N_LISTENER_FLAG = "__MHUB_I18N_LISTENER_BOUND__";

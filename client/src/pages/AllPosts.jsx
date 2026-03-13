@@ -104,7 +104,9 @@ const ve = 5,
   },
   relativeTimeFormatters = new Map(),
   getRelativeTimeFormatter = (s) => {
-    const c = String(s || "en").trim().toLowerCase();
+    const c = String(s || "en")
+      .trim()
+      .toLowerCase();
     const l = c || "en";
     if (relativeTimeFormatters.has(l)) {
       return relativeTimeFormatters.get(l);
@@ -157,17 +159,15 @@ const ve = 5,
         p && c.push(p);
       });
     };
-    (l(s.images),
+    l(s.images),
       l(s.image_urls),
       l(s.imageUrls),
       l(s.image_url),
       l(s.imageUrl),
-      l(s.thumbnail));
+      l(s.thumbnail);
     const t = Array.from(
       new Set(
-        c
-          .map((m) => String(m || "").trim())
-          .filter((m) => !!m && m !== D),
+        c.map((m) => String(m || "").trim()).filter((m) => !!m && m !== D),
       ),
     );
     return t.length ? t : [D];
@@ -229,7 +229,10 @@ const ve = 5,
       [H, ee] = g(!0),
       [Pe, Ce] = g(0),
       [shuffleSeed, setShuffleSeed] = g(() => {
-        if (typeof window === "undefined" || typeof performance === "undefined") {
+        if (
+          typeof window === "undefined" ||
+          typeof performance === "undefined"
+        ) {
           return null;
         }
         try {
@@ -339,13 +342,13 @@ const ve = 5,
         e = !0;
       };
     }, [l]);
-    (w(() => {
+    w(() => {
       const e = sessionStorage.getItem("allPostsScrollPosition");
       e &&
         f.length > 0 &&
         requestAnimationFrame(() => {
-          (window.scrollTo(0, parseInt(e, 10)),
-            sessionStorage.removeItem("allPostsScrollPosition"));
+          window.scrollTo(0, parseInt(e, 10)),
+            sessionStorage.removeItem("allPostsScrollPosition");
         });
     }, [f.length]),
       w(() => subscribeSavedPosts(setSavedPosts), []),
@@ -380,14 +383,14 @@ const ve = 5,
               te(Array.isArray(o) ? o : []);
             } catch (o) {
               if (!e) return;
-              (console.error("Failed to fetch categories:", o), te([]));
+              console.error("Failed to fetch categories:", o), te([]);
             }
           })(),
           () => {
             e = !1;
           }
         );
-      }, []));
+      }, []);
     w(() => {
       if (typeof window > "u" || typeof document > "u") return;
       let e = null;
@@ -409,22 +412,22 @@ const ve = 5,
       };
     }, []);
     const Le = {
-        Electronics: "\u{1F4BB}",
-        Mobiles: "\u{1F4F1}",
-        Fashion: "\u{1F457}",
-        Furniture: "\u{1F6CB}\uFE0F",
-        Vehicles: "\u{1F697}",
-        Books: "\u{1F4DA}",
+        Electronics: "\uD83D\uDCBB",
+        Mobiles: "\uD83D\uDCF1",
+        Fashion: "\uD83D\uDC57",
+        Furniture: "\uD83D\uDECB\uFE0F",
+        Vehicles: "\uD83D\uDE97",
+        Books: "\uD83D\uDCDA",
         Sports: "\u26BD",
-        "Home Appliances": "\u{1F3E0}",
-        Beauty: "\u{1F484}",
-        Kids: "\u{1F9F8}",
-        Grocery: "\u{1F6D2}",
-        Toys: "\u{1F3AE}",
-        Jewelry: "\u{1F48E}",
-        Tools: "\u{1F527}",
-        Garden: "\u{1F33F}",
-        "Pet Supplies": "\u{1F43E}",
+        "Home Appliances": "\uD83C\uDFE0",
+        Beauty: "\uD83D\uDC84",
+        Kids: "\uD83E\uDDF8",
+        Grocery: "\uD83D\uDED2",
+        Toys: "\uD83C\uDFAE",
+        Jewelry: "\uD83D\uDC8E",
+        Tools: "\uD83D\uDD27",
+        Garden: "\uD83C\uDF3F",
+        "Pet Supplies": "\uD83D\uDC3E",
       },
       fallbackCategoryList = Object.keys(Le).map((e) => ({
         name: e,
@@ -450,7 +453,10 @@ const ve = 5,
         () => normalizeLatestWindow(t.latestWindow),
         [t.latestWindow],
       ),
-      canShuffle = N(() => !t.sortBy && !latestWindow, [t.sortBy, latestWindow]),
+      canShuffle = N(
+        () => !t.sortBy && !latestWindow,
+        [t.sortBy, latestWindow],
+      ),
       me = x((e) => {
         const a = new URLSearchParams();
         return (
@@ -463,7 +469,10 @@ const ve = 5,
           e.endDate && a.set("endDate", e.endDate),
           e.latestWindow &&
             normalizeLatestWindow(e.latestWindow) &&
-            a.set("latestWindow", String(normalizeLatestWindow(e.latestWindow))),
+            a.set(
+              "latestWindow",
+              String(normalizeLatestWindow(e.latestWindow)),
+            ),
           e.sortBy && a.set("sortBy", e.sortBy),
           a.toString()
         );
@@ -471,7 +480,7 @@ const ve = 5,
       b = x(
         (e) => {
           const a = { ...t, ...e };
-          (m(a), T(1));
+          m(a), T(1);
           const o = me(a);
           y(o ? `/all-posts?${o}` : "/all-posts");
         },
@@ -503,7 +512,7 @@ const ve = 5,
         [b, t.latestWindow],
       ),
       Y = x(() => {
-        (m(st), T(1), y("/all-posts"));
+        m(st), T(1), y("/all-posts");
       }, [y, m]),
       Te = x(
         (e) => {
@@ -569,15 +578,15 @@ const ve = 5,
             e.push({
               key: "price",
               label: `${s("price") || "Price"}: ${t.minPrice || "0"} - ${
-                t.maxPrice || (s("any") || "any")
+                t.maxPrice || s("any") || "any"
               }`,
             }),
           (t.startDate || t.endDate) &&
             e.push({
               key: "date",
               label: `${s("date") || "Date"}: ${
-                t.startDate || (s("any") || "any")
-              } ${s("to") || "to"} ${t.endDate || (s("any") || "any")}`,
+                t.startDate || s("any") || "any"
+              } ${s("to") || "to"} ${t.endDate || s("any") || "any"}`,
             }),
           latestWindow &&
             e.push({
@@ -630,24 +639,21 @@ const ve = 5,
           t.priceRange && !t.minPrice && !t.maxPrice)
         ) {
           const [n, i] = t.priceRange.split("-").map(Number);
-          (isNaN(n) || e.append("minPrice", n),
-            isNaN(i) || e.append("maxPrice", i));
+          isNaN(n) || e.append("minPrice", n),
+            isNaN(i) || e.append("maxPrice", i);
         }
         return (
           t.startDate && e.append("startDate", t.startDate),
           t.endDate && e.append("endDate", toInclusiveEndDateValue(t.endDate)),
-          latestWindow &&
-            e.append("latestWindow", String(latestWindow)),
+          latestWindow && e.append("latestWindow", String(latestWindow)),
           shuffleSeed && !t.sortBy && !latestWindow
             ? (e.append("sortBy", "shuffle"),
               e.append("shuffleSeed", String(shuffleSeed)))
             : (t.sortBy || latestWindow) &&
               (t.sortBy === "price_asc"
-                ? (e.append("sortBy", "price"),
-                  e.append("sortOrder", "asc"))
+                ? (e.append("sortBy", "price"), e.append("sortOrder", "asc"))
                 : t.sortBy === "price_desc"
-                  ? (e.append("sortBy", "price"),
-                    e.append("sortOrder", "desc"))
+                  ? (e.append("sortBy", "price"), e.append("sortOrder", "desc"))
                   : t.sortBy === "date_desc"
                     ? (e.append("sortBy", "created_at"),
                       e.append("sortOrder", "desc"))
@@ -680,9 +686,9 @@ const ve = 5,
         t.startDate,
         shuffleSeed,
       ]);
-    (w(() => {
+    w(() => {
       const e = P.current + 1;
-      ((P.current = e), v.current && v.current.abort());
+      (P.current = e), v.current && v.current.abort();
       const a = new AbortController();
       return (
         (v.current = a),
@@ -691,8 +697,8 @@ const ve = 5,
         (async () => {
           try {
             const n = be();
-            (L === 1 && (re.current = Date.now()),
-              n.append("refresh", String(re.current)));
+            L === 1 && (re.current = Date.now()),
+              n.append("refresh", String(re.current));
             let i;
             try {
               i = await A.get(`/posts?${n.toString()}`, { signal: a.signal });
@@ -704,9 +710,7 @@ const ve = 5,
             }
             if (e !== P.current) return;
             const p = Array.isArray(i.posts) ? i.posts : [];
-            const F = latestWindow
-              ? p.slice(0, latestWindow)
-              : p;
+            const F = latestWindow ? p.slice(0, latestWindow) : p;
             const activeLanguage = languageRef.current;
             const translatedSeed =
               activeLanguage && activeLanguage !== "en" && F.length > 0
@@ -714,20 +718,24 @@ const ve = 5,
                     paths: ALL_POSTS_TRANSLATE_PATHS,
                   })
                 : F;
-            const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(F) ? F : []);
-            (O(L === 1 ? safeTranslatedSeed : (d) => lt(d, safeTranslatedSeed)),
-              z(null));
+            const safeTranslatedSeed = Array.isArray(translatedSeed)
+              ? translatedSeed
+              : Array.isArray(F)
+                ? F
+                : [];
+            O(L === 1 ? safeTranslatedSeed : (d) => lt(d, safeTranslatedSeed)),
+              z(null);
             const _ = {},
               Vt = {};
-            (Array.isArray(safeTranslatedSeed) &&
+            Array.isArray(safeTranslatedSeed) &&
               safeTranslatedSeed.forEach((d) => {
-                ((_[d.post_id || d.id] = d.likes || 0),
-                  (Vt[d.post_id || d.id] = d.views_count || d.views || 0));
+                (_[d.post_id || d.id] = d.likes || 0),
+                  (Vt[d.post_id || d.id] = d.views_count || d.views || 0);
               }),
               se((d) => ({ ...d, ..._ })),
               oe((d) => ({ ...d, ...Vt })),
               ee(latestWindow ? !1 : p.length === requestLimit),
-              setLastLiveSyncAt(Date.now()));
+              setLastLiveSyncAt(Date.now());
             if (activeLanguage && activeLanguage !== "en" && F.length > 0) {
               Re(F, activeLanguage, {
                 paths: ALL_POSTS_TRANSLATE_PATHS,
@@ -755,14 +763,14 @@ const ve = 5,
             }
           } catch (n) {
             if (n?.name === "AbortError" || e !== P.current) return;
-            (z(n.message || "Failed to fetch posts"), O([]), ee(!1));
+            z(n.message || "Failed to fetch posts"), O([]), ee(!1);
           } finally {
-            (v.current === a && (v.current = null),
-              e === P.current && (R(!1), setIsLiveSyncing(!1)));
+            v.current === a && (v.current = null),
+              e === P.current && (R(!1), setIsLiveSyncing(!1));
           }
         })(),
         () => {
-          (a.abort(), v.current === a && (v.current = null));
+          a.abort(), v.current === a && (v.current = null);
         }
       );
     }, [be, L, Pe]),
@@ -776,7 +784,11 @@ const ve = 5,
         const translatedSeed = Ue(f, l, {
           paths: ALL_POSTS_TRANSLATE_PATHS,
         });
-        const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(f) ? f : []);
+        const safeTranslatedSeed = Array.isArray(translatedSeed)
+          ? translatedSeed
+          : Array.isArray(f)
+            ? f
+            : [];
         const n = new Map();
         Array.isArray(safeTranslatedSeed) &&
           safeTranslatedSeed.forEach((i) => {
@@ -830,7 +842,7 @@ const ve = 5,
         t.endDate,
         t.latestWindow,
         t.sortBy,
-      ]));
+      ]);
     w(() => {
       if (shuffleSeed && (t.sortBy || latestWindow)) {
         setShuffleSeed(null);
@@ -894,9 +906,7 @@ const ve = 5,
       updateCarouselIndex = x((e, a) => {
         const o = I(e);
         if (!o) return;
-        setCarouselIndexByPost((n) =>
-          n[o] === a ? n : { ...n, [o]: a },
-        );
+        setCarouselIndexByPost((n) => (n[o] === a ? n : { ...n, [o]: a }));
       }, []),
       getCarouselIndex = x(
         (e, a) => {
@@ -941,7 +951,7 @@ const ve = 5,
         },
         [updateCarouselIndex],
       );
-    (w(() => {
+    w(() => {
       const e = async () => {
           if (U.current.size === 0) return;
           const o = Array.from(U.current);
@@ -956,7 +966,7 @@ const ve = 5,
           e();
         }, 5e3);
       return () => {
-        (clearInterval(a), e());
+        clearInterval(a), e();
       };
     }, []),
       w(
@@ -981,11 +991,11 @@ const ve = 5,
           }
         ),
         [f, W],
-      ));
+      );
     const Me = async (e) => {
         const a = ae[e];
-        (Se((o) => ({ ...o, [e]: !o[e] })),
-          se((o) => ({ ...o, [e]: (o[e] || 0) + (a ? -1 : 1) })));
+        Se((o) => ({ ...o, [e]: !o[e] })),
+          se((o) => ({ ...o, [e]: (o[e] || 0) + (a ? -1 : 1) }));
         try {
           await A.post(`/posts/${e}/like`);
         } catch {}
@@ -994,7 +1004,7 @@ const ve = 5,
         const a = I(e);
         if (!a) return;
         const o = `${window.location.origin}/post/${a}`;
-        (setShareDialogUrl(o), setShareDialogOpen(!0));
+        setShareDialogUrl(o), setShareDialogOpen(!0);
         try {
           await A.post(`/posts/${a}/share`);
         } catch {}
@@ -1003,23 +1013,23 @@ const ve = 5,
         const a = I(e);
         if (!a) return;
         if (!C) {
-          (M("Please login to save posts"),
+          M("Please login to save posts"),
             setTimeout(() => M(""), 2e3),
-            y("/login", { state: { returnTo: "/all-posts" } }));
+            y("/login", { state: { returnTo: "/all-posts" } });
           return;
         }
         const o = !!savedPosts[a],
           n = !o;
-        (setSavedPosts((i) => ({ ...i, [a]: n })), setSavedPostStatus(a, n));
+        setSavedPosts((i) => ({ ...i, [a]: n })), setSavedPostStatus(a, n);
         try {
           n
             ? await A.post("/wishlist", { postId: a })
             : await A.delete(`/wishlist/${a}`);
         } catch {
-          (setSavedPosts((n) => ({ ...n, [a]: o })),
+          setSavedPosts((n) => ({ ...n, [a]: o })),
             setSavedPostStatus(a, o),
             M(o ? "Failed to remove saved post" : "Failed to save post"),
-            setTimeout(() => M(""), 2e3));
+            setTimeout(() => M(""), 2e3);
         }
       },
       handleCartToggle = x(
@@ -1035,8 +1045,7 @@ const ve = 5,
               title: e?.title || s("title") || "Item",
               price: e?.price || 0,
               image: Ne(e),
-              seller:
-                e?.user?.name || e?.user_name || e?.username || "Unknown",
+              seller: e?.user?.name || e?.user_name || e?.username || "Unknown",
               location: e?.location || e?.city || e?.area || "",
             });
             M(s("add_to_cart") || "Added to cart");
@@ -1055,13 +1064,13 @@ const ve = 5,
         const o = f.find((i) => I(i.id) === a || I(i.post_id) === a);
         W(a);
         const n = tt($);
-        (n &&
+        n &&
           A.post("/recently-viewed/track", {
             postId: a,
             userId: n,
             source: "allposts",
           }).catch(() => {}),
-          o ? y(`/post/${a}`, { state: { post: o } }) : y(`/post/${a}`));
+          o ? y(`/post/${a}`, { state: { post: o } }) : y(`/post/${a}`);
       },
       pe = f
         .filter((e) => e.isSponsored === !0 || e.is_sponsored === !0)
@@ -1117,7 +1126,7 @@ const ve = 5,
               r.createElement(
                 "span",
                 { className: "text-lg sm:text-xl md:text-2xl mb-0.5" },
-                "\u{1F4E6}",
+                "\uD83D\uDCE6",
               ),
               r.createElement(
                 "span",
@@ -1138,7 +1147,7 @@ const ve = 5,
                 r.createElement(
                   "span",
                   { className: "text-lg sm:text-xl md:text-2xl mb-0.5" },
-                  Le[e.name] || "\u{1F4E6}",
+                  Le[e.name] || "\uD83D\uDCE6",
                 ),
                 r.createElement(
                   "span",
@@ -1156,98 +1165,41 @@ const ve = 5,
           { className: "w-full flex justify-center px-3 pb-2.5" },
           r.createElement(
             "div",
-          {
-            className:
-              "w-full max-w-[92rem] bg-white/95 dark:bg-slate-900/40 border border-blue-100/70 dark:border-slate-800/60 rounded-2xl p-2 sm:p-3.5 shadow-sm backdrop-blur-sm",
-          },
-          r.createElement(
-            "div",
-            { className: "flex flex-col gap-2 sm:gap-3" },
+            {
+              className:
+                "w-full max-w-[92rem] bg-white/95 dark:bg-slate-900/40 border border-blue-100/70 dark:border-slate-800/60 rounded-2xl p-2 sm:p-3.5 shadow-sm backdrop-blur-sm",
+            },
             r.createElement(
               "div",
-              { className: "flex items-center justify-between gap-3" },
+              { className: "flex flex-col gap-2 sm:gap-3" },
+              r.createElement(
+                "div",
+                { className: "flex items-center justify-between gap-3" },
+                r.createElement(
+                  "div",
+                  {
+                    className:
+                      "inline-flex items-center gap-2 text-[11px] sm:text-sm font-semibold text-blue-800 dark:text-blue-200",
+                  },
+                  r.createElement(zo, { className: "w-3.5 h-3.5" }),
+                  tr("quick_filters", "Quick filters"),
+                ),
+                r.createElement(
+                  "span",
+                  {
+                    className:
+                      "hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 px-2.5 py-1 text-[11px] md:text-xs text-blue-700 dark:text-blue-300",
+                  },
+                  r.createElement(Ko, { className: "w-3 h-3" }),
+                  `${tr("auto_refresh", "Auto refresh")}: 30s`,
+                ),
+              ),
               r.createElement(
                 "div",
                 {
                   className:
-                    "inline-flex items-center gap-2 text-[11px] sm:text-sm font-semibold text-blue-800 dark:text-blue-200",
+                    "flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1",
                 },
-                r.createElement(zo, { className: "w-3.5 h-3.5" }),
-                tr("quick_filters", "Quick filters"),
-              ),
-              r.createElement(
-                "span",
-                {
-                  className:
-                    "hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 px-2.5 py-1 text-[11px] md:text-xs text-blue-700 dark:text-blue-300",
-                },
-                r.createElement(Ko, { className: "w-3 h-3" }),
-                `${tr("auto_refresh", "Auto refresh")}: 30s`,
-              ),
-            ),
-            r.createElement(
-              "div",
-              { className: "flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1" },
-              r.createElement(
-                u,
-                {
-                  type: "button",
-                  variant: "outline",
-                  className:
-                    "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
-                  onClick: () => b({ minPrice: "", maxPrice: "1000" }),
-                },
-                r.createElement(Vo, { className: "w-3.5 h-3.5" }),
-                tr("under_1000", "Under 1000"),
-              ),
-              r.createElement(
-                u,
-                {
-                  type: "button",
-                  variant: "outline",
-                  className:
-                    "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
-                  onClick: () => b({ minPrice: "1000", maxPrice: "5000" }),
-                },
-                r.createElement(Vo, { className: "w-3.5 h-3.5" }),
-                formatCurrency(1000) + "-" + formatCurrency(5000),
-              ),
-              r.createElement(
-                u,
-                {
-                  type: "button",
-                  variant: "outline",
-                  className: `h-8 sm:h-9 rounded-full border-blue-200 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs ${latestWindow === 5 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "bg-white text-blue-700 hover:bg-blue-50"}`,
-                  onClick: () => jee(5),
-                },
-                r.createElement(Ho, { className: "w-3.5 h-3.5" }),
-                tr("latest_5", "Latest 5"),
-              ),
-              r.createElement(
-                u,
-                {
-                  type: "button",
-                  variant: "outline",
-                  className: `h-8 sm:h-9 rounded-full border-blue-200 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs ${latestWindow === 10 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "bg-white text-blue-700 hover:bg-blue-50"}`,
-                  onClick: () => jee(10),
-                },
-                r.createElement(Ho, { className: "w-3.5 h-3.5" }),
-                tr("latest_10", "Latest 10"),
-              ),
-              r.createElement(
-                u,
-                {
-                  type: "button",
-                  variant: "outline",
-                  className:
-                    "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
-                  onClick: () =>
-                    b({ startDate: ye, endDate: ye, latestWindow: "" }),
-                },
-                r.createElement(zo, { className: "w-3.5 h-3.5" }),
-                tr("posted_today", "Posted Today"),
-              ),
-              Q &&
                 r.createElement(
                   u,
                   {
@@ -1255,49 +1207,109 @@ const ve = 5,
                     variant: "outline",
                     className:
                       "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
-                    onClick: () => b({ location: Q }),
+                    onClick: () => b({ minPrice: "", maxPrice: "1000" }),
                   },
-                  r.createElement(Uo, { className: "w-3.5 h-3.5" }),
-                  `${tr("near", "Near")} `,
-                  Q,
+                  r.createElement(Vo, { className: "w-3.5 h-3.5" }),
+                  tr("under_1000", "Under 1000"),
                 ),
-              ue &&
                 r.createElement(
                   u,
                   {
                     type: "button",
-                    variant: "ghost",
+                    variant: "outline",
                     className:
-                      "h-8 sm:h-9 rounded-full text-red-600 hover:text-red-700 hover:bg-red-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
-                    onClick: Y,
+                      "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                    onClick: () => b({ minPrice: "1000", maxPrice: "5000" }),
                   },
-                  r.createElement(Jo, { className: "w-3.5 h-3.5" }),
-                  tr("clear_all_filters", "Clear all filters"),
+                  r.createElement(Vo, { className: "w-3.5 h-3.5" }),
+                  formatCurrency(1000) + "-" + formatCurrency(5000),
                 ),
-            ),
-          ),
-          ge.length > 0 &&
-            r.createElement(
-              "div",
-              { className: "mt-3 flex flex-wrap gap-2" },
-              ge.map((e) =>
                 r.createElement(
-                  "button",
+                  u,
                   {
-                    key: e.key,
                     type: "button",
-                    onClick: () => Te(e.key),
-                    className:
-                      "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-blue-200 dark:border-gray-700 text-xs text-blue-800 dark:text-blue-200",
-                    title: tr("remove_filter", "Remove filter"),
+                    variant: "outline",
+                    className: `h-8 sm:h-9 rounded-full border-blue-200 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs ${latestWindow === 5 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                    onClick: () => jee(5),
                   },
-                  r.createElement("span", null, e.label),
-                  r.createElement(Jo, { className: "w-3 h-3 font-semibold" }),
+                  r.createElement(Ho, { className: "w-3.5 h-3.5" }),
+                  tr("latest_5", "Latest 5"),
                 ),
+                r.createElement(
+                  u,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className: `h-8 sm:h-9 rounded-full border-blue-200 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs ${latestWindow === 10 ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                    onClick: () => jee(10),
+                  },
+                  r.createElement(Ho, { className: "w-3.5 h-3.5" }),
+                  tr("latest_10", "Latest 10"),
+                ),
+                r.createElement(
+                  u,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className:
+                      "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                    onClick: () =>
+                      b({ startDate: ye, endDate: ye, latestWindow: "" }),
+                  },
+                  r.createElement(zo, { className: "w-3.5 h-3.5" }),
+                  tr("posted_today", "Posted Today"),
+                ),
+                Q &&
+                  r.createElement(
+                    u,
+                    {
+                      type: "button",
+                      variant: "outline",
+                      className:
+                        "h-8 sm:h-9 rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                      onClick: () => b({ location: Q }),
+                    },
+                    r.createElement(Uo, { className: "w-3.5 h-3.5" }),
+                    `${tr("near", "Near")} `,
+                    Q,
+                  ),
+                ue &&
+                  r.createElement(
+                    u,
+                    {
+                      type: "button",
+                      variant: "ghost",
+                      className:
+                        "h-8 sm:h-9 rounded-full text-red-600 hover:text-red-700 hover:bg-red-50 inline-flex items-center gap-1 shrink-0 px-2 sm:px-2.5 text-[10px] sm:text-xs",
+                      onClick: Y,
+                    },
+                    r.createElement(Jo, { className: "w-3.5 h-3.5" }),
+                    tr("clear_all_filters", "Clear all filters"),
+                  ),
               ),
             ),
+            ge.length > 0 &&
+              r.createElement(
+                "div",
+                { className: "mt-3 flex flex-wrap gap-2" },
+                ge.map((e) =>
+                  r.createElement(
+                    "button",
+                    {
+                      key: e.key,
+                      type: "button",
+                      onClick: () => Te(e.key),
+                      className:
+                        "inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-blue-200 dark:border-gray-700 text-xs text-blue-800 dark:text-blue-200",
+                      title: tr("remove_filter", "Remove filter"),
+                    },
+                    r.createElement("span", null, e.label),
+                    r.createElement(Jo, { className: "w-3 h-3 font-semibold" }),
+                  ),
+                ),
+              ),
+          ),
         ),
-      ),
       ),
       r.createElement("div", { className: "h-2 md:h-3" }),
       r.createElement(
@@ -1306,8 +1318,7 @@ const ve = 5,
         r.createElement(
           "div",
           {
-            className:
-              "w-full max-w-[92rem] mb-4 md:mb-5 mt-0 md:mt-2",
+            className: "w-full max-w-[92rem] mb-4 md:mb-5 mt-0 md:mt-2",
           },
           r.createElement(
             "div",
@@ -1417,77 +1428,80 @@ const ve = 5,
       ),
       pe.length > 0 &&
         r.createElement(
-        "div",
-        { className: "w-full flex flex-col items-center mb-6" },
-        r.createElement(
-          "h2",
-          {
-            className:
-              "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-[92rem] px-3 md:px-0",
-          },
-          s("sponsored_deals"),
-        ),
-        r.createElement(
           "div",
-          {
-            className:
-              "flex gap-4 md:gap-6 w-full max-w-[92rem] overflow-x-auto scrollbar-hide px-3 md:px-0 snap-x snap-mandatory",
-          },
-          pe.map((e, a) =>
-                r.createElement(
-                  S,
-                  {
-                    key: e.id || e._id || a,
-                    className:
-                      "rounded-xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[160px] max-w-[180px] md:min-w-[220px] md:max-w-[240px] hover:scale-[1.02] transition-transform duration-200 snap-start",
+          { className: "w-full flex flex-col items-center mb-6" },
+          r.createElement(
+            "h2",
+            {
+              className:
+                "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-[92rem] px-3 md:px-0",
+            },
+            s("sponsored_deals"),
+          ),
+          r.createElement(
+            "div",
+            {
+              className:
+                "flex gap-4 md:gap-6 w-full max-w-[92rem] overflow-x-auto scrollbar-hide px-3 md:px-0 snap-x snap-mandatory",
+            },
+            pe.map((e, a) =>
+              r.createElement(
+                S,
+                {
+                  key: e.id || e._id || a,
+                  className:
+                    "rounded-xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[160px] max-w-[180px] md:min-w-[220px] md:max-w-[240px] hover:scale-[1.02] transition-transform duration-200 snap-start",
+                },
+                r.createElement("img", {
+                  src: Ne(e),
+                  alt: e.title || "Post",
+                  className:
+                    "w-20 h-20 md:w-24 md:h-24 object-cover rounded mb-2 bg-gray-100 dark:bg-gray-700",
+                  onError: (o) => {
+                    o.currentTarget.src = D;
                   },
-                  r.createElement("img", {
-                    src: Ne(e),
-                    alt: e.title || "Post",
+                }),
+                r.createElement(
+                  "div",
+                  {
                     className:
-                      "w-20 h-20 md:w-24 md:h-24 object-cover rounded mb-2 bg-gray-100 dark:bg-gray-700",
-                    onError: (o) => {
-                      o.currentTarget.src = D;
-                    },
-                  }),
-                  r.createElement(
-                    "div",
-                    {
-                      className:
-                        "font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2",
-                    },
-                    e.title,
-                  ),
-                  r.createElement(
-                    "div",
-                    { className: "text-yellow-500 text-xs mb-1" },
-                    "\u2605\u2605\u2605\u2605\u2605",
-                  ),
-                  r.createElement(
-                    "div",
-                    {
-                      className:
-                        "text-blue-900 dark:text-blue-300 text-base md:text-lg font-bold mb-1",
-                    },
-                    "\u20B9",
-                    ot(e.price),
-                  ),
-                  r.createElement(
-                    u,
-                    {
-                      className:
-                        "bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2",
-                      onClick: () => y(`/post/${e.post_id || e.id}`),
-                    },
-                    s("view") || "View",
-                  ),
+                      "font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2",
+                  },
+                  e.title,
+                ),
+                r.createElement(
+                  "div",
+                  { className: "text-yellow-500 text-xs mb-1" },
+                  "\u2605\u2605\u2605\u2605\u2605",
+                ),
+                r.createElement(
+                  "div",
+                  {
+                    className:
+                      "text-blue-900 dark:text-blue-300 text-base md:text-lg font-bold mb-1",
+                  },
+                  "\u20B9",
+                  ot(e.price),
+                ),
+                r.createElement(
+                  u,
+                  {
+                    className:
+                      "bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2",
+                    onClick: () => y(`/post/${e.post_id || e.id}`),
+                  },
+                  s("view") || "View",
                 ),
               ),
+            ),
+          ),
         ),
-      ),
       r.createElement(
         "div",
-        { id: "all-posts-feed", className: "w-full flex flex-col items-center mb-8" },
+        {
+          id: "all-posts-feed",
+          className: "w-full flex flex-col items-center mb-8",
+        },
         r.createElement(
           "div",
           {
@@ -1508,7 +1522,7 @@ const ve = 5,
           ),
           r.createElement(
             "div",
-            { className: "flex items-center gap-2.5" },
+            { className: "flex flex-wrap items-center gap-2.5 min-w-0" },
             r.createElement(
               "span",
               {
@@ -1516,8 +1530,7 @@ const ve = 5,
                   "inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] sm:text-xs font-semibold text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
               },
               r.createElement("span", {
-                className:
-                  "h-2 w-2 rounded-full bg-emerald-500 animate-pulse",
+                className: "h-2 w-2 rounded-full bg-emerald-500 animate-pulse",
               }),
               s("live") || "Live",
             ),
@@ -1554,57 +1567,58 @@ const ve = 5,
         r.createElement(
           "div",
           {
-            className:
-              "w-full max-w-[92rem] mx-auto px-2 md:px-0",
+            className: "w-full max-w-[92rem] mx-auto px-2 md:px-0",
           },
           r.createElement(
             "div",
             {
               className: "order-1 flex flex-col gap-6 w-full min-w-0",
             },
-          E
-            ? Array.from({ length: 3 }).map((e, a) =>
-                r.createElement(
-                  S,
-                  {
-                    key: `all-posts-skeleton-${a}`,
-                    className:
-                      "rounded-2xl border border-blue-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 animate-pulse",
-                  },
-                  r.createElement("div", {
-                    className:
-                      "h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-3",
-                  }),
-                  r.createElement("div", {
-                    className:
-                      "h-48 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-3",
-                  }),
-                  r.createElement("div", {
-                    className:
-                      "h-4 w-5/6 bg-gray-200 dark:bg-gray-700 rounded mb-2",
-                  }),
-                  r.createElement("div", {
-                    className: "h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded",
-                  }),
-                ),
-              )
-            : V
-              ? r.createElement(
-                  S,
-                  {
-                    className:
-                      "border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5",
-                  },
+            E
+              ? Array.from({ length: 3 }).map((e, a) =>
                   r.createElement(
-                    "p",
+                    S,
                     {
-                      className: "text-sm text-red-700 dark:text-red-300 mb-3",
+                      key: `all-posts-skeleton-${a}`,
+                      className:
+                        "rounded-2xl border border-blue-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 animate-pulse",
                     },
-                    V,
+                    r.createElement("div", {
+                      className:
+                        "h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-3",
+                    }),
+                    r.createElement("div", {
+                      className:
+                        "h-48 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-3",
+                    }),
+                    r.createElement("div", {
+                      className:
+                        "h-4 w-5/6 bg-gray-200 dark:bg-gray-700 rounded mb-2",
+                    }),
+                    r.createElement("div", {
+                      className:
+                        "h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded",
+                    }),
                   ),
-                  r.createElement(
-                    "div",
-                    { className: "flex flex-wrap gap-2" },
+                )
+              : V
+                ? r.createElement(
+                    S,
+                    {
+                      className:
+                        "border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5",
+                    },
+                    r.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-sm text-red-700 dark:text-red-300 mb-3",
+                      },
+                      V,
+                    ),
+                    r.createElement(
+                      "div",
+                      { className: "flex flex-wrap gap-2" },
                       r.createElement(
                         u,
                         {
@@ -1614,575 +1628,583 @@ const ve = 5,
                         },
                         tr("retry", "Retry"),
                       ),
-                    ue &&
-                      r.createElement(
-                        u,
-                        {
-                          type: "button",
-                          variant: "outline",
-                          className: "border-red-200 text-red-700",
-                          onClick: Y,
-                        },
-                        tr("reset_filters", "Reset filters"),
-                      ),
-                  ),
-                )
-              : K.length === 0
-                ? r.createElement(
-                    S,
-                    {
-                      className:
-                        "border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-6 text-center",
-                    },
-                    r.createElement(
-                      "h3",
-                      {
-                        className:
-                          "text-base md:text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2",
-                      },
-                      tr("no_results", "No results for the current filters"),
-                    ),
-                    r.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-sm text-blue-700 dark:text-blue-300 mb-4",
-                      },
-                      tr(
-                        "try_broader_keyword",
-                        "Try broadening search terms, changing category, or clearing filters.",
-                      ),
-                    ),
-                    r.createElement(
-                      "div",
-                      { className: "flex flex-wrap justify-center gap-2" },
-                      r.createElement(
-                        u,
-                        {
-                          type: "button",
-                          className: "bg-blue-600 text-white hover:bg-blue-700",
-                          onClick: Y,
-                        },
-                        tr("reset_filters", "Reset filters"),
-                      ),
-                      r.createElement(
-                        u,
-                        {
-                          type: "button",
-                          variant: "outline",
-                          className: "border-blue-200 text-blue-700",
-                          onClick: () => y("/categories"),
-                        },
-                        tr("explore_categories", "Browse categories"),
-                      ),
-                    ),
-                  )
-                : K.map((e) => {
-                    const a = I(e.post_id || e.id),
-                      o =
-                        e.user?.name ||
-                        e.user_name ||
-                        e.username ||
-                        s("unknown") ||
-                        "Unknown",
-                      n = String(o || "U")
-                        .charAt(0)
-                        .toUpperCase(),
-                      i = Number(e.user?.rating || e.seller_rating || 0),
-                      p =
-                        e.category ||
-                        e.category_name ||
-                        tr("general", "General"),
-                      F = !!(
-                        e.user?.isVerified ||
-                        e.is_verified ||
-                        e.aadhaar_verified ||
-                        e.pan_verified
-                      ),
-                      _ = String(e.description || ""),
-                      d = Be === a,
-                      Oe = _.length >= 120,
-                      he = nt(e.created_at || e.createdAt, l),
-                      we = e.location || e.city || e.area || "",
-                      imageList = collectPostImageUrls(e),
-                      activeImageIndex = getCarouselIndex(a, imageList.length),
-                      inCart = isInCartItem(a);
-                    return r.createElement(
-                      S,
-                      {
-                        key: a,
-                        ref: (X) => {
-                          de.current[a] = X;
-                        },
-                        "data-post-id": a,
-                        className:
-                          "rounded-2xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300",
-                      },
-                      r.createElement(
-                        "div",
-                        {
-                          className:
-                            "px-3 pt-2.5 pb-2 border-b border-gray-100 dark:border-gray-700/70 sm:px-4",
-                        },
+                      ue &&
                         r.createElement(
-                          "div",
-                          {
-                            className:
-                              "inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 px-2.5 py-1 sm:px-3 sm:py-1.5",
-                          },
-                          r.createElement(
-                            "span",
-                            {
-                              className:
-                                "text-[10px] sm:text-[11px] md:text-xs uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300",
-                            },
-                            s("price") || "Price",
-                          ),
-                          r.createElement(
-                            "span",
-                            {
-                              className:
-                                "text-sm sm:text-base font-bold text-emerald-800 dark:text-emerald-200",
-                            },
-                            formatCurrency(e.price),
-                          ),
-                        ),
-                      ),
-                      r.createElement(
-                        "div",
-                        {
-                          className:
-                            "flex items-start gap-3 px-3 pt-3 pb-3 relative sm:px-4",
-                        },
-                        r.createElement(
-                          Ve,
-                          { className: "w-9 h-9 sm:w-10 sm:h-10" },
-                          r.createElement(
-                            ze,
-                            { className: "dark:bg-gray-700 dark:text-white" },
-                            n || "U",
-                          ),
-                        ),
-                        r.createElement(
-                          "div",
-                          { className: "flex-1 min-w-0 pr-10" },
-                          r.createElement(
-                            "div",
-                            { className: "flex items-center gap-2" },
-                            r.createElement(
-                              "span",
-                              {
-                                className:
-                                  "font-semibold text-blue-900 dark:text-blue-200 text-sm sm:text-base md:text-lg truncate",
-                              },
-                              o,
-                            ),
-                            F &&
-                              r.createElement(
-                                "span",
-                                {
-                                  className:
-                                    "inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold rounded-full",
-                                  title: `KYC Verified${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
-                                },
-                                r.createElement(
-                                  "svg",
-                                  {
-                                    className: "w-3 h-3",
-                                    fill: "currentColor",
-                                    viewBox: "0 0 20 20",
-                                  },
-                                  r.createElement("path", {
-                                    fillRule: "evenodd",
-                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                    clipRule: "evenodd",
-                                  }),
-                                ),
-                                s("verified") || "Verified",
-                              ),
-                            i > 0 &&
-                              r.createElement(
-                                "span",
-                                {
-                                  className:
-                                    "text-yellow-500 text-[10px] sm:text-xs font-medium",
-                                },
-                                "\u2605 ",
-                                i.toFixed(1),
-                              ),
-                          ),
-                          r.createElement(
-                            "div",
-                            {
-                              className:
-                                "mt-1 flex flex-wrap items-center gap-2 text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400",
-                            },
-                            r.createElement(
-                              "span",
-                              {
-                                className:
-                                  "inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium",
-                              },
-                              p,
-                            ),
-                            he &&
-                              r.createElement(
-                                "span",
-                                {
-                                  className:
-                                    "inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700",
-                                },
-                                `${s("posted") || "Posted"} `,
-                                he,
-                              ),
-                            we &&
-                              r.createElement(
-                                "span",
-                                {
-                                  className:
-                                    "inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700",
-                                },
-                                we,
-                              ),
-                            SHOW_POST_ID_CHIP &&
-                              r.createElement(
-                                "span",
-                                {
-                                  className:
-                                    "hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200",
-                                },
-                                `${s("post_id") || "Post ID"}: `,
-                                a,
-                              ),
-                          ),
-                        ),
-                        r.createElement(
-                          "button",
+                          u,
                           {
                             type: "button",
-                            onClick: () =>
-                              setMenuPostId((t) => (t === a ? null : a)),
-                            className:
-                              "absolute right-3 top-3 p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 sm:right-4 sm:top-4 sm:p-2",
-                            title: tr("more_options", "More options"),
+                            variant: "outline",
+                            className: "border-red-200 text-red-700",
+                            onClick: Y,
                           },
-                          r.createElement(To, { className: "w-4 h-4" }),
+                          tr("reset_filters", "Reset filters"),
                         ),
-                        menuPostId === a &&
-                          r.createElement(
-                            "div",
-                            {
-                              className:
-                                "absolute right-4 top-14 z-20 w-44 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-1",
-                            },
-                            r.createElement(
-                              "button",
-                              {
-                                type: "button",
-                                onClick: () => {
-                                  (handleSharePost(a), setMenuPostId(null));
-                                },
-                                className:
-                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
-                              },
-                              s("share") || "Share",
-                            ),
-                            r.createElement(
-                              "button",
-                              {
-                                type: "button",
-                                onClick: () => {
-                                  (toggleSave(a), setMenuPostId(null));
-                                },
-                                className:
-                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
-                              },
-                              savedPosts[a]
-                                ? s("saved") || "Saved"
-                                : s("save") || "Save",
-                            ),
-                            r.createElement(
-                              "button",
-                              {
-                                type: "button",
-                                onClick: () => {
-                                  (M(
-                                    s("report_feature_coming_soon") ||
-                                      "Report feature coming soon",
-                                  ),
-                                    setTimeout(() => M(""), 2e3),
-                                    setMenuPostId(null));
-                                },
-                                className:
-                                  "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg",
-                              },
-                              s("report") || "Report",
-                            ),
-                          ),
+                    ),
+                  )
+                : K.length === 0
+                  ? r.createElement(
+                      S,
+                      {
+                        className:
+                          "border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-6 text-center",
+                      },
+                      r.createElement(
+                        "h3",
+                        {
+                          className:
+                            "text-base md:text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2",
+                        },
+                        tr("no_results", "No results for the current filters"),
+                      ),
+                      r.createElement(
+                        "p",
+                        {
+                          className:
+                            "text-sm text-blue-700 dark:text-blue-300 mb-4",
+                        },
+                        tr(
+                          "try_broader_keyword",
+                          "Try broadening search terms, changing category, or clearing filters.",
+                        ),
                       ),
                       r.createElement(
                         "div",
+                        { className: "flex flex-wrap justify-center gap-2" },
+                        r.createElement(
+                          u,
+                          {
+                            type: "button",
+                            className:
+                              "bg-blue-600 text-white hover:bg-blue-700",
+                            onClick: Y,
+                          },
+                          tr("reset_filters", "Reset filters"),
+                        ),
+                        r.createElement(
+                          u,
+                          {
+                            type: "button",
+                            variant: "outline",
+                            className: "border-blue-200 text-blue-700",
+                            onClick: () => y("/categories"),
+                          },
+                          tr("explore_categories", "Browse categories"),
+                        ),
+                      ),
+                    )
+                  : K.map((e) => {
+                      const a = I(e.post_id || e.id),
+                        o =
+                          e.user?.name ||
+                          e.user_name ||
+                          e.username ||
+                          s("unknown") ||
+                          "Unknown",
+                        n = String(o || "U")
+                          .charAt(0)
+                          .toUpperCase(),
+                        i = Number(e.user?.rating || e.seller_rating || 0),
+                        p =
+                          e.category ||
+                          e.category_name ||
+                          tr("general", "General"),
+                        F = !!(
+                          e.user?.isVerified ||
+                          e.is_verified ||
+                          e.aadhaar_verified ||
+                          e.pan_verified
+                        ),
+                        _ = String(e.description || ""),
+                        d = Be === a,
+                        Oe = _.length >= 120,
+                        he = nt(e.created_at || e.createdAt, l),
+                        we = e.location || e.city || e.area || "",
+                        imageList = collectPostImageUrls(e),
+                        activeImageIndex = getCarouselIndex(
+                          a,
+                          imageList.length,
+                        ),
+                        inCart = isInCartItem(a);
+                      return r.createElement(
+                        S,
                         {
+                          key: a,
+                          ref: (X) => {
+                            de.current[a] = X;
+                          },
+                          "data-post-id": a,
                           className:
-                            "relative w-full bg-slate-100 dark:bg-slate-900/70 border-y border-slate-200/70 dark:border-slate-700",
+                            "rounded-2xl shadow bg-white dark:bg-gray-800 border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300",
                         },
                         r.createElement(
                           "div",
                           {
-                            ref: (X) => setCarouselTrackRef(a, X),
-                            onScroll: (X) =>
-                              handleCarouselScroll(a, X, imageList.length),
                             className:
-                              "flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide",
+                              "px-3 pt-2.5 pb-2 border-b border-gray-100 dark:border-gray-700/70 sm:px-4",
                           },
-                          imageList.map((X, _t) =>
+                          r.createElement(
+                            "div",
+                            {
+                              className:
+                                "inline-flex items-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 px-2.5 py-1 sm:px-3 sm:py-1.5",
+                            },
                             r.createElement(
-                              "div",
+                              "span",
                               {
-                                key: `${a}-media-${_t}`,
                                 className:
-                                  "w-full shrink-0 snap-center bg-slate-100 dark:bg-slate-800",
+                                  "text-[10px] sm:text-[11px] md:text-xs uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300",
                               },
-                              r.createElement("img", {
-                                src: X,
-                                alt: `${e.title || (s("post") || "Post")} ${s("image") || "image"} ${_t + 1}`,
-                                loading: "lazy",
+                              s("price") || "Price",
+                            ),
+                            r.createElement(
+                              "span",
+                              {
                                 className:
-                                  "w-full h-[200px] sm:h-[260px] md:h-[340px] object-cover object-center",
-                                onError: (Nt) => {
-                                  Nt.currentTarget.src = D;
-                                },
-                              }),
+                                  "text-sm sm:text-base font-bold text-emerald-800 dark:text-emerald-200",
+                              },
+                              formatCurrency(e.price),
                             ),
                           ),
                         ),
-                        imageList.length > 1 &&
+                        r.createElement(
+                          "div",
+                          {
+                            className:
+                              "flex items-start gap-3 px-3 pt-3 pb-3 relative sm:px-4",
+                          },
                           r.createElement(
-                            r.Fragment,
-                            null,
+                            Ve,
+                            { className: "w-9 h-9 sm:w-10 sm:h-10" },
                             r.createElement(
-                              "button",
-                              {
-                                type: "button",
-                                onClick: (X) =>
-                                  moveCarousel(a, -1, imageList.length, X),
-                                className:
-                                  "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8",
-                                "aria-label":
-                                  s("previous_image") || "Previous image",
-                              },
-                              r.createElement(Lo, { className: "w-3 h-3" }),
-                            ),
-                            r.createElement(
-                              "button",
-                              {
-                                type: "button",
-                                onClick: (X) =>
-                                  moveCarousel(a, 1, imageList.length, X),
-                                className:
-                                  "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8",
-                                "aria-label": s("next_image") || "Next image",
-                              },
-                              r.createElement(Co, { className: "w-3 h-3" }),
-                            ),
-                            r.createElement(
-                              "div",
-                              {
-                                className:
-                                  "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-[11px] font-medium",
-                              },
-                              activeImageIndex + 1,
-                              "/",
-                              imageList.length,
-                            ),
-                            r.createElement(
-                              "div",
-                              {
-                                className:
-                                  "absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full",
-                              },
-                              imageList.map((X, _t) =>
-                                r.createElement("button", {
-                                  key: `${a}-dot-${_t}`,
-                                  type: "button",
-                                  onClick: (Nt) => {
-                                    Nt.preventDefault();
-                                    Nt.stopPropagation();
-                                    scrollCarouselToIndex(a, _t, imageList.length);
-                                  },
-                                  className: `h-1.5 w-1.5 rounded-full transition-all ${_t === activeImageIndex ? "bg-white w-3" : "bg-white/50"}`,
-                                  "aria-label": `${s("go_to_image") || "Go to image"} ${_t + 1}`,
-                                }),
-                              ),
+                              ze,
+                              { className: "dark:bg-gray-700 dark:text-white" },
+                              n || "U",
                             ),
                           ),
-                      ),
-                      r.createElement(
-                        "div",
-                        {
-                          className:
-                            "px-3 py-2.5 text-gray-800 dark:text-gray-200 text-xs sm:text-sm md:text-base leading-relaxed sm:px-4 sm:py-3.5",
-                        },
-                        d || !Oe
-                          ? _ ||
+                          r.createElement(
+                            "div",
+                            { className: "flex-1 min-w-0 pr-10" },
+                            r.createElement(
+                              "div",
+                              { className: "flex items-center gap-2" },
                               r.createElement(
                                 "span",
                                 {
                                   className:
-                                    "italic text-gray-400 dark:text-gray-500",
+                                    "font-semibold text-blue-900 dark:text-blue-200 text-sm sm:text-base md:text-lg truncate",
                                 },
-                                s("no_description") || "No description",
-                              )
-                          : r.createElement(
-                              r.Fragment,
-                              null,
-                              _.slice(0, 120),
-                              "...",
-                              " ",
+                                o,
+                              ),
+                              F &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold rounded-full",
+                                    title: `KYC Verified${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
+                                  },
+                                  r.createElement(
+                                    "svg",
+                                    {
+                                      className: "w-3 h-3",
+                                      fill: "currentColor",
+                                      viewBox: "0 0 20 20",
+                                    },
+                                    r.createElement("path", {
+                                      fillRule: "evenodd",
+                                      d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                      clipRule: "evenodd",
+                                    }),
+                                  ),
+                                  s("verified") || "Verified",
+                                ),
+                              i > 0 &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "text-yellow-500 text-[10px] sm:text-xs font-medium",
+                                  },
+                                  "\u2605 ",
+                                  i.toFixed(1),
+                                ),
+                            ),
+                            r.createElement(
+                              "div",
+                              {
+                                className:
+                                  "mt-1 flex flex-wrap items-center gap-2 text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400",
+                              },
+                              r.createElement(
+                                "span",
+                                {
+                                  className:
+                                    "inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium",
+                                },
+                                p,
+                              ),
+                              he &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700",
+                                  },
+                                  `${s("posted") || "Posted"} `,
+                                  he,
+                                ),
+                              we &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700",
+                                  },
+                                  we,
+                                ),
+                              SHOW_POST_ID_CHIP &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200",
+                                  },
+                                  `${s("post_id") || "Post ID"}: `,
+                                  a,
+                                ),
+                            ),
+                          ),
+                          r.createElement(
+                            "button",
+                            {
+                              type: "button",
+                              onClick: () =>
+                                setMenuPostId((t) => (t === a ? null : a)),
+                              className:
+                                "absolute right-3 top-3 p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 sm:right-4 sm:top-4 sm:p-2",
+                              title: tr("more_options", "More options"),
+                            },
+                            r.createElement(To, { className: "w-4 h-4" }),
+                          ),
+                          menuPostId === a &&
+                            r.createElement(
+                              "div",
+                              {
+                                className:
+                                  "absolute right-4 top-14 z-20 w-44 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-1",
+                              },
                               r.createElement(
                                 "button",
                                 {
+                                  type: "button",
+                                  onClick: () => {
+                                    handleSharePost(a), setMenuPostId(null);
+                                  },
                                   className:
-                                    "text-blue-600 dark:text-blue-400 font-semibold hover:underline",
-                                  onClick: () => _e(a),
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
                                 },
-                                s("view_more"),
+                                s("share") || "Share",
+                              ),
+                              r.createElement(
+                                "button",
+                                {
+                                  type: "button",
+                                  onClick: () => {
+                                    toggleSave(a), setMenuPostId(null);
+                                  },
+                                  className:
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
+                                },
+                                savedPosts[a]
+                                  ? s("saved") || "Saved"
+                                  : s("save") || "Save",
+                              ),
+                              r.createElement(
+                                "button",
+                                {
+                                  type: "button",
+                                  onClick: () => {
+                                    M(
+                                      s("report_feature_coming_soon") ||
+                                        "Report feature coming soon",
+                                    ),
+                                      setTimeout(() => M(""), 2e3),
+                                      setMenuPostId(null);
+                                  },
+                                  className:
+                                    "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg",
+                                },
+                                s("report") || "Report",
                               ),
                             ),
-                      ),
-                      r.createElement(
-                        "div",
-                        {
-                          className:
-                            "px-3 pb-2.5 pt-2 border-t border-gray-100 dark:border-gray-700 sm:pb-3",
-                        },
+                        ),
                         r.createElement(
                           "div",
                           {
-                          className:
-                            "post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 scrollbar-hide sm:gap-2",
+                            className:
+                              "relative w-full bg-slate-100 dark:bg-slate-900/70 border-y border-slate-200/70 dark:border-slate-700",
                           },
                           r.createElement(
-                            "button",
+                            "div",
                             {
-                                  className:
-                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
-                              onClick: () => Me(a),
+                              ref: (X) => setCarouselTrackRef(a, X),
+                              onScroll: (X) =>
+                                handleCarouselScroll(a, X, imageList.length),
+                              className:
+                                "flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide",
                             },
-                            ae[a]
-                              ? r.createElement(He, {
-                                  className: "w-4 h-4 text-red-500",
-                                })
-                              : r.createElement(qe, {
+                            imageList.map((X, _t) =>
+                              r.createElement(
+                                "div",
+                                {
+                                  key: `${a}-media-${_t}`,
                                   className:
-                                    "w-4 h-4 text-black dark:text-gray-300",
+                                    "w-full shrink-0 snap-center bg-slate-100 dark:bg-slate-800",
+                                },
+                                r.createElement("img", {
+                                  src: X,
+                                  alt: `${e.title || s("post") || "Post"} ${s("image") || "image"} ${_t + 1}`,
+                                  loading: "lazy",
+                                  className:
+                                    "w-full h-[200px] sm:h-[260px] md:h-[340px] object-cover object-center",
+                                  onError: (Nt) => {
+                                    Nt.currentTarget.src = D;
+                                  },
                                 }),
-                            r.createElement(
-                              "span",
-                              { className: "hidden sm:inline" },
-                              s("like") || "Like",
-                            ),
-                            r.createElement(
-                              "span",
-                              { className: "text-[10px] sm:text-xs" },
-                              Ae[a] || 0,
+                              ),
                             ),
                           ),
-                          r.createElement(
-                            "button",
-                            {
+                          imageList.length > 1 &&
+                            r.createElement(
+                              r.Fragment,
+                              null,
+                              r.createElement(
+                                "button",
+                                {
+                                  type: "button",
+                                  onClick: (X) =>
+                                    moveCarousel(a, -1, imageList.length, X),
                                   className:
-                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
-                              onClick: () => handleSharePost(a),
-                            },
-                            r.createElement(Ge, { className: "w-4 h-4" }),
-                            r.createElement(
-                              "span",
-                              { className: "hidden sm:inline" },
-                              s("share") || "Share",
-                            ),
-                          ),
-                          r.createElement(
-                            "button",
-                            {
+                                    "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8",
+                                  "aria-label":
+                                    s("previous_image") || "Previous image",
+                                },
+                                r.createElement(Lo, { className: "w-3 h-3" }),
+                              ),
+                              r.createElement(
+                                "button",
+                                {
+                                  type: "button",
+                                  onClick: (X) =>
+                                    moveCarousel(a, 1, imageList.length, X),
                                   className:
-                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
-                              onClick: () => toggleSave(a),
-                            },
-                            savedPosts[a]
-                              ? r.createElement(Po, {
-                                  className: "w-4 h-4 text-blue-600",
-                                })
-                              : r.createElement(Ro, { className: "w-4 h-4" }),
-                            r.createElement(
-                              "span",
-                              { className: "hidden sm:inline" },
-                              savedPosts[a]
-                                ? s("saved") || "Saved"
-                                : s("save") || "Save",
-                            ),
-                          ),
-                          r.createElement(
-                            "button",
-                            {
+                                    "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8",
+                                  "aria-label": s("next_image") || "Next image",
+                                },
+                                r.createElement(Co, { className: "w-3 h-3" }),
+                              ),
+                              r.createElement(
+                                "div",
+                                {
                                   className:
-                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
-                              onClick: () => {
-                                (ie(e), le(!0));
-                              },
-                            },
-                            r.createElement(Ye, { className: "w-4 h-4" }),
-                            r.createElement(
-                              "span",
-                              { className: "hidden sm:inline" },
-                              s("interested") || "Interested",
-                            ),
-                          ),
-                          r.createElement(
-                            "span",
-                            {
+                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-[11px] font-medium",
+                                },
+                                activeImageIndex + 1,
+                                "/",
+                                imageList.length,
+                              ),
+                              r.createElement(
+                                "div",
+                                {
                                   className:
-                                    "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold",
-                            },
-                            r.createElement(Qe, { className: "w-4 h-4" }),
-                            De[a] || 0,
-                          ),
-                          r.createElement(
-                            u,
-                            {
-                              variant: "outline",
-                              className: `shrink-0 h-7 px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-medium rounded inline-flex items-center justify-center gap-1 ${inCart ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-blue-200 text-blue-700 hover:bg-blue-50"}`,
-                              onClick: () => handleCartToggle(e),
-                            },
-                            inCart
-                              ? r.createElement(Bo, { className: "w-4 h-4" })
-                              : r.createElement(Mo, { className: "w-4 h-4" }),
-                            r.createElement(
-                              "span",
-                              { className: "hidden sm:inline" },
-                              inCart
-                                ? s("in_cart") || "In Cart"
-                                : s("add_to_cart") || "Add to Cart",
+                                    "absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full",
+                                },
+                                imageList.map((X, _t) =>
+                                  r.createElement("button", {
+                                    key: `${a}-dot-${_t}`,
+                                    type: "button",
+                                    onClick: (Nt) => {
+                                      Nt.preventDefault();
+                                      Nt.stopPropagation();
+                                      scrollCarouselToIndex(
+                                        a,
+                                        _t,
+                                        imageList.length,
+                                      );
+                                    },
+                                    className: `h-1.5 w-1.5 rounded-full transition-all ${_t === activeImageIndex ? "bg-white w-3" : "bg-white/50"}`,
+                                    "aria-label": `${s("go_to_image") || "Go to image"} ${_t + 1}`,
+                                  }),
+                                ),
+                              ),
                             ),
-                          ),
+                        ),
+                        r.createElement(
+                          "div",
+                          {
+                            className:
+                              "px-3 py-2.5 text-gray-800 dark:text-gray-200 text-xs sm:text-sm md:text-base leading-relaxed sm:px-4 sm:py-3.5",
+                          },
+                          d || !Oe
+                            ? _ ||
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "italic text-gray-400 dark:text-gray-500",
+                                  },
+                                  s("no_description") || "No description",
+                                )
+                            : r.createElement(
+                                r.Fragment,
+                                null,
+                                _.slice(0, 120),
+                                "...",
+                                " ",
+                                r.createElement(
+                                  "button",
+                                  {
+                                    className:
+                                      "text-blue-600 dark:text-blue-400 font-semibold hover:underline",
+                                    onClick: () => _e(a),
+                                  },
+                                  s("view_more"),
+                                ),
+                              ),
+                        ),
+                        r.createElement(
+                          "div",
+                          {
+                            className:
+                              "px-3 pb-2.5 pt-2 border-t border-gray-100 dark:border-gray-700 sm:pb-3",
+                          },
                           r.createElement(
-                            u,
+                            "div",
                             {
                               className:
-                                "shrink-0 h-7 bg-blue-600 text-white px-2.5 text-[10px] sm:h-8 sm:px-3 sm:text-xs font-medium rounded hover:bg-blue-700",
-                              onClick: () => je(a),
+                                "post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 scrollbar-hide sm:gap-2",
                             },
-                            r.createElement(Qe, { className: "w-4 h-4" }),
+                            r.createElement(
+                              "button",
+                              {
+                                className:
+                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
+                                onClick: () => Me(a),
+                              },
+                              ae[a]
+                                ? r.createElement(He, {
+                                    className: "w-4 h-4 text-red-500",
+                                  })
+                                : r.createElement(qe, {
+                                    className:
+                                      "w-4 h-4 text-black dark:text-gray-300",
+                                  }),
+                              r.createElement(
+                                "span",
+                                { className: "hidden sm:inline" },
+                                s("like") || "Like",
+                              ),
+                              r.createElement(
+                                "span",
+                                { className: "text-[10px] sm:text-xs" },
+                                Ae[a] || 0,
+                              ),
+                            ),
+                            r.createElement(
+                              "button",
+                              {
+                                className:
+                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
+                                onClick: () => handleSharePost(a),
+                              },
+                              r.createElement(Ge, { className: "w-4 h-4" }),
+                              r.createElement(
+                                "span",
+                                { className: "hidden sm:inline" },
+                                s("share") || "Share",
+                              ),
+                            ),
+                            r.createElement(
+                              "button",
+                              {
+                                className:
+                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
+                                onClick: () => toggleSave(a),
+                              },
+                              savedPosts[a]
+                                ? r.createElement(Po, {
+                                    className: "w-4 h-4 text-blue-600",
+                                  })
+                                : r.createElement(Ro, { className: "w-4 h-4" }),
+                              r.createElement(
+                                "span",
+                                { className: "hidden sm:inline" },
+                                savedPosts[a]
+                                  ? s("saved") || "Saved"
+                                  : s("save") || "Save",
+                              ),
+                            ),
+                            r.createElement(
+                              "button",
+                              {
+                                className:
+                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
+                                onClick: () => {
+                                  ie(e), le(!0);
+                                },
+                              },
+                              r.createElement(Ye, { className: "w-4 h-4" }),
+                              r.createElement(
+                                "span",
+                                { className: "hidden sm:inline" },
+                                s("interested") || "Interested",
+                              ),
+                            ),
                             r.createElement(
                               "span",
-                              { className: "hidden sm:inline" },
-                              s("view_details") || "View Details",
+                              {
+                                className:
+                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold",
+                              },
+                              r.createElement(Qe, { className: "w-4 h-4" }),
+                              De[a] || 0,
+                            ),
+                            r.createElement(
+                              u,
+                              {
+                                variant: "outline",
+                                className: `shrink-0 h-7 px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-medium rounded inline-flex items-center justify-center gap-1 ${inCart ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-blue-200 text-blue-700 hover:bg-blue-50"}`,
+                                onClick: () => handleCartToggle(e),
+                              },
+                              inCart
+                                ? r.createElement(Bo, { className: "w-4 h-4" })
+                                : r.createElement(Mo, { className: "w-4 h-4" }),
+                              r.createElement(
+                                "span",
+                                { className: "hidden sm:inline" },
+                                inCart
+                                  ? s("in_cart") || "In Cart"
+                                  : s("add_to_cart") || "Add to Cart",
+                              ),
+                            ),
+                            r.createElement(
+                              u,
+                              {
+                                className:
+                                  "shrink-0 h-7 bg-blue-600 text-white px-2.5 text-[10px] sm:h-8 sm:px-3 sm:text-xs font-medium rounded hover:bg-blue-700",
+                                onClick: () => je(a),
+                              },
+                              r.createElement(Qe, { className: "w-4 h-4" }),
+                              r.createElement(
+                                "span",
+                                { className: "hidden sm:inline" },
+                                s("view_details") || "View Details",
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
           ),
         ),
         C &&
@@ -2255,23 +2277,22 @@ const ve = 5,
             },
             ne,
           ),
-      r.createElement(Ze, {
-        isOpen: Ie,
-        onClose: () => {
-          (le(!1), ie(null));
-        },
-        postId: G?.post_id || G?.id,
-        postTitle: G?.title,
-      }),
-      r.createElement(pt, {
-        open: shareDialogOpen,
-        onOpenChange: setShareDialogOpen,
-        url: shareDialogUrl,
-        title: s("share") || "Share post",
-      }),
-    ));
+        r.createElement(Ze, {
+          isOpen: Ie,
+          onClose: () => {
+            le(!1), ie(null);
+          },
+          postId: G?.post_id || G?.id,
+          postTitle: G?.title,
+        }),
+        r.createElement(pt, {
+          open: shareDialogOpen,
+          onOpenChange: setShareDialogOpen,
+          url: shareDialogUrl,
+          title: s("share") || "Share post",
+        }),
+      ),
+    );
   };
 var Nt = it;
 export { Nt as default };
-
-

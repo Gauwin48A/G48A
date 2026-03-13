@@ -1,1 +1,406 @@
-import e,{useMemo as z,useState as n}from"react";import{Button as c}from"@/components/ui/button";import{Input as N}from"@/components/ui/input";import{Label as k}from"@/components/ui/label";import{Card as C,CardContent as P,CardDescription as M,CardHeader as Y,CardTitle as $}from"@/components/ui/card";import{useToast as I}from"@/hooks/use-toast";import{Link as L,useNavigate as J,useSearchParams as W,useParams as Z}from"react-router-dom";import{Lock as G,CheckCircle as K,Eye as S,EyeOff as B,AlertCircle as Q}from"lucide-react";import{useTranslation as V}from"react-i18next";import{getApiOriginBase as X}from"@/lib/networkConfig";const R=()=>{const q=J(),{toast:i}=I(),{t:s}=V(),[T]=W(),{token:A}=Z(),E=T.get("token"),w=A||E,[t,F]=n(""),[m,D]=n(""),[g,j]=n(!1),[h,H]=n(!1),[u,f]=n(!1),[p,O]=n(!1),[x,l]=n(""),a=z(()=>({hasUppercase:/[A-Z]/.test(t),hasLowercase:/[a-z]/.test(t),hasNumber:/\d/.test(t),hasSpecial:/[!@#$%^&*]/.test(t),isLongEnough:t.length>=8}),[t]),v=(o,b)=>{const r=String(b||"").toLowerCase();return o===429||r.includes("too many")?"Too many reset attempts detected. Please wait before retrying.":o===400&&(r.includes("invalid or expired reset link")||r.includes("token"))?"This reset link is invalid or expired. Request a new one from Forgot Password.":r.includes("weak")||r.includes("password")?"Password does not meet security requirements. Review the checklist below.":r.includes("network")||r.includes("fetch")||r.includes("timeout")?"Reset service is temporarily unavailable. Please retry shortly.":b||s("failed_reset_password")||"Failed to reset password"},U=async o=>{if(o.preventDefault(),l(""),!w){const r=s("invalid_reset_link");l(r),i({title:s("error"),description:r,variant:"destructive"});return}if(!t||!m){const r=s("fill_all_fields")||"Please fill in all fields";l(r),i({title:s("error"),description:r,variant:"destructive"});return}if(t!==m){const r=s("passwords_do_not_match")||"Passwords do not match";l(r),i({title:s("error"),description:r,variant:"destructive"});return}if(!(a.isLongEnough&&a.hasUppercase&&a.hasLowercase&&a.hasNumber&&a.hasSpecial)){const r=s("password_requirements_msg")||"Password must be 8+ characters with uppercase, lowercase, number, and special character";l(r),i({title:s("weak_password")||"Weak Password",description:r,variant:"destructive"});return}f(!0);try{const r=X(),d=await fetch(`${r}/api/auth/reset-password`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:w,newPassword:t})}),_=await d.json().catch(()=>({}));if(d.ok)O(!0),i({title:s("success"),description:s("password_reset_success")||"Password reset successfully!"}),setTimeout(()=>q("/login"),3e3);else{const y=v(d.status,_.error||_.message);l(y),i({title:s("error"),description:y,variant:"destructive"})}}catch(r){const d=v(null,r.message||s("network_error"));l(d),i({title:s("error"),description:d,variant:"destructive"})}finally{f(!1)}};return w?e.createElement("div",{className:"min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4"},e.createElement(C,{className:"max-w-md w-full shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800"},e.createElement(Y,{className:"text-center py-8 bg-gradient-to-r from-blue-600 to-blue-700"},e.createElement("div",{className:"w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center"},p?e.createElement(K,{className:"w-8 h-8 text-white"}):e.createElement(G,{className:"w-8 h-8 text-white"})),e.createElement($,{className:"text-2xl text-white"},p?s("password_reset_title")||"Password Reset!":s("reset_password_title")),e.createElement(M,{className:"text-blue-100"},p?s("redirecting_to_login")||"Redirecting to login...":s("create_new_password_msg")||"Create a new secure password")),e.createElement(P,{className:"p-8"},p?e.createElement("div",{className:"text-center space-y-4"},e.createElement("p",{className:"text-gray-600 dark:text-gray-300"},s("password_reset_success_msg")||"Your password has been reset successfully. You will be redirected to the login page."),e.createElement(L,{to:"/login"},e.createElement(c,{className:"w-full bg-[#96C2DB] hover:bg-blue-500 text-white"},s("go_to_login")))):e.createElement("form",{onSubmit:U,className:"space-y-6"},x&&e.createElement("div",{className:"rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2"},e.createElement(Q,{className:"w-4 h-4 mt-0.5 flex-shrink-0"}),e.createElement("span",null,x)),e.createElement("div",null,e.createElement(k,{htmlFor:"password",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},s("new_password_label")),e.createElement("div",{className:"relative mt-2"},e.createElement(N,{id:"password",type:g?"text":"password",value:t,onChange:o=>F(o.target.value),className:"h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12",placeholder:s("create_password_placeholder"),disabled:u}),e.createElement(c,{type:"button",variant:"ghost",size:"sm",className:"absolute right-2 top-1/2 transform -translate-y-1/2",onClick:()=>j(!g)},g?e.createElement(B,{className:"w-4 h-4"}):e.createElement(S,{className:"w-4 h-4"})))),e.createElement("div",null,e.createElement(k,{htmlFor:"confirmPassword",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},s("confirm_new_password_label")),e.createElement("div",{className:"relative mt-2"},e.createElement(N,{id:"confirmPassword",type:h?"text":"password",value:m,onChange:o=>D(o.target.value),className:"h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12",placeholder:s("confirm_password_placeholder"),disabled:u}),e.createElement(c,{type:"button",variant:"ghost",size:"sm",className:"absolute right-2 top-1/2 transform -translate-y-1/2",onClick:()=>H(!h)},h?e.createElement(B,{className:"w-4 h-4"}):e.createElement(S,{className:"w-4 h-4"}))),m&&t!==m&&e.createElement("p",{className:"text-xs text-red-500 mt-1"},s("passwords_do_not_match")||"Passwords do not match")),e.createElement("div",{className:"bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-xs"},e.createElement("p",{className:"font-semibold mb-2 text-gray-700 dark:text-gray-300"},s("password_requirements")),e.createElement("ul",{className:"space-y-1 text-gray-600 dark:text-gray-400"},e.createElement("li",{className:a.isLongEnough?"text-green-600":""},"- ",s("req_min_chars")),e.createElement("li",{className:a.hasUppercase?"text-green-600":""},"- ",s("req_uppercase")),e.createElement("li",{className:a.hasLowercase?"text-green-600":""},"- ",s("req_lowercase")),e.createElement("li",{className:a.hasNumber?"text-green-600":""},"- ",s("req_number")),e.createElement("li",{className:a.hasSpecial?"text-green-600":""},"- ",s("req_special")))),e.createElement(c,{type:"submit",disabled:u,className:"w-full py-6 text-lg bg-[#96C2DB] hover:bg-blue-500 text-white rounded-xl"},u?s("resetting_password")||"Resetting...":s("reset_password_title")))))):e.createElement("div",{className:"min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4"},e.createElement(C,{className:"max-w-md w-full shadow-2xl border-0 rounded-3xl bg-white dark:bg-gray-800"},e.createElement(P,{className:"p-8 text-center"},e.createElement("h2",{className:"text-xl font-bold text-gray-800 dark:text-white mb-4"},s("invalid_reset_link")),e.createElement("p",{className:"text-gray-600 dark:text-gray-300 mb-6"},s("invalid_reset_link_desc")),e.createElement(L,{to:"/forgot-password"},e.createElement(c,{className:"w-full bg-[#96C2DB] hover:bg-blue-500 text-white"},s("request_new_link"))))))};var me=R;export{me as default};
+import e, { useMemo as z, useState as n } from "react";
+import { Button as c } from "@/components/ui/button";
+import { Input as N } from "@/components/ui/input";
+import { Label as k } from "@/components/ui/label";
+import {
+  Card as C,
+  CardContent as P,
+  CardDescription as M,
+  CardHeader as Y,
+  CardTitle as $,
+} from "@/components/ui/card";
+import { useToast as I } from "@/hooks/use-toast";
+import {
+  Link as L,
+  useNavigate as J,
+  useSearchParams as W,
+  useParams as Z,
+} from "react-router-dom";
+import {
+  Lock as G,
+  CheckCircle as K,
+  Eye as S,
+  EyeOff as B,
+  AlertCircle as Q,
+} from "lucide-react";
+import { useTranslation as V } from "react-i18next";
+import { getApiOriginBase as X } from "@/lib/networkConfig";
+import { mapPasswordResetError as ee } from "@/utils/passwordResetErrorMapper";
+const R = () => {
+  const q = J(),
+    { toast: i } = I(),
+    { t: s } = V(),
+    [T] = W(),
+    { token: A } = Z(),
+    E = T.get("token"),
+    w = A || E,
+    [t, F] = n(""),
+    [m, D] = n(""),
+    [g, j] = n(!1),
+    [h, H] = n(!1),
+    [u, f] = n(!1),
+    [p, O] = n(!1),
+    [x, l] = n(""),
+    a = z(
+      () => ({
+        hasUppercase: /[A-Z]/.test(t),
+        hasLowercase: /[a-z]/.test(t),
+        hasNumber: /\d/.test(t),
+        hasSpecial: /[!@#$%^&*]/.test(t),
+        isLongEnough: t.length >= 8,
+      }),
+      [t],
+    ),
+    v = (o, b) => ee({ status: o, message: b, t: s, context: "reset" }),
+    U = async (o) => {
+      if ((o.preventDefault(), l(""), !w)) {
+        const r = s("invalid_reset_link");
+        l(r), i({ title: s("error"), description: r, variant: "destructive" });
+        return;
+      }
+      if (!t || !m) {
+        const r = s("fill_all_fields") || "Please fill in all fields";
+        l(r), i({ title: s("error"), description: r, variant: "destructive" });
+        return;
+      }
+      if (t !== m) {
+        const r = s("passwords_do_not_match") || "Passwords do not match";
+        l(r), i({ title: s("error"), description: r, variant: "destructive" });
+        return;
+      }
+      if (
+        !(
+          a.isLongEnough &&
+          a.hasUppercase &&
+          a.hasLowercase &&
+          a.hasNumber &&
+          a.hasSpecial
+        )
+      ) {
+        const r =
+          s("password_requirements_msg") ||
+          "Password must be 8+ characters with uppercase, lowercase, number, and special character";
+        l(r),
+          i({
+            title: s("weak_password") || "Weak Password",
+            description: r,
+            variant: "destructive",
+          });
+        return;
+      }
+      f(!0);
+      try {
+        const r = X(),
+          d = await fetch(`${r}/api/auth/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: w, newPassword: t }),
+          }),
+          _ = await d.json().catch(() => ({}));
+        if (d.ok)
+          O(!0),
+            i({
+              title: s("success"),
+              description:
+                s("password_reset_success") || "Password reset successfully!",
+            }),
+            setTimeout(() => q("/login"), 3e3);
+        else {
+          const y = v(d.status, _.error || _.message);
+          l(y),
+            i({ title: s("error"), description: y, variant: "destructive" });
+        }
+      } catch (r) {
+        const d = v(null, r.message);
+        l(d), i({ title: s("error"), description: d, variant: "destructive" });
+      } finally {
+        f(!1);
+      }
+    };
+  return w
+    ? e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4",
+        },
+        e.createElement(
+          C,
+          {
+            className:
+              "max-w-md w-full shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800",
+          },
+          e.createElement(
+            Y,
+            {
+              className:
+                "text-center py-8 bg-gradient-to-r from-blue-600 to-blue-700",
+            },
+            e.createElement(
+              "div",
+              {
+                className:
+                  "w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center",
+              },
+              p
+                ? e.createElement(K, { className: "w-8 h-8 text-white" })
+                : e.createElement(G, { className: "w-8 h-8 text-white" }),
+            ),
+            e.createElement(
+              $,
+              { className: "text-2xl text-white" },
+              p
+                ? s("password_reset_title") || "Password Reset!"
+                : s("reset_password_title"),
+            ),
+            e.createElement(
+              M,
+              { className: "text-blue-100" },
+              p
+                ? s("redirecting_to_login") || "Redirecting to login..."
+                : s("create_new_password_msg") ||
+                    "Create a new secure password",
+            ),
+          ),
+          e.createElement(
+            P,
+            { className: "p-8" },
+            p
+              ? e.createElement(
+                  "div",
+                  { className: "text-center space-y-4" },
+                  e.createElement(
+                    "p",
+                    { className: "text-gray-600 dark:text-gray-300" },
+                    s("password_reset_success_msg") ||
+                      "Your password has been reset successfully. You will be redirected to the login page.",
+                  ),
+                  e.createElement(
+                    L,
+                    { to: "/login" },
+                    e.createElement(
+                      c,
+                      {
+                        className:
+                          "w-full bg-[#96C2DB] hover:bg-blue-500 text-white",
+                      },
+                      s("go_to_login"),
+                    ),
+                  ),
+                )
+              : e.createElement(
+                  "form",
+                  { onSubmit: U, className: "space-y-6" },
+                  x &&
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2",
+                      },
+                      e.createElement(Q, {
+                        className: "w-4 h-4 mt-0.5 flex-shrink-0",
+                      }),
+                      e.createElement("span", null, x),
+                    ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      k,
+                      {
+                        htmlFor: "password",
+                        className:
+                          "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                      },
+                      s("new_password_label"),
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "relative mt-2" },
+                      e.createElement(N, {
+                        id: "password",
+                        type: g ? "text" : "password",
+                        value: t,
+                        onChange: (o) => F(o.target.value),
+                        className:
+                          "h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12",
+                        placeholder: s("create_password_placeholder"),
+                        disabled: u,
+                      }),
+                      e.createElement(
+                        c,
+                        {
+                          type: "button",
+                          variant: "ghost",
+                          size: "sm",
+                          className:
+                            "absolute right-2 top-1/2 transform -translate-y-1/2",
+                          onClick: () => j(!g),
+                        },
+                        g
+                          ? e.createElement(B, { className: "w-4 h-4" })
+                          : e.createElement(S, { className: "w-4 h-4" }),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      k,
+                      {
+                        htmlFor: "confirmPassword",
+                        className:
+                          "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                      },
+                      s("confirm_new_password_label"),
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "relative mt-2" },
+                      e.createElement(N, {
+                        id: "confirmPassword",
+                        type: h ? "text" : "password",
+                        value: m,
+                        onChange: (o) => D(o.target.value),
+                        className:
+                          "h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12",
+                        placeholder: s("confirm_password_placeholder"),
+                        disabled: u,
+                      }),
+                      e.createElement(
+                        c,
+                        {
+                          type: "button",
+                          variant: "ghost",
+                          size: "sm",
+                          className:
+                            "absolute right-2 top-1/2 transform -translate-y-1/2",
+                          onClick: () => H(!h),
+                        },
+                        h
+                          ? e.createElement(B, { className: "w-4 h-4" })
+                          : e.createElement(S, { className: "w-4 h-4" }),
+                      ),
+                    ),
+                    m &&
+                      t !== m &&
+                      e.createElement(
+                        "p",
+                        { className: "text-xs text-red-500 mt-1" },
+                        s("passwords_do_not_match") || "Passwords do not match",
+                      ),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "bg-gray-50 dark:bg-gray-700 p-4 rounded-xl text-xs",
+                    },
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "font-semibold mb-2 text-gray-700 dark:text-gray-300",
+                      },
+                      s("password_requirements"),
+                    ),
+                    e.createElement(
+                      "ul",
+                      {
+                        className: "space-y-1 text-gray-600 dark:text-gray-400",
+                      },
+                      e.createElement(
+                        "li",
+                        { className: a.isLongEnough ? "text-green-600" : "" },
+                        "- ",
+                        s("req_min_chars"),
+                      ),
+                      e.createElement(
+                        "li",
+                        { className: a.hasUppercase ? "text-green-600" : "" },
+                        "- ",
+                        s("req_uppercase"),
+                      ),
+                      e.createElement(
+                        "li",
+                        { className: a.hasLowercase ? "text-green-600" : "" },
+                        "- ",
+                        s("req_lowercase"),
+                      ),
+                      e.createElement(
+                        "li",
+                        { className: a.hasNumber ? "text-green-600" : "" },
+                        "- ",
+                        s("req_number"),
+                      ),
+                      e.createElement(
+                        "li",
+                        { className: a.hasSpecial ? "text-green-600" : "" },
+                        "- ",
+                        s("req_special"),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    c,
+                    {
+                      type: "submit",
+                      disabled: u,
+                      className:
+                        "w-full py-6 text-lg bg-[#96C2DB] hover:bg-blue-500 text-white rounded-xl",
+                    },
+                    u
+                      ? s("resetting_password") || "Resetting..."
+                      : s("reset_password_title"),
+                  ),
+                ),
+          ),
+        ),
+      )
+    : e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4",
+        },
+        e.createElement(
+          C,
+          {
+            className:
+              "max-w-md w-full shadow-2xl border-0 rounded-3xl bg-white dark:bg-gray-800",
+          },
+          e.createElement(
+            P,
+            { className: "p-8 text-center" },
+            e.createElement(
+              "h2",
+              {
+                className:
+                  "text-xl font-bold text-gray-800 dark:text-white mb-4",
+              },
+              s("invalid_reset_link"),
+            ),
+            e.createElement(
+              "p",
+              { className: "text-gray-600 dark:text-gray-300 mb-6" },
+              s("invalid_reset_link_desc"),
+            ),
+            e.createElement(
+              L,
+              { to: "/forgot-password" },
+              e.createElement(
+                c,
+                {
+                  className: "w-full bg-[#96C2DB] hover:bg-blue-500 text-white",
+                },
+                s("request_new_link"),
+              ),
+            ),
+          ),
+        ),
+      );
+};
+var me = R;
+export { me as default };

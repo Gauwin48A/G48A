@@ -76,6 +76,23 @@ function getTokenExpiryMs(token) {
   return Number.isFinite(exp) ? exp * 1000 : null;
 }
 
+function buildSessionDiagnostics(tokenOverride) {
+  const token = tokenOverride !== undefined ? tokenOverride : getAccessToken();
+  const tokenPresent = Boolean(token);
+  const tokenExpiryMs = tokenPresent ? getTokenExpiryMs(token) : null;
+  const msUntilExpiry = tokenExpiryMs ? tokenExpiryMs - Date.now() : null;
+  const cachedUser = safeParseJson(localStorage.getItem("user"));
+
+  return {
+    tokenPresent,
+    tokenExpired: tokenPresent ? isTokenExpired(token) : null,
+    tokenExpiryMs,
+    msUntilExpiry,
+    authSessionFlag: hasAuthSession(),
+    hasCachedUser: Boolean(cachedUser),
+  };
+}
+
 function clearAuthStorage() {
   AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 }
@@ -179,6 +196,7 @@ export function AuthProvider({ children }) {
 
   const refreshAuth = useCallback(async () => {
     const accessToken = getAccessToken();
+    logAuthDiagnostic("refresh_auth_snapshot", buildSessionDiagnostics(accessToken));
     if (!accessToken) {
       const refreshed = await refreshAccessToken();
       if (!refreshed) {
@@ -254,6 +272,15 @@ export function AuthProvider({ children }) {
           ? session.canRefresh
           : hasRefreshCookie;
       const token = getAccessToken();
+      logAuthDiagnostic("bootstrap_session_snapshot", {
+        authenticated,
+        hasRefreshCookie,
+        canRefresh,
+        authState,
+        requiresReauth,
+        hasSessionUser: Boolean(session?.user),
+        ...buildSessionDiagnostics(token),
+      });
 
       if (requiresReauth) {
         logAuthDiagnostic("bootstrap_requires_reauth", {

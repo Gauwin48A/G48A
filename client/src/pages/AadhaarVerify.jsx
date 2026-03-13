@@ -1,2 +1,582 @@
 /* eslint-disable no-constant-condition */
-import e,{useState as d}from"react";import{useNavigate as D,Link as w}from"react-router-dom";import{Button as a}from"@/components/ui/button";import{Input as I}from"@/components/ui/input";import{Label as o}from"@/components/ui/label";import{Card as n,CardContent as m,CardDescription as U,CardHeader as c,CardTitle as g}from"@/components/ui/card";import{Badge as L}from"@/components/ui/badge";import{useToast as F}from"@/hooks/use-toast";import{Shield as A,Upload as M,FileText as k,CheckCircle as P,AlertCircle as S,Download as H,RefreshCw as E}from"lucide-react";import{useTranslation as G}from"react-i18next";import{PageAuthGateState as O}from"@/components/page-state/PageStateBlocks";const Y=5*1024*1024,_=()=>{const{t:q}=G(),{toast:s}=F(),x=D(),X=localStorage.getItem("authToken")||localStorage.getItem("token"),[p,f]=d(null),[v,h]=d(!1),[b,i]=d("idle"),[N,l]=d(""),[u,y]=d({name:"",gender:"",dob:"",address:""}),B=t=>{const r=t.target.files?.[0];if(r){if(l(""),!r.name.toLowerCase().endsWith(".xml")){f(null),i("failed"),l("Please select a valid Aadhaar XML file."),s({title:"Invalid file type",description:"Only XML files are supported for Aadhaar verification.",variant:"destructive"});return}if(r.size>Y){f(null),i("failed"),l("File size exceeds 5MB limit. Please upload a smaller XML file."),s({title:"File too large",description:"Aadhaar XML must be 5MB or smaller.",variant:"destructive"});return}f(r),i("idle"),s({title:"File selected",description:`Selected: ${r.name}`})}},C=()=>{f(null),i("idle"),l(""),y({name:"",gender:"",dob:"",address:""})},T=async()=>{if(!p){s({title:"No file selected",description:"Select your Aadhaar XML file to continue.",variant:"destructive"});return}h(!0),l(""),setTimeout(()=>{if(h(!1),!!0){i("failed"),l("Verification failed. Please retry with a fresh Aadhaar XML download.");return}i("success"),y({name:"Verified User",gender:"Not disclosed",dob:"Protected",address:"Protected"}),s({title:"Aadhaar verified",description:"Your identity verification is complete."})},2500)},V=()=>{s({title:"Sample format",description:"Use UIDAI Aadhaar XML format when uploading."})};return X?e.createElement("div",{className:"min-h-screen bg-gray-50"},e.createElement("div",{className:"max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8"},e.createElement("div",{className:"mb-8"},e.createElement("div",{className:"flex items-center space-x-3 mb-4"},e.createElement(A,{className:"w-8 h-8 text-green-600"}),e.createElement("h1",{className:"text-3xl font-bold text-gray-900"},"Aadhaar Verification")),e.createElement("p",{className:"text-gray-600"},"Verify identity with your Aadhaar XML file to unlock trust badges and safer transactions.")),e.createElement(n,{className:"mb-8 border-blue-200 bg-blue-50"},e.createElement(c,null,e.createElement(g,{className:"flex items-center space-x-2 text-blue-800"},e.createElement(k,{className:"w-5 h-5"}),e.createElement("span",null,"How to get your Aadhaar XML"))),e.createElement(m,null,e.createElement("div",{className:"space-y-3 text-blue-700"},[1,2,3,4,5].map((t,r)=>e.createElement("div",{key:t,className:"flex items-start space-x-2"},e.createElement("span",{className:"font-bold"},t,"."),e.createElement("p",null,["Visit the official UIDAI portal.",'Open the "Download Aadhaar" section.',"Choose XML format and complete OTP verification.","Download the Aadhaar XML package.","Upload the XML file on this page."][r]))),e.createElement("div",{className:"mt-4 pt-4 border-t border-blue-200"},e.createElement(a,{variant:"outline",onClick:V,className:"text-blue-700 border-blue-300 hover:bg-blue-100"},e.createElement(H,{className:"w-4 h-4 mr-2"}),"XML format guidance"))))),e.createElement(n,{className:"mb-8"},e.createElement(c,null,e.createElement(g,null,"Upload Aadhaar XML"),e.createElement(U,null,"Select your XML file and start verification.")),e.createElement(m,null,e.createElement("div",{className:"space-y-6"},e.createElement("div",null,e.createElement(o,{htmlFor:"aadhaar-xml"},"Aadhaar XML file"),e.createElement("div",{className:"mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center"},e.createElement(M,{className:"mx-auto h-12 w-12 text-gray-400"}),e.createElement("label",{htmlFor:"aadhaar-xml",className:"cursor-pointer block mt-4"},e.createElement("span",{className:"block text-sm font-medium text-gray-900"},"Select Aadhaar XML file"),e.createElement(I,{id:"aadhaar-xml",name:"aadhaar-xml",type:"file",accept:".xml",onChange:B,className:"sr-only"}),e.createElement("p",{className:"mt-1 text-sm text-gray-500"},"XML only, up to 5MB"))),p&&e.createElement("div",{className:"mt-4 p-3 bg-green-50 border border-green-200 rounded-lg"},e.createElement("div",{className:"flex items-center space-x-2"},e.createElement(k,{className:"w-5 h-5 text-green-600"}),e.createElement("span",{className:"text-sm font-medium text-green-800"},p.name),e.createElement(L,{className:"bg-green-600"},"Ready")))),N&&e.createElement("div",{className:"p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm"},N),e.createElement("div",{className:"flex flex-col sm:flex-row gap-3"},e.createElement(a,{onClick:T,className:"w-full sm:w-auto",disabled:!p||v},v?e.createElement(e.Fragment,null,e.createElement("div",{className:"animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"}),"Verifying..."):e.createElement(e.Fragment,null,e.createElement(M,{className:"w-4 h-4 mr-2"}),"Upload and verify")),e.createElement(a,{variant:"outline",onClick:C,disabled:v},e.createElement(E,{className:"w-4 h-4 mr-2"}),"Reset"))))),b==="success"&&e.createElement(n,{className:"mb-8 border-green-200 bg-green-50"},e.createElement(c,null,e.createElement(g,{className:"flex items-center space-x-2 text-green-800"},e.createElement(P,{className:"w-5 h-5"}),e.createElement("span",null,"Verification successful"))),e.createElement(m,{className:"space-y-4"},e.createElement("p",{className:"text-green-700"},"Aadhaar verification is complete. Sensitive details are masked by design."),e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-2 gap-4"},e.createElement("div",null,e.createElement(o,{className:"text-green-700"},"Verified Name"),e.createElement("p",{className:"font-medium text-green-800"},u.name)),e.createElement("div",null,e.createElement(o,{className:"text-green-700"},"Gender"),e.createElement("p",{className:"font-medium text-green-800"},u.gender)),e.createElement("div",null,e.createElement(o,{className:"text-green-700"},"Date of Birth"),e.createElement("p",{className:"font-medium text-green-800"},u.dob)),e.createElement("div",null,e.createElement(o,{className:"text-green-700"},"Address"),e.createElement("p",{className:"font-medium text-green-800"},u.address))),e.createElement("div",{className:"flex items-center space-x-2 pt-2"},e.createElement(L,{className:"bg-green-600"},e.createElement(A,{className:"w-3 h-3 mr-1"}),"Aadhaar Verified"),e.createElement("span",{className:"text-sm text-green-700"},"This badge appears on your profile.")),e.createElement("div",{className:"flex flex-col sm:flex-row gap-3 pt-2"},e.createElement(w,{to:"/profile"},e.createElement(a,{variant:"outline",className:"text-green-700 border-green-300 hover:bg-green-100"},"View Profile")),e.createElement(w,{to:"/dashboard"},e.createElement(a,{className:"bg-green-600 hover:bg-green-700"},"Go to Dashboard"))))),b==="failed"&&e.createElement(n,{className:"mb-8 border-red-200 bg-red-50"},e.createElement(c,null,e.createElement(g,{className:"flex items-center space-x-2 text-red-800"},e.createElement(S,{className:"w-5 h-5"}),e.createElement("span",null,"Verification failed"))),e.createElement(m,{className:"space-y-4"},e.createElement("p",{className:"text-red-700"},"We could not verify this file. Download a fresh XML from UIDAI and retry."),e.createElement("div",{className:"flex flex-col sm:flex-row gap-3"},e.createElement(a,{variant:"outline",className:"text-red-700 border-red-300 hover:bg-red-100",onClick:C},"Try Again"),e.createElement(a,{variant:"outline",onClick:()=>x("/kyc")},"Use KYC document flow")))),e.createElement(n,{className:"border-yellow-200 bg-yellow-50"},e.createElement(m,{className:"p-6"},e.createElement("div",{className:"flex items-start space-x-3"},e.createElement(S,{className:"w-5 h-5 text-yellow-600 mt-0.5"}),e.createElement("div",null,e.createElement("h3",{className:"font-semibold text-yellow-800"},"Security and privacy notice"),e.createElement("ul",{className:"text-sm text-yellow-700 mt-2 space-y-1"},e.createElement("li",null,"- Aadhaar XML is processed for verification only."),e.createElement("li",null,"- Only required identity attributes are used."),e.createElement("li",null,"- Aadhaar number is never displayed back in full."),e.createElement("li",null,"- Verification helps buyers and sellers trust each other.")))))))):e.createElement("div",{className:"min-h-screen bg-gray-50 flex items-center justify-center p-4"},e.createElement("div",{className:"max-w-md w-full"},e.createElement(O,{marker:"auth-gate",title:"Login required",description:"Please log in to continue Aadhaar verification.",primaryAction:e.createElement(a,{onClick:()=>x("/login",{state:{returnTo:"/aadhaar-verify"}})},"Go to Login")})))};var re=_;export{re as default};
+import e, { useState as d } from "react";
+import { useNavigate as D, Link as w } from "react-router-dom";
+import { Button as a } from "@/components/ui/button";
+import { Input as I } from "@/components/ui/input";
+import { Label as o } from "@/components/ui/label";
+import {
+  Card as n,
+  CardContent as m,
+  CardDescription as U,
+  CardHeader as c,
+  CardTitle as g,
+} from "@/components/ui/card";
+import { Badge as L } from "@/components/ui/badge";
+import { useToast as F } from "@/hooks/use-toast";
+import {
+  Shield as A,
+  Upload as M,
+  FileText as k,
+  CheckCircle as P,
+  AlertCircle as S,
+  Download as H,
+  RefreshCw as E,
+} from "lucide-react";
+import { useTranslation as G } from "react-i18next";
+import { PageAuthGateState as O } from "@/components/page-state/PageStateBlocks";
+const Y = 5 * 1024 * 1024,
+  _ = () => {
+    const { t: q } = G(),
+      { toast: s } = F(),
+      x = D(),
+      X = localStorage.getItem("authToken") || localStorage.getItem("token"),
+      [p, f] = d(null),
+      [v, h] = d(!1),
+      [b, i] = d("idle"),
+      [N, l] = d(""),
+      [u, y] = d({ name: "", gender: "", dob: "", address: "" }),
+      B = (t) => {
+        const r = t.target.files?.[0];
+        if (r) {
+          if ((l(""), !r.name.toLowerCase().endsWith(".xml"))) {
+            f(null),
+              i("failed"),
+              l("Please select a valid Aadhaar XML file."),
+              s({
+                title: "Invalid file type",
+                description:
+                  "Only XML files are supported for Aadhaar verification.",
+                variant: "destructive",
+              });
+            return;
+          }
+          if (r.size > Y) {
+            f(null),
+              i("failed"),
+              l(
+                "File size exceeds 5MB limit. Please upload a smaller XML file.",
+              ),
+              s({
+                title: "File too large",
+                description: "Aadhaar XML must be 5MB or smaller.",
+                variant: "destructive",
+              });
+            return;
+          }
+          f(r),
+            i("idle"),
+            s({ title: "File selected", description: `Selected: ${r.name}` });
+        }
+      },
+      C = () => {
+        f(null),
+          i("idle"),
+          l(""),
+          y({ name: "", gender: "", dob: "", address: "" });
+      },
+      T = async () => {
+        if (!p) {
+          s({
+            title: "No file selected",
+            description: "Select your Aadhaar XML file to continue.",
+            variant: "destructive",
+          });
+          return;
+        }
+        h(!0),
+          l(""),
+          setTimeout(() => {
+            if ((h(!1), !!0)) {
+              i("failed"),
+                l(
+                  "Verification failed. Please retry with a fresh Aadhaar XML download.",
+                );
+              return;
+            }
+            i("success"),
+              y({
+                name: "Verified User",
+                gender: "Not disclosed",
+                dob: "Protected",
+                address: "Protected",
+              }),
+              s({
+                title: "Aadhaar verified",
+                description: "Your identity verification is complete.",
+              });
+          }, 2500);
+      },
+      V = () => {
+        s({
+          title: "Sample format",
+          description: "Use UIDAI Aadhaar XML format when uploading.",
+        });
+      };
+    return X
+      ? e.createElement(
+          "div",
+          { className: "min-h-screen bg-gray-50" },
+          e.createElement(
+            "div",
+            { className: "max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" },
+            e.createElement(
+              "div",
+              { className: "mb-8" },
+              e.createElement(
+                "div",
+                { className: "flex items-center space-x-3 mb-4" },
+                e.createElement(A, { className: "w-8 h-8 text-green-600" }),
+                e.createElement(
+                  "h1",
+                  { className: "text-3xl font-bold text-gray-900" },
+                  "Aadhaar Verification",
+                ),
+              ),
+              e.createElement(
+                "p",
+                { className: "text-gray-600" },
+                "Verify identity with your Aadhaar XML file to unlock trust badges and safer transactions.",
+              ),
+            ),
+            e.createElement(
+              n,
+              { className: "mb-8 border-blue-200 bg-blue-50" },
+              e.createElement(
+                c,
+                null,
+                e.createElement(
+                  g,
+                  { className: "flex items-center space-x-2 text-blue-800" },
+                  e.createElement(k, { className: "w-5 h-5" }),
+                  e.createElement("span", null, "How to get your Aadhaar XML"),
+                ),
+              ),
+              e.createElement(
+                m,
+                null,
+                e.createElement(
+                  "div",
+                  { className: "space-y-3 text-blue-700" },
+                  [1, 2, 3, 4, 5].map((t, r) =>
+                    e.createElement(
+                      "div",
+                      { key: t, className: "flex items-start space-x-2" },
+                      e.createElement(
+                        "span",
+                        { className: "font-bold" },
+                        t,
+                        ".",
+                      ),
+                      e.createElement(
+                        "p",
+                        null,
+                        [
+                          "Visit the official UIDAI portal.",
+                          'Open the "Download Aadhaar" section.',
+                          "Choose XML format and complete OTP verification.",
+                          "Download the Aadhaar XML package.",
+                          "Upload the XML file on this page.",
+                        ][r],
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "mt-4 pt-4 border-t border-blue-200" },
+                    e.createElement(
+                      a,
+                      {
+                        variant: "outline",
+                        onClick: V,
+                        className:
+                          "text-blue-700 border-blue-300 hover:bg-blue-100",
+                      },
+                      e.createElement(H, { className: "w-4 h-4 mr-2" }),
+                      "XML format guidance",
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            e.createElement(
+              n,
+              { className: "mb-8" },
+              e.createElement(
+                c,
+                null,
+                e.createElement(g, null, "Upload Aadhaar XML"),
+                e.createElement(
+                  U,
+                  null,
+                  "Select your XML file and start verification.",
+                ),
+              ),
+              e.createElement(
+                m,
+                null,
+                e.createElement(
+                  "div",
+                  { className: "space-y-6" },
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      o,
+                      { htmlFor: "aadhaar-xml" },
+                      "Aadhaar XML file",
+                    ),
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center",
+                      },
+                      e.createElement(M, {
+                        className: "mx-auto h-12 w-12 text-gray-400",
+                      }),
+                      e.createElement(
+                        "label",
+                        {
+                          htmlFor: "aadhaar-xml",
+                          className: "cursor-pointer block mt-4",
+                        },
+                        e.createElement(
+                          "span",
+                          {
+                            className:
+                              "block text-sm font-medium text-gray-900",
+                          },
+                          "Select Aadhaar XML file",
+                        ),
+                        e.createElement(I, {
+                          id: "aadhaar-xml",
+                          name: "aadhaar-xml",
+                          type: "file",
+                          accept: ".xml",
+                          onChange: B,
+                          className: "sr-only",
+                        }),
+                        e.createElement(
+                          "p",
+                          { className: "mt-1 text-sm text-gray-500" },
+                          "XML only, up to 5MB",
+                        ),
+                      ),
+                    ),
+                    p &&
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "mt-4 p-3 bg-green-50 border border-green-200 rounded-lg",
+                        },
+                        e.createElement(
+                          "div",
+                          { className: "flex items-center space-x-2" },
+                          e.createElement(k, {
+                            className: "w-5 h-5 text-green-600",
+                          }),
+                          e.createElement(
+                            "span",
+                            { className: "text-sm font-medium text-green-800" },
+                            p.name,
+                          ),
+                          e.createElement(
+                            L,
+                            { className: "bg-green-600" },
+                            "Ready",
+                          ),
+                        ),
+                      ),
+                  ),
+                  N &&
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm",
+                      },
+                      N,
+                    ),
+                  e.createElement(
+                    "div",
+                    { className: "flex flex-col sm:flex-row gap-3" },
+                    e.createElement(
+                      a,
+                      {
+                        onClick: T,
+                        className: "w-full sm:w-auto",
+                        disabled: !p || v,
+                      },
+                      v
+                        ? e.createElement(
+                            e.Fragment,
+                            null,
+                            e.createElement("div", {
+                              className:
+                                "animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2",
+                            }),
+                            "Verifying...",
+                          )
+                        : e.createElement(
+                            e.Fragment,
+                            null,
+                            e.createElement(M, { className: "w-4 h-4 mr-2" }),
+                            "Upload and verify",
+                          ),
+                    ),
+                    e.createElement(
+                      a,
+                      { variant: "outline", onClick: C, disabled: v },
+                      e.createElement(E, { className: "w-4 h-4 mr-2" }),
+                      "Reset",
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            b === "success" &&
+              e.createElement(
+                n,
+                { className: "mb-8 border-green-200 bg-green-50" },
+                e.createElement(
+                  c,
+                  null,
+                  e.createElement(
+                    g,
+                    { className: "flex items-center space-x-2 text-green-800" },
+                    e.createElement(P, { className: "w-5 h-5" }),
+                    e.createElement("span", null, "Verification successful"),
+                  ),
+                ),
+                e.createElement(
+                  m,
+                  { className: "space-y-4" },
+                  e.createElement(
+                    "p",
+                    { className: "text-green-700" },
+                    "Aadhaar verification is complete. Sensitive details are masked by design.",
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        o,
+                        { className: "text-green-700" },
+                        "Verified Name",
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "font-medium text-green-800" },
+                        u.name,
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        o,
+                        { className: "text-green-700" },
+                        "Gender",
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "font-medium text-green-800" },
+                        u.gender,
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        o,
+                        { className: "text-green-700" },
+                        "Date of Birth",
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "font-medium text-green-800" },
+                        u.dob,
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        o,
+                        { className: "text-green-700" },
+                        "Address",
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "font-medium text-green-800" },
+                        u.address,
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center space-x-2 pt-2" },
+                    e.createElement(
+                      L,
+                      { className: "bg-green-600" },
+                      e.createElement(A, { className: "w-3 h-3 mr-1" }),
+                      "Aadhaar Verified",
+                    ),
+                    e.createElement(
+                      "span",
+                      { className: "text-sm text-green-700" },
+                      "This badge appears on your profile.",
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "flex flex-col sm:flex-row gap-3 pt-2" },
+                    e.createElement(
+                      w,
+                      { to: "/profile" },
+                      e.createElement(
+                        a,
+                        {
+                          variant: "outline",
+                          className:
+                            "text-green-700 border-green-300 hover:bg-green-100",
+                        },
+                        "View Profile",
+                      ),
+                    ),
+                    e.createElement(
+                      w,
+                      { to: "/dashboard" },
+                      e.createElement(
+                        a,
+                        { className: "bg-green-600 hover:bg-green-700" },
+                        "Go to Dashboard",
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            b === "failed" &&
+              e.createElement(
+                n,
+                { className: "mb-8 border-red-200 bg-red-50" },
+                e.createElement(
+                  c,
+                  null,
+                  e.createElement(
+                    g,
+                    { className: "flex items-center space-x-2 text-red-800" },
+                    e.createElement(S, { className: "w-5 h-5" }),
+                    e.createElement("span", null, "Verification failed"),
+                  ),
+                ),
+                e.createElement(
+                  m,
+                  { className: "space-y-4" },
+                  e.createElement(
+                    "p",
+                    { className: "text-red-700" },
+                    "We could not verify this file. Download a fresh XML from UIDAI and retry.",
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "flex flex-col sm:flex-row gap-3" },
+                    e.createElement(
+                      a,
+                      {
+                        variant: "outline",
+                        className:
+                          "text-red-700 border-red-300 hover:bg-red-100",
+                        onClick: C,
+                      },
+                      "Try Again",
+                    ),
+                    e.createElement(
+                      a,
+                      { variant: "outline", onClick: () => x("/kyc") },
+                      "Use KYC document flow",
+                    ),
+                  ),
+                ),
+              ),
+            e.createElement(
+              n,
+              { className: "border-yellow-200 bg-yellow-50" },
+              e.createElement(
+                m,
+                { className: "p-6" },
+                e.createElement(
+                  "div",
+                  { className: "flex items-start space-x-3" },
+                  e.createElement(S, {
+                    className: "w-5 h-5 text-yellow-600 mt-0.5",
+                  }),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "h3",
+                      { className: "font-semibold text-yellow-800" },
+                      "Security and privacy notice",
+                    ),
+                    e.createElement(
+                      "ul",
+                      { className: "text-sm text-yellow-700 mt-2 space-y-1" },
+                      e.createElement(
+                        "li",
+                        null,
+                        "- Aadhaar XML is processed for verification only.",
+                      ),
+                      e.createElement(
+                        "li",
+                        null,
+                        "- Only required identity attributes are used.",
+                      ),
+                      e.createElement(
+                        "li",
+                        null,
+                        "- Aadhaar number is never displayed back in full.",
+                      ),
+                      e.createElement(
+                        "li",
+                        null,
+                        "- Verification helps buyers and sellers trust each other.",
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        )
+      : e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gray-50 flex items-center justify-center p-4",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-md w-full" },
+            e.createElement(O, {
+              marker: "auth-gate",
+              title: "Login required",
+              description: "Please log in to continue Aadhaar verification.",
+              primaryAction: e.createElement(
+                a,
+                {
+                  onClick: () =>
+                    x("/login", { state: { returnTo: "/aadhaar-verify" } }),
+                },
+                "Go to Login",
+              ),
+            }),
+          ),
+        );
+  };
+var re = _;
+export { re as default };

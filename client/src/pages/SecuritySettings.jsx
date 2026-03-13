@@ -35,11 +35,7 @@ function maskIp(ipAddress) {
   return `${parts[0]}.${parts[1]}.x.x`;
 }
 
-function SessionCard({
-  session,
-  isRevoking,
-  onRevoke,
-}) {
+function SessionCard({ session, isRevoking, onRevoke }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -48,7 +44,9 @@ function SessionCard({
             <Monitor className="h-4 w-4 text-blue-600" />
             {session.device_fingerprint || "Unknown device"}
           </p>
-          <p className="text-xs text-slate-500">{session.user_agent || "Unknown user agent"}</p>
+          <p className="text-xs text-slate-500">
+            {session.user_agent || "Unknown user agent"}
+          </p>
         </div>
         <button
           type="button"
@@ -64,7 +62,8 @@ function SessionCard({
       <div className="mt-3 grid gap-1 text-xs text-slate-600 sm:grid-cols-2">
         <p className="flex items-center gap-1.5">
           <Clock3 className="h-3.5 w-3.5 text-slate-400" />
-          Last active: {formatDateTime(session.last_activity || session.created_at)}
+          Last active:{" "}
+          {formatDateTime(session.last_activity || session.created_at)}
         </p>
         <p>Created: {formatDateTime(session.created_at)}</p>
         <p>Expires: {formatDateTime(session.expires_at)}</p>
@@ -165,7 +164,10 @@ export default function SecuritySettings() {
 
   const verifySetup = async () => {
     if (verifyCode.length < 6) {
-      toast({ title: "Invalid code", description: "Enter a valid 6-digit authenticator code." });
+      toast({
+        title: "Invalid code",
+        description: "Enter a valid 6-digit authenticator code.",
+      });
       return;
     }
 
@@ -178,7 +180,10 @@ export default function SecuritySettings() {
       setVerifyCode("");
       setSetupQrCode("");
       setBackupCodes(Array.isArray(data?.backupCodes) ? data.backupCodes : []);
-      toast({ title: "2FA enabled", description: "Two-factor authentication is now active." });
+      toast({
+        title: "2FA enabled",
+        description: "Two-factor authentication is now active.",
+      });
       await loadTwoFaStatus();
     } catch (error) {
       setVerifyError(error?.message || "Failed to verify authenticator code.");
@@ -189,7 +194,10 @@ export default function SecuritySettings() {
 
   const disableTwoFa = async () => {
     if (disableCode.length < 6) {
-      toast({ title: "Invalid code", description: "Enter a valid 6-digit authenticator code." });
+      toast({
+        title: "Invalid code",
+        description: "Enter a valid 6-digit authenticator code.",
+      });
       return;
     }
 
@@ -202,10 +210,15 @@ export default function SecuritySettings() {
       setDisableCode("");
       setDisableMode(false);
       setBackupCodes([]);
-      toast({ title: "2FA disabled", description: "Two-factor authentication has been disabled." });
+      toast({
+        title: "2FA disabled",
+        description: "Two-factor authentication has been disabled.",
+      });
       await loadTwoFaStatus();
     } catch (error) {
-      setDisableError(error?.message || "Failed to disable two-factor authentication.");
+      setDisableError(
+        error?.message || "Failed to disable two-factor authentication.",
+      );
     } finally {
       setDisableLoading(false);
     }
@@ -216,8 +229,13 @@ export default function SecuritySettings() {
     setSessionsError("");
     try {
       await api.delete(`/auth/sessions/${sessionId}`);
-      setSessions((previous) => previous.filter((session) => session.session_id !== sessionId));
-      toast({ title: "Session revoked", description: "The selected session was revoked." });
+      setSessions((previous) =>
+        previous.filter((session) => session.session_id !== sessionId),
+      );
+      toast({
+        title: "Session revoked",
+        description: "The selected session was revoked.",
+      });
     } catch (error) {
       setSessionsError(error?.message || "Failed to revoke session.");
     } finally {
@@ -231,7 +249,10 @@ export default function SecuritySettings() {
     try {
       await api.delete("/auth/sessions");
       setSessions([]);
-      toast({ title: "All sessions revoked", description: "All active sessions were revoked." });
+      toast({
+        title: "All sessions revoked",
+        description: "All active sessions were revoked.",
+      });
     } catch (error) {
       setSessionsError(error?.message || "Failed to revoke all sessions.");
     } finally {
@@ -266,10 +287,15 @@ export default function SecuritySettings() {
         <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-md">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-wide text-blue-100">Security Center</p>
-              <h1 className="mt-1 text-2xl font-bold">Authentication & Session Control</h1>
+              <p className="text-xs uppercase tracking-wide text-blue-100">
+                Security Center
+              </p>
+              <h1 className="mt-1 text-2xl font-bold">
+                Authentication & Session Control
+              </h1>
               <p className="mt-2 text-sm text-blue-100">
-                Manage two-factor authentication and active sessions for your account.
+                Manage two-factor authentication and active sessions for your
+                account.
               </p>
             </div>
             <button
@@ -294,7 +320,10 @@ export default function SecuritySettings() {
                 Two-Factor Authentication
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Status: <span className="font-semibold text-slate-700">{statusBadge}</span>
+                Status:{" "}
+                <span className="font-semibold text-slate-700">
+                  {statusBadge}
+                </span>
               </p>
             </div>
             {!twoFaEnabled ? (
@@ -379,16 +408,28 @@ export default function SecuritySettings() {
 
           {setupQrCode ? (
             <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-2 text-sm font-semibold text-slate-700">Step 1: Scan QR code</p>
+              <p className="mb-2 text-sm font-semibold text-slate-700">
+                Step 1: Scan QR code
+              </p>
               <div className="flex justify-center rounded-lg border border-slate-200 bg-white p-4">
-                <img src={setupQrCode} alt="2FA QR code" className="h-44 w-44" />
+                <img
+                  src={setupQrCode}
+                  alt="2FA QR code"
+                  className="h-44 w-44"
+                />
               </div>
-              <p className="mt-4 text-sm font-semibold text-slate-700">Step 2: Verify code</p>
+              <p className="mt-4 text-sm font-semibold text-slate-700">
+                Step 2: Verify code
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <input
                   type="text"
                   value={verifyCode}
-                  onChange={(event) => setVerifyCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                  onChange={(event) =>
+                    setVerifyCode(
+                      event.target.value.replace(/\D/g, "").slice(0, 8),
+                    )
+                  }
                   placeholder="Enter authenticator code"
                   className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
                 />
@@ -436,10 +477,15 @@ export default function SecuritySettings() {
 
           {backupCodes.length > 0 ? (
             <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="font-semibold text-amber-800">Backup codes (save these now)</p>
+              <p className="font-semibold text-amber-800">
+                Backup codes (save these now)
+              </p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                 {backupCodes.map((code) => (
-                  <div key={code} className="rounded border border-amber-300 bg-white px-2 py-1.5 font-mono">
+                  <div
+                    key={code}
+                    className="rounded border border-amber-300 bg-white px-2 py-1.5 font-mono"
+                  >
                     {code}
                   </div>
                 ))}
@@ -449,12 +495,18 @@ export default function SecuritySettings() {
 
           {disableMode ? (
             <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
-              <p className="text-sm font-semibold text-red-700">Confirm disable using authenticator code</p>
+              <p className="text-sm font-semibold text-red-700">
+                Confirm disable using authenticator code
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <input
                   type="text"
                   value={disableCode}
-                  onChange={(event) => setDisableCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                  onChange={(event) =>
+                    setDisableCode(
+                      event.target.value.replace(/\D/g, "").slice(0, 8),
+                    )
+                  }
                   placeholder="Enter code"
                   className="w-56 rounded-lg border border-red-300 px-3 py-2 text-sm outline-none focus:border-red-500"
                 />
@@ -515,7 +567,9 @@ export default function SecuritySettings() {
             <button
               type="button"
               onClick={revokeAllSessions}
-              disabled={revokeAllLoading || sessionsLoading || sessions.length === 0}
+              disabled={
+                revokeAllLoading || sessionsLoading || sessions.length === 0
+              }
               className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 className="h-4 w-4" />

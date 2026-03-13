@@ -15,10 +15,19 @@ export default function NotificationPermission({ userId, onDismiss }) {
   const tr = (key, fallback) => t(key, { defaultValue: fallback });
     const [status, setStatus] = useState('idle'); // idle, requesting, granted, denied, not-configured
     const [showPrompt, setShowPrompt] = useState(false);
+    const dismissKey = userId
+        ? `mhub:notifications:prompt:dismissed:${userId}`
+        : "notification_prompt_dismissed";
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+        if (!userId) {
+            setShowPrompt(false);
+            setStatus('idle');
+            return;
+        }
         const dismissed =
+            localStorage.getItem(dismissKey) === "true" ||
             localStorage.getItem("notification_prompt_dismissed") === "true";
         if (dismissed) {
             setShowPrompt(false);
@@ -28,6 +37,7 @@ export default function NotificationPermission({ userId, onDismiss }) {
         // Check if Firebase is configured
         if (!isFirebaseConfigured()) {
             setStatus('not-configured');
+            setShowPrompt(false);
             return;
         }
 
@@ -35,42 +45,60 @@ export default function NotificationPermission({ userId, onDismiss }) {
         if ('Notification' in window) {
             if (Notification.permission === 'granted') {
                 setStatus('granted');
+                setShowPrompt(false);
             } else if (Notification.permission === 'denied') {
                 setStatus('denied');
+                setShowPrompt(false);
+                localStorage.setItem(dismissKey, "true");
             } else {
                 // Permission not yet requested - show prompt after delay
                 const timer = setTimeout(() => setShowPrompt(true), 3000);
                 return () => clearTimeout(timer);
             }
         }
-    }, []);
+    }, [userId]);
 
     const handleEnable = async () => {
         setStatus('requesting');
 
-        const token = await requestNotificationPermission();
+        try {
+            const token = await requestNotificationPermission();
 
-        if (token) {
-            setStatus('granted');
-            // Register with backend if user is logged in
-            if (userId) {
-                await registerTokenWithBackend(token, userId);
+            if (token) {
+                setStatus('granted');
+                // Register with backend if user is logged in
+                if (userId) {
+                    await registerTokenWithBackend(token, userId);
+                }
+                // Store token for later registration if not logged in
+                localStorage.setItem('fcm_token', token);
+                localStorage.setItem(dismissKey, "true");
+                setShowPrompt(false);
+                onDismiss?.();
+                return;
             }
-            // Store token for later registration if not logged in
-            localStorage.setItem('fcm_token', token);
-            setShowPrompt(false);
-        } else {
-            setStatus('denied');
+        } catch {
+            // fallthrough to denied handling
         }
+
+        setStatus('denied');
+        localStorage.setItem(dismissKey, "true");
+        setShowPrompt(false);
+        onDismiss?.();
     };
 
     const handleDismiss = () => {
         setShowPrompt(false);
+        localStorage.setItem(dismissKey, "true");
         localStorage.setItem('notification_prompt_dismissed', 'true');
         onDismiss?.();
     };
 
     // Don't show if Firebase not configured
+    if (!userId) {
+        return null;
+    }
+
     if (status === 'not-configured') {
         return null;
     }

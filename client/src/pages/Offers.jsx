@@ -1,5 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
   ArrowLeft,
@@ -30,11 +37,41 @@ const STATUS_CLASS = {
 };
 
 const steps = [
-  { key: "offer", label: "Offer Submitted", hint: "Buyer proposes price" },
-  { key: "review", label: "Seller Review", hint: "Accept, reject, or counter" },
-  { key: "payment", label: "Payment", hint: "Buyer pays after acceptance" },
-  { key: "verify", label: "Verification", hint: "Both parties confirm completion" },
-  { key: "closed", label: "Transaction Closed", hint: "Sale done or reopened" },
+  {
+    key: "offer",
+    labelKey: "offer_step_submitted",
+    labelFallback: "Offer Submitted",
+    hintKey: "offer_step_submitted_hint",
+    hintFallback: "Buyer proposes price",
+  },
+  {
+    key: "review",
+    labelKey: "offer_step_review",
+    labelFallback: "Seller Review",
+    hintKey: "offer_step_review_hint",
+    hintFallback: "Accept, reject, or counter",
+  },
+  {
+    key: "payment",
+    labelKey: "offer_step_payment",
+    labelFallback: "Payment",
+    hintKey: "offer_step_payment_hint",
+    hintFallback: "Buyer pays after acceptance",
+  },
+  {
+    key: "verify",
+    labelKey: "offer_step_verify",
+    labelFallback: "Verification",
+    hintKey: "offer_step_verify_hint",
+    hintFallback: "Both parties confirm completion",
+  },
+  {
+    key: "closed",
+    labelKey: "offer_step_closed",
+    labelFallback: "Transaction Closed",
+    hintKey: "offer_step_closed_hint",
+    hintFallback: "Sale done or reopened",
+  },
 ];
 
 const normalizeOffers = (payload) => {
@@ -44,18 +81,31 @@ const normalizeOffers = (payload) => {
   return [];
 };
 
-const normalizeOfferError = (error, fallback = "Failed to process offer") => {
+const normalizeOfferError = (
+  error,
+  translate,
+  fallback = "Failed to process offer",
+) => {
+  const tr =
+    typeof translate === "function" ? translate : (_key, value) => value;
   const status = Number(error?.status || error?.response?.status || 0);
   if (status === 401 || status === 403) {
-    return "Please sign in again to continue offer actions.";
+    return tr(
+      "offers_auth_required",
+      "Please sign in again to continue offer actions.",
+    );
   }
-  return String(error?.message || error?.response?.data?.error || fallback);
+  return (
+    String(error?.message || error?.response?.data?.error || "").trim() ||
+    tr("offers_error_default", fallback)
+  );
 };
 
 const toSavings = (offeredPrice, originalPrice) => {
   const offered = Number(offeredPrice);
   const original = Number(originalPrice);
-  if (!Number.isFinite(offered) || !Number.isFinite(original) || original <= 0) return 0;
+  if (!Number.isFinite(offered) || !Number.isFinite(original) || original <= 0)
+    return 0;
   return Math.max(0, Math.round(((original - offered) / original) * 100));
 };
 
@@ -63,9 +113,19 @@ const OffersPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, fallback, options = {}) =>
+      t(key, { defaultValue: fallback, ...options }),
+    [t],
+  );
 
-  const authToken = localStorage.getItem("authToken") || localStorage.getItem("token");
-  const userId = getUserId(user) || localStorage.getItem("userId") || localStorage.getItem("user_id");
+  const authToken =
+    localStorage.getItem("authToken") || localStorage.getItem("token");
+  const userId =
+    getUserId(user) ||
+    localStorage.getItem("userId") ||
+    localStorage.getItem("user_id");
   const canUseOffers = useMemo(
     () => Boolean(authToken && userId) && isAuthenticated(user),
     [authToken, userId, user],
@@ -79,6 +139,15 @@ const OffersPage = () => {
   const [processingOfferId, setProcessingOfferId] = useState(null);
 
   const requestRef = useRef(0);
+  const localizedSteps = useMemo(
+    () =>
+      steps.map((step) => ({
+        ...step,
+        label: tr(step.labelKey, step.labelFallback),
+        hint: tr(step.hintKey, step.hintFallback),
+      })),
+    [tr],
+  );
 
   const fetchOffers = useCallback(async () => {
     if (!canUseOffers) {
@@ -100,13 +169,19 @@ const OffersPage = () => {
     } catch (fetchError) {
       if (requestId !== requestRef.current) return;
       setOffers([]);
-      setError(normalizeOfferError(fetchError, "Failed to load offers"));
+      setError(
+        normalizeOfferError(
+          fetchError,
+          tr,
+          tr("offers_load_failed", "Failed to load offers"),
+        ),
+      );
     } finally {
       if (requestId === requestRef.current) {
         setLoading(false);
       }
     }
-  }, [canUseOffers, role]);
+  }, [canUseOffers, role, tr]);
 
   useEffect(() => {
     fetchOffers();
@@ -122,8 +197,11 @@ const OffersPage = () => {
       const value = Number(counterPrice);
       if (!Number.isFinite(value) || value <= 0) {
         toast({
-          title: "Invalid counter offer",
-          description: "Enter a valid amount greater than 0.",
+          title: tr("offers_invalid_counter", "Invalid counter offer"),
+          description: tr(
+            "offers_invalid_counter_desc",
+            "Enter a valid amount greater than 0.",
+          ),
           variant: "destructive",
         });
         return;
@@ -142,24 +220,27 @@ const OffersPage = () => {
       toast({
         title:
           action === "accept"
-            ? "Offer Accepted"
+            ? tr("offers_accepted", "Offer Accepted")
             : action === "reject"
-              ? "Offer Rejected"
-              : "Counter Offer Sent",
+              ? tr("offers_rejected", "Offer Rejected")
+              : tr("offers_counter_sent", "Counter Offer Sent"),
         description:
           action === "accept"
-            ? "Congratulations on your sale!"
+            ? tr("offers_congrats_sale", "Congratulations on your sale!")
             : action === "reject"
-              ? "The buyer has been notified."
-              : "Counter offer sent successfully.",
+              ? tr("offers_buyer_notified", "The buyer has been notified.")
+              : tr(
+                  "offers_counter_sent_desc",
+                  "Counter offer sent successfully.",
+                ),
       });
 
       setCounterByOfferId((prev) => ({ ...prev, [offerId]: "" }));
       await fetchOffers();
     } catch (actionError) {
       toast({
-        title: "Error",
-        description: normalizeOfferError(actionError),
+        title: tr("error", "Error"),
+        description: normalizeOfferError(actionError, tr),
         variant: "destructive",
       });
     } finally {
@@ -172,12 +253,21 @@ const OffersPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border p-6 text-center">
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Login required</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {tr("login_required", "Login required")}
+          </h2>
           <p className="text-sm text-gray-600 mb-4">
-            Sign in to view and manage your offer negotiations.
+            {tr(
+              "offers_login_desc",
+              "Sign in to view and manage your offer negotiations.",
+            )}
           </p>
-          <Button onClick={() => navigate("/login", { state: { returnTo: "/offers" } })}>
-            Go to Login
+          <Button
+            onClick={() =>
+              navigate("/login", { state: { returnTo: "/offers" } })
+            }
+          >
+            {tr("go_to_login", "Go to Login")}
           </Button>
         </div>
       </div>
@@ -188,15 +278,23 @@ const OffersPage = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" size="icon" className="text-white" onClick={() => navigate(-1)}>
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white"
+              onClick={() => navigate(-1)}
+            >
               <ArrowLeft className="w-6 h-6" />
             </Button>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                <DollarSign className="w-8 h-8" /> Price Negotiations
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl font-bold text-white flex items-center gap-3 flex-wrap">
+                <DollarSign className="w-8 h-8" />{" "}
+                {tr("offers_title", "Price Negotiations")}
               </h1>
-              <p className="text-green-100 mt-1">Manage your offers and counter-offers</p>
+              <p className="text-green-100 mt-1">
+                {tr("offers_subtitle", "Manage your offers and counter-offers")}
+              </p>
             </div>
           </div>
 
@@ -205,9 +303,11 @@ const OffersPage = () => {
               variant={role === "seller" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setRole("seller")}
-              className={role === "seller" ? "" : "text-white hover:bg-white/20"}
+              className={
+                role === "seller" ? "" : "text-white hover:bg-white/20"
+              }
             >
-              Received Offers
+              {tr("offers_received", "Received Offers")}
             </Button>
             <Button
               variant={role === "buyer" ? "secondary" : "ghost"}
@@ -215,14 +315,18 @@ const OffersPage = () => {
               onClick={() => setRole("buyer")}
               className={role === "buyer" ? "" : "text-white hover:bg-white/20"}
             >
-              My Offers
+              {tr("offers_mine", "My Offers")}
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 -mt-2">
-        <TransactionStepper steps={steps} currentStep={1} className="bg-white dark:bg-gray-900" />
+      <div className="max-w-4xl mx-auto px-4 mt-2 -translate-y-2">
+        <TransactionStepper
+          steps={localizedSteps}
+          currentStep={1}
+          className="bg-white dark:bg-gray-900"
+        />
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
@@ -233,13 +337,23 @@ const OffersPage = () => {
         ) : error ? (
           <Card className="border-0 shadow-lg">
             <CardContent className="py-10 text-center">
-              <h3 className="text-xl font-semibold text-red-600 mb-2">Unable to load offers</h3>
+              <h3 className="text-xl font-semibold text-red-600 mb-2">
+                {tr("offers_unable_to_load", "Unable to load offers")}
+              </h3>
               <p className="text-gray-500 mb-4">{error}</p>
               <div className="flex flex-wrap gap-2 justify-center">
-                <Button className="bg-green-600 hover:bg-green-700" onClick={fetchOffers}>
-                  <RefreshCw className="w-4 h-4 mr-2" /> Retry
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={fetchOffers}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" /> {tr("retry", "Retry")}
                 </Button>
-                <Button variant="outline" onClick={() => navigate("/all-posts")}>Browse posts</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/all-posts")}
+                >
+                  {tr("browse_posts", "Browse posts")}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -247,16 +361,26 @@ const OffersPage = () => {
           <Card className="border-0 shadow-lg">
             <CardContent className="text-center py-12">
               <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-600">No offers yet</h3>
+              <h3 className="text-xl font-semibold text-gray-600">
+                {tr("offers_empty", "No offers yet")}
+              </h3>
               <p className="text-gray-500 mt-2">
                 {role === "seller"
-                  ? "You haven't received any offers yet"
-                  : "You haven't made any offers yet"}
+                  ? tr(
+                      "offers_empty_seller",
+                      "You haven't received any offers yet",
+                    )
+                  : tr("offers_empty_buyer", "You haven't made any offers yet")}
               </p>
               <div className="flex flex-wrap justify-center gap-2 mt-4">
-                <Button variant="outline" onClick={fetchOffers}>Refresh</Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={() => navigate("/all-posts")}>
-                  Browse listings
+                <Button variant="outline" onClick={fetchOffers}>
+                  {tr("refresh", "Refresh")}
+                </Button>
+                <Button
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => navigate("/all-posts")}
+                >
+                  {tr("browse_listings", "Browse listings")}
                 </Button>
               </div>
             </CardContent>
@@ -266,58 +390,93 @@ const OffersPage = () => {
             {offers.map((offer) => {
               const status = String(offer.status || "pending").toLowerCase();
               const offerId = offer.offer_id || offer.id;
+              const statusLabel = tr(
+                `offers_status_${status}`,
+                status.charAt(0).toUpperCase() + status.slice(1),
+              );
               return (
-                <Card key={offerId} className="border-0 shadow-lg overflow-hidden">
+                <Card
+                  key={offerId}
+                  className="border-0 shadow-lg overflow-hidden"
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge className={STATUS_CLASS[status] || "bg-gray-100 text-gray-800"}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          <Badge
+                            className={
+                              STATUS_CLASS[status] ||
+                              "bg-gray-100 text-gray-800"
+                            }
+                          >
+                            {statusLabel}
                           </Badge>
                           <span className="text-sm text-gray-500">
                             <Clock className="w-4 h-4 inline mr-1" />
-                            {offer.created_at ? new Date(offer.created_at).toLocaleDateString() : "-"}
+                            {offer.created_at
+                              ? new Date(offer.created_at).toLocaleDateString()
+                              : "-"}
                           </span>
                         </div>
 
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                          {offer.post_title || "Untitled Post"}
+                          {offer.post_title ||
+                            tr("offers_untitled_post", "Untitled Post")}
                         </h3>
                         <p className="text-sm text-gray-500 mb-3">
                           {role === "seller"
-                            ? `From: ${offer.buyer_name || offer.buyer_username || "Buyer"}`
-                            : `To: ${offer.seller_name || offer.seller_username || "Seller"}`}
+                            ? `${tr("offers_from", "From")}: ${offer.buyer_name || offer.buyer_username || tr("offers_buyer", "Buyer")}`
+                            : `${tr("offers_to", "To")}: ${offer.seller_name || offer.seller_username || tr("offers_seller", "Seller")}`}
                         </p>
 
                         <div className="flex items-center gap-6 mb-3">
                           <div>
-                            <p className="text-sm text-gray-500">Original Price</p>
+                            <p className="text-sm text-gray-500">
+                              {tr("offers_original_price", "Original Price")}
+                            </p>
                             <p className="text-lg font-bold text-gray-400 line-through">
-                              ₹{Number(offer.original_price || 0).toLocaleString()}
+                              ₹
+                              {Number(
+                                offer.original_price || 0,
+                              ).toLocaleString()}
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500">Offered Price</p>
+                            <p className="text-sm text-gray-500">
+                              {tr("offers_offered_price", "Offered Price")}
+                            </p>
                             <p className="text-xl font-bold text-green-600">
-                              ₹{Number(offer.offered_price || 0).toLocaleString()}
+                              ₹
+                              {Number(
+                                offer.offered_price || 0,
+                              ).toLocaleString()}
                             </p>
                           </div>
-                          <Badge variant="outline" className="text-red-500 border-red-200">
+                          <Badge
+                            variant="outline"
+                            className="text-red-500 border-red-200"
+                          >
                             <TrendingDown className="w-3 h-3 mr-1" />
-                            {toSavings(offer.offered_price, offer.original_price)}% off
+                            {tr("offers_percent_off", "{{percent}}% off", {
+                              percent: toSavings(
+                                offer.offered_price,
+                                offer.original_price,
+                              ),
+                            })}
                           </Badge>
                         </div>
 
                         {offer.message && (
                           <p className="text-sm text-gray-600 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                            <MessageCircle className="w-4 h-4 inline mr-2" />"{offer.message}"
+                            <MessageCircle className="w-4 h-4 inline mr-2" />"
+                            {offer.message}"
                           </p>
                         )}
 
                         {offer.counter_price && (
                           <p className="text-sm mt-2 text-blue-600 font-semibold">
-                            Counter offer: ₹{Number(offer.counter_price || 0).toLocaleString()}
+                            {tr("offers_counter_offer", "Counter offer")}: ₹
+                            {Number(offer.counter_price || 0).toLocaleString()}
                           </p>
                         )}
                       </div>
@@ -330,7 +489,8 @@ const OffersPage = () => {
                             disabled={processingOfferId === offerId}
                             onClick={() => handleOfferAction(offerId, "accept")}
                           >
-                            <Check className="w-4 h-4 mr-1" /> Accept
+                            <Check className="w-4 h-4 mr-1" />{" "}
+                            {tr("accept", "Accept")}
                           </Button>
 
                           <Button
@@ -339,13 +499,17 @@ const OffersPage = () => {
                             disabled={processingOfferId === offerId}
                             onClick={() => handleOfferAction(offerId, "reject")}
                           >
-                            <X className="w-4 h-4 mr-1" /> Reject
+                            <X className="w-4 h-4 mr-1" />{" "}
+                            {tr("reject", "Reject")}
                           </Button>
 
                           <div className="flex gap-1">
                             <Input
                               type="number"
-                              placeholder="Counter"
+                              placeholder={tr(
+                                "offers_counter_placeholder",
+                                "Counter",
+                              )}
                               className="w-24 text-sm"
                               value={counterByOfferId[offerId] || ""}
                               onChange={(event) =>
@@ -358,12 +522,19 @@ const OffersPage = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={!counterByOfferId[offerId] || processingOfferId === offerId}
+                              disabled={
+                                !counterByOfferId[offerId] ||
+                                processingOfferId === offerId
+                              }
                               onClick={() =>
-                                handleOfferAction(offerId, "counter", counterByOfferId[offerId])
+                                handleOfferAction(
+                                  offerId,
+                                  "counter",
+                                  counterByOfferId[offerId],
+                                )
                               }
                             >
-                              Send
+                              {tr("send", "Send")}
                             </Button>
                           </div>
                         </div>

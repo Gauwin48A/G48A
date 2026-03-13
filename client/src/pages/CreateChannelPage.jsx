@@ -1,1 +1,308 @@
-import e,{useMemo as G,useState as s}from"react";import{createChannel as U}from"@/lib/api";import{useNavigate as V}from"react-router-dom";import{useTranslation as Y}from"react-i18next";import{useAuth as $}from"@/context/AuthContext";import{getAccessToken as j,getUserId as z}from"@/utils/authStorage";import{Card as k,CardContent as A,CardDescription as T,CardHeader as D,CardTitle as S}from"@/components/ui/card";import{Button as m}from"@/components/ui/button";import{Input as B}from"@/components/ui/input";import{Textarea as J}from"@/components/ui/textarea";import{Alert as h,AlertDescription as g,AlertTitle as p}from"@/components/ui/alert";import{ArrowLeft as K,PlusCircle as O,AlertTriangle as _,CheckCircle2 as Q}from"lucide-react";const W=()=>{const{t:a}=Y(),n=V(),{user:L}=$(),I=j(),E=z(L),q=!!(I&&E),[l,F]=s(""),[u,P]=s(""),[o,H]=s(""),[f,c]=s(""),[C,y]=s(""),[x,b]=s(!1),d=G(()=>!l.trim()||!o.trim()?a("channel_name_and_category_required")||"Channel name and category are required.":l.trim().length<3?"Channel name must be at least 3 characters.":o.trim().length<2?"Category must be at least 2 characters.":"",[o,l,a]),v=!x&&!d,M=async r=>{if(r.preventDefault(),!v){c(d||"Please fix form errors before submitting.");return}b(!0),c(""),y("");try{const t=await U({name:l.trim(),description:u.trim(),category:o.trim()}),i=t?.data??t,N=i?.channel||i||null,w=N?.channel_id||N?.id||null;if(y(a("channel_created_successfully")||"Channel created successfully."),w){n(`/channels/${w}`);return}n("/channels")}catch(t){const i=Number(t?.status||t?.response?.status||0);c(i===401||i===403?"Your session expired. Please sign in again to create channels.":t?.message||t?.response?.data?.error||a("something_went_wrong")||"Error creating channel.")}finally{b(!1)}};return q?e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 px-4 py-8"},e.createElement("div",{className:"max-w-2xl mx-auto space-y-4"},e.createElement(m,{variant:"ghost",onClick:()=>n("/channels"),className:"gap-2"},e.createElement(K,{className:"w-4 h-4"}),"Back to Channels"),e.createElement(k,null,e.createElement(D,null,e.createElement(S,{className:"flex items-center gap-2"},e.createElement(O,{className:"w-5 h-5 text-blue-600"}),"Create Channel"),e.createElement(T,null,"Launch a channel for your niche and publish updates for followers.")),e.createElement(A,null,e.createElement("form",{onSubmit:M,className:"space-y-4"},e.createElement("div",null,e.createElement("label",{htmlFor:"channel-name",className:"text-sm font-medium text-gray-700 dark:text-gray-300"},"Channel Name"),e.createElement(B,{id:"channel-name",value:l,onChange:r=>F(r.target.value),placeholder:"e.g. Verified Gadget Deals",maxLength:80,required:!0})),e.createElement("div",null,e.createElement("label",{htmlFor:"channel-description",className:"text-sm font-medium text-gray-700 dark:text-gray-300"},"Description"),e.createElement(J,{id:"channel-description",value:u,onChange:r=>P(r.target.value),placeholder:"Tell users what they can expect from this channel.",rows:4,maxLength:500}),e.createElement("p",{className:"mt-1 text-xs text-gray-500"},u.length,"/500")),e.createElement("div",null,e.createElement("label",{htmlFor:"channel-category",className:"text-sm font-medium text-gray-700 dark:text-gray-300"},"Category"),e.createElement(B,{id:"channel-category",value:o,onChange:r=>H(r.target.value),placeholder:"e.g. Electronics",maxLength:60,required:!0})),d?e.createElement(h,{variant:"destructive"},e.createElement(_,{className:"h-4 w-4"}),e.createElement(p,null,"Form incomplete"),e.createElement(g,null,d)):null,f?e.createElement(h,{variant:"destructive"},e.createElement(_,{className:"h-4 w-4"}),e.createElement(p,null,"Channel creation failed"),e.createElement(g,null,f)):null,C?e.createElement(h,{className:"border-emerald-300 bg-emerald-50 text-emerald-900"},e.createElement(Q,{className:"h-4 w-4"}),e.createElement(p,null,"Success"),e.createElement(g,null,C)):null,e.createElement("div",{className:"flex flex-wrap gap-2"},e.createElement(m,{type:"submit",disabled:!v},x?a("loading")||"Loading...":a("create")||"Create Channel"),e.createElement(m,{type:"button",variant:"outline",onClick:()=>n("/channels")},"Cancel"))))))):e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 px-4 py-20"},e.createElement(k,{className:"max-w-lg mx-auto"},e.createElement(D,null,e.createElement(S,null,"Create Channel"),e.createElement(T,null,"Sign in to create and manage your own channel.")),e.createElement(A,{className:"space-y-4"},e.createElement(m,{onClick:()=>n("/login",{state:{returnTo:"/channels/create"}}),className:"w-full"},"Sign In to Continue"),e.createElement(m,{variant:"outline",className:"w-full",onClick:()=>n("/channels")},"Back to Channels"))))};var me=W;export{me as default};
+import e, { useMemo as G, useState as s } from "react";
+import { createChannel as U } from "@/lib/api";
+import { useNavigate as V } from "react-router-dom";
+import { useTranslation as Y } from "react-i18next";
+import { useAuth as $ } from "@/context/AuthContext";
+import { getAccessToken as j, getUserId as z } from "@/utils/authStorage";
+import {
+  Card as k,
+  CardContent as A,
+  CardDescription as T,
+  CardHeader as D,
+  CardTitle as S,
+} from "@/components/ui/card";
+import { Button as m } from "@/components/ui/button";
+import { Input as B } from "@/components/ui/input";
+import { Textarea as J } from "@/components/ui/textarea";
+import {
+  Alert as h,
+  AlertDescription as g,
+  AlertTitle as p,
+} from "@/components/ui/alert";
+import {
+  ArrowLeft as K,
+  PlusCircle as O,
+  AlertTriangle as _,
+  CheckCircle2 as Q,
+} from "lucide-react";
+const W = () => {
+  const { t: a } = Y(),
+    n = V(),
+    { user: L } = $(),
+    I = j(),
+    E = z(L),
+    q = !!(I && E),
+    [l, F] = s(""),
+    [u, P] = s(""),
+    [o, H] = s(""),
+    [f, c] = s(""),
+    [C, y] = s(""),
+    [x, b] = s(!1),
+    d = G(
+      () =>
+        !l.trim() || !o.trim()
+          ? a("channel_name_and_category_required") ||
+            "Channel name and category are required."
+          : l.trim().length < 3
+            ? "Channel name must be at least 3 characters."
+            : o.trim().length < 2
+              ? "Category must be at least 2 characters."
+              : "",
+      [o, l, a],
+    ),
+    v = !x && !d,
+    M = async (r) => {
+      if ((r.preventDefault(), !v)) {
+        c(d || "Please fix form errors before submitting.");
+        return;
+      }
+      b(!0), c(""), y("");
+      try {
+        const t = await U({
+            name: l.trim(),
+            description: u.trim(),
+            category: o.trim(),
+          }),
+          i = t?.data ?? t,
+          N = i?.channel || i || null,
+          w = N?.channel_id || N?.id || null;
+        if (
+          (y(
+            a("channel_created_successfully") ||
+              "Channel created successfully.",
+          ),
+          w)
+        ) {
+          n(`/channels/${w}`);
+          return;
+        }
+        n("/channels");
+      } catch (t) {
+        const i = Number(t?.status || t?.response?.status || 0);
+        c(
+          i === 401 || i === 403
+            ? "Your session expired. Please sign in again to create channels."
+            : t?.message ||
+                t?.response?.data?.error ||
+                a("something_went_wrong") ||
+                "Error creating channel.",
+        );
+      } finally {
+        b(!1);
+      }
+    };
+  return q
+    ? e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 px-4 py-8",
+        },
+        e.createElement(
+          "div",
+          { className: "max-w-2xl mx-auto space-y-4" },
+          e.createElement(
+            m,
+            {
+              variant: "ghost",
+              onClick: () => n("/channels"),
+              className: "gap-2",
+            },
+            e.createElement(K, { className: "w-4 h-4" }),
+            "Back to Channels",
+          ),
+          e.createElement(
+            k,
+            null,
+            e.createElement(
+              D,
+              null,
+              e.createElement(
+                S,
+                { className: "flex items-center gap-2" },
+                e.createElement(O, { className: "w-5 h-5 text-blue-600" }),
+                "Create Channel",
+              ),
+              e.createElement(
+                T,
+                null,
+                "Launch a channel for your niche and publish updates for followers.",
+              ),
+            ),
+            e.createElement(
+              A,
+              null,
+              e.createElement(
+                "form",
+                { onSubmit: M, className: "space-y-4" },
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "label",
+                    {
+                      htmlFor: "channel-name",
+                      className:
+                        "text-sm font-medium text-gray-700 dark:text-gray-300",
+                    },
+                    "Channel Name",
+                  ),
+                  e.createElement(B, {
+                    id: "channel-name",
+                    value: l,
+                    onChange: (r) => F(r.target.value),
+                    placeholder: "e.g. Verified Gadget Deals",
+                    maxLength: 80,
+                    required: !0,
+                  }),
+                ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "label",
+                    {
+                      htmlFor: "channel-description",
+                      className:
+                        "text-sm font-medium text-gray-700 dark:text-gray-300",
+                    },
+                    "Description",
+                  ),
+                  e.createElement(J, {
+                    id: "channel-description",
+                    value: u,
+                    onChange: (r) => P(r.target.value),
+                    placeholder:
+                      "Tell users what they can expect from this channel.",
+                    rows: 4,
+                    maxLength: 500,
+                  }),
+                  e.createElement(
+                    "p",
+                    { className: "mt-1 text-xs text-gray-500" },
+                    u.length,
+                    "/500",
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "label",
+                    {
+                      htmlFor: "channel-category",
+                      className:
+                        "text-sm font-medium text-gray-700 dark:text-gray-300",
+                    },
+                    "Category",
+                  ),
+                  e.createElement(B, {
+                    id: "channel-category",
+                    value: o,
+                    onChange: (r) => H(r.target.value),
+                    placeholder: "e.g. Electronics",
+                    maxLength: 60,
+                    required: !0,
+                  }),
+                ),
+                d
+                  ? e.createElement(
+                      h,
+                      { variant: "destructive" },
+                      e.createElement(_, { className: "h-4 w-4" }),
+                      e.createElement(p, null, "Form incomplete"),
+                      e.createElement(g, null, d),
+                    )
+                  : null,
+                f
+                  ? e.createElement(
+                      h,
+                      { variant: "destructive" },
+                      e.createElement(_, { className: "h-4 w-4" }),
+                      e.createElement(p, null, "Channel creation failed"),
+                      e.createElement(g, null, f),
+                    )
+                  : null,
+                C
+                  ? e.createElement(
+                      h,
+                      {
+                        className:
+                          "border-emerald-300 bg-emerald-50 text-emerald-900",
+                      },
+                      e.createElement(Q, { className: "h-4 w-4" }),
+                      e.createElement(p, null, "Success"),
+                      e.createElement(g, null, C),
+                    )
+                  : null,
+                e.createElement(
+                  "div",
+                  { className: "flex flex-wrap gap-2" },
+                  e.createElement(
+                    m,
+                    { type: "submit", disabled: !v },
+                    x
+                      ? a("loading") || "Loading..."
+                      : a("create") || "Create Channel",
+                  ),
+                  e.createElement(
+                    m,
+                    {
+                      type: "button",
+                      variant: "outline",
+                      onClick: () => n("/channels"),
+                    },
+                    "Cancel",
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      )
+    : e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 px-4 py-20",
+        },
+        e.createElement(
+          k,
+          { className: "max-w-lg mx-auto" },
+          e.createElement(
+            D,
+            null,
+            e.createElement(S, null, "Create Channel"),
+            e.createElement(
+              T,
+              null,
+              "Sign in to create and manage your own channel.",
+            ),
+          ),
+          e.createElement(
+            A,
+            { className: "space-y-4" },
+            e.createElement(
+              m,
+              {
+                onClick: () =>
+                  n("/login", { state: { returnTo: "/channels/create" } }),
+                className: "w-full",
+              },
+              "Sign In to Continue",
+            ),
+            e.createElement(
+              m,
+              {
+                variant: "outline",
+                className: "w-full",
+                onClick: () => n("/channels"),
+              },
+              "Back to Channels",
+            ),
+          ),
+        ),
+      );
+};
+var me = W;
+export { me as default };

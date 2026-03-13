@@ -117,7 +117,9 @@ const MyFeedPage = () => {
     }
 
     try {
-      const query = userId ? `?userId=${encodeURIComponent(String(userId))}` : "";
+      const query = userId
+        ? `?userId=${encodeURIComponent(String(userId))}`
+        : "";
       const response = await fetch(`${baseUrl}/api/wishlist${query}`, {
         method: "GET",
         credentials: "include",
@@ -326,8 +328,8 @@ const MyFeedPage = () => {
     const key = String(postId);
     const isSaved = Boolean(savedPosts[key]);
     const nextSaved = !isSaved;
-    (setSavedPosts((prev) => ({ ...prev, [key]: nextSaved })),
-      setSavedPostStatus(key, nextSaved));
+    setSavedPosts((prev) => ({ ...prev, [key]: nextSaved })),
+      setSavedPostStatus(key, nextSaved);
 
     try {
       if (nextSaved) {
@@ -377,7 +379,9 @@ const MyFeedPage = () => {
   };
 
   const handleViewDetails = (postId) => {
-    const postObj = translatedPosts.find((p) => p.id === postId || p.post_id === postId);
+    const postObj = translatedPosts.find(
+      (p) => p.id === postId || p.post_id === postId,
+    );
     navigate(`/feed/${postId}`, { state: { post: postObj } });
   };
 
@@ -694,7 +698,9 @@ const MyFeedPage = () => {
                         onClick={() => handleShare(postId)}
                       >
                         <FaShare className="mr-1" />
-                        <span className="hidden sm:inline">{t("share") || "Share"}</span>
+                        <span className="hidden sm:inline">
+                          {t("share") || "Share"}
+                        </span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -718,7 +724,9 @@ const MyFeedPage = () => {
                         onClick={() => handleViewDetails(postId)}
                       >
                         <FaEye className="mr-1" />
-                        <span className="hidden sm:inline">{t("view") || "View"}</span>
+                        <span className="hidden sm:inline">
+                          {t("view") || "View"}
+                        </span>
                       </Button>
                     </div>
                   </div>

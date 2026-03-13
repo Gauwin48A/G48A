@@ -117,18 +117,18 @@ const be = () => {
       },
     ],
     ge = {
-      Electronics: "\u{1F4F1}",
-      Mobiles: "\u{1F4F1}",
-      Fashion: "\u{1F455}",
-      Furniture: "\u{1F6CB}\uFE0F",
-      Vehicles: "\u{1F697}",
-      Books: "\u{1F4DA}",
-      Home: "\u{1F3E0}",
+      Electronics: "\uD83D\uDCF1",
+      Mobiles: "\uD83D\uDCF1",
+      Fashion: "\uD83D\uDC55",
+      Furniture: "\uD83D\uDECB\uFE0F",
+      Vehicles: "\uD83D\uDE97",
+      Books: "\uD83D\uDCDA",
+      Home: "\uD83C\uDFE0",
       Sports: "\u26BD",
-      Beauty: "\u{1F484}",
-      Kids: "\u{1F9F8}",
+      Beauty: "\uD83D\uDC84",
+      Kids: "\uD83E\uDDF8",
     };
-  (w(() => {
+  w(() => {
     if (!b || !n) return;
     (async () => {
       try {
@@ -139,7 +139,7 @@ const be = () => {
             minPrice: r.minPrice || "",
             maxPrice: r.maxPrice || "",
             date: r.date || "",
-        });
+          });
       } catch {}
     })();
   }, [b, n]),
@@ -165,7 +165,7 @@ const be = () => {
       };
     }, [b, n]),
     w(() => {
-      (h(1), L(!0));
+      h(1), L(!0);
     }, [s, o]),
     w(() => {
       if (!b || !n) return;
@@ -184,14 +184,17 @@ const be = () => {
           Object.keys(r).forEach((a) => !r[a] && delete r[a]);
           const d = await $.get("/recommendations", { params: r }),
             c = Array.isArray(d?.posts) ? d.posts : [];
-          (x(g === 1 ? c : (a) => [...a, ...c]), L(c.length === 12), S(null));
+          x(g === 1 ? c : (a) => [...a, ...c]), L(c.length === 12), S(null);
         } catch {
-          (S(tr("failed_load_recommendations", "Failed to load recommendations")), g === 1 && x([]));
+          S(
+            tr("failed_load_recommendations", "Failed to load recommendations"),
+          ),
+            g === 1 && x([]);
         } finally {
-          (C(!1), A(!1));
+          C(!1), A(!1);
         }
       })();
-    }, [b, s, o, g, G, n, m]));
+    }, [b, s, o, g, G, n, m]);
   const K = (t) =>
       t ? (t.startsWith("http") ? t : `${ce()}${t}`) : "/placeholder.svg",
     V = J(
@@ -206,25 +209,36 @@ const be = () => {
           (o &&
             d.includes(String(o).toLowerCase()) &&
             r.push(
-              (m("category_match_reason") || "Matches your selected category ({{value}}).")
-                .replace("{{value}}", o),
+              (
+                m("category_match_reason") ||
+                "Matches your selected category ({{value}})."
+              ).replace("{{value}}", o),
             ),
           s.location &&
             c.includes(String(s.location).toLowerCase()) &&
             r.push(
-              (m("location_match_reason") || "Located near your preferred area ({{value}}).")
-                .replace("{{value}}", s.location),
+              (
+                m("location_match_reason") ||
+                "Located near your preferred area ({{value}})."
+              ).replace("{{value}}", s.location),
             ),
           (v > 0 || y > 0) && a > 0)
         ) {
           const Z = v === 0 || a >= v,
             q = y === 0 || a <= y;
-          Z && q && r.push(m("budget_match_reason") || "Within your preferred price range.");
+          Z &&
+            q &&
+            r.push(
+              m("budget_match_reason") || "Within your preferred price range.",
+            );
         }
         return (
           (Number(t.views_count || 0) >= 10 ||
             Number(t.likes_count || 0) >= 5) &&
-            r.push(m("engagement_match_reason") || "Getting strong engagement from other users."),
+            r.push(
+              m("engagement_match_reason") ||
+                "Getting strong engagement from other users.",
+            ),
           r.length === 0 &&
             r.push(
               m("browsing_interest_reason") ||
@@ -266,7 +280,7 @@ const be = () => {
         const d = String(r),
           c = !!savedPosts[d],
           a = !c;
-        (setSavedPosts((v) => ({ ...v, [d]: a })), setSavedPostStatus(d, a));
+        setSavedPosts((v) => ({ ...v, [d]: a })), setSavedPostStatus(d, a);
         setMenuPostId(null);
         try {
           if (a) {
@@ -287,7 +301,7 @@ const be = () => {
             });
           }
         } catch {
-          (setSavedPosts((v) => ({ ...v, [d]: c })), setSavedPostStatus(d, c));
+          setSavedPosts((v) => ({ ...v, [d]: c })), setSavedPostStatus(d, c);
         }
       },
       [N, b, savedPosts, u, apiBase],
@@ -359,15 +373,28 @@ const be = () => {
             e.createElement(
               "p",
               { className: "text-gray-300 text-center mb-8" },
-              m("signin_recommendations_desc")||"Sign in to view personalized recommendations curated just for you",
+              m("signin_recommendations_desc") ||
+                "Sign in to view personalized recommendations curated just for you",
             ),
             e.createElement(
               "div",
               { className: "space-y-3 mb-8" },
               [
-                { icon: R, text: m("personalized_product_picks")||"Personalized product picks" },
-                { icon: ee, text: m("based_on_preferences")||"Based on your preferences" },
-                { icon: te, text: m("real_time_updates")||"Real-time updates" },
+                {
+                  icon: R,
+                  text:
+                    m("personalized_product_picks") ||
+                    "Personalized product picks",
+                },
+                {
+                  icon: ee,
+                  text:
+                    m("based_on_preferences") || "Based on your preferences",
+                },
+                {
+                  icon: te,
+                  text: m("real_time_updates") || "Real-time updates",
+                },
               ].map((t, r) =>
                 e.createElement(
                   "div",
@@ -403,7 +430,7 @@ const be = () => {
             e.createElement(
               "p",
               { className: "text-gray-400 text-center mt-6 text-sm" },
-              m("dont_have_account")||"Don't have an account?",
+              m("dont_have_account") || "Don't have an account?",
               " ",
               e.createElement(
                 "span",
@@ -426,7 +453,96 @@ const be = () => {
           { className: "max-w-6xl mx-auto px-4 pt-4" },
           e.createElement(
             "div",
+            {
+              className:
+                "mb-6 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 sm:p-8 text-white shadow-xl overflow-hidden",
+            },
+            e.createElement(
+              "div",
+              {
+                className:
+                  "flex flex-col md:flex-row md:items-center md:justify-between gap-4",
+              },
+              e.createElement(
+                "div",
+                { className: "max-w-xl" },
+                e.createElement(
+                  "p",
+                  {
+                    className:
+                      "text-xs uppercase tracking-[0.2em] text-white/70",
+                  },
+                  tr("for_you_tag", "For you"),
+                ),
+                e.createElement(
+                  "h2",
+                  { className: "text-2xl sm:text-3xl font-bold mt-2" },
+                  tr(
+                    "for_you_title",
+                    "Recommendations curated just for you",
+                  ),
+                ),
+                e.createElement(
+                  "p",
+                  { className: "mt-2 text-sm sm:text-base text-white/80" },
+                  tr(
+                    "for_you_subtitle",
+                    "Fresh picks based on your activity, location, and budget.",
+                  ),
+                ),
+              ),
+              e.createElement(
+                "div",
+                { className: "flex flex-wrap gap-2" },
+                e.createElement(
+                  l,
+                  {
+                    type: "button",
+                    className:
+                      "bg-white text-indigo-600 hover:bg-white/90 font-semibold",
+                    onClick: () => u("/all-posts"),
+                  },
+                  tr("browse_all", "Browse all"),
+                ),
+                e.createElement(
+                  l,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className:
+                      "border-white/40 text-white hover:bg-white/10",
+                    onClick: () => u("/categories"),
+                  },
+                  tr("explore_categories", "Explore categories"),
+                ),
+              ),
+            ),
+          ),
+          e.createElement(
+            "div",
             { className: "mb-6" },
+            e.createElement(
+              "div",
+              { className: "flex items-center justify-between mb-3" },
+              e.createElement(
+                "h4",
+                {
+                  className:
+                    "text-base font-bold text-gray-900 dark:text-white",
+                },
+                tr("popular_categories", "Popular categories"),
+              ),
+              e.createElement(
+                "button",
+                {
+                  type: "button",
+                  onClick: () => u("/categories"),
+                  className:
+                    "text-xs font-semibold text-blue-600 hover:text-blue-700",
+                },
+                tr("view_all", "View all"),
+              ),
+            ),
             e.createElement(ae, { onCategorySelect: f, activeCategory: o }),
           ),
           e.createElement(
@@ -503,12 +619,16 @@ const be = () => {
                     className:
                       "text-base font-bold text-blue-900 dark:text-blue-100",
                   },
-                  tr("why_seeing_recommendations", "Why you are seeing these recommendations"),
+                  tr(
+                    "why_seeing_recommendations",
+                    "Why you are seeing these recommendations",
+                  ),
                 ),
                 e.createElement(
                   "p",
                   { className: "text-xs text-blue-700 dark:text-blue-200" },
-                  m("signals_updated_from_activity")||"Signals are updated from your filters and browsing activity.",
+                  m("signals_updated_from_activity") ||
+                    "Signals are updated from your filters and browsing activity.",
                 ),
               ),
               e.createElement(
@@ -521,7 +641,9 @@ const be = () => {
                   onClick: () => F((t) => !t),
                 },
                 e.createElement(se, { className: "w-4 h-4 mr-2" }),
-                j ? tr("hide_signals", "Hide signals") : tr("show_signals", "Show signals"),
+                j
+                  ? tr("hide_signals", "Hide signals")
+                  : tr("show_signals", "Show signals"),
               ),
             ),
             j &&
@@ -616,7 +738,7 @@ const be = () => {
                   className:
                     "bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all",
                 },
-                m("shop_now")||"Shop Now",
+                m("shop_now") || "Shop Now",
               ),
             ),
             e.createElement("div", {
@@ -633,12 +755,12 @@ const be = () => {
                 className:
                   "text-lg font-bold text-gray-900 dark:text-white mb-2",
               },
-              m("sponsored_deals")||"Sponsored Deals",
+              m("sponsored_deals") || "Sponsored Deals",
             ),
             e.createElement(
               "p",
               { className: "text-blue-500 dark:text-blue-400 text-sm" },
-              m("no_sponsored_deals")||"No sponsored deals",
+              m("no_sponsored_deals") || "No sponsored deals",
             ),
           ),
           e.createElement(
@@ -647,7 +769,7 @@ const be = () => {
               className:
                 "text-2xl font-bold text-blue-700 dark:text-blue-300 mb-4",
             },
-            m("all_posts")||"All Posts",
+            m("all_posts") || "All Posts",
           ),
           B &&
             e.createElement(
@@ -665,7 +787,7 @@ const be = () => {
                   variant: "outline",
                   className: "border-red-300 text-red-700 w-fit",
                   onClick: () => {
-                    (h(1), D((t) => t + 1));
+                    h(1), D((t) => t + 1);
                   },
                 },
                 tr("retry", "Retry"),
@@ -723,7 +845,8 @@ const be = () => {
                   e.createElement(
                     "p",
                     { className: "text-gray-500 dark:text-gray-400" },
-                    m("interact_for_personalized_picks")||"Interact with more posts to get personalized picks!",
+                    m("interact_for_personalized_picks") ||
+                      "Interact with more posts to get personalized picks!",
                   ),
                   e.createElement(
                     "div",
@@ -731,7 +854,7 @@ const be = () => {
                     e.createElement(
                       l,
                       { type: "button", onClick: () => u("/all-posts") },
-                      m("browse_listings")||"Browse Listings",
+                      m("browse_listings") || "Browse Listings",
                     ),
                     e.createElement(
                       l,
@@ -750,7 +873,7 @@ const be = () => {
                         onClick: () => f(""),
                         disabled: !o,
                       },
-                      m("reset_filters")||"Reset Filters",
+                      m("reset_filters") || "Reset Filters",
                     ),
                   ),
                 )
@@ -814,7 +937,7 @@ const be = () => {
                               className:
                                 "mt-1 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:text-gray-200",
                             },
-                            `${m("post_id")||"Post ID"}: `,
+                            `${m("post_id") || "Post ID"}: `,
                             r,
                           ),
                         ),
@@ -830,7 +953,7 @@ const be = () => {
                               className: "text-xs",
                               onClick: () => E((a) => (a === r ? null : r)),
                             },
-                            m("why_this")||"Why this?",
+                            m("why_this") || "Why this?",
                           ),
                           e.createElement(
                             "button",
@@ -839,7 +962,7 @@ const be = () => {
                               onClick: () => openPostMenu(r),
                               className:
                                 "p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition",
-                              title: m("more_options")||"More options",
+                              title: m("more_options") || "More options",
                             },
                             e.createElement(moreIcon, {
                               className:
@@ -914,14 +1037,14 @@ const be = () => {
                               className:
                                 "text-gray-300 dark:text-gray-600 text-4xl font-bold absolute",
                             },
-                            m("image")||"Image",
+                            m("image") || "Image",
                           ),
                       ),
                       e.createElement(
                         "div",
                         {
                           className:
-                            "relative h-12 -mt-6 z-10 flex justify-center",
+                            "relative h-12 mt-6 -translate-y-6 z-10 flex justify-center",
                         },
                         e.createElement(
                           "div",
@@ -960,7 +1083,8 @@ const be = () => {
                                 className:
                                   "text-xs font-semibold text-blue-900 dark:text-blue-200 mb-2",
                               },
-                              m("recommendation_signals")||"Recommendation signals",
+                              m("recommendation_signals") ||
+                                "Recommendation signals",
                             ),
                             e.createElement(
                               "ul",
@@ -1037,7 +1161,9 @@ const be = () => {
                                 "shrink-0 h-8 rounded-full px-2 text-[11px] sm:px-3 sm:text-xs",
                               onClick: () => u(`/post/${r}`),
                             },
-                            e.createElement(viewIcon, { className: "w-4 h-4 mr-1" }),
+                            e.createElement(viewIcon, {
+                              className: "w-4 h-4 mr-1",
+                            }),
                             e.createElement(
                               "span",
                               { className: "hidden sm:inline" },

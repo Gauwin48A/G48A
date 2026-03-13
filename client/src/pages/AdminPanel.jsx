@@ -79,7 +79,8 @@ const ge = {
     if (normalized === "operations") return "ops";
     return normalized;
   },
-  hasAdminPanelReadAccess = (role) => ADMIN_ALLOWED_ROLES.has(normalizeRole(role)),
+  hasAdminPanelReadAccess = (role) =>
+    ADMIN_ALLOWED_ROLES.has(normalizeRole(role)),
   readStoredUser = () => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
@@ -120,14 +121,14 @@ const ge = {
       [c, A] = d(!1),
       [n, M] = d(null),
       te = v(() => {
-        (f.current && (clearTimeout(f.current), (f.current = null)), M(null));
+        f.current && (clearTimeout(f.current), (f.current = null)), M(null);
       }, []),
       T = v((t) => {
-        (f.current && clearTimeout(f.current),
+        f.current && clearTimeout(f.current),
           M(t),
           (f.current = setTimeout(() => {
-            (M(null), (f.current = null));
-          }, 12e3)));
+            M(null), (f.current = null);
+          }, 12e3));
       }, []),
       S = v(async ({ panel: t = "all" } = {}) => {
         const r = t === "activity";
@@ -135,66 +136,65 @@ const ge = {
         try {
           const a = await k.get("/api/admin/dashboard"),
             i = a?.data ?? a;
-          (N({ ...ge, ...(i?.stats || {}) }),
+          N({ ...ge, ...(i?.stats || {}) }),
             q(J(i?.flaggedUsers)),
             z(J(i?.flaggedPosts)),
             me(J(i?.recentActivity)),
-            r ? $("") : y(""));
+            r ? $("") : y("");
         } catch (a) {
           const i = C(a),
             status = Number(a?.status || a?.response?.status || 0);
           if (status === 401 || status === 403) {
             setHasAdminAccess(!1);
           }
-          (r ? $(i) : y(i),
+          r ? $(i) : y(i),
             import.meta.env.DEV &&
               status !== 403 &&
               status !== 401 &&
-              console.error("[AdminPanel] Dashboard fetch failed:", a));
+              console.error("[AdminPanel] Dashboard fetch failed:", a);
         } finally {
           r ? Z(!1) : X(!1);
         }
       }, []);
-    ve(
-      () => {
-        let t = !1;
-        (async () => {
-          const profileRole = normalizeRole(Bn?.role);
-          const storedRole = normalizeRole(readStoredUser()?.role);
-          let allowed = hasAdminPanelReadAccess(profileRole || storedRole);
+    ve(() => {
+      let t = !1;
+      (async () => {
+        const profileRole = normalizeRole(Bn?.role);
+        const storedRole = normalizeRole(readStoredUser()?.role);
+        let allowed = hasAdminPanelReadAccess(profileRole || storedRole);
 
-          if (!allowed) {
-            try {
-              const profile = await k.get("/auth/me");
-              const fetchedRole = normalizeRole(profile?.role || profile?.user?.role);
-              allowed = hasAdminPanelReadAccess(fetchedRole);
-            } catch {
-              allowed = false;
-            }
+        if (!allowed) {
+          try {
+            const profile = await k.get("/auth/me");
+            const fetchedRole = normalizeRole(
+              profile?.role || profile?.user?.role,
+            );
+            allowed = hasAdminPanelReadAccess(fetchedRole);
+          } catch {
+            allowed = false;
           }
+        }
 
-          if (t) return;
+        if (t) return;
 
-          setHasAdminAccess(allowed);
-          setAccessChecked(true);
+        setHasAdminAccess(allowed);
+        setAccessChecked(true);
 
-          if (!allowed) {
-            X(false);
-            Z(false);
-            N(ge);
-            q([]);
-            z([]);
-            me([]);
-            y("You do not have access to admin operations in this session.");
-          }
-        })();
+        if (!allowed) {
+          X(false);
+          Z(false);
+          N(ge);
+          q([]);
+          z([]);
+          me([]);
+          y("You do not have access to admin operations in this session.");
+        }
+      })();
 
-        return () => {
-          t = true;
-        };
-      },
-      [Bn?.role],
-    );
+      return () => {
+        t = true;
+      };
+    }, [Bn?.role]);
     ve(
       () => (
         accessChecked && hasAdminAccess && S(),
@@ -384,7 +384,7 @@ const ge = {
             }),
             a = r?.data ?? r,
             i = t.action === "suspend" ? "Restricted" : "Under Review";
-          (q((p) =>
+          q((p) =>
             p.map((w) =>
               String(w.id) === String(t.id) ? { ...w, status: i } : w,
             ),
@@ -410,25 +410,25 @@ const ge = {
                 snapshot: t.snapshot,
                 successMessage: "User restriction was reverted.",
                 requestId: a?.requestId || "",
-              }));
+              });
         },
         [T, l],
       ),
       ue = v(async () => {
         if (u) {
-          (A(!0), y(""));
+          A(!0), y("");
           try {
-            (u.kind === "post"
+            u.kind === "post"
               ? await ae(u)
               : u.kind === "user" && (await ie(u)),
-              F(null));
+              F(null);
           } catch (t) {
-            (y(C(t)),
+            y(C(t)),
               l({
                 title: "Action failed",
                 description: C(t),
                 variant: "destructive",
-              }));
+              });
           } finally {
             A(!1);
           }
@@ -436,9 +436,9 @@ const ge = {
       }, [ae, ie, u, l]),
       pe = v(async () => {
         if (n) {
-          (A(!0), y(""));
+          A(!0), y("");
           try {
-            (n.kind === "post" &&
+            n.kind === "post" &&
               (await k.post("/api/admin/dashboard/flagged-posts/bulk-action", {
                 postIds: [String(n.id)],
                 action: n.reverseAction,
@@ -477,14 +477,14 @@ const ge = {
                 title: "Undo complete",
                 description: n.successMessage || "Reverted successfully.",
               }),
-              te());
+              te();
           } catch (t) {
-            (y(C(t)),
+            y(C(t)),
               l({
                 title: "Undo failed",
                 description: C(t),
                 variant: "destructive",
-              }));
+              });
           } finally {
             A(!1);
           }

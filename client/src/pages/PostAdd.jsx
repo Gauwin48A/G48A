@@ -77,11 +77,14 @@ const PostAdd = () => {
 
       toast({
         title: t("post_published") || "Post Published",
-        description: t("post_visible") || "Your post is now visible in the feed.",
+        description:
+          t("post_visible") || "Your post is now visible in the feed.",
       });
       navigate("/feed");
     } catch (submitError) {
-      setError(submitError.message || t("publish_failed") || "Failed to publish post");
+      setError(
+        submitError.message || t("publish_failed") || "Failed to publish post",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -132,7 +135,8 @@ const PostAdd = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("content") || "Content"} <span className="text-red-500">*</span>
+                {t("content") || "Content"}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <textarea
                 className="w-full border rounded-xl px-4 py-3 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
@@ -187,7 +191,9 @@ const PostAdd = () => {
                 disabled={submitting || !combinedDescription.trim()}
                 className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? t("publishing") || "Publishing..." : t("publish_post") || "Publish Post"}
+                {submitting
+                  ? t("publishing") || "Publishing..."
+                  : t("publish_post") || "Publish Post"}
               </Button>
             </div>
           </form>

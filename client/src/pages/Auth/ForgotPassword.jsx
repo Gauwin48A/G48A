@@ -1,1 +1,278 @@
-import e,{useState as a}from"react";import{Button as C}from"@/components/ui/button";import{Input as L}from"@/components/ui/input";import{Label as P}from"@/components/ui/label";import{Card as E,CardContent as D,CardDescription as S,CardHeader as T,CardTitle as A}from"@/components/ui/card";import{useToast as F}from"@/hooks/use-toast";import{Link as y}from"react-router-dom";import{Mail as j,ArrowLeft as B,CheckCircle as H,AlertCircle as I}from"lucide-react";import{useTranslation as U}from"react-i18next";import{getApiOriginBase as M}from"@/lib/networkConfig";const O=()=>{const{toast:l}=F(),{t}=U(),[d,w]=a(""),[u,b]=a(!1),[m,h]=a(!1),[c,f]=a(""),[g,v]=a(null),[x,n]=a(""),_=(o,s)=>{const r=String(s||"").toLowerCase();return o===429||r.includes("too many")||r.includes("rate limit")?"Too many reset requests detected. Please wait a few minutes before retrying.":r.includes("network")||r.includes("fetch")||r.includes("timeout")?"Reset service is temporarily unreachable. Please retry shortly.":o>=500||r.includes("server")?"Reset service is temporarily unavailable. Please retry in a few minutes.":r.includes("invalid")||r.includes("required")?"Please enter a valid email, phone number, or username.":s||t("failed_send_link")||"Failed to send reset link"},k=async o=>{if(o.preventDefault(),n(""),!d){const s=t("enter_email_phone_username")||"Enter your email, phone, or username.";n(s),l({title:t("error"),description:s,variant:"destructive"});return}b(!0);try{const s=M(),r=await fetch(`${s}/api/auth/forgot-password`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({identifier:d})}),p=await r.json().catch(()=>({}));if(r.ok){h(!0);const i=p?.debug||null;v(i),f(i?.resetLink||"");const N=i?.mock?t("reset_link_preview_mode")||"Email is in local preview mode. Use the reset link shown on this page.":t("reset_delivery_hint")||"If an account exists, reset instructions were sent. Check spam/junk if you don't see it.";n(N),l({title:t("success"),description:i?.mock?t("reset_link_preview_mode")||"Email is in local preview mode. Use the reset link shown on this page.":t("reset_link_sent")||"Password reset instructions have been sent."})}else{const i=_(r.status,p.error||p.message);n(i),l({title:t("error"),description:i,variant:"destructive"})}}catch(s){const r=_(null,s.message||t("network_error"));n(r),l({title:t("error"),description:r,variant:"destructive"})}finally{b(!1)}};return e.createElement("div",{className:"min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4"},e.createElement("div",{className:"max-w-md w-full"},e.createElement(y,{to:"/login",className:"flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors"},e.createElement(B,{className:"w-4 h-4"}),e.createElement("span",null,t("back_to_login"))),e.createElement(E,{className:"shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800"},e.createElement(T,{className:"text-center py-8 bg-gradient-to-r from-blue-600 to-blue-700"},e.createElement("div",{className:"w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center"},m?e.createElement(H,{className:"w-8 h-8 text-white"}):e.createElement(j,{className:"w-8 h-8 text-white"})),e.createElement(A,{className:"text-2xl text-white"},m?t("check_your_email")||"Check Your Email":t("forgot_password")),e.createElement(S,{className:"text-blue-100"},m?t("sent_reset_link_msg")||"We sent you password reset instructions":t("enter_email_reset_msg")||"Enter your email, phone, or username to reset your password")),e.createElement(D,{className:"p-8"},x&&e.createElement("div",{className:"mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2"},e.createElement(I,{className:"w-4 h-4 mt-0.5 flex-shrink-0"}),e.createElement("span",null,x)),m?e.createElement("div",{className:"text-center space-y-4"},e.createElement("p",{className:"text-gray-600 dark:text-gray-300"},t("sent_link_to")||"We've sent reset instructions for"," ",e.createElement("strong",null,d),".",t("check_inbox_instructions")||"Please check your inbox and follow the instructions."),c&&e.createElement("div",{className:"rounded-xl border border-blue-200 bg-blue-50 p-3 text-left"},e.createElement("p",{className:"text-xs font-semibold text-blue-700"},t("dev_reset_preview")||"Local reset preview link"),e.createElement("a",{href:c,className:"mt-1 block break-all text-sm text-blue-700 hover:underline"},c),e.createElement("p",{className:"mt-1 text-xs text-blue-600"},g?.mock?t("email_provider_not_configured")||"Email provider not configured; this link is shown for local testing.":(t("email_delivery_channel")||"Delivery channel")+`: ${g?.channel||"email"}`)),e.createElement("p",{className:"text-sm text-gray-500"},t("didnt_receive_email")||"Didn't receive the email?"," ",t("check_spam")||"Check your spam folder or",e.createElement("button",{onClick:()=>{h(!1),v(null),f(""),n("")},className:"text-blue-600 hover:underline ml-1"},t("try_again")))):e.createElement("form",{onSubmit:k,className:"space-y-6"},e.createElement("div",null,e.createElement(P,{htmlFor:"email",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},t("email_phone_username")||"Email / Phone / Username"),e.createElement(L,{id:"email",type:"text",value:d,onChange:o=>w(o.target.value),className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl",placeholder:t("email_phone_username_placeholder")||"Enter your email, phone, or username",disabled:u})),e.createElement(C,{type:"submit",disabled:u,className:"w-full py-6 text-lg bg-[#96C2DB] hover:bg-blue-500 text-white rounded-xl"},u?t("sending")+"...":t("send_reset_link")||"Send Reset Link")),e.createElement("div",{className:"text-center mt-6 text-sm text-gray-600 dark:text-gray-400"},t("remember_password")||"Remember your password?"," ",e.createElement(y,{to:"/login",className:"text-blue-600 hover:underline font-medium"},t("sign_in")))))))};var X=O;export{X as default};
+import e, { useState as a } from "react";
+import { Button as C } from "@/components/ui/button";
+import { Input as L } from "@/components/ui/input";
+import { Label as P } from "@/components/ui/label";
+import {
+  Card as E,
+  CardContent as D,
+  CardDescription as S,
+  CardHeader as T,
+  CardTitle as A,
+} from "@/components/ui/card";
+import { useToast as F } from "@/hooks/use-toast";
+import { Link as y } from "react-router-dom";
+import {
+  Mail as j,
+  ArrowLeft as B,
+  CheckCircle as H,
+  AlertCircle as I,
+} from "lucide-react";
+import { useTranslation as U } from "react-i18next";
+import { getApiOriginBase as M } from "@/lib/networkConfig";
+import { mapPasswordResetError as R } from "@/utils/passwordResetErrorMapper";
+const O = () => {
+  const { toast: l } = F(),
+    { t } = U(),
+    [d, w] = a(""),
+    [u, b] = a(!1),
+    [m, h] = a(!1),
+    [c, f] = a(""),
+    [g, v] = a(null),
+    [x, n] = a(""),
+    _ = (o, s) => R({ status: o, message: s, t, context: "forgot" }),
+    k = async (o) => {
+      if ((o.preventDefault(), n(""), !d)) {
+        const s =
+          t("enter_email_phone_username") ||
+          "Enter your email, phone, or username.";
+        n(s), l({ title: t("error"), description: s, variant: "destructive" });
+        return;
+      }
+      b(!0);
+      try {
+        const s = M(),
+          r = await fetch(`${s}/api/auth/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier: d }),
+          }),
+          p = await r.json().catch(() => ({}));
+        if (r.ok) {
+          h(!0);
+          const i = p?.debug || null;
+          v(i), f(i?.resetLink || "");
+          const N = i?.mock
+            ? t("reset_link_preview_mode") ||
+              "Email is in local preview mode. Use the reset link shown on this page."
+            : t("reset_delivery_hint") ||
+              "If an account exists, reset instructions were sent. Check spam/junk if you don't see it.";
+          n(N),
+            l({
+              title: t("success"),
+              description: i?.mock
+                ? t("reset_link_preview_mode") ||
+                  "Email is in local preview mode. Use the reset link shown on this page."
+                : t("reset_link_sent") ||
+                  "Password reset instructions have been sent.",
+            });
+        } else {
+          const i = _(r.status, p.error || p.message);
+          n(i),
+            l({ title: t("error"), description: i, variant: "destructive" });
+        }
+      } catch (s) {
+        const r = _(null, s.message);
+        n(r), l({ title: t("error"), description: r, variant: "destructive" });
+      } finally {
+        b(!1);
+      }
+    };
+  return e.createElement(
+    "div",
+    {
+      className:
+        "min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4",
+    },
+    e.createElement(
+      "div",
+      { className: "max-w-md w-full" },
+      e.createElement(
+        y,
+        {
+          to: "/login",
+          className:
+            "flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors",
+        },
+        e.createElement(B, { className: "w-4 h-4" }),
+        e.createElement("span", null, t("back_to_login")),
+      ),
+      e.createElement(
+        E,
+        {
+          className:
+            "shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800",
+        },
+        e.createElement(
+          T,
+          {
+            className:
+              "text-center py-8 bg-gradient-to-r from-blue-600 to-blue-700",
+          },
+          e.createElement(
+            "div",
+            {
+              className:
+                "w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center",
+            },
+            m
+              ? e.createElement(H, { className: "w-8 h-8 text-white" })
+              : e.createElement(j, { className: "w-8 h-8 text-white" }),
+          ),
+          e.createElement(
+            A,
+            { className: "text-2xl text-white" },
+            m
+              ? t("check_your_email") || "Check Your Email"
+              : t("forgot_password"),
+          ),
+          e.createElement(
+            S,
+            { className: "text-blue-100" },
+            m
+              ? t("sent_reset_link_msg") ||
+                  "We sent you password reset instructions"
+              : t("enter_email_reset_msg") ||
+                  "Enter your email, phone, or username to reset your password",
+          ),
+        ),
+        e.createElement(
+          D,
+          { className: "p-8" },
+          x &&
+            e.createElement(
+              "div",
+              {
+                className:
+                  "mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2",
+              },
+              e.createElement(I, { className: "w-4 h-4 mt-0.5 flex-shrink-0" }),
+              e.createElement("span", null, x),
+            ),
+          m
+            ? e.createElement(
+                "div",
+                { className: "text-center space-y-4" },
+                e.createElement(
+                  "p",
+                  { className: "text-gray-600 dark:text-gray-300" },
+                  t("sent_link_to") || "We've sent reset instructions for",
+                  " ",
+                  e.createElement("strong", null, d),
+                  ".",
+                  t("check_inbox_instructions") ||
+                    "Please check your inbox and follow the instructions.",
+                ),
+                c &&
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "rounded-xl border border-blue-200 bg-blue-50 p-3 text-left",
+                    },
+                    e.createElement(
+                      "p",
+                      { className: "text-xs font-semibold text-blue-700" },
+                      t("dev_reset_preview") || "Local reset preview link",
+                    ),
+                    e.createElement(
+                      "a",
+                      {
+                        href: c,
+                        className:
+                          "mt-1 block break-all text-sm text-blue-700 hover:underline",
+                      },
+                      c,
+                    ),
+                    e.createElement(
+                      "p",
+                      { className: "mt-1 text-xs text-blue-600" },
+                      g?.mock
+                        ? t("email_provider_not_configured") ||
+                            "Email provider not configured; this link is shown for local testing."
+                        : (t("email_delivery_channel") || "Delivery channel") +
+                            `: ${g?.channel || "email"}`,
+                    ),
+                  ),
+                e.createElement(
+                  "p",
+                  { className: "text-sm text-gray-500" },
+                  t("didnt_receive_email") || "Didn't receive the email?",
+                  " ",
+                  t("check_spam") || "Check your spam folder or",
+                  e.createElement(
+                    "button",
+                    {
+                      onClick: () => {
+                        h(!1), v(null), f(""), n("");
+                      },
+                      className: "text-blue-600 hover:underline ml-1",
+                    },
+                    t("try_again"),
+                  ),
+                ),
+              )
+            : e.createElement(
+                "form",
+                { onSubmit: k, className: "space-y-6" },
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    P,
+                    {
+                      htmlFor: "email",
+                      className:
+                        "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                    },
+                    t("email_phone_username") || "Email / Phone / Username",
+                  ),
+                  e.createElement(L, {
+                    id: "email",
+                    type: "text",
+                    value: d,
+                    onChange: (o) => w(o.target.value),
+                    className:
+                      "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl",
+                    placeholder:
+                      t("email_phone_username_placeholder") ||
+                      "Enter your email, phone, or username",
+                    disabled: u,
+                  }),
+                ),
+                e.createElement(
+                  C,
+                  {
+                    type: "submit",
+                    disabled: u,
+                    className:
+                      "w-full py-6 text-lg bg-[#96C2DB] hover:bg-blue-500 text-white rounded-xl",
+                  },
+                  u
+                    ? t("sending") + "..."
+                    : t("send_reset_link") || "Send Reset Link",
+                ),
+              ),
+          e.createElement(
+            "div",
+            {
+              className:
+                "text-center mt-6 text-sm text-gray-600 dark:text-gray-400",
+            },
+            t("remember_password") || "Remember your password?",
+            " ",
+            e.createElement(
+              y,
+              {
+                to: "/login",
+                className: "text-blue-600 hover:underline font-medium",
+              },
+              t("sign_in"),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+};
+var X = O;
+export { X as default };

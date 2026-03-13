@@ -51,7 +51,7 @@ const Cart = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 -mt-6 pb-8">
+      <div className="max-w-6xl mx-auto px-4 mt-6 -translate-y-6 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 md:p-6">
             {items.length === 0 ? (

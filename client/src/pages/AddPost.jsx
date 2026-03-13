@@ -1,1 +1,1741 @@
-import e,{useState as n,useEffect as U,useCallback as z,useMemo as j}from"react";import{Button as v}from"@/components/ui/button";import{Input as h}from"@/components/ui/input";import{Label as u}from"@/components/ui/label";import{Card as W,CardContent as ce,CardDescription as Pe,CardHeader as Te,CardTitle as Le}from"@/components/ui/card";import{Select as F,SelectContent as _,SelectItem as p,SelectTrigger as A,SelectValue as D}from"@/components/ui/select";import{Textarea as $e}from"@/components/ui/textarea";import{Badge as H}from"@/components/ui/badge";import{useToast as Ee}from"@/hooks/use-toast";import{ArrowLeft as be,Upload as Be,Eye as qe}from"lucide-react";import{Link as Ue,useNavigate as je,useLocation as Fe}from"react-router-dom";import _e from"@/components/AudioRecorder";import{useTranslation as Ae}from"react-i18next";import{getAccessToken as De,getUserId as Me}from"@/utils/authStorage";import{fetchCategoriesCached as Oe}from"@/services/categoriesService";import{buildApiPath as G}from"@/lib/networkConfig";const Xe=2*1024*1024,M=[{key:"basic",name:"Basic",maxImages:1,color:"bg-gray-500"},{key:"silver",name:"Silver",maxImages:5,color:"bg-blue-500"},{key:"premium",name:"Premium",maxImages:10,color:"bg-yellow-500"}],V=a=>{if(!a)return"basic";const m=String(a).trim().toLowerCase();return m.includes("premium")?"premium":m.includes("silver")?"silver":m.includes("basic")||m.includes("free")?"basic":m},ze=a=>{if(!a)return"bg-gray-500";const m=String(a).trim();return m.startsWith("bg-")?m:`bg-${m}`},We=a=>{const m=V(a?.key||a?.tier_key||a?.slug||a?.name);return{...a,key:m,name:a?.name||m.charAt(0).toUpperCase()+m.slice(1),maxImages:Number(a?.maxImages??a?.max_images??1),color:ze(a?.color),icon:typeof a?.icon=="function"?a.icon:null}},He=()=>{const{t:a}=Ae(),m=je(),S=Fe(),{toast:y}=Ee(),{selectedTier:O,selectedCategory:Y}=j(()=>{const r=new URLSearchParams(S.search);return{selectedTier:V(r.get("tier")||"basic"),selectedCategory:r.get("category")}},[S.search]),[ue,J]=n([]),[ye,K]=n([]),[Z,Q]=n(""),[pe,xe]=n(0);U(()=>{let r=!1;return(async()=>{try{Q("");const[d,s]=await Promise.all([Oe(),fetch(G("/brands"))]),l=s.ok?await s.json():[];if(r)return;J(Array.isArray(d)?d:[]),K(Array.isArray(l)?l:[])}catch{if(r)return;J([]),K([]),Q("Failed to load categories and brands. Please retry.")}})(),()=>{r=!0}},[pe]);const[t,R]=n({title:"",category:Y||"",brand:"",model:"",condition:"",age:"",warranty:"",price:"",district:"",state:"",contactNumber:"",description:"",dimensions:""}),[b,ee]=n([]),[re,he]=n(null),[N,ve]=n(!1),[k,I]=n(!1),[f,P]=n(0),[te,T]=n("idle"),[ae,w]=n(""),[ke,X]=n(!1),[i,se]=n({}),L=j(()=>b.map(r=>URL.createObjectURL(r)),[b]);U(()=>()=>{L.forEach(r=>URL.revokeObjectURL(r))},[L]);const[ie,$]=n([]),[oe,C]=n(""),[fe,Ne]=n(0);U(()=>{let r=!1;return(async()=>{try{C("");const d=await fetch(G("/tiers"));if(!d.ok){r||($([]),C(`Tier data failed to load (HTTP ${d.status}).`),y({title:"Tier fetch error",description:`Error ${d.status}`,variant:"destructive"}));return}const s=d.headers.get("content-type");if(!s||!s.includes("application/json")){r||($([]),C("Tier data response was invalid."),y({title:"Tier fetch error",description:"Invalid response",variant:"destructive"}));return}const l=await d.json();if(!r){const c=Array.isArray(l)?l.map(We):[];$(c.length>0?c:M),C("")}}catch(d){if(r)return;$(M),C(d.message||"Tier data unavailable. Using fallback tiers."),y({title:"Tier fetch error",description:d.message,variant:"destructive"})}})(),()=>{r=!0}},[y,fe]);const g=j(()=>ie.find(r=>V(r.key)===O)||M.find(r=>r.key===O)||M[0],[ie,O]),E=j(()=>[{key:"title",label:"Title (5-100 chars)",met:t.title.trim().length>=5&&t.title.trim().length<=100,hint:`${t.title.trim().length}/100`},{key:"category",label:"Category selected",met:!!t.category,hint:t.category?t.category:"Required"},{key:"brand_model",label:"Brand and model",met:t.brand.trim().length>=2&&t.model.trim().length>=2,hint:t.brand&&t.model?`${t.brand} ${t.model}`:"Required"},{key:"condition",label:"Condition selected",met:!!t.condition,hint:t.condition||"Required"},{key:"price",label:"Valid price",met:Number(t.price)>0,hint:t.price?`INR ${Number(t.price)||0}`:"Required"},{key:"location",label:"District and state",met:!!(t.district.trim()&&t.state.trim()),hint:t.district&&t.state?`${t.district}, ${t.state}`:"Required"},{key:"contact",label:"Contact number",met:/^([6-9][0-9]{9})$/.test(t.contactNumber),hint:t.contactNumber?`${t.contactNumber.length}/10 digits`:"Required"},{key:"description",label:"Description (20-1000 chars)",met:t.description.trim().length>=20&&t.description.trim().length<=1e3,hint:`${t.description.trim().length}/1000`},{key:"images",label:`Images (1-${g?.maxImages||1})`,met:b.length>0&&b.length<=(g?.maxImages||1),hint:`${b.length}/${g?.maxImages||1}`}],[t,b.length,g?.maxImages]),de=E.filter(r=>r.met).length,le=E.length-de,x=r=>{const{name:o,value:d}=r.target;R(s=>({...s,[o]:d}))},B=r=>o=>{R(d=>({...d,[r]:o}))},we=r=>{const o=Array.from(r.target.files||[]),d=["image/jpeg","image/png","image/webp"];for(const s of o){if(!d.includes(s.type)){y({title:"Invalid file type",description:"Only JPG, PNG, WEBP allowed.",variant:"destructive"});return}if(s.size>Xe){y({title:"File too large",description:"Each image must be <2MB.",variant:"destructive"});return}}if(o.length+b.length>(g?.maxImages||1)){y({title:"Too many images",description:`Max ${g?.maxImages||1} images allowed.`,variant:"destructive"});return}ee(s=>[...s,...o])},Ce=r=>{ee(o=>o.filter((d,s)=>s!==r))};U(()=>{if(Object.keys(i).length>0){const r=Object.keys(i)[0],o=document.querySelector(`[name="${r}"]`);o&&o.focus()}},[i]);const ne=z(()=>{const r={};return(!t.title||t.title.length<5||t.title.length>100)&&(r.title="Title is required (5-100 chars)."),t.category||(r.category="Category is required."),(!t.brand||t.brand.length<2)&&(r.brand="Brand is required (min 2 chars)."),(!t.model||t.model.length<2)&&(r.model="Model is required (min 2 chars)."),t.condition||(r.condition="Condition is required."),(!t.price||isNaN(t.price)||Number(t.price)<=0)&&(r.price="Price must be a positive number."),(!t.district||t.district.trim().length<2)&&(r.district="District is required."),(!t.state||t.state.trim().length<2)&&(r.state="State is required."),(!t.contactNumber||!/^([6-9][0-9]{9})$/.test(t.contactNumber))&&(r.contactNumber="Contact number must be 10 digits and start with 6-9."),(!t.description||t.description.length<20||t.description.length>1e3)&&(r.description="Description is required (20-1000 chars)."),b.length===0&&(r.images="At least one image is required."),r},[t,b]),Se=()=>{const r=ne();if(se(r),Object.keys(r).length>0){y({title:"Missing or Invalid Information",description:Object.values(r).join(" "),variant:"destructive"});return}X(!0)},q=z(()=>{P(0),T("idle"),w("")},[]),Ie=z((r,o)=>new Promise((d,s)=>{const l=new XMLHttpRequest;l.open("POST",G("/posts")),l.withCredentials=!0,l.timeout=18e4,o&&l.setRequestHeader("Authorization",`Bearer ${o}`),l.upload.onprogress=c=>{if(T("uploading"),c.lengthComputable&&c.total>0){const ge=Math.max(1,Math.min(99,Math.round(c.loaded/c.total*100)));P(ge),w(`Uploading media ${ge}%`)}else w("Uploading media...")},l.upload.onload=()=>{P(100),T("processing"),w("Upload complete. Finalizing listing...")},l.onload=()=>{let c={};try{c=l.responseText?JSON.parse(l.responseText):{}}catch{c={}}if(l.status>=200&&l.status<300){d(c);return}s(new Error(c?.error||c?.message||`Upload failed (HTTP ${l.status})`))},l.onerror=()=>s(new Error("Network issue while uploading. Please try again.")),l.ontimeout=()=>s(new Error("Upload timed out. Please retry with a smaller payload.")),l.send(r)}),[]),me=async()=>{I(!0),T("uploading"),P(0),w("Preparing upload...");const r=ne();if(se(r),Object.keys(r).length>0){y({title:"Missing or Invalid Information",description:Object.values(r).join(" "),variant:"destructive"}),q(),I(!1);return}const o=De(),d=Me();if(!o||!d){y({title:"Login required",description:"Please log in to publish a listing.",variant:"destructive"}),m("/login",{state:{returnTo:S.pathname+S.search}}),q(),I(!1);return}try{const s=new FormData;Object.entries(t).forEach(([l,c])=>{c&&s.append(l,c)}),b.forEach(l=>s.append("images",l)),re&&s.append("audio",re,"voice-description.webm"),s.append("is_flash_sale",N?"true":"false"),await Ie(s,o),localStorage.setItem("mhub:first-post-created","true"),y({title:"Post Created Successfully",description:"Your mobile listing has been created."}),q(),m("/all-posts")}catch(s){y({title:"Error",description:s.message||"Failed to create post.",variant:"destructive"}),q()}I(!1)};return ke?e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800"},e.createElement("div",{className:"max-w-4xl mx-auto px-4 py-8"},e.createElement("div",{className:"mb-8"},e.createElement(v,{onClick:()=>X(!1),variant:"outline",className:"mb-4"},e.createElement(be,{className:"w-4 h-4 mr-2"}),"Edit Post"),e.createElement("h1",{className:"text-3xl font-bold text-gray-900 dark:text-white mb-2"},"Preview Your Post"),e.createElement("p",{className:"text-gray-600 dark:text-gray-300"},"Review your listing before publishing")),e.createElement(W,{className:"shadow-xl border-0 rounded-2xl overflow-hidden mb-6 dark:bg-gray-800"},e.createElement("div",{className:"flex"},e.createElement("div",{className:"w-80 h-64 relative bg-gray-100 dark:bg-gray-700 flex-shrink-0"},b[0]?e.createElement("img",{src:L[0],onError:r=>{r.target.onerror=null,r.target.src="/placeholder.svg"},alt:"Product",className:"w-full h-full object-cover"}):e.createElement("div",{className:"w-full h-full flex items-center justify-center text-gray-400"},"No Image"),e.createElement(H,{className:`absolute top-4 left-4 ${g?.color||"bg-gray-400"} text-white`},g?.name||"Basic")),e.createElement("div",{className:"flex-1 p-6"},e.createElement("h3",{className:"text-2xl font-bold text-gray-900 dark:text-white mb-2"},t.brand," ",t.model),e.createElement("div",{className:"text-3xl font-bold text-green-600 dark:text-green-400 mb-4"},"\u20B9",(Number.parseInt(t.price,10)||0).toLocaleString()),e.createElement("div",{className:"grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300"},e.createElement("div",null,e.createElement("span",{className:"font-medium"},"Condition:")," ",t.condition),e.createElement("div",null,e.createElement("span",{className:"font-medium"},"Age:")," ",t.age," months"),e.createElement("div",null,e.createElement("span",{className:"font-medium"},"Warranty:")," ",t.warranty),e.createElement("div",null,e.createElement("span",{className:"font-medium"},"Location:")," ",t.district,", ",t.state)),t.description&&e.createElement("p",{className:"text-gray-600 dark:text-gray-400 mb-4"},t.description)))),e.createElement("div",{className:"flex space-x-4"},e.createElement(v,{onClick:()=>X(!1),variant:"outline",className:"flex-1 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"},"Edit Post"),e.createElement(v,{onClick:me,className:"flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700",disabled:k},k?te==="processing"?"Finalizing...":"Publishing...":"Publish Post")),k&&e.createElement("div",{className:"mt-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3"},e.createElement("div",{className:"flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1"},e.createElement("span",null,ae||"Uploading media..."),e.createElement("span",null,f>0?`${f}%`:"")),e.createElement("div",{className:"h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900"},e.createElement("div",{className:"h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300",style:{width:`${Math.min(100,Math.max(5,f||5))}%`}}))))):e.createElement("div",{className:"min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800"},e.createElement("div",{className:"max-w-4xl mx-auto px-4 py-8 pb-40"}," ",e.createElement("div",{className:"mb-8"},e.createElement(Ue,{to:"/all-posts",className:"inline-flex items-center text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 mb-4"},e.createElement(be,{className:"w-4 h-4 mr-2"}),a("back_to_browse")),e.createElement("div",{className:"flex items-center justify-between"},e.createElement("div",null,e.createElement("h1",{className:"text-3xl font-bold text-gray-900 dark:text-white"},a("create_new_listing")),e.createElement("p",{className:"text-gray-600 dark:text-gray-300 mt-2"},a("fill_details"))),e.createElement(H,{className:`${g?.color||"bg-gray-400"} text-white text-lg px-4 py-2`},g?.icon?e.createElement(g.icon,{className:"w-5 h-5 mr-2"}):null,g?.name?`${g.name} ${a("tier")}`:a("tier")))),Z&&e.createElement("div",{className:"mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2"},e.createElement("p",{className:"text-sm text-amber-800 dark:text-amber-300"},Z),e.createElement(v,{type:"button",variant:"outline",className:"border-amber-300 text-amber-800",onClick:()=>xe(r=>r+1)},"Retry")),oe&&e.createElement("div",{className:"mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2"},e.createElement("p",{className:"text-sm text-amber-800 dark:text-amber-300"},oe),e.createElement(v,{type:"button",variant:"outline",className:"border-amber-300 text-amber-800",onClick:()=>Ne(r=>r+1)},"Retry")),e.createElement(W,{className:"mb-4 border border-sky-200 dark:border-sky-900 bg-sky-50 dark:bg-sky-950/20"},e.createElement(ce,{className:"p-4"},e.createElement("div",{className:"flex items-center justify-between gap-3 mb-3"},e.createElement("p",{className:"text-sm font-semibold text-sky-800 dark:text-sky-300"},"Pre-submit checklist"),e.createElement(H,{className:`${le===0?"bg-emerald-600":"bg-sky-600"} text-white`},de,"/",E.length," complete")),e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-2 gap-2"},E.map(r=>e.createElement("div",{key:r.key,className:`rounded-lg border px-3 py-2 text-xs ${r.met?"border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900":"border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"}`},e.createElement("p",{className:`font-semibold ${r.met?"text-emerald-700 dark:text-emerald-300":"text-amber-700 dark:text-amber-300"}`},r.met?"Complete:":"Pending:"," ",r.label),e.createElement("p",{className:"text-slate-600 dark:text-slate-300"},r.hint)))),le>0&&e.createElement("p",{className:"text-xs text-amber-700 dark:text-amber-300 mt-3"},"Complete pending fields above to reduce submit errors and rework."))),e.createElement(W,{className:"shadow-xl border-0 rounded-2xl overflow-hidden dark:bg-gray-800"},e.createElement(Te,{className:"bg-gradient-to-r from-sky-500 to-blue-600 text-white"},e.createElement(Le,{className:"text-2xl"},a("mobile_phone_details")),e.createElement(Pe,{className:"text-sky-100"},a("provide_accurate_info"))),e.createElement(ce,{className:"p-8 dark:bg-gray-800"},e.createElement("div",{className:"space-y-8"},e.createElement("div",null,e.createElement("h3",{className:"text-lg font-semibold text-gray-900 dark:text-white mb-4"},a("basic_information")),e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-2 gap-6"},e.createElement("div",null,e.createElement(u,{htmlFor:"title",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("title")," *"),e.createElement(h,{id:"title",name:"title",value:t.title,onChange:x,placeholder:"e.g., iPhone 14 Pro for Sale",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",required:!0,maxLength:100,minLength:5}),i.title&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.title),e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400 mt-1"},"Use a clear title with brand + model. ",t.title.trim().length,"/100")),e.createElement("div",null,e.createElement(u,{className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("category")," *"),Y?e.createElement(h,{name:"category",value:t.category,readOnly:!0,disabled:!0,className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed"}):e.createElement(F,{name:"category",value:t.category,onValueChange:B("category"),required:!0},e.createElement(A,{className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"},e.createElement(D,{placeholder:"Select category"})),e.createElement(_,null,ue.map(r=>e.createElement(p,{key:r.id||r,value:r.name||r},r.name||r)))),i.category&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.category)),e.createElement("div",null,e.createElement(u,{className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("brand")," *"),e.createElement(F,{name:"brand",value:t.brand,onValueChange:B("brand"),required:!0},e.createElement(A,{className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"},e.createElement(D,{placeholder:a("select_brand")})),e.createElement(_,null,ye.map(r=>e.createElement(p,{key:r.id||r,value:r.name||r},r.name||r)))),i.brand&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.brand)),e.createElement("div",null,e.createElement(u,{htmlFor:"model",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("model")," *"),e.createElement(h,{id:"model",name:"model",value:t.model,onChange:x,placeholder:"e.g., iPhone 14 Pro, Galaxy S23",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",required:!0}),i.model&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.model)),e.createElement("div",null,e.createElement(u,{className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("condition")," *"),e.createElement(F,{value:t.condition||"",onValueChange:B("condition")},e.createElement(A,{className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"},e.createElement(D,{placeholder:a("select_condition")})),e.createElement(_,null,e.createElement(p,{value:"new"},"New"),e.createElement(p,{value:"like-new"},"Like New"),e.createElement(p,{value:"excellent"},"Excellent"),e.createElement(p,{value:"good"},"Good"),e.createElement(p,{value:"fair"},"Fair"))),i.condition&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.condition)))),e.createElement("div",null,e.createElement("h3",{className:"text-lg font-semibold text-gray-900 dark:text-white mb-4"},a("additional_details")),e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-6"},e.createElement("div",null,e.createElement(u,{htmlFor:"age",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("age_months")),e.createElement(h,{id:"age",name:"age",type:"number",value:t.age,onChange:x,placeholder:"0-48 months",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",min:"0",max:"48"})),e.createElement("div",null,e.createElement(u,{className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("warranty_status")),e.createElement(F,{value:t.warranty||"",onValueChange:B("warranty")},e.createElement(A,{className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"},e.createElement(D,{placeholder:"Warranty status"})),e.createElement(_,null,e.createElement(p,{value:"active"},"Under Warranty"),e.createElement(p,{value:"expired"},"Warranty Expired"),e.createElement(p,{value:"no-warranty"},"No Warranty")))),e.createElement("div",null,e.createElement(u,{htmlFor:"dimensions",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},a("dimensions")),e.createElement(h,{id:"dimensions",name:"dimensions",value:t.dimensions,onChange:x,placeholder:"e.g., 6.1 inch",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500"})))),e.createElement("div",null,e.createElement("h3",{className:"text-lg font-semibold text-gray-900 dark:text-white mb-4"},a("pricing_location")),e.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-6"},e.createElement("div",null,e.createElement(u,{htmlFor:"price",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},"Price (\u20B9) *"),e.createElement(h,{id:"price",name:"price",type:"number",value:t.price,onChange:x,placeholder:"Enter price",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",required:!0}),i.price&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.price),e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400 mt-1"},"Enter your expected final selling price.")),e.createElement("div",null,e.createElement(u,{htmlFor:"district",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},"District *"),e.createElement(h,{id:"district",name:"district",value:t.district,onChange:x,placeholder:"Enter district",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",required:!0}),i.district&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.district)),e.createElement("div",null,e.createElement(u,{htmlFor:"state",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},"State *"),e.createElement(h,{id:"state",name:"state",value:t.state,onChange:x,placeholder:"Enter state",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",required:!0}),i.state&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.state)))),e.createElement("div",null,e.createElement("h3",{className:"text-lg font-semibold text-gray-900 dark:text-white mb-4"},"Contact & Images"),e.createElement("div",{className:"space-y-6"},e.createElement("div",null,e.createElement(u,{htmlFor:"contactNumber",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},"Contact Number *"),e.createElement(h,{id:"contactNumber",name:"contactNumber",type:"tel",value:t.contactNumber,onChange:x,placeholder:"+91 XXXXXXXXXX",className:"mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",required:!0}),i.contactNumber&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.contactNumber),e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400 mt-1"},"Use a 10-digit Indian number starting with 6-9.")),e.createElement("div",null,e.createElement(u,{className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},"Images (1-",g?.maxImages||1," photos) *"),e.createElement("div",{className:"mt-2"},e.createElement("div",{className:"border-2 border-dashed border-sky-300 dark:border-sky-600 rounded-xl p-8 bg-sky-50 dark:bg-gray-700"},e.createElement("div",{className:"text-center"},e.createElement(Be,{className:"mx-auto h-12 w-12 text-sky-400 mb-4"}),e.createElement("div",null,e.createElement("label",{htmlFor:"images",className:"cursor-pointer"},e.createElement(v,{type:"button",className:"bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700",onClick:()=>document.getElementById("images").click()},"Upload Images"),e.createElement("input",{id:"images",name:"images",type:"file",multiple:!0,accept:"image/*",onChange:we,className:"sr-only"})),e.createElement("p",{className:"mt-1 text-xs text-gray-500 dark:text-gray-400"},"Selected: ",b.length,"/",g?.maxImages||1),e.createElement("p",{className:"mt-2 text-sm text-gray-500 dark:text-gray-400"},"PNG, JPG up to 2MB each \u2022 Max ",g?.maxImages||1," images")))),b.length>0&&e.createElement("div",{className:"mt-4 grid grid-cols-2 md:grid-cols-4 gap-4"},b.map((r,o)=>e.createElement("div",{key:o,className:"relative"},e.createElement("img",{src:L[o],onError:d=>{d.target.onerror=null,d.target.src="/placeholder.svg"},alt:`Upload ${o+1}`,className:"h-24 w-full object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"}),e.createElement("button",{type:"button",onClick:()=>Ce(o),className:"absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"},"\xD7"))))),i.images&&e.createElement("div",{className:"text-red-500 text-xs mt-2"},i.images)),e.createElement("div",null,e.createElement(u,{htmlFor:"description",className:"text-sm font-semibold text-gray-700 dark:text-gray-300"},"Description *"),e.createElement($e,{id:"description",name:"description",value:t.description,onChange:x,placeholder:"Add any additional details about your mobile phone...",className:"mt-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",rows:4,required:!0,minLength:20,maxLength:1e3}),i.description&&e.createElement("div",{className:"text-red-500 text-xs mt-1"},i.description),e.createElement("p",{className:"text-xs text-gray-500 dark:text-gray-400 mt-1"},"Share condition, accessories, and reason for selling. ",t.description.trim().length,"/1000")),e.createElement(_e,{onAudioReady:r=>he(r),existingAudio:null}),e.createElement("div",{className:"flex flex-col gap-3 p-4 border-2 border-dashed border-orange-300 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20"},e.createElement("div",{className:"flex items-center justify-between"},e.createElement("div",{className:"flex items-center gap-2"},e.createElement("span",{className:"text-xl"},"\u23F3"),e.createElement("div",null,e.createElement("h3",{className:"text-sm font-semibold text-orange-800 dark:text-orange-300"},"24-Hour Flash Sale"),e.createElement("p",{className:"text-xs text-gray-600 dark:text-gray-400"},"Auto-expires in 24 hours \u2022 Gets 2x visibility boost"))),e.createElement("button",{type:"button",onClick:()=>ve(!N),className:`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${N?"bg-orange-500":"bg-gray-300 dark:bg-gray-600"}`},e.createElement("span",{className:`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${N?"translate-x-7":"translate-x-1"}`}))),N&&e.createElement("div",{className:"text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg"},"\u{1F525} Your listing will appear at the TOP of feeds and auto-delete after 24 hours!")))),e.createElement("div",{className:"flex flex-col sm:flex-row items-center justify-end gap-2 pt-6 border-t dark:border-gray-600 mt-8"},e.createElement(v,{type:"button",onClick:Se,variant:"outline",className:"border-sky-500 text-sky-600 hover:bg-sky-50 dark:hover:bg-gray-700 font-semibold px-6 py-3 text-base shadow",style:{minWidth:120}},e.createElement(qe,{className:"w-5 h-5 mr-2"}),"Preview"),e.createElement(v,{onClick:me,className:`bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 font-semibold px-6 py-3 text-base shadow ${k?"opacity-60 cursor-not-allowed":""}`,disabled:k,style:{minWidth:140}},k?e.createElement("span",{className:"flex items-center justify-center"},e.createElement("svg",{className:"animate-spin mr-2 w-5 h-5 text-white",fill:"none",viewBox:"0 0 24 24"},e.createElement("circle",{className:"opacity-25",cx:"12",cy:"12",r:"10",stroke:"currentColor",strokeWidth:"4"}),e.createElement("path",{className:"opacity-75",fill:"currentColor",d:"M4 12a8 8 0 018-8v8z"})),te==="processing"?"Finalizing...":"Publishing..."):"Publish Post")),k&&e.createElement("div",{className:"rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3"},e.createElement("div",{className:"flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1"},e.createElement("span",null,ae||"Uploading media..."),e.createElement("span",null,f>0?`${f}%`:"")),e.createElement("div",{className:"h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900"},e.createElement("div",{className:"h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300",style:{width:`${Math.min(100,Math.max(5,f||5))}%`}}))))))))};var lr=He;export{lr as default};
+import e, {
+  useState as n,
+  useEffect as U,
+  useCallback as z,
+  useMemo as j,
+} from "react";
+import { Button as v } from "@/components/ui/button";
+import { Input as h } from "@/components/ui/input";
+import { Label as u } from "@/components/ui/label";
+import {
+  Card as W,
+  CardContent as ce,
+  CardDescription as Pe,
+  CardHeader as Te,
+  CardTitle as Le,
+} from "@/components/ui/card";
+import {
+  Select as F,
+  SelectContent as _,
+  SelectItem as p,
+  SelectTrigger as A,
+  SelectValue as D,
+} from "@/components/ui/select";
+import { Textarea as $e } from "@/components/ui/textarea";
+import { Badge as H } from "@/components/ui/badge";
+import { useToast as Ee } from "@/hooks/use-toast";
+import { ArrowLeft as be, Upload as Be, Eye as qe } from "lucide-react";
+import {
+  Link as Ue,
+  useNavigate as je,
+  useLocation as Fe,
+} from "react-router-dom";
+import _e from "@/components/AudioRecorder";
+import { useTranslation as Ae } from "react-i18next";
+import { getAccessToken as De, getUserId as Me } from "@/utils/authStorage";
+import { fetchCategoriesCached as Oe } from "@/services/categoriesService";
+import { buildApiPath as G } from "@/lib/networkConfig";
+const Xe = 2 * 1024 * 1024,
+  M = [
+    { key: "basic", name: "Basic", maxImages: 1, color: "bg-gray-500" },
+    { key: "silver", name: "Silver", maxImages: 5, color: "bg-blue-500" },
+    { key: "premium", name: "Premium", maxImages: 10, color: "bg-yellow-500" },
+  ],
+  V = (a) => {
+    if (!a) return "basic";
+    const m = String(a).trim().toLowerCase();
+    return m.includes("premium")
+      ? "premium"
+      : m.includes("silver")
+        ? "silver"
+        : m.includes("basic") || m.includes("free")
+          ? "basic"
+          : m;
+  },
+  ze = (a) => {
+    if (!a) return "bg-gray-500";
+    const m = String(a).trim();
+    return m.startsWith("bg-") ? m : `bg-${m}`;
+  },
+  We = (a) => {
+    const m = V(a?.key || a?.tier_key || a?.slug || a?.name);
+    return {
+      ...a,
+      key: m,
+      name: a?.name || m.charAt(0).toUpperCase() + m.slice(1),
+      maxImages: Number(a?.maxImages ?? a?.max_images ?? 1),
+      color: ze(a?.color),
+      icon: typeof a?.icon == "function" ? a.icon : null,
+    };
+  },
+  He = () => {
+    const { t: a } = Ae(),
+      m = je(),
+      S = Fe(),
+      { toast: y } = Ee(),
+      { selectedTier: O, selectedCategory: Y } = j(() => {
+        const r = new URLSearchParams(S.search);
+        return {
+          selectedTier: V(r.get("tier") || "basic"),
+          selectedCategory: r.get("category"),
+        };
+      }, [S.search]),
+      [ue, J] = n([]),
+      [ye, K] = n([]),
+      [Z, Q] = n(""),
+      [pe, xe] = n(0);
+    U(() => {
+      let r = !1;
+      return (
+        (async () => {
+          try {
+            Q("");
+            const [d, s] = await Promise.all([Oe(), fetch(G("/brands"))]),
+              l = s.ok ? await s.json() : [];
+            if (r) return;
+            J(Array.isArray(d) ? d : []), K(Array.isArray(l) ? l : []);
+          } catch {
+            if (r) return;
+            J([]),
+              K([]),
+              Q("Failed to load categories and brands. Please retry.");
+          }
+        })(),
+        () => {
+          r = !0;
+        }
+      );
+    }, [pe]);
+    const [t, R] = n({
+        title: "",
+        category: Y || "",
+        brand: "",
+        model: "",
+        condition: "",
+        age: "",
+        warranty: "",
+        price: "",
+        district: "",
+        state: "",
+        contactNumber: "",
+        description: "",
+        dimensions: "",
+      }),
+      [b, ee] = n([]),
+      [re, he] = n(null),
+      [N, ve] = n(!1),
+      [k, I] = n(!1),
+      [f, P] = n(0),
+      [te, T] = n("idle"),
+      [ae, w] = n(""),
+      [ke, X] = n(!1),
+      [i, se] = n({}),
+      L = j(() => b.map((r) => URL.createObjectURL(r)), [b]);
+    U(
+      () => () => {
+        L.forEach((r) => URL.revokeObjectURL(r));
+      },
+      [L],
+    );
+    const [ie, $] = n([]),
+      [oe, C] = n(""),
+      [fe, Ne] = n(0);
+    U(() => {
+      let r = !1;
+      return (
+        (async () => {
+          try {
+            C("");
+            const d = await fetch(G("/tiers"));
+            if (!d.ok) {
+              r ||
+                ($([]),
+                C(`Tier data failed to load (HTTP ${d.status}).`),
+                y({
+                  title: "Tier fetch error",
+                  description: `Error ${d.status}`,
+                  variant: "destructive",
+                }));
+              return;
+            }
+            const s = d.headers.get("content-type");
+            if (!s || !s.includes("application/json")) {
+              r ||
+                ($([]),
+                C("Tier data response was invalid."),
+                y({
+                  title: "Tier fetch error",
+                  description: "Invalid response",
+                  variant: "destructive",
+                }));
+              return;
+            }
+            const l = await d.json();
+            if (!r) {
+              const c = Array.isArray(l) ? l.map(We) : [];
+              $(c.length > 0 ? c : M), C("");
+            }
+          } catch (d) {
+            if (r) return;
+            $(M),
+              C(d.message || "Tier data unavailable. Using fallback tiers."),
+              y({
+                title: "Tier fetch error",
+                description: d.message,
+                variant: "destructive",
+              });
+          }
+        })(),
+        () => {
+          r = !0;
+        }
+      );
+    }, [y, fe]);
+    const g = j(
+        () =>
+          ie.find((r) => V(r.key) === O) || M.find((r) => r.key === O) || M[0],
+        [ie, O],
+      ),
+      E = j(
+        () => [
+          {
+            key: "title",
+            label: "Title (5-100 chars)",
+            met: t.title.trim().length >= 5 && t.title.trim().length <= 100,
+            hint: `${t.title.trim().length}/100`,
+          },
+          {
+            key: "category",
+            label: "Category selected",
+            met: !!t.category,
+            hint: t.category ? t.category : "Required",
+          },
+          {
+            key: "brand_model",
+            label: "Brand and model",
+            met: t.brand.trim().length >= 2 && t.model.trim().length >= 2,
+            hint: t.brand && t.model ? `${t.brand} ${t.model}` : "Required",
+          },
+          {
+            key: "condition",
+            label: "Condition selected",
+            met: !!t.condition,
+            hint: t.condition || "Required",
+          },
+          {
+            key: "price",
+            label: "Valid price",
+            met: Number(t.price) > 0,
+            hint: t.price ? `INR ${Number(t.price) || 0}` : "Required",
+          },
+          {
+            key: "location",
+            label: "District and state",
+            met: !!(t.district.trim() && t.state.trim()),
+            hint:
+              t.district && t.state ? `${t.district}, ${t.state}` : "Required",
+          },
+          {
+            key: "contact",
+            label: "Contact number",
+            met: /^([6-9][0-9]{9})$/.test(t.contactNumber),
+            hint: t.contactNumber
+              ? `${t.contactNumber.length}/10 digits`
+              : "Required",
+          },
+          {
+            key: "description",
+            label: "Description (20-1000 chars)",
+            met:
+              t.description.trim().length >= 20 &&
+              t.description.trim().length <= 1e3,
+            hint: `${t.description.trim().length}/1000`,
+          },
+          {
+            key: "images",
+            label: `Images (1-${g?.maxImages || 1})`,
+            met: b.length > 0 && b.length <= (g?.maxImages || 1),
+            hint: `${b.length}/${g?.maxImages || 1}`,
+          },
+        ],
+        [t, b.length, g?.maxImages],
+      ),
+      de = E.filter((r) => r.met).length,
+      le = E.length - de,
+      x = (r) => {
+        const { name: o, value: d } = r.target;
+        R((s) => ({ ...s, [o]: d }));
+      },
+      B = (r) => (o) => {
+        R((d) => ({ ...d, [r]: o }));
+      },
+      we = (r) => {
+        const o = Array.from(r.target.files || []),
+          d = ["image/jpeg", "image/png", "image/webp"];
+        for (const s of o) {
+          if (!d.includes(s.type)) {
+            y({
+              title: "Invalid file type",
+              description: "Only JPG, PNG, WEBP allowed.",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (s.size > Xe) {
+            y({
+              title: "File too large",
+              description: "Each image must be <2MB.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+        if (o.length + b.length > (g?.maxImages || 1)) {
+          y({
+            title: "Too many images",
+            description: `Max ${g?.maxImages || 1} images allowed.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        ee((s) => [...s, ...o]);
+      },
+      Ce = (r) => {
+        ee((o) => o.filter((d, s) => s !== r));
+      };
+    U(() => {
+      if (Object.keys(i).length > 0) {
+        const r = Object.keys(i)[0],
+          o = document.querySelector(`[name="${r}"]`);
+        o && o.focus();
+      }
+    }, [i]);
+    const ne = z(() => {
+        const r = {};
+        return (
+          (!t.title || t.title.length < 5 || t.title.length > 100) &&
+            (r.title = "Title is required (5-100 chars)."),
+          t.category || (r.category = "Category is required."),
+          (!t.brand || t.brand.length < 2) &&
+            (r.brand = "Brand is required (min 2 chars)."),
+          (!t.model || t.model.length < 2) &&
+            (r.model = "Model is required (min 2 chars)."),
+          t.condition || (r.condition = "Condition is required."),
+          (!t.price || isNaN(t.price) || Number(t.price) <= 0) &&
+            (r.price = "Price must be a positive number."),
+          (!t.district || t.district.trim().length < 2) &&
+            (r.district = "District is required."),
+          (!t.state || t.state.trim().length < 2) &&
+            (r.state = "State is required."),
+          (!t.contactNumber || !/^([6-9][0-9]{9})$/.test(t.contactNumber)) &&
+            (r.contactNumber =
+              "Contact number must be 10 digits and start with 6-9."),
+          (!t.description ||
+            t.description.length < 20 ||
+            t.description.length > 1e3) &&
+            (r.description = "Description is required (20-1000 chars)."),
+          b.length === 0 && (r.images = "At least one image is required."),
+          r
+        );
+      }, [t, b]),
+      Se = () => {
+        const r = ne();
+        if ((se(r), Object.keys(r).length > 0)) {
+          y({
+            title: "Missing or Invalid Information",
+            description: Object.values(r).join(" "),
+            variant: "destructive",
+          });
+          return;
+        }
+        X(!0);
+      },
+      q = z(() => {
+        P(0), T("idle"), w("");
+      }, []),
+      Ie = z(
+        (r, o) =>
+          new Promise((d, s) => {
+            const l = new XMLHttpRequest();
+            l.open("POST", G("/posts")),
+              (l.withCredentials = !0),
+              (l.timeout = 18e4),
+              o && l.setRequestHeader("Authorization", `Bearer ${o}`),
+              (l.upload.onprogress = (c) => {
+                if ((T("uploading"), c.lengthComputable && c.total > 0)) {
+                  const ge = Math.max(
+                    1,
+                    Math.min(99, Math.round((c.loaded / c.total) * 100)),
+                  );
+                  P(ge), w(`Uploading media ${ge}%`);
+                } else w("Uploading media...");
+              }),
+              (l.upload.onload = () => {
+                P(100),
+                  T("processing"),
+                  w("Upload complete. Finalizing listing...");
+              }),
+              (l.onload = () => {
+                let c = {};
+                try {
+                  c = l.responseText ? JSON.parse(l.responseText) : {};
+                } catch {
+                  c = {};
+                }
+                if (l.status >= 200 && l.status < 300) {
+                  d(c);
+                  return;
+                }
+                s(
+                  new Error(
+                    c?.error ||
+                      c?.message ||
+                      `Upload failed (HTTP ${l.status})`,
+                  ),
+                );
+              }),
+              (l.onerror = () =>
+                s(
+                  new Error("Network issue while uploading. Please try again."),
+                )),
+              (l.ontimeout = () =>
+                s(
+                  new Error(
+                    "Upload timed out. Please retry with a smaller payload.",
+                  ),
+                )),
+              l.send(r);
+          }),
+        [],
+      ),
+      me = async () => {
+        I(!0), T("uploading"), P(0), w("Preparing upload...");
+        const r = ne();
+        if ((se(r), Object.keys(r).length > 0)) {
+          y({
+            title: "Missing or Invalid Information",
+            description: Object.values(r).join(" "),
+            variant: "destructive",
+          }),
+            q(),
+            I(!1);
+          return;
+        }
+        const o = De(),
+          d = Me();
+        if (!o || !d) {
+          y({
+            title: "Login required",
+            description: "Please log in to publish a listing.",
+            variant: "destructive",
+          }),
+            m("/login", { state: { returnTo: S.pathname + S.search } }),
+            q(),
+            I(!1);
+          return;
+        }
+        try {
+          const s = new FormData();
+          Object.entries(t).forEach(([l, c]) => {
+            c && s.append(l, c);
+          }),
+            b.forEach((l) => s.append("images", l)),
+            re && s.append("audio", re, "voice-description.webm"),
+            s.append("is_flash_sale", N ? "true" : "false"),
+            await Ie(s, o),
+            localStorage.setItem("mhub:first-post-created", "true"),
+            y({
+              title: "Post Created Successfully",
+              description: "Your mobile listing has been created.",
+            }),
+            q(),
+            m("/all-posts");
+        } catch (s) {
+          y({
+            title: "Error",
+            description: s.message || "Failed to create post.",
+            variant: "destructive",
+          }),
+            q();
+        }
+        I(!1);
+      };
+    return ke
+      ? e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-4xl mx-auto px-4 py-8" },
+            e.createElement(
+              "div",
+              { className: "mb-8" },
+              e.createElement(
+                v,
+                { onClick: () => X(!1), variant: "outline", className: "mb-4" },
+                e.createElement(be, { className: "w-4 h-4 mr-2" }),
+                "Edit Post",
+              ),
+              e.createElement(
+                "h1",
+                {
+                  className:
+                    "text-3xl font-bold text-gray-900 dark:text-white mb-2",
+                },
+                "Preview Your Post",
+              ),
+              e.createElement(
+                "p",
+                { className: "text-gray-600 dark:text-gray-300" },
+                "Review your listing before publishing",
+              ),
+            ),
+            e.createElement(
+              W,
+              {
+                className:
+                  "shadow-xl border-0 rounded-2xl overflow-hidden mb-6 dark:bg-gray-800",
+              },
+              e.createElement(
+                "div",
+                { className: "flex" },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "w-80 h-64 relative bg-gray-100 dark:bg-gray-700 flex-shrink-0",
+                  },
+                  b[0]
+                    ? e.createElement("img", {
+                        src: L[0],
+                        onError: (r) => {
+                          (r.target.onerror = null),
+                            (r.target.src = "/placeholder.svg");
+                        },
+                        alt: "Product",
+                        className: "w-full h-full object-cover",
+                      })
+                    : e.createElement(
+                        "div",
+                        {
+                          className:
+                            "w-full h-full flex items-center justify-center text-gray-400",
+                        },
+                        "No Image",
+                      ),
+                  e.createElement(
+                    H,
+                    {
+                      className: `absolute top-4 left-4 ${g?.color || "bg-gray-400"} text-white`,
+                    },
+                    g?.name || "Basic",
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  { className: "flex-1 p-6" },
+                  e.createElement(
+                    "h3",
+                    {
+                      className:
+                        "text-2xl font-bold text-gray-900 dark:text-white mb-2",
+                    },
+                    t.brand,
+                    " ",
+                    t.model,
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "text-3xl font-bold text-green-600 dark:text-green-400 mb-4",
+                    },
+                    "\u20B9",
+                    (Number.parseInt(t.price, 10) || 0).toLocaleString(),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300",
+                    },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "span",
+                        { className: "font-medium" },
+                        "Condition:",
+                      ),
+                      " ",
+                      t.condition,
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "span",
+                        { className: "font-medium" },
+                        "Age:",
+                      ),
+                      " ",
+                      t.age,
+                      " months",
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "span",
+                        { className: "font-medium" },
+                        "Warranty:",
+                      ),
+                      " ",
+                      t.warranty,
+                    ),
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "span",
+                        { className: "font-medium" },
+                        "Location:",
+                      ),
+                      " ",
+                      t.district,
+                      ", ",
+                      t.state,
+                    ),
+                  ),
+                  t.description &&
+                    e.createElement(
+                      "p",
+                      { className: "text-gray-600 dark:text-gray-400 mb-4" },
+                      t.description,
+                    ),
+                ),
+              ),
+            ),
+            e.createElement(
+              "div",
+              { className: "flex space-x-4" },
+              e.createElement(
+                v,
+                {
+                  onClick: () => X(!1),
+                  variant: "outline",
+                  className:
+                    "flex-1 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700",
+                },
+                "Edit Post",
+              ),
+              e.createElement(
+                v,
+                {
+                  onClick: me,
+                  className:
+                    "flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700",
+                  disabled: k,
+                },
+                k
+                  ? te === "processing"
+                    ? "Finalizing..."
+                    : "Publishing..."
+                  : "Publish Post",
+              ),
+            ),
+            k &&
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "mt-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3",
+                },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1",
+                  },
+                  e.createElement("span", null, ae || "Uploading media..."),
+                  e.createElement("span", null, f > 0 ? `${f}%` : ""),
+                ),
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900",
+                  },
+                  e.createElement("div", {
+                    className:
+                      "h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300",
+                    style: { width: `${Math.min(100, Math.max(5, f || 5))}%` },
+                  }),
+                ),
+              ),
+          ),
+        )
+      : e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-4xl mx-auto px-4 py-8 pb-40" },
+            " ",
+            e.createElement(
+              "div",
+              { className: "mb-8" },
+              e.createElement(
+                Ue,
+                {
+                  to: "/all-posts",
+                  className:
+                    "inline-flex items-center text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 mb-4",
+                },
+                e.createElement(be, { className: "w-4 h-4 mr-2" }),
+                a("back_to_browse"),
+              ),
+              e.createElement(
+                "div",
+                { className: "flex items-center justify-between" },
+                e.createElement(
+                  "div",
+                  null,
+                  e.createElement(
+                    "h1",
+                    {
+                      className:
+                        "text-3xl font-bold text-gray-900 dark:text-white",
+                    },
+                    a("create_new_listing"),
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-gray-600 dark:text-gray-300 mt-2" },
+                    a("fill_details"),
+                  ),
+                ),
+                e.createElement(
+                  H,
+                  {
+                    className: `${g?.color || "bg-gray-400"} text-white text-lg px-4 py-2`,
+                  },
+                  g?.icon
+                    ? e.createElement(g.icon, { className: "w-5 h-5 mr-2" })
+                    : null,
+                  g?.name ? `${g.name} ${a("tier")}` : a("tier"),
+                ),
+              ),
+            ),
+            Z &&
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2",
+                },
+                e.createElement(
+                  "p",
+                  { className: "text-sm text-amber-800 dark:text-amber-300" },
+                  Z,
+                ),
+                e.createElement(
+                  v,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className: "border-amber-300 text-amber-800",
+                    onClick: () => xe((r) => r + 1),
+                  },
+                  "Retry",
+                ),
+              ),
+            oe &&
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 flex flex-wrap items-center justify-between gap-2",
+                },
+                e.createElement(
+                  "p",
+                  { className: "text-sm text-amber-800 dark:text-amber-300" },
+                  oe,
+                ),
+                e.createElement(
+                  v,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className: "border-amber-300 text-amber-800",
+                    onClick: () => Ne((r) => r + 1),
+                  },
+                  "Retry",
+                ),
+              ),
+            e.createElement(
+              W,
+              {
+                className:
+                  "mb-4 border border-sky-200 dark:border-sky-900 bg-sky-50 dark:bg-sky-950/20",
+              },
+              e.createElement(
+                ce,
+                { className: "p-4" },
+                e.createElement(
+                  "div",
+                  { className: "flex items-center justify-between gap-3 mb-3" },
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-sm font-semibold text-sky-800 dark:text-sky-300",
+                    },
+                    "Pre-submit checklist",
+                  ),
+                  e.createElement(
+                    H,
+                    {
+                      className: `${le === 0 ? "bg-emerald-600" : "bg-sky-600"} text-white`,
+                    },
+                    de,
+                    "/",
+                    E.length,
+                    " complete",
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  { className: "grid grid-cols-1 md:grid-cols-2 gap-2" },
+                  E.map((r) =>
+                    e.createElement(
+                      "div",
+                      {
+                        key: r.key,
+                        className: `rounded-lg border px-3 py-2 text-xs ${r.met ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900" : "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"}`,
+                      },
+                      e.createElement(
+                        "p",
+                        {
+                          className: `font-semibold ${r.met ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`,
+                        },
+                        r.met ? "Complete:" : "Pending:",
+                        " ",
+                        r.label,
+                      ),
+                      e.createElement(
+                        "p",
+                        { className: "text-slate-600 dark:text-slate-300" },
+                        r.hint,
+                      ),
+                    ),
+                  ),
+                ),
+                le > 0 &&
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-xs text-amber-700 dark:text-amber-300 mt-3",
+                    },
+                    "Complete pending fields above to reduce submit errors and rework.",
+                  ),
+              ),
+            ),
+            e.createElement(
+              W,
+              {
+                className:
+                  "shadow-xl border-0 rounded-2xl overflow-hidden dark:bg-gray-800",
+              },
+              e.createElement(
+                Te,
+                {
+                  className:
+                    "bg-gradient-to-r from-sky-500 to-blue-600 text-white",
+                },
+                e.createElement(
+                  Le,
+                  { className: "text-2xl" },
+                  a("mobile_phone_details"),
+                ),
+                e.createElement(
+                  Pe,
+                  { className: "text-sky-100" },
+                  a("provide_accurate_info"),
+                ),
+              ),
+              e.createElement(
+                ce,
+                { className: "p-8 dark:bg-gray-800" },
+                e.createElement(
+                  "div",
+                  { className: "space-y-8" },
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-lg font-semibold text-gray-900 dark:text-white mb-4",
+                      },
+                      a("basic_information"),
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "title",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("title"),
+                          " *",
+                        ),
+                        e.createElement(h, {
+                          id: "title",
+                          name: "title",
+                          value: t.title,
+                          onChange: x,
+                          placeholder: "e.g., iPhone 14 Pro for Sale",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          required: !0,
+                          maxLength: 100,
+                          minLength: 5,
+                        }),
+                        i.title &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.title,
+                          ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-xs text-gray-500 dark:text-gray-400 mt-1",
+                          },
+                          "Use a clear title with brand + model. ",
+                          t.title.trim().length,
+                          "/100",
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("category"),
+                          " *",
+                        ),
+                        Y
+                          ? e.createElement(h, {
+                              name: "category",
+                              value: t.category,
+                              readOnly: !0,
+                              disabled: !0,
+                              className:
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed",
+                            })
+                          : e.createElement(
+                              F,
+                              {
+                                name: "category",
+                                value: t.category,
+                                onValueChange: B("category"),
+                                required: !0,
+                              },
+                              e.createElement(
+                                A,
+                                {
+                                  className:
+                                    "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                                },
+                                e.createElement(D, {
+                                  placeholder: "Select category",
+                                }),
+                              ),
+                              e.createElement(
+                                _,
+                                null,
+                                ue.map((r) =>
+                                  e.createElement(
+                                    p,
+                                    { key: r.id || r, value: r.name || r },
+                                    r.name || r,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        i.category &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.category,
+                          ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("brand"),
+                          " *",
+                        ),
+                        e.createElement(
+                          F,
+                          {
+                            name: "brand",
+                            value: t.brand,
+                            onValueChange: B("brand"),
+                            required: !0,
+                          },
+                          e.createElement(
+                            A,
+                            {
+                              className:
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                            },
+                            e.createElement(D, {
+                              placeholder: a("select_brand"),
+                            }),
+                          ),
+                          e.createElement(
+                            _,
+                            null,
+                            ye.map((r) =>
+                              e.createElement(
+                                p,
+                                { key: r.id || r, value: r.name || r },
+                                r.name || r,
+                              ),
+                            ),
+                          ),
+                        ),
+                        i.brand &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.brand,
+                          ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "model",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("model"),
+                          " *",
+                        ),
+                        e.createElement(h, {
+                          id: "model",
+                          name: "model",
+                          value: t.model,
+                          onChange: x,
+                          placeholder: "e.g., iPhone 14 Pro, Galaxy S23",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          required: !0,
+                        }),
+                        i.model &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.model,
+                          ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("condition"),
+                          " *",
+                        ),
+                        e.createElement(
+                          F,
+                          {
+                            value: t.condition || "",
+                            onValueChange: B("condition"),
+                          },
+                          e.createElement(
+                            A,
+                            {
+                              className:
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                            },
+                            e.createElement(D, {
+                              placeholder: a("select_condition"),
+                            }),
+                          ),
+                          e.createElement(
+                            _,
+                            null,
+                            e.createElement(p, { value: "new" }, "New"),
+                            e.createElement(
+                              p,
+                              { value: "like-new" },
+                              "Like New",
+                            ),
+                            e.createElement(
+                              p,
+                              { value: "excellent" },
+                              "Excellent",
+                            ),
+                            e.createElement(p, { value: "good" }, "Good"),
+                            e.createElement(p, { value: "fair" }, "Fair"),
+                          ),
+                        ),
+                        i.condition &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.condition,
+                          ),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-lg font-semibold text-gray-900 dark:text-white mb-4",
+                      },
+                      a("additional_details"),
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "age",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("age_months"),
+                        ),
+                        e.createElement(h, {
+                          id: "age",
+                          name: "age",
+                          type: "number",
+                          value: t.age,
+                          onChange: x,
+                          placeholder: "0-48 months",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          min: "0",
+                          max: "48",
+                        }),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("warranty_status"),
+                        ),
+                        e.createElement(
+                          F,
+                          {
+                            value: t.warranty || "",
+                            onValueChange: B("warranty"),
+                          },
+                          e.createElement(
+                            A,
+                            {
+                              className:
+                                "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                            },
+                            e.createElement(D, {
+                              placeholder: "Warranty status",
+                            }),
+                          ),
+                          e.createElement(
+                            _,
+                            null,
+                            e.createElement(
+                              p,
+                              { value: "active" },
+                              "Under Warranty",
+                            ),
+                            e.createElement(
+                              p,
+                              { value: "expired" },
+                              "Warranty Expired",
+                            ),
+                            e.createElement(
+                              p,
+                              { value: "no-warranty" },
+                              "No Warranty",
+                            ),
+                          ),
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "dimensions",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          a("dimensions"),
+                        ),
+                        e.createElement(h, {
+                          id: "dimensions",
+                          name: "dimensions",
+                          value: t.dimensions,
+                          onChange: x,
+                          placeholder: "e.g., 6.1 inch",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                        }),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-lg font-semibold text-gray-900 dark:text-white mb-4",
+                      },
+                      a("pricing_location"),
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "price",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          "Price (\u20B9) *",
+                        ),
+                        e.createElement(h, {
+                          id: "price",
+                          name: "price",
+                          type: "number",
+                          value: t.price,
+                          onChange: x,
+                          placeholder: "Enter price",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          required: !0,
+                        }),
+                        i.price &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.price,
+                          ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-xs text-gray-500 dark:text-gray-400 mt-1",
+                          },
+                          "Enter your expected final selling price.",
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "district",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          "District *",
+                        ),
+                        e.createElement(h, {
+                          id: "district",
+                          name: "district",
+                          value: t.district,
+                          onChange: x,
+                          placeholder: "Enter district",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          required: !0,
+                        }),
+                        i.district &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.district,
+                          ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "state",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          "State *",
+                        ),
+                        e.createElement(h, {
+                          id: "state",
+                          name: "state",
+                          value: t.state,
+                          onChange: x,
+                          placeholder: "Enter state",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          required: !0,
+                        }),
+                        i.state &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.state,
+                          ),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-lg font-semibold text-gray-900 dark:text-white mb-4",
+                      },
+                      "Contact & Images",
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "space-y-6" },
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "contactNumber",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          "Contact Number *",
+                        ),
+                        e.createElement(h, {
+                          id: "contactNumber",
+                          name: "contactNumber",
+                          type: "tel",
+                          value: t.contactNumber,
+                          onChange: x,
+                          placeholder: "+91 XXXXXXXXXX",
+                          className:
+                            "mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          required: !0,
+                        }),
+                        i.contactNumber &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.contactNumber,
+                          ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-xs text-gray-500 dark:text-gray-400 mt-1",
+                          },
+                          "Use a 10-digit Indian number starting with 6-9.",
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          "Images (1-",
+                          g?.maxImages || 1,
+                          " photos) *",
+                        ),
+                        e.createElement(
+                          "div",
+                          { className: "mt-2" },
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "border-2 border-dashed border-sky-300 dark:border-sky-600 rounded-xl p-8 bg-sky-50 dark:bg-gray-700",
+                            },
+                            e.createElement(
+                              "div",
+                              { className: "text-center" },
+                              e.createElement(Be, {
+                                className:
+                                  "mx-auto h-12 w-12 text-sky-400 mb-4",
+                              }),
+                              e.createElement(
+                                "div",
+                                null,
+                                e.createElement(
+                                  "label",
+                                  {
+                                    htmlFor: "images",
+                                    className: "cursor-pointer",
+                                  },
+                                  e.createElement(
+                                    v,
+                                    {
+                                      type: "button",
+                                      className:
+                                        "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700",
+                                      onClick: () =>
+                                        document
+                                          .getElementById("images")
+                                          .click(),
+                                    },
+                                    "Upload Images",
+                                  ),
+                                  e.createElement("input", {
+                                    id: "images",
+                                    name: "images",
+                                    type: "file",
+                                    multiple: !0,
+                                    accept: "image/*",
+                                    onChange: we,
+                                    className: "sr-only",
+                                  }),
+                                ),
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "mt-1 text-xs text-gray-500 dark:text-gray-400",
+                                  },
+                                  "Selected: ",
+                                  b.length,
+                                  "/",
+                                  g?.maxImages || 1,
+                                ),
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "mt-2 text-sm text-gray-500 dark:text-gray-400",
+                                  },
+                                  "PNG, JPG up to 2MB each \u2022 Max ",
+                                  g?.maxImages || 1,
+                                  " images",
+                                ),
+                              ),
+                            ),
+                          ),
+                          b.length > 0 &&
+                            e.createElement(
+                              "div",
+                              {
+                                className:
+                                  "mt-4 grid grid-cols-2 md:grid-cols-4 gap-4",
+                              },
+                              b.map((r, o) =>
+                                e.createElement(
+                                  "div",
+                                  { key: o, className: "relative" },
+                                  e.createElement("img", {
+                                    src: L[o],
+                                    onError: (d) => {
+                                      (d.target.onerror = null),
+                                        (d.target.src = "/placeholder.svg");
+                                    },
+                                    alt: `Upload ${o + 1}`,
+                                    className:
+                                      "h-24 w-full object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600",
+                                  }),
+                                  e.createElement(
+                                    "button",
+                                    {
+                                      type: "button",
+                                      onClick: () => Ce(o),
+                                      className:
+                                        "absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600",
+                                    },
+                                    "\xD7",
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ),
+                        i.images &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-2" },
+                            i.images,
+                          ),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          u,
+                          {
+                            htmlFor: "description",
+                            className:
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300",
+                          },
+                          "Description *",
+                        ),
+                        e.createElement($e, {
+                          id: "description",
+                          name: "description",
+                          value: t.description,
+                          onChange: x,
+                          placeholder:
+                            "Add any additional details about your mobile phone...",
+                          className:
+                            "mt-2 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-sky-500",
+                          rows: 4,
+                          required: !0,
+                          minLength: 20,
+                          maxLength: 1e3,
+                        }),
+                        i.description &&
+                          e.createElement(
+                            "div",
+                            { className: "text-red-500 text-xs mt-1" },
+                            i.description,
+                          ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-xs text-gray-500 dark:text-gray-400 mt-1",
+                          },
+                          "Share condition, accessories, and reason for selling. ",
+                          t.description.trim().length,
+                          "/1000",
+                        ),
+                      ),
+                      e.createElement(_e, {
+                        onAudioReady: (r) => he(r),
+                        existingAudio: null,
+                      }),
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "flex flex-col gap-3 p-4 border-2 border-dashed border-orange-300 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20",
+                        },
+                        e.createElement(
+                          "div",
+                          { className: "flex items-center justify-between" },
+                          e.createElement(
+                            "div",
+                            { className: "flex items-center gap-2" },
+                            e.createElement(
+                              "span",
+                              { className: "text-xl" },
+                              "\u23F3",
+                            ),
+                            e.createElement(
+                              "div",
+                              null,
+                              e.createElement(
+                                "h3",
+                                {
+                                  className:
+                                    "text-sm font-semibold text-orange-800 dark:text-orange-300",
+                                },
+                                "24-Hour Flash Sale",
+                              ),
+                              e.createElement(
+                                "p",
+                                {
+                                  className:
+                                    "text-xs text-gray-600 dark:text-gray-400",
+                                },
+                                "Auto-expires in 24 hours \u2022 Gets 2x visibility boost",
+                              ),
+                            ),
+                          ),
+                          e.createElement(
+                            "button",
+                            {
+                              type: "button",
+                              onClick: () => ve(!N),
+                              className: `relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${N ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"}`,
+                            },
+                            e.createElement("span", {
+                              className: `inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${N ? "translate-x-7" : "translate-x-1"}`,
+                            }),
+                          ),
+                        ),
+                        N &&
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg",
+                            },
+                            "\uD83D\uDD25 Your listing will appear at the TOP of feeds and auto-delete after 24 hours!",
+                          ),
+                      ),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "flex flex-col sm:flex-row items-center justify-end gap-2 pt-6 border-t dark:border-gray-600 mt-8",
+                    },
+                    e.createElement(
+                      v,
+                      {
+                        type: "button",
+                        onClick: Se,
+                        variant: "outline",
+                        className:
+                          "border-sky-500 text-sky-600 hover:bg-sky-50 dark:hover:bg-gray-700 font-semibold px-6 py-3 text-base shadow",
+                        style: { minWidth: 120 },
+                      },
+                      e.createElement(qe, { className: "w-5 h-5 mr-2" }),
+                      "Preview",
+                    ),
+                    e.createElement(
+                      v,
+                      {
+                        onClick: me,
+                        className: `bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 font-semibold px-6 py-3 text-base shadow ${k ? "opacity-60 cursor-not-allowed" : ""}`,
+                        disabled: k,
+                        style: { minWidth: 140 },
+                      },
+                      k
+                        ? e.createElement(
+                            "span",
+                            { className: "flex items-center justify-center" },
+                            e.createElement(
+                              "svg",
+                              {
+                                className:
+                                  "animate-spin mr-2 w-5 h-5 text-white",
+                                fill: "none",
+                                viewBox: "0 0 24 24",
+                              },
+                              e.createElement("circle", {
+                                className: "opacity-25",
+                                cx: "12",
+                                cy: "12",
+                                r: "10",
+                                stroke: "currentColor",
+                                strokeWidth: "4",
+                              }),
+                              e.createElement("path", {
+                                className: "opacity-75",
+                                fill: "currentColor",
+                                d: "M4 12a8 8 0 018-8v8z",
+                              }),
+                            ),
+                            te === "processing"
+                              ? "Finalizing..."
+                              : "Publishing...",
+                          )
+                        : "Publish Post",
+                    ),
+                  ),
+                  k &&
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/30 p-3",
+                      },
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1",
+                        },
+                        e.createElement(
+                          "span",
+                          null,
+                          ae || "Uploading media...",
+                        ),
+                        e.createElement("span", null, f > 0 ? `${f}%` : ""),
+                      ),
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "h-2 w-full rounded-full bg-sky-100 dark:bg-sky-900",
+                        },
+                        e.createElement("div", {
+                          className:
+                            "h-2 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-300",
+                          style: {
+                            width: `${Math.min(100, Math.max(5, f || 5))}%`,
+                          },
+                        }),
+                      ),
+                    ),
+                ),
+              ),
+            ),
+          ),
+        );
+  };
+var lr = He;
+export { lr as default };
