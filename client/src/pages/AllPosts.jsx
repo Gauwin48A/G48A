@@ -88,9 +88,12 @@ const ve = 5,
   ke = (s) => s?.post_id ?? s?.id ?? null,
   I = (s) => {
     if (s == null) return "";
+    if (Array.isArray(s)) return "";
     if (typeof s === "object") {
       const candidate = s.post_id ?? s.postId ?? s.id;
-      if (candidate != null) return String(candidate).trim();
+      if (candidate == null) return "";
+      if (typeof candidate === "object") return "";
+      return String(candidate).trim();
     }
     const c = String(s).trim();
     return c.length ? c : "";
@@ -225,6 +228,25 @@ const ve = 5,
       [L, T] = g(1),
       [H, ee] = g(!0),
       [Pe, Ce] = g(0),
+      [shuffleSeed, setShuffleSeed] = g(() => {
+        if (typeof window === "undefined" || typeof performance === "undefined") {
+          return null;
+        }
+        try {
+          const navEntries =
+            typeof performance.getEntriesByType === "function"
+              ? performance.getEntriesByType("navigation")
+              : [];
+          const navType = navEntries?.[0]?.type;
+          if (navType === "reload") {
+            return Date.now();
+          }
+        } catch {
+          // ignore
+        }
+        const legacy = performance.navigation?.type;
+        return legacy === 1 ? Date.now() : null;
+      }),
       q = 6,
       y = Je(),
       [h, te] = g([]),
@@ -428,6 +450,7 @@ const ve = 5,
         () => normalizeLatestWindow(t.latestWindow),
         [t.latestWindow],
       ),
+      canShuffle = N(() => !t.sortBy && !latestWindow, [t.sortBy, latestWindow]),
       me = x((e) => {
         const a = new URLSearchParams();
         return (
@@ -615,22 +638,27 @@ const ve = 5,
           t.endDate && e.append("endDate", toInclusiveEndDateValue(t.endDate)),
           latestWindow &&
             e.append("latestWindow", String(latestWindow)),
-          (t.sortBy || latestWindow) &&
-            (t.sortBy === "price_asc"
-              ? (e.append("sortBy", "price"), e.append("sortOrder", "asc"))
-              : t.sortBy === "price_desc"
-                ? (e.append("sortBy", "price"), e.append("sortOrder", "desc"))
-                : t.sortBy === "date_desc"
-                  ? (e.append("sortBy", "created_at"),
+          shuffleSeed && !t.sortBy && !latestWindow
+            ? (e.append("sortBy", "shuffle"),
+              e.append("shuffleSeed", String(shuffleSeed)))
+            : (t.sortBy || latestWindow) &&
+              (t.sortBy === "price_asc"
+                ? (e.append("sortBy", "price"),
+                  e.append("sortOrder", "asc"))
+                : t.sortBy === "price_desc"
+                  ? (e.append("sortBy", "price"),
                     e.append("sortOrder", "desc"))
-                : t.sortBy === "date_asc"
+                  : t.sortBy === "date_desc"
                     ? (e.append("sortBy", "created_at"),
-                      e.append("sortOrder", "asc"))
-                    : latestWindow
+                      e.append("sortOrder", "desc"))
+                    : t.sortBy === "date_asc"
                       ? (e.append("sortBy", "created_at"),
-                        e.append("sortOrder", "desc"))
-                    : (e.append("sortBy", t.sortBy),
-                      e.append("sortOrder", "desc"))),
+                        e.append("sortOrder", "asc"))
+                      : latestWindow
+                        ? (e.append("sortBy", "created_at"),
+                          e.append("sortOrder", "desc"))
+                        : (e.append("sortBy", t.sortBy),
+                          e.append("sortOrder", "desc"))),
           e.append("page", L),
           e.append("limit", requestLimit),
           e
@@ -650,6 +678,7 @@ const ve = 5,
         t.search,
         t.sortBy,
         t.startDate,
+        shuffleSeed,
       ]);
     (w(() => {
       const e = P.current + 1;
@@ -685,17 +714,16 @@ const ve = 5,
                     paths: ALL_POSTS_TRANSLATE_PATHS,
                   })
                 : F;
-            const safeTranslatedSeed = Array.isArray(translatedSeed)
-              ? translatedSeed
-              : F;
+            const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(F) ? F : []);
             (O(L === 1 ? safeTranslatedSeed : (d) => lt(d, safeTranslatedSeed)),
               z(null));
             const _ = {},
               Vt = {};
-            (safeTranslatedSeed.forEach((d) => {
-              ((_[d.post_id || d.id] = d.likes || 0),
-                (Vt[d.post_id || d.id] = d.views_count || d.views || 0));
-            }),
+            (Array.isArray(safeTranslatedSeed) &&
+              safeTranslatedSeed.forEach((d) => {
+                ((_[d.post_id || d.id] = d.likes || 0),
+                  (Vt[d.post_id || d.id] = d.views_count || d.views || 0));
+              }),
               se((d) => ({ ...d, ..._ })),
               oe((d) => ({ ...d, ...Vt })),
               ee(latestWindow ? !1 : p.length === requestLimit),
@@ -748,14 +776,13 @@ const ve = 5,
         const translatedSeed = Ue(f, l, {
           paths: ALL_POSTS_TRANSLATE_PATHS,
         });
-        const safeTranslatedSeed = Array.isArray(translatedSeed)
-          ? translatedSeed
-          : f;
+        const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(f) ? f : []);
         const n = new Map();
-        safeTranslatedSeed.forEach((i) => {
-          const p = ke(i);
-          p !== null && n.set(String(p), i);
-        });
+        Array.isArray(safeTranslatedSeed) &&
+          safeTranslatedSeed.forEach((i) => {
+            const p = ke(i);
+            p !== null && n.set(String(p), i);
+          });
         O((i) =>
           Array.isArray(i)
             ? i.map((p) => {
@@ -804,6 +831,11 @@ const ve = 5,
         t.latestWindow,
         t.sortBy,
       ]));
+    w(() => {
+      if (shuffleSeed && (t.sortBy || latestWindow)) {
+        setShuffleSeed(null);
+      }
+    }, [shuffleSeed, t.sortBy, latestWindow]);
     const J = x(() => {
       E || !H || latestWindow || T((e) => e + 1);
     }, [E, H, latestWindow]);
@@ -958,7 +990,7 @@ const ve = 5,
           await A.post(`/posts/${e}/like`);
         } catch {}
       },
-      Ue = async (e) => {
+      handleSharePost = async (e) => {
         const a = I(e);
         if (!a) return;
         const o = `${window.location.origin}/post/${a}`;
@@ -1049,8 +1081,11 @@ const ve = 5,
       }, []),
       Fe = x(() => {
         setIsLiveSyncing(!0);
+        if (canShuffle) {
+          setShuffleSeed(Date.now());
+        }
         Ce((e) => e + 1);
-      }, []);
+      }, [canShuffle]);
     return r.createElement(
       "div",
       {
@@ -1175,7 +1210,7 @@ const ve = 5,
                   onClick: () => b({ minPrice: "1000", maxPrice: "5000" }),
                 },
                 r.createElement(Vo, { className: "w-3.5 h-3.5" }),
-                "1000-5000",
+                formatCurrency(1000) + "-" + formatCurrency(5000),
               ),
               r.createElement(
                 u,
@@ -1570,15 +1605,15 @@ const ve = 5,
                   r.createElement(
                     "div",
                     { className: "flex flex-wrap gap-2" },
-                    r.createElement(
-                      u,
-                      {
-                        type: "button",
-                        className: "bg-red-600 text-white hover:bg-red-700",
-                        onClick: Fe,
-                      },
-                      "Retry",
-                    ),
+                      r.createElement(
+                        u,
+                        {
+                          type: "button",
+                          className: "bg-red-600 text-white hover:bg-red-700",
+                          onClick: Fe,
+                        },
+                        tr("retry", "Retry"),
+                      ),
                     ue &&
                       r.createElement(
                         u,
@@ -1588,7 +1623,7 @@ const ve = 5,
                           className: "border-red-200 text-red-700",
                           onClick: Y,
                         },
-                        "Reset filters",
+                        tr("reset_filters", "Reset filters"),
                       ),
                   ),
                 )
@@ -1605,7 +1640,7 @@ const ve = 5,
                         className:
                           "text-base md:text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2",
                       },
-                      "No results for the current filters",
+                      tr("no_results", "No results for the current filters"),
                     ),
                     r.createElement(
                       "p",
@@ -1613,7 +1648,10 @@ const ve = 5,
                         className:
                           "text-sm text-blue-700 dark:text-blue-300 mb-4",
                       },
-                      "Try broadening search terms, changing category, or clearing filters.",
+                      tr(
+                        "try_broader_keyword",
+                        "Try broadening search terms, changing category, or clearing filters.",
+                      ),
                     ),
                     r.createElement(
                       "div",
@@ -1625,7 +1663,7 @@ const ve = 5,
                           className: "bg-blue-600 text-white hover:bg-blue-700",
                           onClick: Y,
                         },
-                        "Reset filters",
+                        tr("reset_filters", "Reset filters"),
                       ),
                       r.createElement(
                         u,
@@ -1635,7 +1673,7 @@ const ve = 5,
                           className: "border-blue-200 text-blue-700",
                           onClick: () => y("/categories"),
                         },
-                        "Browse categories",
+                        tr("explore_categories", "Browse categories"),
                       ),
                     ),
                   )
@@ -1652,7 +1690,9 @@ const ve = 5,
                         .toUpperCase(),
                       i = Number(e.user?.rating || e.seller_rating || 0),
                       p =
-                        e.category || e.category_name || s("all") || "General",
+                        e.category ||
+                        e.category_name ||
+                        tr("general", "General"),
                       F = !!(
                         e.user?.isVerified ||
                         e.is_verified ||
@@ -1840,7 +1880,7 @@ const ve = 5,
                               {
                                 type: "button",
                                 onClick: () => {
-                                  (Ue(a), setMenuPostId(null));
+                                  (handleSharePost(a), setMenuPostId(null));
                                 },
                                 className:
                                   "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
@@ -2019,8 +2059,8 @@ const ve = 5,
                         r.createElement(
                           "div",
                           {
-                            className:
-                              "flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 scrollbar-hide sm:gap-2",
+                          className:
+                            "post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 scrollbar-hide sm:gap-2",
                           },
                           r.createElement(
                             "button",
@@ -2053,7 +2093,7 @@ const ve = 5,
                             {
                                   className:
                                     "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none",
-                              onClick: () => Ue(a),
+                              onClick: () => handleSharePost(a),
                             },
                             r.createElement(Ge, { className: "w-4 h-4" }),
                             r.createElement(
@@ -2233,4 +2273,5 @@ const ve = 5,
   };
 var Nt = it;
 export { Nt as default };
+
 

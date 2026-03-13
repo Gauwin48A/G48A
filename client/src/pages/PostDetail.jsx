@@ -65,12 +65,19 @@ function we() {
     [shareUrl, setShareUrl] = i(""),
     [showMenu, setShowMenu] = i(!1),
     [savedPost, setSavedPost] = i(!1),
+    [ownerInsights, setOwnerInsights] = i({
+      inquiries: [],
+      offers: [],
+      viewers: [],
+    }),
+    [ownerInsightsLoading, setOwnerInsightsLoading] = i(!1),
+    [ownerInsightsError, setOwnerInsightsError] = i(""),
     U = Z();
   if (
     (L(() => {
-      const t = r?.post_id || r?.id || d;
+      const t = normalizeId(r?.post_id || r?.id || d);
       if (!t) return;
-      const a = localStorage.getItem("userId"),
+      const a = currentUserId || localStorage.getItem("userId"),
         s = localStorage.getItem("authToken");
       if (!a || !s) return;
       const Q = (document.referrer || "").includes("/feed")
@@ -129,13 +136,86 @@ function we() {
         m(0));
     }, [d, F]),
     L(() => {
-      const t = String(r?.post_id || r?.id || d || "").trim();
+      const t = normalizeId(r?.post_id || r?.id || d);
       if (!t) return;
       setSavedPost(isSavedPostId(t));
       return subscribeSavedPosts((a) => {
         setSavedPost(Boolean(a?.[t]));
       });
     }, [d, r?.id, r?.post_id]),
+    L(() => {
+      const postId = normalizeId(r?.post_id || r?.id || d);
+      if (!postId) return;
+      const ownerMatch =
+        currentUserId &&
+        [
+          r?.user_id,
+          r?.userId,
+          r?.owner_id,
+          r?.seller_id,
+          r?.seller?.id,
+          r?.user?.id,
+        ].some((t) => normalizeId(t) === currentUserId);
+      if (!ownerMatch) return;
+      let cancelled = false;
+      setOwnerInsightsLoading(true);
+      setOwnerInsightsError("");
+      Promise.allSettled([
+        re.get(`/api/inquiries/post/${postId}`),
+        re.get(`/api/offers/history/${postId}`),
+        re.get(`/api/recently-viewed/post/${postId}`),
+      ])
+        .then((results) => {
+          if (cancelled) return;
+          const [inquiriesRes, offersRes, viewersRes] = results;
+          const inquiries =
+            inquiriesRes.status === "fulfilled" &&
+            Array.isArray(inquiriesRes.value?.inquiries)
+              ? inquiriesRes.value.inquiries
+              : [];
+          const offers =
+            offersRes.status === "fulfilled" &&
+            Array.isArray(offersRes.value?.history)
+              ? offersRes.value.history
+              : [];
+          const viewers =
+            viewersRes.status === "fulfilled" &&
+            Array.isArray(viewersRes.value?.viewers)
+              ? viewersRes.value.viewers
+              : [];
+          setOwnerInsights({ inquiries, offers, viewers });
+          if (!inquiries.length && !offers.length && !viewers.length) {
+            setOwnerInsightsError(
+              tr("no_leads_yet", "No interactions yet. Check back later."),
+            );
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setOwnerInsightsError(
+              tr("lead_fetch_failed", "Failed to load lead activity."),
+            );
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setOwnerInsightsLoading(false);
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [
+      d,
+      r?.id,
+      r?.post_id,
+      r?.user_id,
+      r?.userId,
+      r?.owner_id,
+      r?.seller_id,
+      r?.seller?.id,
+      r?.user?.id,
+    ]),
     j)
   )
     return e.createElement(
@@ -284,9 +364,40 @@ function we() {
       r?.response_time ||
       r?.avg_response_time ||
       "Not available",
-    J = r?.post_id || r?.id || d,
+    currentUserId = (() => {
+      const stored =
+        localStorage.getItem("userId") ||
+        localStorage.getItem("user_id") ||
+        localStorage.getItem("id") ||
+        "";
+      const normalized = String(stored || "").trim();
+      return normalized.length ? normalized : null;
+    })(),
+    normalizeId = (t) => {
+      if (t === undefined || t === null) return "";
+      if (typeof t === "string" || typeof t === "number") {
+        return String(t).trim();
+      }
+      if (typeof t === "object") {
+        const candidate = t.post_id || t.id || t.user_id;
+        return candidate ? String(candidate).trim() : "";
+      }
+      return "";
+    },
+    J = normalizeId(r?.post_id || r?.id || d),
+    isOwner = Boolean(
+      currentUserId &&
+        [
+          r?.user_id,
+          r?.userId,
+          r?.owner_id,
+          r?.seller_id,
+          r?.seller?.id,
+          r?.user?.id,
+        ].some((t) => normalizeId(t) === currentUserId),
+    ),
     toggleSavedPost = async () => {
-      const t = r?.post_id || r?.id || d;
+      const t = J;
       if (!t) return;
       const a = isSavedPostId(t),
         s = !a;
@@ -333,6 +444,32 @@ function we() {
         hint: `Listing ID: ${J}`,
       },
     ];
+  const ownerInquiries = Array.isArray(ownerInsights?.inquiries)
+      ? ownerInsights.inquiries
+      : [],
+    ownerOffers = Array.isArray(ownerInsights?.offers)
+      ? ownerInsights.offers
+      : [],
+    ownerViewers = Array.isArray(ownerInsights?.viewers)
+      ? ownerInsights.viewers
+      : [],
+    ownerLeadCount = (() => {
+      const seen = new Set();
+      const add = (value) => {
+        if (!value) return;
+        seen.add(String(value));
+      };
+      ownerInquiries.forEach((entry) =>
+        add(entry?.buyer_id || entry?.user_id || entry?.id),
+      );
+      ownerOffers.forEach((entry) =>
+        add(entry?.buyer_id || entry?.user_id || entry?.id),
+      );
+      ownerViewers.forEach((entry) =>
+        add(entry?.viewer_id || entry?.user_id || entry?.id),
+      );
+      return seen.size;
+    })();
   return e.createElement(
     "div",
     {
@@ -363,83 +500,85 @@ function we() {
           e.createElement($, { className: "w-5 h-5 mr-2" }),
           "Back",
         ),
-        e.createElement(
-          "div",
-          { className: "flex items-center gap-1 relative" },
+        !isOwner &&
           e.createElement(
-            l,
-            {
-              variant: "ghost",
-              size: "icon",
-              onClick: toggleSavedPost,
-              className: `rounded-full w-10 h-10 ${savedPost ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30" : "text-gray-500"}`,
-            },
-            savedPost
-              ? e.createElement(Xe, { className: "w-5 h-5" })
-              : e.createElement(We, { className: "w-5 h-5" }),
-          ),
-          e.createElement(
-            l,
-            {
-              variant: "ghost",
-              size: "icon",
-              onClick: () => setShowMenu((t) => !t),
-              className: "rounded-full w-10 h-10 text-gray-500",
-            },
-            e.createElement(Je, { className: "w-5 h-5" }),
-          ),
-          showMenu &&
+            "div",
+            { className: "flex items-center gap-1 relative" },
             e.createElement(
-              "div",
+              l,
               {
-                className:
-                  "absolute right-0 top-11 z-30 w-44 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-1",
+                variant: "ghost",
+                size: "icon",
+                onClick: toggleSavedPost,
+                className: `rounded-full w-10 h-10 ${savedPost ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30" : "text-gray-500"}`,
               },
-              e.createElement(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => {
-                    const t = `${window.location.origin}/post/${J}`;
-                    (setShareUrl(t),
-                      setShareDialogOpen(!0),
-                      setShowMenu(!1),
-                      re.post(`/api/posts/${J}/share`).catch(() => {}));
-                  },
-                  className:
-                    "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
-                },
-                tr("share_link", "Share link"),
-              ),
-              e.createElement(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => {
-                    (toggleSavedPost(), setShowMenu(!1));
-                  },
-                  className:
-                    "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
-                },
-                savedPost
-                  ? tr("remove_from_saved", "Remove from saved")
-                  : tr("save_post", "Save post"),
-              ),
-              e.createElement(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => {
-                    (setShowMenu(!1),
-                      U("/complaints", { state: { postId: J } }));
-                  },
-                  className:
-                    "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg",
-                },
-                "Report",
-              ),
+              savedPost
+                ? e.createElement(Xe, { className: "w-5 h-5" })
+                : e.createElement(We, { className: "w-5 h-5" }),
             ),
-        ),
+            e.createElement(
+              l,
+              {
+                variant: "ghost",
+                size: "icon",
+                onClick: () => setShowMenu((t) => !t),
+                className: "rounded-full w-10 h-10 text-gray-500",
+              },
+              e.createElement(Je, { className: "w-5 h-5" }),
+            ),
+            showMenu &&
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "absolute right-0 top-11 z-30 w-44 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-1",
+                },
+                e.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => {
+                      if (!J) return;
+                      const t = `${window.location.origin}/post/${J}`;
+                      (setShareUrl(t),
+                        setShareDialogOpen(!0),
+                        setShowMenu(!1),
+                        re.post(`/api/posts/${J}/share`).catch(() => {}));
+                    },
+                    className:
+                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
+                  },
+                  tr("share_link", "Share link"),
+                ),
+                e.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => {
+                      (toggleSavedPost(), setShowMenu(!1));
+                    },
+                    className:
+                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg",
+                  },
+                  savedPost
+                    ? tr("remove_from_saved", "Remove from saved")
+                    : tr("save_post", "Save post"),
+                ),
+                e.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => {
+                      (setShowMenu(!1),
+                        U("/complaints", { state: { postId: J } }));
+                    },
+                    className:
+                      "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg",
+                  },
+                  "Report",
+                ),
+              ),
+          ),
       ),
       e.createElement(
         "div",
@@ -825,6 +964,217 @@ function we() {
             ),
           ),
         ),
+        isOwner &&
+        e.createElement(
+          "div",
+          {
+            className:
+              "rounded-2xl border border-slate-200 bg-white dark:bg-gray-800 p-4 shadow-lg space-y-4",
+          },
+          e.createElement(
+            "div",
+            { className: "flex items-center justify-between" },
+            e.createElement(
+              "div",
+              null,
+              e.createElement(
+                "h3",
+                {
+                  className:
+                    "text-lg font-bold text-gray-900 dark:text-white",
+                },
+                tr("lead_activity", "Lead activity"),
+              ),
+              e.createElement(
+                "p",
+                { className: "text-xs text-gray-500 dark:text-gray-400" },
+                tr(
+                  "lead_activity_hint",
+                  "Track who viewed and engaged with your post.",
+                ),
+              ),
+            ),
+            e.createElement(
+              "span",
+              {
+                className:
+                  "inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold",
+              },
+              tr("total_leads", "Total leads"),
+              " : ",
+              ownerLeadCount,
+            ),
+          ),
+          ownerInsightsLoading
+            ? e.createElement(
+                "p",
+                { className: "text-sm text-gray-500" },
+                tr("loading_leads", "Loading lead activity..."),
+              )
+            : ownerInsightsError
+              ? e.createElement(
+                  "p",
+                  { className: "text-sm text-gray-500" },
+                  ownerInsightsError,
+                )
+              : e.createElement(
+                  "div",
+                  { className: "grid gap-3 md:grid-cols-3" },
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40",
+                    },
+                    e.createElement(
+                      "p",
+                      { className: "text-xs text-slate-500 uppercase" },
+                      tr("interested_users", "Interested"),
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-xl font-bold text-slate-900 dark:text-white",
+                      },
+                      ownerInquiries.length,
+                    ),
+                    ownerInquiries.length > 0 &&
+                      e.createElement(
+                        "div",
+                        { className: "mt-2 space-y-1 text-xs" },
+                        ownerInquiries.slice(0, 3).map((t, s) =>
+                          e.createElement(
+                            "div",
+                            {
+                              key: t.inquiry_id || t.buyer_id || s,
+                              className:
+                                "flex items-center justify-between text-slate-600 dark:text-slate-300",
+                            },
+                            e.createElement(
+                              "span",
+                              null,
+                              t.buyer_name ||
+                                t.name ||
+                                t.buyer_id ||
+                                tr("unknown", "Unknown"),
+                            ),
+                            t.phone
+                              ? e.createElement(
+                                  "span",
+                                  { className: "text-[11px]" },
+                                  t.phone,
+                                )
+                              : null,
+                          ),
+                        ),
+                      ),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40",
+                    },
+                    e.createElement(
+                      "p",
+                      { className: "text-xs text-slate-500 uppercase" },
+                      tr("offers_received", "Offers"),
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-xl font-bold text-slate-900 dark:text-white",
+                      },
+                      ownerOffers.length,
+                    ),
+                    ownerOffers.length > 0 &&
+                      e.createElement(
+                        "div",
+                        { className: "mt-2 space-y-1 text-xs" },
+                        ownerOffers.slice(0, 3).map((t, s) =>
+                          e.createElement(
+                            "div",
+                            {
+                              key: t.offer_id || t.buyer_id || s,
+                              className:
+                                "flex items-center justify-between text-slate-600 dark:text-slate-300",
+                            },
+                            e.createElement(
+                              "span",
+                              null,
+                              t.buyer_name ||
+                                t.name ||
+                                t.buyer_id ||
+                                tr("unknown", "Unknown"),
+                            ),
+                            t.offered_price
+                              ? e.createElement(
+                                  "span",
+                                  { className: "text-[11px]" },
+                                  "\u20B9",
+                                  t.offered_price,
+                                )
+                              : null,
+                          ),
+                        ),
+                      ),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40",
+                    },
+                    e.createElement(
+                      "p",
+                      { className: "text-xs text-slate-500 uppercase" },
+                      tr("detail_views", "View details"),
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-xl font-bold text-slate-900 dark:text-white",
+                      },
+                      ownerViewers.length,
+                    ),
+                    ownerViewers.length > 0 &&
+                      e.createElement(
+                        "div",
+                        { className: "mt-2 space-y-1 text-xs" },
+                        ownerViewers.slice(0, 3).map((t, s) =>
+                          e.createElement(
+                            "div",
+                            {
+                              key: t.viewer_id || t.user_id || s,
+                              className:
+                                "flex items-center justify-between text-slate-600 dark:text-slate-300",
+                            },
+                            e.createElement(
+                              "span",
+                              null,
+                              t.viewer_name ||
+                                t.full_name ||
+                                t.username ||
+                                t.user_id ||
+                                tr("unknown", "Unknown"),
+                            ),
+                            t.viewed_at
+                              ? e.createElement(
+                                  "span",
+                                  { className: "text-[11px]" },
+                                  I(t.viewed_at),
+                                )
+                              : null,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+        ),
+        !isOwner &&
         e.createElement(
           "div",
           { className: "space-y-3" },
@@ -860,6 +1210,7 @@ function we() {
             ),
           ),
         ),
+        !isOwner &&
         e.createElement(
           "div",
           { className: "grid grid-cols-2 gap-3" },
@@ -880,6 +1231,7 @@ function we() {
             {
               variant: "outline",
               onClick: () => {
+                if (!J) return;
                 const t = `${window.location.origin}/post/${J}`;
                 (setShareUrl(t),
                   setShareDialogOpen(!0),
@@ -907,7 +1259,7 @@ function we() {
       e.createElement(le, {
         isOpen: E,
         onClose: () => f(!1),
-        postId: r?.post_id || r?.id || d,
+        postId: J || d,
         postTitle: r?.title,
       }),
       e.createElement(ie, { isOpen: V, onClose: () => w(!1), post: r }),

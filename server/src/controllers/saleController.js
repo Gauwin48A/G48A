@@ -24,6 +24,9 @@ const PENDING_SALE_STATUSES = ["pending_buyer_confirm", "initiated", "pending"];
 const FIRST_SALE_BONUS_POINTS = Number.parseInt(process.env.FIRST_SALE_BONUS_POINTS, 10) || 100;
 const FIRST_PURCHASE_BONUS_POINTS =
   Number.parseInt(process.env.FIRST_PURCHASE_BONUS_POINTS, 10) || 50;
+const DIRECT_REFERRAL_BONUS_POINTS =
+  Number.parseInt(process.env.DIRECT_REFERRAL_BONUS_POINTS, 10) || 50;
+const COMPLETED_TRANSACTION_STATUSES = ["completed", "success"];
 
 let txSchemaCache = { value: null, expiresAt: 0 };
 
@@ -49,6 +52,54 @@ function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
   return Math.min(parsed, max);
+}
+
+function parseOptionalString(value) {
+  if (value === undefined || value === null) return null;
+  const normalized = String(value).trim();
+  return normalized.length ? normalized : null;
+}
+
+async function hasAnyCompletedTransactions(client, userId, excludeTransactionId) {
+  if (!client || !userId) return false;
+  const result = await client.query(
+    {
+      text: `
+        SELECT 1
+        FROM transactions
+        WHERE (seller_id::text = $1 OR buyer_id::text = $1)
+          AND status = ANY($2::text[])
+          AND transaction_id::text <> $3
+        LIMIT 1
+      `,
+      values: [
+        String(userId),
+        COMPLETED_TRANSACTION_STATUSES,
+        String(excludeTransactionId || ""),
+      ],
+      query_timeout: DB_QUERY_TIMEOUT_MS,
+    },
+  );
+  return result.rows.length > 0;
+}
+
+async function getReferrerId(client, userId) {
+  if (!client || !userId) return null;
+  const result = await client.query(
+    {
+      text: `
+        SELECT referred_by::text AS referrer_id
+        FROM users
+        WHERE user_id::text = $1
+        LIMIT 1
+      `,
+      values: [String(userId)],
+      query_timeout: DB_QUERY_TIMEOUT_MS,
+    },
+  );
+  const referrerId = parseOptionalString(result.rows[0]?.referrer_id);
+  if (!referrerId || referrerId === String(userId)) return null;
+  return referrerId;
 }
 
 function hashOtp(value) {
@@ -641,9 +692,20 @@ const confirmSale = async (req, res) => {
       });
     }
 
-    const [sellerHasPrior, buyerHasPrior] = await Promise.all([
+    const [
+      sellerHasPrior,
+      buyerHasPrior,
+      sellerHadAny,
+      buyerHadAny,
+      sellerReferrerId,
+      buyerReferrerId,
+    ] = await Promise.all([
       hasPriorCompletedTransactions(client, "seller_id", transaction.seller_id, rewardReferenceId),
       hasPriorCompletedTransactions(client, "buyer_id", transaction.buyer_id, rewardReferenceId),
+      hasAnyCompletedTransactions(client, transaction.seller_id, rewardReferenceId),
+      hasAnyCompletedTransactions(client, transaction.buyer_id, rewardReferenceId),
+      getReferrerId(client, transaction.seller_id),
+      getReferrerId(client, transaction.buyer_id),
     ]);
 
     const bonusRewardChanges = [];
@@ -675,27 +737,52 @@ const confirmSale = async (req, res) => {
       }
     }
 
-    if (!sellerHasPrior) {
-      const changes = await applyReferralChainRewards({
+    const directReferralChanges = [];
+    if (!sellerHadAny && sellerReferrerId && DIRECT_REFERRAL_BONUS_POINTS > 0) {
+      const referralChange = await applyRewardDeltaInTransaction({
         client,
-        subjectUserId: transaction.seller_id,
-        referenceId: rewardReferenceId,
-        eventKey: "sale_completed",
-        maxDepth: CHAIN_MAX_DEPTH,
+        userId: sellerReferrerId,
+        pointsDelta: DIRECT_REFERRAL_BONUS_POINTS,
+        action: "qualified_referral_bonus",
+        description: `Qualified referral bonus for ${transaction.seller_id}`,
+        idempotencyKey: `referral:qualified:${transaction.seller_id}`,
       });
-      chainRewardChanges.push(...changes);
+      if (referralChange?.applied) {
+        directReferralChanges.push(referralChange);
+      }
     }
 
-    if (!buyerHasPrior) {
-      const changes = await applyReferralChainRewards({
+    if (!buyerHadAny && buyerReferrerId && DIRECT_REFERRAL_BONUS_POINTS > 0) {
+      const referralChange = await applyRewardDeltaInTransaction({
         client,
-        subjectUserId: transaction.buyer_id,
-        referenceId: rewardReferenceId,
-        eventKey: "purchase_completed",
-        maxDepth: CHAIN_MAX_DEPTH,
+        userId: buyerReferrerId,
+        pointsDelta: DIRECT_REFERRAL_BONUS_POINTS,
+        action: "qualified_referral_bonus",
+        description: `Qualified referral bonus for ${transaction.buyer_id}`,
+        idempotencyKey: `referral:qualified:${transaction.buyer_id}`,
       });
-      chainRewardChanges.push(...changes);
+      if (referralChange?.applied) {
+        directReferralChanges.push(referralChange);
+      }
     }
+
+    const sellerChainChanges = await applyReferralChainRewards({
+      client,
+      subjectUserId: transaction.seller_id,
+      referenceId: rewardReferenceId,
+      eventKey: "sale_completed",
+      maxDepth: CHAIN_MAX_DEPTH,
+    });
+    chainRewardChanges.push(...sellerChainChanges);
+
+    const buyerChainChanges = await applyReferralChainRewards({
+      client,
+      subjectUserId: transaction.buyer_id,
+      referenceId: rewardReferenceId,
+      eventKey: "purchase_completed",
+      maxDepth: CHAIN_MAX_DEPTH,
+    });
+    chainRewardChanges.push(...buyerChainChanges);
 
     await client.query("COMMIT");
 
@@ -712,6 +799,11 @@ const confirmSale = async (req, res) => {
       afterCommitRewardMutation(buyerRewardChange);
     }
     bonusRewardChanges.forEach((change) => {
+      if (change?.applied) {
+        afterCommitRewardMutation(change);
+      }
+    });
+    directReferralChanges.forEach((change) => {
       if (change?.applied) {
         afterCommitRewardMutation(change);
       }

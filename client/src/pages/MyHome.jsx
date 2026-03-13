@@ -129,7 +129,7 @@ const vt = () => {
     b = Ge(),
     routeLoc = wt(),
     { toast: d } = gt(),
-    { t: l, i18n: Ae } = Ve(),
+    { t: l, i18n: Ae } = Ve(), tr = (key, fallback, options = {}) => l(key, { defaultValue: fallback, ...options }),
     { user: _e } = mt(),
     E = Ae.language || "en",
     F = ut(_e),
@@ -320,12 +320,11 @@ const vt = () => {
       const transactionId =
         routeLoc?.state?.transactionId || storedMarker?.transactionId || "";
       d({
-        title: l("sale_completed") || "Sale completed",
+        title: tr("sale_completed","Sale completed"),
         description: transactionId
           ? l("sale_completed_txn", { transactionId }) ||
             `Listing moved to Sold. Transaction: ${transactionId}.`
-          : l("sale_completed_desc") ||
-            "Listing moved to Sold. You can find it in Sold tab.",
+          : tr("sale_completed_desc","Listing moved to Sold. You can find it in Sold tab."),
       });
       try {
         localStorage.removeItem("mhub:sale:lastCompleted");
@@ -400,17 +399,16 @@ const vt = () => {
     Le = (t) => {
       if (!Te(t.created_at || t.postedTime)) {
         d({
-          title: l("edit_not_available") || "Edit Not Available",
+          title: tr("edit_not_available","Edit Not Available"),
           description:
-            l("edit_time_limit") ||
-            "Posts can only be edited within 5 minutes of publishing",
+            tr("edit_time_limit","Posts can only be edited within 5 minutes of publishing"),
           variant: "destructive",
         });
         return;
       }
       (d({
-        title: l("edit_post") || "Edit Post",
-        description: l("opening_editor_for_post") || "Opening editor for post",
+        title: tr("edit_post","Edit Post"),
+        description: tr("opening_editor_for_post","Opening editor for post"),
       }),
         b(`/edit-post/${t.postId || t.post_id || t.id}`));
     },
@@ -459,9 +457,9 @@ const vt = () => {
         (setSavedPosts((o) => ({ ...o, [r]: m })),
           setSavedPostStatus(r, m),
           d({
-            title: l("save_failed") || "Save Failed",
+            title: tr("save_failed","Save Failed"),
             description:
-              l("save_status_update_failed") || "Unable to update saved status",
+              tr("save_status_update_failed","Unable to update saved status"),
             variant: "destructive",
           }));
       }
@@ -475,19 +473,17 @@ const vt = () => {
           (await R.delete(`/posts/${T}`),
             k((t) => t.filter((s) => (s.postId || s.post_id || s.id) !== T)),
             d({
-              title: l("post_deleted") || "Post Deleted",
+              title: tr("post_deleted","Post Deleted"),
               description:
-                l("post_deleted_success") ||
-                "Post has been deleted successfully",
+                tr("post_deleted_success","Post has been deleted successfully"),
             }));
         } catch (t) {
           (console.error("Delete error:", t),
             d({
-              title: l("delete_failed") || "Delete Failed",
+              title: tr("delete_failed","Delete Failed"),
               description:
                 t.message ||
-                l("delete_failed_desc") ||
-                "Could not delete the post.",
+                tr("delete_failed_desc","Could not delete the post."),
               variant: "destructive",
             }));
         } finally {
@@ -498,7 +494,7 @@ const vt = () => {
       const t = new Set([...le, ...c]);
       (we(t),
         d({
-          title: l("posts_moved") || "Posts Moved",
+          title: tr("posts_moved","Posts Moved"),
           description:
             l("posts_moved_count", { count: c.size }) ||
             `${c.size} posts moved to Sale Undone`,
@@ -510,10 +506,9 @@ const vt = () => {
     Ee = (t) => {
       if (le.has(t)) {
         d({
-          title: l("cannot_select") || "Cannot Select",
+          title: tr("cannot_select","Cannot Select"),
           description:
-            l("already_moved_sale_undone") ||
-            "This post has already been moved to Sale Undone",
+            tr("already_moved_sale_undone","This post has already been moved to Sale Undone"),
           variant: "destructive",
         });
         return;
@@ -532,9 +527,9 @@ const vt = () => {
     He = async () => {
       if (c.size === 0) {
         d({
-          title: l("no_posts_selected") || "No Posts Selected",
+          title: tr("no_posts_selected","No Posts Selected"),
           description:
-            l("select_posts_delete") || "Please select posts to delete",
+            tr("select_posts_delete","Please select posts to delete"),
           variant: "destructive",
         });
         return;
@@ -558,13 +553,13 @@ const vt = () => {
           ? (oe(!1),
             $(!1),
             d({
-              title: l("posts_deleted") || "Posts Deleted",
+              title: tr("posts_deleted","Posts Deleted"),
               description:
                 l("posts_deleted_count", { count: r.length }) ||
                 `${r.length} posts have been deleted`,
             }))
           : d({
-              title: l("partial_delete") || "Partial Delete",
+              title: tr("partial_delete","Partial Delete"),
               description:
                 l("partial_delete_count", { deleted: r.length, failed: m }) ||
                 `${r.length} deleted, ${m} failed.`,
@@ -573,10 +568,9 @@ const vt = () => {
       } catch (t) {
         (console.error("Bulk delete error:", t),
           d({
-            title: l("delete_failed") || "Delete Failed",
+            title: tr("delete_failed","Delete Failed"),
             description:
-              l("some_posts_delete_failed") ||
-              "Some posts could not be deleted",
+              tr("some_posts_delete_failed","Some posts could not be deleted"),
             variant: "destructive",
           }));
       }
@@ -630,7 +624,7 @@ const vt = () => {
                     className:
                       "text-xl font-semibold text-gray-900 dark:text-white mb-2",
                   },
-                  l("my_home_listings_unavailable") || "Listings unavailable",
+                  tr("my_home_listings_unavailable","Listings unavailable"),
                 ),
                 e.createElement(
                   "p",
@@ -646,12 +640,12 @@ const vt = () => {
                     g,
                     { onClick: re },
                     e.createElement(he, { className: "w-4 h-4 mr-2" }),
-                    l("retry") || "Retry",
+                    tr("retry","Retry"),
                   ),
                   e.createElement(
                     g,
                     { variant: "outline", onClick: () => b("/all-posts") },
-                    l("browse_marketplace") || "Browse Marketplace",
+                    tr("browse_marketplace","Browse Marketplace"),
                   ),
                 ),
               ),
@@ -891,7 +885,7 @@ const vt = () => {
                     e.createElement(
                       Je,
                       null,
-                      l("latest_refresh_failed") || "Latest refresh failed",
+                      tr("latest_refresh_failed","Latest refresh failed"),
                     ),
                     e.createElement(Qe, null, listError),
                     e.createElement(
@@ -901,7 +895,7 @@ const vt = () => {
                         g,
                         { size: "sm", onClick: re },
                         e.createElement(he, { className: "w-4 h-4 mr-2" }),
-                        l("retry") || "Retry",
+                        tr("retry","Retry"),
                       ),
                     ),
                   )
@@ -1041,34 +1035,11 @@ const vt = () => {
                       className:
                         "text-xs text-gray-500 dark:text-gray-400 mt-2",
                     },
-                    (l("tip") || "Tip") + ": ",
+                    (tr("tip","Tip")) + ": ",
                     l("bulk_selection_tip"),
                   ),
                 ),
-              e.createElement(
-                "div",
-                { className: "flex w-full gap-4 mb-6" },
-                e.createElement(
-                  g,
-                  {
-                    className:
-                      "flex-1 bg-green-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all hover:bg-green-600",
-                    onClick: Be,
-                  },
-                  e.createElement(G, { className: "w-5 h-5 mr-2" }),
-                  l("sale_done"),
-                ),
-                e.createElement(
-                  g,
-                  {
-                    className:
-                      "flex-1 bg-orange-500 text-white font-bold rounded-xl px-0 py-3 text-lg shadow hover:scale-105 transition-all hover:bg-orange-600",
-                    onClick: () => b("/saleundone"),
-                  },
-                  e.createElement(tt, { className: "w-5 h-5 mr-2" }),
-                  l("sale_undone"),
-                ),
-              ),
+              
               e.createElement(
                 "div",
                 { className: "w-full flex flex-col gap-6 pb-24 pt-20" },
@@ -1111,11 +1082,11 @@ const vt = () => {
                         r = s ? "bought" : t.status || "active",
                         statusLabel =
                           r === "active"
-                            ? l("active") || "Active"
+                            ? tr("active","Active")
                             : r === "sold"
-                              ? l("sold") || "Sold"
+                              ? tr("sold","Sold")
                               : r === "bought"
-                                ? l("bought") || "Bought"
+                                ? tr("bought","Bought")
                                 : r;
                       return e.createElement(
                         de,
@@ -1206,8 +1177,8 @@ const vt = () => {
                                     savedPosts[
                                       String(t.postId || t.post_id || t.id)
                                     ]
-                                      ? l("saved") || "Saved"
-                                      : l("save") || "Save",
+                                      ? tr("saved","Saved")
+                                      : tr("save","Save"),
                                   ),
                                   !s &&
                                     e.createElement(
@@ -1244,7 +1215,7 @@ const vt = () => {
                                     className:
                                       "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-mono text-xs px-2 py-1",
                                   },
-                                  l("post_id_label") || "Post ID: ",
+                                  tr("post_id_label","Post ID: "),
                                   t.postId || t.post_id || t.id,
                                 ),
                                 e.createElement(
@@ -1256,10 +1227,9 @@ const vt = () => {
                                           String(t.postId || t.post_id || t.id),
                                         ),
                                         d({
-                                          title: l("copied") || "Copied",
+                                          title: tr("copied","Copied"),
                                           description:
-                                            l("post_id_copied") ||
-                                            "Post ID copied to clipboard",
+                                            tr("post_id_copied","Post ID copied to clipboard"),
                                         }));
                                     },
                                     className:
@@ -1325,7 +1295,7 @@ const vt = () => {
                                 e.createElement(
                                   "span",
                                   { className: "hidden sm:inline" },
-                                  l("view_details") || "View Details",
+                                  tr("view_details","View Details"),
                                 ),
                               ),
                               e.createElement(
@@ -1335,7 +1305,7 @@ const vt = () => {
                                   className:
                                     "shrink-0 h-8 border-2 border-blue-300 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold rounded-lg px-2.5 sm:h-9 sm:px-3",
                                   onClick: () => saveMyPost(t),
-                                  title: l("save") || "Save",
+                                  title: tr("save","Save"),
                                 },
                                 savedPosts[
                                   String(t.postId || t.post_id || t.id)
@@ -1542,7 +1512,7 @@ const vt = () => {
               open: shareDialogOpen,
               onOpenChange: setShareDialogOpen,
               url: shareDialogUrl,
-              title: l("share_post") || "Share post",
+              title: tr("share_post","Share post"),
             }),
           )
       : e.createElement(
@@ -1653,3 +1623,5 @@ const vt = () => {
 };
 var zt = vt;
 export { zt as default };
+
+

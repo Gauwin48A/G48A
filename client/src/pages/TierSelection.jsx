@@ -120,7 +120,7 @@ export default function TierSelection() {
         description: `Your ${tierKey} plan is active now.`,
       });
       setTimeout(() => {
-        navigate(`/add-post?tier=${encodeURIComponent(tierKey)}`);
+        navigate(`/categories?tier=${encodeURIComponent(tierKey)}`);
       }, 800);
     } catch (requestError) {
       const errorMessage =

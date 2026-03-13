@@ -31,7 +31,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
           <div className="flex-1">
             <CardTitle className="text-lg">{post.title}</CardTitle>
             <CardDescription className="mt-1">
-              {post.condition} • {post.age} old
+              {post.condition} â€¢ {post.age} {t("old") || "old"}
             </CardDescription>
           </div>
           <div className="text-right">
@@ -70,17 +70,17 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
           <div className="flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center space-x-1">
               <Eye className="w-4 h-4" />
-              <span>{post.views} views</span>
+              <span>{post.views} {t("views") || "views"}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="w-4 h-4" />
-              <span>{post.daysLeft} days left</span>
+              <span>{post.daysLeft} {t("days") || "days"} {t("remaining") || "remaining"}</span>
             </div>
           </div>
 
           {/* Warranty */}
           <div className="flex items-center space-x-2 text-sm">
-            <span className="font-medium">Warranty:</span>
+            <span className="font-medium">{t("warranty") || "Warranty"}:</span>
             <Badge variant={post.warranty === 'Active' ? 'default' : 'secondary'}>
               {post.warranty}
             </Badge>
@@ -93,24 +93,20 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
 
           {/* Action Buttons */}
           {showActions && (
-            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap pt-2 scrollbar-hide">
+            <div className="post-action-row flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap pt-2 scrollbar-hide">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onContact && onContact(post)}
                 className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
               >
-                <Phone className="w-4 h-4 mr-1" />
-                Contact
-              </Button>
+                <Phone className="w-4 h-4 mr-1" />{t("contact") || "Contact"}</Button>
               <Button
                 size="sm"
                 onClick={() => onBuy && onBuy(post.id)}
                 className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
                 disabled={post.status !== 'Active'}
-              >
-                Buy Now
-              </Button>
+              >{t("buy_now") || "Buy Now"}</Button>
             </div>
           )}
         </div>
@@ -120,3 +116,9 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
 };
 
 export default PostCard;
+
+
+
+
+
+

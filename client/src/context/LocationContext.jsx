@@ -84,6 +84,12 @@ const normalizeLocation = (location) => {
     country: safeText(location.country || location.address?.country),
     area: safeText(location.area || location.address?.area),
     locality: safeText(location.locality || location.address?.locality),
+    placeName: safeText(
+      location.placeName ||
+        location.poiName ||
+        location.address?.placeName ||
+        location.address?.poiName,
+    ),
     district: safeText(location.district || location.address?.district),
     pincode: safeText(location.pincode || location.address?.pincode),
     street: safeText(location.street || location.address?.street),
@@ -167,6 +173,7 @@ const buildLocationString = (location) => {
     parts.push(text);
   };
 
+  add(location?.placeName || "");
   add(location?.area || location?.locality || "");
   add(location?.city || "");
   add(location?.state || "");

@@ -125,7 +125,13 @@ const SaleDone = () => {
       setPendingError("");
       try {
         const response = await api.get("/sale/pending?limit=10");
-        const list = Array.isArray(response?.pendingSales) ? response.pendingSales : [];
+        const list = Array.isArray(response?.pendingSales)
+          ? response.pendingSales
+          : Array.isArray(response?.data?.pendingSales)
+            ? response.data.pendingSales
+            : Array.isArray(response)
+              ? response
+              : [];
         if (!cancelled) {
           setPendingSales(list);
         }
@@ -552,9 +558,12 @@ const SaleDone = () => {
                 ) : pendingSales.length === 0 ? (
                   <p className="text-sm text-gray-500">No pending sales right now.</p>
                 ) : (
-                  pendingSales.map((sale) => (
+                  pendingSales.map((sale, index) => {
+                    const transactionId =
+                      sale?.transaction_id || sale?.transactionId || sale?.id || index;
+                    return (
                     <div
-                      key={sale.transaction_id}
+                      key={transactionId}
                       className="rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-3"
                     >
                       <div>
@@ -562,7 +571,7 @@ const SaleDone = () => {
                           {sale.post_title || "Untitled post"}
                         </p>
                         <p className="text-xs text-gray-500 break-all font-mono">
-                          {sale.transaction_id}
+                          {transactionId}
                         </p>
                       </div>
                       <Button
@@ -572,7 +581,9 @@ const SaleDone = () => {
                         onClick={() => {
                           setBuyerForm((prev) => ({
                             ...prev,
-                            transactionId: String(sale.transaction_id || ""),
+                            transactionId: String(
+                              sale?.transaction_id || sale?.transactionId || "",
+                            ),
                           }));
                           setActiveTab("buyer");
                         }}
@@ -580,7 +591,8 @@ const SaleDone = () => {
                         Use
                       </Button>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </CardContent>
             </Card>

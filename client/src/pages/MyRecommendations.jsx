@@ -88,6 +88,34 @@ const be = () => {
         t
       );
     }, [m, s.location, s.maxPrice, s.minPrice, o]),
+    quickFilters = [
+      {
+        key: "under_1000",
+        label: tr("under_1000", "Under 1000"),
+        values: { minPrice: "", maxPrice: "1000" },
+      },
+      {
+        key: "between_1k_5k",
+        label: tr("between_1k_5k", "1000-5000"),
+        values: { minPrice: "1000", maxPrice: "5000" },
+      },
+      {
+        key: "above_10k",
+        label: tr("above_10k", "Above 10k"),
+        values: { minPrice: "10000", maxPrice: "" },
+      },
+      {
+        key: "near_me",
+        label: tr("near_me", "Near me"),
+        values: {
+          location:
+            localStorage.getItem("mhub_user_city") ||
+            localStorage.getItem("city") ||
+            s.location ||
+            "",
+        },
+      },
+    ],
     ge = {
       Electronics: "\u{1F4F1}",
       Mobiles: "\u{1F4F1}",
@@ -400,6 +428,59 @@ const be = () => {
             "div",
             { className: "mb-6" },
             e.createElement(ae, { onCategorySelect: f, activeCategory: o }),
+          ),
+          e.createElement(
+            "div",
+            {
+              className:
+                "mb-6 rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-white/80 dark:bg-gray-900/50 p-4",
+            },
+            e.createElement(
+              "div",
+              { className: "flex items-center justify-between mb-3" },
+              e.createElement(
+                "h4",
+                { className: "font-semibold text-blue-900 dark:text-blue-100" },
+                tr("quick_filters", "Quick filters"),
+              ),
+              e.createElement(
+                l,
+                {
+                  type: "button",
+                  size: "sm",
+                  variant: "ghost",
+                  className: "text-blue-700 dark:text-blue-200",
+                  onClick: () =>
+                    W({ location: "", minPrice: "", maxPrice: "", date: "" }),
+                },
+                tr("reset", "Reset"),
+              ),
+            ),
+            e.createElement(
+              "div",
+              { className: "flex flex-wrap gap-2" },
+              quickFilters.map((t) => {
+                const disabled = t.key === "near_me" && !t.values.location;
+                return e.createElement(
+                  l,
+                  {
+                    key: t.key,
+                    type: "button",
+                    size: "sm",
+                    variant: "outline",
+                    disabled,
+                    className:
+                      "rounded-full border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-200 dark:hover:bg-blue-900/30",
+                    onClick: () =>
+                      W((r) => ({
+                        ...r,
+                        ...t.values,
+                      })),
+                  },
+                  t.label,
+                );
+              }),
+            ),
           ),
           e.createElement(
             "div",

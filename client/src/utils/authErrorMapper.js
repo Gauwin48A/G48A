@@ -108,6 +108,17 @@ export function mapAuthError(error, options = {}) {
       requiresOtp: true,
     });
   }
+  if (shape.code === "RISK_CHALLENGE_UNAVAILABLE") {
+    return buildMappedError({
+      status: shape.status,
+      code: shape.code,
+      category: "challenge_unavailable",
+      message:
+        shape.message ||
+        "Additional verification is required, but two-factor authentication is not enabled.",
+      retryable: true,
+    });
+  }
 
   if (
     shape.status === 429 ||

@@ -65,7 +65,12 @@ const Ve = 5,
     "user.name",
     "user.location",
   ],
-  de = (o) => o?.post_id ?? o?.id ?? null,
+  de = (o) => {
+    const candidate = o?.post_id ?? o?.id ?? null;
+    if (candidate == null) return null;
+    if (typeof candidate === "object") return null;
+    return candidate;
+  },
   setNestedValue = (o, B, m) => {
     if (!o || typeof o != "object" || !B) return;
     const n = String(B).split(".");
@@ -219,9 +224,7 @@ const Ve = 5,
                   paths: FEED_TRANSLATE_PATHS,
                 })
               : sourcePosts;
-          const safeTranslatedSeed = Array.isArray(translatedSeed)
-            ? translatedSeed
-            : sourcePosts;
+          const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(sourcePosts) ? sourcePosts : []);
           if (
             r !== v.current
           )
@@ -229,10 +232,11 @@ const Ve = 5,
           t || s === 1 ? (u(safeTranslatedSeed), q(1)) : u((d) => qe(d, safeTranslatedSeed));
           const $ = {},
             U = {};
-          (safeTranslatedSeed.forEach((d) => {
-            const re = d.post_id || d.id;
-            (($[re] = d.likes || 0), (U[re] = d.views_count || d.views || 0));
-          }),
+          (Array.isArray(safeTranslatedSeed) &&
+            safeTranslatedSeed.forEach((d) => {
+              const re = d.post_id || d.id;
+              (($[re] = d.likes || 0), (U[re] = d.views_count || d.views || 0));
+            }),
             J((d) => (t ? $ : { ...d, ...$ })),
             he((d) => (t ? U : { ...d, ...U })),
             M(safeTranslatedSeed.length === F));
@@ -284,14 +288,13 @@ const Ve = 5,
         const translatedSeed = instantTranslatePosts(n, m, {
           paths: FEED_TRANSLATE_PATHS,
         });
-        const safeTranslatedSeed = Array.isArray(translatedSeed)
-          ? translatedSeed
-          : n;
+        const safeTranslatedSeed = Array.isArray(translatedSeed) ? translatedSeed : (Array.isArray(n) ? n : []);
         const s = new Map();
-        safeTranslatedSeed.forEach((a) => {
-          const l = de(a);
-          l !== null && s.set(String(l), a);
-        });
+        Array.isArray(safeTranslatedSeed) &&
+          safeTranslatedSeed.forEach((a) => {
+            const l = de(a);
+            l !== null && s.set(String(l), a);
+          });
         u((a) =>
           Array.isArray(a)
             ? a.map((l) => {
@@ -921,7 +924,7 @@ const Ve = 5,
                             "div",
                             {
                               className:
-                                "flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2",
+                                "post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2",
                             },
                           e.createElement(
                             "button",
@@ -1071,3 +1074,4 @@ const Ve = 5,
   };
 var ot = ze;
 export { ot as default };
+

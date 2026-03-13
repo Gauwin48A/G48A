@@ -127,7 +127,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
         disabled={isSwitching}
         className={`rounded-full border border-white/30 bg-white/90 px-2 font-semibold text-slate-800 shadow-sm hover:bg-white ${
           compact
-            ? "h-8 min-w-[56px] text-[11px] sm:h-9 sm:min-w-[90px] sm:text-sm"
+            ? "h-7 min-w-[48px] text-[10px] sm:h-8 sm:min-w-[72px] sm:text-xs"
             : "h-11 min-w-[132px] text-sm"
         }`}
       >
