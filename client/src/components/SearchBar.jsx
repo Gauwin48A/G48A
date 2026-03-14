@@ -16,11 +16,11 @@ const SearchBar = ({ onSearch }) => {
       <input
         type="text"
         className="flex-1 px-4 py-2 rounded-l border border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        placeholder="Search products, brands, categories..."
+        placeholder={t("search_products_placeholder")}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-r font-semibold hover:bg-indigo-700 transition">Search</button>
+      <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-r font-semibold hover:bg-indigo-700 transition">{t("search")}</button>
     </form>
   );
 };

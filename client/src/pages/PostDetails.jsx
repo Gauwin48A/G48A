@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import api from "../lib/api";
 
 import { useTranslation } from "react-i18next";
+import { navigateBack } from "@/utils/navigation";
 
 const PostDetails = () => {
   const { t } = useTranslation();
@@ -84,7 +85,7 @@ const PostDetails = () => {
             </div>
             <button
               className="bg-blue-600 text-white px-4 py-2 rounded shadow"
-              onClick={() => navigate(-1)}
+              onClick={() => navigateBack(navigate)}
             >
               Back
             </button>

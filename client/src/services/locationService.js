@@ -1,6 +1,7 @@
 import { Geolocation } from "@capacitor/geolocation";
 import { Capacitor } from "@capacitor/core";
 import { buildApiPath } from "@/lib/networkConfig";
+import { getDeviceId } from "@/utils/device";
 const GEO_OPTIONS = {
   enableHighAccuracy: true,
   timeout: 20e3,
@@ -31,6 +32,18 @@ const WEB_STALE_FIX_MAX_AGE_MS = 2 * 60 * 1e3;
 const NATIVE_ACCURACY_RETRY_THRESHOLD_METERS = 120;
 const NATIVE_SECOND_FIX_DELAY_MS = 1200;
 const STRICT_REQUIRED_ACCURACY_METERS = 100;
+const VERIFY_REQUIRED_ACCURACY_METERS = Number(
+  import.meta.env.VITE_LOCATION_TARGET_ACCURACY_METERS || 20,
+);
+const VERIFY_MAX_ACCURACY_METERS = Number(
+  import.meta.env.VITE_LOCATION_MAX_ACCURACY_METERS || 20,
+);
+const VERIFY_MAX_AGE_MS = Number(
+  import.meta.env.VITE_LOCATION_MAX_AGE_MS || 10000,
+);
+const VERIFY_TARGET_RADIUS_METERS = Number(
+  import.meta.env.VITE_LOCATION_TARGET_RADIUS_METERS || 10,
+);
 const DEFAULT_REQUIRED_ACCURACY_METERS = STRICT_REQUIRED_ACCURACY_METERS;
 const DEFAULT_COARSE_REQUIRED_ACCURACY_METERS = 1500;
 const DEFAULT_CACHE_MAX_AGE_MS = 15 * 60 * 1e3;
@@ -49,6 +62,9 @@ const REVERSE_GEOCODE_ROUNDING_DIGITS = 4;
 const COORD_PRECISION_DIGITS = 7;
 const POI_CACHE_TTL_MS = 30 * 60 * 1e3;
 const POI_LOOKUP_TIMEOUT_MS = 3500;
+const LOCATION_HMAC_SECRET = String(
+  import.meta.env.VITE_LOCATION_HMAC_SECRET || "",
+).trim();
 const GOOGLE_PLACES_API_KEY = String(
   import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
 ).trim();
@@ -74,6 +90,56 @@ const debugLog = (...args) => {
     console.log("[LocationService]", ...args);
   }
 };
+const stableStringify = (value) => {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+  if (typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  const keys = Object.keys(value).sort();
+  const entries = keys
+    .filter((key) => value[key] !== undefined)
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`);
+  return `{${entries.join(",")}}`;
+};
+const toHex = (buffer) =>
+  [...new Uint8Array(buffer)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+const createLocationSignature = async (payload) => {
+  if (!LOCATION_HMAC_SECRET) return null;
+  if (
+    typeof globalThis === "undefined" ||
+    !globalThis.crypto?.subtle ||
+    typeof TextEncoder === "undefined"
+  ) {
+    return null;
+  }
+  try {
+    const encoder = new TextEncoder();
+    const key = await globalThis.crypto.subtle.importKey(
+      "raw",
+      encoder.encode(LOCATION_HMAC_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const canonical = stableStringify(payload);
+    const signature = await globalThis.crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(canonical),
+    );
+    return toHex(signature);
+  } catch (error) {
+    debugLog("HMAC signature generation failed:", error?.message || error);
+    return null;
+  }
+};
 const fetchWithTimeout = async (
   url,
   options = {},
@@ -97,6 +163,29 @@ const getLocationEndpointCandidates = () => {
     candidates.push(`${window.location.origin}/api/location`);
     LOCAL_DEV_BACKEND_ORIGINS.forEach((origin) => {
       candidates.push(`${origin}/api/location`);
+    });
+  }
+  const deduped = [];
+  const seen = new Set();
+  candidates.forEach((candidate) => {
+    const normalized = normalizeEndpointUrl(candidate);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    deduped.push(normalized);
+  });
+  return deduped;
+};
+const getLocationVerificationEndpointCandidates = () => {
+  const candidates = [
+    buildApiPath("/v1/location/verify"),
+    buildApiPath("/location/verify"),
+  ];
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    candidates.push(`${window.location.origin}/api/v1/location/verify`);
+    candidates.push(`${window.location.origin}/api/location/verify`);
+    LOCAL_DEV_BACKEND_ORIGINS.forEach((origin) => {
+      candidates.push(`${origin}/api/v1/location/verify`);
+      candidates.push(`${origin}/api/location/verify`);
     });
   }
   const deduped = [];
@@ -162,7 +251,10 @@ const getBrowserPermissionState = async () => {
     return "unknown";
   }
 };
-const refineBrowserPositionWithWatch = async (initialFix) => {
+const refineBrowserPositionWithWatch = async (
+  initialFix,
+  targetAccuracy = WEB_TARGET_ACCURACY_METERS,
+) => {
   if (
     typeof navigator === "undefined" ||
     !navigator.geolocation?.watchPosition
@@ -178,7 +270,7 @@ const refineBrowserPositionWithWatch = async (initialFix) => {
   const initialAccuracy = getPositionAccuracy(initialFix);
   if (
     Number.isFinite(initialAccuracy) &&
-    initialAccuracy <= WEB_TARGET_ACCURACY_METERS
+    initialAccuracy <= targetAccuracy
   ) {
     return initialFix;
   }
@@ -215,7 +307,7 @@ const refineBrowserPositionWithWatch = async (initialFix) => {
           const bestAccuracy = getPositionAccuracy(bestFix);
           if (
             Number.isFinite(bestAccuracy) &&
-            bestAccuracy <= WEB_TARGET_ACCURACY_METERS
+            bestAccuracy <= targetAccuracy
           ) {
             finish();
           }
@@ -230,7 +322,10 @@ const refineBrowserPositionWithWatch = async (initialFix) => {
     }
   });
 };
-const getBrowserPosition = async () => {
+const getBrowserPosition = async (options = {}) => {
+  const targetAccuracy = Number.isFinite(options.targetAccuracy)
+    ? Number(options.targetAccuracy)
+    : WEB_TARGET_ACCURACY_METERS;
   if (typeof navigator === "undefined" || !navigator.geolocation) {
     throw new Error("Browser geolocation not supported");
   }
@@ -293,16 +388,22 @@ const getBrowserPosition = async () => {
   }
 
   const initialAccuracy = getPositionAccuracy(best);
+  const accuracyRetryThreshold = Number.isFinite(targetAccuracy)
+    ? Math.min(WEB_ACCURACY_RETRY_THRESHOLD_METERS, targetAccuracy * 2)
+    : WEB_ACCURACY_RETRY_THRESHOLD_METERS;
   if (
     Number.isFinite(initialAccuracy) &&
-    initialAccuracy > WEB_ACCURACY_RETRY_THRESHOLD_METERS
+    initialAccuracy > accuracyRetryThreshold
   ) {
-    const refinedFix = await refineBrowserPositionWithWatch(best);
+    const refinedFix = await refineBrowserPositionWithWatch(
+      best,
+      targetAccuracy,
+    );
     addCandidate(refinedFix);
     best = pickBestPosition(rawCandidates) || best;
   }
 
-  if (getPositionAccuracy(best) > WEB_ACCURACY_RETRY_THRESHOLD_METERS) {
+  if (getPositionAccuracy(best) > accuracyRetryThreshold) {
     for (let attempt = 0; attempt < WEB_EXTRA_SAMPLE_ATTEMPTS; attempt += 1) {
       await sleep(WEB_EXTRA_SAMPLE_DELAY_MS);
       try {
@@ -392,6 +493,7 @@ const normalizeLocationShape = (loc, defaults = {}) => {
   if (!isValidCoordinates(latitude, longitude)) return null;
   const accuracy = Number(loc.accuracy);
   const timestamp = parseTimestamp(loc.timestamp);
+  const isMock = Boolean(loc.isMock ?? loc.is_mock ?? loc.mocked ?? false);
   return {
     latitude: roundCoordinate(latitude),
     longitude: roundCoordinate(longitude),
@@ -421,6 +523,7 @@ const normalizeLocationShape = (loc, defaults = {}) => {
     provider: loc.provider || defaults.provider || "unknown",
     address: loc.address || defaults.address || null,
     timestamp: timestamp,
+    isMock,
   };
 };
 const getRecentCachedLocation = (maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS) => {
@@ -440,11 +543,13 @@ const getRecentCachedLocation = (maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS) => {
       } catch {
         return null;
       }
-    })
-      .filter(Boolean)
-      .filter((entry) => now - entry.timestamp <= maxAgeMs);
-    if (!candidates.length) return null;
-    candidates.sort((a, b) => {
+    }).filter(Boolean);
+    const freshCandidates = candidates.filter((entry) => {
+      const ageMs = now - entry.timestamp;
+      return ageMs <= maxAgeMs;
+    });
+    if (!freshCandidates.length) return null;
+    freshCandidates.sort((a, b) => {
       if (b.timestamp !== a.timestamp) return b.timestamp - a.timestamp;
       const aAccuracy = Number.isFinite(a.accuracy)
         ? a.accuracy
@@ -455,10 +560,10 @@ const getRecentCachedLocation = (maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS) => {
       return aAccuracy - bAccuracy;
     });
     return {
-      ...candidates[0],
+      ...freshCandidates[0],
       provider: "cached_location",
       originalProvider:
-        candidates[0].originalProvider || candidates[0].provider || null,
+        freshCandidates[0].originalProvider || freshCandidates[0].provider || null,
     };
   } catch {
     return null;
@@ -571,6 +676,69 @@ const buildLocationPayload = (locationData = {}) => {
   if (!payload.last_active_at) {
     payload.last_active_at = new Date().toISOString();
   }
+  return payload;
+};
+const buildLocationVerificationPayload = (locationData = {}, options = {}) => {
+  const latitude = toFiniteNumberOrNull(
+    locationData.latitude ?? locationData.lat,
+  );
+  const longitude = toFiniteNumberOrNull(
+    locationData.longitude ?? locationData.lng,
+  );
+  const accuracy = toFiniteNumberOrNull(locationData.accuracy);
+  const timestamp = parseTimestamp(locationData.timestamp ?? Date.now());
+  const deviceId = options.deviceId || getDeviceId();
+  const userId = options.userId || getStoredUserId();
+
+  const payload = {
+    user_id: userId || null,
+    latitude,
+    longitude,
+    accuracy,
+    speed: toFiniteNumberOrNull(locationData.speed) || 0,
+    altitude: toFiniteNumberOrNull(locationData.altitude),
+    bearing: toFiniteNumberOrNull(locationData.heading ?? locationData.bearing),
+    device_id: deviceId || null,
+    timestamp,
+    provider: locationData.provider || "browser_gps",
+    is_mock: Boolean(locationData.isMock ?? locationData.mocked ?? false),
+  };
+
+  if (options.targetLat !== undefined || options.targetLatitude !== undefined) {
+    payload.target_latitude = toFiniteNumberOrNull(
+      options.targetLatitude ?? options.targetLat,
+    );
+  }
+  if (options.targetLng !== undefined || options.targetLongitude !== undefined) {
+    payload.target_longitude = toFiniteNumberOrNull(
+      options.targetLongitude ?? options.targetLng,
+    );
+  }
+  if (options.targetUserId) {
+    payload.target_user_id = options.targetUserId;
+  }
+  if (Number.isFinite(Number(options.targetRadiusMetres))) {
+    payload.target_radius_metres = Number(options.targetRadiusMetres);
+  }
+  if (Array.isArray(options.wifiBssids)) {
+    payload.wifi_bssids = options.wifiBssids;
+  }
+  if (options.cellInfo) {
+    payload.cell_info = options.cellInfo;
+  }
+  if (options.sensorHash) {
+    payload.sensor_hash = options.sensorHash;
+  }
+  if (options.integrity) {
+    payload.play_integrity = options.integrity;
+  }
+  if (options.storeSellerLocation) {
+    payload.store_seller_location = true;
+  }
+  if (options.ipAddress) {
+    payload.ip_address = options.ipAddress;
+  }
+
   return payload;
 };
 const getAccuracyScore = (location) => {
@@ -1034,12 +1202,18 @@ const composeDisplayName = (placeName, addressData = null) => {
   }
   return [safePlaceName, baseName].filter(Boolean).join(", ");
 };
-const getNativePositionWithSampling = async () => {
+const getNativePositionWithSampling = async (options = {}) => {
+  const targetAccuracy = Number.isFinite(options.targetAccuracy)
+    ? Number(options.targetAccuracy)
+    : null;
+  const retryThreshold = Number.isFinite(targetAccuracy)
+    ? Math.min(NATIVE_ACCURACY_RETRY_THRESHOLD_METERS, targetAccuracy * 2)
+    : NATIVE_ACCURACY_RETRY_THRESHOLD_METERS;
   const samples = [];
   const firstFix = await Geolocation.getCurrentPosition(GEO_OPTIONS);
   samples.push(firstFix);
 
-  if (getPositionAccuracy(firstFix) > NATIVE_ACCURACY_RETRY_THRESHOLD_METERS) {
+  if (getPositionAccuracy(firstFix) > retryThreshold) {
     await sleep(NATIVE_SECOND_FIX_DELAY_MS);
     try {
       const secondFix = await Geolocation.getCurrentPosition({
@@ -1054,8 +1228,11 @@ const getNativePositionWithSampling = async () => {
 
   return pickBestPosition(samples) || firstFix;
 };
-export const getCurrentLocation = async () => {
-  const hotCached = getRuntimeCachedLocation(WEB_TARGET_ACCURACY_METERS, 2e4);
+export const getCurrentLocation = async (options = {}) => {
+  const targetAccuracy = Number.isFinite(options.targetAccuracy)
+    ? Number(options.targetAccuracy)
+    : WEB_TARGET_ACCURACY_METERS;
+  const hotCached = getRuntimeCachedLocation(targetAccuracy, 2e4);
   if (hotCached) {
     return hotCached;
   }
@@ -1065,7 +1242,7 @@ export const getCurrentLocation = async () => {
     let coordinates;
     let provider = "browser_gps";
     if (!isNativePlatform) {
-      coordinates = await getBrowserPosition();
+      coordinates = await getBrowserPosition({ targetAccuracy });
       provider = "browser_gps";
     } else {
       let useBrowserPermissionFlow = false;
@@ -1092,18 +1269,18 @@ export const getCurrentLocation = async () => {
         useBrowserPermissionFlow = true;
       }
       if (useBrowserPermissionFlow) {
-        coordinates = await getBrowserPosition();
+        coordinates = await getBrowserPosition({ targetAccuracy });
         provider = "browser_gps_fallback";
       } else {
         try {
-          coordinates = await getNativePositionWithSampling();
+          coordinates = await getNativePositionWithSampling({ targetAccuracy });
           provider = "native_gps";
         } catch (geoError) {
           debugLog(
             "Capacitor geolocation failed, trying browser fallback:",
             geoError?.message || geoError,
           );
-          coordinates = await getBrowserPosition();
+          coordinates = await getBrowserPosition({ targetAccuracy });
           provider = "browser_gps_fallback";
         }
       }
@@ -1127,12 +1304,19 @@ export const getCurrentLocation = async () => {
       placeName: placeName || addressData?.poiName || "",
       displayName: displayName,
     };
+    const isMock = Boolean(
+      coordinates?.mocked ??
+        coordinates?.coords?.mocked ??
+        coordinates?.coords?.isMocked ??
+        coordinates?.coords?.isMock,
+    );
     const location = {
       latitude: normalizedLat,
       longitude: normalizedLng,
       lat: normalizedLat,
       lng: normalizedLng,
       accuracy: accuracy,
+      isMock,
       speed: speed || 0,
       address: enrichedAddress,
       city: enrichedAddress.city,
@@ -1169,6 +1353,7 @@ export const getBestAvailableLocation = async (options = {}) => {
     allowIpFallback: allowIpFallback = true,
     cacheMaxAgeMs: cacheMaxAgeMs = DEFAULT_CACHE_MAX_AGE_MS,
     strictAccuracy: strictAccuracy = true,
+    targetAccuracy: targetAccuracy = null,
   } = options;
 
   const parsedRequiredAccuracy = Number(requiredAccuracy);
@@ -1182,6 +1367,10 @@ export const getBestAvailableLocation = async (options = {}) => {
     Number.isFinite(parsedRequiredAccuracy) && parsedRequiredAccuracy > 0
       ? Math.min(parsedRequiredAccuracy, accuracyCeiling)
       : fallbackAccuracy;
+  const effectiveTargetAccuracy =
+    Number.isFinite(targetAccuracy) && Number(targetAccuracy) > 0
+      ? Number(targetAccuracy)
+      : effectiveRequiredAccuracy;
 
   const allowRuntimeOrDiskCache = allowCache;
   const allowIpFallbackForSession = allowIpFallback;
@@ -1208,7 +1397,9 @@ export const getBestAvailableLocation = async (options = {}) => {
         await sleep(600 + attempt * 400);
       }
 
-      const capturedLocation = await getCurrentLocation();
+      const capturedLocation = await getCurrentLocation({
+        targetAccuracy: effectiveTargetAccuracy,
+      });
       const normalized = normalizeLocationShape(capturedLocation, {
         provider: capturedLocation.provider || "gps",
       });
@@ -1282,6 +1473,37 @@ export const getBestAvailableLocation = async (options = {}) => {
 
   throw new Error("Unable to determine location");
 };
+
+export const getHighPrecisionLocation = async (options = {}) => {
+  const requiredAccuracy =
+    Number(options.requiredAccuracy) || VERIFY_REQUIRED_ACCURACY_METERS;
+  const cacheMaxAgeMs =
+    Number(options.cacheMaxAgeMs) || Math.min(VERIFY_MAX_AGE_MS, 15 * 1000);
+  const allowCache = options.allowCache === true;
+  const location = await getBestAvailableLocation({
+    allowCache,
+    allowIpFallback: false,
+    cacheMaxAgeMs,
+    requiredAccuracy,
+    strictAccuracy: true,
+    targetAccuracy: requiredAccuracy,
+  });
+  const ageMs = Date.now() - parseTimestamp(location.timestamp);
+  if (ageMs > VERIFY_MAX_AGE_MS) {
+    throw new Error("Location fix too old for verification.");
+  }
+  const accuracy = Number(location.accuracy);
+  if (!Number.isFinite(accuracy)) {
+    throw new Error("Location accuracy unavailable for verification.");
+  }
+  if (location.isMock) {
+    throw new Error("Mock location detected.");
+  }
+  if (Number.isFinite(accuracy) && accuracy > VERIFY_MAX_ACCURACY_METERS) {
+    throw new Error("Location accuracy too low for verification.");
+  }
+  return location;
+};
 export async function sendLocation(locationData) {
   const payload = buildLocationPayload(locationData);
   debugLog("Sending location to backend:", payload);
@@ -1349,6 +1571,128 @@ export async function sendLocation(locationData) {
     }
   }
   throw new Error(lastError || "Location sync failed");
+}
+
+export async function verifyLocation(options = {}) {
+  const {
+    locationData = null,
+    targetLat = null,
+    targetLng = null,
+    targetUserId = null,
+    targetRadiusMetres = VERIFY_TARGET_RADIUS_METERS,
+    wifiBssids = null,
+    cellInfo = null,
+    sensorHash = null,
+    integrity = null,
+    storeSellerLocation = false,
+    deviceId = null,
+    userId = null,
+    ipAddress = null,
+  } = options;
+
+  const normalizedCandidate = normalizeLocationShape(locationData, {
+    provider: locationData?.provider || "gps",
+  });
+  let location = normalizedCandidate;
+  if (location) {
+    const ageMs = Date.now() - parseTimestamp(location.timestamp);
+    const accuracy = Number(location.accuracy);
+    if (ageMs > VERIFY_MAX_AGE_MS || !Number.isFinite(accuracy)) {
+      location = null;
+    } else if (Number.isFinite(accuracy) && accuracy > VERIFY_MAX_ACCURACY_METERS) {
+      location = null;
+    }
+  }
+  if (!location) {
+    location = await getHighPrecisionLocation(options);
+  }
+  if (location.isMock) {
+    throw new Error("Mock location detected.");
+  }
+
+  const payload = buildLocationVerificationPayload(location, {
+    targetLat,
+    targetLng,
+    targetUserId,
+    targetRadiusMetres,
+    wifiBssids,
+    cellInfo,
+    sensorHash,
+    integrity,
+    storeSellerLocation,
+    deviceId,
+    userId,
+    ipAddress,
+  });
+
+  if (!Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) {
+    throw new Error("Unable to capture precise GPS coordinates.");
+  }
+
+  const signature = await createLocationSignature(payload);
+  if (signature) {
+    payload.signature = signature;
+  }
+
+  const endpointCandidates = getLocationVerificationEndpointCandidates();
+  let lastError = null;
+  const token =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem("authToken")
+      : null;
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Device-Id": payload.device_id || getDeviceId(),
+    "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+  if (signature) {
+    headers["X-Location-Signature"] = signature;
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  for (let endpointIndex = 0; endpointIndex < endpointCandidates.length; endpointIndex += 1) {
+    const endpoint = endpointCandidates[endpointIndex];
+    for (let attempt = 0; attempt < LOCATION_SYNC_MAX_ATTEMPTS_PER_ENDPOINT; attempt += 1) {
+      try {
+        const response = await fetchWithTimeout(endpoint, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+          credentials: "include",
+        });
+        if (!response.ok) {
+          const errText = await response.text();
+          lastError = `Server returned ${response.status}: ${errText}`;
+          if (isRouteNotFoundPayload(response.status, errText)) {
+            break;
+          }
+          throw new Error(lastError);
+        }
+        const result = await response.json();
+        debugLog("Location verification response:", result);
+        return { location, verification: result };
+      } catch (error) {
+        lastError = error.message;
+        debugLog(
+          `verifyLocation error (${endpoint}, attempt ${attempt + 1}):`,
+          lastError,
+        );
+        const canRetrySameEndpoint =
+          attempt < LOCATION_SYNC_MAX_ATTEMPTS_PER_ENDPOINT - 1 &&
+          !/Server returned 404/i.test(lastError);
+        if (!canRetrySameEndpoint) {
+          break;
+        }
+        await new Promise((resolve) =>
+          setTimeout(resolve, LOCATION_SYNC_RETRY_DELAY_MS),
+        );
+      }
+    }
+  }
+
+  throw new Error(lastError || "Location verification failed");
 }
 export async function captureLocation(userId = null) {
   try {

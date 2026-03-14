@@ -1,5 +1,6 @@
 import React from "react";
 import PolicyLayout from "@/components/legal/PolicyLayout";
+import { useTranslation } from "react-i18next";
 
 const sections = [
   {
@@ -45,10 +46,11 @@ const sections = [
 ];
 
 export default function SupportTicketPolicy() {
+  const { t } = useTranslation();
   return (
     <PolicyLayout
-      title="Support Ticket Policy"
-      subtitle="How support tickets are submitted, reviewed, prioritized, and resolved."
+      title={t("support_ticket_policy")}
+      subtitle={t("support_ticket_policy_subtitle")}
       updatedOn="March 10, 2026"
       sections={sections}
     />

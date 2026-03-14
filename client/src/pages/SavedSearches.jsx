@@ -26,6 +26,7 @@ import { useNavigate as W } from "react-router-dom";
 import h from "../lib/api";
 import { useAuth as X } from "@/context/AuthContext";
 import { isAuthenticated as Y } from "@/utils/authStorage";
+import { navigateBack } from "@/utils/navigation";
 const Z = () => {
   const i = W(),
     { user: S, loading: x } = X(),
@@ -176,7 +177,7 @@ const Z = () => {
                   {
                     variant: "ghost",
                     size: "icon",
-                    onClick: () => i(-1),
+                    onClick: () => navigateBack(i),
                     className:
                       "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white",
                   },

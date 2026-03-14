@@ -1,5 +1,6 @@
 import React from "react";
 import PolicyLayout from "@/components/legal/PolicyLayout";
+import { useTranslation } from "react-i18next";
 
 const sections = [
   {
@@ -45,10 +46,11 @@ const sections = [
 ];
 
 export default function TermsAndConditions() {
+  const { t } = useTranslation();
   return (
     <PolicyLayout
-      title="Terms & Conditions"
-      subtitle="These terms govern access and use of marketplace, support, and premium module features."
+      title={t("terms_conditions")}
+      subtitle={t("terms_conditions_subtitle")}
       updatedOn="March 10, 2026"
       sections={sections}
     />

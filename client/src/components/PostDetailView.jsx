@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTranslation } from 'react-i18next';
+import { navigateBack } from "@/utils/navigation";
 
 import { 
   ArrowLeft, 
@@ -48,7 +49,7 @@ const PostDetailView = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             {tr("post_not_found", "Post not found")}
           </h2>
-          <Button onClick={() => navigate(-1)} className="bg-blue-500 hover:bg-blue-600">
+          <Button onClick={() => navigateBack(navigate)} className="bg-blue-500 hover:bg-blue-600">
             {tr("back_to_posts", "Back to Posts")}
           </Button>
         </div>
@@ -91,7 +92,7 @@ const PostDetailView = () => {
         <div className="mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate(-1)}
+            onClick={() => navigateBack(navigate)}
             className="text-gray-700 hover:bg-gray-100"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

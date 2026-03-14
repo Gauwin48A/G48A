@@ -24,6 +24,7 @@ import {
   PageErrorState as re,
   PageLoadingState as te,
 } from "@/components/page-state/PageStateBlocks";
+import { navigateBack } from "@/utils/navigation";
 const u = "recentSearches",
   ae = 10,
   oe = {
@@ -180,7 +181,7 @@ const u = "recentSearches",
               "button",
               {
                 type: "button",
-                onClick: () => s(-1),
+                onClick: () => navigateBack(s, y),
                 className:
                   "p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition",
               },

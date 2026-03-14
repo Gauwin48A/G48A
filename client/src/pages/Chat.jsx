@@ -27,6 +27,7 @@ import {
 import { useNavigate as Ae } from "react-router-dom";
 import Y from "../lib/api";
 import { socket as r } from "../lib/socket";
+import { navigateBack } from "@/utils/navigation";
 const ze = () => {
   const N = Ae(),
     [L, U] = m([]),
@@ -348,7 +349,7 @@ const ze = () => {
                 variant: "ghost",
                 size: "icon",
                 className: "text-white",
-                onClick: () => N(-1),
+                onClick: () => navigateBack(N),
               },
               e.createElement(ve, { className: "w-6 h-6" }),
             ),

@@ -11,17 +11,20 @@ import { Badge as te } from "@/components/ui/badge";
 import { Avatar as ae, AvatarFallback as se } from "@/components/ui/avatar";
 import { Card as g, CardContent as p } from "@/components/ui/card";
 import { useTranslation as oe } from "react-i18next";
+import { useAuth as useAuthContext } from "@/context/AuthContext";
 import le from "@/components/BuyerInterestModal";
 import ie from "@/components/MakeOfferModal";
 import ne from "@/components/BargainActions";
 import Se from "@/components/ShareLinkDialog";
 import { getApiOriginBase as de } from "@/lib/networkConfig";
+import { getUserId as getUserIdFromStorage } from "@/utils/authStorage";
 import {
   isSavedPostId,
   setSavedPostStatus,
   subscribeSavedPosts,
 } from "@/utils/savedPosts";
 import { resolveMediaUrl as cee } from "@/lib/mediaUrl";
+import { navigateBack } from "@/utils/navigation";
 import {
   ArrowLeft as $,
   ChevronLeft as me,
@@ -54,6 +57,7 @@ function we() {
     },
     { id: d } = Y(),
     y = ee(),
+    { user: currentUser } = useAuthContext(),
     [r, u] = i(y.state?.post || null),
     [j, c] = i(!y.state?.post),
     [v, N] = i(""),
@@ -72,12 +76,43 @@ function we() {
     }),
     [ownerInsightsLoading, setOwnerInsightsLoading] = i(!1),
     [ownerInsightsError, setOwnerInsightsError] = i(""),
-    U = Z();
+    U = Z(),
+    normalizeId = (t) => {
+      if (t === undefined || t === null) return "";
+      if (typeof t === "string" || typeof t === "number") {
+        return String(t).trim();
+      }
+      if (typeof t === "object") {
+        const candidate = t.post_id || t.id || t.user_id;
+        return candidate ? String(candidate).trim() : "";
+      }
+      return "";
+    },
+    currentUserId = getUserIdFromStorage(currentUser),
+    normalizedCurrentUserId = normalizeId(currentUserId),
+    J = normalizeId(r?.post_id || r?.id || d),
+    isOwner = Boolean(
+      normalizedCurrentUserId &&
+        [
+          r?.user_id,
+          r?.userId,
+          r?.owner_id,
+          r?.ownerId,
+          r?.seller_id,
+          r?.sellerId,
+          r?.seller?.id,
+          r?.user?.id,
+          r?.user?.user_id,
+          r?.author_id,
+          r?.authorId,
+        ].some((t) => normalizeId(t) === normalizedCurrentUserId),
+    ),
+    isOwnerView = isOwner || Boolean(y?.state?.fromMyPosts);
   if (
     (L(() => {
       const t = normalizeId(r?.post_id || r?.id || d);
       if (!t) return;
-      const a = currentUserId || localStorage.getItem("userId"),
+      const a = currentUserId,
         s = localStorage.getItem("authToken");
       if (!a || !s) return;
       const Q = (document.referrer || "").includes("/feed")
@@ -95,7 +130,7 @@ function we() {
       })
         .then((X) => X.json())
         .catch(() => {});
-    }, [d]),
+    }, [d, currentUserId]),
     L(() => {
       window.scrollTo(0, 0),
         r ||
@@ -145,21 +180,10 @@ function we() {
         setSavedPost(Boolean(a?.[t]));
       });
     }, [d, r?.id, r?.post_id]),
-    L(() => {
-      const postId = normalizeId(r?.post_id || r?.id || d);
-      if (!postId) return;
-      const ownerMatch =
-        currentUserId &&
-        [
-          r?.user_id,
-          r?.userId,
-          r?.owner_id,
-          r?.seller_id,
-          r?.seller?.id,
-          r?.user?.id,
-        ].some((t) => normalizeId(t) === currentUserId);
-      if (!ownerMatch) return;
-      let cancelled = false;
+      L(() => {
+        const postId = normalizeId(r?.post_id || r?.id || d);
+        if (!postId || !isOwnerView) return;
+        let cancelled = false;
       setOwnerInsightsLoading(true);
       setOwnerInsightsError("");
       Promise.allSettled([
@@ -186,11 +210,6 @@ function we() {
               ? viewersRes.value.viewers
               : [];
           setOwnerInsights({ inquiries, offers, viewers });
-          if (!inquiries.length && !offers.length && !viewers.length) {
-            setOwnerInsightsError(
-              tr("no_leads_yet", "No interactions yet. Check back later."),
-            );
-          }
         })
         .catch(() => {
           if (!cancelled) {
@@ -207,17 +226,18 @@ function we() {
       return () => {
         cancelled = true;
       };
-    }, [
-      d,
-      r?.id,
-      r?.post_id,
-      r?.user_id,
-      r?.userId,
-      r?.owner_id,
-      r?.seller_id,
-      r?.seller?.id,
-      r?.user?.id,
-    ]),
+      }, [
+        d,
+        isOwnerView,
+        r?.id,
+        r?.post_id,
+        r?.user_id,
+        r?.userId,
+        r?.owner_id,
+        r?.seller_id,
+        r?.seller?.id,
+        r?.user?.id,
+      ]),
     j)
   )
     return e.createElement(
@@ -366,38 +386,6 @@ function we() {
       r?.response_time ||
       r?.avg_response_time ||
       "Not available",
-    currentUserId = (() => {
-      const stored =
-        localStorage.getItem("userId") ||
-        localStorage.getItem("user_id") ||
-        localStorage.getItem("id") ||
-        "";
-      const normalized = String(stored || "").trim();
-      return normalized.length ? normalized : null;
-    })(),
-    normalizeId = (t) => {
-      if (t === undefined || t === null) return "";
-      if (typeof t === "string" || typeof t === "number") {
-        return String(t).trim();
-      }
-      if (typeof t === "object") {
-        const candidate = t.post_id || t.id || t.user_id;
-        return candidate ? String(candidate).trim() : "";
-      }
-      return "";
-    },
-    J = normalizeId(r?.post_id || r?.id || d),
-    isOwner = Boolean(
-      currentUserId &&
-        [
-          r?.user_id,
-          r?.userId,
-          r?.owner_id,
-          r?.seller_id,
-          r?.seller?.id,
-          r?.user?.id,
-        ].some((t) => normalizeId(t) === currentUserId),
-    ),
     toggleSavedPost = async () => {
       const t = J;
       if (!t) return;
@@ -517,14 +505,14 @@ function we() {
           l,
           {
             variant: "ghost",
-            onClick: () => U(-1),
+            onClick: () => navigateBack(U),
             className:
               "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-4",
           },
           e.createElement($, { className: "w-5 h-5 mr-2" }),
           "Back",
         ),
-        !isOwner &&
+        !isOwnerView &&
           e.createElement(
             "div",
             { className: "flex items-center gap-1 relative" },
@@ -919,8 +907,8 @@ function we() {
             e.createElement(ne, {
               post: r,
               currentUser: {
-                userId: localStorage.getItem("userId"),
-                id: localStorage.getItem("userId"),
+                userId: currentUserId,
+                id: currentUserId,
               },
               onChatClick: () => f(!0),
             }),
@@ -987,7 +975,7 @@ function we() {
             ),
           ),
         ),
-        !isOwner &&
+        !isOwnerView &&
           e.createElement(
             "div",
             { className: "space-y-3" },
@@ -1027,7 +1015,7 @@ function we() {
               ),
             ),
           ),
-        !isOwner &&
+        !isOwnerView &&
           e.createElement(
             "div",
             { className: "grid grid-cols-2 gap-3" },
@@ -1061,8 +1049,18 @@ function we() {
               tr("share", "Share"),
             ),
           ),
-        isOwner &&
-          e.createElement(
+        e.createElement(
+          l,
+          {
+            variant: "ghost",
+            className:
+              "w-full text-gray-400 hover:text-red-500 py-3 rounded-xl",
+          },
+          e.createElement(be, { className: "w-4 h-4 mr-2" }),
+          tr("report_listing", "Report this listing"),
+        ),
+          isOwnerView &&
+            e.createElement(
             "div",
             {
               className:
@@ -1124,48 +1122,63 @@ function we() {
                           "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40",
                       },
                       e.createElement(
-                        "p",
-                        { className: "text-xs text-slate-500 uppercase" },
-                        tr("interested_users", "Interested"),
-                      ),
-                      e.createElement(
-                        "p",
-                        {
-                          className:
-                            "text-xl font-bold text-slate-900 dark:text-white",
-                        },
-                        ownerInquiries.length,
-                      ),
-                      ownerInquiries.length > 0 &&
+                        "div",
+                        { className: "flex items-center justify-between" },
                         e.createElement(
-                          "div",
-                          { className: "mt-2 space-y-1 text-xs" },
-                          ownerInquiries.slice(0, 3).map((t, s) =>
-                            e.createElement(
-                              "div",
-                              {
-                                key: t.inquiry_id || t.buyer_id || s,
-                                className:
-                                  "flex items-center justify-between text-slate-600 dark:text-slate-300",
-                              },
-                              e.createElement(
-                                "span",
-                                null,
-                                t.buyer_name ||
-                                  t.name ||
-                                  t.buyer_id ||
-                                  tr("unknown", "Unknown"),
-                              ),
-                              t.phone
-                                ? e.createElement(
-                                    "span",
-                                    { className: "text-[11px]" },
-                                    t.phone,
-                                  )
-                                : null,
-                            ),
-                          ),
+                          "p",
+                          { className: "text-xs text-slate-500 uppercase" },
+                          tr("interested_users", "Interested"),
                         ),
+                        e.createElement(
+                          "span",
+                          {
+                            className:
+                              "text-xs font-semibold text-slate-600 dark:text-slate-300",
+                          },
+                          ownerInquiries.length,
+                        ),
+                      ),
+                      ownerInquiries.length > 0
+                        ? e.createElement(
+                            "div",
+                            {
+                              className:
+                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
+                            },
+                            ownerInquiries.map((t, s) =>
+                              e.createElement(
+                                "div",
+                                {
+                                  key: t.inquiry_id || t.buyer_id || s,
+                                  className:
+                                    "flex items-center justify-between text-slate-600 dark:text-slate-300",
+                                },
+                                e.createElement(
+                                  "span",
+                                  null,
+                                  t.buyer_name ||
+                                    t.name ||
+                                    t.buyer_id ||
+                                    tr("unknown", "Unknown"),
+                                ),
+                                t.phone
+                                  ? e.createElement(
+                                      "span",
+                                      { className: "text-[11px]" },
+                                      t.phone,
+                                    )
+                                  : null,
+                              ),
+                            ),
+                          )
+                        : e.createElement(
+                            "p",
+                            {
+                              className:
+                                "mt-2 text-xs text-slate-400 dark:text-slate-500",
+                            },
+                            tr("no_leads_yet", "No interactions yet."),
+                          ),
                     ),
                     e.createElement(
                       "div",
@@ -1174,45 +1187,64 @@ function we() {
                           "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40",
                       },
                       e.createElement(
-                        "p",
-                        { className: "text-xs text-slate-500 uppercase" },
-                        tr("lead_users", "Leads"),
-                      ),
-                      e.createElement(
-                        "p",
-                        {
-                          className:
-                            "text-xl font-bold text-slate-900 dark:text-white",
-                        },
-                        ownerLeadCount,
-                      ),
-                      ownerLeadList.length > 0 &&
+                        "div",
+                        { className: "flex items-center justify-between" },
                         e.createElement(
-                          "div",
-                          { className: "mt-2 space-y-1 text-xs" },
-                          ownerLeadList.slice(0, 3).map((t, s) =>
-                            e.createElement(
-                              "div",
-                              {
-                                key: t.id || s,
-                                className:
-                                  "flex items-center justify-between text-slate-600 dark:text-slate-300",
-                              },
-                              e.createElement(
-                                "span",
-                                null,
-                                t.name || tr("unknown", "Unknown"),
-                              ),
-                              t.types?.length
-                                ? e.createElement(
-                                    "span",
-                                    { className: "text-[11px]" },
-                                    t.types.join(", "),
-                                  )
-                                : null,
-                            ),
-                          ),
+                          "p",
+                          { className: "text-xs text-slate-500 uppercase" },
+                          tr("detail_views", "View details"),
                         ),
+                        e.createElement(
+                          "span",
+                          {
+                            className:
+                              "text-xs font-semibold text-slate-600 dark:text-slate-300",
+                          },
+                          ownerViewers.length,
+                        ),
+                      ),
+                      ownerViewers.length > 0
+                        ? e.createElement(
+                            "div",
+                            {
+                              className:
+                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
+                            },
+                            ownerViewers.map((t, s) =>
+                              e.createElement(
+                                "div",
+                                {
+                                  key: t.viewer_id || t.user_id || s,
+                                  className:
+                                    "flex items-center justify-between text-slate-600 dark:text-slate-300",
+                                },
+                                e.createElement(
+                                  "span",
+                                  null,
+                                  t.viewer_name ||
+                                    t.full_name ||
+                                    t.username ||
+                                    t.user_id ||
+                                    tr("unknown", "Unknown"),
+                                ),
+                                t.viewed_at
+                                  ? e.createElement(
+                                      "span",
+                                      { className: "text-[11px]" },
+                                      I(t.viewed_at),
+                                    )
+                                  : null,
+                              ),
+                            ),
+                          )
+                        : e.createElement(
+                            "p",
+                            {
+                              className:
+                                "mt-2 text-xs text-slate-400 dark:text-slate-500",
+                            },
+                            tr("no_leads_yet", "No interactions yet."),
+                          ),
                     ),
                     e.createElement(
                       "div",
@@ -1221,62 +1253,63 @@ function we() {
                           "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40",
                       },
                       e.createElement(
-                        "p",
-                        { className: "text-xs text-slate-500 uppercase" },
-                        tr("detail_views", "View details"),
-                      ),
-                      e.createElement(
-                        "p",
-                        {
-                          className:
-                            "text-xl font-bold text-slate-900 dark:text-white",
-                        },
-                        ownerViewers.length,
-                      ),
-                      ownerViewers.length > 0 &&
+                        "div",
+                        { className: "flex items-center justify-between" },
                         e.createElement(
-                          "div",
-                          { className: "mt-2 space-y-1 text-xs" },
-                          ownerViewers.slice(0, 3).map((t, s) =>
-                            e.createElement(
-                              "div",
-                              {
-                                key: t.viewer_id || t.user_id || s,
-                                className:
-                                  "flex items-center justify-between text-slate-600 dark:text-slate-300",
-                              },
-                              e.createElement(
-                                "span",
-                                null,
-                                t.viewer_name ||
-                                  t.full_name ||
-                                  t.username ||
-                                  t.user_id ||
-                                  tr("unknown", "Unknown"),
-                              ),
-                              t.viewed_at
-                                ? e.createElement(
-                                    "span",
-                                    { className: "text-[11px]" },
-                                    I(t.viewed_at),
-                                  )
-                                : null,
-                            ),
-                          ),
+                          "p",
+                          { className: "text-xs text-slate-500 uppercase" },
+                          tr("lead_users", "Leads"),
                         ),
+                        e.createElement(
+                          "span",
+                          {
+                            className:
+                              "text-xs font-semibold text-slate-600 dark:text-slate-300",
+                          },
+                          ownerLeadCount,
+                        ),
+                      ),
+                      ownerLeadList.length > 0
+                        ? e.createElement(
+                            "div",
+                            {
+                              className:
+                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
+                            },
+                            ownerLeadList.map((t, s) =>
+                              e.createElement(
+                                "div",
+                                {
+                                  key: t.id || s,
+                                  className:
+                                    "flex items-center justify-between text-slate-600 dark:text-slate-300",
+                                },
+                                e.createElement(
+                                  "span",
+                                  null,
+                                  t.name || tr("unknown", "Unknown"),
+                                ),
+                                t.types?.length
+                                  ? e.createElement(
+                                      "span",
+                                      { className: "text-[11px]" },
+                                      t.types.join(", "),
+                                    )
+                                  : null,
+                              ),
+                            ),
+                          )
+                        : e.createElement(
+                            "p",
+                            {
+                              className:
+                                "mt-2 text-xs text-slate-400 dark:text-slate-500",
+                            },
+                            tr("no_leads_yet", "No interactions yet."),
+                          ),
                     ),
                   ),
           ),
-        e.createElement(
-          l,
-          {
-            variant: "ghost",
-            className:
-              "w-full text-gray-400 hover:text-red-500 py-3 rounded-xl",
-          },
-          e.createElement(be, { className: "w-4 h-4 mr-2" }),
-          tr("report_listing", "Report this listing"),
-        ),
         e.createElement("div", { className: "h-8" }),
       ),
       e.createElement(le, {

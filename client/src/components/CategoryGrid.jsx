@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const categories = [
   { name: "Mobiles", icon: "/icons/mobile.svg" },
@@ -7,9 +8,16 @@ const categories = [
   { name: "Home", icon: "/icons/home.svg" },
 ];
 
-const CategoryGrid = () => (
-  <section className="max-w-7xl mx-auto px-4 py-10" aria-label="Popular Categories">
-    <h2 className="text-2xl font-bold mb-6 text-primary">Popular Categories</h2>
+const CategoryGrid = () => {
+  const { t } = useTranslation();
+  return (
+    <section
+      className="max-w-7xl mx-auto px-4 py-10"
+      aria-label={t("popular_categories")}
+    >
+      <h2 className="text-2xl font-bold mb-6 text-primary">
+        {t("popular_categories")}
+      </h2>
     <div className="flex gap-6 overflow-x-auto scrollbar-hide">
       {Array.isArray(categories) && categories.length > 0
         ? categories.map(cat => (
@@ -33,9 +41,10 @@ const CategoryGrid = () => (
               <span className="font-medium text-primary mb-1">{cat.name}</span>
             </div>
           ))
-        : <div className="text-center text-gray-500">No categories available</div>}
+        : <div className="text-center text-gray-500">{t("no_categories_available")}</div>}
     </div>
   </section>
-);
+  );
+};
 
 export default CategoryGrid;

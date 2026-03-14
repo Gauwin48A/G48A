@@ -60,7 +60,7 @@ const ToastDemo = () => {
 
   return (
     <div className="space-y-4 p-6">
-      <h3 className="text-lg font-semibold">Toast Notifications</h3>
+      <h3 className="text-lg font-semibold">{t("toast_notifications")}</h3>
       <div className="flex flex-wrap gap-2">
         <Button onClick={showSuccessToast} className="bg-green-500 hover:bg-green-600">
           Show Success Toast

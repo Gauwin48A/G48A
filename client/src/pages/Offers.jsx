@@ -28,6 +28,7 @@ import TransactionStepper from "@/components/TransactionStepper";
 import api from "../lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { getUserId, isAuthenticated } from "@/utils/authStorage";
+import { navigateBack } from "@/utils/navigation";
 
 const STATUS_CLASS = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -283,7 +284,7 @@ const OffersPage = () => {
               variant="ghost"
               size="icon"
               className="text-white"
-              onClick={() => navigate(-1)}
+              onClick={() => navigateBack(navigate)}
             >
               <ArrowLeft className="w-6 h-6" />
             </Button>

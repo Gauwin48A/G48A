@@ -245,7 +245,10 @@ const U = () => {
                                 type: "button",
                                 variant: "link",
                                 className: "mt-2 p-0 h-auto text-blue-600",
-                                onClick: () => i(`/post/${t.post_id || t.id}`),
+                                onClick: () =>
+                                  i(`/post/${t.post_id || t.id}`, {
+                                    state: { fromMyPosts: true },
+                                  }),
                               },
                               s("view_details") || "View details",
                             ),

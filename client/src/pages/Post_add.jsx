@@ -39,12 +39,12 @@ const PostAdd = () => {
 
   return (
     <div className="max-w-xl mx-auto py-8">
-      <h2 className="text-2xl font-bold mb-4">Add New Text Post</h2>
+      <h2 className="text-2xl font-bold mb-4">{t("add_new_text_post")}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <textarea
           className="w-full border rounded p-2"
           rows={5}
-          placeholder="Enter your post description..."
+          placeholder={t("enter_description_placeholder")}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 import { useTranslation } from "react-i18next";
 import { getApiOriginBase } from "@/lib/networkConfig";
+import { navigateBack } from "@/utils/navigation";
 
 const PostDetailView = () => {
   const { t } = useTranslation();
@@ -74,7 +75,7 @@ const PostDetailView = () => {
   return (
     <div className="bg-white min-h-screen flex flex-col items-center py-8">
       <div className="w-full max-w-3xl mx-auto">
-        <Button className="mb-4" onClick={() => navigate(-1)}>
+        <Button className="mb-4" onClick={() => navigateBack(navigate)}>
           {tr("back", "Back")}
         </Button>
         <Card className="rounded-2xl shadow-lg p-6 flex flex-col gap-4">

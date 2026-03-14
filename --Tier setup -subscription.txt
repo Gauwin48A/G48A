@@ -1,5 +1,57 @@
 --Tier setup -subscription.txt
 
+6. “For You” Page (My Recommendations)
+
+Enhance the For You page with:
+
+
+
+These should be similar to the Home Page layout.
+myposts load issue fix it and then 
+1. General Fixes
+
+Fix the Sale Done page functionality.have a clear testing.
+
+Fix the notification popup issues - when switched to other tablet view etc notification is displaying until closed so this is a popup issues or notification issue need to fix.
+
+
+
+3. Navigation Improvements
+
+Implement Back Button navigation across all pages so users can easily return to the previous page - all pages either have back button user must have a friendly navigation between pages so set it accordingly.
+
+
+5. My Posts Section Improvements
+
+When the post owner opens their post (View Details tab):
+
+At the bottom of the page, display:
+
+Users who clicked "Interested"
+
+Users who clicked "View Details"
+
+Leads/users who interacted with the post
+
+Remove unnecessary buttons in My Posts view:
+
+I'm Interested
+
+Make Offer
+
+Share
+
+Save
+
+These buttons should only appear in the All Posts page, not in My Posts.
+
+The goal is to help the seller easily see all potential leads and interactions.
+
+
+
+
+
+
 1️⃣ First Principle: Separate 3 Things
 
 Your marketplace actually has 3 different monetization features:

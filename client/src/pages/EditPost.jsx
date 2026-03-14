@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { isAuthenticated } from "@/utils/authStorage";
 import api from "@/services/api";
+import { useTranslation } from "react-i18next";
 
 const normalizePost = (payload) => payload?.post ?? payload ?? null;
 
@@ -25,6 +26,7 @@ const normalizeErrorMessage = (error, fallback) => {
 };
 
 const EditPost = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { postId } = useParams();
   const { toast } = useToast();
@@ -196,7 +198,7 @@ const EditPost = () => {
       <div className="max-w-2xl mx-auto p-4 pt-8">
         <Card className="shadow-lg border-0">
           <CardHeader>
-            <CardTitle className="text-2xl">Edit Listing</CardTitle>
+            <CardTitle className="text-2xl">{t("edit_listing")}</CardTitle>
           </CardHeader>
           <CardContent>
             {error && (
@@ -207,7 +209,7 @@ const EditPost = () => {
 
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">{t("title")}</Label>
                 <Input
                   id="title"
                   name="title"
@@ -220,7 +222,7 @@ const EditPost = () => {
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("description")}</Label>
                 <Textarea
                   id="description"
                   name="description"
@@ -233,7 +235,7 @@ const EditPost = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="price">Price (INR)</Label>
+                  <Label htmlFor="price">{t("price_inr")}</Label>
                   <Input
                     id="price"
                     name="price"
@@ -247,7 +249,7 @@ const EditPost = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="status">{t("status")}</Label>
                   <select
                     id="status"
                     name="status"
@@ -255,14 +257,14 @@ const EditPost = () => {
                     onChange={onChange}
                     className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
-                    <option value="active">Active</option>
-                    <option value="sold">Sold</option>
+                    <option value="active">{t("active")}</option>
+                    <option value="sold">{t("sold")}</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">{t("location")}</Label>
                 <Input
                   id="location"
                   name="location"

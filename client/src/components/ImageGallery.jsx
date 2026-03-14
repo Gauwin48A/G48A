@@ -17,7 +17,7 @@ const ImageGallery = ({ images = [], alt = 'Product image' }) => {
         return (
             <div className="gallery-placeholder">
                 <span>📷</span>
-                <p>No images available</p>
+                <p>{t("no_images_available")}</p>
             </div>
         );
     }

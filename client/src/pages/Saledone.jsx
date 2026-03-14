@@ -20,7 +20,7 @@ import {
   KeyRound,
   CircleDollarSign,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import PageHeader from "../components/PageHeader";
@@ -33,6 +33,7 @@ const SaleDone = () => {
     t(key, { defaultValue: fallback, ...options });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeTab, setActiveTab] = useState("seller");
@@ -132,6 +133,23 @@ const SaleDone = () => {
     return error?.message || fallback;
   };
 
+  const isRouteMissing = (error) => {
+    const status = Number(error?.status || error?.response?.status || 0);
+    const message = String(error?.message || "").toLowerCase();
+    return status === 404 || message.includes("route not found");
+  };
+
+  const requestWithFallback = async (method, primaryPath, fallbackPath, payload) => {
+    try {
+      return await api[method](primaryPath, payload);
+    } catch (error) {
+      if (fallbackPath && isRouteMissing(error)) {
+        return await api[method](fallbackPath, payload);
+      }
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const onScroll = () => {
       setShowScrollTop(window.scrollY > 300);
@@ -141,13 +159,47 @@ const SaleDone = () => {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search || "");
+    const prefillPostId =
+      params.get("postId") || location.state?.postId || "";
+    const prefillBuyerId =
+      params.get("buyerId") || location.state?.buyerId || "";
+    const prefillAmount =
+      params.get("amount") || location.state?.saleAmount || "";
+    const prefillTransactionId =
+      params.get("transactionId") || location.state?.transactionId || "";
+
+    if (prefillPostId || prefillBuyerId || prefillAmount) {
+      setSellerForm((prev) => ({
+        ...prev,
+        postId: prev.postId || prefillPostId,
+        buyerId: prev.buyerId || prefillBuyerId,
+        saleAmount: prev.saleAmount || prefillAmount,
+      }));
+    }
+
+    if (prefillTransactionId) {
+      setBuyerForm((prev) => ({
+        ...prev,
+        transactionId: prev.transactionId || prefillTransactionId,
+      }));
+      setActiveTab("buyer");
+    }
+  }, [location.key, location.search, location.state]);
+
+  useEffect(() => {
     let cancelled = false;
 
     (async () => {
       setPendingLoading(true);
       setPendingError("");
       try {
-        const response = await api.get("/sale/pending?limit=10");
+        const response = await requestWithFallback(
+          "get",
+          "/sale/pending",
+          "/transactions/pending",
+          { params: { limit: 10 } },
+        );
         const list = Array.isArray(response?.pendingSales)
           ? response.pendingSales
           : Array.isArray(response?.data?.pendingSales)
@@ -208,11 +260,12 @@ const SaleDone = () => {
 
     setIsInitiating(true);
     try {
-      const payload = await api.post("/sale/initiate", {
-        postId,
-        buyerId,
-        agreedPrice,
-      });
+      const payload = await requestWithFallback(
+        "post",
+        "/sale/initiate",
+        "/transactions/initiate",
+        { postId, buyerId, agreedPrice },
+      );
 
       const tx = payload?.transaction || payload?.data?.transaction || payload || {};
       const transactionId = String(
@@ -273,7 +326,12 @@ const SaleDone = () => {
 
     setIsConfirming(true);
     try {
-      const payload = await api.post("/sale/confirm", { transactionId, otp });
+      const payload = await requestWithFallback(
+        "post",
+        "/sale/confirm",
+        "/transactions/confirm",
+        { transactionId, otp },
+      );
       const tx = payload?.transaction || payload?.data?.transaction || payload || {};
       const normalizedTransactionId = String(
         tx.transactionId || tx.transaction_id || transactionId || "",
@@ -399,7 +457,6 @@ const SaleDone = () => {
     >
       <PageHeader
         transparent={true}
-        backTo="/profile"
         className="text-white"
         title=""
       />
@@ -695,7 +752,17 @@ const SaleDone = () => {
                     {tr("pending_sales_loading", "Loading pending sales...")}
                   </div>
                 ) : pendingError ? (
-                  <p className="text-sm text-red-600">{pendingError}</p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-red-600">{pendingError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRefreshTick((prev) => prev + 1)}
+                    >
+                      {tr("retry", "Retry")}
+                    </Button>
+                  </div>
                 ) : pendingSales.length === 0 ? (
                   <p className="text-sm text-gray-500">
                     {tr("pending_sales_empty", "No pending sales right now.")}

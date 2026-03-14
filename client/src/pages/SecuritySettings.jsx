@@ -18,6 +18,7 @@ import {
   PageErrorState,
   PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
+import { useTranslation } from "react-i18next";
 
 function formatDateTime(value) {
   if (!value) return "N/A";
@@ -74,6 +75,7 @@ function SessionCard({ session, isRevoking, onRevoke }) {
 }
 
 export default function SecuritySettings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const auth = useAuth() || {};
@@ -272,7 +274,7 @@ export default function SecuritySettings() {
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="w-full max-w-md px-4">
           <PageLoadingState
-            title="Loading security settings..."
+            title={t("loading_security_settings")}
             description="Checking authentication and security controls."
             marker="security-settings-loading"
           />
@@ -355,7 +357,7 @@ export default function SecuritySettings() {
           {statusError ? (
             <div className="mt-4">
               <PageErrorState
-                title="Two-factor status unavailable"
+                title={t("two_factor_status_unavailable")}
                 description={statusError}
                 onRetry={() => {
                   void loadTwoFaStatus();
@@ -369,7 +371,7 @@ export default function SecuritySettings() {
           {statusLoading ? (
             <div className="mt-4">
               <PageLoadingState
-                title="Checking 2FA status..."
+                title={t("checking_2fa_status")}
                 description="Loading authenticator setup state."
                 marker="security-twofa-status-loading"
               />
@@ -379,7 +381,7 @@ export default function SecuritySettings() {
           {setupLoading ? (
             <div className="mt-4">
               <PageLoadingState
-                title="Preparing authenticator setup..."
+                title={t("preparing_authenticator_setup")}
                 description="Generating QR code and setup details."
                 marker="security-setup-loading"
               />
@@ -389,7 +391,7 @@ export default function SecuritySettings() {
           {setupError ? (
             <div className="mt-4">
               <PageErrorState
-                title="Could not start 2FA setup"
+                title={t("could_not_start_2fa_setup")}
                 description={setupError}
                 marker="security-setup-error"
                 secondaryAction={
@@ -414,7 +416,7 @@ export default function SecuritySettings() {
               <div className="flex justify-center rounded-lg border border-slate-200 bg-white p-4">
                 <img
                   src={setupQrCode}
-                  alt="2FA QR code"
+                  alt={t("two_fa_qr_code_alt")}
                   className="h-44 w-44"
                 />
               </div>
@@ -430,7 +432,7 @@ export default function SecuritySettings() {
                       event.target.value.replace(/\D/g, "").slice(0, 8),
                     )
                   }
-                  placeholder="Enter authenticator code"
+                  placeholder={t("enter_authenticator_code")}
                   className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
                 />
                 <button
@@ -448,7 +450,7 @@ export default function SecuritySettings() {
           {verifyLoading ? (
             <div className="mt-4">
               <PageLoadingState
-                title="Verifying authenticator code..."
+                title={t("verifying_authenticator_code")}
                 description="This takes only a moment."
                 marker="security-verify-loading"
               />
@@ -458,7 +460,7 @@ export default function SecuritySettings() {
           {verifyError ? (
             <div className="mt-4">
               <PageErrorState
-                title="Could not verify code"
+                title={t("could_not_verify_code")}
                 description={verifyError}
                 marker="security-verify-error"
                 secondaryAction={
@@ -507,7 +509,7 @@ export default function SecuritySettings() {
                       event.target.value.replace(/\D/g, "").slice(0, 8),
                     )
                   }
-                  placeholder="Enter code"
+                  placeholder={t("enter_code")}
                   className="w-56 rounded-lg border border-red-300 px-3 py-2 text-sm outline-none focus:border-red-500"
                 />
                 <button
@@ -525,7 +527,7 @@ export default function SecuritySettings() {
           {disableLoading ? (
             <div className="mt-4">
               <PageLoadingState
-                title="Disabling two-factor authentication..."
+                title={t("disabling_two_factor_auth")}
                 description="Updating account security settings."
                 marker="security-disable-loading"
               />
@@ -535,7 +537,7 @@ export default function SecuritySettings() {
           {disableError ? (
             <div className="mt-4">
               <PageErrorState
-                title="Could not disable 2FA"
+                title={t("could_not_disable_2fa")}
                 description={disableError}
                 marker="security-disable-error"
                 secondaryAction={
@@ -580,7 +582,7 @@ export default function SecuritySettings() {
           {sessionsError ? (
             <div className="mt-4">
               <PageErrorState
-                title="Active sessions unavailable"
+                title={t("active_sessions_unavailable")}
                 description={sessionsError}
                 onRetry={() => {
                   void loadSessions();
@@ -594,7 +596,7 @@ export default function SecuritySettings() {
           {sessionsLoading ? (
             <div className="mt-4">
               <PageLoadingState
-                title="Loading active sessions..."
+                title={t("loading_active_sessions")}
                 description="Fetching signed-in devices."
                 marker="security-sessions-loading"
               />
@@ -602,7 +604,7 @@ export default function SecuritySettings() {
           ) : sessions.length === 0 ? (
             <div className="mt-4">
               <PageEmptyState
-                title="No active sessions found"
+                title={t("no_active_sessions_found")}
                 description="You're currently signed in only on this device."
                 marker="security-sessions-empty"
                 action={

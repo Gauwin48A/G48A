@@ -8,7 +8,7 @@ const ProductCard = ({ product }) => {
   const { t } = useTranslation();
   // Defensive: Ensure product is a valid object
   if (!product || typeof product !== "object") {
-    return <div className="bg-white p-4 rounded-xl">Invalid product data</div>;
+    return <div className="bg-white p-4 rounded-xl">{t("invalid_product_data")}</div>;
   }
 
   // Defensive: Ensure rating is a number
@@ -52,8 +52,8 @@ const ProductCard = ({ product }) => {
         </div>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-primary font-bold text-xl">₹{Number(product.price).toLocaleString()}</span>
-          <button className="px-3 py-1 bg-primary text-white rounded-xl hover:bg-accent transition" aria-label="View Product">
-            View
+          <button className="px-3 py-1 bg-primary text-white rounded-xl hover:bg-accent transition" aria-label={t("view_product")}>
+            {t("view")}
           </button>
         </div>
       </div>

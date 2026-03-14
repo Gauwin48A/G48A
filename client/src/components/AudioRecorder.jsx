@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Mic, Pause, Play, Square, Trash2, Volume2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const MAX_RECORDING_SECONDS = 30;
 
@@ -11,6 +12,7 @@ function formatDuration(totalSeconds) {
 }
 
 const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
+  const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(existingAudio);
   const [audioBlob, setAudioBlob] = useState(null);
@@ -136,8 +138,12 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
     <div className="flex flex-col gap-3 p-4 border-2 border-dashed border-green-300 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
       <div className="flex items-center gap-2">
         <Volume2 className="w-5 h-5 text-green-600" />
-        <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">Voice Description</h3>
-        <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Trust boost</span>
+        <h3 className="text-sm font-semibold text-green-800 dark:text-green-300">
+          {t("voice_description")}
+        </h3>
+        <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+          {t("trust_boost")}
+        </span>
       </div>
 
       <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -173,7 +179,9 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
             </Button>
           </div>
 
-          <p className="text-xs text-center text-green-600">Voice recording attached successfully.</p>
+          <p className="text-xs text-center text-green-600">
+            {t("voice_recording_attached")}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -213,4 +221,3 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
 };
 
 export default AudioRecorder;
-

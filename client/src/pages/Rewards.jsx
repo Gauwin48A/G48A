@@ -355,30 +355,30 @@ const fe = () => {
       "div",
       {
         className:
-          "min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700",
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900",
       },
       e.createElement(
         "div",
         {
           className:
-            "bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-10 shadow-2xl text-center max-w-md",
+            "bg-white/95 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl p-10 shadow-2xl text-center max-w-md",
         },
         e.createElement(
           "div",
           {
             className:
-              "w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center",
+              "w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center",
           },
           e.createElement(A, { className: "w-10 h-10 text-white" }),
         ),
         e.createElement(
           "h2",
-          { className: "text-3xl font-bold text-white mb-4" },
+          { className: "text-3xl font-bold text-gray-900 dark:text-white mb-4" },
           a("rewards_referrals"),
         ),
         e.createElement(
           "p",
-          { className: "text-white/80 text-lg mb-8" },
+          { className: "text-gray-600 dark:text-gray-300 text-lg mb-8" },
           a("earn_coins_unlock_rewards"),
         ),
         e.createElement(
@@ -389,7 +389,7 @@ const fe = () => {
             {
               to: "/login",
               className:
-                "bg-white text-indigo-600 text-lg px-8 py-4 rounded-xl font-bold hover:bg-white/90 transition",
+                "bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg px-8 py-4 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition",
             },
             a("login_to_continue"),
           ),
@@ -398,7 +398,7 @@ const fe = () => {
             {
               to: "/signup",
               className:
-                "border-2 border-white/50 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition",
+                "border-2 border-blue-200 text-blue-700 dark:text-blue-200 text-lg px-8 py-4 rounded-xl font-semibold hover:bg-blue-50 dark:hover:bg-white/10 transition",
             },
             a("create_account"),
           ),
@@ -410,7 +410,7 @@ const fe = () => {
       "div",
       {
         className:
-          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100",
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900",
       },
       e.createElement(
         "div",
@@ -431,7 +431,7 @@ const fe = () => {
       "div",
       {
         className:
-          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100",
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900",
       },
       e.createElement(
         "div",
@@ -467,7 +467,7 @@ const fe = () => {
       "div",
       {
         className:
-          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100",
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900",
       },
       e.createElement(
         "div",
@@ -781,7 +781,7 @@ const fe = () => {
     "div",
     {
       className:
-        "min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900",
+        "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900",
       style: { paddingBottom: "180px" },
     },
     e.createElement(
@@ -789,7 +789,7 @@ const fe = () => {
       { className: "relative overflow-hidden" },
       e.createElement("div", {
         className:
-          "absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500",
+          "absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600",
       }),
       e.createElement("div", {
         className: "absolute inset-0 opacity-20",
@@ -799,7 +799,32 @@ const fe = () => {
       }),
       e.createElement(
         "div",
-        { className: "relative max-w-5xl mx-auto px-4 py-12 sm:px-6" },
+        { className: "relative max-w-6xl mx-auto px-4 py-12 sm:px-6" },
+        e.createElement(
+          "div",
+          { className: "mb-6 text-center md:text-left" },
+          e.createElement(
+            "p",
+            {
+              className:
+                "text-xs uppercase tracking-[0.2em] text-white/70 mb-2",
+            },
+            tr("rewards_program", "Rewards Program"),
+          ),
+          e.createElement(
+            "h1",
+            { className: "text-3xl md:text-4xl font-bold text-white" },
+            tr("rewards_title", "Rewards & Referrals"),
+          ),
+          e.createElement(
+            "p",
+            { className: "text-sm md:text-base text-white/80 mt-2" },
+            tr(
+              "rewards_subtitle",
+              "Track progress, earn points, and unlock perks for every milestone.",
+            ),
+          ),
+        ),
         e.createElement(
           "div",
           {
@@ -896,7 +921,7 @@ const fe = () => {
                 type: "button",
                 onClick: h,
                 className:
-                  "mt-3 w-full bg-white/90 text-indigo-600 hover:bg-white font-semibold",
+                  "mt-3 w-full bg-white/90 text-blue-700 hover:bg-white font-semibold",
               },
               e.createElement(T, { className: "w-4 h-4 mr-2" }),
               tr("invite_friends", "Invite friends"),
@@ -909,7 +934,7 @@ const fe = () => {
       "div",
       {
         className:
-          "max-w-5xl mx-auto px-4 mt-8 -translate-y-8 mb-8 relative z-10",
+          "max-w-6xl mx-auto px-4 mt-8 -translate-y-8 mb-8 relative z-10",
       },
       e.createElement(
         "div",
@@ -1170,7 +1195,7 @@ const fe = () => {
     showDiagnostics &&
       e.createElement(
         "div",
-        { className: "max-w-5xl mx-auto px-4 mb-6" },
+        { className: "max-w-6xl mx-auto px-4 mb-6" },
         e.createElement(
           "div",
           {
@@ -1230,7 +1255,7 @@ const fe = () => {
       ),
     e.createElement(
       "div",
-      { className: "max-w-5xl mx-auto px-4 pb-12" },
+      { className: "max-w-6xl mx-auto px-4 pb-12" },
       e.createElement(
         Z,
         { value: V, onValueChange: q, className: "w-full" },
@@ -1245,7 +1270,7 @@ const fe = () => {
             {
               value: "overview",
               className:
-                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
             a("overview"),
           ),
@@ -1254,7 +1279,7 @@ const fe = () => {
             {
               value: "referrals",
               className:
-                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
             a("referrals"),
           ),
@@ -1263,7 +1288,7 @@ const fe = () => {
             {
               value: "milestones",
               className:
-                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
             a("milestones"),
           ),
@@ -1272,7 +1297,7 @@ const fe = () => {
             {
               value: "leaderboard",
               className:
-                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
+                "flex-none md:flex-1 min-w-[120px] rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white px-4 py-2 text-sm md:text-base font-semibold",
             },
             tr("leaderboard", "Leaderboard"),
           ),

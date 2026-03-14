@@ -1,5 +1,6 @@
 import React from "react";
 import PolicyLayout from "@/components/legal/PolicyLayout";
+import { useTranslation } from "react-i18next";
 
 const sections = [
   {
@@ -45,10 +46,11 @@ const sections = [
 ];
 
 export default function RefundPolicy() {
+  const { t } = useTranslation();
   return (
     <PolicyLayout
-      title="Refund Policy"
-      subtitle="Rules and process for payment refunds, including premium feature and entitlement transactions."
+      title={t("refund_policy")}
+      subtitle={t("refund_policy_subtitle")}
       updatedOn="March 10, 2026"
       sections={sections}
     />

@@ -89,7 +89,7 @@ const FeedPostAdd = () => {
         </Button>
         <Card className="shadow-xl border-0 rounded-2xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-sky-500 to-blue-600 text-white">
-            <CardTitle className="text-2xl">Create Text Post</CardTitle>
+            <CardTitle className="text-2xl">{t("create_text_post")}</CardTitle>
           </CardHeader>
           <CardContent className="p-8">
             <div className="space-y-8">
@@ -105,7 +105,7 @@ const FeedPostAdd = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="Write your update here..."
+                  placeholder={t("write_update_here")}
                   className="mt-2 h-32 border-2 border-gray-200 focus:border-sky-500"
                   required
                   maxLength={500}

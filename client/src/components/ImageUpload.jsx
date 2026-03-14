@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { Progress } from '@/components/ui/progress';
 import { Upload, X, Loader2 } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 const MAX_FILE_SIZE_KB = 200;
 const MAX_WIDTH_PX = 1000;
@@ -20,6 +21,7 @@ const ImageUpload = ({
     maxFiles = MAX_FILES,
     className = ''
 }) => {
+    const { t } = useTranslation();
     const [images, setImages] = useState([]);
     const [compressing, setCompressing] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -159,7 +161,7 @@ const ImageUpload = ({
                 {compressing ? (
                     <div className="space-y-2">
                         <Loader2 className="w-8 h-8 mx-auto text-blue-500 animate-spin" />
-                        <p className="text-sm text-gray-500">Compressing images...</p>
+                        <p className="text-sm text-gray-500">{t("compressing_images")}</p>
                         <Progress value={progress} className="w-full max-w-xs mx-auto" />
                     </div>
                 ) : (

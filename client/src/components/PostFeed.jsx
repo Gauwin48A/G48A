@@ -27,7 +27,7 @@ const PostFeed = ({ posts, onView }) => {
               </div>
               <div className="w-full h-48 bg-gray-100 rounded mb-3 flex items-center justify-center">
                 {/* Placeholder for post image/content */}
-                <span className="text-gray-400">Image</span>
+                <span className="text-gray-400">{t("image_placeholder")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button className="bg-blue-600 text-white rounded px-4 py-1 text-sm font-medium" onClick={() => onView(post.id)}>{t('view')}</button>

@@ -104,6 +104,30 @@ const setNestedValue = (t, s, r) => {
         (r.description = t._originalDescription),
       r
     );
+  },
+  normalizeSearchValue = (value) => {
+    if (typeof value == "string") return value.toLowerCase();
+    if (typeof value == "number") return String(value);
+    if (value && typeof value == "object") {
+      const candidate =
+        value.name ||
+        value.city ||
+        value.locality ||
+        value.address ||
+        value.formatted ||
+        value.label;
+      if (typeof candidate == "string") return candidate.toLowerCase();
+    }
+    return "";
+  },
+  extractPostList = (payload) => {
+    if (Array.isArray(payload?.posts)) return payload.posts;
+    if (Array.isArray(payload?.data?.posts)) return payload.data.posts;
+    if (Array.isArray(payload?.items)) return payload.items;
+    if (Array.isArray(payload?.rows)) return payload.rows;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload)) return payload;
+    return [];
   };
 const vt = () => {
   const [p, pe] = n("active"),
@@ -182,8 +206,8 @@ const vt = () => {
           return;
         }
         try {
-          const o = await R.get(`/posts/mine?userId=${r}`),
-            a = Array.isArray(o?.posts) ? o.posts : Array.isArray(o) ? o : [];
+          const o = await R.get("/posts/mine", { params: { userId: r } }),
+            a = extractPostList(o);
           let i = a;
           if (E !== "en" && a.length > 0) {
             const instantTranslated = instantTranslatePosts(a, E);
@@ -375,11 +399,11 @@ const vt = () => {
                   : u,
         s = z.trim().toLowerCase(),
         r = s
-          ? t.filter(
-              (o) =>
-                o.title?.toLowerCase().includes(s) ||
-                o.location?.toLowerCase().includes(s),
-            )
+          ? t.filter((o) => {
+              const titleValue = normalizeSearchValue(o?.title);
+              const locationValue = normalizeSearchValue(o?.location);
+              return titleValue.includes(s) || locationValue.includes(s);
+            })
           : t,
         m = (o) => {
           if (U === "postedDate")
@@ -390,7 +414,11 @@ const vt = () => {
       return [...r].sort((o, a) => {
         const i = m(o),
           y = m(a);
-        return i === y ? 0 : se === "asc" ? (i > y ? 1 : -1) : i < y ? 1 : -1;
+        if (i === y) return 0;
+        if (se === "asc") {
+          return i > y ? 1 : -1;
+        }
+        return i < y ? 1 : -1;
       });
     }, [p, v, u, P, z, I, U, se]),
     M = h(() => Math.max(1, Math.ceil(f.length / N)), [f.length, N]);
@@ -399,8 +427,14 @@ const vt = () => {
   }, [M]);
   const Me = h(() => f.slice((x - 1) * N, x * N), [f, x, N]),
     Be = () => b("/saledone"),
-    Te = (t) => (new Date() - new Date(t)) / (1e3 * 60) <= 5,
-    je = (t) => b(`/post/${t.postId || t.post_id || t.id}`),
+    Te = (t) => {
+      const minutes = (new Date() - new Date(t)) / (1e3 * 60);
+      return minutes <= 5;
+    },
+    je = (t) =>
+      b(`/post/${t.postId || t.post_id || t.id}`, {
+        state: { fromMyPosts: true },
+      }),
     Le = (t) => {
       if (!Te(t.created_at || t.postedTime)) {
         d({

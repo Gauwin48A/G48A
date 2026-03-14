@@ -88,7 +88,7 @@ const Cart = () => {
                         type="button"
                         className="h-8 w-8 rounded-full border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700"
                         onClick={() => updateQty(item.id, (item.qty || 1) - 1)}
-                        aria-label="Decrease quantity"
+                        aria-label={t("decrease_quantity")}
                       >
                         <Minus className="w-4 h-4" />
                       </button>
@@ -99,7 +99,7 @@ const Cart = () => {
                         type="button"
                         className="h-8 w-8 rounded-full border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700"
                         onClick={() => updateQty(item.id, (item.qty || 1) + 1)}
-                        aria-label="Increase quantity"
+                        aria-label={t("increase_quantity")}
                       >
                         <Plus className="w-4 h-4" />
                       </button>
