@@ -21,6 +21,7 @@ import {
   AlertTriangle as Q,
   RefreshCw as X,
   RotateCcw as F,
+  ArrowLeft as BackArrow,
 } from "lucide-react";
 import R from "../lib/api";
 import { Card as ee } from "@/components/ui/card";
@@ -37,6 +38,7 @@ import { useAuth as _e } from "@/context/AuthContext";
 import { getAccessToken as Ae, getUserId as Se } from "@/utils/authStorage";
 import { getApiOriginBase as je } from "@/lib/networkConfig";
 import { fetchCategoriesCached as qe } from "@/services/categoriesService";
+import { navigateBack } from "@/utils/navigation";
 const te = 12,
   Be = (r) => {
     const i = Number(r?.status || r?.response?.status || 0),
@@ -450,24 +452,33 @@ const te = 12,
                 { className: "flex flex-wrap items-center justify-between gap-3" },
                 e.createElement(
                   "div",
-                  { className: "min-w-0" },
+                  { className: "flex items-center gap-2 min-w-0" },
                   e.createElement(
-                    "h1",
-                    {
-                      className:
-                        "text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent truncate",
-                    },
-                    r("for_you") || "For You",
+                    o,
+                    { variant: "ghost", size: "icon", onClick: () => navigateBack(i), className: "rounded-full flex-shrink-0" },
+                    e.createElement(BackArrow, { className: "w-5 h-5" }),
                   ),
                   e.createElement(
-                    "p",
-                    {
-                      className:
-                        "text-sm text-gray-600 dark:text-gray-400 truncate",
-                    },
-                    d
-                      ? `${C.length} ${tr("matches", "matches")}`
-                      : tr("personalized_feed", "Personalized feed"),
+                    "div",
+                    { className: "min-w-0" },
+                    e.createElement(
+                      "h1",
+                      {
+                        className:
+                          "text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent truncate",
+                      },
+                      r("for_you") || "For You",
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-sm text-gray-600 dark:text-gray-400 truncate",
+                      },
+                      d
+                        ? `${C.length} ${tr("matches", "matches")}`
+                        : tr("personalized_feed", "Personalized feed"),
+                    ),
                   ),
                 ),
                 e.createElement(
@@ -1321,9 +1332,7 @@ const te = 12,
                         : null,
                     ),
           ),
-          ),
         );
   };
 var Ve = Ee;
 export { Ve as default };
-

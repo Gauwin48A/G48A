@@ -1,5 +1,6 @@
 const SAVED_POSTS_STORAGE_KEY = "mhub_saved_post_ids";
 const SAVED_POSTS_UPDATED_EVENT = "mhub:saved-posts-updated";
+const SAVED_POSTS_MUTATION_GUARD = new Set();
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
@@ -11,6 +12,34 @@ export function normalizeSavedPostId(postId) {
   }
   const normalized = String(postId).trim();
   return normalized.length ? normalized : "";
+}
+
+export function beginSavedPostMutation(postId) {
+  const normalizedId = normalizeSavedPostId(postId);
+  if (!normalizedId) {
+    return "";
+  }
+  if (SAVED_POSTS_MUTATION_GUARD.has(normalizedId)) {
+    return "";
+  }
+  SAVED_POSTS_MUTATION_GUARD.add(normalizedId);
+  return normalizedId;
+}
+
+export function endSavedPostMutation(postId) {
+  const normalizedId = normalizeSavedPostId(postId);
+  if (!normalizedId) {
+    return;
+  }
+  SAVED_POSTS_MUTATION_GUARD.delete(normalizedId);
+}
+
+export function isSavedPostMutationInFlight(postId) {
+  const normalizedId = normalizeSavedPostId(postId);
+  if (!normalizedId) {
+    return false;
+  }
+  return SAVED_POSTS_MUTATION_GUARD.has(normalizedId);
 }
 
 export function readSavedPostIds() {
@@ -183,4 +212,3 @@ export function subscribeSavedPosts(listener) {
     window.removeEventListener("storage", onStorage);
   };
 }
-

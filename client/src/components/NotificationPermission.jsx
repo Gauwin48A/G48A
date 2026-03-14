@@ -39,16 +39,37 @@ export default function NotificationPermission({ userId, onDismiss }) {
     ? `mhub:notifications:prompt:dismissed:${userId}`
     : baseDismissKey;
   const isMobilePreview = layoutMode === "mobile";
+  const isDesktopPreview = layoutMode === "desktop";
+  const shouldShowForViewport = (nextLayout) => {
+    const mode = String(nextLayout || layoutMode || "").trim().toLowerCase();
+    const isMobileMode = mode === "mobile";
+    const isDesktopMode = mode === "desktop";
+    return isMobileMode || (isDesktopMode && isSmallViewport());
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleLayoutChange = (event) => {
       const next = String(event?.detail?.mode || "").trim().toLowerCase();
-      setLayoutMode(next || readLayoutMode());
+      const resolved = next || readLayoutMode();
+      setLayoutMode(resolved);
+      if (!shouldShowForViewport(resolved)) {
+        setShowPrompt(false);
+      }
+    };
+    const handleResize = () => {
+      const resolved = readLayoutMode();
+      setLayoutMode(resolved);
+      if (!shouldShowForViewport(resolved)) {
+        setShowPrompt(false);
+      }
     };
     window.addEventListener("mhub:layout-change", handleLayoutChange);
-    return () =>
+    window.addEventListener("resize", handleResize);
+    return () => {
       window.removeEventListener("mhub:layout-change", handleLayoutChange);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -58,7 +79,9 @@ export default function NotificationPermission({ userId, onDismiss }) {
       setStatus('idle');
       return;
     }
-    if (!isMobilePreview && !isSmallViewport()) {
+    const allowPromptContext =
+      isMobilePreview || (isDesktopPreview && isSmallViewport());
+    if (!allowPromptContext) {
       setShowPrompt(false);
       return;
     }
@@ -95,7 +118,7 @@ export default function NotificationPermission({ userId, onDismiss }) {
         return () => clearTimeout(timer);
       }
     }
-  }, [dismissKey, isMobilePreview, userId]);
+  }, [dismissKey, isMobilePreview, isDesktopPreview, layoutMode, userId]);
 
     const handleEnable = async () => {
         setStatus('requesting');
@@ -217,4 +240,3 @@ export default function NotificationPermission({ userId, onDismiss }) {
         </div>
     );
 }
-

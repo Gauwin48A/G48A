@@ -16,9 +16,13 @@ import le from "@/components/BuyerInterestModal";
 import ie from "@/components/MakeOfferModal";
 import ne from "@/components/BargainActions";
 import Se from "@/components/ShareLinkDialog";
+import PostBoostPanel from "@/components/PostBoostPanel";
+import SponsoredListings from "@/components/SponsoredListings";
 import { getApiOriginBase as de } from "@/lib/networkConfig";
 import { getUserId as getUserIdFromStorage } from "@/utils/authStorage";
 import {
+  beginSavedPostMutation,
+  endSavedPostMutation,
   isSavedPostId,
   setSavedPostStatus,
   subscribeSavedPosts,
@@ -46,7 +50,7 @@ import {
   MoreVertical as Je,
   Link as Qe,
 } from "lucide-react";
-function we() {
+function PostDetail() {
   const { t: h } = oe(),
     tr = (key, fallback) => {
       const value = h(key);
@@ -107,7 +111,10 @@ function we() {
           r?.authorId,
         ].some((t) => normalizeId(t) === normalizedCurrentUserId),
     ),
-    isOwnerView = isOwner || Boolean(y?.state?.fromMyPosts);
+    isOwnerView = isOwner || Boolean(y?.state?.fromMyPosts),
+    backTarget =
+      y?.state?.returnTo ||
+      (y?.state?.fromMyPosts ? "/my-home" : "/all-posts");
   if (
     (L(() => {
       const t = normalizeId(r?.post_id || r?.id || d);
@@ -389,15 +396,19 @@ function we() {
     toggleSavedPost = async () => {
       const t = J;
       if (!t) return;
-      const a = isSavedPostId(t),
-        s = !a;
-      setSavedPost(s), setSavedPostStatus(t, s);
+      const a = beginSavedPostMutation(t);
+      if (!a) return;
+      const s = isSavedPostId(a),
+        l = !s;
+      setSavedPost(l), setSavedPostStatus(a, l);
       try {
-        s
-          ? await re.post("/api/wishlist", { postId: t })
-          : await re.delete(`/api/wishlist/${t}`);
+        l
+          ? await re.post("/api/wishlist", { postId: a })
+          : await re.delete(`/api/wishlist/${a}`);
       } catch {
-        setSavedPost(a), setSavedPostStatus(t, a);
+        setSavedPost(s), setSavedPostStatus(a, s);
+      } finally {
+        endSavedPostMutation(a);
       }
     },
     K = [
@@ -505,7 +516,7 @@ function we() {
           l,
           {
             variant: "ghost",
-            onClick: () => navigateBack(U),
+            onClick: () => navigateBack(U, backTarget),
             className:
               "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-4",
           },
@@ -1310,6 +1321,8 @@ function we() {
                     ),
                   ),
           ),
+        isOwnerView && e.createElement(PostBoostPanel, { key: "boost-panel", postId: J || d }),
+        !isOwnerView && e.createElement(SponsoredListings, { key: "sponsored", excludePostId: J || d, category: r?.category }),
         e.createElement("div", { className: "h-8" }),
       ),
       e.createElement(le, {
@@ -1328,4 +1341,4 @@ function we() {
     ),
   );
 }
-export { we as default };
+export { PostDetail as default };

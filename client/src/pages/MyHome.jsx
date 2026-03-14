@@ -53,6 +53,8 @@ import { useAuth as mt } from "@/context/AuthContext";
 import { getAccessToken as ct, getUserId as ut } from "@/utils/authStorage";
 import {
   buildSavedPostsMap,
+  beginSavedPostMutation,
+  endSavedPostMutation,
   extractSavedPostIds,
   getSavedPostsMap,
   replaceSavedPostIds,
@@ -156,11 +158,11 @@ const vt = () => {
     { t: l, i18n: Ae } = Ve(),
     tr = (key, fallback, options = {}) =>
       l(key, { defaultValue: fallback, ...options }),
-    { user: _e } = mt(),
+    { user: _e, isAuthenticated: _authIsAuthenticated } = mt(),
     E = Ae.language || "en",
     F = ut(_e),
     H = ct(),
-    Pe = !!(F && H),
+    Pe = Boolean(_authIsAuthenticated ?? _e ?? F ?? H),
     Se = pt(),
     resolveMessage = Ze(
       (t) => {
@@ -196,7 +198,7 @@ const vt = () => {
       (async () => {
         L(!0);
         const r = F;
-        if (!r || !H) {
+        if (!Pe) {
           t ||
             (C({
               key: "my_home_login_required",
@@ -206,7 +208,11 @@ const vt = () => {
           return;
         }
         try {
-          const o = await R.get("/posts/mine", { params: { userId: r } }),
+          const params = r ? { userId: r } : undefined,
+            o = await R.get(
+              "/posts/mine",
+              params ? { params } : undefined,
+            ),
             a = extractPostList(o);
           let i = a;
           if (E !== "en" && a.length > 0) {
@@ -472,12 +478,14 @@ const vt = () => {
         b("/login", { state: { returnTo: "/my-home" } });
         return;
       }
-      const r = String(s),
-        m = !!savedPosts[r],
-        o = !m;
-      setSavedPosts((a) => ({ ...a, [r]: o })), setSavedPostStatus(r, o);
+      const r = String(s);
+      const m = beginSavedPostMutation(r);
+      if (!m) return;
+      const o = !!savedPosts[m],
+        a = !o;
+      setSavedPosts((l) => ({ ...l, [m]: a })), setSavedPostStatus(m, a);
       try {
-        if (o) {
+        if (a) {
           await fetch(`${Se}/api/wishlist`, {
             method: "POST",
             credentials: "include",
@@ -485,18 +493,18 @@ const vt = () => {
               "Content-Type": "application/json",
               ...(H ? { Authorization: `Bearer ${H}` } : {}),
             },
-            body: JSON.stringify({ postId: r }),
+            body: JSON.stringify({ postId: m }),
           });
         } else {
-          await fetch(`${Se}/api/wishlist/${r}`, {
+          await fetch(`${Se}/api/wishlist/${m}`, {
             method: "DELETE",
             credentials: "include",
             headers: H ? { Authorization: `Bearer ${H}` } : {},
           });
         }
       } catch {
-        setSavedPosts((o) => ({ ...o, [r]: m })),
-          setSavedPostStatus(r, m),
+        setSavedPosts((l) => ({ ...l, [m]: o })),
+          setSavedPostStatus(m, o),
           d({
             title: tr("save_failed", "Save Failed"),
             description: tr(
@@ -505,6 +513,8 @@ const vt = () => {
             ),
             variant: "destructive",
           });
+      } finally {
+        endSavedPostMutation(m);
       }
     },
     ae = (t) => {
@@ -1307,6 +1317,38 @@ const vt = () => {
                                   className: "w-4 h-4 mr-1",
                                 }),
                                 t.location,
+                              ),
+                            !s &&
+                              e.createElement(
+                                "div",
+                                {
+                                  className:
+                                    "flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-3",
+                                },
+                                e.createElement(
+                                  "span",
+                                  { className: "inline-flex items-center gap-1" },
+                                  e.createElement(Xe, {
+                                    className: "w-3.5 h-3.5",
+                                  }),
+                                  Number(t.views_count || t.views || 0),
+                                ),
+                                e.createElement(
+                                  "span",
+                                  { className: "inline-flex items-center gap-1" },
+                                  e.createElement(qe, {
+                                    className: "w-3.5 h-3.5",
+                                  }),
+                                  Number(t.likes || t.likes_count || 0),
+                                ),
+                                e.createElement(
+                                  "span",
+                                  { className: "inline-flex items-center gap-1" },
+                                  e.createElement(st, {
+                                    className: "w-3.5 h-3.5",
+                                  }),
+                                  Number(t.shares || 0),
+                                ),
                               ),
                             e.createElement(
                               "div",

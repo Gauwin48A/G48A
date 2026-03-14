@@ -115,13 +115,13 @@ Source docs: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`, `
 
 `server/docs/project/AUTH_README.md` currently contains 162 open checklist entries with duplicate/overlapping items.
 
-- [ ] Split `server/docs/project/AUTH_README.md` into:
+- [x] Split `server/docs/project/AUTH_README.md` into:
   - auth_done.md (already implemented/validated)
   - auth_now.md (current actionable items only)
   - auth_deferred.md (external or long-range items)
-- [ ] Remove duplicated tasks repeated across "priority", "sprint", "week", and "launch day" sections.
-- [ ] Convert all remaining auth items to one normalized tracker with `owner`, `status`, `proof`, `target_date`.
-- [ ] Reconcile docs against actual code/tests before carrying any item forward.
+- [x] Remove duplicated tasks repeated across "priority", "sprint", "week", and "launch day" sections.
+- [x] Convert all remaining auth items to one normalized tracker with `owner`, `status`, `proof`, `target_date`.
+- [x] Reconcile docs against actual code/tests before carrying any item forward.
 
 ## 5) File-by-File Disposition
 

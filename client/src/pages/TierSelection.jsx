@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
+  ArrowLeft,
   Check,
   Clock,
   Crown,
@@ -18,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import api from "@/lib/api";
 import { getAccessToken, getUserId } from "@/utils/authStorage";
 import { useToast } from "@/hooks/use-toast";
+import { navigateBack } from "@/utils/navigation";
 
 const tierPlans = [
   {
@@ -205,6 +207,17 @@ export default function TierSelection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigateBack(navigate)}
+          className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+      </div>
       <div className="text-center mb-12">
         <div className="flex justify-center mb-4">
           <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl">

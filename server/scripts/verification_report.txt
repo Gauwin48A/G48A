@@ -1,54 +1,69 @@
 === Translation Readiness Report ===
 
-Base Language (EN): 876 keys
+Base Language (EN): 2044 keys
 
-[HI] Translated: 100%
-Total Keys: 879
-Untranslated (English): 2 keys
+[HI] Translated: 83%
+Total Keys: 2045
+Untranslated (English): 338 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
-   price_100_500: "₹100 - ₹500"
-   price_500_1000: "₹500 - ₹1000"
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_verified_badge: "Aadhaar Verified"
 
-[TE] Translated: 100%
-Total Keys: 879
-Untranslated (English): 2 keys
+[TE] Translated: 84%
+Total Keys: 2045
+Untranslated (English): 336 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
-   price_100_500: "₹100 - ₹500"
-   price_500_1000: "₹500 - ₹1000"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_verified_badge: "Aadhaar Verified"
+   aadhaar_verified_desc: "All sellers verified with government ID for maximum trust"
+   about_us: "About Us"
 
-[TA] Translated: 100%
-Total Keys: 892
-Untranslated (English): 2 keys
+[TA] Translated: 80%
+Total Keys: 2049
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
-   price_100_500: "₹100 - ₹500"
-   price_500_1000: "₹500 - ₹1000"
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_number_label: "Aadhaar Number"
 
-[KN] Translated: 100%
-Total Keys: 909
-Untranslated (English): 3 keys
+[KN] Translated: 80%
+Total Keys: 2073
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
-   price_100_500: "₹100 - ₹500"
-   price_500_1000: "₹500 - ₹1000"
-   try_different_search: "Try a different search term"
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_number_label: "Aadhaar Number"
 
-[MR] Translated: 100%
-Total Keys: 909
-Untranslated (English): 3 keys
+[MR] Translated: 80%
+Total Keys: 2073
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
-   price_100_500: "₹100 - ₹500"
-   price_500_1000: "₹500 - ₹1000"
-   try_different_search: "Try a different search term"
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_number_label: "Aadhaar Number"
 
-[BN] Translated: 100%
-Total Keys: 909
-Untranslated (English): 3 keys
+[BN] Translated: 80%
+Total Keys: 2087
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
-   price_100_500: "₹100 - ₹500"
-   price_500_1000: "₹500 - ₹1000"
-   try_different_search: "Try a different search term"
+   2k_to_10k: "₹2K-₹10K"
+   500_to_2k: "₹500-₹2K"
+   aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_number_label: "Aadhaar Number"

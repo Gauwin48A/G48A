@@ -155,6 +155,25 @@ describe("AllPosts save/cart state sync", () => {
     expect(afterIds).not.toContain("1");
   });
 
+  it("dedupes rapid save toggles to avoid duplicate writes", async () => {
+    renderAllPosts();
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: /save/i }).length).toBeGreaterThan(0);
+    });
+
+    const saveButton = screen.getAllByRole("button", { name: /save/i })[0];
+    fireEvent.click(saveButton);
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      const wishlistCalls = hoisted.apiPost.mock.calls.filter(([url]) =>
+        String(url).includes("/wishlist"),
+      );
+      expect(wishlistCalls).toHaveLength(1);
+    });
+  });
+
   it("toggles cart state and persists to storage", async () => {
     renderAllPosts();
 

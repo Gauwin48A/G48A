@@ -32,6 +32,8 @@ import { getAccessToken as me, getUserId as ue } from "@/utils/authStorage";
 import { getApiOriginBase as ce } from "@/lib/networkConfig";
 import {
   buildSavedPostsMap,
+  beginSavedPostMutation,
+  endSavedPostMutation,
   extractSavedPostIds,
   getSavedPostsMap,
   replaceSavedPostIds,
@@ -277,13 +279,15 @@ const be = () => {
           u("/login", { state: { returnTo: "/my-recommendations" } });
           return;
         }
-        const d = String(r),
-          c = !!savedPosts[d],
-          a = !c;
-        setSavedPosts((v) => ({ ...v, [d]: a })), setSavedPostStatus(d, a);
+        const d = String(r);
+        const c = beginSavedPostMutation(d);
+        if (!c) return;
+        const a = !!savedPosts[c],
+          v = !a;
+        setSavedPosts((_) => ({ ..._, [c]: v })), setSavedPostStatus(c, v);
         setMenuPostId(null);
         try {
-          if (a) {
+          if (v) {
             await fetch(`${apiBase}/api/wishlist`, {
               method: "POST",
               credentials: "include",
@@ -291,17 +295,19 @@ const be = () => {
                 "Content-Type": "application/json",
                 ...(N ? { Authorization: `Bearer ${N}` } : {}),
               },
-              body: JSON.stringify({ postId: d }),
+              body: JSON.stringify({ postId: c }),
             });
           } else {
-            await fetch(`${apiBase}/api/wishlist/${d}`, {
+            await fetch(`${apiBase}/api/wishlist/${c}`, {
               method: "DELETE",
               credentials: "include",
               headers: N ? { Authorization: `Bearer ${N}` } : {},
             });
           }
         } catch {
-          setSavedPosts((v) => ({ ...v, [d]: c })), setSavedPostStatus(d, c);
+          setSavedPosts((_) => ({ ..._, [c]: a })), setSavedPostStatus(c, a);
+        } finally {
+          endSavedPostMutation(c);
         }
       },
       [N, b, savedPosts, u, apiBase],

@@ -765,7 +765,7 @@ const verifyLocationPayload = async ({ payload, req, userId }) => {
     requires_review: decisionInfo.review,
     radius_verified: radiusResult?.radiusVerified ?? null,
     distance_metres: radiusResult?.distanceMetres ?? null,
-    target_user_id: radiusResult?.targetUserId ?? targetUserId || null,
+    target_user_id: (radiusResult?.targetUserId ?? targetUserId) || null,
     seller_location_id: sellerLocationId || radiusResult?.sellerLocationId || null,
   };
 };

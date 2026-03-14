@@ -29,6 +29,7 @@
     "risk:telemetry:export": "node scripts/export_risk_telemetry.js",
     "backup:drill": "node scripts/run_backup_drill.js",
     "backup:drill:ps1": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run_backup_drill.ps1",
+    "auth:verify": "node scripts/verify_auth_rollout.js",
     "migrate:auth-sessions": "node run_migration.js database/migrations/fix_user_sessions_user_id_type.sql",
     "migrate:profiles-backfill": "node run_migration.js database/migrations/backfill_missing_profiles.sql",
     "migrate:posts-expiry-backfill": "node run_migration.js database/migrations/backfill_active_post_expiry.sql",
