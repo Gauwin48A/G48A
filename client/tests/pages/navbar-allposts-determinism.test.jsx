@@ -82,6 +82,9 @@ vi.mock("@/components/LanguageSelector", () => ({
 
 vi.mock("@/utils/savedPosts", () => ({
   getSavedPostsMap: () => ({}),
+  beginSavedPostMutation: (id) => String(id ?? ""),
+  endSavedPostMutation: () => {},
+  isSavedPostMutationInFlight: () => false,
   subscribeSavedPosts: (cb) => {
     cb({});
     return () => {};

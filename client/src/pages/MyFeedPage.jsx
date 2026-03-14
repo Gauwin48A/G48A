@@ -25,6 +25,8 @@ import { useAuth } from "@/context/AuthContext";
 import { getApiOriginBase } from "@/lib/networkConfig";
 import {
   buildSavedPostsMap,
+  beginSavedPostMutation,
+  endSavedPostMutation,
   extractSavedPostIds,
   getSavedPostsMap,
   replaceSavedPostIds,
@@ -326,10 +328,12 @@ const MyFeedPage = () => {
     }
 
     const key = String(postId);
-    const isSaved = Boolean(savedPosts[key]);
+    const mutationId = beginSavedPostMutation(key);
+    if (!mutationId) return;
+    const isSaved = Boolean(savedPosts[mutationId]);
     const nextSaved = !isSaved;
-    setSavedPosts((prev) => ({ ...prev, [key]: nextSaved })),
-      setSavedPostStatus(key, nextSaved);
+    setSavedPosts((prev) => ({ ...prev, [mutationId]: nextSaved })),
+      setSavedPostStatus(mutationId, nextSaved);
 
     try {
       if (nextSaved) {
@@ -340,21 +344,23 @@ const MyFeedPage = () => {
             "Content-Type": "application/json",
             ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
           },
-          body: JSON.stringify({ postId: key }),
+          body: JSON.stringify({ postId: mutationId }),
         });
       } else {
-        await fetch(`${baseUrl}/api/wishlist/${key}`, {
+        await fetch(`${baseUrl}/api/wishlist/${mutationId}`, {
           method: "DELETE",
           credentials: "include",
           headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
         });
       }
     } catch {
-      setSavedPosts((prev) => ({ ...prev, [key]: isSaved }));
-      setSavedPostStatus(key, isSaved);
+      setSavedPosts((prev) => ({ ...prev, [mutationId]: isSaved }));
+      setSavedPostStatus(mutationId, isSaved);
       showToast(
         isSaved ? "Unable to remove saved post." : "Unable to save post.",
       );
+    } finally {
+      endSavedPostMutation(mutationId);
     }
   };
 

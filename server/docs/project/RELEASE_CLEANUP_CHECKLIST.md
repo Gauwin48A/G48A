@@ -18,6 +18,8 @@ Generated: 2026-03-11T12:40:40.515Z
 - [ ] Review each intentional change and mark it KEEP or RESTORE.
 - [ ] Explicitly confirm every source/config/database deletion.
 - [ ] Run `npm run audit:worktree` and verify no BLOCKER findings remain.
+- [ ] Run auth rollout verification: `npm run auth:verify` (set `AUTH_VERIFY_TOKEN` for authenticated checks).
+- [ ] Run auth integration suite: `npm run test:auth:integration` (expect no open-handle warnings).
 
 ## Command Hints
 ### Restore tracked safe changes

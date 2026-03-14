@@ -1,1 +1,22 @@
-import*as o from"react";import*as a from"@radix-ui/react-separator";import{cn as l}from"@/lib/utils";const t=o.forwardRef(({className:e,orientation:r="horizontal",decorative:i=!0,...m},p)=>o.createElement(a.Root,{ref:p,decorative:i,orientation:r,className:l("shrink-0 bg-border",r==="horizontal"?"h-[1px] w-full":"h-full w-[1px]",e),...m}));t.displayName=a.Root.displayName;export{t as Separator};
+import React from "react";
+import { cn } from "@/lib/utils";
+
+const Separator = React.forwardRef(
+  ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => (
+    <div
+      ref={ref}
+      role={decorative ? "none" : "separator"}
+      aria-orientation={orientation}
+      className={cn(
+        "shrink-0 bg-border",
+        orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+
+Separator.displayName = "Separator";
+
+export { Separator };

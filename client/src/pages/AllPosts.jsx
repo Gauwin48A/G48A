@@ -43,6 +43,8 @@ import { getUserId as tt, isAuthenticated as rt } from "@/utils/authStorage";
 import { fetchCategoriesCached as at } from "@/services/categoriesService";
 import {
   buildSavedPostsMap,
+  beginSavedPostMutation,
+  endSavedPostMutation,
   extractSavedPostIds,
   getSavedPostsMap,
   replaceSavedPostIds,
@@ -101,6 +103,10 @@ const ve = 5,
   ot = (s) => {
     const c = Number(s);
     return Number.isFinite(c) ? c : s || 0;
+  },
+  normalizeNumber = (s) => {
+    const c = Number.parseInt(String(s || ""), 10);
+    return Number.isFinite(c) && c > 0 ? String(c) : "";
   },
   relativeTimeFormatters = new Map(),
   getRelativeTimeFormatter = (s) => {
@@ -277,7 +283,7 @@ const ve = 5,
         startDate: e.get("startDate") || "",
         endDate: e.get("endDate") || "",
         latestWindow: e.get("latestWindow") || "",
-        sortBy: e.get("sortBy") || n.sortBy || "",
+        sortBy: e.get("sortBy") || "",
       }));
     }, [Z.search, h, m]);
     const [Be, _e] = g(null),
@@ -459,12 +465,26 @@ const ve = 5,
       ),
       me = x((e) => {
         const a = new URLSearchParams();
+        const o = normalizeNumber(e.minPrice);
+        const n = normalizeNumber(e.maxPrice);
         return (
           e.search && a.set("search", e.search),
           e.category && e.category !== "All" && a.set("category", e.category),
           e.location && a.set("location", e.location),
-          e.minPrice && a.set("minPrice", e.minPrice),
-          e.maxPrice && a.set("maxPrice", e.maxPrice),
+          o && a.set("minPrice", o),
+          n && a.set("maxPrice", n),
+          e.priceRange &&
+            !o &&
+            !n &&
+            (() => {
+              const [i, r] = String(e.priceRange)
+                .split("-")
+                .map((value) => Number.parseInt(value, 10));
+              Number.isFinite(i) &&
+                i >= 0 &&
+                a.set("minPrice", String(i));
+              Number.isFinite(r) && r > 0 && a.set("maxPrice", String(r));
+            })(),
           e.startDate && a.set("startDate", e.startDate),
           e.endDate && a.set("endDate", e.endDate),
           e.latestWindow &&
@@ -1018,18 +1038,22 @@ const ve = 5,
             y("/login", { state: { returnTo: "/all-posts" } });
           return;
         }
-        const o = !!savedPosts[a],
-          n = !o;
-        setSavedPosts((i) => ({ ...i, [a]: n })), setSavedPostStatus(a, n);
+        const o = beginSavedPostMutation(a);
+        if (!o) return;
+        const n = !!savedPosts[o],
+          i = !n;
+        setSavedPosts((l) => ({ ...l, [o]: i })), setSavedPostStatus(o, i);
         try {
-          n
-            ? await A.post("/wishlist", { postId: a })
-            : await A.delete(`/wishlist/${a}`);
+          i
+            ? await A.post("/wishlist", { postId: o })
+            : await A.delete(`/wishlist/${o}`);
         } catch {
-          setSavedPosts((n) => ({ ...n, [a]: o })),
-            setSavedPostStatus(a, o),
-            M(o ? "Failed to remove saved post" : "Failed to save post"),
+          setSavedPosts((l) => ({ ...l, [o]: n })),
+            setSavedPostStatus(o, n),
+            M(n ? "Failed to remove saved post" : "Failed to save post"),
             setTimeout(() => M(""), 2e3);
+        } finally {
+          endSavedPostMutation(o);
         }
       },
       handleCartToggle = x(

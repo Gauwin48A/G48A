@@ -4,6 +4,9 @@ Date: 2026-02-28
 Owner: Engineering
 Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED
 
+> Backend-only snapshot. Canonical plan lives at `Mhub/SPRINT_PLAN_PHASED.md` and `Mhub/SPRINT_PLAN_WEEK1_TO_WEEK10.md`. Do not update this file independently.
+
+
 ## Execution Status
 - Week 1-5 baseline hardening: COMPLETE
 - Week 6-8 remaining half-pending closure: COMPLETE

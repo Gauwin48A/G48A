@@ -4,6 +4,8 @@ Last updated: March 11, 2026
 Owner: Product + Client + Server
 Execution mode: Phase-wise, measurable gates, production-first
 
+> Canonical phased plan: `SPRINT_PLAN_PHASED.md`. This week-based plan is retained for history and detailed scope.
+
 ## 1. Goal
 
 Ship a stable, responsive, multilingual marketplace with hardened auth, predictable performance, and release-grade QA in 10 weeks.

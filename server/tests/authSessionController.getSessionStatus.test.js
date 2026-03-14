@@ -95,4 +95,30 @@ describe("authSessionController.getSessionStatus", () => {
       user: null,
     });
   });
+
+  it("marks password_changed state as reauth required and blocks refresh", async () => {
+    jest.resetModules();
+    // eslint-disable-next-line global-require
+    const { getSessionStatus } = require("../src/controllers/authSessionController");
+
+    const req = {
+      cookies: {
+        refreshToken: "refresh-cookie",
+      },
+      authState: "password_changed",
+      user: null,
+    };
+    const res = createResponseMock();
+    await getSessionStatus(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      authenticated: false,
+      authState: "password_changed",
+      hasRefreshCookie: true,
+      hasAccessCookie: false,
+      canRefresh: false,
+      requiresReauth: true,
+      user: null,
+    });
+  });
 });

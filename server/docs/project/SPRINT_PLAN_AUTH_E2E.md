@@ -1,6 +1,6 @@
 # Authentication E2E Sprint Plan
 
-Date: 2026-03-11  
+Date: 2026-03-14  
 Owner: Engineering  
 Scope: Backend + Frontend auth hardening, session resilience, UX correctness, and operational readiness.
 
@@ -14,6 +14,13 @@ Scope: Backend + Frontend auth hardening, session resilience, UX correctness, an
 - No AI-based auth scoring changes in this sprint.
 - No breaking redesign of existing auth APIs used by mobile/web clients.
 - No infra expansion beyond current runtime stack.
+
+## Status Summary
+- Sprint A: COMPLETE
+- Sprint B: COMPLETE (pending verification)
+- Sprint C: COMPLETE (pending verification)
+- Sprint D: COMPLETE (pending verification)
+- Sprint E: IN PROGRESS (rollout + operability; signoff pending)
 
 ## Baseline (Already Present)
 - Access + refresh token model with cookie support.
@@ -42,7 +49,7 @@ Acceptance:
 - Cold boot as logged-out user must not trigger avoidable `/auth/me` 401 noise.
 - Cold boot as logged-in user must recover state without manual refresh.
 
-### Sprint B - Token Lifecycle Hardening (In Progress)
+### Sprint B - Token Lifecycle Hardening (Complete, pending verification)
 Objective: Tighten token handling and edge-case consistency.
 
 Planned:
@@ -60,7 +67,7 @@ Progress update (2026-03-11):
 - Added refresh-failure backoff + auth redirect cooldown in API interceptor to avoid repeated refresh/redirect storms.
 - Added login challenge contract handling (`requireOtp` / challenge codes) in AuthContext.
 
-### Sprint C - UX + Security Controls (In Progress)
+### Sprint C - UX + Security Controls (Complete, pending verification)
 Objective: Make auth behavior user-clear and operator-debuggable.
 
 Planned:
@@ -77,7 +84,7 @@ Progress update (2026-03-11):
 - Added dev-safe auth diagnostics channel (`window.__MHUB_AUTH_DIAG__`) with redacted payload logging.
 - Wired diagnostics and mapped auth errors into API interceptor and AuthContext login/signup/bootstrap paths.
 
-### Sprint D - Testing + Regression Shield (Pending)
+### Sprint D - Testing + Regression Shield (Complete, pending verification)
 Objective: Protect auth path from future regressions.
 
 Planned:
@@ -91,6 +98,9 @@ Acceptance:
 
 Progress update (2026-03-12):
 - Added `RequireAuth` component regression tests to cover redirect + loading behavior.
+Progress update (2026-03-14):
+- Added AuthContext bootstrap tests for `/auth/session` fallbacks and reauth handling.
+- Added server session-status tests for terminal auth states.
 
 ### Sprint E - Operability & Rollout (Pending)
 Objective: Safe rollout with observability and rollback path.
@@ -99,10 +109,24 @@ Planned:
 - Add rollout notes and quick rollback instructions.
 - Document env toggles and fallback behavior.
 - Add post-deploy verification checklist.
+- Close auth hardening exit criteria in MD_IMPLEMENTATION_MASTER_CHECKLIST.
+- Normalize AUTH_README into done/now/deferred tracker with owner/status/proof.
 
 Acceptance:
 - One-command verification path after deployment.
 - Clear rollback steps with zero schema risk.
+
+Rollout checklist:
+- Run `npm run auth:verify` (optionally set `AUTH_VERIFY_TOKEN` for authenticated checks).
+- Verify `/api/auth/session` returns expected payload for anonymous and authenticated requests.
+- Confirm CSRF cookie is set by `/api/auth/csrf-token` and refresh flow succeeds once.
+- Validate `/api/auth/sessions` list and revoke endpoints for an authenticated user.
+- Confirm client bootstrap completes without 401 loops (login -> refresh -> logout path).
+
+Rollback notes:
+- If `/api/auth/session` is misbehaving, temporarily return `404` for that route to force the client fallback path.
+- Roll back to the previous server and client build if auth errors spike.
+- Revoke active sessions only if required to contain a bad token rollout.
 
 ## Execution Order (Strict)
 1. Sprint A backend contract.
@@ -116,6 +140,8 @@ Acceptance:
   - Mitigation: Keep refresh + `/auth/me` fallback path intact.
 - Risk: Token claim shape variance.
   - Mitigation: Normalize user id with multi-claim fallback (`userId`, `id`, `user_id`, `sub`).
+- Risk: Auth status drift across docs (AUTH_README vs sprint plan).
+  - Mitigation: Normalize AUTH_README and keep one canonical tracker.
 - Risk: Dirty worktree side effects.
   - Mitigation: Limit edits to auth-specific files and avoid unrelated rewrites.
 
@@ -130,3 +156,11 @@ Acceptance:
 - [x] AuthContext login challenge handling for adaptive MFA/risk flow
 - [x] shared auth error mapping for UX-safe actionable messages
 - [x] dev diagnostics hook for auth lifecycle debugging with sensitive-field redaction
+- [x] client bootstrap tests for `/auth/session` success, reauth, and 404 fallback
+- [x] server session-status terminal-state regression tests
+
+## Sprint E Checklist
+- [ ] Publish rollout checklist and rollback notes with owner signoff.
+- [x] Run auth bootstrap/refresh/revoke test suites and confirm no open-handle warnings. (2026-03-14: `npm run test:auth:integration`)
+- [x] Confirm post-deploy verification path and update release gate docs. (2026-03-14: release checklist updated with `npm run auth:verify` + auth integration suite)
+- [x] Normalize AUTH_README into done/now/deferred tracker with owner/status/proof.

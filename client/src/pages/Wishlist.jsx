@@ -22,9 +22,12 @@ import N from "../lib/api";
 import { useTranslation as q } from "react-i18next";
 import { useTranslatedPosts as F } from "@/hooks/useTranslatedContent";
 import {
+  beginSavedPostMutation,
+  endSavedPostMutation,
   extractSavedPostIds,
   replaceSavedPostIds,
   setSavedPostStatus,
+  subscribeSavedPosts,
 } from "@/utils/savedPosts";
 import { useAuth as H } from "@/context/AuthContext";
 import { getUserId as M, isAuthenticated as G } from "@/utils/authStorage";
@@ -37,24 +40,29 @@ const Y = () => {
     [_, c] = v(!0),
     [y, x] = v(null),
     l = I(0),
+    savedIdsRef = I(new Set()),
+    syncingRef = I(0),
     f = G(w),
     i = M(w),
     { translatedPosts: Qe, isTranslating: Je } = F(g),
     h = L(async () => {
       const t = ++l.current;
       c(!0);
+      syncingRef.current += 1;
       try {
         const r = await N.get("/wishlist", { params: { userId: i } });
         if (t !== l.current) return;
         const n = r?.data ?? r;
         const d = Array.isArray(n?.items) ? n.items : [];
         const I = extractSavedPostIds(d);
+        savedIdsRef.current = new Set(I);
         replaceSavedPostIds(I), u(d), x(null);
       } catch (r) {
         import.meta.env.DEV && console.error("Failed to fetch wishlist:", r),
           t === l.current && (x(s("failed_load_wishlist")), u([]));
       } finally {
         t === l.current && c(!1);
+        syncingRef.current = Math.max(0, syncingRef.current - 1);
       }
     }, [s, i]);
   S(() => {
@@ -64,17 +72,52 @@ const Y = () => {
     }
     h();
   }, [p, h, f, i]);
+  S(() => {
+    if (!f || !i) {
+      savedIdsRef.current = new Set();
+      return;
+    }
+    return subscribeSavedPosts((map) => {
+      const ids = new Set(Object.keys(map || {}));
+      if (syncingRef.current > 0) {
+        savedIdsRef.current = ids;
+        return;
+      }
+      const previousIds = savedIdsRef.current;
+      let hasNew = false;
+      ids.forEach((id) => {
+        if (!previousIds.has(id)) {
+          hasNew = true;
+        }
+      });
+      savedIdsRef.current = ids;
+      u((prev) =>
+        prev.filter((item) =>
+          ids.has(String(item.post_id ?? item.id ?? item.postId)),
+        ),
+      );
+      if (hasNew) {
+        void h();
+      }
+    });
+  }, [f, i, h]);
   const C = async (t) => {
+      const mutationId = beginSavedPostMutation(t);
+      if (!mutationId) return;
       try {
-        await N.delete(`/wishlist/${t}`, { params: { userId: i } }),
-          u((r) => r.filter((n) => n.post_id !== t)),
-          setSavedPostStatus(t, !1);
+        await N.delete(`/wishlist/${mutationId}`, { params: { userId: i } }),
+          u((r) =>
+            r.filter((n) => String(n.post_id ?? n.id ?? n.postId) !== mutationId),
+          ),
+          setSavedPostStatus(mutationId, !1);
       } catch (r) {
         import.meta.env.DEV && console.error("Failed to remove:", r),
           x(
             s("failed_remove_wishlist_item") ||
               "Unable to remove item right now.",
           );
+      } finally {
+        endSavedPostMutation(mutationId);
       }
     },
     B = (t) => {
@@ -171,7 +214,7 @@ const Y = () => {
                     onClick: h,
                   },
                   e.createElement(U, { className: "w-4 h-4 mr-2" }),
-                  "Retry",
+                  s("retry") || "Retry",
                 ),
               ),
           ),
@@ -256,7 +299,8 @@ const Y = () => {
                           onClick: () => o("/my-recommendations"),
                         },
                         e.createElement($, { className: "w-4 h-4 mr-2" }),
-                        " Recommendations",
+                        " ",
+                        s("my_recommendations") || "Recommendations",
                       ),
                       e.createElement(
                         a,
@@ -266,7 +310,7 @@ const Y = () => {
                           className: "px-6 py-6 rounded-2xl",
                           onClick: () => o("/categories"),
                         },
-                        "Explore Categories",
+                        s("explore_categories") || "Explore Categories",
                       ),
                     ),
                   )
@@ -313,7 +357,7 @@ const Y = () => {
                               className:
                                 "absolute top-3 left-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0",
                             },
-                            t.category_name || "General",
+                            t.category_name || s("general") || "General",
                           ),
                         ),
                         e.createElement(
@@ -359,7 +403,7 @@ const Y = () => {
                                   "flex items-center gap-1 text-gray-500 text-sm",
                               },
                               e.createElement(D, { className: "w-3 h-3" }),
-                              t.location || "N/A",
+                              t.location || s("not_available") || "N/A",
                             ),
                           ),
                           e.createElement(

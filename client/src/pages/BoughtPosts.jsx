@@ -3,6 +3,8 @@ import { Badge as _ } from "@/components/ui/badge";
 import { Button as o } from "@/components/ui/button";
 import { useTranslation as C } from "react-i18next";
 import { Link as v, useNavigate as A } from "react-router-dom";
+import { ArrowLeft as BackIcon } from "lucide-react";
+import { navigateBack } from "@/utils/navigation";
 import { useAuth as T } from "@/context/AuthContext";
 import E from "@/lib/api";
 import { getAccessToken as I, getUserId as O } from "@/utils/authStorage";
@@ -77,12 +79,21 @@ const S = () => {
                 "div",
                 { className: "flex items-center justify-between gap-2 mb-4" },
                 e.createElement(
-                  "h2",
-                  {
-                    className:
-                      "text-2xl font-bold text-gray-900 dark:text-white",
-                  },
-                  r("bought_posts") || "Bought Posts",
+                  "div",
+                  { className: "flex items-center gap-2" },
+                  e.createElement(
+                    o,
+                    { type: "button", variant: "ghost", size: "icon", onClick: () => navigateBack(d), className: "rounded-full" },
+                    e.createElement(BackIcon, { className: "w-5 h-5" })
+                  ),
+                  e.createElement(
+                    "h2",
+                    {
+                      className:
+                        "text-2xl font-bold text-gray-900 dark:text-white",
+                    },
+                    r("bought_posts") || "Bought Posts",
+                  ),
                 ),
                 e.createElement(
                   o,

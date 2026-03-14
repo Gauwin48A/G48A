@@ -3,6 +3,8 @@ import { Badge as S } from "@/components/ui/badge";
 import { Button as o } from "@/components/ui/button";
 import { useTranslation as _ } from "react-i18next";
 import { Link as k, useNavigate as C } from "react-router-dom";
+import { ArrowLeft as BackIcon } from "lucide-react";
+import { navigateBack } from "@/utils/navigation";
 import { useAuth as A } from "@/context/AuthContext";
 import T from "@/lib/api";
 import { getAccessToken as E, getUserId as I } from "@/utils/authStorage";
@@ -78,12 +80,27 @@ const U = () => {
                 "div",
                 { className: "flex items-center justify-between gap-2 mb-4" },
                 e.createElement(
-                  "h2",
-                  {
-                    className:
-                      "text-2xl font-bold text-gray-900 dark:text-white",
-                  },
-                  s("sold_posts") || "Sold Posts",
+                  "div",
+                  { className: "flex items-center gap-2" },
+                  e.createElement(
+                    o,
+                    {
+                      type: "button",
+                      variant: "ghost",
+                      size: "sm",
+                      onClick: () => navigateBack(i),
+                    },
+                    e.createElement(BackIcon, { className: "w-4 h-4 mr-1" }),
+                    s("back") || "Back",
+                  ),
+                  e.createElement(
+                    "h2",
+                    {
+                      className:
+                        "text-2xl font-bold text-gray-900 dark:text-white",
+                    },
+                    s("sold_posts") || "Sold Posts",
+                  ),
                 ),
                 e.createElement(
                   o,
@@ -92,7 +109,7 @@ const U = () => {
                     variant: "outline",
                     onClick: () => f((t) => t + 1),
                   },
-                  "Refresh",
+                  s("refresh") || "Refresh",
                 ),
               ),
               h
@@ -147,7 +164,7 @@ const U = () => {
                             className: "bg-red-600 text-white hover:bg-red-700",
                             onClick: () => f((t) => t + 1),
                           },
-                          "Retry",
+                          s("retry") || "Retry",
                         ),
                         e.createElement(
                           o,
@@ -156,7 +173,7 @@ const U = () => {
                             variant: "outline",
                             onClick: () => i("/all-posts"),
                           },
-                          "Browse posts",
+                          s("browse_posts") || "Browse posts",
                         ),
                       ),
                     )
@@ -173,7 +190,9 @@ const U = () => {
                             className:
                               "text-blue-900 dark:text-blue-200 font-semibold mb-2",
                           },
-                          "No sold posts yet",
+                          s("sold_posts_empty_title") ||
+                            s("no_posts_yet") ||
+                            "No sold posts yet",
                         ),
                         e.createElement(
                           "p",
@@ -181,7 +200,8 @@ const U = () => {
                             className:
                               "text-sm text-blue-700 dark:text-blue-300 mb-4",
                           },
-                          "Marking sold listings will keep your completed sales history here.",
+                          s("sold_posts_empty_hint") ||
+                            "Marking sold listings will keep your completed sales history here.",
                         ),
                         e.createElement(
                           o,
@@ -191,7 +211,7 @@ const U = () => {
                               "bg-blue-600 text-white hover:bg-blue-700",
                             onClick: () => i("/all-posts"),
                           },
-                          "Explore listings",
+                          s("browse_listings") || "Explore listings",
                         ),
                       )
                     : e.createElement(
@@ -211,7 +231,7 @@ const U = () => {
                                 className:
                                   "font-bold text-lg text-gray-900 dark:text-white",
                               },
-                              t.title || "Untitled post",
+                              t.title || s("untitled_post") || "Untitled post",
                             ),
                             e.createElement(
                               "p",
@@ -219,7 +239,9 @@ const U = () => {
                                 className:
                                   "text-gray-500 dark:text-gray-400 text-sm line-clamp-2",
                               },
-                              t.description || "No description available.",
+                              t.description ||
+                                s("no_description") ||
+                                "No description available.",
                             ),
                             e.createElement(
                               "div",
@@ -236,7 +258,7 @@ const U = () => {
                               e.createElement(
                                 S,
                                 { className: "bg-green-100 text-green-700" },
-                                t.status || "Sold",
+                                t.status || s("sold") || "Sold",
                               ),
                             ),
                             e.createElement(

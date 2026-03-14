@@ -16,11 +16,14 @@ import {
   Shield,
   Clock,
   ArrowUp,
+  ArrowLeft,
   RefreshCw,
   KeyRound,
   CircleDollarSign,
+  Info,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { navigateBack } from "@/utils/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import PageHeader from "../components/PageHeader";
@@ -459,9 +462,21 @@ const SaleDone = () => {
         transparent={true}
         className="text-white"
         title=""
+        backTo="/my-home"
       />
 
       <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
+        <div className="flex gap-2 items-center">
+          <button
+            type="button"
+            onClick={() => navigateBack(navigate, "/my-home")}
+            className="inline-flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+        </div>
+
         <div className="text-center pt-4">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 shadow-2xl shadow-green-500/30 mb-6">
             <CheckCircle className="w-10 h-10 text-white" />
@@ -511,6 +526,33 @@ const SaleDone = () => {
           </CardHeader>
 
           <CardContent className="p-8 space-y-6">
+            {/* ── Testing Guide ── */}
+            <details className="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 overflow-hidden">
+              <summary className="flex items-center gap-2 cursor-pointer px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200 select-none">
+                <Info className="w-4 h-4 shrink-0" />
+                {tr("testing_guide_title", "How to test this page — click to expand")}
+              </summary>
+              <div className="px-4 pb-4 space-y-3 text-sm text-blue-900 dark:text-blue-100">
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1">
+                  <p className="font-bold">Step 1 — Find your Post ID</p>
+                  <p>Go to <strong>My Home</strong> → tap any of your active listings → the URL ends in <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">/post/&#123;post_id&#125;</code>. Copy that number.</p>
+                </div>
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1">
+                  <p className="font-bold">Step 2 — Find the Buyer&apos;s User ID</p>
+                  <p>Ask the buyer to open <strong>Profile → Settings → Account Info</strong> and share their User ID. In dev mode you can also check the browser console after login.</p>
+                </div>
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1">
+                  <p className="font-bold">Step 3 — Seller initiates</p>
+                  <p>Enter Post ID, Buyer User ID and agreed sale amount, then tap <strong>Initiate Sale</strong>. A Transaction ID and OTP will appear — share both with the buyer.</p>
+                </div>
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1">
+                  <p className="font-bold">Step 4 — Buyer confirms</p>
+                  <p>Switch to the <strong>I am the Buyer</strong> tab (or the buyer opens this page). Enter the Transaction ID and OTP, then tap <strong>Confirm Purchase</strong>. The post moves to Sold automatically.</p>
+                </div>
+                <p className="text-xs text-blue-600 dark:text-blue-300 pt-1">OTPs expire in 24 hours. If expired, seller must re-initiate.</p>
+              </div>
+            </details>
+
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
