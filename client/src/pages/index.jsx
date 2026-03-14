@@ -22,14 +22,14 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              India's Most
-              <span className="text-blue-600"> Trusted </span>
-              Mobile Marketplace
+              {t("homepage_hero_title_prefix")}{" "}
+              <span className="text-blue-600">
+                {t("homepage_hero_title_highlight")}
+              </span>{" "}
+              {t("homepage_hero_title_suffix")}
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Buy and sell mobile phones with complete security. Our
-              dual-verification system ensures every transaction is genuine and
-              trustworthy.
+              {t("homepage_hero_subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/signup">
@@ -37,7 +37,7 @@ const Index = () => {
                   size="lg"
                   className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3"
                 >
-                  Start Selling Today
+                  {t("start_selling")}
                 </Button>
               </Link>
               <Link to="/login">
@@ -46,7 +46,7 @@ const Index = () => {
                   variant="outline"
                   className="text-lg px-8 py-3"
                 >
-                  Browse Mobiles
+                  {t("browse_phones")}
                 </Button>
               </Link>
             </div>
@@ -58,27 +58,33 @@ const Index = () => {
               <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Aadhaar Verified</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {t("aadhaar_verified_badge")}
+              </h3>
               <p className="text-gray-600">
-                All sellers verified with government ID for maximum trust
+                {t("aadhaar_verified_desc")}
               </p>
             </div>
             <div className="text-center">
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Dual Confirmation</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {t("dual_confirmation")}
+              </h3>
               <p className="text-gray-600">
-                Both buyer and seller must confirm sales to prevent fraud
+                {t("dual_confirmation_desc")}
               </p>
             </div>
             <div className="text-center">
               <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Award className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Rewards System</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {t("rewards_system")}
+              </h3>
               <p className="text-gray-600">
-                Earn points and badges for successful transactions
+                {t("rewards_system_desc")}
               </p>
             </div>
           </div>
@@ -90,10 +96,10 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose Our Platform?
+              {t("homepage_features_title")}
             </h2>
             <p className="text-xl text-gray-600">
-              Experience the safest way to buy and sell mobile phones online
+              {t("homepage_features_subtitle")}
             </p>
           </div>
 
@@ -103,10 +109,9 @@ const Index = () => {
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                   <Phone className="w-6 h-6 text-blue-600" />
                 </div>
-                <CardTitle>Easy Listing</CardTitle>
+                <CardTitle>{t("easy_listing")}</CardTitle>
                 <CardDescription>
-                  Create detailed listings with photos, specifications, and
-                  pricing in minutes
+                  {t("easy_listing_desc")}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -116,9 +121,9 @@ const Index = () => {
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                   <Users className="w-6 h-6 text-green-600" />
                 </div>
-                <CardTitle>Verified Community</CardTitle>
+                <CardTitle>{t("verified_community")}</CardTitle>
                 <CardDescription>
-                  Connect with genuine buyers and sellers in a trusted community
+                  {t("verified_community_desc")}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -128,10 +133,9 @@ const Index = () => {
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <Star className="w-6 h-6 text-purple-600" />
                 </div>
-                <CardTitle>Ranking System</CardTitle>
+                <CardTitle>{t("ranking_system")}</CardTitle>
                 <CardDescription>
-                  Build your reputation with our comprehensive ranking and badge
-                  system
+                  {t("ranking_system_desc")}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -147,23 +151,23 @@ const Index = () => {
               <div className="text-3xl font-bold text-blue-600 mb-2">
                 10,000+
               </div>
-              <div className="text-gray-600">Verified Users</div>
+              <div className="text-gray-600">{t("verified_users")}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-green-600 mb-2">
                 25,000+
               </div>
-              <div className="text-gray-600">Successful Sales</div>
+              <div className="text-gray-600">{t("successful_sales")}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-purple-600 mb-2">50+</div>
-              <div className="text-gray-600">Cities Covered</div>
+              <div className="text-gray-600">{t("cities_covered")}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-orange-600 mb-2">
                 ₹5Cr+
               </div>
-              <div className="text-gray-600">Transaction Value</div>
+              <div className="text-gray-600">{t("transaction_value")}</div>
             </div>
           </div>
         </div>
@@ -173,11 +177,10 @@ const Index = () => {
       <div className="py-24 bg-blue-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Start Your Journey?
+            {t("homepage_cta_title")}
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join thousands of satisfied users who trust us for their mobile
-            transactions
+            {t("homepage_cta_subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/signup">
@@ -186,7 +189,7 @@ const Index = () => {
                 variant="secondary"
                 className="text-lg px-8 py-3"
               >
-                Create Account
+                {t("create_account")}
               </Button>
             </Link>
             <Link to="/login">
@@ -195,7 +198,7 @@ const Index = () => {
                 variant="outline"
                 className="text-lg px-8 py-3 text-white border-white hover:bg-white hover:text-blue-600"
               >
-                Sign In
+                {t("sign_in")}
               </Button>
             </Link>
           </div>
@@ -207,63 +210,62 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">MobileMart</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("brand_mobilemart")}</h3>
               <p className="text-gray-400">
-                India's most trusted platform for buying and selling mobile
-                phones.
+                {t("homepage_footer_tagline")}
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("quick_links")}</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
                   <Link to="/about" className="hover:text-white">
-                    About Us
+                    {t("about_us")}
                   </Link>
                 </li>
                 <li>
                   <Link to="/contact" className="hover:text-white">
-                    Contact
+                    {t("contact")}
                   </Link>
                 </li>
                 <li>
                   <Link to="/help" className="hover:text-white">
-                    Help Center
+                    {t("help_center")}
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Legal</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("legal")}</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
                   <Link to="/terms" className="hover:text-white">
-                    Terms of Service
+                    {t("terms_of_service")}
                   </Link>
                 </li>
                 <li>
                   <Link to="/privacy" className="hover:text-white">
-                    Privacy Policy
+                    {t("privacy_policy")}
                   </Link>
                 </li>
                 <li>
                   <Link to="/security" className="hover:text-white">
-                    Security
+                    {t("security")}
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Connect</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("connect")}</h3>
               <ul className="space-y-2 text-gray-400">
-                <li>support@mobilemart.com</li>
-                <li>+91 80000 12345</li>
-                <li>Follow us on social media</li>
+                <li>{t("support_email")}</li>
+                <li>{t("support_phone")}</li>
+                <li>{t("follow_social")}</li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 MobileMart. All rights reserved.</p>
+            <p>{t("copyright_mobilemart")}</p>
           </div>
         </div>
       </footer>

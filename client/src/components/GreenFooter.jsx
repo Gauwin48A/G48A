@@ -8,7 +8,7 @@ const GreenFooter = () => {
     <footer className="bg-primary text-white py-8 mt-12" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <h2 className="font-bold text-lg mb-2">GreenKart</h2>
+          <h2 className="font-bold text-lg mb-2">{t("brand_greenkart")}</h2>
           <p className="text-sm">{t('trusted_ecommerce')}</p>
         </div>
         <div>

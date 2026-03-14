@@ -6,7 +6,11 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { getBestAvailableLocation, sendLocation } from "../services/locationService";
+import {
+  getBestAvailableLocation,
+  sendLocation,
+  verifyLocation,
+} from "../services/locationService";
 
 const LOCATION_CACHE_TTL_MS = 5 * 60 * 1000;
 const AUTH_LOCATION_CACHE_TTL_MS = 60 * 1000;
@@ -380,6 +384,16 @@ export function LocationProvider({ children }) {
     [setLocationState],
   );
 
+  const verifyPreciseLocation = useCallback(async (options = {}) => {
+    try {
+      const userId = localStorage.getItem("userId");
+      return await verifyLocation({ ...options, userId });
+    } catch (error) {
+      console.error("[LocationContext] Location verification failed:", error);
+      throw error;
+    }
+  }, []);
+
   const retry = useCallback(() => {
     initializedRef.current = false;
     return requestLocation();
@@ -532,6 +546,7 @@ export function LocationProvider({ children }) {
     permissionGranted,
     permissionDenied,
     requestLocation,
+    verifyLocation: verifyPreciseLocation,
     retry,
     skipForNow,
     clearLocation,

@@ -1,5 +1,6 @@
 import React from "react";
 import ProductCard from "./ProductCard";
+import { useTranslation } from "react-i18next";
 
 const products = [
   {
@@ -32,15 +33,23 @@ const products = [
   },
 ];
 
-const DealsSection = () => (
-  <section className="max-w-7xl mx-auto px-4 py-10" aria-label="Today's Deals">
-    <h2 className="text-2xl font-bold mb-6 text-primary">Today's Deals</h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-      {Array.isArray(products) && products.length > 0
-        ? products.map(product => <ProductCard key={product.id} product={product} />)
-        : <div className="col-span-4 text-center text-gray-500">No deals available</div>}
-    </div>
-  </section>
-);
+const DealsSection = () => {
+  const { t } = useTranslation();
+  return (
+    <section
+      className="max-w-7xl mx-auto px-4 py-10"
+      aria-label={t("todays_deals")}
+    >
+      <h2 className="text-2xl font-bold mb-6 text-primary">
+        {t("todays_deals")}
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        {Array.isArray(products) && products.length > 0
+          ? products.map(product => <ProductCard key={product.id} product={product} />)
+          : <div className="col-span-4 text-center text-gray-500">{t("no_deals_available")}</div>}
+      </div>
+    </section>
+  );
+};
 
 export default DealsSection;

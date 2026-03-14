@@ -395,13 +395,13 @@ const ve = 5,
       if (typeof window > "u" || typeof document > "u") return;
       let e = null;
       const a = () => {
-        const o = document.querySelector('nav[aria-label="main_navigation"]');
+        const o = document.querySelector("nav[aria-label='main_navigation']");
         const n = Math.ceil(o?.getBoundingClientRect().height || 68);
         setNavStickyTop(Math.max(56, n));
       };
       a();
       window.addEventListener("resize", a);
-      const o = document.querySelector('nav[aria-label="main_navigation"]');
+      const o = document.querySelector("nav[aria-label='main_navigation']");
       if (o && typeof window.ResizeObserver < "u") {
         e = new window.ResizeObserver(a);
         e.observe(o);

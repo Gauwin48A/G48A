@@ -151,12 +151,12 @@ const GetVerified = () => {
                       value={verificationData.aadhaarNumber}
                       onChange={handleInputChange}
                       className="mt-1"
-                      placeholder="XXXX"
+                      placeholder={t("aadhaar_last4_placeholder")}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Label htmlFor="dateOfBirth">{t("date_of_birth")}</Label>
                     <Input
                       id="dateOfBirth"
                       name="dateOfBirth"

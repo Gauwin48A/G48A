@@ -34,6 +34,7 @@ import { getSavedPostsMap, subscribeSavedPosts } from "@/utils/savedPosts";
 import LanguageSelector from "./LanguageSelector";
 import LocationSelector from "./LocationSelector";
 import { useToast } from "@/hooks/use-toast";
+import { navigateBack } from "@/utils/navigation";
 
 const HIDDEN_PATHS = new Set(["/login", "/signup", "/forgot-password"]);
 const BACK_BUTTON_HIDDEN_PATHS = new Set([]);
@@ -562,6 +563,15 @@ export default function GreenNavbar() {
     document.documentElement.setAttribute("data-layout-preview", layoutMode);
     document.body?.setAttribute("data-layout-preview", layoutMode);
     localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode);
+    if (typeof window !== "undefined") {
+      try {
+        window.dispatchEvent(
+          new CustomEvent("mhub:layout-change", { detail: { mode: layoutMode } }),
+        );
+      } catch {
+        // No-op: event dispatch isn't critical for layout mode.
+      }
+    }
   }, [layoutMode]);
 
   useEffect(() => {
@@ -666,11 +676,7 @@ export default function GreenNavbar() {
   };
 
   const handleBackNavigation = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate("/all-posts");
+    navigateBack(navigate);
   };
 
   const handleDrawerItemClick = (item) => {
@@ -758,7 +764,30 @@ export default function GreenNavbar() {
     handleLayoutModeChange(nextPreset.key);
   };
 
-  if (hideNavbar) return null;
+  if (hideNavbar)
+    return (
+      <header
+        className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/90"
+        aria-label={t("main_navigation") || "Main navigation"}
+      >
+        <div className="mx-auto flex w-full max-w-[92rem] items-center gap-2 px-3 py-2">
+          <button
+            type="button"
+            onClick={() => {
+              navigateBack(navigate);
+            }}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 shadow-sm hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            aria-label={t("back") || "Back"}
+            title={t("back") || "Back"}
+          >
+            <FiArrowLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            {t("back") || "Back"}
+          </span>
+        </div>
+      </header>
+    );
 
   return (
     <>

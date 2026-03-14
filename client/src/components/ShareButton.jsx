@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { Share2, Check, Copy, Link } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 const ShareButton = ({
     url,
@@ -17,6 +18,7 @@ const ShareButton = ({
     onShareSuccess,
     onShareError,
 }) => {
+    const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
 
@@ -71,7 +73,7 @@ const ShareButton = ({
                 onClick={handleShare}
                 disabled={isSharing}
                 className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${className}`}
-                title="Share"
+                title={t("share")}
             >
                 {copied ? (
                     <Check className="w-5 h-5 text-green-500" />
@@ -93,12 +95,12 @@ const ShareButton = ({
                 {copied ? (
                     <>
                         <Check className="w-4 h-4 text-green-500" />
-                        <span className="text-green-500">Link copied!</span>
+                        <span className="text-green-500">{t("link_copied")}</span>
                     </>
                 ) : (
                     <>
                         <Share2 className="w-4 h-4" />
-                        <span>Share</span>
+                        <span>{t("share")}</span>
                     </>
                 )}
             </button>
@@ -123,7 +125,7 @@ const ShareButton = ({
             {copied ? (
                 <>
                     <Check className="w-4 h-4 text-green-500" />
-                    <span className="text-green-500">Copied!</span>
+                    <span className="text-green-500">{t("copied")}</span>
                 </>
             ) : (
                 <>
@@ -132,7 +134,7 @@ const ShareButton = ({
                     ) : (
                         <Copy className="w-4 h-4" />
                     )}
-                    <span>{canShare ? 'Share' : 'Copy Link'}</span>
+                    <span>{canShare ? t("share") : t("copy_link")}</span>
                 </>
             )}
         </button>

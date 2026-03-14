@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { Link as y, useNavigate as me } from "react-router-dom";
 import _ from "../lib/api";
+import { navigateBack } from "@/utils/navigation";
 const D = [
     { value: "7d", label: "7D", days: 7 },
     { value: "30d", label: "30D", days: 30 },
@@ -247,7 +248,7 @@ const D = [
                 variant: "ghost",
                 size: "icon",
                 className: "text-white self-start",
-                onClick: () => r(-1),
+                onClick: () => navigateBack(r),
               },
               e.createElement(se, { className: "w-6 h-6" }),
             ),

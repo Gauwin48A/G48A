@@ -508,7 +508,7 @@ const MyFeedPage = () => {
             />
           ) : error ? (
             <PageErrorState
-              title="Unable to load your feed"
+              title={t("feed_load_failed_title")}
               description={error}
               onRetry={() => fetchPosts({ page: 1, refresh: true })}
               retryLabel="Retry"
@@ -594,7 +594,7 @@ const MyFeedPage = () => {
                           )
                         }
                         className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition"
-                        title="More options"
+                        title={t("more_options")}
                       >
                         <FaEllipsisV className="w-4 h-4" />
                       </button>

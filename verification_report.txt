@@ -1,69 +1,69 @@
 === Translation Readiness Report ===
 
-Base Language (EN): 1932 keys
+Base Language (EN): 2044 keys
 
-[HI] Translated: 89%
-Total Keys: 1933
-Untranslated (English): 213 keys
+[HI] Translated: 83%
+Total Keys: 2045
+Untranslated (English): 338 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
    2k_to_10k: "₹2K-₹10K"
    500_to_2k: "₹500-₹2K"
    aadhaar_image_required: "Aadhaar Image Required"
-   advanced_flagging_tools: "Advanced Flagging Tools"
-   agree_to_terms_prefix: "Agree To Terms Prefix"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_verified_badge: "Aadhaar Verified"
 
-[TE] Translated: 89%
-Total Keys: 1933
-Untranslated (English): 211 keys
+[TE] Translated: 84%
+Total Keys: 2045
+Untranslated (English): 336 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
    aadhaar_image_required: "Aadhaar Image Required"
-   advanced_flagging_tools: "Advanced Flagging Tools"
-   agree_to_terms_prefix: "Agree To Terms Prefix"
-   and: "And"
-   approve: "Approve"
+   aadhaar_last4_placeholder: "XXXX"
+   aadhaar_verified_badge: "Aadhaar Verified"
+   aadhaar_verified_desc: "All sellers verified with government ID for maximum trust"
+   about_us: "About Us"
 
-[TA] Translated: 85%
-Total Keys: 1937
-Untranslated (English): 285 keys
+[TA] Translated: 80%
+Total Keys: 2049
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
    2k_to_10k: "₹2K-₹10K"
    500_to_2k: "₹500-₹2K"
    aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
    aadhaar_number_label: "Aadhaar Number"
-   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"
 
-[KN] Translated: 85%
-Total Keys: 1961
-Untranslated (English): 285 keys
+[KN] Translated: 80%
+Total Keys: 2073
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
    2k_to_10k: "₹2K-₹10K"
    500_to_2k: "₹500-₹2K"
    aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
    aadhaar_number_label: "Aadhaar Number"
-   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"
 
-[MR] Translated: 85%
-Total Keys: 1961
-Untranslated (English): 285 keys
+[MR] Translated: 80%
+Total Keys: 2073
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
    2k_to_10k: "₹2K-₹10K"
    500_to_2k: "₹500-₹2K"
    aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
    aadhaar_number_label: "Aadhaar Number"
-   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"
 
-[BN] Translated: 85%
-Total Keys: 1975
-Untranslated (English): 285 keys
+[BN] Translated: 80%
+Total Keys: 2087
+Untranslated (English): 410 keys
 Missing Keys: 0 (Key synced)
    Examples of Untranslated:
    2k_to_10k: "₹2K-₹10K"
    500_to_2k: "₹500-₹2K"
    aadhaar_image_required: "Aadhaar Image Required"
+   aadhaar_last4_placeholder: "XXXX"
    aadhaar_number_label: "Aadhaar Number"
-   aadhaar_privacy_1: "Your Aadhaar XML file is processed locally and securely"

@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
+import { navigateBack } from "@/utils/navigation";
 
 const PageHeader = ({
   title,
@@ -12,19 +14,14 @@ const PageHeader = ({
   transparent = false,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleBack = () => {
     if (backTo) {
       navigate(backTo);
       return;
     }
-
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-
-    navigate("/all-posts");
+    navigateBack(navigate);
   };
 
   return (
@@ -55,7 +52,7 @@ const PageHeader = ({
                   : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
               }
             `}
-              aria-label="Go back"
+              aria-label={t("go_back")}
             >
               <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
             </Button>

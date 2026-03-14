@@ -201,7 +201,9 @@ const Xe = 2 * 1024 * 1024,
           {
             key: "title",
             label: "Title (5-100 chars)",
-            met: t.title.trim().length >= 5 && t.title.trim().length <= 100,
+            met:
+              t.title.trim().length >= 5 &&
+              t.title.trim().length <= 100,
             hint: `${t.title.trim().length}/100`,
           },
           {
@@ -254,7 +256,9 @@ const Xe = 2 * 1024 * 1024,
           {
             key: "images",
             label: `Images (1-${g?.maxImages || 1})`,
-            met: b.length > 0 && b.length <= (g?.maxImages || 1),
+            met:
+              b.length > 0 &&
+              b.length <= (g?.maxImages || 1),
             hint: `${b.length}/${g?.maxImages || 1}`,
           },
         ],
@@ -382,7 +386,10 @@ const Xe = 2 * 1024 * 1024,
                 } catch {
                   c = {};
                 }
-                if (l.status >= 200 && l.status < 300) {
+                if (
+                  l.status >= 200 &&
+                  l.status < 300
+                ) {
                   d(c);
                   return;
                 }

@@ -13,50 +13,89 @@ import { useTranslation } from 'react-i18next';
 export default function NotificationPermission({ userId, onDismiss }) {
   const { t } = useTranslation();
   const tr = (key, fallback) => t(key, { defaultValue: fallback });
-    const [status, setStatus] = useState('idle'); // idle, requesting, granted, denied, not-configured
-    const [showPrompt, setShowPrompt] = useState(false);
-    const dismissKey = userId
-        ? `mhub:notifications:prompt:dismissed:${userId}`
-        : "notification_prompt_dismissed";
+  const LAYOUT_STORAGE_KEY = "mhub_layout_preview_mode";
+  const readLayoutMode = () => {
+    if (typeof window === "undefined") return "desktop";
+    const attr =
+      typeof document !== "undefined"
+        ? document.documentElement?.getAttribute("data-layout-preview")
+        : "";
+    const normalizedAttr = String(attr || "").trim().toLowerCase();
+    if (normalizedAttr) return normalizedAttr;
+    const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || "")
+      .trim()
+      .toLowerCase();
+    return stored || "desktop";
+  };
+  const isSmallViewport = () => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(max-width: 767px)").matches;
+  };
+  const [status, setStatus] = useState('idle'); // idle, requesting, granted, denied, not-configured
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [layoutMode, setLayoutMode] = useState(readLayoutMode);
+  const baseDismissKey = "notification_prompt_dismissed";
+  const dismissKey = userId
+    ? `mhub:notifications:prompt:dismissed:${userId}`
+    : baseDismissKey;
+  const isMobilePreview = layoutMode === "mobile";
 
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        if (!userId) {
-            setShowPrompt(false);
-            setStatus('idle');
-            return;
-        }
-        const dismissed =
-            localStorage.getItem(dismissKey) === "true" ||
-            localStorage.getItem("notification_prompt_dismissed") === "true";
-        if (dismissed) {
-            setShowPrompt(false);
-            return;
-        }
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleLayoutChange = (event) => {
+      const next = String(event?.detail?.mode || "").trim().toLowerCase();
+      setLayoutMode(next || readLayoutMode());
+    };
+    window.addEventListener("mhub:layout-change", handleLayoutChange);
+    return () =>
+      window.removeEventListener("mhub:layout-change", handleLayoutChange);
+  }, []);
 
-        // Check if Firebase is configured
-        if (!isFirebaseConfigured()) {
-            setStatus('not-configured');
-            setShowPrompt(false);
-            return;
-        }
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!userId) {
+      setShowPrompt(false);
+      setStatus('idle');
+      return;
+    }
+    if (!isMobilePreview && !isSmallViewport()) {
+      setShowPrompt(false);
+      return;
+    }
+    const dismissed =
+      localStorage.getItem(dismissKey) === "true" ||
+      (dismissKey !== baseDismissKey &&
+        localStorage.getItem(baseDismissKey) === "true");
+    if (dismissed && dismissKey !== baseDismissKey) {
+      localStorage.setItem(dismissKey, "true");
+    }
+    if (dismissed) {
+      setShowPrompt(false);
+      return;
+    }
 
-        // Check current permission status
-        if ('Notification' in window) {
-            if (Notification.permission === 'granted') {
-                setStatus('granted');
-                setShowPrompt(false);
-            } else if (Notification.permission === 'denied') {
-                setStatus('denied');
-                setShowPrompt(false);
-                localStorage.setItem(dismissKey, "true");
-            } else {
-                // Permission not yet requested - show prompt after delay
-                const timer = setTimeout(() => setShowPrompt(true), 3000);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [userId]);
+    // Check if Firebase is configured
+    if (!isFirebaseConfigured()) {
+      setStatus('not-configured');
+      setShowPrompt(false);
+      return;
+    }
+
+    // Check current permission status
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setStatus('granted');
+        setShowPrompt(false);
+      } else if (Notification.permission === 'denied') {
+        setStatus('denied');
+        setShowPrompt(true);
+      } else {
+        // Permission not yet requested - show prompt after delay
+        const timer = setTimeout(() => setShowPrompt(true), 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [dismissKey, isMobilePreview, userId]);
 
     const handleEnable = async () => {
         setStatus('requesting');
@@ -82,15 +121,13 @@ export default function NotificationPermission({ userId, onDismiss }) {
         }
 
         setStatus('denied');
-        localStorage.setItem(dismissKey, "true");
-        setShowPrompt(false);
+        setShowPrompt(true);
         onDismiss?.();
     };
 
     const handleDismiss = () => {
         setShowPrompt(false);
         localStorage.setItem(dismissKey, "true");
-        localStorage.setItem('notification_prompt_dismissed', 'true');
         onDismiss?.();
     };
 
@@ -109,7 +146,7 @@ export default function NotificationPermission({ userId, onDismiss }) {
     }
 
     return (
-        <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-slide-up">
+        <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 z-[60] animate-slide-up">
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-4 shadow-2xl">
                 <button
                     onClick={handleDismiss}
@@ -144,6 +181,11 @@ export default function NotificationPermission({ userId, onDismiss }) {
                                     <>
                                         <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
                                         {tr("notification_enabling", "Enabling...")}
+                                    </>
+                                ) : status === 'denied' ? (
+                                    <>
+                                        <BellOff className="w-4 h-4" />
+                                        {tr("notification_enable", "Enable")}
                                     </>
                                 ) : (
                                     <>

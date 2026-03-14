@@ -9,6 +9,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { useLocation } from "@/context/LocationContext";
+import { useTranslation } from "react-i18next";
 
 const POPULAR_CITIES = [
   { name: "Hyderabad", state: "Telangana", lat: 17.385, lng: 78.4867 },
@@ -75,6 +76,7 @@ const toSuggestion = (item) => {
 };
 
 export default function LocationSelector({ isOpen, onClose }) {
+  const { t } = useTranslation();
   const {
     city,
     area,
@@ -230,7 +232,7 @@ export default function LocationSelector({ isOpen, onClose }) {
             type="button"
             onClick={onClose}
             className="rounded p-1 hover:bg-blue-500"
-            aria-label="Close location selector"
+            aria-label={t("close_location_selector")}
           >
             <FiX className="h-5 w-5" />
           </button>
@@ -284,7 +286,9 @@ export default function LocationSelector({ isOpen, onClose }) {
         </div>
 
         <div className="border-b p-4 dark:border-gray-700">
-          <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">Or search your area / colony:</p>
+          <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
+            {t("location_search_prompt")}
+          </p>
           <div className="relative">
             <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -292,7 +296,7 @@ export default function LocationSelector({ isOpen, onClose }) {
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search area, colony, street, city"
+              placeholder={t("location_search_placeholder")}
               className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -304,7 +308,9 @@ export default function LocationSelector({ isOpen, onClose }) {
           </p>
 
           {isSearching ? (
-            <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">Searching...</div>
+            <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+              {t("searching")}
+            </div>
           ) : results.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
               No matching locations found.
@@ -349,7 +355,9 @@ export default function LocationSelector({ isOpen, onClose }) {
 
         {currentLabel ? (
           <div className="border-t bg-gray-50 px-4 py-3 dark:border-gray-600 dark:bg-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Current location:</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t("current_location_label")}
+            </p>
             <p className="truncate text-sm font-medium text-gray-800 dark:text-white">{currentLabel}</p>
           </div>
         ) : null}

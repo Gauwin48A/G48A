@@ -26,6 +26,7 @@ import R from "../lib/api";
 import { Card as ee } from "@/components/ui/card";
 import { Button as o } from "@/components/ui/button";
 import { Avatar as ye, AvatarFallback as Ne } from "@/components/ui/avatar";
+import CategoriesGrid from "@/components/CategoriesGrid";
 import {
   Alert as ke,
   AlertDescription as Pe,
@@ -35,6 +36,7 @@ import { useTranslatedPosts as Le } from "../hooks/useTranslatedContent";
 import { useAuth as _e } from "@/context/AuthContext";
 import { getAccessToken as Ae, getUserId as Se } from "@/utils/authStorage";
 import { getApiOriginBase as je } from "@/lib/networkConfig";
+import { fetchCategoriesCached as qe } from "@/services/categoriesService";
 const te = 12,
   Be = (r) => {
     const i = Number(r?.status || r?.response?.status || 0),
@@ -45,6 +47,8 @@ const te = 12,
   },
   Ee = () => {
     const { t: r } = xe(),
+      tr = (key, fallback, options = {}) =>
+        r(key, { defaultValue: fallback, ...options }),
       i = ce(),
       g = ge(),
       [n, P] = be(),
@@ -58,7 +62,10 @@ const te = 12,
       m = Se(S),
       y = J(() => !!(S || (z && m)), [S, z, m]),
       [b, se] = c({ location: "", minPrice: "", maxPrice: "", categories: [] }),
+      [categories, setCategories] = c([]),
       [C, j] = c([]),
+      [trendPosts, setTrendPosts] = c([]),
+      [trendLoading, setTrendLoading] = c(!1),
       [ae, T] = c(!0),
       [L, U] = c(""),
       [oe, le] = c(0),
@@ -72,6 +79,66 @@ const te = 12,
         import.meta.env.DEV && console.log(t, a);
       }, []),
       _ = J(() => !!(d || h || f || v || w), [h, w, v, f, d]),
+      nearMeLocation = J(
+        () =>
+          localStorage.getItem("mhub_user_city") ||
+          localStorage.getItem("city") ||
+          b.location ||
+          "",
+        [b.location],
+      ),
+      priceFormatter = J(
+        () =>
+          new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 0,
+          }),
+        [],
+      ),
+      updateQueryParams = A(
+        (t, a = {}) => {
+          const s = new URLSearchParams(n);
+          Object.entries(t || {}).forEach(([u, l]) => {
+            if (
+              l === null ||
+              l === undefined ||
+              l === "" ||
+              (Array.isArray(l) && l.length === 0)
+            ) {
+              s.delete(u);
+              return;
+            }
+            if (Array.isArray(l)) {
+              s.set(u, l.join(","));
+              return;
+            }
+            s.set(u, String(l));
+          });
+          P(s, { replace: a.replace ?? !1 });
+        },
+        [n, P],
+      ),
+      activeCategoryName = J(() => {
+        if (!h) return "";
+        const match = categories.find((t) => {
+          const id = String(t.category_id || t.id || t.name || "")
+            .trim()
+            .toLowerCase();
+          const name = String(t.name || t.title || "")
+            .trim()
+            .toLowerCase();
+          const target = String(h).trim().toLowerCase();
+          return id === target || name === target;
+        });
+        return match?.name || match?.title || h;
+      }, [categories, h]),
+      handleCategorySelect = A(
+        (t) => {
+          updateQueryParams({ category: t || "" });
+        },
+        [updateQueryParams],
+      ),
       me = A(() => {
         const t = new URLSearchParams(n);
         t.delete("search"), P(t, { replace: !0 });
@@ -126,6 +193,48 @@ const te = 12,
       );
     }, [N, y, g.key, m]),
       I(() => {
+        let t = !1;
+        (async () => {
+          try {
+            const a = await qe();
+            t || setCategories(Array.isArray(a) ? a : []);
+          } catch {
+            t || setCategories([]);
+          }
+        })();
+        return () => {
+          t = !0;
+        };
+      }, []),
+      I(() => {
+        if (!y) {
+          setTrendPosts([]);
+          setTrendLoading(!1);
+          return;
+        }
+        let t = !1;
+        (async () => {
+          setTrendLoading(!0);
+          try {
+            const a = await R.get("/feed/trending"),
+              s = a?.data ?? a,
+              u = Array.isArray(s?.posts)
+                ? s.posts
+                : Array.isArray(s)
+                  ? s
+                  : [];
+            t || setTrendPosts(u);
+          } catch {
+            t || setTrendPosts([]);
+          } finally {
+            t || setTrendLoading(!1);
+          }
+        })();
+        return () => {
+          t = !0;
+        };
+      }, [oe, y]),
+      I(() => {
         Y(1), $(!0);
       }, [b, d, h, f, v, w]),
       I(() => {
@@ -179,6 +288,15 @@ const te = 12,
           }
         })();
       }, [N, y, x, b, oe, h, w, v, f, d, m]);
+    const formatPrice = (t) => {
+      const a = Number(t);
+      if (!Number.isFinite(a) || a <= 0) return "INR --";
+      try {
+        return priceFormatter.format(a);
+      } catch {
+        return `INR ${a.toLocaleString()}`;
+      }
+    };
     const G = (t) =>
       t ? (t.startsWith("http") ? t : `${je()}${t}`) : "/placeholder.svg";
     return !re && !y
@@ -186,7 +304,7 @@ const te = 12,
           "div",
           {
             className:
-              "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4",
+              "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 flex items-center justify-center p-4",
           },
           e.createElement(
             "div",
@@ -207,7 +325,7 @@ const te = 12,
               "div",
               {
                 className:
-                  "bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl",
+                  "bg-white/95 dark:bg-slate-900/80 backdrop-blur-2xl rounded-3xl p-8 border border-gray-200 dark:border-white/10 shadow-2xl",
               },
               e.createElement(
                 "div",
@@ -219,7 +337,7 @@ const te = 12,
                     "div",
                     {
                       className:
-                        "w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl",
+                        "w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl",
                     },
                     e.createElement(pe, { className: "w-10 h-10 text-white" }),
                   ),
@@ -235,12 +353,18 @@ const te = 12,
               ),
               e.createElement(
                 "h1",
-                { className: "text-3xl font-bold text-white text-center mb-3" },
+                {
+                  className:
+                    "text-3xl font-bold text-gray-900 dark:text-white text-center mb-3",
+                },
                 r("access_restricted") || "Access Restricted",
               ),
               e.createElement(
                 "p",
-                { className: "text-gray-300 text-center mb-8" },
+                {
+                  className:
+                    "text-gray-600 dark:text-gray-300 text-center mb-8",
+                },
                 "Sign in to view personalized recommendations curated just for you",
               ),
               e.createElement(
@@ -255,16 +379,17 @@ const te = 12,
                     "div",
                     {
                       key: a,
-                      className: "flex items-center gap-3 text-gray-300",
+                      className:
+                        "flex items-center gap-3 text-gray-600 dark:text-gray-300",
                     },
                     e.createElement(
                       "div",
                       {
                         className:
-                          "w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center",
+                          "w-8 h-8 rounded-lg bg-blue-50 dark:bg-white/10 flex items-center justify-center",
                       },
                       e.createElement(t.icon, {
-                        className: "w-4 h-4 text-purple-400",
+                        className: "w-4 h-4 text-blue-600 dark:text-purple-400",
                       }),
                     ),
                     e.createElement("span", { className: "text-sm" }, t.text),
@@ -279,14 +404,17 @@ const te = 12,
                       state: { returnTo: `${g.pathname}${g.search}` },
                     }),
                   className:
-                    "w-full h-14 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 text-white font-semibold text-lg rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:scale-105",
+                    "w-full h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold text-lg rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:scale-105",
                 },
                 e.createElement(we, { className: "w-5 h-5 mr-2" }),
                 r("sign_in_to_continue") || "Sign In to Continue",
               ),
               e.createElement(
                 "p",
-                { className: "text-gray-400 text-center mt-6 text-sm" },
+                {
+                  className:
+                    "text-gray-500 dark:text-gray-400 text-center mt-6 text-sm",
+                },
                 "Don't have an account?",
                 " ",
                 e.createElement(
@@ -294,7 +422,7 @@ const te = 12,
                   {
                     onClick: () => i("/signup"),
                     className:
-                      "text-purple-400 hover:text-purple-300 cursor-pointer font-medium",
+                      "text-blue-600 dark:text-purple-300 hover:text-blue-700 dark:hover:text-purple-200 cursor-pointer font-medium",
                   },
                   r("create_one_now") || "Create one now",
                 ),
@@ -304,79 +432,432 @@ const te = 12,
         )
       : e.createElement(
           "div",
-          { className: "min-h-screen bg-white dark:bg-gray-900 pb-20" },
+          {
+            className:
+              "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24",
+          },
           e.createElement(
             "div",
-            { className: "max-w-6xl mx-auto px-4 pt-4" },
+            {
+              className:
+                "sticky top-0 z-40 bg-gradient-to-r from-white/95 via-gray-50/95 to-white/95 dark:from-slate-900/95 dark:via-gray-900/95 dark:to-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/10",
+            },
             e.createElement(
               "div",
-              {
-                className:
-                  "flex flex-col md:flex-row items-center justify-between px-3 md:px-8 py-6 md:py-8 bg-blue-100 dark:bg-gray-800 rounded-xl mb-8 shadow-lg w-full relative overflow-hidden border border-blue-200 dark:border-gray-700",
-              },
+              { className: "max-w-6xl mx-auto px-4 py-4" },
               e.createElement(
                 "div",
-                { className: "flex flex-col gap-2 z-10 w-full md:w-auto" },
+                { className: "flex flex-wrap items-center justify-between gap-3" },
                 e.createElement(
-                  "span",
-                  {
-                    className:
-                      "text-xl md:text-3xl font-bold text-blue-900 dark:text-blue-100 mb-1",
-                  },
-                  r("great_deals"),
+                  "div",
+                  { className: "min-w-0" },
+                  e.createElement(
+                    "h1",
+                    {
+                      className:
+                        "text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent truncate",
+                    },
+                    r("for_you") || "For You",
+                  ),
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-sm text-gray-600 dark:text-gray-400 truncate",
+                    },
+                    d
+                      ? `${C.length} ${tr("matches", "matches")}`
+                      : tr("personalized_feed", "Personalized feed"),
+                  ),
                 ),
                 e.createElement(
-                  "span",
-                  {
-                    className:
-                      "text-sm md:text-base text-blue-800 dark:text-blue-200 font-medium mb-2",
-                  },
-                  r("up_to_off"),
+                  "div",
+                  { className: "flex items-center gap-2" },
+                  e.createElement(
+                    o,
+                    {
+                      variant: "ghost",
+                      size: "icon",
+                      onClick: O,
+                      disabled: ae || D,
+                      className: `text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl ${ae || D ? "animate-spin" : ""}`,
+                    },
+                    e.createElement(X, { className: "h-5 w-5" }),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          e.createElement(
+            "div",
+            { className: "px-4 pt-4" },
+            e.createElement(
+              "div",
+              { className: "max-w-6xl mx-auto flex flex-wrap gap-2" },
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: "border-blue-200 text-blue-700",
+                  onClick: () => i("/search?context=for-you"),
+                },
+                tr("search_listings", "Search Listings"),
+              ),
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: "border-blue-200 text-blue-700",
+                  onClick: () => i("/categories"),
+                },
+                r("categories") || "Categories",
+              ),
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: "border-blue-200 text-blue-700",
+                  onClick: () => i("/all-posts"),
+                },
+                tr("browse_all", "Browse All"),
+              ),
+            ),
+          ),
+          _ &&
+            e.createElement(
+              "div",
+              { className: "px-4 pt-3" },
+              e.createElement(
+                "div",
+                {
+                  className:
+                    "max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2",
+                },
+                e.createElement(
+                  "p",
+                  { className: "text-sm text-amber-800 dark:text-amber-300" },
+                  tr(
+                    "for_you_filter_notice",
+                    "Filters are active and may hide some recommendations.",
+                  ),
                 ),
                 e.createElement(
                   o,
                   {
-                    className:
-                      "bg-blue-600 text-white font-semibold px-5 md:px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition w-fit text-sm md:text-base",
+                    type: "button",
+                    variant: "outline",
+                    className: "border-amber-300 text-amber-800 w-fit",
+                    onClick: E,
                   },
-                  r("shop_now"),
+                  tr("clear_filters", "Clear filters"),
+                ),
+              ),
+            ),
+          e.createElement(
+            "div",
+            { className: "max-w-6xl mx-auto px-4 pt-4" },
+          e.createElement(
+            "div",
+            { className: "mb-6" },
+            e.createElement(
+              "div",
+              {
+                className:
+                  "flex items-center justify-between mb-3 flex-wrap gap-2",
+              },
+              e.createElement(
+                "h3",
+                {
+                  className:
+                    "text-base md:text-lg font-bold text-gray-900 dark:text-white",
+                },
+                r("quick_filters") || "Quick filters",
+              ),
+              _ &&
+                e.createElement(
+                  "button",
+                  {
+                    onClick: E,
+                    className:
+                      "text-xs md:text-sm text-blue-600 dark:text-blue-300 hover:text-blue-700",
+                  },
+                  r("reset_filters") || "Reset filters",
+                ),
+            ),
+            e.createElement(
+              "div",
+              { className: "flex flex-wrap gap-2" },
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: `h-9 rounded-full border-blue-200 ${f === "" && v === "1000" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                  onClick: () =>
+                    updateQueryParams({ minPrice: "", maxPrice: "1000" }),
+                },
+                r("under_1000") || "Under 1000",
+              ),
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: `h-9 rounded-full border-blue-200 ${f === "500" && v === "2000" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                  onClick: () =>
+                    updateQueryParams({ minPrice: "500", maxPrice: "2000" }),
+                },
+                r("500_to_2k") || "₹500-₹2K",
+              ),
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: `h-9 rounded-full border-blue-200 ${f === "2000" && v === "10000" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                  onClick: () =>
+                    updateQueryParams({ minPrice: "2000", maxPrice: "10000" }),
+                },
+                r("2k_to_10k") || "₹2K-₹10K",
+              ),
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  className: `h-9 rounded-full border-blue-200 ${f === "10000" && v === "" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-blue-700 hover:bg-blue-50"}`,
+                  onClick: () =>
+                    updateQueryParams({ minPrice: "10000", maxPrice: "" }),
+                },
+                r("above_10k") || "Above ₹10K",
+              ),
+              e.createElement(
+                o,
+                {
+                  type: "button",
+                  variant: "outline",
+                  disabled: !nearMeLocation,
+                  className: `h-9 rounded-full border-blue-200 ${w && nearMeLocation && w === nearMeLocation ? "bg-blue-600 text-white border-blue-600" : "bg-white text-blue-700 hover:bg-blue-50"} ${nearMeLocation ? "" : "opacity-60"}`,
+                  onClick: () =>
+                    updateQueryParams({ location: nearMeLocation }),
+                },
+                r("near_me") || "Near me",
+              ),
+              _ &&
+                e.createElement(
+                  o,
+                  {
+                    type: "button",
+                    variant: "outline",
+                    className:
+                      "h-9 rounded-full border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
+                    onClick: E,
+                  },
+                  r("clear") || "Clear",
+                ),
+            ),
+          ),
+          categories.length > 0 &&
+            e.createElement(
+              "div",
+              { className: "mb-6" },
+              e.createElement(
+                "div",
+                { className: "flex items-center justify-between mb-3" },
+                e.createElement(
+                  "h3",
+                  {
+                    className:
+                      "text-base md:text-lg font-bold text-gray-900 dark:text-white",
+                  },
+                  r("popular_categories") || "Popular categories",
+                ),
+                e.createElement(
+                  "button",
+                  {
+                    onClick: () => updateQueryParams({ category: "" }),
+                    className:
+                      "text-xs md:text-sm text-blue-600 dark:text-blue-300 hover:text-blue-700",
+                  },
+                  r("view_all") || "View all",
+                ),
+              ),
+              e.createElement(CategoriesGrid, {
+                onCategorySelect: handleCategorySelect,
+                activeCategory: activeCategoryName,
+              }),
+            ),
+          categories.length > 0 &&
+            e.createElement(
+              "div",
+              { className: "mb-6" },
+              e.createElement(
+                "div",
+                { className: "flex items-center justify-between mb-3" },
+                e.createElement(
+                  "h3",
+                  {
+                    className:
+                      "text-base md:text-lg font-bold text-gray-900 dark:text-white",
+                  },
+                  r("categories") || "Categories",
+                ),
+                e.createElement(
+                  "button",
+                  {
+                    onClick: () => updateQueryParams({ category: "" }),
+                    className:
+                      "text-xs md:text-sm text-blue-600 dark:text-blue-300 hover:text-blue-700",
+                  },
+                  r("view_all") || "View all",
                 ),
               ),
               e.createElement(
                 "div",
-                { className: "mt-4 md:mt-0 md:ml-8 z-10" },
+                {
+                  className:
+                    "flex gap-2 overflow-x-auto pb-1 scrollbar-hide",
+                },
                 e.createElement(
-                  "div",
+                  "button",
                   {
-                    className:
-                      "w-24 h-16 md:w-32 md:h-24 bg-blue-200 dark:bg-blue-800 rounded-lg flex items-center justify-center",
+                    onClick: () => updateQueryParams({ category: "" }),
+                    className: `px-4 py-2 rounded-xl font-semibold text-sm border ${
+                      h
+                        ? "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                        : "bg-blue-600 text-white border-blue-600 shadow"
+                    }`,
                   },
-                  e.createElement(
-                    "svg",
-                    {
-                      width: "64",
-                      height: "48",
-                      fill: "none",
-                      viewBox: "0 0 64 48",
-                    },
-                    e.createElement("rect", {
-                      width: "64",
-                      height: "48",
-                      rx: "8",
-                      fill: "#2563eb",
-                    }),
-                  ),
+                  r("all") || "All",
+                ),
+                  categories.map((t) => {
+                    const a = String(t.category_id || t.id || t.name || "");
+                    const n = String(t.name || t.title || "");
+                    const s =
+                      h === a ||
+                      (n && h === n) ||
+                      (n && activeCategoryName === n) ||
+                      activeCategoryName === a;
+                    return e.createElement(
+                      "button",
+                      {
+                        key: a || t.name,
+                        onClick: () => updateQueryParams({ category: a }),
+                        className: `px-4 py-2 rounded-xl font-medium text-sm border transition-all ${
+                          s
+                            ? "bg-blue-600 text-white border-blue-600 shadow"
+                            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/60"
+                        }`,
+                      },
+                      t.name || t.title || a,
+                    );
+                  }),
                 ),
               ),
-              e.createElement("div", {
-                className:
-                  "absolute right-0 bottom-0 opacity-10 w-32 h-24 md:w-40 md:h-32 bg-blue-300 dark:bg-blue-700 rounded-bl-2xl",
-              }),
-            ),
+            (trendLoading || trendPosts.length > 0) &&
+              e.createElement(
+                "div",
+                { className: "mb-6" },
+                e.createElement(
+                  "div",
+                  { className: "flex items-center justify-between mb-3" },
+                  e.createElement(
+                    "h3",
+                    {
+                      className:
+                        "text-base md:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2",
+                    },
+                    e.createElement(fe, {
+                      className: "h-4 w-4 text-orange-400",
+                    }),
+                    r("trending_now") || "Trending Now",
+                  ),
+                  e.createElement(
+                    "button",
+                    {
+                      onClick: () =>
+                        i("/all-posts?sortBy=views_count&sortOrder=desc"),
+                      className:
+                        "text-xs md:text-sm text-blue-600 dark:text-blue-300 hover:text-blue-700 flex items-center gap-1",
+                    },
+                    r("view_all") || "View all",
+                  ),
+                ),
+                trendLoading
+                  ? e.createElement(
+                      "div",
+                      {
+                        className:
+                          "flex gap-3 overflow-x-auto pb-2 scrollbar-hide",
+                      },
+                      [1, 2, 3].map((t) =>
+                        e.createElement(
+                          "div",
+                          {
+                            key: t,
+                            className:
+                              "flex-shrink-0 w-40 h-24 rounded-xl bg-white/70 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/50 animate-pulse",
+                          },
+                          e.createElement("div", {
+                            className:
+                              "h-full w-full rounded-xl bg-gray-200/70 dark:bg-gray-700/60",
+                          }),
+                        ),
+                      ),
+                    )
+                  : e.createElement(
+                      "div",
+                      {
+                        className:
+                          "flex gap-3 overflow-x-auto pb-2 scrollbar-hide",
+                      },
+                      trendPosts.map((t, a) =>
+                        e.createElement(
+                          "div",
+                          {
+                            key: t.post_id || t.id || a,
+                            onClick: () =>
+                              i(`/post/${t.post_id || t.id}`),
+                            className:
+                              "flex-shrink-0 w-40 bg-white dark:bg-gray-800/60 rounded-xl p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-all border border-gray-200 dark:border-gray-700/50 shadow-sm",
+                          },
+                          e.createElement(
+                            "div",
+                            { className: "flex items-center gap-2 mb-2" },
+                            e.createElement(
+                              "span",
+                              { className: "text-orange-400 font-bold text-lg" },
+                              "#",
+                              a + 1,
+                            ),
+                            e.createElement(fe, {
+                              className: "h-4 w-4 text-orange-400",
+                            }),
+                          ),
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-gray-900 dark:text-white text-sm font-medium truncate",
+                            },
+                            t.title,
+                          ),
+                          e.createElement(
+                            "p",
+                            { className: "text-emerald-400 font-bold text-sm mt-1" },
+                            formatPrice(t.price),
+                          ),
+                        ),
+                      ),
+                    ),
+              ),
             e.createElement(
               "div",
               { className: "mb-8" },
-              e.createElement(
+                e.createElement(
                 "h3",
                 {
                   className:
@@ -440,7 +921,7 @@ const te = 12,
               "h3",
               {
                 className:
-                  "text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-300 mb-4",
+                  "text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-4",
               },
               d
                 ? r("search_results") || "Search Results"
@@ -631,24 +1112,28 @@ const te = 12,
                             {
                               key: t.post_id || t.id,
                               className:
-                                "group rounded-2xl shadow-md hover:shadow-2xl bg-white dark:bg-gray-800 border-0 overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer",
+                                "group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 border-gray-200 dark:border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl shadow-sm",
                               onClick: () => i(`/post/${t.post_id || t.id}`),
                             },
                             e.createElement(
                               "div",
                               {
                                 className:
-                                  "relative w-full aspect-[4/3] bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 overflow-hidden",
+                                  "relative aspect-[4/3] overflow-hidden",
                               },
                               e.createElement("img", {
                                 src: a,
                                 alt: t.title,
                                 className:
-                                  "w-full h-full object-cover group-hover:scale-105 transition-transform duration-300",
+                                  "w-full h-full object-cover group-hover:scale-110 transition-transform duration-500",
                                 onError: (s) => {
                                   (s.target.onerror = null),
                                     (s.target.src = "/placeholder.svg");
                                 },
+                              }),
+                              e.createElement("div", {
+                                className:
+                                  "absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent",
                               }),
                               e.createElement(
                                 "div",
@@ -657,9 +1142,22 @@ const te = 12,
                                   "span",
                                   {
                                     className:
-                                      "px-2.5 py-1 bg-white/90 dark:bg-gray-900/90 text-blue-600 dark:text-blue-400 text-xs font-semibold rounded-full backdrop-blur-sm shadow-sm",
+                                      "px-2.5 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-semibold rounded-full backdrop-blur-sm shadow-sm",
                                   },
                                   t.category || t.category_name || "General",
+                                ),
+                              ),
+                              e.createElement(
+                                "div",
+                                { className: "absolute bottom-3 left-3" },
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-2xl font-bold text-white drop-shadow-lg",
+                                  },
+                                  "INR ",
+                                  t.price?.toLocaleString() || "0",
                                 ),
                               ),
                               e.createElement(
@@ -696,24 +1194,15 @@ const te = 12,
                                 "div",
                                 {
                                   className:
-                                    "flex items-start justify-between gap-2 mb-2",
+                                    "flex items-start justify-between gap-2 mb-3",
                                 },
                                 e.createElement(
                                   "h3",
                                   {
                                     className:
-                                      "font-semibold text-gray-900 dark:text-white text-sm md:text-base line-clamp-2 flex-1",
+                                      "text-gray-900 dark:text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors",
                                   },
                                   t.title,
-                                ),
-                                e.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "text-blue-600 dark:text-blue-400 font-bold text-base md:text-lg whitespace-nowrap",
-                                  },
-                                  "INR ",
-                                  t.price?.toLocaleString() || "0",
                                 ),
                               ),
                               t.location
@@ -832,7 +1321,9 @@ const te = 12,
                         : null,
                     ),
           ),
+          ),
         );
   };
 var Ve = Ee;
 export { Ve as default };
+

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from "react-i18next";
 
 const GreenSkeletonLoader = ({ count = 4 }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
@@ -13,8 +14,11 @@ const GreenSkeletonLoader = ({ count = 4 }) => (
   </div>
 );
 
-export const SkeletonLoader = ({ height = 24, width = '100%', className = '' }) => (
-  <div className={`skeleton-loader`} style={{ height, width }} aria-busy="true" aria-label="Loading..." />
-);
+export const SkeletonLoader = ({ height = 24, width = '100%', className = '' }) => {
+  const { t } = useTranslation();
+  return (
+    <div className={`skeleton-loader`} style={{ height, width }} aria-busy="true" aria-label={t("common_loading")} />
+  );
+};
 
 export default GreenSkeletonLoader;

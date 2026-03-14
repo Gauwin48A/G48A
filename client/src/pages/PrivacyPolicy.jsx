@@ -1,5 +1,6 @@
 import React from "react";
 import PolicyLayout from "@/components/legal/PolicyLayout";
+import { useTranslation } from "react-i18next";
 
 const sections = [
   {
@@ -45,10 +46,11 @@ const sections = [
 ];
 
 export default function PrivacyPolicy() {
+  const { t } = useTranslation();
   return (
     <PolicyLayout
-      title="Privacy Policy"
-      subtitle="This policy explains how account, marketplace, support, and wallet data is collected and used."
+      title={t("privacy_policy")}
+      subtitle={t("privacy_policy_subtitle")}
       updatedOn="March 10, 2026"
       sections={sections}
     />

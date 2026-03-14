@@ -28,6 +28,7 @@ import {
 import x from "@/services/api";
 import { useToast as Q } from "@/hooks/use-toast";
 import { useAuth as V } from "@/context/AuthContext";
+import { navigateBack } from "@/utils/navigation";
 import {
   PageEmptyState as X,
   PageErrorState as Y,
@@ -174,7 +175,7 @@ const R = () => {
               onRetry: m,
               secondaryAction: e.createElement(
                 u,
-                { variant: "outline", onClick: () => g(-1) },
+                { variant: "outline", onClick: () => navigateBack(g) },
                 e.createElement(T, { className: "w-4 h-4 mr-2" }),
                 " Go back",
               ),
@@ -199,7 +200,7 @@ const R = () => {
                   variant: "ghost",
                   className:
                     "text-white mb-4 pl-0 hover:text-blue-100 hover:bg-white/10",
-                  onClick: () => g(-1),
+                  onClick: () => navigateBack(g),
                 },
                 e.createElement(T, { className: "w-5 h-5 mr-2" }),
                 " Back",
