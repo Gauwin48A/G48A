@@ -33,6 +33,7 @@ import { translateText as be } from "../utils/translateContent";
 import { useAuth as pe } from "@/context/AuthContext";
 import { getApiOriginBase as xe } from "@/lib/networkConfig";
 import { getInitials as gi } from "@/lib/userDisplay";
+import SellerDashboard from "@/components/SellerDashboard";
 const E = String(xe()).replace(/\/+$/, ""),
   he = E.endsWith("/api") ? E : `${E}/api`,
   W = {
@@ -563,6 +564,7 @@ const E = String(xe()).replace(/\/+$/, ""),
                       );
                     }),
                   ),
+                  e.createElement(SellerDashboard, { key: "seller-dashboard" }),
                   e.createElement(
                     "div",
                     { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" },

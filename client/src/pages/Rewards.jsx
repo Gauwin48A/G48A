@@ -67,6 +67,9 @@ const fe = () => {
     [leaderboardCountdown, setLeaderboardCountdown] = n(""),
     [rewardLog, setRewardLog] = n([]),
     [rewardLogLoading, setRewardLogLoading] = n(!1),
+    [coinBalance, setCoinBalance] = n(null),
+    [coinHistory, setCoinHistory] = n([]),
+    [coinHistoryLoading, setCoinHistoryLoading] = n(!1),
     [showMoreStats, setShowMoreStats] = n(!1),
     [showAllChallenges, setShowAllChallenges] = n(!1),
     [sseStatus, setSseStatus] = n("connecting"),
@@ -109,7 +112,7 @@ const fe = () => {
       () => ({
         referralCode: Boolean(r?.referralCode),
         secretCode: Boolean(r?.dailySecretCode),
-        progress: Number.isFinite(Number(r?.totalCoins)),
+        progress: Number.isFinite(Number(coinBalance ?? r?.totalCoins)),
         leaderboard: Boolean(
           r?.leaderboard?.nextPayoutAt ||
             publicWall?.topSellers?.length ||
@@ -122,7 +125,7 @@ const fe = () => {
         sseFallbackActive,
         lastSseUpdate,
       }),
-      [r, publicWall, sseStatus, sseFallbackActive, lastSseUpdate],
+      [r, publicWall, sseStatus, sseFallbackActive, lastSseUpdate, coinBalance],
     ),
     formatCountdown = W(
       (t) => {
@@ -291,6 +294,39 @@ const fe = () => {
         setRewardLog([]);
       } finally {
         if (t) setRewardLogLoading(!1);
+      }
+    })();
+    return () => {
+      t = !1;
+    };
+  }, [d, D]);
+  E(() => {
+    if (!d) return;
+    let t = !0;
+    (async () => {
+      try {
+        setCoinHistoryLoading(!0);
+        const [balanceRes, historyRes] = await Promise.all([
+          ne.get("/coins/balance").catch(() => null),
+          ne.get("/coins/history?limit=10").catch(() => null),
+        ]);
+        if (!t) return;
+        const nextBalance = balanceRes?.balance ?? balanceRes?.coins;
+        if (Number.isFinite(Number(nextBalance))) {
+          setCoinBalance(Number(nextBalance));
+        }
+        const history = Array.isArray(historyRes?.transactions)
+          ? historyRes.transactions
+          : Array.isArray(historyRes)
+            ? historyRes
+            : [];
+        setCoinHistory(history);
+      } catch {
+        if (t) {
+          setCoinHistory([]);
+        }
+      } finally {
+        if (t) setCoinHistoryLoading(!1);
       }
     })();
     return () => {
@@ -520,7 +556,18 @@ const fe = () => {
     streakProgress = nextStreakTarget
       ? Math.min(100, Math.round((maxStreak / nextStreakTarget) * 100))
       : 0,
-    rewardLogItems = Array.isArray(rewardLog) ? rewardLog : [],
+    displayCoins = coinBalance !== null ? coinBalance : r.totalCoins,
+    rewardLogItems = coinHistory.length
+      ? coinHistory.map((entry) => ({
+          action: entry.type || "coin",
+          points: Number(entry.amount ?? 0),
+          description: entry.description || entry.type || a("reward_log_action"),
+          created_at: entry.created_at,
+        }))
+      : Array.isArray(rewardLog)
+        ? rewardLog
+        : [],
+    logLoading = rewardLogLoading || coinHistoryLoading,
     diagnosticsItems = [
       {
         key: "referrals",
@@ -742,7 +789,7 @@ const fe = () => {
       {
         key: "coins",
         label: a("total_coins"),
-        value: r.totalCoins,
+        value: displayCoins,
         icon: ee,
         accent: "from-yellow-400 to-orange-500",
       },
@@ -1763,7 +1810,7 @@ const fe = () => {
               e.createElement(
                 i,
                 null,
-                rewardLogLoading
+                logLoading
                   ? e.createElement(
                       "p",
                       { className: "text-sm text-slate-500" },

@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
 INSERT INTO subscription_plans (name, display_name, price_inr, duration_months, max_listings, visibility_days, boost_quota_monthly, featured_quota_monthly, spotlight_quota_monthly, badge_type, has_analytics, has_priority_search, has_priority_support, search_priority)
 VALUES
   ('basic', 'Basic', 500, NULL, 1, 15, 0, 0, 0, NULL, false, false, false, 0),
-  ('bronze', 'Bronze', 850, 3, 100, 30, 1, 0, 0, 'seller', true, false, false, 1),
-  ('silver', 'Silver Seller', 1200, 6, 200, 30, 3, 2, 0, 'verified', true, true, false, 2),
+  ('bronze', 'Bronze', 850, 3, 100, 30, 0, 0, 0, 'seller', true, false, false, 1),
+  ('silver', 'Silver Seller', 1200, 6, 200, 30, 5, 5, 5, 'verified', true, true, false, 2),
   ('premium', 'Premium God Mode', 1500, 12, NULL, 45, 5, 5, 5, 'crown', true, true, true, 3)
 ON CONFLICT (name) DO UPDATE SET
   display_name = EXCLUDED.display_name,
@@ -47,7 +47,7 @@ ON CONFLICT (name) DO UPDATE SET
 -- User subscriptions tracking
 CREATE TABLE IF NOT EXISTS user_subscriptions (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(user_id),
+  user_id UUID NOT NULL REFERENCES users(user_id),
   plan_name VARCHAR(20) NOT NULL,
   started_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ,

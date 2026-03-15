@@ -6,5 +6,6 @@ router.get("/stats", authenticateToken, sellerAnalytics.getStats);
 router.get("/listings-performance", authenticateToken, sellerAnalytics.getListingsPerformance);
 router.get("/views-trend", authenticateToken, sellerAnalytics.getViewsTrend);
 router.get("/conversion", authenticateToken, sellerAnalytics.getConversionFunnel);
+router.get("/export", authenticateToken, sellerAnalytics.exportCSV);
 
 module.exports = router;

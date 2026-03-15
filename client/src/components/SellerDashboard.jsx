@@ -20,6 +20,7 @@ import {
   Crown,
   ShieldCheck,
   Lock,
+  Download,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getApiOriginBase } from "@/lib/networkConfig";
@@ -171,6 +172,7 @@ export default function SellerDashboard() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const plan = useMemo(
     () => user?.current_plan || user?.tier || "basic",
@@ -208,6 +210,31 @@ export default function SellerDashboard() {
     loadData();
   }, [loadData]);
 
+  const exportCSV = useCallback(async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const res = await fetch(`${API_BASE}/seller-analytics/export?period=30d`, {
+        headers: { ...getAuthHeaders() },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "listings-30d.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [exporting]);
+
   if (!isEligible) {
     return (
       <Card className="border-dashed">
@@ -219,7 +246,7 @@ export default function SellerDashboard() {
             tracking, and performance insights for your listings.
           </p>
           <Button variant="outline" className="mt-3" size="sm" asChild>
-            <a href="/subscription">View Plans</a>
+            <a href="/tier-selection">View Plans</a>
           </Button>
         </CardContent>
       </Card>
@@ -260,12 +287,28 @@ export default function SellerDashboard() {
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <BarChart3 className="h-5 w-5" /> Seller Analytics
         </h3>
-        {planBadge && (
-          <Badge className={planBadge.color}>
-            <planBadge.icon className="h-3 w-3 mr-1" />
-            {planBadge.label}
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportCSV}
+            disabled={exporting}
+            className="flex items-center gap-1 text-xs"
+          >
+            {exporting ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Download className="h-3 w-3" />
+            )}
+            Export CSV
+          </Button>
+          {planBadge && (
+            <Badge className={planBadge.color}>
+              <planBadge.icon className="h-3 w-3 mr-1" />
+              {planBadge.label}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {stats && (

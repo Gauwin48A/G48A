@@ -9,6 +9,8 @@ const PROMO_BADGE_COLORS = {
   Featured:        "bg-purple-500 text-white",
   Boosted:         "bg-emerald-500 text-white",
   "Premium Seller":"bg-yellow-500 text-black",
+  "Silver Seller":"bg-slate-500 text-white",
+  "Bronze Seller":"bg-amber-500 text-white",
   Promoted:        "bg-blue-500 text-white",
   Listing:         "bg-gray-400 text-white",
 };

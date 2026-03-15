@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Crown, ShieldCheck, Sparkles, Loader2 } from "lucide-react";
 import { getApiOriginBase } from "@/lib/networkConfig";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
 
 const API_BASE = (() => {
   const base = String(getApiOriginBase()).replace(/\/+$/, "");
@@ -41,7 +42,7 @@ function getFirstImage(images) {
 }
 
 const RecommendationCard = memo(function RecommendationCard({ post }) {
-  const image = getFirstImage(post.images);
+  const image = resolveMediaUrl(getFirstImage(post.images), "/placeholder.svg");
   const badge = BADGE_CONFIG[post.badge_type];
 
   return (

@@ -12,7 +12,12 @@ function awardCoinOnPostCreate(req, res, next) {
   const originalJson = res.json.bind(res);
   res.json = function (body) {
     // Only award for successful post creation
-    if (res.statusCode >= 200 && res.statusCode < 300 && body?.post_id) {
+    const postId =
+      body?.post_id ||
+      body?.post?.post_id ||
+      body?.post?.id ||
+      null;
+    if (res.statusCode >= 200 && res.statusCode < 300 && postId) {
       const userId = req.user?.userId || req.user?.id || req.user?.user_id;
       if (userId) {
         // Fire and forget — don't block the response
@@ -21,7 +26,7 @@ function awardCoinOnPostCreate(req, res, next) {
             const { addCoins } = require("../controllers/coinController");
             await addCoins(
               userId, 1, "post",
-              `post_create:${body.post_id}`,
+              `post_create:${postId}`,
               "Earned 1 coin for creating a listing",
             );
           } catch (err) {
