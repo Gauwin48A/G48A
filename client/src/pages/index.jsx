@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,19 +16,19 @@ import { useTranslation } from "react-i18next";
 const Index = () => {
   const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               {t("homepage_hero_title_prefix")}{" "}
               <span className="text-blue-600">
                 {t("homepage_hero_title_highlight")}
               </span>{" "}
               {t("homepage_hero_title_suffix")}
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
               {t("homepage_hero_subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -55,35 +55,35 @@ const Index = () => {
           {/* Trust Indicators */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-green-100 dark:bg-green-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-lg font-semibold mb-2 dark:text-white">
                 {t("aadhaar_verified_badge")}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 {t("aadhaar_verified_desc")}
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-lg font-semibold mb-2 dark:text-white">
                 {t("dual_confirmation")}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 {t("dual_confirmation_desc")}
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Award className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-lg font-semibold mb-2 dark:text-white">
                 {t("rewards_system")}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 {t("rewards_system_desc")}
               </p>
             </div>
@@ -92,13 +92,13 @@ const Index = () => {
       </div>
 
       {/* Features Section */}
-      <div className="py-24 bg-white">
+      <div className="py-24 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {t("homepage_features_title")}
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-300">
               {t("homepage_features_subtitle")}
             </p>
           </div>
@@ -144,30 +144,30 @@ const Index = () => {
       </div>
 
       {/* Stats Section */}
-      <div className="py-16 bg-gray-50">
+      <div className="py-16 bg-gray-50 dark:bg-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl font-bold text-blue-600 mb-2">
                 10,000+
               </div>
-              <div className="text-gray-600">{t("verified_users")}</div>
+              <div className="text-gray-600 dark:text-gray-400">{t("verified_users")}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-green-600 mb-2">
                 25,000+
               </div>
-              <div className="text-gray-600">{t("successful_sales")}</div>
+              <div className="text-gray-600 dark:text-gray-400">{t("successful_sales")}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-purple-600 mb-2">50+</div>
-              <div className="text-gray-600">{t("cities_covered")}</div>
+              <div className="text-gray-600 dark:text-gray-400">{t("cities_covered")}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-orange-600 mb-2">
-                ₹5Cr+
+                â‚¹5Cr+
               </div>
-              <div className="text-gray-600">{t("transaction_value")}</div>
+              <div className="text-gray-600 dark:text-gray-400">{t("transaction_value")}</div>
             </div>
           </div>
         </div>
@@ -274,3 +274,4 @@ const Index = () => {
 };
 
 export default Index;
+

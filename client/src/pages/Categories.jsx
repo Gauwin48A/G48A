@@ -122,8 +122,8 @@ export default function Categories() {
   const clearSearch = () => setSearchQuery("");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-100 pb-24 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      <div className="mb-6 w-full max-w-6xl px-4 pt-8 md:pt-10 mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      <div className="mb-6 w-full max-w-6xl px-4 pt-8 md:pt-10 mx-auto page-shell page-pad">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 px-6 py-8 shadow-xl">
           <div className="relative z-10 mx-auto max-w-4xl">
             <button
@@ -146,7 +146,7 @@ export default function Categories() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto max-w-6xl px-4 page-shell page-pad">
         <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

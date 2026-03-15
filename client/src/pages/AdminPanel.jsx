@@ -213,7 +213,7 @@ const ge = {
         },
         e.createElement(
           "div",
-          { className: "max-w-6xl mx-auto py-20 text-center" },
+          { className: "max-w-6xl mx-auto py-20 text-center page-shell page-pad" },
           e.createElement("div", {
             className:
               "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto",
@@ -499,7 +499,7 @@ const ge = {
           },
           e.createElement(
             "div",
-            { className: "max-w-6xl mx-auto py-20 text-center" },
+            { className: "max-w-6xl mx-auto py-20 text-center page-shell page-pad" },
             e.createElement("div", {
               className:
                 "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto",
@@ -519,7 +519,7 @@ const ge = {
           },
           e.createElement(
             "div",
-            { className: "max-w-6xl mx-auto space-y-4" },
+            { className: "max-w-6xl mx-auto space-y-4 page-shell page-pad" },
             e.createElement(
               "div",
               { className: "text-center md:text-left" },

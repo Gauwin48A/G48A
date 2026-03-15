@@ -161,8 +161,8 @@ const EditPost = () => {
 
   if (!canUsePage) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center page-shell page-pad">
           <h2 className="text-xl font-bold text-amber-800 mb-2">
             Login required
           </h2>
@@ -187,15 +187,15 @@ const EditPost = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 text-gray-600">
+      <div className="min-h-screen flex items-center justify-center p-6 text-gray-600 dark:text-gray-300 dark:bg-gray-900">
         Loading listing details...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="max-w-2xl mx-auto p-4 pt-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-2xl mx-auto p-4 pt-8 page-shell page-pad">
         <Card className="shadow-lg border-0">
           <CardHeader>
             <CardTitle className="text-2xl">{t("edit_listing")}</CardTitle>

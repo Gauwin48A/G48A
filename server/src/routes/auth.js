@@ -8,6 +8,16 @@ const { authenticateToken, optionalAuthenticateToken } = require("../middleware/
 const { strictLoginLimiter } = require("../middleware/wafEnforcement");
 const { enforceNoVpnForAuth } = require("../middleware/fraudCheck");
 const { enforceAdaptiveMfaLogin } = require("../middleware/adaptiveMfaLogin");
+
+// Prevent browser/CDN from caching auth responses
+router.use((req, res, next) => {
+  res.set({
+    "Cache-Control": "no-store, no-cache, must-revalidate, private",
+    "Pragma": "no-cache",
+    "Expires": "0",
+  });
+  next();
+});
 const { hardenAuthResponse } = require("../middleware/authResponseHardening");
 const { authAnomalyThrottle } = require("../middleware/authAnomalyThrottle");
 const { authSessionRetentionMiddleware } = require("../middleware/authSessionRetentionMiddleware");
@@ -148,6 +158,24 @@ router.post(
   authSessionRetentionMiddleware,
   authController.verifyOTP,
 );
+router.post(
+  "/aadhaar/send-otp",
+  otpSendLimiter,
+  authAnomalyThrottle("aadhaar_send_otp"),
+  authController.sendAadhaarSignupOtp,
+);
+router.post(
+  "/aadhaar/verify-otp",
+  otpVerifyLimiter,
+  authAnomalyThrottle("aadhaar_verify_otp"),
+  authController.verifyAadhaarSignupOtp,
+);
+router.post(
+  "/aadhaar/complete-signup",
+  signupLimiter,
+  authSessionRetentionMiddleware,
+  authController.completeAadhaarSignup,
+);
 router.post("/otp/callback/:provider", authController.handleOtpDeliveryCallback);
 router.get("/csrf-token", csrfTokenEndpoint);
 router.get("/session", optionalAuthenticateToken, authSessionController.getSessionStatus);
@@ -178,5 +206,19 @@ router.delete(
   authSessionController.revokeSession,
 );
 router.delete("/sessions", authenticateToken, authCsrfProtection, authSessionController.revokeAllSessions);
+
+// A26: Phone number change (requires Aadhaar re-verification)
+router.post(
+  "/phone-change/initiate",
+  authenticateToken,
+  otpSendLimiter,
+  authController.initiatePhoneChange,
+);
+router.post(
+  "/phone-change/complete",
+  authenticateToken,
+  otpVerifyLimiter,
+  authController.completePhoneChange,
+);
 
 module.exports = router;

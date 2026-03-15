@@ -28,6 +28,7 @@ const z = () => {
           allowCache: !0,
           allowIpFallback: !0,
           requiredAccuracy: 500,
+          strictAccuracy: !1,
         });
         w({ lat: t.latitude ?? t.lat, long: t.longitude ?? t.lng }),
           f("granted");
@@ -78,7 +79,7 @@ const z = () => {
   };
   return e.createElement(
     "div",
-    { className: "min-h-screen bg-gray-50 dark:bg-gray-900 pb-20" },
+    { className: "min-h-screen bg-gray-50 dark:bg-gray-900" },
     e.createElement(
       "div",
       {
@@ -157,7 +158,7 @@ const z = () => {
     ),
     e.createElement(
       "div",
-      { className: "max-w-6xl mx-auto px-4 py-6" },
+      { className: "max-w-6xl mx-auto px-4 py-6 page-shell page-pad" },
       N === "denied" &&
         e.createElement(
           "div",

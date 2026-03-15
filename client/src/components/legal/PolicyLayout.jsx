@@ -5,20 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function PolicyLayout({ title, subtitle, updatedOn, sections }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
-      <div className="mx-auto w-full max-w-4xl px-4 pb-24 pt-7 md:px-6">
-        <div className="mb-6 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900 md:p-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 md:text-3xl">
+      <div className="page-shell page-pad w-full max-w-4xl pt-8 md:pt-10">
+        <div className="mb-8 rounded-2xl border border-blue-100 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900 md:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">
+            Legal
+          </p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100 md:text-3xl">
             {title}
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 md:text-base">
             {subtitle}
           </p>
-          <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="mt-4 text-xs font-medium text-slate-500 dark:text-slate-400">
             Last updated: {updatedOn}
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="page-section space-y-4">
           {sections.map((section) => (
             <Card key={section.heading} className="border-blue-100 dark:border-gray-700">
               <CardHeader className="pb-2">
@@ -35,7 +38,7 @@ export default function PolicyLayout({ title, subtitle, updatedOn, sections }) {
           ))}
         </div>
 
-        <div className="mt-8 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm dark:border-blue-900 dark:bg-blue-950/30">
+        <div className="page-section rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm dark:border-blue-900 dark:bg-blue-950/30">
           <p className="mb-2 font-semibold text-blue-800 dark:text-blue-200">
             Other legal pages
           </p>
@@ -70,4 +73,3 @@ export default function PolicyLayout({ title, subtitle, updatedOn, sections }) {
     </div>
   );
 }
-

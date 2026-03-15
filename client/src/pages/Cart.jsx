@@ -15,9 +15,9 @@ const Cart = () => {
     useCart();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 nav-clearance">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-8">
-        <div className="max-w-6xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="max-w-6xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center page-shell page-pad">
           <div className="flex items-center gap-3">
             <ShoppingCart className="w-8 h-8" />
             <div>
@@ -51,7 +51,7 @@ const Cart = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 mt-6 -translate-y-6 pb-8">
+      <div className="max-w-6xl mx-auto px-4 mt-6 -translate-y-6 pb-8 page-shell page-pad">
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_280px] lg:grid-cols-[minmax(0,1fr)_320px] gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 md:p-6">
             {items.length === 0 ? (
@@ -147,7 +147,7 @@ const Cart = () => {
             <Button
               asChild
               variant="outline"
-              className="w-full mt-2 border-blue-200 text-blue-700"
+              className="w-full mt-2 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
             >
               <Link to="/all-posts">
                 {t("browse_all_posts") || "Continue shopping"}

@@ -14,7 +14,7 @@ export default function ProtectedChat() {
   if (!loggedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
-        <div className="mx-auto flex w-full max-w-xl items-center justify-center px-4 pb-24 pt-12">
+        <div className="mx-auto flex w-full max-w-xl items-center justify-center px-4 pt-12 page-shell page-pad">
           <Card className="w-full border-blue-100 shadow-sm dark:border-gray-700">
             <CardHeader className="pb-2 text-center">
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">

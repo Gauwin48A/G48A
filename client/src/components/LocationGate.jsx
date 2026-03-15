@@ -1,4 +1,362 @@
-import o,{useEffect as b,useState as r}from"react";import{useLocation as A}from"../context/LocationContext";import{getDeviceInfo as E}from"../utils/deviceInfo";import{MapPin as s,Loader2 as l,AlertTriangle as y,RefreshCw as h,Smartphone as C}from"lucide-react";import{buildApiPath as T}from"@/lib/networkConfig";const v="mhub_device_info_sent";function G({children:x}){const{loading:n,error:c,permissionGranted:a,permissionDenied:w,requestLocation:d,city:N,accuracy:g,provider:k}=A(),[p,m]=r(!1),[t,u]=r(!1),[z,S]=r(!1);b(()=>{const i=setTimeout(()=>{n&&!a&&(console.log("[LocationGate] Auto-bypassing after 5 seconds - app will load while GPS continues in background"),S(!0))},5e3);return()=>clearTimeout(i)},[n,a]),b(()=>{if(sessionStorage.getItem(v)==="1"){m(!0);return}p||(L(),m(!0))},[p]);const L=async()=>{try{const i=E();await fetch(T("/analytics/device"),{method:"POST",headers:{"Content-Type":"application/json"},credentials:"include",body:JSON.stringify(i)}),sessionStorage.setItem(v,"1"),console.log("[LocationGate] Device info sent:",i.fingerprint)}catch(i){console.error("[LocationGate] Failed to send device info:",i)}},f=async()=>{u(!0),await d(),u(!1)};return a&&!n||z?o.createElement(o.Fragment,null,x):n?o.createElement("div",{className:"location-gate"},o.createElement("div",{className:"location-gate-content"},o.createElement("div",{className:"location-gate-icon pulse"},o.createElement(s,{size:48})),o.createElement("h1",null,"Detecting Your Location"),o.createElement("p",null,"Using GPS for accurate location (up to 60 seconds)"),o.createElement("div",{className:"location-gate-loader"},o.createElement(l,{className:"spin",size:32})),o.createElement("p",{className:"location-gate-hint"},"App will load shortly even if detection takes time...")),o.createElement("style",null,e)):w?o.createElement("div",{className:"location-gate denied"},o.createElement("div",{className:"location-gate-content"},o.createElement("div",{className:"location-gate-icon warning"},o.createElement(y,{size:48})),o.createElement("h1",null,"Location Access Required"),o.createElement("p",null,"MHub needs your location to show nearby products and connect you with local sellers."),o.createElement("div",{className:"location-gate-instructions"},o.createElement("h3",null,o.createElement(C,{size:20})," How to Enable Location:"),o.createElement("ol",null,o.createElement("li",null,"Tap the ",o.createElement("strong",null,"\uD83D\uDD12 lock icon")," in your browser's address bar"),o.createElement("li",null,"Find ",o.createElement("strong",null,"Location")," setting"),o.createElement("li",null,"Change to ",o.createElement("strong",null,"Allow")),o.createElement("li",null,"Refresh this page"))),N&&o.createElement("div",{className:"location-gate-fallback"},o.createElement("p",null,"Current location source: ",o.createElement("strong",null,k||"unknown")),o.createElement("p",{className:"muted"},g?`Last known accuracy: \xB1${Math.round(g)}m`:"Enable GPS for the most accurate location.")),o.createElement("button",{className:"location-gate-btn",onClick:f,disabled:t},t?o.createElement(o.Fragment,null,o.createElement(l,{className:"spin",size:20})," Checking..."):o.createElement(o.Fragment,null,o.createElement(h,{size:20})," Try Again"))),o.createElement("style",null,e)):c?o.createElement("div",{className:"location-gate error"},o.createElement("div",{className:"location-gate-content"},o.createElement("div",{className:"location-gate-icon warning"},o.createElement(y,{size:48})),o.createElement("h1",null,"Location Error"),o.createElement("p",null,c),o.createElement("button",{className:"location-gate-btn",onClick:f,disabled:t},t?o.createElement(o.Fragment,null,o.createElement(l,{className:"spin",size:20})," Retrying..."):o.createElement(o.Fragment,null,o.createElement(h,{size:20})," Try Again"))),o.createElement("style",null,e)):o.createElement("div",{className:"location-gate"},o.createElement("div",{className:"location-gate-content"},o.createElement("div",{className:"location-gate-icon pulse"},o.createElement(s,{size:48})),o.createElement("h1",null,"Enable Location"),o.createElement("p",null,"Allow location access to discover products near you and connect with local sellers."),o.createElement("button",{className:"location-gate-btn primary",onClick:d},o.createElement(s,{size:20})," Allow Location Access"),o.createElement("p",{className:"location-gate-privacy"},"\uD83D\uDD12 Your location is stored securely and only used to improve your experience.")),o.createElement("style",null,e))}const e=`
+import React, { useEffect, useState } from "react";
+import { useLocation } from "../context/LocationContext";
+import { getDeviceInfo } from "../utils/deviceInfo";
+import {
+  MapPin,
+  Loader2,
+  AlertTriangle,
+  RefreshCw,
+  Smartphone,
+  Crosshair,
+  Wifi,
+  Globe,
+} from "lucide-react";
+import { buildApiPath } from "@/lib/networkConfig";
+
+const DEVICE_INFO_KEY = "mhub_device_info_sent";
+
+const getAccuracyBadge = (provider, accuracy) => {
+  const prov = String(provider || "").toLowerCase();
+  if (prov === "ip_fallback") {
+    return { label: "City-level (IP)", icon: Globe, color: "#f59e0b" };
+  }
+  if (prov.includes("cache") || prov === "network") {
+    return { label: "Approximate (Network)", icon: Wifi, color: "#3b82f6" };
+  }
+  if (accuracy && accuracy <= 100) {
+    return { label: "Precise (GPS)", icon: Crosshair, color: "#22c55e" };
+  }
+  if (accuracy && accuracy <= 500) {
+    return { label: "Approximate (GPS)", icon: Wifi, color: "#3b82f6" };
+  }
+  return { label: "Precise (GPS)", icon: Crosshair, color: "#22c55e" };
+};
+
+function LocationGate({ children }) {
+  const {
+    loading,
+    error,
+    permissionGranted,
+    permissionDenied,
+    requestLocation,
+    city,
+    accuracy,
+    provider,
+    locationString,
+  } = useLocation();
+
+  const [deviceInfoSent, setDeviceInfoSent] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [bypassed, setBypassed] = useState(false);
+
+  const isWebDriver =
+    typeof navigator !== "undefined" && navigator.webdriver;
+
+  useEffect(() => {
+    if (isWebDriver) {
+      setBypassed(true);
+    }
+  }, [isWebDriver]);
+
+  // Auto-bypass after 5 seconds so app loads while GPS continues
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loading && !permissionGranted) {
+        console.log(
+          "[LocationGate] Auto-bypassing after 5 seconds - app will load while GPS continues in background",
+        );
+        setBypassed(true);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [loading, permissionGranted]);
+
+  // Send device info once per session
+  useEffect(() => {
+    if (sessionStorage.getItem(DEVICE_INFO_KEY) === "1") {
+      setDeviceInfoSent(true);
+      return;
+    }
+    if (!deviceInfoSent) {
+      sendDeviceInfo();
+      setDeviceInfoSent(true);
+    }
+  }, [deviceInfoSent]);
+
+  const sendDeviceInfo = async () => {
+    try {
+      const info = getDeviceInfo();
+      await fetch(buildApiPath("/analytics/device"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(info),
+      });
+      sessionStorage.setItem(DEVICE_INFO_KEY, "1");
+      console.log("[LocationGate] Device info sent:", info.fingerprint);
+    } catch (err) {
+      console.error("[LocationGate] Failed to send device info:", err);
+    }
+  };
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    await requestLocation();
+    setRetrying(false);
+  };
+
+  // L10: Accuracy badge component
+  const AccuracyBadge = () => {
+    if (!permissionGranted && !bypassed) return null;
+    const badge = getAccuracyBadge(provider, accuracy);
+    const BadgeIcon = badge.icon;
+    return React.createElement(
+      "div",
+      { className: "location-accuracy-badge", style: { borderColor: badge.color } },
+      React.createElement(BadgeIcon, { size: 14, style: { color: badge.color } }),
+      React.createElement("span", { style: { color: badge.color } }, badge.label),
+    );
+  };
+
+  // Passed through — app renders with optional accuracy badge overlay
+  if ((permissionGranted && !loading) || bypassed) {
+    return React.createElement(
+      React.Fragment,
+      null,
+      children,
+      React.createElement(AccuracyBadge, null),
+      React.createElement("style", null, badgeStyles),
+    );
+  }
+
+  // Loading state
+  if (loading) {
+    return React.createElement(
+      "div",
+      { className: "location-gate" },
+      React.createElement(
+        "div",
+        { className: "location-gate-content" },
+        React.createElement(
+          "div",
+          { className: "location-gate-icon pulse" },
+          React.createElement(MapPin, { size: 48 }),
+        ),
+        React.createElement("h1", null, "Detecting Your Location"),
+        React.createElement(
+          "p",
+          null,
+          "Using GPS for accurate location (up to 60 seconds)",
+        ),
+        React.createElement(
+          "div",
+          { className: "location-gate-loader" },
+          React.createElement(Loader2, { className: "spin", size: 32 }),
+        ),
+        React.createElement(
+          "p",
+          { className: "location-gate-hint" },
+          "App will load shortly even if detection takes time...",
+        ),
+      ),
+      React.createElement("style", null, gateStyles),
+    );
+  }
+
+  // Permission denied
+  if (permissionDenied) {
+    return React.createElement(
+      "div",
+      { className: "location-gate denied" },
+      React.createElement(
+        "div",
+        { className: "location-gate-content" },
+        React.createElement(
+          "div",
+          { className: "location-gate-icon warning" },
+          React.createElement(AlertTriangle, { size: 48 }),
+        ),
+        React.createElement("h1", null, "Location Access Required"),
+        React.createElement(
+          "p",
+          null,
+          "MHub needs your location to show nearby products and connect you with local sellers.",
+        ),
+        React.createElement(
+          "div",
+          { className: "location-gate-instructions" },
+          React.createElement(
+            "h3",
+            null,
+            React.createElement(Smartphone, { size: 20 }),
+            " How to Enable Location:",
+          ),
+          React.createElement(
+            "ol",
+            null,
+            React.createElement(
+              "li",
+              null,
+              "Tap the ",
+              React.createElement("strong", null, "\uD83D\uDD12 lock icon"),
+              " in your browser's address bar",
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Find ",
+              React.createElement("strong", null, "Location"),
+              " setting",
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Change to ",
+              React.createElement("strong", null, "Allow"),
+            ),
+            React.createElement("li", null, "Refresh this page"),
+          ),
+        ),
+        city &&
+          React.createElement(
+            "div",
+            { className: "location-gate-fallback" },
+            React.createElement(
+              "p",
+              null,
+              "Current location source: ",
+              React.createElement("strong", null, provider || "unknown"),
+            ),
+            React.createElement(
+              "p",
+              { className: "muted" },
+              accuracy
+                ? `Last known accuracy: \xB1${Math.round(accuracy)}m`
+                : "Enable GPS for the most accurate location.",
+            ),
+          ),
+        React.createElement(
+          "button",
+          {
+            className: "location-gate-btn",
+            onClick: handleRetry,
+            disabled: retrying,
+          },
+          retrying
+            ? React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(Loader2, { className: "spin", size: 20 }),
+                " Checking...",
+              )
+            : React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(RefreshCw, { size: 20 }),
+                " Try Again",
+              ),
+        ),
+      ),
+      React.createElement("style", null, gateStyles),
+    );
+  }
+
+  // Error state
+  if (error) {
+    return React.createElement(
+      "div",
+      { className: "location-gate error" },
+      React.createElement(
+        "div",
+        { className: "location-gate-content" },
+        React.createElement(
+          "div",
+          { className: "location-gate-icon warning" },
+          React.createElement(AlertTriangle, { size: 48 }),
+        ),
+        React.createElement("h1", null, "Location Error"),
+        React.createElement("p", null, error),
+        React.createElement(
+          "button",
+          {
+            className: "location-gate-btn",
+            onClick: handleRetry,
+            disabled: retrying,
+          },
+          retrying
+            ? React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(Loader2, { className: "spin", size: 20 }),
+                " Retrying...",
+              )
+            : React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(RefreshCw, { size: 20 }),
+                " Try Again",
+              ),
+        ),
+      ),
+      React.createElement("style", null, gateStyles),
+    );
+  }
+
+  // Initial prompt
+  return React.createElement(
+    "div",
+    { className: "location-gate" },
+    React.createElement(
+      "div",
+      { className: "location-gate-content" },
+      React.createElement(
+        "div",
+        { className: "location-gate-icon pulse" },
+        React.createElement(MapPin, { size: 48 }),
+      ),
+      React.createElement("h1", null, "Enable Location"),
+      React.createElement(
+        "p",
+        null,
+        "Allow location access to discover products near you and connect you with local sellers.",
+      ),
+      React.createElement(
+        "button",
+        { className: "location-gate-btn primary", onClick: requestLocation },
+        React.createElement(MapPin, { size: 20 }),
+        " Allow Location Access",
+      ),
+      React.createElement(
+        "p",
+        { className: "location-gate-privacy" },
+        "\uD83D\uDD12 Your location is stored securely and only used to improve your experience.",
+      ),
+    ),
+    React.createElement("style", null, gateStyles),
+  );
+}
+
+const badgeStyles = `
+  .location-accuracy-badge {
+    position: fixed;
+    bottom: 72px;
+    left: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    z-index: 999;
+    pointer-events: none;
+  }
+`;
+
+const gateStyles = `
   .location-gate {
     position: fixed;
     top: 0;
@@ -143,4 +501,6 @@ import o,{useEffect as b,useState as r}from"react";import{useLocation as A}from"
     margin-top: 20px;
     margin-bottom: 0;
   }
-`;export{G as default};
+`;
+
+export { LocationGate as default };

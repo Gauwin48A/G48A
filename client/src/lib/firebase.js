@@ -1,228 +1,114 @@
 /**
- * Firebase Configuration for Client-Side
- * 
- * SETUP REQUIRED:
- * 1. Create a Firebase project at https://console.firebase.google.com
- * 2. Register your web app in the Firebase console
- * 3. Set VITE_FIREBASE_* env vars in .env (see .env.example)
- * 4. Set VITE_VAPID_PUBLIC_KEY from Cloud Messaging settings
+ * Web Push Notification Service (VAPID)
+ *
+ * Replaces Firebase Cloud Messaging with native Web Push API.
+ * Uses VAPID (Voluntary Application Server Identification) for server-to-browser push.
+ *
+ * SETUP:
+ * 1. Generate VAPID keys: npx web-push generate-vapid-keys
+ * 2. Set VITE_VAPID_PUBLIC_KEY in client .env
+ * 3. Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL in server .env
  */
 import { buildApiPath } from '@/lib/networkConfig';
-import { reportRuntimeError } from '@/lib/errorReporting';
 
-const env = import.meta.env || {};
-const PLACEHOLDER_MARKERS = [
-    "YOUR_API_KEY",
-    "YOUR_PROJECT_ID",
-    "YOUR_SENDER_ID",
-    "YOUR_APP_ID",
-    "YOUR_VAPID_KEY",
-];
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
 
-const isPlaceholder = (value) => {
-    if (!value) return true;
-    return PLACEHOLDER_MARKERS.some((marker) => value.includes(marker));
-};
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
-// Firebase config is sourced from env to avoid hardcoding.
-const firebaseConfig = {
-    apiKey: env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_SENDER_ID",
-    appId: env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID",
-};
-
-// VAPID key for web push (get from Firebase Console > Cloud Messaging > Web Push certificates)
-const VAPID_KEY = env.VITE_VAPID_PUBLIC_KEY || "YOUR_VAPID_KEY";
-
-let cachedFirebase = null;
-let initPromise = null;
 let warnedConfig = false;
-let reportedInitFailure = false;
 
-const REQUIRED_FIELDS = [
-    { key: "VITE_FIREBASE_API_KEY", value: firebaseConfig.apiKey },
-    { key: "VITE_FIREBASE_AUTH_DOMAIN", value: firebaseConfig.authDomain },
-    { key: "VITE_FIREBASE_PROJECT_ID", value: firebaseConfig.projectId },
-    { key: "VITE_FIREBASE_STORAGE_BUCKET", value: firebaseConfig.storageBucket },
-    { key: "VITE_FIREBASE_MESSAGING_SENDER_ID", value: firebaseConfig.messagingSenderId },
-    { key: "VITE_FIREBASE_APP_ID", value: firebaseConfig.appId },
-    { key: "VITE_VAPID_PUBLIC_KEY", value: VAPID_KEY },
-];
+export function isFirebaseConfigured() {
+  return isPushConfigured();
+}
 
-export function getFirebaseConfigDiagnostics() {
-    const missingKeys = REQUIRED_FIELDS.filter((field) => isPlaceholder(field.value))
-        .map((field) => field.key);
-    return {
-        configured: missingKeys.length === 0,
-        missingKeys,
-    };
+export function isPushConfigured() {
+  return Boolean(VAPID_PUBLIC_KEY && VAPID_PUBLIC_KEY.length > 20 && !VAPID_PUBLIC_KEY.includes('YOUR_'));
 }
 
 export function warnIfFirebaseMisconfigured() {
-    if (warnedConfig) return;
-    const diagnostics = getFirebaseConfigDiagnostics();
-    if (diagnostics.configured) return;
-    warnedConfig = true;
-    const message = `[FCM] Firebase env missing or placeholder: ${diagnostics.missingKeys.join(', ')}`;
-    console.warn(message);
-    try {
-        reportRuntimeError(new Error(message), 'firebase-config');
-    } catch {
-        // ignore reporting failures
-    }
+  warnIfPushMisconfigured();
 }
 
-/**
- * Check if Firebase is configured
- */
-export function isFirebaseConfigured() {
-    return getFirebaseConfigDiagnostics().configured;
+export function warnIfPushMisconfigured() {
+  if (warnedConfig) return;
+  if (isPushConfigured()) return;
+  warnedConfig = true;
+  console.warn('[Push] VITE_VAPID_PUBLIC_KEY is missing or placeholder. Push notifications disabled.');
 }
 
-/**
- * Initialize Firebase and get messaging instance
- * Call this after user logs in
- */
-export async function initializeFirebase() {
-    if (cachedFirebase) return cachedFirebase;
-    if (initPromise) return initPromise;
-
-    initPromise = (async () => {
-        if (typeof window === "undefined") {
-            return null;
-        }
-
-        if (!isFirebaseConfigured()) {
-            warnIfFirebaseMisconfigured();
-            console.warn('[FCM] Firebase not configured. Push notifications disabled.');
-            return null;
-        }
-
-        try {
-            // Dynamic import to avoid errors if Firebase is not installed
-            const { initializeApp, getApps, getApp } = await import('firebase/app');
-            const { getMessaging, getToken, onMessage, isSupported } = await import('firebase/messaging');
-
-            const supported = await isSupported();
-            if (!supported) {
-                console.warn('[FCM] Messaging not supported in this browser/environment.');
-                return null;
-            }
-
-            const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-            const messaging = getMessaging(app);
-
-            return { messaging, getToken, onMessage };
-        } catch (error) {
-            const message = String(error?.message || error);
-            if (message.includes('firebase/app') || message.includes('Failed to resolve import')) {
-                console.error('[FCM] Firebase package not installed. Run npm install in client.');
-            }
-            console.error('[FCM] Failed to initialize Firebase:', error);
-            if (!reportedInitFailure) {
-                reportedInitFailure = true;
-                try {
-                    reportRuntimeError(error, 'firebase-init');
-                } catch {
-                    // ignore reporting failures
-                }
-            }
-            return null;
-        }
-    })();
-
-    try {
-        cachedFirebase = await initPromise;
-        return cachedFirebase;
-    } finally {
-        initPromise = null;
-    }
-}
-
-/**
- * Request notification permission and get FCM token
- */
 export async function requestNotificationPermission() {
-    if (!('Notification' in window)) {
-        console.warn('[FCM] Notifications not supported in this browser');
-        return null;
-    }
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.warn('[Push] Push notifications not supported in this browser');
+    return null;
+  }
 
-    if (isPlaceholder(VAPID_KEY)) {
-        warnIfFirebaseMisconfigured();
-        console.warn('[FCM] VAPID key missing. Push notifications disabled.');
-        return null;
-    }
+  if (!isPushConfigured()) {
+    warnIfPushMisconfigured();
+    return null;
+  }
 
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-        console.warn('[FCM] Notification permission denied');
-        return null;
-    }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    console.warn('[Push] Notification permission denied');
+    return null;
+  }
 
-    const firebase = await initializeFirebase();
-    if (!firebase) return null;
+  try {
+    const registration = await navigator.serviceWorker.register('/push-sw.js');
+    await navigator.serviceWorker.ready;
 
-    try {
-        let serviceWorkerRegistration = null;
-        if ('serviceWorker' in navigator) {
-            try {
-                serviceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-            } catch (error) {
-                console.warn('[FCM] Failed to register service worker:', error);
-            }
-        }
-
-        const token = await firebase.getToken(firebase.messaging, {
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: serviceWorkerRegistration || undefined,
-        });
-        console.log('[FCM] Token obtained:', token);
-        return token;
-    } catch (error) {
-        console.error('[FCM] Failed to get token:', error);
-        return null;
-    }
-}
-
-/**
- * Register token with backend
- */
-export async function registerTokenWithBackend(token, userId) {
-    try {
-        const response = await fetch(buildApiPath('/push/register'), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-user-id': userId
-            },
-            body: JSON.stringify({
-                token,
-                deviceType: 'web',
-                deviceName: navigator.userAgent
-            })
-        });
-        return response.json();
-    } catch (error) {
-        console.error('[FCM] Failed to register token:', error);
-        return { success: false, error };
-    }
-}
-
-/**
- * Setup foreground message handler
- */
-export async function setupForegroundHandler(callback) {
-    const firebase = await initializeFirebase();
-    if (!firebase) return;
-
-    firebase.onMessage(firebase.messaging, (payload) => {
-        console.log('[FCM] Foreground message:', payload);
-        callback(payload);
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
+
+    // Return the subscription as JSON string (acts as the "token")
+    const subscriptionJSON = JSON.stringify(subscription);
+    console.log('[Push] Subscription obtained');
+    return subscriptionJSON;
+  } catch (error) {
+    console.error('[Push] Failed to subscribe:', error);
+    return null;
+  }
 }
 
-export { firebaseConfig, VAPID_KEY };
+export async function registerTokenWithBackend(token, userId) {
+  try {
+    const response = await fetch(buildApiPath('/push/register'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': userId,
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        token,
+        deviceType: 'web',
+        deviceName: navigator.userAgent,
+      }),
+    });
+    return response.json();
+  } catch (error) {
+    console.error('[Push] Failed to register with backend:', error);
+    return { success: false, error };
+  }
+}
+
+export async function setupForegroundHandler(callback) {
+  if (!('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'PUSH_RECEIVED') {
+      callback(event.data.payload);
+    }
+  });
+}

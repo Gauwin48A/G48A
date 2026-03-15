@@ -1,866 +1,564 @@
-import e, { useState as i } from "react";
-import { Button as f } from "@/components/ui/button";
-import { Input as p } from "@/components/ui/input";
-import { Label as d } from "@/components/ui/label";
-import { Card as X, CardContent as R } from "@/components/ui/card";
-import { Checkbox as ee } from "@/components/ui/checkbox";
-import { useToast as re } from "@/hooks/use-toast";
+import React, { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Link as y,
-  useNavigate as se,
-  useLocation as te,
-} from "react-router-dom";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  Eye as L,
-  EyeOff as T,
-  User as le,
-  Mail as ae,
-  Phone as I,
-  Lock as B,
-  Gift as oe,
-  CheckCircle as m,
-  ArrowRight as ie,
-  Sparkles as ne,
-  Shield as E,
-  Users as de,
+  Shield,
+  Phone,
+  Lock,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  KeyRound,
 } from "lucide-react";
-import { useTranslation as ue } from "react-i18next";
-import { useAuth as pe } from "@/context/AuthContext";
-const A =
-    String(import.meta.env.VITE_ENABLE_GOOGLE_AUTH || "").toLowerCase() ===
-    "true",
-  j =
-    String(import.meta.env.VITE_ENABLE_PHONE_OTP_SIGNUP || "").toLowerCase() ===
-    "true",
-  ce = () => {
-    const _ = se(),
-      F = te(),
-      { toast: c } = re(),
-      { t: s } = ue(),
-      { signup: Oe, setUser: O } = pe(),
-      U = (t) => {
-        const r = t?.id ?? t?.user_id ?? null;
-        return r == null || r === "" ? null : String(r);
-      },
-      $ = new URLSearchParams(F.search).get("ref") || "",
-      [b, C] = i(1),
-      [l, k] = i({
-        fullName: "",
-        phoneNumber: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        referralCode: $,
-        agreeToTerms: !1,
-      }),
-      [S, P] = i(!1),
-      [v, G] = i(!1),
-      [N, z] = i(!1),
-      [h, o] = i(null),
-      [H, D] = i(!1),
-      M = (t) => {
-        if (Array.isArray(t?.errors)) {
-          const r = t.errors
-            .map((a) =>
-              typeof a == "string"
-                ? a
-                : a?.msg
-                  ? a.msg
-                  : a?.message
-                    ? a.message
-                    : null,
-            )
-            .filter(Boolean);
-          if (r.length > 0) return r.join(", ");
-        }
-        return typeof t?.error == "string" && t.error.trim()
-          ? t.error
-          : typeof t?.message == "string" && t.message.trim()
-            ? t.message
-            : "Something went wrong. Please try again.";
-      },
-      [w, V] = i({
-        fullName: null,
-        email: null,
-        phoneNumber: null,
-        password: null,
-        confirmPassword: null,
-      }),
-      J = (t, r) => {
-        switch (t) {
-          case "fullName":
-            return r.length >= 2 ? "valid" : r.length > 0 ? "invalid" : null;
-          case "email":
-            return /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(r)
-              ? "valid"
-              : r.length > 0
-                ? "invalid"
-                : null;
-          case "phoneNumber":
-            return /^[6-9]\d{9}$/.test(r)
-              ? "valid"
-              : r.length > 0
-                ? "invalid"
-                : null;
-          case "password":
-            const Z = r.length >= 8,
-              K = /[A-Z]/.test(r),
-              q = /[a-z]/.test(r),
-              Q = /[0-9]/.test(r);
-            return Z && K && q && Q ? "valid" : r.length > 0 ? "invalid" : null;
-          case "confirmPassword":
-            return r === l.password && r.length > 0
-              ? "valid"
-              : r.length > 0
-                ? "invalid"
-                : null;
-          default:
-            return null;
-        }
-      },
-      u = (t) => {
-        const { name: r, value: a } = t.target;
-        k((n) => ({ ...n, [r]: a })), V((n) => ({ ...n, [r]: J(r, a) }));
-      },
-      g = () => {
-        const t = l.password;
-        if (!t) return { score: 0, label: "", color: "" };
-        let r = 0;
-        return (
-          t.length >= 8 && r++,
-          t.length >= 12 && r++,
-          /[A-Z]/.test(t) && r++,
-          /[a-z]/.test(t) && r++,
-          /[0-9]/.test(t) && r++,
-          /[!@#$%^&*(),.?":{}|<>]/.test(t) && r++,
-          r <= 2
-            ? { score: 1, label: "Weak", color: "bg-red-500" }
-            : r <= 4
-              ? { score: 2, label: "Medium", color: "bg-yellow-500" }
-              : { score: 3, label: "Strong", color: "bg-green-500" }
-        );
-      },
-      W = () =>
-        l.fullName.length >= 2 &&
-        l.phoneNumber.length === 10 &&
-        l.email.includes("@") &&
-        l.password.length >= 8 &&
-        l.password === l.confirmPassword,
-      Y = async (t) => {
-        if ((t.preventDefault(), !l.agreeToTerms)) {
-          c({
-            title: "Please accept terms",
-            description:
-              "You must agree to the terms and conditions to continue.",
-            variant: "destructive",
-          });
-          return;
-        }
-        P(!0);
-        try {
-          const r = {
-              fullName: l.fullName,
-              phone: l.phoneNumber,
-              email: l.email,
-              password: l.password,
-              referral_code: l.referralCode || void 0,
-            },
-            a = await Oe(r);
-          if (a && a.success) {
-            c({
-              title: "Welcome to MHub! \uD83C\uDF89",
-              description: "Account created and logged in successfully.",
-            }),
-              _("/all-posts", { replace: !0 });
-          } else {
-            const n = a?.error || M(a) || "Signup failed";
-            c({
-              title: "Signup Failed",
-              description: n,
-              variant: "destructive",
-            });
-          }
-        } catch (r) {
-          c({
-            title: "Signup Failed",
-            description: M(r),
-            variant: "destructive",
-          });
-        } finally {
-          P(!1);
-        }
-      };
-    if (H)
-      return e.createElement(
-        "div",
-        {
-          className:
-            "min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500",
-        },
-        e.createElement(
-          "div",
-          { className: "text-center animate-fadeIn" },
-          e.createElement(
-            "div",
-            {
-              className:
-                "w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center animate-bounce",
-            },
-            e.createElement(m, { className: "w-14 h-14 text-white" }),
-          ),
-          e.createElement(
-            "h2",
-            { className: "text-3xl font-bold text-white mb-2" },
-            s("account_created"),
-          ),
-          e.createElement(
-            "p",
-            { className: "text-white/80" },
-            s("redirecting_login"),
-          ),
-        ),
-      );
-    const x = ({ status: t }) =>
-      t === "valid"
-        ? e.createElement(m, { className: "w-5 h-5 text-green-500" })
-        : t === "invalid"
-          ? e.createElement("div", {
-              className: "w-5 h-5 rounded-full border-2 border-red-400",
-            })
-          : null;
-    return e.createElement(
-      "div",
-      {
-        className:
-          "min-h-screen flex items-center justify-center py-8 px-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden",
-      },
-      e.createElement(
-        "div",
-        { className: "absolute inset-0 overflow-hidden pointer-events-none" },
-        e.createElement("div", {
-          className:
-            "absolute -top-40 -right-40 w-80 h-80 bg-purple-500/30 rounded-full blur-3xl animate-pulse",
-        }),
-        e.createElement("div", {
-          className:
-            "absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/30 rounded-full blur-3xl animate-pulse",
-          style: { animationDelay: "1s" },
-        }),
-        e.createElement("div", {
-          className:
-            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl",
-        }),
-      ),
-      e.createElement(
-        "div",
-        { className: "w-full max-w-md relative z-10" },
-        e.createElement(
-          "div",
-          { className: "text-center mb-8" },
-          e.createElement(
-            "div",
-            { className: "flex justify-center mb-4" },
-            e.createElement(
-              "div",
-              {
-                className:
-                  "w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-purple-500/30 rotate-3 hover:rotate-0 transition-transform",
-              },
-              e.createElement(ne, { className: "h-8 w-8 text-white" }),
-            ),
-          ),
-          e.createElement(
-            "h1",
-            { className: "text-3xl font-bold text-white mb-2" },
-            s("create_account"),
-          ),
-          e.createElement(
-            "p",
-            { className: "text-gray-400" },
-            s("join_thousands") ||
-              "Join thousands of verified buyers & sellers",
-          ),
-        ),
-        e.createElement(
-          "div",
-          { className: "flex justify-center gap-2 mb-6" },
-          e.createElement("div", {
-            className: `w-3 h-3 rounded-full transition-all duration-300 ${b >= 1 ? "bg-purple-500 scale-110" : "bg-gray-600"}`,
-          }),
-          e.createElement("div", {
-            className: `w-3 h-3 rounded-full transition-all duration-300 ${b >= 2 ? "bg-purple-500 scale-110" : "bg-gray-600"}`,
-          }),
-        ),
-        e.createElement(
-          X,
-          {
-            className:
-              "bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl overflow-hidden",
-          },
-          e.createElement(
-            R,
-            { className: "p-6 sm:p-8" },
-            e.createElement(
-              "form",
-              { onSubmit: Y },
-              b === 1 &&
-                e.createElement(
-                  "div",
-                  { className: "space-y-5 animate-fadeIn" },
-                  e.createElement(
-                    "div",
-                    { className: "relative" },
-                    e.createElement(
-                      d,
-                      {
-                        className:
-                          "text-white/80 text-sm font-medium mb-2 flex items-center gap-2",
-                      },
-                      e.createElement(le, { className: "w-4 h-4" }),
-                      " ",
-                      s("full_name_label"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "relative" },
-                      e.createElement(p, {
-                        name: "fullName",
-                        type: "text",
-                        value: l.fullName,
-                        onChange: u,
-                        onFocus: () => o("fullName"),
-                        onBlur: () => o(null),
-                        className: `h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${h === "fullName" ? "border-purple-500 ring-2 ring-purple-500/20" : ""}`,
-                        placeholder: s("enter_full_name"),
-                      }),
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "absolute right-3 top-1/2 -translate-y-1/2",
-                        },
-                        e.createElement(x, { status: w.fullName }),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    { className: "relative" },
-                    e.createElement(
-                      d,
-                      {
-                        className:
-                          "text-white/80 text-sm font-medium mb-2 flex items-center gap-2",
-                      },
-                      e.createElement(I, { className: "w-4 h-4" }),
-                      " ",
-                      s("phone"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "relative flex" },
-                      e.createElement(
-                        "span",
-                        {
-                          className:
-                            "inline-flex items-center px-3 bg-white/5 border border-r-0 border-white/20 rounded-l-xl text-gray-400 text-sm",
-                        },
-                        "+91",
-                      ),
-                      e.createElement(p, {
-                        name: "phoneNumber",
-                        type: "tel",
-                        maxLength: 10,
-                        value: l.phoneNumber,
-                        onChange: u,
-                        onFocus: () => o("phoneNumber"),
-                        onBlur: () => o(null),
-                        className: `h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-l-none rounded-r-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${h === "phoneNumber" ? "border-purple-500 ring-2 ring-purple-500/20" : ""}`,
-                        placeholder: "9876543210",
-                      }),
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "absolute right-3 top-1/2 -translate-y-1/2",
-                        },
-                        e.createElement(x, { status: w.phoneNumber }),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    { className: "relative" },
-                    e.createElement(
-                      d,
-                      {
-                        className:
-                          "text-white/80 text-sm font-medium mb-2 flex items-center gap-2",
-                      },
-                      e.createElement(ae, { className: "w-4 h-4" }),
-                      " ",
-                      s("email"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "relative" },
-                      e.createElement(p, {
-                        name: "email",
-                        type: "email",
-                        value: l.email,
-                        onChange: u,
-                        onFocus: () => o("email"),
-                        onBlur: () => o(null),
-                        className: `h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${h === "email" ? "border-purple-500 ring-2 ring-purple-500/20" : ""}`,
-                        placeholder: s("email_placeholder"),
-                      }),
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "absolute right-3 top-1/2 -translate-y-1/2",
-                        },
-                        e.createElement(x, { status: w.email }),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    { className: "relative" },
-                    e.createElement(
-                      d,
-                      {
-                        className:
-                          "text-white/80 text-sm font-medium mb-2 flex items-center gap-2",
-                      },
-                      e.createElement(B, { className: "w-4 h-4" }),
-                      " ",
-                      s("password"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "relative" },
-                      e.createElement(p, {
-                        name: "password",
-                        type: v ? "text" : "password",
-                        value: l.password,
-                        onChange: u,
-                        onFocus: () => o("password"),
-                        onBlur: () => o(null),
-                        className: `h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-20 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${h === "password" ? "border-purple-500 ring-2 ring-purple-500/20" : ""}`,
-                        placeholder: s("create_password_placeholder"),
-                      }),
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2",
-                        },
-                        e.createElement(
-                          "button",
-                          {
-                            type: "button",
-                            onClick: () => G(!v),
-                            className:
-                              "text-gray-400 hover:text-white transition",
-                          },
-                          v
-                            ? e.createElement(T, { className: "w-5 h-5" })
-                            : e.createElement(L, { className: "w-5 h-5" }),
-                        ),
-                      ),
-                    ),
-                    l.password &&
-                      e.createElement(
-                        "div",
-                        { className: "mt-2" },
-                        e.createElement(
-                          "div",
-                          { className: "flex gap-1 mb-1" },
-                          [1, 2, 3].map((t) =>
-                            e.createElement("div", {
-                              key: t,
-                              className: `h-1 flex-1 rounded-full transition-all ${g().score >= t ? g().color : "bg-gray-600"}`,
-                            }),
-                          ),
-                        ),
-                        e.createElement(
-                          "p",
-                          { className: "text-xs text-gray-400" },
-                          s("password_strength") || "Password strength",
-                          ": ",
-                          e.createElement(
-                            "span",
-                            {
-                              className: `font-medium ${g().score === 3 ? "text-green-400" : g().score === 2 ? "text-yellow-400" : "text-red-400"}`,
-                            },
-                            g().label,
-                          ),
-                        ),
-                      ),
-                  ),
-                  e.createElement(
-                    "div",
-                    { className: "relative" },
-                    e.createElement(
-                      d,
-                      {
-                        className:
-                          "text-white/80 text-sm font-medium mb-2 flex items-center gap-2",
-                      },
-                      e.createElement(B, { className: "w-4 h-4" }),
-                      " ",
-                      s("confirm_new_password_label"),
-                    ),
-                    e.createElement(
-                      "div",
-                      { className: "relative" },
-                      e.createElement(p, {
-                        name: "confirmPassword",
-                        type: N ? "text" : "password",
-                        value: l.confirmPassword,
-                        onChange: u,
-                        onFocus: () => o("confirmPassword"),
-                        onBlur: () => o(null),
-                        className: `h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-20 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${h === "confirmPassword" ? "border-purple-500 ring-2 ring-purple-500/20" : ""}`,
-                        placeholder: s("confirm_password_placeholder"),
-                      }),
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2",
-                        },
-                        e.createElement(
-                          "button",
-                          {
-                            type: "button",
-                            onClick: () => z(!N),
-                            className:
-                              "text-gray-400 hover:text-white transition",
-                          },
-                          N
-                            ? e.createElement(T, { className: "w-5 h-5" })
-                            : e.createElement(L, { className: "w-5 h-5" }),
-                        ),
-                        e.createElement(x, { status: w.confirmPassword }),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    f,
-                    {
-                      type: "button",
-                      onClick: () => C(2),
-                      disabled: !W(),
-                      className:
-                        "w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2",
-                    },
-                    s("continue"),
-                    " ",
-                    e.createElement(ie, { className: "w-5 h-5" }),
-                  ),
-                ),
-              b === 2 &&
-                e.createElement(
-                  "div",
-                  { className: "space-y-5 animate-fadeIn" },
-                  e.createElement(
-                    "div",
-                    { className: "relative" },
-                    e.createElement(
-                      d,
-                      {
-                        className:
-                          "text-white/80 text-sm font-medium mb-2 flex items-center gap-2",
-                      },
-                      e.createElement(oe, { className: "w-4 h-4" }),
-                      " ",
-                      s("referral_code_label"),
-                      " ",
-                      e.createElement(
-                        "span",
-                        { className: "text-gray-500 text-xs" },
-                        s("optional_label"),
-                      ),
-                    ),
-                    e.createElement(p, {
-                      name: "referralCode",
-                      type: "text",
-                      value: l.referralCode,
-                      onChange: u,
-                      className:
-                        "h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl focus:border-purple-500 focus:ring-purple-500/20 uppercase",
-                      placeholder: s("enter_referral_code"),
-                      maxLength: 8,
-                    }),
-                    l.referralCode &&
-                      e.createElement(
-                        "p",
-                        { className: "text-xs text-purple-400 mt-1" },
-                        s("signup_bonus_msg"),
-                      ),
-                  ),
-                  e.createElement(
-                    "div",
-                    {
-                      className:
-                        "bg-white/5 rounded-2xl p-4 border border-white/10",
-                    },
-                    e.createElement(
-                      "h3",
-                      {
-                        className:
-                          "text-white font-semibold mb-3 flex items-center gap-2",
-                      },
-                      e.createElement(E, {
-                        className: "w-5 h-5 text-purple-400",
-                      }),
-                      " ",
-                      s("what_you_get"),
-                    ),
-                    e.createElement(
-                      "ul",
-                      { className: "space-y-2 text-sm text-gray-300" },
-                      e.createElement(
-                        "li",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(m, {
-                          className: "w-4 h-4 text-green-400",
-                        }),
-                        s("buy_sell_securely") ||
-                          "Buy & sell products securely",
-                      ),
-                      e.createElement(
-                        "li",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(m, {
-                          className: "w-4 h-4 text-green-400",
-                        }),
-                        s("earn_rewards") || "Earn rewards & referral coins",
-                      ),
-                      e.createElement(
-                        "li",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(m, {
-                          className: "w-4 h-4 text-green-400",
-                        }),
-                        s("personalized_recommendations") ||
-                          "Get personalized recommendations",
-                      ),
-                      e.createElement(
-                        "li",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(m, {
-                          className: "w-4 h-4 text-green-400",
-                        }),
-                        s("optional_kyc") || "Optional KYC for verified badge",
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    {
-                      className:
-                        "flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/10",
-                    },
-                    e.createElement(ee, {
-                      id: "agreeToTerms",
-                      checked: l.agreeToTerms,
-                      onCheckedChange: (t) =>
-                        k((r) => ({ ...r, agreeToTerms: t })),
-                      className:
-                        "mt-0.5 border-white/30 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600",
-                    }),
-                    e.createElement(
-                      d,
-                      {
-                        htmlFor: "agreeToTerms",
-                        className:
-                          "text-sm text-gray-300 leading-relaxed cursor-pointer",
-                      },
-                      s("agree_to_terms_prefix") || "I agree to the ",
-                      " ",
-                      e.createElement(
-                        y,
-                        {
-                          to: "/terms",
-                          className:
-                            "text-purple-400 hover:text-purple-300 underline",
-                        },
-                        s("terms_of_service"),
-                      ),
-                      " ",
-                      s("and"),
-                      " ",
-                      e.createElement(
-                        y,
-                        {
-                          to: "/privacy",
-                          className:
-                            "text-purple-400 hover:text-purple-300 underline",
-                        },
-                        s("privacy_policy"),
-                      ),
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    { className: "flex gap-3" },
-                    e.createElement(
-                      f,
-                      {
-                        type: "button",
-                        variant: "outline",
-                        onClick: () => C(1),
-                        className:
-                          "flex-1 h-12 bg-transparent border-white/20 text-white hover:bg-white/10 rounded-xl",
-                      },
-                      s("back"),
-                    ),
-                    e.createElement(
-                      f,
-                      {
-                        type: "submit",
-                        disabled: S || !l.agreeToTerms,
-                        className:
-                          "flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 transition-all",
-                      },
-                      S
-                        ? e.createElement("div", {
-                            className:
-                              "w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin",
-                          })
-                        : s("create_account"),
-                    ),
-                  ),
-                ),
-            ),
-            e.createElement(
-              "div",
-              { className: "relative my-6" },
-              e.createElement(
-                "div",
-                { className: "absolute inset-0 flex items-center" },
-                e.createElement("div", {
-                  className: "w-full border-t border-white/10",
-                }),
-              ),
-              e.createElement(
-                "div",
-                { className: "relative flex justify-center text-xs" },
-                e.createElement(
-                  "span",
-                  { className: "bg-transparent px-3 text-gray-500" },
-                  s("continue_with"),
-                ),
-              ),
-            ),
-            e.createElement(
-              "div",
-              { className: "grid grid-cols-2 gap-3" },
-              e.createElement(
-                f,
-                {
-                  type: "button",
-                  variant: "outline",
-                  disabled: !A,
-                  className:
-                    "h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2",
-                  onClick: () =>
-                    c({
-                      title: "Coming Soon",
-                      description: "Google login will be available soon.",
-                    }),
-                },
-                e.createElement(
-                  "svg",
-                  { className: "w-5 h-5", viewBox: "0 0 24 24" },
-                  e.createElement("path", {
-                    fill: "currentColor",
-                    d: "M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z",
-                  }),
-                  e.createElement("path", {
-                    fill: "currentColor",
-                    d: "M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z",
-                  }),
-                  e.createElement("path", {
-                    fill: "currentColor",
-                    d: "M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z",
-                  }),
-                  e.createElement("path", {
-                    fill: "currentColor",
-                    d: "M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z",
-                  }),
-                ),
-                "Google",
-              ),
-              e.createElement(
-                f,
-                {
-                  type: "button",
-                  variant: "outline",
-                  disabled: !j,
-                  className:
-                    "h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2",
-                  onClick: () =>
-                    c({
-                      title: s("coming_soon"),
-                      description: s("phone_otp_coming_soon"),
-                    }),
-                },
-                e.createElement(I, { className: "w-5 h-5" }),
-                s("phone_otp"),
-              ),
-            ),
-            (!A || !j) &&
-              e.createElement(
-                "p",
-                { className: "text-center text-xs text-gray-500 mt-2" },
-                s("third_party_auth_not_ready") ||
-                  "Google and Phone OTP signup are not enabled yet.",
-              ),
-            e.createElement(
-              "p",
-              { className: "text-center text-sm text-gray-400 mt-6" },
-              s("already_have_account") || "Already have an account?",
-              " ",
-              e.createElement(
-                y,
-                {
-                  to: "/login",
-                  className:
-                    "text-purple-400 hover:text-purple-300 font-medium",
-                },
-                s("sign_in"),
-              ),
-            ),
-          ),
-        ),
-        e.createElement(
-          "div",
-          { className: "flex justify-center gap-6 mt-6 text-gray-500 text-xs" },
-          e.createElement(
-            "div",
-            { className: "flex items-center gap-1" },
-            e.createElement(E, { className: "w-4 h-4" }),
-            e.createElement("span", null, s("secure_signup")),
-          ),
-          e.createElement(
-            "div",
-            { className: "flex items-center gap-1" },
-            e.createElement(de, { className: "w-4 h-4" }),
-            e.createElement("span", null, s("users_count_signup")),
-          ),
-          e.createElement(
-            "div",
-            { className: "flex items-center gap-1" },
-            e.createElement(m, { className: "w-4 h-4" }),
-            e.createElement("span", null, s("verified_signup")),
-          ),
-        ),
-      ),
-    );
+import { useTranslation } from "react-i18next";
+import api from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
+
+const verhoeffTableD = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+  [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+  [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+  [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+  [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+  [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+  [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+  [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+  [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+];
+const verhoeffTableP = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+  [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+  [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+  [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+  [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+  [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+  [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
+];
+
+const normalizeAadhaar = (value) => String(value || "").replace(/\s+/g, "");
+
+const isValidAadhaarNumber = (value) => {
+  const digits = normalizeAadhaar(value).replace(/\D/g, "");
+  if (!/^\d{12}$/.test(digits)) return false;
+  let c = 0;
+  for (let i = 0; i < digits.length; i += 1) {
+    const digit = Number(digits[digits.length - 1 - i]);
+    c = verhoeffTableD[c][verhoeffTableP[i % 8][digit]];
+  }
+  return c === 0;
+};
+
+const normalizeMobile = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+  return digits;
+};
+const isValidMobile = (value) => /^[6-9]\d{9}$/.test(normalizeMobile(value));
+
+export default function SignUp() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const { refreshAuth, setUser } = useAuth();
+
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    aadhaar: "",
+    mobile: "",
+    otp: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [txnId, setTxnId] = useState("");
+  const [signupToken, setSignupToken] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const timer = setInterval(() => setResendIn((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [resendIn]);
+
+  const aadhaarStatus = useMemo(() => {
+    if (!form.aadhaar) return null;
+    return isValidAadhaarNumber(form.aadhaar) ? "valid" : "invalid";
+  }, [form.aadhaar]);
+
+  const mobileStatus = useMemo(() => {
+    if (!form.mobile) return null;
+    return isValidMobile(form.mobile) ? "valid" : "invalid";
+  }, [form.mobile]);
+
+  const passwordStrength = useMemo(() => {
+    const pw = form.password;
+    if (!pw) return { score: 0, label: "", color: "" };
+    let score = 0;
+    if (pw.length >= 8) score += 1;
+    if (pw.length >= 12) score += 1;
+    if (/[A-Z]/.test(pw)) score += 1;
+    if (/[a-z]/.test(pw)) score += 1;
+    if (/\d/.test(pw)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pw)) score += 1;
+
+    if (score <= 2) return { score: 1, label: t("weak") || "Weak", color: "bg-red-500" };
+    if (score <= 4) return { score: 2, label: t("medium") || "Medium", color: "bg-yellow-500" };
+    return { score: 3, label: t("strong") || "Strong", color: "bg-green-500" };
+  }, [form.password, t]);
+
+  const applyAuthResponse = async (response) => {
+    if (response?.token) {
+      localStorage.setItem("authToken", response.token);
+      localStorage.removeItem("token");
+      localStorage.setItem("authSession", "true");
+    }
+    if (response?.user) {
+      setUser(response.user);
+    } else if (response?.token) {
+      await refreshAuth();
+    }
   };
-var Pe = ce;
-export { Pe as default };
+
+  const handleSendOtp = async () => {
+    setErrorMessage("");
+    const aadhaarDigits = normalizeAadhaar(form.aadhaar);
+    const mobileDigits = normalizeMobile(form.mobile);
+
+    if (!isValidAadhaarNumber(aadhaarDigits) || !isValidMobile(mobileDigits)) {
+      const msg =
+        t("aadhaar_mobile_required") ||
+        "Enter a valid Aadhaar number and Aadhaar-registered mobile number.";
+      setErrorMessage(msg);
+      toast({
+        title: t("validation_error") || "Validation Error",
+        description: msg,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/aadhaar/send-otp", {
+        aadhaarNumber: aadhaarDigits,
+        mobileNumber: mobileDigits,
+      });
+      setTxnId(response?.txnId || "");
+      setResendIn(30);
+      setStep(2);
+      toast({
+        title: t("otp_sent") || "OTP Sent",
+        description:
+          t("aadhaar_otp_sent") || "OTP sent to your Aadhaar-registered mobile.",
+      });
+    } catch (err) {
+      const msg = err?.message || t("otp_send_failed") || "Failed to send OTP.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setErrorMessage("");
+    const otpValue = String(form.otp || "").trim();
+    if (!/^\d{4,8}$/.test(otpValue)) {
+      const msg = t("otp_valid_desc") || "Please enter a valid OTP.";
+      setErrorMessage(msg);
+      toast({ title: t("invalid_otp") || "Invalid OTP", description: msg, variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/aadhaar/verify-otp", {
+        aadhaarNumber: normalizeAadhaar(form.aadhaar),
+        mobileNumber: normalizeMobile(form.mobile),
+        otp: otpValue,
+        txnId,
+      });
+      setSignupToken(response?.signupToken || "");
+      setStep(3);
+      toast({
+        title: t("otp_verified") || "OTP Verified",
+        description: t("create_password") || "Create your password to finish setup.",
+      });
+    } catch (err) {
+      const msg = err?.message || t("otp_verify_failed") || "OTP verification failed.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteSignup = async (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+
+    if (!form.password || !form.confirmPassword) {
+      const msg = t("fill_all_fields") || "Please fill in all fields.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      const msg = t("passwords_do_not_match") || "Passwords do not match.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+      return;
+    }
+    if (!/\d/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password) || form.password.length < 8) {
+      const msg =
+        t("password_policy") ||
+        "Password must be 8+ characters with at least 1 number and 1 special character.";
+      setErrorMessage(msg);
+      toast({ title: t("weak_password") || "Weak Password", description: msg, variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/aadhaar/complete-signup", {
+        signupToken,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+      });
+      await applyAuthResponse(response);
+      toast({
+        title: t("welcome_to_mhub") || "Welcome to MHub!",
+        description: t("account_created_success") || "Account created successfully.",
+      });
+      navigate("/all-posts", { replace: true });
+    } catch (err) {
+      const msg = err?.message || t("signup_failed") || "Signup failed.";
+      setErrorMessage(msg);
+      toast({ title: t("signup_failed") || "Signup Failed", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const FieldStatus = ({ status }) => {
+    if (status === "valid") return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (status === "invalid") return <AlertCircle className="w-4 h-4 text-red-500" />;
+    return null;
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-purple-950/30 dark:to-gray-900 relative overflow-hidden transition-colors duration-300">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300/30 dark:bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300/30 dark:bg-indigo-500/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+      </div>
+
+      <div className="w-full max-w-md relative z-10 space-y-6">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+              <Sparkles className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            {t("create_account") || "Create Account"}
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+            {t("aadhaar_signup_hint") || "Register with your Aadhaar details"}
+          </p>
+        </div>
+
+        <div className="flex justify-center gap-2">
+          {[1, 2, 3].map((dot) => (
+            <div
+              key={dot}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                step >= dot ? "bg-purple-500 scale-110" : "bg-gray-300 dark:bg-gray-600"
+              }`}
+            />
+          ))}
+        </div>
+
+        <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden dark:bg-gray-800/80 dark:border-gray-700/50 backdrop-blur-sm">
+          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-indigo-600 to-purple-600">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center">
+              {step === 3 ? (
+                <KeyRound className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              ) : (
+                <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              )}
+            </div>
+            <CardTitle className="text-xl sm:text-2xl text-white font-bold">
+              {step === 1
+                ? t("aadhaar_verification") || "Aadhaar Verification"
+                : step === 2
+                  ? t("otp_verification") || "OTP Verification"
+                  : t("create_password") || "Create Password"}
+            </CardTitle>
+            <CardDescription className="text-purple-100 text-sm">
+              {step === 1
+                ? t("enter_aadhaar_details") || "Enter your Aadhaar details to continue"
+                : step === 2
+                  ? t("enter_otp_received") || "Enter the OTP sent to your Aadhaar-registered mobile"
+                  : t("set_secure_password") || "Set a strong password for your account"}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="p-5 sm:p-8">
+            {errorMessage && (
+              <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-4">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="space-y-5">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                    {t("aadhaar_number") || "Aadhaar Number"}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={12}
+                      value={form.aadhaar}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, aadhaar: e.target.value }))
+                      }
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl pr-10"
+                      placeholder="123412341234"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <FieldStatus status={aadhaarStatus} />
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t("aadhaar_validation_hint") || "We validate Aadhaar in real time."}
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                    {t("aadhaar_mobile") || "Aadhaar Registered Mobile"}
+                  </Label>
+                  <div className="relative flex">
+                    <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm">
+                      +91
+                    </span>
+                    <Input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={form.mobile}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, mobile: e.target.value }))
+                      }
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-l-none rounded-r-xl pr-10"
+                      placeholder="9876543210"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <FieldStatus status={mobileStatus} />
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={loading}
+                  className="w-full h-11 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      {t("send_otp") || "Send OTP"} <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-5">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                    {t("enter_otp") || "Enter OTP"}
+                  </Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={form.otp}
+                    onChange={(e) => setForm((p) => ({ ...p, otp: e.target.value }))}
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest"
+                    placeholder="123456"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={loading}
+                    className="w-full h-11 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t("verifying") || "Verifying..."}
+                      </span>
+                    ) : (
+                      t("verify_otp") || "Verify OTP"
+                    )}
+                  </Button>
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={resendIn > 0 || loading}
+                      onClick={handleSendOtp}
+                      className="text-indigo-600 dark:text-indigo-400"
+                    >
+                      {resendIn > 0
+                        ? `${t("resend_in") || "Resend in"} ${resendIn}s`
+                        : t("resend_otp") || "Resend OTP"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setStep(1)}
+                      className="text-gray-500"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-1" /> {t("back") || "Back"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <form onSubmit={handleCompleteSignup} className="space-y-5">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                    <Lock className="w-4 h-4 inline-block mr-1" /> {t("password") || "Password"}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                    placeholder={t("create_password_placeholder") || "Create a strong password"}
+                  />
+                  {form.password && (
+                    <div className="mt-2">
+                      <div className="flex gap-1 mb-1">
+                        {[1, 2, 3].map((level) => (
+                          <div
+                            key={level}
+                            className={`h-1 flex-1 rounded-full transition-all ${
+                              passwordStrength.score >= level
+                                ? passwordStrength.color
+                                : "bg-gray-200 dark:bg-gray-600"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {t("password_strength") || "Password strength"}: {" "}
+                        <span
+                          className={`font-medium ${
+                            passwordStrength.score === 3
+                              ? "text-green-500"
+                              : passwordStrength.score === 2
+                                ? "text-yellow-500"
+                                : "text-red-500"
+                          }`}
+                        >
+                          {passwordStrength.label}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                    {t("confirm_new_password_label") || "Confirm Password"}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={form.confirmPassword}
+                    onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl"
+                    placeholder={t("confirm_password_placeholder") || "Re-enter your password"}
+                  />
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600">
+                  <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                    {t("password_requirements") || "Password Requirements"}
+                  </p>
+                  <ul className="space-y-1 text-gray-600 dark:text-gray-400">
+                    <li>- {t("req_min_chars") || "At least 8 characters"}</li>
+                    <li>- {t("req_number") || "One number"}</li>
+                    <li>- {t("req_special") || "One special character"}</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(2)}
+                    className="flex-1 h-11 sm:h-12 rounded-xl dark:border-gray-600 dark:text-gray-200"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" /> {t("back") || "Back"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 h-11 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      t("create_account") || "Create Account"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+              {t("already_have_account") || "Already have an account?"}{" "}
+              <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">
+                {t("sign_in") || "Sign In"}
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

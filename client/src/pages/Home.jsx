@@ -359,7 +359,7 @@ const Ae = 3e3,
           "div",
           {
             className:
-              "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24",
+              "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900",
           },
           e.createElement(
             "div",
@@ -369,7 +369,7 @@ const Ae = 3e3,
             },
             e.createElement(
               "div",
-              { className: "max-w-6xl mx-auto px-4 py-4" },
+              { className: "max-w-6xl mx-auto px-4 py-4 page-shell page-pad" },
               e.createElement(
                 "div",
                 { className: "flex flex-wrap items-center justify-between gap-3" },
@@ -424,7 +424,7 @@ const Ae = 3e3,
             { className: "px-4 pt-4" },
             e.createElement(
               "div",
-              { className: "max-w-6xl mx-auto flex flex-wrap gap-2" },
+              { className: "max-w-6xl mx-auto flex flex-wrap gap-2 page-shell page-pad" },
               e.createElement(
                 d,
                 {
@@ -465,7 +465,7 @@ const Ae = 3e3,
                 "div",
                 {
                   className:
-                    "max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2",
+                    "max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 page-shell page-pad",
                 },
                 e.createElement(
                   "p",
@@ -492,7 +492,7 @@ const Ae = 3e3,
                 "div",
                 {
                   className:
-                    "max-w-6xl mx-auto rounded-xl border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/20 p-4",
+                    "max-w-6xl mx-auto rounded-xl border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/20 p-4 page-shell page-pad",
                 },
                 e.createElement(
                   "div",

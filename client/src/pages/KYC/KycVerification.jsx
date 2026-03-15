@@ -1,4 +1,4 @@
-import e, { useCallback as A, useEffect as F, useState as n } from "react";
+﻿import e, { useCallback as A, useEffect as F, useState as n } from "react";
 import { useNavigate as I } from "react-router-dom";
 import P from "../../services/api";
 import { Button as s } from "@/components/ui/button";
@@ -82,11 +82,11 @@ const V = () => {
           "div",
           {
             className:
-              "min-h-screen bg-gray-50 flex items-center justify-center p-4",
+              "min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4",
           },
           e.createElement(
             "div",
-            { className: "max-w-md w-full" },
+            { className: "max-w-md w-full page-shell page-pad" },
             e.createElement(T, {
               marker: "loading",
               title: "Loading KYC status...",
@@ -99,11 +99,11 @@ const V = () => {
             "div",
             {
               className:
-                "min-h-screen bg-gray-50 flex items-center justify-center p-4",
+                "min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4",
             },
             e.createElement(
               "div",
-              { className: "max-w-md w-full" },
+              { className: "max-w-md w-full page-shell page-pad" },
               e.createElement(q, {
                 marker: "error",
                 className: "border-red-200 bg-red-50",
@@ -123,11 +123,11 @@ const V = () => {
               "div",
               {
                 className:
-                  "min-h-screen bg-gray-50 flex items-center justify-center p-4",
+                  "min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4",
               },
               e.createElement(
                 u,
-                { className: "max-w-lg w-full border-green-200 bg-green-50" },
+                { className: "max-w-lg w-full border-green-200 bg-green-50 page-shell page-pad" },
                 e.createElement(
                   c,
                   { className: "pt-8 text-center space-y-4" },
@@ -169,11 +169,11 @@ const V = () => {
                 "div",
                 {
                   className:
-                    "min-h-screen bg-gray-50 flex items-center justify-center p-4",
+                    "min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4",
                 },
                 e.createElement(
                   u,
-                  { className: "max-w-lg w-full border-amber-200 bg-amber-50" },
+                  { className: "max-w-lg w-full border-amber-200 bg-amber-50 page-shell page-pad" },
                   e.createElement(
                     c,
                     { className: "pt-8 text-center space-y-4" },
@@ -213,7 +213,7 @@ const V = () => {
               )
             : e.createElement(
                 "div",
-                { className: "min-h-screen bg-gray-50 py-8 px-4" },
+                { className: "min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4" },
                 e.createElement(
                   "div",
                   { className: "max-w-2xl mx-auto" },
@@ -375,11 +375,11 @@ const V = () => {
         "div",
         {
           className:
-            "min-h-screen bg-gray-50 flex items-center justify-center p-4",
+            "min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4",
         },
         e.createElement(
           "div",
-          { className: "max-w-md w-full" },
+          { className: "max-w-md w-full page-shell page-pad" },
           e.createElement(Y, {
             marker: "auth-gate",
             title: "Login required",

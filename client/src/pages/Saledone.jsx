@@ -403,10 +403,9 @@ const SaleDone = () => {
   if (completedSale) {
     return (
       <div
-        className="bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 relative"
-        style={{ minHeight: "100vh", paddingBottom: "120px" }}
+        className="min-h-screen bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 dark:from-emerald-800 dark:via-green-900 dark:to-teal-900 relative"
       >
-        <div className="relative max-w-2xl mx-auto p-6 pt-20">
+        <div className="relative max-w-2xl mx-auto page-shell page-pad pt-16 pb-12">
           <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/95 dark:bg-gray-800/95">
             <CardContent className="p-12 text-center">
               <div className="w-28 h-28 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-2xl">
@@ -417,16 +416,16 @@ const SaleDone = () => {
                 {t("sale_confirmed") || "Sale Confirmed"}
               </h2>
 
-              <p className="text-gray-600 text-lg mb-6">
+              <p className="text-gray-600 dark:text-gray-400 text-lg mb-6">
                 {t("both_verified") ||
                   "Buyer verification completed. Post moved to Sold."}
               </p>
 
-              <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-left mb-8">
-                <p className="text-sm text-green-700 font-semibold">
+              <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 text-left mb-8">
+                <p className="text-sm text-green-700 dark:text-green-300 font-semibold">
                   {tr("transaction_id", "Transaction ID")}
                 </p>
-                <p className="font-mono text-green-900 break-all">
+                <p className="font-mono text-green-900 dark:text-green-100 break-all">
                   {completedSale.transactionId || "-"}
                 </p>
               </div>
@@ -435,7 +434,7 @@ const SaleDone = () => {
                 <Button
                   variant="outline"
                   onClick={resetFlow}
-                  className="border-2 border-green-500 text-green-700 hover:bg-green-50 rounded-xl px-8 py-3 font-semibold"
+                  className="border-2 border-green-500 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl px-8 py-3 font-semibold"
                 >
                   {t("confirm_another_sale") || "Confirm Another Sale"}
                 </Button>
@@ -455,8 +454,7 @@ const SaleDone = () => {
 
   return (
     <div
-      className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-green-900 dark:to-emerald-900 relative"
-      style={{ minHeight: "100vh", paddingBottom: "120px" }}
+      className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-green-900 dark:to-emerald-900 relative nav-clearance"
     >
       <PageHeader
         transparent={true}
@@ -465,7 +463,7 @@ const SaleDone = () => {
         backTo="/my-home"
       />
 
-      <div className="relative max-w-lg mx-auto p-4 sm:p-6 space-y-6">
+      <div className="relative max-w-2xl mx-auto page-shell page-pad pt-6 pb-12 space-y-8">
         <div className="flex gap-2 items-center">
           <button
             type="button"
@@ -477,7 +475,7 @@ const SaleDone = () => {
           </button>
         </div>
 
-        <div className="text-center pt-4">
+        <div className="text-center pt-2">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 shadow-2xl shadow-green-500/30 mb-6">
             <CheckCircle className="w-10 h-10 text-white" />
           </div>
@@ -498,7 +496,7 @@ const SaleDone = () => {
         <TransactionStepper steps={steps} currentStep={3} />
 
         <div className="flex flex-wrap justify-center gap-3">
-          <Badge className="bg-green-500/10 text-green-700 border-green-500/20 px-4 py-2 rounded-full">
+          <Badge className="bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20 px-4 py-2 rounded-full">
             <Shield className="w-4 h-4 mr-2" />
             {t("secure_verification") || "Secure Verification"}
           </Badge>
@@ -558,7 +556,7 @@ const SaleDone = () => {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 dark:bg-gray-700 rounded-2xl p-1.5 h-14">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/80 dark:bg-gray-700/80 rounded-2xl p-1.5 h-14 border border-gray-100 dark:border-gray-700">
                 <TabsTrigger
                   value="seller"
                   className="rounded-xl text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white transition-all"
@@ -574,7 +572,7 @@ const SaleDone = () => {
               </TabsList>
 
               <TabsContent value="seller" className="space-y-6">
-                <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4">
                   <p className="text-sm text-green-800 font-medium">
                     {tr(
                       "seller_details_hint",
@@ -789,7 +787,7 @@ const SaleDone = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <RefreshCw className="w-4 h-4 animate-spin" />{" "}
                     {tr("pending_sales_loading", "Loading pending sales...")}
                   </div>
@@ -806,7 +804,7 @@ const SaleDone = () => {
                     </Button>
                   </div>
                 ) : pendingSales.length === 0 ? (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {tr("pending_sales_empty", "No pending sales right now.")}
                   </p>
                 ) : (
@@ -822,11 +820,11 @@ const SaleDone = () => {
                         className="rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-3"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-gray-800 break-all">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 break-all">
                             {sale.post_title ||
                               tr("untitled_post", "Untitled post")}
                           </p>
-                          <p className="text-xs text-gray-500 break-all font-mono">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 break-all font-mono">
                             {transactionId}
                           </p>
                         </div>

@@ -1,11 +1,38 @@
 const pool = require("../config/db");
 const logger = require("../utils/logger");
 
+const https = require("https");
+
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const COLUMN_CACHE_TTL_MS = 60 * 1000;
 
 const runQuery = (text, values = []) =>
   pool.query({ text, values, query_timeout: DB_QUERY_TIMEOUT_MS });
+
+const serverReverseGeocode = async (lat, lon) => {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=19&addressdetails=1&namedetails=1&extratags=1`;
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve(null), 5000);
+    https
+      .get(url, { headers: { "User-Agent": "MHub/1.0" } }, (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => {
+          clearTimeout(timeout);
+          try {
+            const parsed = JSON.parse(data);
+            resolve(parsed?.address || null);
+          } catch {
+            resolve(null);
+          }
+        });
+      })
+      .on("error", () => {
+        clearTimeout(timeout);
+        resolve(null);
+      });
+  });
+};
 
 let schemaReadyPromise = null;
 let columnCache = null;
@@ -22,6 +49,8 @@ const LOCATION_OPTIONAL_COLUMNS = [
   "street",
   "timezone",
   "synced_at",
+  "village",
+  "colony",
 ];
 
 const USER_OPTIONAL_COLUMNS = [
@@ -30,6 +59,8 @@ const USER_OPTIONAL_COLUMNS = [
   "current_pincode",
   "current_display_name",
   "current_district",
+  "current_village",
+  "current_colony",
 ];
 
 const safeText = (value) => {
@@ -75,12 +106,16 @@ const ensureLocationSchema = async () => {
       await runQuery(`ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS street TEXT`);
       await runQuery(`ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS timezone TEXT`);
       await runQuery(`ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ`);
+      await runQuery(`ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS village TEXT`);
+      await runQuery(`ALTER TABLE user_locations ADD COLUMN IF NOT EXISTS colony TEXT`);
 
       await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_area TEXT`);
       await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_locality TEXT`);
       await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_pincode TEXT`);
       await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_display_name TEXT`);
       await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_district TEXT`);
+      await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_village TEXT`);
+      await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS current_colony TEXT`);
 
       await runQuery(
         `CREATE INDEX IF NOT EXISTS idx_user_locations_city_area ON user_locations(city, area, locality)`,
@@ -178,6 +213,12 @@ const updateUserLocationSnapshot = async (
   if (availability.userColumns.has("current_district")) {
     pushUpdate("current_district", values.district || null);
   }
+  if (availability.userColumns.has("current_village")) {
+    pushUpdate("current_village", values.village || null);
+  }
+  if (availability.userColumns.has("current_colony")) {
+    pushUpdate("current_colony", values.colony || null);
+  }
 
   updates.push("last_location_sync = NOW()");
 
@@ -205,8 +246,9 @@ exports.updateLocation = async (req, res) => {
 
 exports.saveLocation = async (req, res) => {
   try {
+    // Prefer authenticated user ID from JWT to prevent identity spoofing
+    const authenticatedUserId = req.user?.userId || req.user?.id || req.user?.user_id || null;
     const {
-      user_id,
       latitude,
       longitude,
       accuracy,
@@ -224,7 +266,12 @@ exports.saveLocation = async (req, res) => {
       provider,
       street,
       timezone,
+      village,
+      colony,
     } = req.body;
+
+    // Authenticated user takes priority; fall back to body only for unauthenticated saves
+    const user_id = authenticatedUserId || req.body?.user_id || req.body?.userId || null;
 
     const normalizedPermission = String(permission_status || "").toLowerCase();
     const hasLatitude = latitude !== undefined && latitude !== null && latitude !== "";
@@ -234,6 +281,11 @@ exports.saveLocation = async (req, res) => {
 
     if (normalizedPermission.startsWith("granted") && (!hasLatitude || !hasLongitude)) {
       return res.status(400).json({ error: "Missing latitude or longitude" });
+    }
+
+    // Reject Null Island coordinates (0, 0) — these come from error-state clients
+    if (parsedLatitude === 0 && parsedLongitude === 0) {
+      return res.status(400).json({ error: "Invalid coordinates (0, 0)" });
     }
 
     if ((hasLatitude && parsedLatitude === null) || (hasLongitude && parsedLongitude === null)) {
@@ -254,18 +306,37 @@ exports.saveLocation = async (req, res) => {
       );
     }
 
+    // L8: Server-side reverse geocode for IP-based locations to get village/colony
+    const isIpProvider = String(provider || "").toLowerCase().includes("ip");
+    let enrichedAddress = null;
+    if (isIpProvider && parsedLatitude && parsedLongitude) {
+      try {
+        enrichedAddress = await serverReverseGeocode(parsedLatitude, parsedLongitude);
+        if (enrichedAddress) {
+          logger.info("[Location] Server-side reverse geocode enrichment for IP location", {
+            village: enrichedAddress.village || "",
+            colony: enrichedAddress.neighbourhood || enrichedAddress.suburb || "",
+          });
+        }
+      } catch (err) {
+        logger.warn("[Location] Server-side reverse geocode failed", { message: err.message });
+      }
+    }
+
     const finalCity =
-      safeText(city) || safeText(area) || safeText(locality) || safeText(ipLocation?.city) || "Unknown";
-    const finalState = safeText(state) || safeText(ipLocation?.region) || "";
-    const finalCountry = safeText(country) || safeText(ipLocation?.country) || "Unknown";
-    const finalArea = safeText(area);
-    const finalLocality = safeText(locality);
-    const finalDistrict = safeText(district);
-    const finalPincode = safeText(pincode);
+      safeText(city) || safeText(enrichedAddress?.city) || safeText(enrichedAddress?.town) || safeText(area) || safeText(locality) || safeText(ipLocation?.city) || "Unknown";
+    const finalState = safeText(state) || safeText(enrichedAddress?.state) || safeText(ipLocation?.region) || "";
+    const finalCountry = safeText(country) || safeText(enrichedAddress?.country) || safeText(ipLocation?.country) || "Unknown";
+    const finalArea = safeText(area) || safeText(enrichedAddress?.suburb) || "";
+    const finalLocality = safeText(locality) || safeText(enrichedAddress?.neighbourhood) || "";
+    const finalDistrict = safeText(district) || safeText(enrichedAddress?.county) || safeText(enrichedAddress?.state_district) || "";
+    const finalPincode = safeText(pincode) || safeText(enrichedAddress?.postcode) || "";
     const finalDisplayName = safeText(display_name || displayName);
     const finalProvider = safeText(provider) || "browser_gps";
     const finalStreet = safeText(street);
     const finalTimezone = safeText(timezone) || safeText(ipLocation?.timezone);
+    const finalVillage = safeText(village) || safeText(enrichedAddress?.village) || safeText(enrichedAddress?.hamlet) || "";
+    const finalColony = safeText(colony) || safeText(enrichedAddress?.neighbourhood) || safeText(enrichedAddress?.suburb) || "";
     const finalSpeed =
       toNumberOrNull(req.body?.device_speed ?? req.body?.speed) ?? 0;
 
@@ -380,6 +451,22 @@ exports.saveLocation = async (req, res) => {
         "synced_at",
         null,
       );
+      appendOptionalInsertColumn(
+        columns,
+        placeholders,
+        params,
+        availability,
+        "village",
+        finalVillage || null,
+      );
+      appendOptionalInsertColumn(
+        columns,
+        placeholders,
+        params,
+        availability,
+        "colony",
+        finalColony || null,
+      );
 
       const insertQuery = `
         INSERT INTO user_locations (${columns.join(", ")})
@@ -404,6 +491,8 @@ exports.saveLocation = async (req, res) => {
             district: finalDistrict,
             pincode: finalPincode,
             displayName: finalDisplayName,
+            village: finalVillage,
+            colony: finalColony,
           },
           availability,
         );
@@ -423,6 +512,8 @@ exports.saveLocation = async (req, res) => {
           country: finalCountry,
           pincode: finalPincode,
           displayName: finalDisplayName,
+          village: finalVillage,
+          colony: finalColony,
         },
         provider: finalProvider,
         verified: locationVerified,
@@ -443,8 +534,16 @@ exports.saveLocation = async (req, res) => {
   }
 };
 
-exports.getLocations = async (_req, res) => {
+exports.getLocations = async (req, res) => {
   try {
+    const userId = req.user?.userId || req.user?.id || req.user?.user_id || null;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const limit = Math.min(Math.max(Number.parseInt(req.query?.limit, 10) || 50, 1), 200);
+    const offset = Math.max(Number.parseInt(req.query?.offset, 10) || 0, 0);
+
     const availability = await getColumnAvailability();
 
     const columns = [
@@ -471,8 +570,11 @@ exports.getLocations = async (_req, res) => {
       `
         SELECT ${columns.join(", ")}
         FROM user_locations
+        WHERE user_id::text = $1
         ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
       `,
+      [String(userId), limit, offset],
     );
 
     return res.json(result.rows);
@@ -484,6 +586,11 @@ exports.getLocations = async (_req, res) => {
 
 exports.getLocationById = async (req, res) => {
   try {
+    const userId = req.user?.userId || req.user?.id || req.user?.user_id || null;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const { id } = req.params;
     const availability = await getColumnAvailability();
 
@@ -511,9 +618,9 @@ exports.getLocationById = async (req, res) => {
       `
         SELECT ${columns.join(", ")}
         FROM user_locations
-        WHERE id = $1
+        WHERE id = $1 AND user_id::text = $2
       `,
-      [id],
+      [id, String(userId)],
     );
 
     if (!result.rows.length) {
@@ -529,10 +636,15 @@ exports.getLocationById = async (req, res) => {
 
 exports.deleteLocation = async (req, res) => {
   try {
+    const userId = req.user?.userId || req.user?.id || req.user?.user_id || null;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     const { id } = req.params;
     const result = await runQuery(
-      "DELETE FROM user_locations WHERE id = $1 RETURNING id",
-      [id],
+      "DELETE FROM user_locations WHERE id = $1 AND user_id::text = $2 RETURNING id",
+      [id, String(userId)],
     );
 
     if (!result.rows.length) {

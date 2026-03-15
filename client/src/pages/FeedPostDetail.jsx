@@ -153,7 +153,7 @@ const X = () => {
           title: s("loading") || "Loading...",
           description:
             s("feed_post_loading_desc") || "Loading the selected feed post.",
-          className: "w-full max-w-md",
+          className: "w-full max-w-md page-shell page-pad",
           marker: "loading",
         }),
       )
@@ -165,13 +165,13 @@ const X = () => {
               "min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4",
           },
           e.createElement(G, {
-            title: s("post_not_found") || "Post unavailable",
+            title: tr("post_unavailable_title", "Post unavailable"),
             description:
               v || tr("post_removed_hint", "This post may have been removed."),
             onRetry: () => S((t) => t + 1),
             retryLabel: tr("retry", "Retry"),
             marker: "error",
-            className: "w-full max-w-md",
+            className: "w-full max-w-md page-shell page-pad",
             secondaryAction: e.createElement(
               N,
               {
@@ -201,7 +201,7 @@ const X = () => {
               "div",
               {
                 className:
-                  "max-w-4xl mx-auto px-4 py-3 flex items-center gap-4",
+                  "max-w-4xl mx-auto px-4 py-3 flex items-center gap-4 page-shell page-pad",
               },
               e.createElement(
                 "button",
@@ -232,7 +232,7 @@ const X = () => {
           ),
           e.createElement(
             "div",
-            { className: "max-w-4xl mx-auto px-4 py-8" },
+            { className: "max-w-4xl mx-auto px-4 py-8 page-shell page-pad" },
             e.createElement(
               O,
               {
@@ -397,7 +397,7 @@ const X = () => {
               "div",
               {
                 className:
-                  "fixed bottom-8 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50",
+                  "fixed bottom-28 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg z-50",
               },
               p,
             ),

@@ -14,29 +14,31 @@ const WEB_GEO_OPTIONS = {
 };
 const WEB_RELAXED_GEO_OPTIONS = {
   enableHighAccuracy: false,
-  timeout: 10e3,
-  maximumAge: 12e4,
+  timeout: 12e3,
+  maximumAge: 15e3,
 };
 const WEB_WATCH_GEO_OPTIONS = {
   enableHighAccuracy: true,
   timeout: 20e3,
   maximumAge: 0,
 };
-const WEB_ACCURACY_RETRY_THRESHOLD_METERS = 250;
-const WEB_TARGET_ACCURACY_METERS = 80;
-const WEB_WATCH_MAX_DURATION_MS = 20e3;
-const WEB_WATCH_MIN_IMPROVEMENT_METERS = 12;
-const WEB_EXTRA_SAMPLE_ATTEMPTS = 2;
-const WEB_EXTRA_SAMPLE_DELAY_MS = 1100;
-const WEB_STALE_FIX_MAX_AGE_MS = 2 * 60 * 1e3;
-const NATIVE_ACCURACY_RETRY_THRESHOLD_METERS = 120;
-const NATIVE_SECOND_FIX_DELAY_MS = 1200;
+const WEB_ACCURACY_RETRY_THRESHOLD_METERS = 50;
+const WEB_TARGET_ACCURACY_METERS = 20;
+const WEB_WATCH_MAX_DURATION_MS = 30e3;
+const WEB_WATCH_MIN_IMPROVEMENT_METERS = 3;
+const WEB_EXTRA_SAMPLE_ATTEMPTS = 4;
+const WEB_EXTRA_SAMPLE_DELAY_MS = 1500;
+const WEB_STALE_FIX_MAX_AGE_MS = 60 * 1e3;
+const NATIVE_ACCURACY_RETRY_THRESHOLD_METERS = 50;
+const NATIVE_SECOND_FIX_DELAY_MS = 2000;
+const NATIVE_MAX_SAMPLES = 4;
+const NATIVE_WATCH_MAX_DURATION_MS = 25e3;
 const STRICT_REQUIRED_ACCURACY_METERS = 100;
 const VERIFY_REQUIRED_ACCURACY_METERS = Number(
-  import.meta.env.VITE_LOCATION_TARGET_ACCURACY_METERS || 20,
+  import.meta.env.VITE_LOCATION_TARGET_ACCURACY_METERS || 100,
 );
 const VERIFY_MAX_ACCURACY_METERS = Number(
-  import.meta.env.VITE_LOCATION_MAX_ACCURACY_METERS || 20,
+  import.meta.env.VITE_LOCATION_MAX_ACCURACY_METERS || 100,
 );
 const VERIFY_MAX_AGE_MS = Number(
   import.meta.env.VITE_LOCATION_MAX_AGE_MS || 10000,
@@ -48,17 +50,28 @@ const DEFAULT_REQUIRED_ACCURACY_METERS = STRICT_REQUIRED_ACCURACY_METERS;
 const DEFAULT_COARSE_REQUIRED_ACCURACY_METERS = 1500;
 const DEFAULT_CACHE_MAX_AGE_MS = 15 * 60 * 1e3;
 const RUNTIME_CACHE_MAX_AGE_MS = 45e3;
-const RUNTIME_CACHE_RELAXED_FACTOR = 1.35;
+const RUNTIME_CACHE_RELAXED_FACTOR = 1.15;
 const LIVE_CAPTURE_ATTEMPTS = 3;
 const IP_FALLBACK_TIMEOUT_MS = 5e3;
 const LOCATION_CACHE_KEYS = ["mhub_location", "user_location", "last_location"];
-const MIN_MOVEMENT_THRESHOLD = 0;
+const MIN_MOVEMENT_THRESHOLD = 8;
+/** Maximum accuracy we'll accept at all — beyond this is meaningless */
+const ABSOLUTE_MAX_ACCURACY_METERS = 50000;
+/** Accuracy tiers for quality classification */
+const ACCURACY_TIER_PRECISE = 30;
+const ACCURACY_TIER_GOOD = 100;
+const ACCURACY_TIER_MODERATE = 500;
+const ACCURACY_TIER_COARSE = 5000;
+const KALMAN_PROCESS_NOISE = 3;
+const KALMAN_MEASUREMENT_NOISE_BASE = 10;
+const STATIONARY_SPEED_THRESHOLD_MS = 0.5;
+const FIRST_FIX_OUTLIER_FACTOR = 2.5;
 const NETWORK_TIMEOUT_MS = 6e3;
 const LOCATION_SYNC_MAX_ATTEMPTS_PER_ENDPOINT = 2;
 const LOCATION_SYNC_RETRY_DELAY_MS = 1e3;
 const REVERSE_GEOCODE_CACHE_TTL_MS = 30 * 60 * 1e3;
 const REVERSE_GEOCODE_TIMEOUT_MS = 3500;
-const REVERSE_GEOCODE_ROUNDING_DIGITS = 4;
+const REVERSE_GEOCODE_ROUNDING_DIGITS = 5;
 const COORD_PRECISION_DIGITS = 7;
 const POI_CACHE_TTL_MS = 30 * 60 * 1e3;
 const POI_LOOKUP_TIMEOUT_MS = 3500;
@@ -90,6 +103,134 @@ const debugLog = (...args) => {
     console.log("[LocationService]", ...args);
   }
 };
+/**
+ * Simple 1-D Kalman filter for smoothing GPS coordinates.
+ * Maintains separate state for latitude and longitude.
+ * Reduces GPS noise by ~2-3x compared to raw readings.
+ */
+class KalmanFilter1D {
+  constructor(processNoise = KALMAN_PROCESS_NOISE, measurementNoiseBase = KALMAN_MEASUREMENT_NOISE_BASE) {
+    this.processNoise = processNoise;
+    this.measurementNoiseBase = measurementNoiseBase;
+    this.estimate = null;
+    this.errorCovariance = null;
+    this.lastTimestamp = null;
+  }
+  update(measurement, accuracy, timestamp) {
+    const measurementNoise = Math.max(this.measurementNoiseBase, accuracy || this.measurementNoiseBase);
+    if (this.estimate === null) {
+      this.estimate = measurement;
+      this.errorCovariance = measurementNoise;
+      this.lastTimestamp = timestamp || Date.now();
+      return this.estimate;
+    }
+    const dt = timestamp ? Math.max(0.001, (timestamp - this.lastTimestamp) / 1000) : 1;
+    this.lastTimestamp = timestamp;
+    const predictedCovariance = this.errorCovariance + this.processNoise * dt;
+    const kalmanGain = predictedCovariance / (predictedCovariance + measurementNoise);
+    this.estimate = this.estimate + kalmanGain * (measurement - this.estimate);
+    this.errorCovariance = (1 - kalmanGain) * predictedCovariance;
+    return this.estimate;
+  }
+  reset() {
+    this.estimate = null;
+    this.errorCovariance = null;
+    this.lastTimestamp = null;
+  }
+}
+
+/**
+ * Weighted position averaging using inverse-accuracy-squared weighting.
+ * More accurate fixes contribute proportionally more to the result.
+ */
+const weightedAveragePosition = (samples, bestFix) => {
+  const usable = samples.filter(isPositionUsable);
+  if (usable.length < 2) return bestFix;
+  let totalWeight = 0;
+  let weightedLat = 0;
+  let weightedLng = 0;
+  let bestAccuracy = Number.MAX_SAFE_INTEGER;
+  for (const sample of usable) {
+    const acc = getPositionAccuracy(sample);
+    if (!Number.isFinite(acc) || acc <= 0) continue;
+    const weight = 1 / (acc * acc);
+    weightedLat += sample.coords.latitude * weight;
+    weightedLng += sample.coords.longitude * weight;
+    totalWeight += weight;
+    if (acc < bestAccuracy) bestAccuracy = acc;
+  }
+  if (totalWeight === 0) return bestFix;
+  const avgLat = weightedLat / totalWeight;
+  const avgLng = weightedLng / totalWeight;
+  const distFromBest = getDistanceFromCoords(avgLat, avgLng, bestFix.coords.latitude, bestFix.coords.longitude);
+  if (distFromBest > bestAccuracy * 2) return bestFix;
+  return {
+    coords: {
+      latitude: avgLat,
+      longitude: avgLng,
+      accuracy: Math.min(bestAccuracy, getPositionAccuracy(bestFix)),
+      altitude: bestFix.coords.altitude,
+      altitudeAccuracy: bestFix.coords.altitudeAccuracy,
+      heading: bestFix.coords.heading,
+      speed: bestFix.coords.speed,
+    },
+    timestamp: bestFix.timestamp,
+  };
+};
+
+/**
+ * Discard first GPS fix if it's a significant outlier compared to later fixes.
+ * Returns filtered sample array with the first fix removed if it's an outlier.
+ */
+const discardFirstFixIfOutlier = (samples) => {
+  if (samples.length < 3) return samples;
+  const first = samples[0];
+  const rest = samples.slice(1);
+  const firstAcc = getPositionAccuracy(first);
+  const restAccuracies = rest.map(getPositionAccuracy).filter(Number.isFinite);
+  if (!restAccuracies.length) return samples;
+  const avgRestAccuracy = restAccuracies.reduce((sum, a) => sum + a, 0) / restAccuracies.length;
+  if (firstAcc > avgRestAccuracy * FIRST_FIX_OUTLIER_FACTOR) {
+    debugLog(`Discarding first fix (${Math.round(firstAcc)}m) as outlier vs avg ${Math.round(avgRestAccuracy)}m`);
+    return rest;
+  }
+  return samples;
+};
+
+/**
+ * Apply Kalman filtering to a sequence of GPS samples.
+ * Returns a synthetic position with smoothed coordinates and the best accuracy.
+ */
+const kalmanFilteredPosition = (samples, bestFix) => {
+  const usable = samples.filter(isPositionUsable);
+  if (usable.length < 2) return bestFix;
+  const sorted = [...usable].sort((a, b) => getPositionTimestamp(a) - getPositionTimestamp(b));
+  const latFilter = new KalmanFilter1D();
+  const lngFilter = new KalmanFilter1D();
+  for (const sample of sorted) {
+    const acc = getPositionAccuracy(sample);
+    const ts = getPositionTimestamp(sample);
+    latFilter.update(sample.coords.latitude, acc / 111320, ts);
+    lngFilter.update(sample.coords.longitude, acc / (111320 * Math.cos(sample.coords.latitude * Math.PI / 180)), ts);
+  }
+  const smoothedLat = latFilter.estimate;
+  const smoothedLng = lngFilter.estimate;
+  const distFromBest = getDistanceFromCoords(smoothedLat, smoothedLng, bestFix.coords.latitude, bestFix.coords.longitude);
+  const bestAcc = getPositionAccuracy(bestFix);
+  if (distFromBest > bestAcc * 2) return bestFix;
+  return {
+    coords: {
+      latitude: smoothedLat,
+      longitude: smoothedLng,
+      accuracy: Math.min(bestAcc, latFilter.errorCovariance * 111320),
+      altitude: bestFix.coords.altitude,
+      altitudeAccuracy: bestFix.coords.altitudeAccuracy,
+      heading: bestFix.coords.heading,
+      speed: bestFix.coords.speed,
+    },
+    timestamp: bestFix.timestamp,
+  };
+};
 const stableStringify = (value) => {
   if (value === null || value === undefined) {
     return "null";
@@ -120,6 +261,11 @@ const createLocationSignature = async (payload) => {
     return null;
   }
   try {
+    // Add nonce and timestamp to prevent replay attacks
+    const nonce = toHex(globalThis.crypto.getRandomValues(new Uint8Array(16)));
+    const signedAt = Date.now();
+    payload._nonce = nonce;
+    payload._signed_at = signedAt;
     const encoder = new TextEncoder();
     const key = await globalThis.crypto.subtle.importKey(
       "raw",
@@ -251,6 +397,86 @@ const getBrowserPermissionState = async () => {
     return "unknown";
   }
 };
+/**
+ * Multi-stage GPS sample filtering pipeline:
+ * 1. Discard first-fix outlier
+ * 2. Median-filter to reject spatial outliers
+ * 3. Apply Kalman filter for temporal smoothing
+ * 4. Apply weighted averaging as final refinement
+ * Returns the most precise synthetic position available.
+ */
+const medianFilteredPosition = (samples, bestFix) => {
+  const usable = samples.filter(isPositionUsable);
+  if (usable.length < 3) return bestFix;
+
+  // Stage 1: Discard first-fix outlier if applicable
+  const cleaned = discardFirstFixIfOutlier(usable);
+
+  // Sort by accuracy (best first) and take the better half
+  const sorted = [...cleaned].sort(
+    (a, b) => getPositionAccuracy(a) - getPositionAccuracy(b),
+  );
+  const topHalf = sorted.slice(0, Math.max(3, Math.ceil(sorted.length / 2)));
+
+  // Stage 2: Median filter for outlier rejection
+  const lats = topHalf.map((p) => p.coords.latitude).sort((a, b) => a - b);
+  const lngs = topHalf.map((p) => p.coords.longitude).sort((a, b) => a - b);
+  const mid = Math.floor(lats.length / 2);
+  const medianLat = lats.length % 2 === 1 ? lats[mid] : (lats[mid - 1] + lats[mid]) / 2;
+  const medianLng = lngs.length % 2 === 1 ? lngs[mid] : (lngs[mid - 1] + lngs[mid]) / 2;
+
+  const bestAcc = getPositionAccuracy(bestFix);
+  const distFromBest = getDistanceFromCoords(
+    medianLat, medianLng,
+    bestFix.coords.latitude, bestFix.coords.longitude,
+  );
+
+  if (distFromBest > bestAcc * 2) {
+    return bestFix;
+  }
+
+  const medianResult = {
+    coords: {
+      latitude: medianLat,
+      longitude: medianLng,
+      accuracy: Math.min(bestAcc, getPositionAccuracy(sorted[0])),
+      altitude: bestFix.coords.altitude,
+      altitudeAccuracy: bestFix.coords.altitudeAccuracy,
+      heading: bestFix.coords.heading,
+      speed: bestFix.coords.speed,
+    },
+    timestamp: bestFix.timestamp,
+  };
+
+  // Stage 3: Apply Kalman filter for temporal smoothing if enough samples
+  if (cleaned.length >= 4) {
+    const kalmanResult = kalmanFilteredPosition(cleaned, medianResult);
+    if (getPositionAccuracy(kalmanResult) < getPositionAccuracy(medianResult)) {
+      return kalmanResult;
+    }
+  }
+
+  // Stage 4: Weighted average as fallback refinement
+  if (cleaned.length >= 3) {
+    const weightedResult = weightedAveragePosition(cleaned, medianResult);
+    if (getPositionAccuracy(weightedResult) < getPositionAccuracy(medianResult)) {
+      return weightedResult;
+    }
+  }
+
+  return medianResult;
+};
+const getDistanceFromCoords = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(deltaPhi / 2) ** 2 +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
 const refineBrowserPositionWithWatch = async (
   initialFix,
   targetAccuracy = WEB_TARGET_ACCURACY_METERS,
@@ -268,12 +494,15 @@ const refineBrowserPositionWithWatch = async (
 
   let bestFix = initialFix;
   const initialAccuracy = getPositionAccuracy(initialFix);
+  debugLog(`Watch refinement starting. Initial accuracy: ${Number.isFinite(initialAccuracy) ? Math.round(initialAccuracy) + 'm' : 'unknown'}, target: ${targetAccuracy}m`);
   if (
     Number.isFinite(initialAccuracy) &&
     initialAccuracy <= targetAccuracy
   ) {
+    debugLog("Initial fix already meets target accuracy, skipping watch.");
     return initialFix;
   }
+  const allSamples = [initialFix];
   return new Promise((resolve) => {
     let resolved = false;
     let watchId = null;
@@ -287,20 +516,41 @@ const refineBrowserPositionWithWatch = async (
       if (finishTimer) {
         clearTimeout(finishTimer);
       }
-      resolve(bestFix);
+      // Multi-stage filtering: Kalman → median → weighted for best precision
+      let finalFix = bestFix;
+      if (allSamples.length >= 4) {
+        finalFix = kalmanFilteredPosition(allSamples, bestFix);
+        const medianCandidate = medianFilteredPosition(allSamples, bestFix);
+        if (getPositionAccuracy(medianCandidate) < getPositionAccuracy(finalFix)) {
+          finalFix = medianCandidate;
+        }
+      } else if (allSamples.length >= 3) {
+        finalFix = medianFilteredPosition(allSamples, bestFix);
+      }
+      debugLog(`Watch refinement done. Samples: ${allSamples.length}, final accuracy: ${Math.round(getPositionAccuracy(finalFix))}m`);
+      resolve(finalFix);
     };
     finishTimer = setTimeout(finish, WEB_WATCH_MAX_DURATION_MS);
     try {
       watchId = navigator.geolocation.watchPosition(
         (position) => {
           if (!isPositionUsable(position)) return;
+          allSamples.push(position);
 
           const currentBest = getPositionAccuracy(bestFix);
           const nextAccuracy = getPositionAccuracy(position);
+          const speed = Number(position.coords?.speed);
+          const isStationary = Number.isFinite(speed) && speed < STATIONARY_SPEED_THRESHOLD_MS;
+          debugLog(`Watch sample #${allSamples.length}: ${Math.round(nextAccuracy)}m (best: ${Math.round(currentBest)}m)${isStationary ? ' [stationary]' : ''}`);
+
+          // For stationary devices, require larger improvement to reduce jitter
+          const improvementThreshold = isStationary
+            ? WEB_WATCH_MIN_IMPROVEMENT_METERS * 2
+            : WEB_WATCH_MIN_IMPROVEMENT_METERS;
           if (
             !Number.isFinite(currentBest) ||
             (Number.isFinite(nextAccuracy) &&
-              nextAccuracy + WEB_WATCH_MIN_IMPROVEMENT_METERS < currentBest)
+              nextAccuracy + improvementThreshold < currentBest)
           ) {
             bestFix = position;
           }
@@ -388,12 +638,12 @@ const getBrowserPosition = async (options = {}) => {
   }
 
   const initialAccuracy = getPositionAccuracy(best);
-  const accuracyRetryThreshold = Number.isFinite(targetAccuracy)
-    ? Math.min(WEB_ACCURACY_RETRY_THRESHOLD_METERS, targetAccuracy * 2)
-    : WEB_ACCURACY_RETRY_THRESHOLD_METERS;
+  debugLog(`Initial browser fix: ${best.coords.latitude.toFixed(7)}, ${best.coords.longitude.toFixed(7)} ±${Number.isFinite(initialAccuracy) ? Math.round(initialAccuracy) + 'm' : '?'}`);
+
+  // Always try watch refinement if not yet at target accuracy
   if (
-    Number.isFinite(initialAccuracy) &&
-    initialAccuracy > accuracyRetryThreshold
+    !Number.isFinite(initialAccuracy) ||
+    initialAccuracy > targetAccuracy
   ) {
     const refinedFix = await refineBrowserPositionWithWatch(
       best,
@@ -403,12 +653,15 @@ const getBrowserPosition = async (options = {}) => {
     best = pickBestPosition(rawCandidates) || best;
   }
 
-  if (getPositionAccuracy(best) > accuracyRetryThreshold) {
+  // Take extra samples if still above target accuracy
+  if (getPositionAccuracy(best) > targetAccuracy) {
     for (let attempt = 0; attempt < WEB_EXTRA_SAMPLE_ATTEMPTS; attempt += 1) {
-      await sleep(WEB_EXTRA_SAMPLE_DELAY_MS);
+      await sleep(WEB_EXTRA_SAMPLE_DELAY_MS + attempt * 500);
       try {
         const extraFix = await getBrowserPositionOnce(WEB_GEO_OPTIONS);
         addCandidate(extraFix);
+        debugLog(`Extra sample #${attempt + 1}: ±${Math.round(getPositionAccuracy(extraFix))}m`);
+        if (getPositionAccuracy(extraFix) <= targetAccuracy) break;
       } catch {
         // Keep best candidate captured so far.
       }
@@ -416,6 +669,7 @@ const getBrowserPosition = async (options = {}) => {
     best = pickBestPosition(rawCandidates) || best;
   }
 
+  debugLog(`Final browser position: ±${Math.round(getPositionAccuracy(best))}m from ${rawCandidates.length} candidates`);
   return best;
 };
 const isValidCoordinates = (latitude, longitude) =>
@@ -510,6 +764,8 @@ const normalizeLocationShape = (loc, defaults = {}) => {
       loc.locality ||
       loc.address?.locality ||
       "",
+    village: loc.village || loc.address?.village || "",
+    colony: loc.colony || loc.address?.colony || "",
     locality: loc.locality || loc.address?.locality || "",
     placeName:
       loc.placeName ||
@@ -546,7 +802,13 @@ const getRecentCachedLocation = (maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS) => {
     }).filter(Boolean);
     const freshCandidates = candidates.filter((entry) => {
       const ageMs = now - entry.timestamp;
-      return ageMs <= maxAgeMs;
+      if (ageMs > maxAgeMs) return false;
+      // Skip IP-fallback cached locations — they are coarse (~5km) and
+      // produce the same result for every user on the same ISP/network.
+      // Only return cached GPS-sourced locations.
+      const orig = String(entry.originalProvider || entry.provider || "").toLowerCase();
+      if (orig === "ip_fallback") return false;
+      return true;
     });
     if (!freshCandidates.length) return null;
     freshCandidates.sort((a, b) => {
@@ -583,6 +845,35 @@ const getIPBasedFallbackLocation = async () => {
     if (!isValidCoordinates(latitude, longitude)) return null;
     const roundedLat = roundCoordinate(latitude);
     const roundedLng = roundCoordinate(longitude);
+
+    // Reverse-geocode IP coordinates to get sub-city precision (area, street, neighbourhood)
+    let addressData = null;
+    try {
+      addressData = await resolveAddress(roundedLat, roundedLng);
+    } catch {
+      debugLog("IP fallback reverse geocode failed, using city-level data");
+    }
+
+    const area = addressData?.area || "";
+    const locality = addressData?.locality || "";
+    const street = addressData?.street || "";
+    const district = addressData?.district || "";
+    const pincode = addressData?.pincode || data.postal || "";
+    const city = addressData?.city || data.city || "";
+    const state = addressData?.state || data.region || "";
+    const country = addressData?.country || data.country_name || "";
+    const placeName = addressData?.poiName || "";
+
+    const displayParts = [];
+    if (placeName) displayParts.push(placeName);
+    if (area && area.toLowerCase() !== city.toLowerCase()) displayParts.push(area);
+    if (city) displayParts.push(city);
+    if (state && state.toLowerCase() !== city.toLowerCase()) displayParts.push(state);
+    const displayName = displayParts.length ? displayParts.join(", ") : [data.city, data.region].filter(Boolean).join(", ") || "Unknown Location";
+
+    const village = addressData?.village || "";
+    const colony = addressData?.colony || "";
+
     return {
       latitude: roundedLat,
       longitude: roundedLng,
@@ -590,12 +881,19 @@ const getIPBasedFallbackLocation = async () => {
       lng: roundedLng,
       accuracy: 5e3,
       speed: 0,
-      city: data.city || "",
-      state: data.region || "",
-      country: data.country_name || "",
-      displayName: [data.city, data.region, data.country_name]
-        .filter(Boolean)
-        .join(", "),
+      city,
+      state,
+      country,
+      area,
+      village,
+      colony,
+      locality,
+      street,
+      district,
+      pincode,
+      placeName,
+      displayName,
+      address: addressData || null,
       provider: "ip_fallback",
       timestamp: Date.now(),
     };
@@ -649,6 +947,14 @@ const buildLocationPayload = (locationData = {}) => {
   if (!payload.locality) {
     payload.locality =
       locationData?.locality || locationData?.address?.locality || "";
+  }
+  if (!payload.village) {
+    payload.village =
+      locationData?.village || locationData?.address?.village || "";
+  }
+  if (!payload.colony) {
+    payload.colony =
+      locationData?.colony || locationData?.address?.colony || "";
   }
   if (!payload.district) {
     payload.district =
@@ -772,6 +1078,11 @@ const getRuntimeCachedLocation = (
 ) => {
   if (!isFreshLocation(runtimeBestLocation, maxAgeMs)) return null;
 
+  // Never return IP-fallback data from runtime cache — it's the same for
+  // every user on the same network and masks real per-user location.
+  const prov = String(runtimeBestLocation?.provider || "").toLowerCase();
+  if (prov === "ip_fallback") return null;
+
   const score = getAccuracyScore(runtimeBestLocation);
   const threshold = Number(requiredAccuracy) * RUNTIME_CACHE_RELAXED_FACTOR;
   if (!Number.isFinite(score) || score <= threshold) {
@@ -785,6 +1096,12 @@ const setRuntimeCachedLocation = (location) => {
     provider: location?.provider || "runtime_cache",
   });
   if (!normalized) return;
+  // Never let an IP-fallback location overwrite a real GPS fix
+  const incomingProvider = String(normalized.provider || "").toLowerCase();
+  const existingProvider = String(runtimeBestLocation?.provider || "").toLowerCase();
+  if (incomingProvider === "ip_fallback" && existingProvider !== "ip_fallback" && runtimeBestLocation) {
+    return;
+  }
   runtimeBestLocation = pickMorePreciseCandidate(
     runtimeBestLocation,
     normalized,
@@ -850,14 +1167,26 @@ const parseNominatimAddress = (data = {}) => {
   );
   const street = [houseNumber, road].filter(Boolean).join(" ").trim();
 
-  const area = firstNonEmptyText(
+  const village = firstNonEmptyText(
+    address.village,
+    address.hamlet,
+    address.isolated_dwelling,
+    address.farm,
+    address.croft,
+  );
+
+  const colony = firstNonEmptyText(
     address.neighbourhood,
-    address.suburb,
     address.residential,
     address.quarter,
     address.city_block,
     address.allotments,
-    address.hamlet,
+  );
+
+  const area = firstNonEmptyText(
+    colony,
+    address.suburb,
+    village,
     address.locality,
   );
 
@@ -872,7 +1201,7 @@ const parseNominatimAddress = (data = {}) => {
   const city = firstNonEmptyText(
     address.city,
     address.town,
-    address.village,
+    village,
     address.municipality,
     address.locality,
     address.suburb,
@@ -899,6 +1228,8 @@ const parseNominatimAddress = (data = {}) => {
   return {
     source: "nominatim",
     formatted: compactDisplay || fallbackDisplay || "Unknown Location",
+    village: village || "",
+    colony: colony || "",
     city: city || locality || district || "Unknown",
     state: state || "",
     country: country || "",
@@ -934,8 +1265,25 @@ const parseBigDataCloudAddress = (data = {}) => {
       (item) => String(item?.type || "").toLowerCase() === "road",
     )?.name,
   );
-  const area = firstNonEmptyText(data?.locality, data?.principalSubdivision);
-  const city = firstNonEmptyText(data?.city, data?.locality, data?.principalSubdivision);
+  const village = firstNonEmptyText(
+    data?.localityInfo?.informative?.find(
+      (item) => /village|hamlet/i.test(String(item?.type || "")),
+    )?.name,
+  );
+  const colony = firstNonEmptyText(
+    data?.localityInfo?.informative?.find(
+      (item) => /neighbourhood|neighborhood|residential|colony/i.test(String(item?.type || "")),
+    )?.name,
+  );
+  const area = firstNonEmptyText(
+    colony,
+    data?.locality,
+    village,
+    data?.localityInfo?.informative?.find(
+      (item) => /suburb|district/i.test(String(item?.type || "")),
+    )?.name,
+  );
+  const city = firstNonEmptyText(data?.city, village, data?.locality);
   const state = firstNonEmptyText(data?.principalSubdivision, data?.region);
   const country = firstNonEmptyText(data?.countryName, data?.countryCode);
   const pincode = firstNonEmptyText(data?.postcode);
@@ -956,6 +1304,8 @@ const parseBigDataCloudAddress = (data = {}) => {
     district: firstNonEmptyText(data?.localityInfo?.administrative?.[2]?.name),
     area: area || "",
     street: street || "",
+    village: village || "",
+    colony: colony || "",
     locality: firstNonEmptyText(data?.locality),
     poiName: poiName,
     displayName: displayParts.join(", ") || city || "Unknown Location",
@@ -986,6 +1336,8 @@ const mergeAddressResults = (primary = null, secondary = null) => {
     source: [primary.source, secondary.source].filter(Boolean).join("+"),
     poiName: firstNonEmptyText(primary.poiName, secondary.poiName),
     street: firstNonEmptyText(primary.street, secondary.street),
+    village: firstNonEmptyText(primary.village, secondary.village),
+    colony: firstNonEmptyText(primary.colony, secondary.colony),
     area: firstNonEmptyText(primary.area, secondary.area),
     locality: firstNonEmptyText(primary.locality, secondary.locality),
     city: firstNonEmptyText(primary.city, secondary.city, "Unknown"),
@@ -1002,10 +1354,11 @@ const mergeAddressResults = (primary = null, secondary = null) => {
   const displayParts = [];
   pushUniquePart(displayParts, merged.poiName);
   pushUniquePart(displayParts, merged.street);
-  pushUniquePart(displayParts, merged.area);
-  pushUniquePart(displayParts, merged.city || merged.locality);
-  pushUniquePart(displayParts, merged.state);
-
+    if (merged.colony) pushUniquePart(displayParts, merged.colony);
+    if (merged.village && merged.village !== merged.city) pushUniquePart(displayParts, merged.village);
+    pushUniquePart(displayParts, merged.area);
+    pushUniquePart(displayParts, merged.city || merged.locality);
+    pushUniquePart(displayParts, merged.district);
   merged.displayName =
     displayParts.join(", ") || merged.rawDisplayName || "Unknown Location";
   merged.formatted = merged.displayName;
@@ -1013,7 +1366,7 @@ const mergeAddressResults = (primary = null, secondary = null) => {
 };
 const fetchNominatimAddress = async (lat, lng) => {
   const response = await fetchWithTimeout(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&zoom=18&addressdetails=1&namedetails=1&extratags=1`,
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en&zoom=19&addressdetails=1&namedetails=1&extratags=1`,
     {
       headers: {
         Accept: "application/json",
@@ -1205,28 +1558,99 @@ const composeDisplayName = (placeName, addressData = null) => {
 const getNativePositionWithSampling = async (options = {}) => {
   const targetAccuracy = Number.isFinite(options.targetAccuracy)
     ? Number(options.targetAccuracy)
-    : null;
+    : WEB_TARGET_ACCURACY_METERS;
   const retryThreshold = Number.isFinite(targetAccuracy)
     ? Math.min(NATIVE_ACCURACY_RETRY_THRESHOLD_METERS, targetAccuracy * 2)
     : NATIVE_ACCURACY_RETRY_THRESHOLD_METERS;
   const samples = [];
   const firstFix = await Geolocation.getCurrentPosition(GEO_OPTIONS);
   samples.push(firstFix);
+  debugLog("Native fix #1 accuracy:", getPositionAccuracy(firstFix), "m");
 
-  if (getPositionAccuracy(firstFix) > retryThreshold) {
-    await sleep(NATIVE_SECOND_FIX_DELAY_MS);
-    try {
-      const secondFix = await Geolocation.getCurrentPosition({
-        ...GEO_OPTIONS,
-        timeout: 25e3,
-      });
-      samples.push(secondFix);
-    } catch (error) {
-      debugLog("Second native GPS sample failed:", error?.message || error);
+  const needsRefinement = getPositionAccuracy(firstFix) > targetAccuracy;
+
+  if (needsRefinement) {
+    // Progressive sampling: take multiple fixes with increasing delays
+    for (let i = 1; i < NATIVE_MAX_SAMPLES; i++) {
+      await sleep(NATIVE_SECOND_FIX_DELAY_MS + i * 500);
+      try {
+        const fix = await Geolocation.getCurrentPosition({
+          ...GEO_OPTIONS,
+          timeout: 25e3,
+        });
+        samples.push(fix);
+        debugLog(`Native fix #${i + 1} accuracy:`, getPositionAccuracy(fix), "m");
+        if (getPositionAccuracy(fix) <= targetAccuracy) break;
+      } catch (error) {
+        debugLog(`Native GPS sample #${i + 1} failed:`, error?.message || error);
+      }
     }
   }
 
-  return pickBestPosition(samples) || firstFix;
+  // Try native watchPosition refinement if still not precise enough
+  const bestSoFar = pickBestPosition(samples) || firstFix;
+  if (getPositionAccuracy(bestSoFar) > targetAccuracy) {
+    const refined = await refineNativePositionWithWatch(bestSoFar, targetAccuracy);
+    samples.push(refined);
+  }
+
+  // Apply multi-stage filtering pipeline to all collected samples
+  const bestRaw = pickBestPosition(samples) || firstFix;
+  const cleanedSamples = discardFirstFixIfOutlier(samples);
+  if (cleanedSamples.length >= 4) {
+    const kalmanResult = kalmanFilteredPosition(cleanedSamples, bestRaw);
+    if (getPositionAccuracy(kalmanResult) <= getPositionAccuracy(bestRaw)) {
+      return kalmanResult;
+    }
+  }
+  if (cleanedSamples.length >= 3) {
+    const filtered = medianFilteredPosition(cleanedSamples, bestRaw);
+    if (getPositionAccuracy(filtered) <= getPositionAccuracy(bestRaw)) {
+      return filtered;
+    }
+  }
+  return bestRaw;
+};
+const refineNativePositionWithWatch = async (initialFix, targetAccuracy) => {
+  let bestFix = initialFix;
+  const watchSamples = [initialFix];
+  return new Promise((resolve) => {
+    let resolved = false;
+    let watchId = null;
+    let timer = null;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      if (watchId !== null) {
+        Geolocation.clearWatch({ id: watchId }).catch(() => {});
+      }
+      if (timer) clearTimeout(timer);
+      // Apply Kalman filtering to watch samples
+      let finalFix = bestFix;
+      if (watchSamples.length >= 4) {
+        finalFix = kalmanFilteredPosition(watchSamples, bestFix);
+      } else if (watchSamples.length >= 3) {
+        finalFix = medianFilteredPosition(watchSamples, bestFix);
+      }
+      resolve(finalFix);
+    };
+    timer = setTimeout(finish, NATIVE_WATCH_MAX_DURATION_MS);
+    Geolocation.watchPosition(
+      { ...GEO_OPTIONS, timeout: NATIVE_WATCH_MAX_DURATION_MS },
+      (position, err) => {
+        if (err || !position) return;
+        if (!isPositionUsable(position)) return;
+        watchSamples.push(position);
+        const nextAcc = getPositionAccuracy(position);
+        const bestAcc = getPositionAccuracy(bestFix);
+        if (nextAcc + WEB_WATCH_MIN_IMPROVEMENT_METERS < bestAcc) {
+          bestFix = position;
+          debugLog("Native watch improved to:", nextAcc, "m");
+        }
+        if (getPositionAccuracy(bestFix) <= targetAccuracy) finish();
+      },
+    ).then((id) => { watchId = id; }).catch(() => finish());
+  });
 };
 export const getCurrentLocation = async (options = {}) => {
   const targetAccuracy = Number.isFinite(options.targetAccuracy)
@@ -1290,10 +1714,14 @@ export const getCurrentLocation = async (options = {}) => {
       longitude: longitude,
       speed: speed,
       accuracy: accuracy,
+      altitude: altitude,
+      altitudeAccuracy: altitudeAccuracy,
+      heading: heading,
     } = coordinates.coords;
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       throw new Error("Invalid GPS coordinates");
     }
+    debugLog(`GPS fix: ${latitude.toFixed(7)}, ${longitude.toFixed(7)} ±${accuracy ? Math.round(accuracy) : '?'}m`);
     const normalizedLat = roundCoordinate(latitude);
     const normalizedLng = roundCoordinate(longitude);
     const addressData = await resolveAddress(normalizedLat, normalizedLng);
@@ -1316,6 +1744,9 @@ export const getCurrentLocation = async (options = {}) => {
       lat: normalizedLat,
       lng: normalizedLng,
       accuracy: accuracy,
+      altitude: Number.isFinite(altitude) ? altitude : null,
+      altitudeAccuracy: Number.isFinite(altitudeAccuracy) ? altitudeAccuracy : null,
+      heading: Number.isFinite(heading) ? heading : null,
       isMock,
       speed: speed || 0,
       address: enrichedAddress,
@@ -1323,6 +1754,8 @@ export const getCurrentLocation = async (options = {}) => {
       state: enrichedAddress.state,
       country: enrichedAddress.country,
       area: enrichedAddress.area || enrichedAddress.locality || "",
+      village: enrichedAddress.village || "",
+      colony: enrichedAddress.colony || "",
       locality: enrichedAddress.locality || "",
       district: enrichedAddress.district || "",
       pincode: enrichedAddress.pincode || "",
@@ -1375,6 +1808,22 @@ export const getBestAvailableLocation = async (options = {}) => {
   const allowRuntimeOrDiskCache = allowCache;
   const allowIpFallbackForSession = allowIpFallback;
 
+  const classifyAccuracy = (acc) => {
+    if (!Number.isFinite(acc)) return "unknown";
+    if (acc <= ACCURACY_TIER_PRECISE) return "precise";
+    if (acc <= ACCURACY_TIER_GOOD) return "good";
+    if (acc <= ACCURACY_TIER_MODERATE) return "moderate";
+    if (acc <= ACCURACY_TIER_COARSE) return "coarse";
+    return "very_coarse";
+  };
+  const tagMeetsTarget = (location) => {
+    if (!location) return location;
+    location.meetsTargetAccuracy = true;
+    location.targetAccuracyMeters = effectiveRequiredAccuracy;
+    location.accuracyTier = classifyAccuracy(Number(location.accuracy));
+    return location;
+  };
+
   const errors = [];
   let bestCandidate = null;
 
@@ -1386,7 +1835,7 @@ export const getBestAvailableLocation = async (options = {}) => {
     if (runtimeCached) {
       bestCandidate = pickMorePreciseCandidate(bestCandidate, runtimeCached);
       if (isAccuracyAcceptable(runtimeCached, effectiveRequiredAccuracy)) {
-        return runtimeCached;
+        return tagMeetsTarget(runtimeCached);
       }
     }
   }
@@ -1407,7 +1856,7 @@ export const getBestAvailableLocation = async (options = {}) => {
         bestCandidate = pickMorePreciseCandidate(bestCandidate, normalized);
         setRuntimeCachedLocation(normalized);
         if (isAccuracyAcceptable(normalized, effectiveRequiredAccuracy)) {
-          return normalized;
+          return tagMeetsTarget(normalized);
         }
 
         const accuracy = normalized.accuracy;
@@ -1430,20 +1879,20 @@ export const getBestAvailableLocation = async (options = {}) => {
       bestCandidate = pickMorePreciseCandidate(bestCandidate, cached);
       if (isAccuracyAcceptable(cached, effectiveRequiredAccuracy)) {
         setRuntimeCachedLocation(cached);
-        return cached;
+        return tagMeetsTarget(cached);
       }
     }
   }
 
   const shouldTryIpFallback =
-    allowIpFallbackForSession && getAccuracyScore(bestCandidate) > 5e3;
+    allowIpFallbackForSession && (!bestCandidate || getAccuracyScore(bestCandidate) > ACCURACY_TIER_COARSE);
   if (shouldTryIpFallback) {
     const ipLocation = await getIPBasedFallbackLocation();
     if (ipLocation) {
       bestCandidate = pickMorePreciseCandidate(bestCandidate, ipLocation);
       if (isAccuracyAcceptable(ipLocation, effectiveRequiredAccuracy)) {
         setRuntimeCachedLocation(ipLocation);
-        return ipLocation;
+        return tagMeetsTarget(ipLocation);
       }
     }
   }
@@ -1455,16 +1904,27 @@ export const getBestAvailableLocation = async (options = {}) => {
 
   if (meetsStrictTarget) {
     setRuntimeCachedLocation(bestCandidate);
-    return bestCandidate;
+    return tagMeetsTarget(bestCandidate);
   }
 
+  // Graceful degradation: return best available location with quality metadata
+  // instead of throwing. Callers can check .accuracyTier to decide what to show.
   if (bestCandidate) {
-    const roundedAccuracy = accuracyKnown
-      ? Math.round(bestAccuracy)
-      : "unknown";
-    throw new Error(
-      `Unable to achieve required GPS accuracy (<=${effectiveRequiredAccuracy}m). Best captured accuracy: ${roundedAccuracy}m.`,
-    );
+    const acc = accuracyKnown ? bestAccuracy : null;
+    let accuracyTier = "unknown";
+    if (acc !== null) {
+      if (acc <= ACCURACY_TIER_PRECISE) accuracyTier = "precise";
+      else if (acc <= ACCURACY_TIER_GOOD) accuracyTier = "good";
+      else if (acc <= ACCURACY_TIER_MODERATE) accuracyTier = "moderate";
+      else if (acc <= ACCURACY_TIER_COARSE) accuracyTier = "coarse";
+      else accuracyTier = "very_coarse";
+    }
+    bestCandidate.accuracyTier = accuracyTier;
+    bestCandidate.meetsTargetAccuracy = false;
+    bestCandidate.targetAccuracyMeters = effectiveRequiredAccuracy;
+    debugLog(`Returning best-effort location: ${acc !== null ? Math.round(acc) + 'm' : 'unknown'} (${accuracyTier}), target was ${effectiveRequiredAccuracy}m`);
+    setRuntimeCachedLocation(bestCandidate);
+    return bestCandidate;
   }
 
   if (errors.length) {
@@ -1488,6 +1948,13 @@ export const getHighPrecisionLocation = async (options = {}) => {
     strictAccuracy: true,
     targetAccuracy: requiredAccuracy,
   });
+  // For high-precision verification, we cannot accept degraded locations
+  if (location.meetsTargetAccuracy === false) {
+    const acc = Number(location.accuracy);
+    throw new Error(
+      `Unable to achieve required GPS accuracy (<=${requiredAccuracy}m). Best captured accuracy: ${Number.isFinite(acc) ? Math.round(acc) + 'm' : 'unknown'}.`,
+    );
+  }
   const ageMs = Date.now() - parseTimestamp(location.timestamp);
   if (ageMs > VERIFY_MAX_AGE_MS) {
     throw new Error("Location fix too old for verification.");
@@ -1700,9 +2167,10 @@ export async function captureLocation(userId = null) {
     const cacheMaxAgeMs = authenticatedSession ? 60 * 1000 : DEFAULT_CACHE_MAX_AGE_MS;
     const loc = await getBestAvailableLocation({
       allowCache: true,
-      allowIpFallback: !authenticatedSession,
+      allowIpFallback: true,
       cacheMaxAgeMs,
       requiredAccuracy: STRICT_REQUIRED_ACCURACY_METERS,
+      strictAccuracy: false,
     });
     const permissionStatus = getPermissionStatusFromProvider(loc.provider);
     const response = await sendLocation({
@@ -1750,26 +2218,17 @@ export function getCachedLocation() {
   }
   return null;
 }
-const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
-  const R = 6371e3;
-  const phi1 = (lat1 * Math.PI) / 180;
-  const phi2 = (lat2 * Math.PI) / 180;
-  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
-  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(deltaPhi / 2) ** 2 +
-    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
+const getDistanceInMeters = getDistanceFromCoords;
 export async function checkAndSyncLocation(userId = null) {
   try {
     const authenticatedSession = hasAuthenticatedSession() || Boolean(userId);
     const cacheMaxAgeMs = authenticatedSession ? 60 * 1000 : DEFAULT_CACHE_MAX_AGE_MS;
     const loc = await getBestAvailableLocation({
       allowCache: true,
-      allowIpFallback: !authenticatedSession,
+      allowIpFallback: true,
       cacheMaxAgeMs,
       requiredAccuracy: STRICT_REQUIRED_ACCURACY_METERS,
+      strictAccuracy: false,
     });
     const lastSaved = getCachedLocation();
     if (lastSaved?.lat && lastSaved?.lng) {
@@ -1803,9 +2262,10 @@ export async function syncLocationToBackend(userId, locationData = null) {
       locationData ||
       (await getBestAvailableLocation({
         allowCache: true,
-        allowIpFallback: !authenticatedSession,
+        allowIpFallback: true,
         cacheMaxAgeMs,
         requiredAccuracy: STRICT_REQUIRED_ACCURACY_METERS,
+        strictAccuracy: false,
       }));
     const permissionStatus = getPermissionStatusFromProvider(loc.provider);
     await sendLocation({

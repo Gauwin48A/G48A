@@ -24,7 +24,7 @@ const CONFIG = {
   bypassLocalhost: parseBooleanEnv(process.env.FRAUD_BYPASS_LOCALHOST, true),
   maxDistanceKm: parseNumberEnv(process.env.FRAUD_MAX_DISTANCE_KM, DEFAULT_MAX_DISTANCE_KM),
   blockUnknownPublicIp: parseBooleanEnv(process.env.FRAUD_BLOCK_UNKNOWN_PUBLIC_IP, true),
-  requireGpsForAuth: parseBooleanEnv(process.env.FRAUD_REQUIRE_GPS_FOR_AUTH, true),
+  requireGpsForAuth: parseBooleanEnv(process.env.FRAUD_REQUIRE_GPS_FOR_AUTH, false),
   requireTimezoneForAuth: parseBooleanEnv(process.env.FRAUD_REQUIRE_TIMEZONE_FOR_AUTH, false),
 };
 

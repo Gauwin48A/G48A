@@ -115,10 +115,10 @@ const Y = 5 * 1024 * 1024,
     return X
       ? e.createElement(
           "div",
-          { className: "min-h-screen bg-gray-50" },
+          { className: "min-h-screen bg-gray-50 dark:bg-gray-900" },
           e.createElement(
             "div",
-            { className: "max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8" },
+            { className: "max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 page-shell page-pad" },
             e.createElement(
               "div",
               { className: "mb-8" },
@@ -557,11 +557,11 @@ const Y = 5 * 1024 * 1024,
           "div",
           {
             className:
-              "min-h-screen bg-gray-50 flex items-center justify-center p-4",
+              "min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4",
           },
           e.createElement(
             "div",
-            { className: "max-w-md w-full" },
+            { className: "max-w-md w-full page-shell page-pad" },
             e.createElement(O, {
               marker: "auth-gate",
               title: "Login required",

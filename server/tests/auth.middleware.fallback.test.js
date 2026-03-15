@@ -60,8 +60,8 @@ describe('auth middleware token fallback', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ id: 101, source: 'header' });
-    expect(verifyTokenMock).toHaveBeenCalledWith('stale-cookie-token', expect.any(String));
-    expect(verifyTokenMock).toHaveBeenCalledWith('valid-header-token', expect.any(String));
+    expect(verifyTokenMock).toHaveBeenCalledWith('stale-cookie-token', expect.any(String), expect.any(Object));
+    expect(verifyTokenMock).toHaveBeenCalledWith('valid-header-token', expect.any(String), expect.any(Object));
   });
 
   it('accepts valid cookie token when header token is stale', async () => {
@@ -74,7 +74,7 @@ describe('auth middleware token fallback', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ id: 202, source: 'cookie' });
-    expect(verifyTokenMock).toHaveBeenCalledWith('valid-cookie-token', expect.any(String));
+    expect(verifyTokenMock).toHaveBeenCalledWith('valid-cookie-token', expect.any(String), expect.any(Object));
   });
 
   it('returns 401 when all available tokens are invalid', async () => {

@@ -70,11 +70,11 @@ const S = () => {
             "div",
             {
               className:
-                "bg-white dark:bg-gray-900 min-h-screen flex flex-col items-center transition-colors duration-300 pb-24",
+                "bg-white dark:bg-gray-900 min-h-screen flex flex-col items-center transition-colors duration-300",
             },
             e.createElement(
               "div",
-              { className: "w-full max-w-2xl mx-auto py-6 px-4" },
+              { className: "w-full max-w-2xl mx-auto py-6 px-4 page-shell page-pad" },
               e.createElement(
                 "div",
                 { className: "flex items-center justify-between gap-2 mb-4" },

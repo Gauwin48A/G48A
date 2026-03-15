@@ -26,6 +26,12 @@
     --radius: 16px;
     --category: #e6f2e6;
     --hero: #d9f0d9;
+
+    --page-max-w: 72rem;
+    --page-pad-x: clamp(16px, 2vw, 28px);
+    --page-section-gap: clamp(20px, 2.5vw, 32px);
+    --bottom-nav-height: 64px;
+    --bottom-nav-safe: env(safe-area-inset-bottom, 0px);
   }
 
   .dark {
@@ -49,24 +55,29 @@
     --input: #334155;
     --ring: #60a5fa;
   }
+
+  .page-shell {
+    width: min(100%, var(--page-max-w));
+    margin-inline: auto;
+  }
+
+  .app-main {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--bottom-nav-safe) + 1.5rem);
+  }
+
 }
 
 
 @layer base {
   * {
-    border-color: #e0e0e0;
+    border-color: var(--border);
   }
 
   body {
-    background-color: #f5f5f5;
-    color: #333333;
+    background-color: var(--background);
+    color: var(--foreground);
     transition: background 0.3s, color 0.3s;
     overflow-x: hidden;
-  }
-
-  .dark body {
-    background-color: #18181b;
-    color: #f3f4f6;
   }
 }
 
@@ -83,18 +94,8 @@ label {
   margin-bottom: 0.25rem;
 }
 
-/* Improve color contrast for accessibility */
-body {
-  color: #1e293b;
-  background: #f8fafc;
-  overflow-x: hidden;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    color: #f1f5f9;
-    background: #18181b;
-  }
+html {
+  scroll-padding-bottom: calc(var(--bottom-nav-height) + var(--bottom-nav-safe));
 }
 
 .animate-fadeIn {
@@ -165,16 +166,16 @@ html.dark {
 }
 
 html.dark body {
-  background-color: #1a1a2e;
-  color: #f1f5f9;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 html.dark input,
 html.dark select,
 html.dark textarea {
-  background: #374151;
-  color: #f1f5f9;
-  border-color: #4b5563;
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
 }
 
 #root {
@@ -268,4 +269,109 @@ html[data-layout-preview="mobile"] #root {
   html[data-layout-preview="tablet"] body::before {
     top: 66px;
   }
+}
+@layer utilities {
+  .page-pad {
+    padding-inline: var(--page-pad-x);
+  }
+
+  .bottom-nav {
+    padding-bottom: calc(0.375rem + var(--bottom-nav-safe));
+    min-height: calc(var(--bottom-nav-height) + var(--bottom-nav-safe));
+  }
+
+  .page-section {
+    margin-top: var(--page-section-gap);
+  }
+
+  .page-section-tight {
+    margin-top: calc(var(--page-section-gap) * 0.6);
+  }
+
+  .page-section-loose {
+    margin-top: calc(var(--page-section-gap) * 1.4);
+  }
+
+  /* Bottom-nav content clearance — apply to scrollable page wrappers */
+  .nav-clearance {
+    padding-bottom: calc(var(--bottom-nav-height) + var(--bottom-nav-safe) + 1rem);
+  }
+
+  /* Contrast safety: reset text color inside hero sections so child buttons aren't invisible */
+  .hero-section button:not([class*="bg-"]),
+  .hero-section a:not([class*="bg-"]) {
+    color: inherit;
+  }
+}
+
+/* ─── Global dark-mode contrast & visibility overrides ───
+   Covers compiled pages that use Tailwind classes without dark: variants.
+   These selectors match the actual class strings in compiled JSX. */
+
+/* 1. Cards / surfaces: bg-white → dark card bg */
+.dark .bg-white:not([class*="dark\:bg-"]):not([class*="bg-white/"]) {
+  background-color: var(--card) !important;
+}
+
+/* 2. bg-gray-50 pages/sections → dark bg */
+.dark .bg-gray-50:not([class*="dark\:bg-"]) {
+  background-color: var(--background) !important;
+}
+
+/* 3. Low-contrast meta text: text-gray-500/600 → visible in dark */
+.dark .text-gray-500:not([class*="dark\:text-"]) {
+  color: #94a3b8 !important; /* slate-400 */
+}
+.dark .text-gray-600:not([class*="dark\:text-"]) {
+  color: #cbd5e1 !important; /* slate-300 */
+}
+.dark .text-gray-700:not([class*="dark\:text-"]) {
+  color: #e2e8f0 !important; /* slate-200 */
+}
+.dark .text-gray-800:not([class*="dark\:text-"]),
+.dark .text-gray-900:not([class*="dark\:text-"]) {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+/* 4. Borders that disappear in dark mode */
+.dark .border-gray-100:not([class*="dark\:border-"]) {
+  border-color: #334155 !important; /* slate-700 */
+}
+.dark .border-gray-200:not([class*="dark\:border-"]) {
+  border-color: #334155 !important;
+}
+.dark .border-gray-300:not([class*="dark\:border-"]) {
+  border-color: #475569 !important; /* slate-600 */
+}
+
+/* 5. Coloured accents on light surfaces → dark-safe */
+.dark .bg-blue-50:not([class*="dark\:bg-"]) { background-color: rgba(59,130,246,0.12) !important; }
+.dark .bg-green-50:not([class*="dark\:bg-"]) { background-color: rgba(34,197,94,0.12) !important; }
+.dark .bg-red-50:not([class*="dark\:bg-"]) { background-color: rgba(239,68,68,0.12) !important; }
+.dark .bg-yellow-50:not([class*="dark\:bg-"]) { background-color: rgba(234,179,8,0.12) !important; }
+.dark .bg-purple-50:not([class*="dark\:bg-"]) { background-color: rgba(168,85,247,0.12) !important; }
+.dark .bg-orange-50:not([class*="dark\:bg-"]) { background-color: rgba(249,115,22,0.12) !important; }
+.dark .bg-indigo-50:not([class*="dark\:bg-"]) { background-color: rgba(99,102,241,0.12) !important; }
+
+/* 6. Coloured text that's too dark on dark bg */
+.dark .text-blue-700:not([class*="dark\:text-"]) { color: #93c5fd !important; } /* blue-300 */
+.dark .text-green-700:not([class*="dark\:text-"]) { color: #86efac !important; } /* green-300 */
+.dark .text-red-700:not([class*="dark\:text-"]) { color: #fca5a5 !important; } /* red-300 */
+.dark .text-yellow-700:not([class*="dark\:text-"]) { color: #fde047 !important; }
+.dark .text-purple-700:not([class*="dark\:text-"]) { color: #d8b4fe !important; }
+
+/* 7. Colored borders */
+.dark .border-blue-200:not([class*="dark\:border-"]) { border-color: rgba(59,130,246,0.3) !important; }
+.dark .border-green-200:not([class*="dark\:border-"]) { border-color: rgba(34,197,94,0.3) !important; }
+.dark .border-red-200:not([class*="dark\:border-"]) { border-color: rgba(239,68,68,0.3) !important; }
+
+/* 8. Input / form backgrounds */
+.dark .bg-gray-100:not([class*="dark\:bg-"]) {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+/* 9. Dividers */
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #334155 !important;
 }

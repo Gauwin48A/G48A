@@ -253,12 +253,12 @@ const PaymentPage = () => {
 
   if (!loggedIn) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-          <h2 className="text-lg font-semibold text-amber-800 mb-2">
+      <div className="max-w-2xl mx-auto p-6 page-shell page-pad">
+        <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-5">
+          <h2 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
             {tr("login_required", "Login required")}
           </h2>
-          <p className="text-sm text-amber-700 mb-4">
+          <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
             {tr(
               "payment_login_desc",
               "Sign in to view membership plans and submit payment confirmations.",
@@ -280,20 +280,23 @@ const PaymentPage = () => {
 
   if (configLoading) {
     return (
-      <div className="p-6 text-center">
-        {tr("payment_loading_details", "Loading payment details...")}
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-300 border-t-blue-600 dark:border-gray-600 dark:border-t-blue-400" />
+          <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">{tr("payment_loading_details", "Loading payment details...")}</p>
+        </div>
       </div>
     );
   }
 
   if (!paymentConfig || configError) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-          <h2 className="text-lg font-semibold text-red-700 mb-2">
+      <div className="max-w-2xl mx-auto p-6 page-shell page-pad">
+        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-5">
+          <h2 className="text-lg font-semibold text-red-700 dark:text-red-300 mb-2">
             {tr("payment_unable_to_load", "Unable to load payment details")}
           </h2>
-          <p className="text-sm text-red-600 mb-4">
+          <p className="text-sm text-red-600 dark:text-red-400 mb-4">
             {configError ||
               tr(
                 "payment_unavailable",
@@ -333,12 +336,12 @@ const PaymentPage = () => {
   )}`;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 pb-24 space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 max-w-4xl mx-auto p-4 sm:p-6 space-y-6 page-shell page-pad nav-clearance">
       <TransactionStepper steps={localizedSteps} currentStep={2} />
 
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
             {tr("payment_upgrade_title", "Upgrade Membership")}
           </h1>
 
@@ -348,10 +351,10 @@ const PaymentPage = () => {
                 key={plan}
                 type="button"
                 onClick={() => setSelectedPlan(plan)}
-                className={`p-2 rounded border capitalize ${
+                className={`p-2 rounded-lg border capitalize font-medium transition-colors ${
                   selectedPlan === plan
                     ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-gray-50 border-gray-200"
+                    : "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                 }`}
               >
                 {plan}
@@ -360,22 +363,22 @@ const PaymentPage = () => {
           </div>
 
           {selectedTier ? (
-            <div className="mb-6 p-4 bg-blue-50 rounded border border-blue-100">
-              <h3 className="font-bold text-lg capitalize">
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+              <h3 className="font-bold text-lg capitalize text-gray-900 dark:text-white">
                 {tr("payment_selected_plan", "{{plan}} Plan", {
                   plan: selectedPlan,
                 })}
               </h3>
-              <p className="text-gray-600 mb-2">{selectedTier.description}</p>
-              <div className="text-3xl font-bold text-blue-700">
+              <p className="text-gray-600 dark:text-gray-400 mb-2">{selectedTier.description}</p>
+              <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">
                 {tr("payment_amount_rupees", "Rs {{amount}}", {
                   amount: selectedTier.amount,
                 })}
               </div>
             </div>
           ) : (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded">
-              <p className="text-sm text-amber-700">
+            <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+              <p className="text-sm text-amber-700 dark:text-amber-300">
                 {tr(
                   "payment_selected_plan_unavailable",
                   "Selected plan data is unavailable. Please choose another plan.",
@@ -401,7 +404,7 @@ const PaymentPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 {tr("payment_transaction_label", "Transaction ID (UTR)")}
               </label>
               <input
@@ -409,7 +412,7 @@ const PaymentPage = () => {
                 value={transactionId}
                 onChange={(event) => setTransactionId(event.target.value)}
                 placeholder={tr("payment_transaction_placeholder", "Enter UTR")}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded-lg bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
                 required
                 minLength={6}
               />
@@ -437,18 +440,18 @@ const PaymentPage = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="font-bold mb-3">
+          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+            <h3 className="font-bold mb-3 text-gray-900 dark:text-white">
               {tr("payment_how_it_works", "How it works")}
             </h3>
-            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
+            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 dark:text-gray-400">
               {(paymentConfig.instructions || []).map((instruction, index) => (
                 <li key={index}>{instruction}</li>
               ))}
             </ul>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold">
                 {tr("payment_history_title", "Payment History")}
@@ -468,8 +471,8 @@ const PaymentPage = () => {
                 {tr("payment_history_loading", "Loading history...")}
               </p>
             ) : historyError ? (
-              <div className="rounded border border-red-200 bg-red-50 p-3">
-                <p className="text-sm text-red-600 mb-2">{historyError}</p>
+              <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3">
+                <p className="text-sm text-red-600 dark:text-red-400 mb-2">{historyError}</p>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"

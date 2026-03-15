@@ -32,6 +32,7 @@ import { useNavigate as Je, useLocation as Ke } from "react-router-dom";
 import { useFilter as We } from "@/context/FilterContext";
 import { useTranslation as Xe } from "react-i18next";
 import Ze from "@/components/BuyerInterestModal";
+import LoginPromptModal from "@/components/LoginPromptModal";
 import {
   translatePosts as Re,
   translatePostsInstant as Ue,
@@ -291,6 +292,7 @@ const ve = 5,
       [savedPosts, setSavedPosts] = g(() => getSavedPostsMap()),
       [shareDialogOpen, setShareDialogOpen] = g(!1),
       [shareDialogUrl, setShareDialogUrl] = g(""),
+      [loginPromptOpen, setLoginPromptOpen] = g(!1),
       [carouselIndexByPost, setCarouselIndexByPost] = g({}),
       de = k({}),
       carouselTrackRefs = k({}),
@@ -411,6 +413,29 @@ const ve = 5,
         e?.disconnect();
       };
     }, []);
+    w(() => {
+      if (C) {
+        setLoginPromptOpen(!1);
+        return;
+      }
+      setShuffleSeed(null);
+    }, [C]);
+    w(() => {
+      if (typeof window > "u" || typeof document > "u") return;
+      const e = () => {
+        if (C) return;
+        const a = window.innerHeight + window.scrollY;
+        const o = document.documentElement.scrollHeight;
+        a >= o - 200 && setLoginPromptOpen((n) => n || !0);
+      };
+      return (
+        window.addEventListener("scroll", e, { passive: !0 }),
+        e(),
+        () => {
+          window.removeEventListener("scroll", e);
+        }
+      );
+    }, [C]);
     const Le = {
         Electronics: "\uD83D\uDCBB",
         Mobiles: "\uD83D\uDCF1",
@@ -646,7 +671,7 @@ const ve = 5,
           t.startDate && e.append("startDate", t.startDate),
           t.endDate && e.append("endDate", toInclusiveEndDateValue(t.endDate)),
           latestWindow && e.append("latestWindow", String(latestWindow)),
-          shuffleSeed && !t.sortBy && !latestWindow
+          C && shuffleSeed && !t.sortBy && !latestWindow
             ? (e.append("sortBy", "shuffle"),
               e.append("shuffleSeed", String(shuffleSeed)))
             : (t.sortBy || latestWindow) &&
@@ -685,6 +710,7 @@ const ve = 5,
         t.sortBy,
         t.startDate,
         shuffleSeed,
+        C,
       ]);
     w(() => {
       const e = P.current + 1;
@@ -1036,6 +1062,10 @@ const ve = 5,
         (e) => {
           const a = I(e?.post_id || e?.id);
           if (!a) return;
+          if (!C) {
+            setLoginPromptOpen(!0);
+            return;
+          }
           if (isInCartItem(a)) {
             removeCartItem(a);
             M(s("removed") || "Removed from cart");
@@ -1052,11 +1082,15 @@ const ve = 5,
           }
           setTimeout(() => M(""), 2e3);
         },
-        [addCartItem, isInCartItem, removeCartItem, s],
+        [C, addCartItem, isInCartItem, removeCartItem, s],
       ),
       je = async (e) => {
         const a = I(e);
         if (!a) return;
+        if (!C) {
+          setLoginPromptOpen(!0);
+          return;
+        }
         sessionStorage.setItem(
           "allPostsScrollPosition",
           window.scrollY.toString(),
@@ -1089,12 +1123,16 @@ const ve = 5,
         return `${a}-${o}-${n}`;
       }, []),
       Fe = x(() => {
+        if (!C) {
+          setLoginPromptOpen(!0);
+          return;
+        }
         setIsLiveSyncing(!0);
         if (canShuffle) {
           setShuffleSeed(Date.now());
         }
         Ce((e) => e + 1);
-      }, [canShuffle]);
+      }, [C, canShuffle]);
     return r.createElement(
       "div",
       {
@@ -2284,6 +2322,10 @@ const ve = 5,
           },
           postId: G?.post_id || G?.id,
           postTitle: G?.title,
+        }),
+        r.createElement(LoginPromptModal, {
+          isOpen: loginPromptOpen,
+          onClose: () => setLoginPromptOpen(!1),
         }),
         r.createElement(pt, {
           open: shareDialogOpen,

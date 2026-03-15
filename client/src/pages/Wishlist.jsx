@@ -145,7 +145,7 @@ const Y = () => {
             "div",
             {
               className:
-                "bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center",
+                "bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center page-shell page-pad",
             },
             e.createElement(b, {
               className: "w-16 h-16 text-pink-400 mx-auto mb-4",
@@ -181,7 +181,7 @@ const Y = () => {
           e.createElement(T, { title: s("my_wishlist") || "My Wishlist" }),
           e.createElement(
             "div",
-            { className: "max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8" },
+            { className: "max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 page-shell page-pad" },
             e.createElement(
               "div",
               { className: "flex items-center gap-3 mb-2" },
@@ -220,7 +220,7 @@ const Y = () => {
           ),
           e.createElement(
             "div",
-            { className: "max-w-7xl mx-auto px-4 py-8" },
+            { className: "max-w-7xl mx-auto px-4 py-8 page-shell page-pad" },
             _
               ? e.createElement(
                   "div",

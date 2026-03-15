@@ -69,7 +69,10 @@ const csrfProtection = (options = {}) => {
         }
 
         // Constant-time comparison to prevent timing attacks
-        if (!crypto.timingSafeEqual(Buffer.from(cookieToken), Buffer.from(headerToken))) {
+        const cookieBuffer = Buffer.from(String(cookieToken), 'utf8');
+        const headerBuffer = Buffer.from(String(headerToken), 'utf8');
+        if (cookieBuffer.length !== headerBuffer.length ||
+            !crypto.timingSafeEqual(cookieBuffer, headerBuffer)) {
             console.warn(`[CSRF] Token mismatch - Path: ${req.path}, IP: ${req.ip}`);
             return res.status(403).json({
                 error: 'CSRF token invalid',

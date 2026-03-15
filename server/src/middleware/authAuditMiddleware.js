@@ -12,6 +12,12 @@ function inferAuthAction(req) {
   if (path === "/reset-password" && method === "POST") return "PASSWORD_RESET_ATTEMPT";
   if (path === "/verify-otp" && method === "POST") return "OTP_VERIFY_ATTEMPT";
   if (path === "/send-otp" && method === "POST") return "OTP_SEND_ATTEMPT";
+  if (path === "/aadhaar/send-otp" && method === "POST")
+    return "AADHAAR_OTP_SEND_ATTEMPT";
+  if (path === "/aadhaar/verify-otp" && method === "POST")
+    return "AADHAAR_OTP_VERIFY_ATTEMPT";
+  if (path === "/aadhaar/complete-signup" && method === "POST")
+    return "AADHAAR_SIGNUP_COMPLETE_ATTEMPT";
 
   return "AUTH_EVENT";
 }

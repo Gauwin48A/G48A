@@ -340,7 +340,7 @@ const be = () => {
         ),
         e.createElement(
           "div",
-          { className: "relative z-10 max-w-md w-full" },
+          { className: "relative z-10 max-w-md w-full page-shell page-pad" },
           e.createElement(
             "div",
             {
@@ -453,10 +453,10 @@ const be = () => {
       )
     : e.createElement(
         "div",
-        { className: "min-h-screen bg-white dark:bg-gray-900 pb-20 pt-20" },
+        { className: "min-h-screen bg-white dark:bg-gray-900 pt-20" },
         e.createElement(
           "div",
-          { className: "max-w-6xl mx-auto px-4 pt-4" },
+          { className: "max-w-6xl mx-auto px-4 pt-4 page-shell page-pad" },
           e.createElement(
             "div",
             {
@@ -885,7 +885,7 @@ const be = () => {
                 )
               : e.createElement(
                   "div",
-                  { className: "flex flex-col gap-6 w-full max-w-5xl mx-auto" },
+                  { className: "flex flex-col gap-6 w-full max-w-5xl mx-auto page-shell page-pad" },
                   H.map((t) => {
                     const r = t.post_id || t.id,
                       d = V(t),

@@ -1,6 +1,8 @@
 import React from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { PageAuthGateState } from "@/components/page-state/PageStateBlocks";
 
 const normalizeRole = (value) =>
   String(value || "")
@@ -29,6 +31,7 @@ export default function RequireAuth({
 }) {
   const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const authed = Boolean(isAuthenticated ?? user);
   const returnTo = buildReturnTo(location);
 
@@ -47,12 +50,29 @@ export default function RequireAuth({
       return fallback;
     }
     const queryJoiner = redirectTo.includes("?") ? "&" : "?";
+    const loginTarget = `${redirectTo}${queryJoiner}returnTo=${encodeURIComponent(returnTo)}`;
     return (
-      <Navigate
-        to={`${redirectTo}${queryJoiner}returnTo=${encodeURIComponent(returnTo)}`}
-        replace
-        state={{ returnTo }}
-      />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
+        <div className="page-shell page-pad py-16">
+          <PageAuthGateState
+            title="Authentication Required"
+            description="Please log in to continue."
+            primaryAction={
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => navigate(loginTarget)}
+              >
+                Go to Login
+              </Button>
+            }
+            secondaryAction={
+              <Button variant="outline" onClick={() => navigate("/all-posts")}>
+                Browse Marketplace
+              </Button>
+            }
+          />
+        </div>
+      </div>
     );
   }
 

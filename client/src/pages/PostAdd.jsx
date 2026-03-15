@@ -93,7 +93,7 @@ const PostAdd = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 dark:from-indigo-800 dark:via-purple-800 dark:to-blue-800 py-6">
-        <div className="max-w-2xl mx-auto px-4">
+        <div className="max-w-2xl mx-auto px-4 page-shell page-pad">
           <button
             onClick={() => navigate("/feed")}
             className="flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
@@ -116,7 +116,7 @@ const PostAdd = () => {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto py-8 px-4">
+      <div className="max-w-2xl mx-auto py-8 px-4 page-shell page-pad">
         <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div>

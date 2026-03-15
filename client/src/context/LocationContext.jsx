@@ -17,7 +17,8 @@ const AUTH_LOCATION_CACHE_TTL_MS = 60 * 1000;
 const SKIP_TTL_MS = 24 * 60 * 60 * 1000;
 const REQUIRED_ACCURACY_METERS = 100;
 const BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
-const LOCATION_CAPTURE_TIMEOUT_MS = 25 * 1000;
+const LOCATION_CAPTURE_TIMEOUT_MS = 45 * 1000;
+const STALE_LOCATION_THRESHOLD_MS = 30 * 60 * 1000; // L11: 30 min stale threshold
 const DEBUG = import.meta.env.DEV;
 
 const log = (...args) => {
@@ -98,10 +99,15 @@ const normalizeLocation = (location) => {
     latitude,
     longitude,
     accuracy: Number.isFinite(accuracy) ? accuracy : null,
+    altitude: Number.isFinite(Number(location.altitude)) ? Number(location.altitude) : null,
+    altitudeAccuracy: Number.isFinite(Number(location.altitudeAccuracy)) ? Number(location.altitudeAccuracy) : null,
+    heading: Number.isFinite(Number(location.heading)) ? Number(location.heading) : null,
     city: safeText(location.city || location.address?.city),
     state: safeText(location.state || location.address?.state),
     country: safeText(location.country || location.address?.country),
     area: safeText(location.area || location.address?.area),
+    village: safeText(location.village || location.address?.village),
+    colony: safeText(location.colony || location.address?.colony),
     locality: safeText(location.locality || location.address?.locality),
     placeName: safeText(
       location.placeName ||
@@ -192,10 +198,23 @@ const buildLocationString = (location) => {
     parts.push(text);
   };
 
+  // Build from most specific to least: street → colony → village → area → city → state
+  add(location?.street || "");
   add(location?.placeName || "");
+  add(location?.colony || "");
+  add(location?.village || "");
   add(location?.area || location?.locality || "");
-  add(location?.city || "");
-  add(location?.state || "");
+  const cityText = safeText(location?.city);
+  const areaText = safeText(location?.area || location?.locality);
+  // Only add city if it's different from area (avoid "Madhapur, Madhapur")
+  if (cityText && cityText.toLowerCase() !== areaText.toLowerCase()) {
+    add(cityText);
+  }
+
+  // If we have no sub-city parts yet, fall back to the district
+  if (parts.length === 0) {
+    add(location?.district || "");
+  }
 
   return parts.join(", ");
 };
@@ -228,9 +247,8 @@ const sendLocationBestEffort = async (location) => {
 };
 
 export function LocationProvider({ children }) {
-  const manual = readManualLocation();
   const cached = getCachedLocation();
-  const bootstrapLocation = manual || cached;
+  const bootstrapLocation = cached;
 
   const [coords, setCoords] = useState(
     bootstrapLocation
@@ -245,10 +263,13 @@ export function LocationProvider({ children }) {
   const [state, setState] = useState(bootstrapLocation?.state || "");
   const [country, setCountry] = useState(bootstrapLocation?.country || "");
   const [area, setArea] = useState(bootstrapLocation?.area || "");
+  const [village, setVillage] = useState(bootstrapLocation?.village || "");
+  const [colony, setColony] = useState(bootstrapLocation?.colony || "");
   const [locality, setLocality] = useState(bootstrapLocation?.locality || "");
   const [district, setDistrict] = useState(bootstrapLocation?.district || "");
   const [pincode, setPincode] = useState(bootstrapLocation?.pincode || "");
   const [street, setStreet] = useState(bootstrapLocation?.street || "");
+  const [placeName, setPlaceName] = useState(bootstrapLocation?.placeName || "");
   const [displayName, setDisplayName] = useState(bootstrapLocation?.displayName || "");
   const [provider, setProvider] = useState(bootstrapLocation?.provider || "");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(bootstrapLocation?.timestamp || null);
@@ -258,6 +279,7 @@ export function LocationProvider({ children }) {
   const [permissionGranted, setPermissionGranted] = useState(Boolean(bootstrapLocation));
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [userSkipped, setUserSkipped] = useState(() => readSkipFlag());
+  const [accuracyTier, setAccuracyTier] = useState("unknown");
 
   const initializedRef = useRef(false);
   const requestInFlightRef = useRef(null);
@@ -270,20 +292,38 @@ export function LocationProvider({ children }) {
       latitude: normalized.latitude,
       longitude: normalized.longitude,
       accuracy: normalized.accuracy,
+      altitude: normalized.altitude,
+      altitudeAccuracy: normalized.altitudeAccuracy,
+      heading: normalized.heading,
     });
     setCity(normalized.city);
     setState(normalized.state);
     setCountry(normalized.country);
     setArea(normalized.area);
+    setVillage(normalized.village || "");
+    setColony(normalized.colony || "");
     setLocality(normalized.locality);
     setDistrict(normalized.district);
     setPincode(normalized.pincode);
     setStreet(normalized.street);
+    setPlaceName(normalized.placeName || "");
     setDisplayName(normalized.displayName || buildLocationString(normalized));
     setProvider(normalized.provider);
     setLastUpdatedAt(normalized.timestamp || Date.now());
     setPermissionGranted(true);
     setPermissionDenied(false);
+
+    // Classify accuracy for UI quality indicators
+    const acc = normalized.accuracy;
+    if (acc !== null && Number.isFinite(acc)) {
+      if (acc <= 30) setAccuracyTier("precise");
+      else if (acc <= 100) setAccuracyTier("good");
+      else if (acc <= 500) setAccuracyTier("moderate");
+      else if (acc <= 5000) setAccuracyTier("coarse");
+      else setAccuracyTier("very_coarse");
+    } else {
+      setAccuracyTier("unknown");
+    }
 
     return normalized;
   }, []);
@@ -315,9 +355,10 @@ export function LocationProvider({ children }) {
           const location = await withTimeout(
             getBestAvailableLocation({
               allowCache: true,
-              allowIpFallback: !authenticated,
+              allowIpFallback: true,
               cacheMaxAgeMs,
               requiredAccuracy: REQUIRED_ACCURACY_METERS,
+              strictAccuracy: false,
             }),
             LOCATION_CAPTURE_TIMEOUT_MS,
             "Location request timed out. You can continue without location.",
@@ -328,9 +369,23 @@ export function LocationProvider({ children }) {
             throw new Error("Unable to normalize captured location");
           }
 
+          // If we got a coarse location, schedule a background refinement attempt
+          const isCoarse = location.accuracyTier === "coarse" || location.accuracyTier === "very_coarse";
+          if (isCoarse && !silent) {
+            log("[LocationContext] Coarse location received, scheduling background GPS refinement");
+            setTimeout(() => {
+              requestLocation({ silent: true }).catch(() => {});
+            }, 3000);
+          }
+
           clearManualLocation();
-          cacheLocation(normalized);
-          localStorage.setItem("mhub_user_city", normalized.city || normalized.area || "");
+          // Only cache GPS-sourced locations — IP fallback is coarse (~5km)
+          // and produces identical results for all users on the same network.
+          const isIpFallback = String(normalized.provider || "").toLowerCase() === "ip_fallback";
+          if (!isIpFallback) {
+            cacheLocation(normalized);
+          }
+          localStorage.setItem("mhub_user_city", normalized.area || normalized.locality || normalized.city || "");
 
           sendLocationBestEffort({
             ...normalized,
@@ -359,12 +414,10 @@ export function LocationProvider({ children }) {
           setPermissionGranted(false);
           setPermissionDenied(denied);
 
-          sendLocationBestEffort({
-            latitude: 0,
-            longitude: 0,
-            provider: "none",
-            permission_status: denied ? "denied" : "error",
-          });
+          // Do NOT send (0,0) to backend — server rejects it and it creates noise
+          if (denied) {
+            log("[LocationContext] Permission denied, not sending fallback");
+          }
 
           if (silent) {
             log("[LocationContext] Silent refresh failed", message);
@@ -415,10 +468,13 @@ export function LocationProvider({ children }) {
     setState("");
     setCountry("");
     setArea("");
+    setVillage("");
+    setColony("");
     setLocality("");
     setDistrict("");
     setPincode("");
     setStreet("");
+    setPlaceName("");
     setDisplayName("");
     setProvider("");
     setLastUpdatedAt(null);
@@ -461,20 +517,26 @@ export function LocationProvider({ children }) {
 
     log("[LocationContext] Initializing location context");
 
+    clearManualLocation();
+
     if (readSkipFlag()) {
       setLoading(false);
       setUserSkipped(true);
       return;
     }
 
-    const manualLocation = readManualLocation();
-    const cachedLocation = manualLocation || getCachedLocation();
+    const cachedLocation = getCachedLocation();
 
     if (cachedLocation) {
       setLocationState(cachedLocation);
       setLoading(false);
-
-      if (!manualLocation) {
+      // L11: If cached location is older than 30 min, force fresh GPS fix
+      const cacheAge = Date.now() - Number(cachedLocation.timestamp || 0);
+      const isStale = cacheAge >= STALE_LOCATION_THRESHOLD_MS;
+      if (isStale) {
+        log("[LocationContext] L11: Cached location is stale (>30min), forcing GPS refresh");
+        requestLocation({ silent: true }).catch(() => {});
+      } else {
         setTimeout(() => {
           requestLocation({ silent: true }).catch(() => {});
         }, 5000);
@@ -491,7 +553,6 @@ export function LocationProvider({ children }) {
     }
 
     const refreshIfNeeded = () => {
-      if (readManualLocation()) return;
       const cachedLocation = getCachedLocation();
       const stale = !cachedLocation || Date.now() - Number(cachedLocation.timestamp || 0) >= LOCATION_CACHE_TTL_MS;
       if (stale) {
@@ -518,9 +579,14 @@ export function LocationProvider({ children }) {
   }, [requestLocation, userSkipped]);
 
   const currentLocation = {
+    street,
+    placeName,
     area,
+    village,
+    colony,
     locality,
     city,
+    district,
     state,
     country,
   };
@@ -530,10 +596,15 @@ export function LocationProvider({ children }) {
     latitude: coords?.latitude || null,
     longitude: coords?.longitude || null,
     accuracy: coords?.accuracy || null,
+    altitude: coords?.altitude || null,
+    altitudeAccuracy: coords?.altitudeAccuracy || null,
+    heading: coords?.heading || null,
     city,
     state,
     country,
     area,
+    village,
+    colony,
     locality,
     district,
     pincode,
@@ -545,6 +616,8 @@ export function LocationProvider({ children }) {
     error,
     permissionGranted,
     permissionDenied,
+    accuracyTier,
+    isPrecise: accuracyTier === "precise" || accuracyTier === "good",
     requestLocation,
     verifyLocation: verifyPreciseLocation,
     retry,
@@ -558,7 +631,8 @@ export function LocationProvider({ children }) {
     },
     hasLocation: Boolean(coords),
     userSkipped,
-    locationString: buildLocationString(currentLocation) || "Location not set",
+    placeName,
+    locationString: displayName || buildLocationString(currentLocation) || "Location not set",
   };
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;

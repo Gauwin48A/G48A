@@ -426,11 +426,11 @@ const wt = () => {
       "div",
       {
         className:
-          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100",
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
       },
       e.createElement(
         "div",
-        { className: "w-full max-w-md px-4" },
+        { className: "w-full max-w-md px-4 page-shell page-pad" },
         e.createElement(T, {
           title: t("loading") || "Loading...",
           description:
@@ -445,7 +445,6 @@ const wt = () => {
       {
         className:
           "min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700",
-        style: { paddingBottom: "120px" },
       },
       e.createElement(
         "div",
@@ -471,7 +470,7 @@ const wt = () => {
       ),
       e.createElement(
         "div",
-        { className: "max-w-lg mx-auto px-6 space-y-4" },
+        { className: "max-w-lg mx-auto px-6 space-y-4 page-shell page-pad" },
         e.createElement(
           _e,
           {
@@ -545,7 +544,7 @@ const wt = () => {
       ),
       e.createElement(
         "div",
-        { className: "max-w-lg mx-auto px-6 mt-10" },
+        { className: "max-w-lg mx-auto px-6 mt-10 page-shell page-pad" },
         e.createElement(
           "p",
           { className: "text-center text-white/60 text-sm mb-6" },
@@ -580,11 +579,11 @@ const wt = () => {
       "div",
       {
         className:
-          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100",
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
       },
       e.createElement(
         "div",
-        { className: "w-full max-w-md px-4" },
+        { className: "w-full max-w-md px-4 page-shell page-pad" },
         e.createElement(T, {
           title: t("loading_profile") || "Loading profile...",
           description:
@@ -598,11 +597,11 @@ const wt = () => {
       "div",
       {
         className:
-          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100",
+          "min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
       },
       e.createElement(
         "div",
-        { className: "w-full max-w-md px-4" },
+        { className: "w-full max-w-md px-4 page-shell page-pad" },
         e.createElement(H, {
           title: t("profile_not_found") || "Profile not found",
           description:
@@ -663,7 +662,6 @@ const wt = () => {
     "div",
     {
       className: "min-h-screen bg-slate-50 dark:bg-gray-900",
-      style: { paddingBottom: "180px" },
     },
     e.createElement(
       "div",
@@ -680,13 +678,15 @@ const wt = () => {
       }),
       e.createElement(
         "div",
-        { className: "relative max-w-4xl mx-auto px-4 py-8 sm:py-10 sm:px-6" },
+        { className: "relative max-w-4xl mx-auto px-4 py-8 sm:py-10 sm:px-6 page-shell page-pad" },
         e.createElement(
           "div",
-          { className: "flex flex-col md:flex-row items-center gap-4" },
+          {
+            className: "grid grid-cols-1 lg:grid-cols-[auto_minmax(0,1fr)_minmax(240px,320px)] items-start gap-6",
+          },
           e.createElement(
             "div",
-            { className: "relative group" },
+            { className: "relative group justify-self-center md:justify-self-start" },
             e.createElement(
               Xe,
               {
@@ -755,13 +755,14 @@ const wt = () => {
                   document.getElementById("avatar-upload")?.click(),
                 className:
                   "absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition group-hover:bg-blue-50",
+                "aria-label": t("change_profile_photo") || "Change profile photo",
               },
               e.createElement(st, { className: "w-5 h-5 text-blue-600" }),
             ),
           ),
           e.createElement(
             "div",
-            { className: "text-center md:text-left flex-1 min-w-0" },
+            { className: "text-center md:text-left min-w-0" },
             e.createElement(
               "h1",
               {
@@ -804,7 +805,7 @@ const wt = () => {
                     type: "button",
                     onClick: () => p("/verification"),
                     className:
-                      "text-xs font-semibold px-3 py-1 rounded-full bg-white/15 text-white border border-white/20 hover:bg-white/25",
+                      "text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/15 text-white border border-white/20 hover:bg-white/25",
                   },
                   t("verify_now") || "Verify now",
                 ),
@@ -824,9 +825,17 @@ const wt = () => {
                   t("channel_owner"),
                 ),
             ),
+          ),
+          e.createElement(
+            "div",
+            {
+              className: "w-full lg:justify-self-end text-left lg:text-right lg:w-[300px]",
+            },
             e.createElement(
               "div",
-              { className: "mt-3 w-full max-w-md" },
+              {
+                className: "rounded-2xl border border-white/20 bg-white/10 px-4 py-4 text-white",
+              },
               e.createElement(
                 "div",
                 {
@@ -863,7 +872,7 @@ const wt = () => {
                 "div",
                 {
                   className:
-                    "mt-2 hidden sm:flex flex-wrap gap-1.5 text-[11px] text-white/85",
+                    "mt-2 hidden sm:flex flex-wrap justify-start md:justify-end gap-1.5 text-[11px] text-white/85",
                 },
                 e.createElement(
                   "span",
@@ -899,7 +908,10 @@ const wt = () => {
             ),
             e.createElement(
               "div",
-              { className: "mt-3 flex flex-wrap items-center gap-2" },
+              {
+                className:
+                  "mt-3 flex flex-wrap items-center gap-2 md:justify-end",
+              },
               e.createElement(
                 "button",
                 {
@@ -1009,13 +1021,12 @@ const wt = () => {
               ),
             e.createElement(
               "div",
-              { className: "flex flex-wrap items-center gap-2 mt-4" },
+              { className: "mt-4 flex flex-wrap items-center gap-2 md:justify-end" },
               e.createElement(
                 d,
                 {
                   onClick: () => V(!0),
-                  className:
-                    "bg-white text-indigo-700 hover:bg-white/95 font-bold shadow-lg ring-2 ring-white/70 ring-offset-2 ring-offset-indigo-500/40",
+                  className: "h-10 px-4 bg-white text-indigo-700 hover:bg-white/95 font-bold shadow-lg ring-2 ring-white/70 ring-offset-2 ring-offset-indigo-500/40 rounded-xl",
                 },
                 e.createElement(et, { className: "w-4 h-4 mr-2" }),
                 " ",
@@ -1030,7 +1041,7 @@ const wt = () => {
       "div",
       {
         className:
-          "max-w-4xl mx-auto px-4 mt-4 sm:mt-6 mb-10 relative z-10 space-y-6",
+          "max-w-4xl mx-auto px-4 mt-4 sm:mt-6 mb-8 relative z-10 space-y-5 page-shell page-pad",
       },
       e.createElement(
         "p",
@@ -1054,7 +1065,7 @@ const wt = () => {
           },
           e.createElement(
             "div",
-            { className: "flex-1 flex items-center gap-3 px-4 py-4" },
+            { className: "flex-1 flex items-center gap-3 px-5 py-4" },
             e.createElement(
               "div",
               {
@@ -1082,7 +1093,7 @@ const wt = () => {
           ),
           e.createElement(
             "div",
-            { className: "flex-1 flex items-center gap-3 px-4 py-4" },
+            { className: "flex-1 flex items-center gap-3 px-5 py-4" },
             e.createElement(
               "div",
               {
@@ -1110,7 +1121,7 @@ const wt = () => {
           ),
           e.createElement(
             "div",
-            { className: "flex-1 flex items-center gap-3 px-4 py-4" },
+            { className: "flex-1 flex items-center gap-3 px-5 py-4" },
             e.createElement(
               "div",
               {
@@ -1142,7 +1153,7 @@ const wt = () => {
         "div",
         {
           className:
-            "rounded-2xl border border-slate-200 bg-white shadow-sm p-4 dark:border-gray-700 dark:bg-gray-800",
+            "rounded-2xl border border-slate-200 bg-white shadow-sm p-5 dark:border-gray-700 dark:bg-gray-800",
         },
         e.createElement(
           "p",
@@ -1163,7 +1174,7 @@ const wt = () => {
             {
               onClick: () => p("/my-home"),
               className:
-                "min-h-[92px] py-4 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg rounded-2xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.02]",
+                "min-h-[90px] py-4 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg rounded-xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.02]",
             },
             e.createElement(lt, { className: "w-6 h-6" }),
             e.createElement(
@@ -1186,7 +1197,7 @@ const wt = () => {
             {
               onClick: () => p("/my-feed"),
               className:
-                "min-h-[92px] py-4 px-4 bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 shadow-sm rounded-2xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.01] dark:bg-gray-800/80 dark:border-gray-700 dark:text-white",
+                "min-h-[90px] py-4 px-4 bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 shadow-sm rounded-xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.01] dark:bg-gray-800/80 dark:border-gray-700 dark:text-white",
             },
             e.createElement(nt, { className: "w-6 h-6" }),
             e.createElement(
@@ -1212,7 +1223,7 @@ const wt = () => {
             {
               onClick: () => p("/saledone"),
               className:
-                "min-h-[92px] py-4 px-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg rounded-2xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.02]",
+                "min-h-[90px] py-4 px-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg rounded-xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.02]",
             },
             e.createElement(ne, { className: "w-6 h-6" }),
             e.createElement(
@@ -1237,7 +1248,7 @@ const wt = () => {
             {
               onClick: () => p("/saleundone"),
               className:
-                "min-h-[92px] py-4 px-4 bg-rose-600 hover:bg-rose-700 text-white shadow-lg rounded-2xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.02]",
+                "min-h-[90px] py-4 px-4 bg-rose-600 hover:bg-rose-700 text-white shadow-lg rounded-xl flex items-center gap-3 justify-start transition-transform hover:scale-[1.02]",
             },
             e.createElement(dt, { className: "w-6 h-6" }),
             e.createElement(
@@ -1260,7 +1271,7 @@ const wt = () => {
     ),
     e.createElement(
       "div",
-      { id: "profile-details", className: "max-w-4xl mx-auto px-4 pb-12" },
+      { id: "profile-details", className: "max-w-4xl mx-auto px-4 pb-12 page-shell page-pad" },
       e.createElement(
         We,
         { value: je, onValueChange: Ae, className: "w-full" },
@@ -2306,3 +2317,4 @@ const wt = () => {
 };
 var Jt = wt;
 export { Jt as default };
+

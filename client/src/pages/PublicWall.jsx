@@ -135,7 +135,7 @@ const Y = (s) => String(s || "").replace(/\/+$/, ""),
           },
           e.createElement(
             "div",
-            { className: "max-w-7xl mx-auto px-4 py-8 space-y-6" },
+            { className: "max-w-7xl mx-auto px-4 py-8 space-y-6 page-shell page-pad" },
             [1, 2, 3].map((t) =>
               e.createElement(
                 i,
@@ -166,7 +166,7 @@ const Y = (s) => String(s || "").replace(/\/+$/, ""),
           },
           e.createElement(
             "div",
-            { className: "max-w-7xl mx-auto px-4 py-8" },
+            { className: "max-w-7xl mx-auto px-4 py-8 page-shell page-pad" },
             e.createElement(
               "div",
               { className: "mb-8 text-center" },
@@ -192,12 +192,15 @@ const Y = (s) => String(s || "").replace(/\/+$/, ""),
                       className:
                         "text-4xl font-bold text-gray-900 dark:text-white",
                     },
-                    "Public Wall",
+                    s("public_wall", "Public Wall"),
                   ),
                   e.createElement(
                     "p",
                     { className: "text-gray-600 dark:text-gray-300 text-lg" },
-                    "Celebrating top performance from the community",
+                    s(
+                      "public_wall_subtitle",
+                      "Celebrating top performance from the community",
+                    ),
                   ),
                 ),
               ),
@@ -246,7 +249,7 @@ const Y = (s) => String(s || "").replace(/\/+$/, ""),
             c && !x
               ? e.createElement(
                   i,
-                  { className: "max-w-2xl mx-auto mb-8 border-red-200" },
+                  { className: "max-w-2xl mx-auto mb-8 border-red-200 page-shell page-pad" },
                   e.createElement(
                     n,
                     { className: "p-8 text-center" },
@@ -297,7 +300,7 @@ const Y = (s) => String(s || "").replace(/\/+$/, ""),
                   i,
                   {
                     className:
-                      "max-w-2xl mx-auto mb-8 border-dashed border-2 border-blue-200",
+                      "max-w-2xl mx-auto mb-8 border-dashed border-2 border-blue-200 page-shell page-pad",
                   },
                   e.createElement(
                     n,

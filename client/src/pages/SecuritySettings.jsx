@@ -38,14 +38,14 @@ function maskIp(ipAddress) {
 
 function SessionCard({ session, isRevoking, onRevoke }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <p className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Monitor className="h-4 w-4 text-blue-600" />
+          <p className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <Monitor className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             {session.device_fingerprint || "Unknown device"}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {session.user_agent || "Unknown user agent"}
           </p>
         </div>
@@ -53,16 +53,16 @@ function SessionCard({ session, isRevoking, onRevoke }) {
           type="button"
           onClick={() => onRevoke(session.session_id)}
           disabled={isRevoking}
-          className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {isRevoking ? "Revoking..." : "Revoke"}
         </button>
       </div>
 
-      <div className="mt-3 grid gap-1 text-xs text-slate-600 sm:grid-cols-2">
+      <div className="mt-3 grid gap-1 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-2">
         <p className="flex items-center gap-1.5">
-          <Clock3 className="h-3.5 w-3.5 text-slate-400" />
+          <Clock3 className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
           Last active:{" "}
           {formatDateTime(session.last_activity || session.created_at)}
         </p>
@@ -271,8 +271,8 @@ export default function SecuritySettings() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="w-full max-w-md px-4">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-gray-900">
+        <div className="w-full max-w-md px-4 page-shell page-pad">
           <PageLoadingState
             title={t("loading_security_settings")}
             description="Checking authentication and security controls."
@@ -284,8 +284,8 @@ export default function SecuritySettings() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 px-4 py-6 md:px-8">
+      <div className="mx-auto max-w-5xl space-y-6 page-shell page-pad">
         <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-md">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -314,16 +314,16 @@ export default function SecuritySettings() {
           </div>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
+                <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 Two-Factor Authentication
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Status:{" "}
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
                   {statusBadge}
                 </span>
               </p>
@@ -409,18 +409,18 @@ export default function SecuritySettings() {
           ) : null}
 
           {setupQrCode ? (
-            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-2 text-sm font-semibold text-slate-700">
+            <div className="mt-5 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 p-4">
+              <p className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Step 1: Scan QR code
               </p>
-              <div className="flex justify-center rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex justify-center rounded-lg border border-slate-200 dark:border-gray-600 bg-white p-4">
                 <img
                   src={setupQrCode}
                   alt={t("two_fa_qr_code_alt")}
                   className="h-44 w-44"
                 />
               </div>
-              <p className="mt-4 text-sm font-semibold text-slate-700">
+              <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Step 2: Verify code
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -433,7 +433,7 @@ export default function SecuritySettings() {
                     )
                   }
                   placeholder={t("enter_authenticator_code")}
-                  className="w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  className="w-56 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-blue-500"
                 />
                 <button
                   type="button"
@@ -478,15 +478,15 @@ export default function SecuritySettings() {
           ) : null}
 
           {backupCodes.length > 0 ? (
-            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="font-semibold text-amber-800">
+            <div className="mt-5 rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+              <p className="font-semibold text-amber-800 dark:text-amber-300">
                 Backup codes (save these now)
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                 {backupCodes.map((code) => (
                   <div
                     key={code}
-                    className="rounded border border-amber-300 bg-white px-2 py-1.5 font-mono"
+                    className="rounded border border-amber-300 dark:border-amber-600 bg-white dark:bg-gray-800 px-2 py-1.5 font-mono text-slate-800 dark:text-slate-200"
                   >
                     {code}
                   </div>
@@ -496,8 +496,8 @@ export default function SecuritySettings() {
           ) : null}
 
           {disableMode ? (
-            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
-              <p className="text-sm font-semibold text-red-700">
+            <div className="mt-5 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                 Confirm disable using authenticator code
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -510,7 +510,7 @@ export default function SecuritySettings() {
                     )
                   }
                   placeholder={t("enter_code")}
-                  className="w-56 rounded-lg border border-red-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                  className="w-56 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-red-500"
                 />
                 <button
                   type="button"
@@ -555,14 +555,14 @@ export default function SecuritySettings() {
           ) : null}
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-                <Smartphone className="h-5 w-5 text-blue-600" />
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
+                <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Active Sessions
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Revoke sessions you do not recognize.
               </p>
             </div>
