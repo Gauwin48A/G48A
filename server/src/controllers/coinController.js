@@ -24,15 +24,49 @@ const EARN_AMOUNTS = {
  */
 async function ensureCoinSchema() {
   await runQuery(`
-    CREATE TABLE IF NOT EXISTS coin_transactions (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      amount DECIMAL(10,2) NOT NULL,
-      type VARCHAR(30) NOT NULL,
-      reference_id TEXT,
-      description TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
+    DO $$
+    DECLARE current_type text;
+    BEGIN
+      SELECT data_type INTO current_type
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'coin_transactions'
+        AND column_name = 'user_id';
+
+      IF current_type IS NULL THEN
+        CREATE TABLE IF NOT EXISTS coin_transactions (
+          id SERIAL PRIMARY KEY,
+          user_id UUID NOT NULL REFERENCES users(user_id),
+          amount DECIMAL(10,2) NOT NULL,
+          type VARCHAR(30) NOT NULL,
+          reference_id TEXT,
+          description TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+      ELSIF current_type <> 'uuid' THEN
+        BEGIN
+          ALTER TABLE coin_transactions
+            ALTER COLUMN user_id TYPE UUID USING user_id::uuid;
+        EXCEPTION WHEN others THEN
+          ALTER TABLE coin_transactions RENAME TO coin_transactions_legacy;
+          CREATE TABLE IF NOT EXISTS coin_transactions (
+            id SERIAL PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(user_id),
+            amount DECIMAL(10,2) NOT NULL,
+            type VARCHAR(30) NOT NULL,
+            reference_id TEXT,
+            description TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+          INSERT INTO coin_transactions (id, user_id, amount, type, reference_id, description, created_at)
+          SELECT id,
+                 NULLIF(user_id::text, '')::uuid,
+                 amount, type, reference_id, description, created_at
+          FROM coin_transactions_legacy
+          WHERE user_id::text ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+        END;
+      END IF;
+    END $$;
   `).catch(() => {});
   await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_user ON coin_transactions(user_id, created_at DESC)`).catch(() => {});
   await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_reference ON coin_transactions(reference_id)`).catch(() => {});
@@ -229,9 +263,30 @@ exports.redeemCoins = async (req, res) => {
   }
 
   const cost = REDEEM_COSTS[redeemType];
-  const referenceId = `redeem:${redeemType}:${userId}:${postId}:${Date.now()}`;
+  const idempotencyKey =
+    req.body?.idempotencyKey ||
+    req.body?.requestId ||
+    req.headers["x-idempotency-key"] ||
+    null;
+  const referenceId = idempotencyKey
+    ? `redeem:${redeemType}:${idempotencyKey}`
+    : `redeem:${redeemType}:${userId}:${postId}:${Date.now()}`;
 
   try {
+    const ownershipCheck = await runQuery(
+      "SELECT user_id, status FROM posts WHERE post_id::text = $1 LIMIT 1",
+      [postId],
+    );
+    if (!ownershipCheck.rows.length) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    if (String(ownershipCheck.rows[0].user_id) !== String(userId)) {
+      return res.status(403).json({ error: "You can only redeem boosts for your own posts" });
+    }
+    if (ownershipCheck.rows[0].status !== "active") {
+      return res.status(400).json({ error: "Only active posts can be boosted" });
+    }
+
     const result = await spendCoins(
       userId,
       cost,
@@ -251,8 +306,6 @@ exports.redeemCoins = async (req, res) => {
       return res.status(409).json({ error: "Duplicate redemption" });
     }
 
-    // Apply the boost via postBoostController logic
-    const { boostPost } = require("./postBoostController");
     // We directly insert the boost record since the user paid with coins
     const BOOST_DURATIONS = { boost: 7, featured: 14, spotlight: 30 };
     const BOOST_LEVELS = { boost: 1, featured: 2, spotlight: 3 };

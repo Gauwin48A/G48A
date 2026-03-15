@@ -23,7 +23,7 @@ function parseChainPointsFromEnv() {
 
   const parsed = raw
     .split(",")
-    .map((entry) => Number.parseInt(entry.trim(), 10))
+    .map((entry) => Number.parseFloat(entry.trim()))
     .filter((value) => Number.isFinite(value) && value > 0);
 
   return parsed.length ? parsed : DEFAULT_CHAIN_POINTS.slice();

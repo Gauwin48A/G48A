@@ -41,7 +41,7 @@ function ensureBoostSchema() {
  */
 exports.boostPost = async (req, res) => {
   try {
-    const userId = getAuthenticatedUserId(req);
+    const userId = getAuthUserId(req);
     if (!userId) return res.status(401).json({ error: 'Authentication required' });
 
     const { postId } = req.params;
@@ -99,20 +99,23 @@ exports.boostPost = async (req, res) => {
 
     // Update post boost_level (take the max of existing and new boost level)
     await runQuery(
-      `UPDATE posts SET boost_level = GREATEST(COALESCE(boost_level, 0), $1),
-                        tier_priority = GREATEST(COALESCE(tier_priority, 1), $1 + 1)
+      `UPDATE posts
+       SET boost_level = GREATEST(COALESCE(boost_level, 0), $1)
        WHERE post_id::text = $2`,
       [cfg.boostLevel, postId],
     );
 
-    logger.info(`[Boost] User ${userId} used ${boostType} quota on post ${postId} (remaining: ${quotaStatus.remaining - 1})`);
+    const remainingAfter = Math.max(0, (quotaStatus.remaining || 0) - 1);
+    logger.info(
+      `[Boost] User ${userId} used ${boostType} quota on post ${postId} (remaining: ${remainingAfter})`,
+    );
 
     return res.json({
       success: true,
       message: `"${boostType}" boost applied! Your post will have enhanced visibility for ${cfg.durationDays} days.`,
       boost: boostResult.rows[0],
       source: 'subscription_quota',
-      remaining: quotaStatus.remaining - 1,
+      remaining: remainingAfter,
       expiresAt,
     });
   } catch (err) {
@@ -161,15 +164,17 @@ exports.getSponsoredPosts = async (req, res) => {
         p.created_at,
         COALESCE(p.boost_level, 0) AS boost_level,
         COALESCE(p.tier_priority, 1) AS tier_priority,
-        u.tier AS seller_tier,
+        COALESCE(u.current_plan, u.tier, 'basic') AS seller_plan,
         c.name AS category_name,
         COALESCE(pr.full_name, u.username, 'Seller') AS seller_name,
         CASE
           WHEN COALESCE(p.boost_level, 0) >= 3 THEN 'Spotlight'
           WHEN COALESCE(p.boost_level, 0) = 2 THEN 'Featured'
           WHEN COALESCE(p.boost_level, 0) = 1 THEN 'Boosted'
-          WHEN u.tier = 'premium' THEN 'Premium Seller'
-          ELSE 'Promoted'
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'premium' THEN 'Premium Seller'
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'silver' THEN 'Silver Seller'
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'bronze' THEN 'Bronze Seller'
+          ELSE 'Listing'
         END AS promo_label
       FROM posts p
       LEFT JOIN users u ON p.user_id::text = u.user_id::text
@@ -181,14 +186,21 @@ exports.getSponsoredPosts = async (req, res) => {
         AND (p.expires_at IS NULL OR p.expires_at > NOW())
         AND (
           COALESCE(p.boost_level, 0) > 0
-          OR u.tier IN ('premium', 'silver')
+          OR COALESCE(u.current_plan, u.tier, 'basic') IN ('premium', 'silver', 'bronze')
         )
         ${excludeClause}
         ${categoryClause}
       ORDER BY
+        CASE
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'premium' AND COALESCE(p.boost_level, 0) >= 2 THEN 1
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'premium' THEN 2
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'silver' AND COALESCE(p.boost_level, 0) >= 2 THEN 3
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'silver' THEN 4
+          WHEN COALESCE(u.current_plan, u.tier, 'basic') = 'bronze' THEN 5
+          ELSE 6
+        END ASC,
         COALESCE(p.boost_level, 0) DESC,
-        CASE WHEN u.tier = 'premium' THEN 2 WHEN u.tier = 'silver' THEN 1 ELSE 0 END DESC,
-        p.created_at DESC
+        RANDOM()
       LIMIT $1
     `;
 
@@ -291,16 +303,13 @@ exports.getPremiumRecommendations = async (req, res) => {
 
     const { category_id, location } = postResult.rows[0];
 
-    // Query premium/silver user posts in same category, excluding current post
-    const params = [postId, limit];
-    let categoryClause = '';
-    let paramIdx = 3;
+    const locationToken = String(location || "")
+      .split(",")[0]
+      ?.trim()
+      .slice(0, 80);
 
-    if (category_id) {
-      categoryClause = `AND p.category_id = $${paramIdx}`;
-      params.push(category_id);
-      paramIdx++;
-    }
+    // Query paid listings first, fall back to basic if needed via ranking
+    const params = [postId, limit, category_id || null, locationToken || null];
 
     const query = `
       SELECT
@@ -312,7 +321,23 @@ exports.getPremiumRecommendations = async (req, res) => {
              WHEN u.current_plan = 'bronze' THEN 'seller'
              ELSE NULL END AS badge_type,
         c.name AS category_name,
-        COALESCE(pr.full_name, u.username, 'Seller') AS seller_name
+        COALESCE(pr.full_name, u.username, 'Seller') AS seller_name,
+        CASE
+          WHEN u.current_plan = 'premium' AND COALESCE(p.boost_level, 0) >= 2 THEN 1
+          WHEN u.current_plan = 'premium' THEN 2
+          WHEN u.current_plan = 'silver' AND COALESCE(p.boost_level, 0) >= 2 THEN 3
+          WHEN u.current_plan = 'silver' THEN 4
+          WHEN u.current_plan = 'bronze' THEN 5
+          ELSE 6
+        END AS plan_rank,
+        CASE
+          WHEN $3::text IS NOT NULL AND p.category_id::text = $3::text THEN 1
+          ELSE 0
+        END AS category_match,
+        CASE
+          WHEN $4::text IS NOT NULL AND $4::text <> '' AND p.location ILIKE '%' || $4::text || '%' THEN 1
+          ELSE 0
+        END AS location_match
       FROM posts p
       JOIN users u ON p.user_id::text = u.user_id::text
       LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
@@ -320,51 +345,15 @@ exports.getPremiumRecommendations = async (req, res) => {
       WHERE p.status = 'active'
         AND p.post_id::text != $1
         AND (p.expires_at IS NULL OR p.expires_at > NOW())
-        AND u.current_plan IN ('premium', 'silver')
-        ${categoryClause}
       ORDER BY
-        CASE WHEN u.current_plan = 'premium' THEN 1 ELSE 2 END ASC,
-        COALESCE(p.boost_level, 0) DESC,
+        plan_rank ASC,
+        location_match DESC,
+        category_match DESC,
         RANDOM()
       LIMIT $2
     `;
 
-    let result = await runQuery(query, params);
-
-    // If less than 3 results, fill with bronze users
-    if (result.rows.length < 3) {
-      const existingIds = result.rows.map(r => String(r.post_id));
-      const excludeIds = [postId, ...existingIds];
-      const fillLimit = limit - result.rows.length;
-
-      const fillQuery = `
-        SELECT
-          p.post_id, p.title, p.price, p.images, p.location, p.created_at,
-          COALESCE(p.boost_level, 0) AS boost_level,
-          u.current_plan,
-          'seller' AS badge_type,
-          c.name AS category_name,
-          COALESCE(pr.full_name, u.username, 'Seller') AS seller_name
-        FROM posts p
-        JOIN users u ON p.user_id::text = u.user_id::text
-        LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
-        LEFT JOIN categories c ON p.category_id = c.category_id
-        WHERE p.status = 'active'
-          AND p.post_id::text != ALL($1::text[])
-          AND (p.expires_at IS NULL OR p.expires_at > NOW())
-          AND u.current_plan = 'bronze'
-          ${category_id ? 'AND p.category_id = $3' : ''}
-        ORDER BY RANDOM()
-        LIMIT $2
-      `;
-
-      const fillParams = category_id
-        ? [excludeIds, fillLimit, category_id]
-        : [excludeIds, fillLimit];
-
-      const fillResult = await runQuery(fillQuery, fillParams).catch(() => ({ rows: [] }));
-      result = { rows: [...result.rows, ...fillResult.rows] };
-    }
+    const result = await runQuery(query, params);
 
     return res.json({
       success: true,

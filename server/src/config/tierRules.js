@@ -1,10 +1,10 @@
 /**
  * MHub 4-Tier Pricing Model
  *
- * Basic:   ₹500/listing, 15-day expiry, no bonuses
- * Bronze:  ₹850/3mo, 100 listings, 30-day expiry, 1 boost/mo, seller badge, basic analytics
- * Silver:  ₹1200/6mo, 200 listings, 30-day expiry, 3 boost + 2 featured/mo, verified badge, priority search
- * Premium: ₹1500/12mo, unlimited, 45-day expiry, 5 each/mo, crown badge, top search, priority support
+ * Basic:   INR 500/listing, 15-day expiry, no bonuses
+ * Bronze:  INR 850/3mo, 100 listings, 30-day expiry, seller badge, basic analytics
+ * Silver:  INR 1200/6mo, 200 listings, 30-day expiry, 5 boosts + 5 featured + 5 spotlights/6mo
+ * Premium: INR 1500/12mo, unlimited, 45-day expiry, 5 boosts + 5 featured + 5 spotlights/month
  */
 
 const TIER_RULES = {
@@ -18,6 +18,7 @@ const TIER_RULES = {
     searchPriority: 0,
     priceINR: 500,
     durationMonths: null,
+    quotaPeriodMonths: 1,
     trialDays: 0,
     boostQuotaMonthly: 0,
     featuredQuotaMonthly: 0,
@@ -46,8 +47,9 @@ const TIER_RULES = {
     searchPriority: 1,
     priceINR: 850,
     durationMonths: 3,
+    quotaPeriodMonths: 1,
     trialDays: 0,
-    boostQuotaMonthly: 1,
+    boostQuotaMonthly: 0,
     featuredQuotaMonthly: 0,
     spotlightQuotaMonthly: 0,
     badgeType: "seller",
@@ -59,7 +61,6 @@ const TIER_RULES = {
     features: [
       "Up to 100 Posts",
       "30 Days Visibility/Post",
-      "1 Boost/Month",
       "Seller Badge",
       "Basic Analytics",
     ],
@@ -83,10 +84,11 @@ const TIER_RULES = {
     searchPriority: 2,
     priceINR: 1200,
     durationMonths: 6,
+    quotaPeriodMonths: 6,
     trialDays: 7,
-    boostQuotaMonthly: 3,
-    featuredQuotaMonthly: 2,
-    spotlightQuotaMonthly: 0,
+    boostQuotaMonthly: 5,
+    featuredQuotaMonthly: 5,
+    spotlightQuotaMonthly: 5,
     badgeType: "verified",
     hasAnalytics: true,
     hasPrioritySearch: true,
@@ -96,7 +98,7 @@ const TIER_RULES = {
     features: [
       "Up to 200 Posts",
       "30 Days Visibility/Post",
-      "3 Boosts + 2 Featured/Month",
+      "5 Boosts + 5 Featured + 5 Spotlights / 6 Months",
       "Verified Badge",
       "Priority Search Ranking",
       "Full Analytics Dashboard",
@@ -122,6 +124,7 @@ const TIER_RULES = {
     searchPriority: 3,
     priceINR: 1500,
     durationMonths: 12,
+    quotaPeriodMonths: 1,
     trialDays: 14,
     boostQuotaMonthly: 5,
     featuredQuotaMonthly: 5,
@@ -182,6 +185,10 @@ const formatTierDisplay = (tierName) => {
     priceINR: rules.priceINR,
     duration: rules.durationMonths ? `${rules.durationMonths} months` : "per listing",
     durationLabel: rules.durationMonths ? `${rules.durationMonths}mo` : "listing",
+    quotaPeriodMonths: rules.quotaPeriodMonths || 1,
+    quotaPeriodLabel: rules.quotaPeriodMonths && rules.quotaPeriodMonths > 1
+      ? `${rules.quotaPeriodMonths}mo`
+      : "month",
     features: rules.features,
     priority: rules.priority,
     searchPriority: rules.searchPriority,

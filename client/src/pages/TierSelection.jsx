@@ -11,7 +11,6 @@ import {
   Shield,
   Sparkles,
   TrendingUp,
-  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,22 +23,48 @@ import { navigateBack } from "@/utils/navigation";
 const tierPlans = [
   {
     key: "basic",
-    nameKey: "free_user",
-    nameFallback: "Free User",
-    subtitleKey: "free_user_subtitle",
-    subtitleFallback: "Start selling",
-    price: "Free",
-    periodKey: "per_month",
-    periodFallback: "per month",
+    nameKey: "basic_plan",
+    nameFallback: "Basic",
+    subtitleKey: "basic_subtitle",
+    subtitleFallback: "Quick one-time listing",
+    price: "₹500",
+    periodKey: "per_listing",
+    periodFallback: "per listing",
+    perPostCost: "₹500/post",
     icon: Clock,
     color: "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700",
     buttonClass: "bg-gray-600 hover:bg-gray-700",
-    ctaLabel: "Start Free",
+    ctaLabel: "Post Basic Listing",
     features: [
-      { key: "free_posts_month", label: "3 free posts per month", included: true },
-      { key: "pay_per_post_after", label: "Pay per post after limit", included: true },
-      { key: "normal_visibility", label: "Normal search visibility", included: true },
-      { key: "no_featured_promo", label: "No featured promotion", included: false },
+      { key: "single_listing_credit", label: "1 listing credit", included: true },
+      { key: "visibility_15_days", label: "15 days visibility", included: true },
+      { key: "standard_reach", label: "Standard search reach", included: true },
+      { key: "no_boosts", label: "No boosts or promotions", included: false },
+      { key: "no_analytics", label: "No analytics", included: false },
+      { key: "no_badge", label: "No seller badge", included: false },
+    ],
+  },
+  {
+    key: "bronze",
+    nameKey: "bronze_seller",
+    nameFallback: "Bronze Seller",
+    subtitleKey: "bronze_subtitle",
+    subtitleFallback: "For casual sellers",
+    price: "₹850",
+    periodKey: "per_3_months",
+    periodFallback: "per 3 months",
+    perPostCost: "₹8.50/post",
+    icon: Shield,
+    color: "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
+    buttonClass: "bg-amber-600 hover:bg-amber-700 text-white",
+    ctaLabel: "Get Bronze",
+    features: [
+      { key: "up_to_100_listings", label: "Up to 100 listings", included: true },
+      { key: "visibility_30_days", label: "30 days visibility per listing", included: true },
+      { key: "medium_search", label: "Medium search priority", included: true },
+      { key: "seller_badge", label: "Seller badge", included: true },
+      { key: "basic_analytics", label: "Basic analytics", included: true },
+      { key: "no_boosts_bronze", label: "No boosts (use coins to boost)", included: false },
     ],
   },
   {
@@ -47,76 +72,53 @@ const tierPlans = [
     nameKey: "silver_seller",
     nameFallback: "Silver Seller",
     subtitleKey: "silver_subtitle",
-    subtitleFallback: "Best for regular sellers",
-    price: "₹499",
+    subtitleFallback: "Most popular",
+    price: "₹1,200",
     periodKey: "per_6_months",
     periodFallback: "per 6 months",
-    icon: Shield,
+    perPostCost: "₹6/post",
+    icon: Sparkles,
     color: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
     buttonClass: "bg-blue-600 hover:bg-blue-700",
     popular: true,
-    ctaLabel: "Get Silver",
+    ctaLabel: "Get Silver ⭐",
     features: [
-      { key: "up_to_3_posts_day", label: "Up to 3 posts per day", included: true },
-      { key: "featured_access", label: "Featured listing access", included: true },
-      { key: "medium_priority_reach", label: "Medium search priority", included: true },
-      { key: "verified_badge", label: "Seller verification badge", included: true },
-      { key: "boosts_available", label: "Can boost listings (small fee)", included: true },
+      { key: "up_to_200_listings", label: "Up to 200 listings", included: true },
+      { key: "visibility_30_days", label: "30 days visibility per listing", included: true },
+      { key: "boosts_featured_period", label: "5 boosts + 5 featured + 5 spotlights / 6 months", included: true },
+      { key: "verified_badge", label: "Verified seller badge", included: true },
+      { key: "priority_search", label: "Priority search ranking", included: true },
+      { key: "full_analytics", label: "Full analytics dashboard", included: true },
+      { key: "trial_7_days", label: "7-day free trial", included: true },
     ],
   },
   {
     key: "premium",
     nameKey: "premium",
-    nameFallback: "Premium Seller",
+    nameFallback: "Premium",
     subtitleKey: "premium_subtitle",
-    subtitleFallback: "Best for businesses",
-    price: "₹999",
+    subtitleFallback: "Best value — Power Sellers",
+    price: "₹1,500",
     periodKey: "per_year",
-    periodFallback: "per year",
+    periodFallback: "per 12 months",
+    perPostCost: "Unlimited",
     icon: Crown,
     color: "bg-gradient-to-br from-gray-900 to-gray-800 border-yellow-500",
     textColor: "text-white",
     buttonClass: "bg-yellow-500 hover:bg-yellow-400 text-black",
     featured: true,
-    ctaLabel: "Go Premium",
+    ctaLabel: "Go Premium 👑",
     features: [
-      { key: "unlimited_posts", label: "Unlimited posts", included: true },
-      { key: "top_feed_priority", label: "Top search priority", included: true },
-      { key: "auto_featured", label: "Automatic featured rotation", included: true },
-      { key: "verified_badge_crown", label: "Verified badge + crown", included: true },
-      { key: "free_boosts_month", label: "3 free boosts per month", included: true },
+      { key: "unlimited_listings", label: "Unlimited listings", included: true },
+      { key: "visibility_45_days", label: "45 days visibility", included: true },
+      { key: "boosts_featured_spotlight", label: "5 boosts + 5 featured + 5 spotlights / month", included: true },
+      { key: "crown_badge", label: "Crown badge", included: true },
+      { key: "top_priority", label: "Top of feed priority", included: true },
+      { key: "premium_ad_exposure", label: "Premium ad exposure on listings", included: true },
       { key: "priority_support", label: "Priority support", included: true },
+      { key: "full_analytics_premium", label: "Full analytics dashboard", included: true },
+      { key: "trial_14_days", label: "14-day free trial", included: true },
     ],
-  },
-];
-
-const boostPlans = [
-  {
-    key: "boost",
-    title: "Boost Listing",
-    price: "₹49",
-    description: "Lift a listing higher in search results for a quick visibility bump.",
-    icon: Zap,
-    accent: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800",
-  },
-  {
-    key: "featured",
-    title: "Featured Listing",
-    price: "₹99",
-    description: "Featured badge + higher placement in feeds and category results.",
-    icon: Sparkles,
-    accent: "text-purple-600",
-    bg: "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800",
-  },
-  {
-    key: "spotlight",
-    title: "Homepage Spotlight",
-    price: "₹199",
-    description: "Top visibility on the homepage featured slots.",
-    icon: TrendingUp,
-    accent: "text-orange-600",
-    bg: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800",
   },
 ];
 
@@ -127,6 +129,7 @@ export default function TierSelection() {
     t(key, { defaultValue: fallback, ...options });
   const { toast } = useToast();
   const [processingTier, setProcessingTier] = useState(null);
+  const [processingTrial, setProcessingTrial] = useState(null);
   const [activatedTier, setActivatedTier] = useState(null);
   const [error, setError] = useState(null);
   const [lastAttemptedTier, setLastAttemptedTier] = useState(null);
@@ -150,6 +153,9 @@ export default function TierSelection() {
     if (planKey === "basic") {
       return t("tier_cta_basic");
     }
+    if (planKey === "bronze") {
+      return t("tier_cta_bronze");
+    }
     if (planKey === "silver") {
       return t("tier_cta_silver");
     }
@@ -168,16 +174,37 @@ export default function TierSelection() {
     setLastAttemptedTier(tierKey);
     setError(null);
 
+    // Navigate to payment page with the selected plan
+    navigate(`/payment?plan=${encodeURIComponent(tierKey)}`);
+    setProcessingTier(null);
+  };
+
+  const activateTrial = async (tierKey) => {
+    const userId = getUserId();
+    const accessToken = getAccessToken();
+    if (!userId || !accessToken) {
+      navigate("/login", { state: { returnTo: "/tier-selection" } });
+      return;
+    }
+
+    setProcessingTrial(tierKey);
+    setError(null);
+
     try {
-      await api.post("/users/upgrade-tier", { tier: tierKey });
+      const res = await api.post("/subscriptions/trial", { planName: tierKey });
+      const data = res?.data ?? res;
       setActivatedTier(tierKey);
-      const selectedPlan = tierPlans.find((plan) => plan.key === tierKey);
+      const selectedPlan = tierPlans.find((p) => p.key === tierKey);
       const planLabel = selectedPlan
         ? tr(selectedPlan.nameKey, selectedPlan.nameFallback || selectedPlan.key)
         : tierKey;
       toast({
-        title: t("tier_plan_activated_title"),
-        description: t("tier_plan_activated_desc", { plan: planLabel }),
+        title: t("trial_activated_title", { defaultValue: "Trial Activated!" }),
+        description: t("trial_activated_desc", {
+          defaultValue: `${data?.subscription?.trialDays || 7}-day free trial started for ${planLabel}`,
+          plan: planLabel,
+          days: data?.subscription?.trialDays || 7,
+        }),
       });
       setTimeout(() => {
         navigate(`/categories?tier=${encodeURIComponent(tierKey)}`);
@@ -186,15 +213,15 @@ export default function TierSelection() {
       const errorMessage =
         requestError?.response?.data?.error ||
         requestError?.message ||
-        t("tier_upgrade_failed_fallback");
+        t("trial_failed_fallback", { defaultValue: "Failed to activate trial" });
       setError(errorMessage);
       toast({
-        title: t("upgrade_failed"),
+        title: t("trial_failed", { defaultValue: "Trial Failed" }),
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setProcessingTier(null);
+      setProcessingTrial(null);
     }
   };
 
@@ -230,7 +257,7 @@ export default function TierSelection() {
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
           {tr(
             "selling_power_subtitle_new",
-            "Choose a membership plan. Boosts are purchased separately per listing.",
+            "Choose a membership plan. Boosts are included with paid plans.",
           )}
         </p>
       </div>
@@ -285,7 +312,7 @@ export default function TierSelection() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-3 items-stretch page-shell page-pad">
+      <div className="max-w-7xl mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-4 items-stretch page-shell page-pad">
         {tierPlans.map((plan) => {
           const Icon = plan.icon;
           const isProcessing = processingTier === plan.key;
@@ -344,6 +371,23 @@ export default function TierSelection() {
                     {tr(plan.periodKey, plan.periodFallback || plan.periodKey)}
                   </span>
                 </div>
+                {plan.perPostCost && (
+                  <div className="mt-2">
+                    <span
+                      className={`inline-block text-xs font-semibold px-2 py-1 rounded-full ${
+                        plan.featured
+                          ? "bg-yellow-400/20 text-yellow-300"
+                          : plan.key === "silver"
+                            ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                            : plan.key === "bronze"
+                              ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                      }`}
+                    >
+                      {plan.perPostCost}
+                    </span>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-8">
@@ -390,57 +434,81 @@ export default function TierSelection() {
                     planCtaLabel(plan.key)
                   )}
                 </Button>
+                {(plan.key === "silver" || plan.key === "premium") && (
+                  <Button
+                    variant="outline"
+                    onClick={() => activateTrial(plan.key)}
+                    disabled={processingTrial === plan.key || Boolean(activatedTier)}
+                    className="w-full mt-2 py-3 text-sm font-medium rounded-xl border-dashed"
+                  >
+                    {processingTrial === plan.key ? (
+                      <span className="flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {t("activating_trial", { defaultValue: "Activating..." })}
+                      </span>
+                    ) : (
+                      t(plan.key === "silver" ? "start_7_day_trial" : "start_14_day_trial", {
+                        defaultValue: plan.key === "silver" ? "Start 7-Day Free Trial" : "Start 14-Day Free Trial",
+                      })
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      <div className="max-w-6xl mx-auto mt-12">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {tr("boost_listing_title", "Boost & Featured Listings")}
-          </h2>
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-            {tr("boost_listing_hint", "One-time visibility upgrades")}
-          </span>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          {tr(
-            "boost_listing_desc",
-            "Boosts are separate from subscriptions and can be purchased per listing anytime.",
-          )}
-        </p>
-        <div className="grid gap-4 md:grid-cols-3">
-          {boostPlans.map((boost) => {
-            const Icon = boost.icon;
-            return (
-              <Card
-                key={boost.key}
-                className={`border-2 rounded-2xl shadow-md ${boost.bg}`}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-white/80 dark:bg-gray-800/80">
-                      <Icon className={`w-5 h-5 ${boost.accent}`} />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base font-semibold text-gray-900 dark:text-white">
-                        {boost.title}
-                      </CardTitle>
-                      <p className={`text-sm font-bold ${boost.accent}`}>
-                        {boost.price}
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{boost.description}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+      <div className="max-w-7xl mx-auto mt-12 grid gap-6 sm:grid-cols-2">
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">
+              {tr("boost_listing_title", "Promotions Bundled With Plans")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {tr(
+                "boost_listing_desc",
+                "Boost, Featured, and Spotlight quotas are bundled into Silver and Premium plans — not sold separately. This forces real value into higher tiers.",
+              )}
+            </p>
+            <div className="mt-3 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+              <p>• <strong>Silver:</strong> 5 boosts + 5 featured + 5 spotlights per 6 months</p>
+              <p>• <strong>Premium:</strong> 5 boosts + 5 featured + 5 spotlights per month</p>
+              <p>• <strong>Bronze/Basic:</strong> Use coins to redeem boosts (10 coins = 1 boost)</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">
+              {tr("coin_economy_title", "Coin Economy")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              Earn coins through activity. Redeem for boosts anytime.
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <div>
+                <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Earn</p>
+                <p>Post listing → +1 coin</p>
+                <p>Sell item → +3 coins</p>
+                <p>Buy item → +1 coin</p>
+                <p>Invite friend → +2 coins</p>
+                <p>Welcome bonus → 90 coins</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-700 dark:text-gray-200 mb-1">Redeem</p>
+                <p>1 Boost → 10 coins</p>
+                <p>1 Featured → 20 coins</p>
+                <p>1 Spotlight → 40 coins</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="max-w-4xl mx-auto mt-16 text-center">
@@ -451,3 +519,5 @@ export default function TierSelection() {
     </div>
   );
 }
+
+

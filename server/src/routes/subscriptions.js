@@ -9,5 +9,6 @@ router.get("/plans", subscriptionController.getPlans);
 router.get("/my", authenticateToken, subscriptionController.getMySubscription);
 router.post("/subscribe", authenticateToken, subscriptionController.subscribe);
 router.get("/quota", authenticateToken, subscriptionController.getQuotaStatus);
+router.post("/trial", authenticateToken, subscriptionController.activateTrial);
 
 module.exports = router;

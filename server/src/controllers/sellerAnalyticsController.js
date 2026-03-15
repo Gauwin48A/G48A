@@ -193,6 +193,80 @@ exports.getViewsTrend = async (req, res) => {
 };
 
 /**
+ * GET /api/seller-analytics/export
+ * CSV export of listings performance data
+ */
+exports.exportCSV = async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  try {
+    const tierCheck = await requireSellerTier(userId);
+    if (!tierCheck.allowed) {
+      return res.status(403).json({ error: "Silver or Premium plan required", upgrade: true });
+    }
+
+    const period = req.query.period || "30d";
+    const interval = parseSafeInterval(period, "30 days");
+
+    const result = await runQuery(
+      `SELECT
+        p.post_id, p.title, p.price, p.status,
+        COALESCE(p.views_count, 0) AS views,
+        COALESCE(p.likes, 0) AS likes,
+        COALESCE(p.shares, 0) AS shares,
+        COALESCE(p.boost_level, 0) AS boost_level,
+        c.name AS category,
+        p.created_at, p.expires_at
+      FROM posts p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      WHERE p.user_id::text = $1
+        AND p.created_at > NOW() - $2::interval
+      ORDER BY p.created_at DESC
+      LIMIT 500`,
+      [userId, interval],
+    );
+
+    const rows = result.rows;
+    const headers = ["Post ID", "Title", "Price", "Status", "Views", "Likes", "Shares", "Boost Level", "Category", "Created", "Expires"];
+
+    // Build CSV with proper escaping
+    const escapeCsv = (val) => {
+      const str = String(val ?? "");
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const csvLines = [headers.join(",")];
+    for (const row of rows) {
+      csvLines.push([
+        row.post_id,
+        escapeCsv(row.title),
+        row.price,
+        row.status,
+        row.views,
+        row.likes,
+        row.shares,
+        row.boost_level,
+        escapeCsv(row.category),
+        row.created_at ? new Date(row.created_at).toISOString() : "",
+        row.expires_at ? new Date(row.expires_at).toISOString() : "",
+      ].join(","));
+    }
+
+    const csv = csvLines.join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="listings-${period}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    logger.error("[SellerAnalytics] exportCSV error:", err);
+    res.status(500).json({ error: "Failed to export data" });
+  }
+};
+
+/**
  * GET /api/seller-analytics/conversion
  * Conversion funnel: views → inquiries → offers → sales
  */

@@ -697,7 +697,9 @@ exports.getAllPosts = async (req, res) => {
       sortBy === "created_at"
         ? "CASE WHEN p.created_at >= NOW() - INTERVAL '12 hours' THEN 1 ELSE 0 END DESC, "
         : "";
-    const sortClause = `ORDER BY ${freshnessOrder}COALESCE(p.tier_priority, 1) DESC, ${safeSortBy} ${safeSortOrder}, p.created_at DESC`;
+    const rankScore =
+      "(COALESCE(p.tier_priority, 0) * 10 + COALESCE(p.boost_level, 0))";
+    const sortClause = `ORDER BY ${rankScore} DESC, ${freshnessOrder}${safeSortBy} ${safeSortOrder}, p.created_at DESC`;
 
     query += ` ${sortClause} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limitNumber, offset);

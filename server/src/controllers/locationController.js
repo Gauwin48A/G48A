@@ -34,6 +34,54 @@ const serverReverseGeocode = async (lat, lon) => {
   });
 };
 
+const INDIA_POST_API_ENABLED =
+  String(process.env.INDIA_POST_API_ENABLED || "true").toLowerCase() === "true";
+const INDIA_POST_TIMEOUT_MS =
+  Number.parseInt(process.env.INDIA_POST_API_TIMEOUT_MS, 10) || 3500;
+
+const fetchIndiaPostDetails = async (pincode) => {
+  const normalized = String(pincode || "").replace(/\D/g, "");
+  if (!INDIA_POST_API_ENABLED || normalized.length !== 6) return null;
+
+  const url = `https://api.postalpincode.in/pincode/${normalized}`;
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve(null), INDIA_POST_TIMEOUT_MS);
+    https
+      .get(url, { headers: { "User-Agent": "MHub/1.0" } }, (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => {
+          clearTimeout(timeout);
+          try {
+            const parsed = JSON.parse(data);
+            const payload = Array.isArray(parsed) ? parsed[0] : null;
+            if (!payload || payload.Status !== "Success") return resolve(null);
+            const office = Array.isArray(payload.PostOffice)
+              ? payload.PostOffice[0]
+              : null;
+            if (!office) return resolve(null);
+            resolve({
+              pincode: office.Pincode || normalized,
+              village: office.Name || null,
+              district: office.District || null,
+              state: office.State || null,
+              block: office.Block || null,
+              region: office.Region || null,
+              division: office.Division || null,
+              circle: office.Circle || null,
+            });
+          } catch {
+            resolve(null);
+          }
+        });
+      })
+      .on("error", () => {
+        clearTimeout(timeout);
+        resolve(null);
+      });
+  });
+};
+
 let schemaReadyPromise = null;
 let columnCache = null;
 let columnCacheAt = 0;
@@ -323,20 +371,93 @@ exports.saveLocation = async (req, res) => {
       }
     }
 
+    let indiaPostDetails = null;
+    const pincodeCandidate =
+      safeText(pincode) || safeText(enrichedAddress?.postcode) || "";
+    const countryHint =
+      safeText(country) ||
+      safeText(enrichedAddress?.country) ||
+      safeText(ipLocation?.country) ||
+      "";
+    if (
+      INDIA_POST_API_ENABLED &&
+      (countryHint.toLowerCase() === "india" || pincodeCandidate)
+    ) {
+      try {
+        indiaPostDetails = await fetchIndiaPostDetails(pincodeCandidate);
+        if (indiaPostDetails) {
+          logger.info("[Location] India Post enrichment applied", {
+            pincode: indiaPostDetails.pincode,
+            village: indiaPostDetails.village || "",
+            district: indiaPostDetails.district || "",
+          });
+        }
+      } catch (err) {
+        logger.warn("[Location] India Post lookup failed", {
+          message: err.message,
+        });
+      }
+    }
+
     const finalCity =
-      safeText(city) || safeText(enrichedAddress?.city) || safeText(enrichedAddress?.town) || safeText(area) || safeText(locality) || safeText(ipLocation?.city) || "Unknown";
-    const finalState = safeText(state) || safeText(enrichedAddress?.state) || safeText(ipLocation?.region) || "";
-    const finalCountry = safeText(country) || safeText(enrichedAddress?.country) || safeText(ipLocation?.country) || "Unknown";
-    const finalArea = safeText(area) || safeText(enrichedAddress?.suburb) || "";
-    const finalLocality = safeText(locality) || safeText(enrichedAddress?.neighbourhood) || "";
-    const finalDistrict = safeText(district) || safeText(enrichedAddress?.county) || safeText(enrichedAddress?.state_district) || "";
-    const finalPincode = safeText(pincode) || safeText(enrichedAddress?.postcode) || "";
+      safeText(city) ||
+      safeText(enrichedAddress?.city) ||
+      safeText(enrichedAddress?.town) ||
+      safeText(area) ||
+      safeText(locality) ||
+      safeText(indiaPostDetails?.district) ||
+      safeText(indiaPostDetails?.division) ||
+      safeText(ipLocation?.city) ||
+      "Unknown";
+    const finalState =
+      safeText(state) ||
+      safeText(enrichedAddress?.state) ||
+      safeText(ipLocation?.region) ||
+      safeText(indiaPostDetails?.state) ||
+      "";
+    const finalCountry =
+      safeText(country) ||
+      safeText(enrichedAddress?.country) ||
+      safeText(ipLocation?.country) ||
+      "Unknown";
+    const finalArea =
+      safeText(area) ||
+      safeText(enrichedAddress?.suburb) ||
+      safeText(indiaPostDetails?.block) ||
+      safeText(indiaPostDetails?.division) ||
+      "";
+    const finalLocality =
+      safeText(locality) ||
+      safeText(enrichedAddress?.neighbourhood) ||
+      safeText(indiaPostDetails?.region) ||
+      "";
+    const finalDistrict =
+      safeText(district) ||
+      safeText(enrichedAddress?.county) ||
+      safeText(enrichedAddress?.state_district) ||
+      safeText(indiaPostDetails?.district) ||
+      "";
+    const finalPincode =
+      safeText(pincode) ||
+      safeText(enrichedAddress?.postcode) ||
+      safeText(indiaPostDetails?.pincode) ||
+      "";
     const finalDisplayName = safeText(display_name || displayName);
     const finalProvider = safeText(provider) || "browser_gps";
     const finalStreet = safeText(street);
     const finalTimezone = safeText(timezone) || safeText(ipLocation?.timezone);
-    const finalVillage = safeText(village) || safeText(enrichedAddress?.village) || safeText(enrichedAddress?.hamlet) || "";
-    const finalColony = safeText(colony) || safeText(enrichedAddress?.neighbourhood) || safeText(enrichedAddress?.suburb) || "";
+    const finalVillage =
+      safeText(village) ||
+      safeText(enrichedAddress?.village) ||
+      safeText(enrichedAddress?.hamlet) ||
+      safeText(indiaPostDetails?.village) ||
+      "";
+    const finalColony =
+      safeText(colony) ||
+      safeText(enrichedAddress?.neighbourhood) ||
+      safeText(enrichedAddress?.suburb) ||
+      safeText(indiaPostDetails?.region) ||
+      "";
     const finalSpeed =
       toNumberOrNull(req.body?.device_speed ?? req.body?.speed) ?? 0;
 

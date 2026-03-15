@@ -410,6 +410,7 @@ export default function GreenNavbar() {
     area,
     locality,
     displayName,
+    accuracy,
     loading: locationLoading,
   } = useLocationContext();
 
@@ -594,6 +595,14 @@ export default function GreenNavbar() {
       return t("detecting_location") || "Detecting location...";
     return t("location") || "Location";
   }, [area, city, displayName, locality, locationLoading, t]);
+
+  const accuracyBadge = useMemo(() => {
+    if (!accuracy || accuracy <= 0) return null;
+    if (accuracy <= 30) return { label: "GPS", color: "bg-green-500" };
+    if (accuracy <= 100) return { label: "Good", color: "bg-blue-500" };
+    if (accuracy <= 500) return { label: "~Area", color: "bg-yellow-500" };
+    return { label: "~City", color: "bg-orange-400" };
+  }, [accuracy]);
   const currentLayoutPreset = useMemo(
     () =>
       LAYOUT_PRESETS.find((item) => item.key === layoutMode) ||
@@ -830,6 +839,9 @@ export default function GreenNavbar() {
                   >
                     <FiMapPin className="h-4 w-4" />
                     <span className="truncate">{locationLabel}</span>
+                    {accuracyBadge && (
+                      <span className={`ml-0.5 inline-block h-1.5 w-1.5 rounded-full ${accuracyBadge.color}`} title={`${accuracyBadge.label} (${Math.round(accuracy)}m)`} />
+                    )}
                   </div>
                 </div>
 
@@ -1117,6 +1129,9 @@ export default function GreenNavbar() {
                 >
                   <FiMapPin className="h-4 w-4" />
                   <span className="truncate">{locationLabel}</span>
+                  {accuracyBadge && (
+                    <span className={`ml-0.5 inline-block h-1.5 w-1.5 rounded-full ${accuracyBadge.color}`} title={`${accuracyBadge.label} (${Math.round(accuracy)}m)`} />
+                  )}
                 </div>
               </div>
 

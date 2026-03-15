@@ -18,6 +18,7 @@ import ne from "@/components/BargainActions";
 import Se from "@/components/ShareLinkDialog";
 import PostBoostPanel from "@/components/PostBoostPanel";
 import SponsoredListings from "@/components/SponsoredListings";
+import PremiumRecommendations from "@/components/PremiumRecommendations";
 import { getApiOriginBase as de } from "@/lib/networkConfig";
 import { getUserId as getUserIdFromStorage } from "@/utils/authStorage";
 import {
@@ -1322,6 +1323,7 @@ function PostDetail() {
           ),
         isOwnerView && e.createElement(PostBoostPanel, { key: "boost-panel", postId: J || d }),
         !isOwnerView && e.createElement(SponsoredListings, { key: "sponsored", excludePostId: J || d, category: r?.category }),
+        !isOwnerView && e.createElement(PremiumRecommendations, { key: "premium-recs", postId: J || d }),
         e.createElement("div", { className: "h-8" }),
       ),
       e.createElement(le, {

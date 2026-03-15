@@ -2,6 +2,46 @@ const { pool, runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 const { getTierRules, getSubscriptionExpiry, getAllTiersDisplay, TIER_ORDER } = require("../config/tierRules");
 
+const normalizeQuotaPeriodMonths = (rules) => {
+  const raw = Number.parseInt(rules?.quotaPeriodMonths, 10);
+  if (!Number.isFinite(raw) || raw < 1) return 1;
+  return raw;
+};
+
+const isQuotaResetDue = (quotaResetAt, periodMonths) => {
+  if (!periodMonths || periodMonths < 1) return false;
+  if (!quotaResetAt) return true;
+  const lastReset = new Date(quotaResetAt);
+  if (Number.isNaN(lastReset.getTime())) return true;
+  const nextReset = new Date(lastReset);
+  nextReset.setMonth(nextReset.getMonth() + periodMonths);
+  return new Date() >= nextReset;
+};
+
+async function maybeResetQuota(sub) {
+  if (!sub?.id) return sub;
+  const rules = getTierRules(sub.plan_name);
+  const periodMonths = normalizeQuotaPeriodMonths(rules);
+  const hasQuota =
+    (rules.boostQuotaMonthly || 0) > 0 ||
+    (rules.featuredQuotaMonthly || 0) > 0 ||
+    (rules.spotlightQuotaMonthly || 0) > 0;
+  if (!hasQuota) return sub;
+  if (!isQuotaResetDue(sub.quota_reset_at, periodMonths)) return sub;
+
+  const resetResult = await runQuery(
+    `UPDATE user_subscriptions
+     SET boost_used_this_month = 0,
+         featured_used_this_month = 0,
+         spotlight_used_this_month = 0,
+         quota_reset_at = NOW()
+     WHERE id = $1
+     RETURNING id, plan_name, boost_used_this_month, featured_used_this_month, spotlight_used_this_month, quota_reset_at`,
+    [sub.id],
+  );
+  return resetResult.rows[0] || sub;
+}
+
 // GET /api/subscriptions/plans — list all available plans
 exports.getPlans = async (req, res) => {
   try {
@@ -44,8 +84,9 @@ exports.getMySubscription = async (req, res) => {
       });
     }
 
-    const sub = result.rows[0];
+    const sub = await maybeResetQuota(result.rows[0]);
     const tierRules = getTierRules(sub.plan_name);
+    const quotaPeriodMonths = normalizeQuotaPeriodMonths(tierRules);
     res.json({
       success: true,
       subscription: {
@@ -63,6 +104,7 @@ exports.getMySubscription = async (req, res) => {
         spotlightUsed: sub.spotlight_used_this_month,
         spotlightQuota: tierRules.spotlightQuotaMonthly,
         quotaResetAt: sub.quota_reset_at,
+        quotaPeriodMonths,
       },
       currentPlan: sub.current_plan || sub.plan_name,
       postCredits: sub.post_credits || 0,
@@ -114,8 +156,14 @@ exports.subscribe = async (req, res) => {
 
     // Update user's current plan
     await client.query(
-      `UPDATE users SET current_plan = $1, subscription_id = $2, post_credits = COALESCE(post_credits, 0) + $3 WHERE user_id = $4`,
-      [normalizedPlan, subscriptionId, postCredits, userId],
+      `UPDATE users
+       SET tier = $1,
+           current_plan = $1,
+           subscription_id = $2,
+           subscription_expiry = $3,
+           post_credits = COALESCE(post_credits, 0) + $4
+       WHERE user_id = $5`,
+      [normalizedPlan, subscriptionId, expiresAt, postCredits, userId],
     );
 
     await client.query("COMMIT");
@@ -165,12 +213,14 @@ exports.getQuotaStatus = async (req, res) => {
       });
     }
 
-    const sub = result.rows[0];
+    const sub = await maybeResetQuota(result.rows[0]);
     const rules = getTierRules(sub.plan_name);
+    const quotaPeriodMonths = normalizeQuotaPeriodMonths(rules);
     res.json({
       success: true,
       plan: sub.plan_name,
       quotaResetAt: sub.quota_reset_at,
+      quotaPeriodMonths,
       boost: {
         used: sub.boost_used_this_month,
         quota: rules.boostQuotaMonthly,
@@ -203,21 +253,116 @@ exports.useQuota = async (userId, quotaType) => {
   const column = columnMap[quotaType];
   if (!column) throw new Error(`Invalid quota type: ${quotaType}`);
 
+  const subResult = await runQuery(
+    `SELECT id, plan_name, boost_used_this_month, featured_used_this_month, spotlight_used_this_month, quota_reset_at
+     FROM user_subscriptions
+     WHERE user_id = $1 AND is_active = true
+     ORDER BY created_at DESC LIMIT 1`,
+    [userId],
+  );
+
+  if (!subResult.rows.length) return null;
+
+  const sub = await maybeResetQuota(subResult.rows[0]);
+
   const result = await runQuery(
     `UPDATE user_subscriptions
      SET ${column} = ${column} + 1
-     WHERE user_id = $1 AND is_active = true
+     WHERE id = $1
      RETURNING id, ${column} as used`,
-    [userId],
+    [sub.id],
   );
 
   return result.rows[0] || null;
 };
 
+// POST /api/subscriptions/trial — activate free trial for Silver or Premium
+exports.activateTrial = async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  const { planName } = req.body;
+  const normalizedPlan = String(planName || "").toLowerCase();
+
+  if (normalizedPlan !== "silver" && normalizedPlan !== "premium") {
+    return res.status(400).json({ error: "Free trial is only available for Silver and Premium plans" });
+  }
+
+  const tierRules = getTierRules(normalizedPlan);
+  if (!tierRules.trialDays || tierRules.trialDays <= 0) {
+    return res.status(400).json({ error: "No trial available for this plan" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Check if user already used a trial
+    const trialCheck = await client.query(
+      "SELECT id FROM user_subscriptions WHERE user_id = $1 AND is_trial = true LIMIT 1",
+      [userId],
+    );
+    if (trialCheck.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "You have already used your free trial" });
+    }
+
+    // Deactivate existing subscription
+    await client.query(
+      "UPDATE user_subscriptions SET is_active = false WHERE user_id = $1 AND is_active = true",
+      [userId],
+    );
+
+    // Calculate trial expiry
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + tierRules.trialDays);
+
+    // Create trial subscription
+    const insertResult = await client.query(
+      `INSERT INTO user_subscriptions (user_id, plan_name, expires_at, is_trial, quota_reset_at)
+       VALUES ($1, $2, $3, true, NOW())
+       RETURNING id`,
+      [userId, normalizedPlan, expiresAt],
+    );
+    const subscriptionId = insertResult.rows[0].id;
+
+    // Update user's current plan
+    await client.query(
+      `UPDATE users
+       SET tier = $1, current_plan = $1, subscription_id = $2, subscription_expiry = $3
+       WHERE user_id = $4`,
+      [normalizedPlan, subscriptionId, expiresAt, userId],
+    );
+
+    await client.query("COMMIT");
+
+    logger.info(`[SUBSCRIPTION] User ${userId} activated ${tierRules.trialDays}-day trial for ${normalizedPlan}`);
+
+    res.status(201).json({
+      success: true,
+      message: `${tierRules.trialDays}-day free trial activated for ${tierRules.name}`,
+      subscription: {
+        id: subscriptionId,
+        planName: normalizedPlan,
+        expiresAt,
+        isTrial: true,
+        trialDays: tierRules.trialDays,
+        features: tierRules.features,
+      },
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    logger.error("[SUBSCRIPTION] activateTrial error:", err);
+    res.status(500).json({ error: "Failed to activate trial" });
+  } finally {
+    client.release();
+  }
+};
+
 // Internal: check if user has quota remaining
 exports.checkQuota = async (userId, quotaType) => {
   const result = await runQuery(
-    `SELECT us.plan_name, us.boost_used_this_month, us.featured_used_this_month, us.spotlight_used_this_month
+    `SELECT us.id, us.plan_name, us.boost_used_this_month, us.featured_used_this_month, us.spotlight_used_this_month, us.quota_reset_at
      FROM user_subscriptions us
      WHERE us.user_id = $1 AND us.is_active = true
      ORDER BY us.created_at DESC LIMIT 1`,
@@ -226,7 +371,7 @@ exports.checkQuota = async (userId, quotaType) => {
 
   if (result.rows.length === 0) return { hasQuota: false, plan: "basic", remaining: 0 };
 
-  const sub = result.rows[0];
+  const sub = await maybeResetQuota(result.rows[0]);
   const rules = getTierRules(sub.plan_name);
   const quotaMap = {
     boost: { used: sub.boost_used_this_month, max: rules.boostQuotaMonthly },

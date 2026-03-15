@@ -46,6 +46,10 @@ const PlanCard = memo(function PlanCard({ plan, currentPlan, onSubscribe, subscr
   const isCurrent = currentPlan === plan.name;
   const Icon = TIER_ICONS[plan.name] || Zap;
   const borderColor = TIER_COLORS[plan.name] || "border-gray-200";
+  const quotaPeriodLabel =
+    plan.quotaPeriodMonths && plan.quotaPeriodMonths > 1
+      ? `per ${plan.quotaPeriodMonths} months`
+      : "per month";
 
   return (
     <Card className={`relative overflow-hidden ${borderColor} ${isCurrent ? "bg-primary/5" : ""}`}>
@@ -85,15 +89,15 @@ const PlanCard = memo(function PlanCard({ plan, currentPlan, onSubscribe, subscr
 
         {plan.quotas && (
           <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-            <p className="text-xs font-medium">Monthly Quotas:</p>
+            <p className="text-xs font-medium">Plan Quotas ({quotaPeriodLabel}):</p>
             {plan.quotas.boost > 0 && (
-              <p className="text-xs text-muted-foreground">{plan.quotas.boost} Boost/mo</p>
+              <p className="text-xs text-muted-foreground">{plan.quotas.boost} Boost</p>
             )}
             {plan.quotas.featured > 0 && (
-              <p className="text-xs text-muted-foreground">{plan.quotas.featured} Featured/mo</p>
+              <p className="text-xs text-muted-foreground">{plan.quotas.featured} Featured</p>
             )}
             {plan.quotas.spotlight > 0 && (
-              <p className="text-xs text-muted-foreground">{plan.quotas.spotlight} Spotlight/mo</p>
+              <p className="text-xs text-muted-foreground">{plan.quotas.spotlight} Spotlight</p>
             )}
           </div>
         )}

@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS coin_transactions (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(user_id),
+  user_id UUID NOT NULL REFERENCES users(user_id),
   amount DECIMAL(10,2) NOT NULL,       -- positive=earn, negative=spend
   type VARCHAR(30) NOT NULL,           -- 'welcome_bonus','post','sale','purchase','referral_l1','referral_l2','referral_l3','redeem_boost','redeem_featured','redeem_spotlight'
   reference_id TEXT,                   -- idempotency key
