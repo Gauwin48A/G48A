@@ -42,8 +42,6 @@ import {
 import Re from "@/components/ShareLinkDialog";
 import {
   buildSavedPostsMap,
-  beginSavedPostMutation,
-  endSavedPostMutation,
   extractSavedPostIds,
   getSavedPostsMap,
   replaceSavedPostIds,
@@ -419,30 +417,26 @@ const Ve = 5,
           W(!0);
           return;
         }
-        const s = String(r);
-        const a = beginSavedPostMutation(s);
-        if (!a) return;
-        const l = !!savedPosts[a],
-          P = !l;
-        setSavedPosts((k) => ({ ...k, [a]: P })), setSavedPostStatus(a, P);
+        const s = String(r),
+          a = !!savedPosts[s],
+          l = !a;
+        setSavedPosts((P) => ({ ...P, [s]: l })), setSavedPostStatus(s, l);
         try {
-          P
+          l
             ? await fetch(`${L}/api/wishlist`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ postId: a }),
+                body: JSON.stringify({ postId: s }),
               })
-            : await fetch(`${L}/api/wishlist/${a}`, {
+            : await fetch(`${L}/api/wishlist/${s}`, {
                 method: "DELETE",
                 credentials: "include",
               });
         } catch {
-          setSavedPosts((k) => ({ ...k, [a]: l })),
-            setSavedPostStatus(a, l),
-            R(l ? "Failed to remove saved post" : "Failed to save post");
-        } finally {
-          endSavedPostMutation(a);
+          setSavedPosts((P) => ({ ...P, [s]: a })),
+            setSavedPostStatus(s, a),
+            R(a ? "Failed to remove saved post" : "Failed to save post");
         }
       },
       ke = (t) => {
