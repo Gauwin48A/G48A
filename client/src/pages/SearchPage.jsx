@@ -173,7 +173,7 @@ const u = "recentSearches",
         { className: "sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-lg" },
         e.createElement(
           "div",
-          { className: "max-w-2xl mx-auto px-4 py-3" },
+          { className: "max-w-2xl mx-auto px-4 py-3 page-shell page-pad" },
           e.createElement(
             "form",
             { onSubmit: $, className: "flex items-center gap-3" },
@@ -231,8 +231,7 @@ const u = "recentSearches",
       e.createElement(
         "div",
         {
-          className: "max-w-2xl mx-auto px-4 py-6 space-y-6",
-          style: { paddingBottom: "120px" },
+          className: "max-w-2xl mx-auto px-4 py-6 space-y-6 page-shell page-pad",
         },
         O &&
           e.createElement(

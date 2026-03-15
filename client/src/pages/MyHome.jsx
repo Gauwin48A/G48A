@@ -641,18 +641,18 @@ const vt = () => {
         "div",
         {
           className:
-            "flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-blue-100",
+            "flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-900 dark:to-gray-800",
         },
         e.createElement(
           "div",
           { className: "text-center" },
           e.createElement("div", {
             className:
-              "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4",
+              "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4",
           }),
           e.createElement(
             "p",
-            { className: "text-gray-600 font-medium" },
+            { className: "text-gray-600 dark:text-gray-300 font-medium" },
             l("loading_posts"),
           ),
         ),
@@ -667,7 +667,7 @@ const vt = () => {
             },
             e.createElement(
               de,
-              { className: "max-w-xl mx-auto border-red-200" },
+              { className: "max-w-xl mx-auto border-red-200 page-shell page-pad" },
               e.createElement(
                 ge,
                 { className: "p-8 text-center" },
@@ -731,7 +731,7 @@ const vt = () => {
               }),
               e.createElement(
                 "div",
-                { className: "relative max-w-4xl mx-auto px-4 py-10 sm:px-6" },
+                { className: "relative py-10 sm:py-12 max-w-4xl mx-auto px-4 sm:px-6 page-shell page-pad" },
                 e.createElement(
                   "button",
                   {
@@ -775,8 +775,7 @@ const vt = () => {
             e.createElement(
               "div",
               {
-                className:
-                  "max-w-4xl mx-auto px-4 mt-8 -translate-y-8 mb-6 relative z-10",
+                className: "mt-6 mb-8 relative z-10 max-w-4xl mx-auto px-4 sm:px-6 page-shell page-pad",
               },
               e.createElement(
                 "div",
@@ -937,7 +936,7 @@ const vt = () => {
             ),
             e.createElement(
               "div",
-              { className: "max-w-4xl mx-auto px-4 pb-8" },
+              { className: "pb-10 max-w-4xl mx-auto px-4 sm:px-6 page-shell page-pad" },
               listError
                 ? e.createElement(
                     Ye,
@@ -968,7 +967,7 @@ const vt = () => {
                 "div",
                 {
                   className:
-                    "w-full flex justify-center gap-2 py-2 mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide",
+                    "w-full flex justify-start gap-2 py-2 mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide",
                 },
                 [
                   {
@@ -1106,7 +1105,7 @@ const vt = () => {
 
               e.createElement(
                 "div",
-                { className: "w-full flex flex-col gap-6 pb-24 pt-20" },
+                { className: "w-full flex flex-col gap-6" },
                 f.length === 0
                   ? e.createElement(
                       "div",
@@ -1433,7 +1432,7 @@ const vt = () => {
             ),
             e.createElement(
               "div",
-              { className: "fixed bottom-20 right-4 z-40" },
+              { className: "fixed right-4 z-40 bottom-[calc(var(--bottom-nav-height)+var(--bottom-nav-safe)+1rem)]" },
               e.createElement(
                 g,
                 {
@@ -1573,7 +1572,6 @@ const vt = () => {
           {
             className:
               "min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700",
-            style: { paddingBottom: "120px" },
           },
           e.createElement(
             "div",
@@ -1599,14 +1597,14 @@ const vt = () => {
           ),
           e.createElement(
             "div",
-            { className: "max-w-lg mx-auto px-6 space-y-4" },
+            { className: "max-w-2xl mx-auto px-6 space-y-4 page-shell page-pad" },
             e.createElement(
               ne,
               {
                 to: "/login",
                 state: { returnTo: "/my-home" },
                 className:
-                  "block bg-white rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300",
+                  "block bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300",
               },
               e.createElement(
                 "div",
@@ -1624,16 +1622,16 @@ const vt = () => {
                   { className: "flex-1" },
                   e.createElement(
                     "h3",
-                    { className: "text-xl font-bold text-gray-900" },
+                    { className: "text-xl font-bold text-gray-900 dark:text-white" },
                     l("login"),
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-gray-500 text-sm" },
+                    { className: "text-gray-500 dark:text-gray-400 text-sm" },
                     l("already_account"),
                   ),
                 ),
-                e.createElement(be, { className: "w-6 h-6 text-gray-400" }),
+                e.createElement(be, { className: "w-6 h-6 text-gray-400 dark:text-gray-500" }),
               ),
             ),
             e.createElement(
@@ -1676,3 +1674,4 @@ const vt = () => {
 };
 var zt = vt;
 export { zt as default };
+

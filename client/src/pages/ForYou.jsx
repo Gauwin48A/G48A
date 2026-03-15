@@ -322,7 +322,7 @@ const te = 12,
           ),
           e.createElement(
             "div",
-            { className: "relative z-10 max-w-md w-full" },
+            { className: "relative z-10 max-w-md w-full page-shell page-pad" },
             e.createElement(
               "div",
               {
@@ -436,7 +436,7 @@ const te = 12,
           "div",
           {
             className:
-              "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24",
+              "min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900",
           },
           e.createElement(
             "div",
@@ -446,7 +446,7 @@ const te = 12,
             },
             e.createElement(
               "div",
-              { className: "max-w-6xl mx-auto px-4 py-4" },
+              { className: "max-w-6xl mx-auto px-4 py-4 page-shell page-pad" },
               e.createElement(
                 "div",
                 { className: "flex flex-wrap items-center justify-between gap-3" },
@@ -504,7 +504,7 @@ const te = 12,
             { className: "px-4 pt-4" },
             e.createElement(
               "div",
-              { className: "max-w-6xl mx-auto flex flex-wrap gap-2" },
+              { className: "max-w-6xl mx-auto flex flex-wrap gap-2 page-shell page-pad" },
               e.createElement(
                 o,
                 {
@@ -545,7 +545,7 @@ const te = 12,
                 "div",
                 {
                   className:
-                    "max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2",
+                    "max-w-6xl mx-auto bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 page-shell page-pad",
                 },
                 e.createElement(
                   "p",
@@ -569,7 +569,7 @@ const te = 12,
             ),
           e.createElement(
             "div",
-            { className: "max-w-6xl mx-auto px-4 pt-4" },
+            { className: "max-w-6xl mx-auto px-4 pt-4 page-shell page-pad" },
           e.createElement(
             "div",
             { className: "mb-6" },
@@ -977,7 +977,7 @@ const te = 12,
             ae
               ? e.createElement(
                   "div",
-                  { className: "flex flex-col gap-6 w-full max-w-5xl mx-auto" },
+                  { className: "flex flex-col gap-6 w-full max-w-5xl mx-auto page-shell page-pad" },
                   [1, 2, 3].map((t) =>
                     e.createElement(
                       "div",
@@ -1006,7 +1006,7 @@ const te = 12,
                     ee,
                     {
                       className:
-                        "max-w-2xl mx-auto p-6 text-center border-red-200",
+                        "max-w-2xl mx-auto p-6 text-center border-red-200 page-shell page-pad",
                     },
                     e.createElement(
                       "div",

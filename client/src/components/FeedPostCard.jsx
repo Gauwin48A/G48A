@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
@@ -6,9 +6,14 @@ import { useNavigate } from 'react-router-dom';
 
 import { useTranslation } from 'react-i18next';
 
-const FeedPostCard = ({ post }) => {
+const FeedPostCard = memo(function FeedPostCard({ post }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const handleViewDetails = useCallback(() => {
+    navigate(`/post/${post.id || post.post_id}`, { state: { post } });
+  }, [navigate, post]);
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow mb-4 rounded-2xl border border-blue-100 flex flex-col p-0">
       <CardHeader className="pb-2 flex items-center justify-between">
@@ -28,7 +33,7 @@ const FeedPostCard = ({ post }) => {
         <div className="flex items-center justify-end">
           <button
             className="h-7 px-3 bg-blue-600 text-white rounded text-[10px] sm:h-8 sm:text-xs md:text-sm font-medium hover:bg-blue-700"
-            onClick={() => navigate(`/post/${post.id || post.post_id}`, { state: { post } })}
+            onClick={handleViewDetails}
           >
             {t("view_details")}
           </button>
@@ -36,6 +41,6 @@ const FeedPostCard = ({ post }) => {
       </CardContent>
     </Card>
   );
-};
+});
 
 export default FeedPostCard;

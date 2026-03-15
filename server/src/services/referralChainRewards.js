@@ -1,8 +1,8 @@
 const logger = require("../utils/logger");
 const { applyRewardDeltaInTransaction } = require("./rewardsLedgerService");
 
-const DEFAULT_CHAIN_POINTS = [50, 25, 10, 5, 2];
-const DEFAULT_MAX_CHAIN_DEPTH = DEFAULT_CHAIN_POINTS.length;
+const DEFAULT_CHAIN_POINTS = [2, 1, 0.5];
+const DEFAULT_MAX_CHAIN_DEPTH = 3;
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 
 function parseOptionalString(value) {

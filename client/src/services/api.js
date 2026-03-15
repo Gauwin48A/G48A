@@ -15,6 +15,9 @@ const AUTH_REFRESH_EXCLUDED_PATHS = [
   "/auth/signup",
   "/auth/send-otp",
   "/auth/verify-otp",
+  "/auth/aadhaar/send-otp",
+  "/auth/aadhaar/verify-otp",
+  "/auth/aadhaar/complete-signup",
   "/auth/session",
   "/auth/refresh-token",
   "/auth/csrf-token",
@@ -49,6 +52,12 @@ const MEDIA_URL_KEYS = new Set([
 ]);
 const MEDIA_LIST_KEYS = new Set(["images", "image_urls", "imageUrls"]);
 let refreshPromise = null;
+// External refresh delegate — AuthContext registers its refresh function here
+// so that only ONE refresh path exists (avoids dual-caller race condition)
+let externalRefreshFn = null;
+export function setRefreshDelegate(fn) {
+  externalRefreshFn = typeof fn === "function" ? fn : null;
+}
 let csrfBootstrapPromise = null;
 let backendRecoveryPromise = null;
 let backendRecoveryFailureUntil = 0;
@@ -287,6 +296,22 @@ async function refreshAccessToken() {
       waitMs: Math.max(0, refreshFailureBackoffUntil - Date.now()),
     });
     return null;
+  }
+  // If AuthContext has registered a delegate, use it as the single source of truth
+  if (externalRefreshFn) {
+    if (!refreshPromise) {
+      refreshPromise = externalRefreshFn()
+        .then((token) => {
+          refreshFailureBackoffUntil = 0;
+          return token;
+        })
+        .catch((err) => {
+          refreshFailureBackoffUntil = Date.now() + REFRESH_FAILURE_BACKOFF_MS;
+          throw err;
+        })
+        .finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
   }
   if (!refreshPromise) {
     const apiRootUrl = getCurrentApiRootUrl();

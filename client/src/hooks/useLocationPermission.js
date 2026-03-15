@@ -45,6 +45,7 @@ export default function useLocationPermission() {
           allowCache: true,
           allowIpFallback: true,
           requiredAccuracy: 500,
+          strictAccuracy: false,
         }),
         LOCATION_TIMEOUT_MS
       );
@@ -101,12 +102,7 @@ export default function useLocationPermission() {
       setLoading(false);
       setPermissionGranted(false);
 
-      sendLocation({
-        latitude: 0,
-        longitude: 0,
-        permission_status: permissionStatus,
-        provider: "location_hook",
-      }).catch(() => {});
+      // Do NOT send (0,0) to backend — server rejects Null Island coordinates
     }
   }, []);
 

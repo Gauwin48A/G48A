@@ -1,4 +1,5 @@
-﻿const pool = require("../config/db");
+﻿const { pool, runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { parseOptionalString, parsePositiveInt, parsePositiveNumber } = require("../utils/parseHelpers");
 const crypto = require("crypto");
 const otpService = require("../services/otpService");
 const cacheService = require("../services/cacheService");
@@ -16,10 +17,11 @@ const {
   hasPriorCompletedTransactions,
 } = require("../services/transactionRewardService");
 
+/* ── Constants ─────────────────────────────────────────────────── */
+
 const DEFAULT_PENDING_SALES_LIMIT = 50;
 const MAX_PENDING_SALES_LIMIT = 200;
 const PENDING_SALES_CACHE_TTL_SECONDS = 15;
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const PENDING_SALE_STATUSES = ["pending_buyer_confirm", "initiated", "pending"];
 const FIRST_SALE_BONUS_POINTS = Number.parseInt(process.env.FIRST_SALE_BONUS_POINTS, 10) || 100;
 const FIRST_PURCHASE_BONUS_POINTS =
@@ -30,34 +32,11 @@ const COMPLETED_TRANSACTION_STATUSES = ["completed", "success"];
 
 let txSchemaCache = { value: null, expiresAt: 0 };
 
-function runQuery(text, values = []) {
-  return pool.query({ text, values, query_timeout: DB_QUERY_TIMEOUT_MS });
-}
-
-function getUserId(req) {
-  return req.user?.userId || req.user?.id || req.user?.user_id || null;
-}
+/* ── Helpers ───────────────────────────────────────────────────── */
 
 function idsEqual(a, b) {
-  if (a === undefined || a === null || b === undefined || b === null) return false;
+  if (a == null || b == null) return false;
   return String(a) === String(b);
-}
-
-function parsePositiveNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
-  return Math.min(parsed, max);
-}
-
-function parseOptionalString(value) {
-  if (value === undefined || value === null) return null;
-  const normalized = String(value).trim();
-  return normalized.length ? normalized : null;
 }
 
 async function hasAnyCompletedTransactions(client, userId, excludeTransactionId) {
@@ -279,7 +258,7 @@ async function setTransactionStatus(client, schema, transactionId, candidates, o
 
 
 const initiateSale = async (req, res) => {
-  const sellerId = getUserId(req);
+  const sellerId = getAuthUserId(req);
   const { postId, buyerId, agreedPrice } = req.body || {};
 
   if (!sellerId) {
@@ -509,7 +488,7 @@ const initiateSale = async (req, res) => {
 };
 
 const confirmSale = async (req, res) => {
-  const buyerId = getUserId(req);
+  const buyerId = getAuthUserId(req);
   const { transactionId, otp } = req.body || {};
 
   if (!buyerId) {
@@ -850,7 +829,7 @@ const confirmSale = async (req, res) => {
 };
 
 const cancelSale = async (req, res) => {
-  const userId = getUserId(req);
+  const userId = getAuthUserId(req);
   const { transactionId, reason } = req.body || {};
 
   if (!userId) {
@@ -953,7 +932,7 @@ const cancelSale = async (req, res) => {
 };
 
 const getPendingSales = async (req, res) => {
-  const userId = getUserId(req);
+  const userId = getAuthUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
   }

@@ -162,7 +162,8 @@ export const useNearbyPosts = (options = {}) => {
                 const bestLoc = await getBestAvailableLocation({
                     allowCache: true,
                     allowIpFallback: true,
-                    requiredAccuracy: 500
+                    requiredAccuracy: 500,
+                    strictAccuracy: false,
                 });
                 if (!active) return;
                 setLocation({
@@ -172,8 +173,8 @@ export const useNearbyPosts = (options = {}) => {
             } catch (err) {
                 console.warn('[Geolocation] Error:', err?.message || err);
                 if (!active) return;
-                // Fallback to default location (Hyderabad)
-                setLocation({ lat: 17.385, lng: 78.4867 });
+                // No fallback — location remains null, nearby posts won't load without real location
+                setLocation(null);
             }
         };
 

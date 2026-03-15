@@ -32,7 +32,6 @@ import { useAuth } from "@/context/AuthContext";
 import { fetchCategoriesCached } from "@/services/categoriesService";
 import { getSavedPostsMap, subscribeSavedPosts } from "@/utils/savedPosts";
 import LanguageSelector from "./LanguageSelector";
-import LocationSelector from "./LocationSelector";
 import { useToast } from "@/hooks/use-toast";
 import { navigateBack } from "@/utils/navigation";
 
@@ -417,7 +416,6 @@ export default function GreenNavbar() {
   const isAuthenticated = Boolean(authIsAuthenticated ?? user);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
   const [isCompactMenuOpen, setIsCompactMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -825,15 +823,14 @@ export default function GreenNavbar() {
                     </span>
                   </Link>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsLocationOpen(true)}
-                    className="inline-flex h-7 max-w-[120px] items-center gap-1 rounded-full bg-white/15 px-1.5 text-[10px] font-semibold text-white shadow-sm hover:bg-white/25 sm:max-w-[200px] sm:px-2 sm:text-xs"
+                  <div
+                    className="inline-flex h-7 max-w-[120px] items-center gap-1 rounded-full bg-white/15 px-1.5 text-[10px] font-semibold text-white shadow-sm sm:max-w-[200px] sm:px-2 sm:text-xs"
                     title={locationLabel}
+                    aria-label={locationLabel}
                   >
                     <FiMapPin className="h-4 w-4" />
                     <span className="truncate">{locationLabel}</span>
-                  </button>
+                  </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-1 py-0.5 backdrop-blur">
@@ -858,26 +855,26 @@ export default function GreenNavbar() {
                           onClick={() => setIsCompactMenuOpen(false)}
                           className="absolute inset-0 bg-black/40"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white px-4 pb-6 pt-4 shadow-2xl">
+                        <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white dark:bg-slate-900 px-4 pb-6 pt-4 shadow-2xl">
                           <div className="flex items-center justify-between pb-3">
-                            <h3 className="text-base font-semibold text-slate-800">
+                            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
                               {t("quick_settings") || "Quick settings"}
                             </h3>
                             <button
                               type="button"
                               onClick={() => setIsCompactMenuOpen(false)}
-                              className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+                              className="rounded-full p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                             >
                               <FiX className="h-4 w-4" />
                             </button>
                           </div>
                           <div className="space-y-3">
-                            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-3">
+                            <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-3">
                               <div>
-                                <p className="text-sm font-semibold text-slate-800">
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                                   {t("language") || "Language"}
                                 </p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                   {t("choose_language") || "Choose your preferred language"}
                                 </p>
                               </div>
@@ -887,19 +884,19 @@ export default function GreenNavbar() {
                             <button
                               type="button"
                               onClick={handleToggleDarkMode}
-                              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-3 text-left"
+                              className="flex w-full items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-3 text-left"
                             >
                               <div>
-                                <p className="text-sm font-semibold text-slate-800">
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                                   {isDarkMode
                                     ? t("light_mode") || "Light mode"
                                     : t("dark_mode") || "Dark mode"}
                                 </p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                   {t("theme") || "Theme"}
                                 </p>
                               </div>
-                              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
+                              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
                                 {isDarkMode ? (
                                   <FiSun className="h-4 w-4 text-amber-500" />
                                 ) : (
@@ -909,7 +906,7 @@ export default function GreenNavbar() {
                             </button>
 
                             <div className="grid gap-2">
-                              <p className="text-sm font-semibold text-slate-800">
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                                 {t("layout") || "Layout"}
                               </p>
                               {LAYOUT_PRESETS.map((preset) => {
@@ -922,18 +919,18 @@ export default function GreenNavbar() {
                                     onClick={() => handleLayoutModeChange(preset.key)}
                                     className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left ${
                                       active
-                                        ? "border-blue-300 bg-blue-50 text-blue-700"
-                                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                                        ? "border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                                        : "border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                                     }`}
                                   >
-                                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm">
+                                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white dark:bg-slate-800 shadow-sm">
                                       <Icon className="h-4 w-4" />
                                     </span>
                                     <span className="flex flex-1 flex-col">
                                       <span className="text-sm font-semibold">
                                         {t(preset.labelKey) || preset.key}
                                       </span>
-                                      <span className="text-[11px] font-normal text-slate-500">
+                                      <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
                                         {preset.width} x {preset.height}
                                       </span>
                                     </span>
@@ -1113,15 +1110,14 @@ export default function GreenNavbar() {
                   </span>
                 </Link>
 
-                <button
-                  type="button"
-                  onClick={() => setIsLocationOpen(true)}
-                  className="inline-flex h-6 max-w-[72px] items-center gap-0.5 rounded-xl bg-blue-500 px-1 text-[8px] font-semibold text-white hover:bg-blue-500/80 sm:h-10 sm:max-w-[180px] sm:gap-1 sm:px-2.5 sm:text-xs md:max-w-[240px] md:text-sm"
+                <div
+                  className="inline-flex h-6 max-w-[72px] items-center gap-0.5 rounded-xl bg-blue-500 px-1 text-[8px] font-semibold text-white sm:h-10 sm:max-w-[180px] sm:gap-1 sm:px-2.5 sm:text-xs md:max-w-[240px] md:text-sm"
                   title={locationLabel}
+                  aria-label={locationLabel}
                 >
                   <FiMapPin className="h-4 w-4" />
                   <span className="truncate">{locationLabel}</span>
-                </button>
+                </div>
               </div>
 
               <form
@@ -1704,7 +1700,7 @@ export default function GreenNavbar() {
       ) : null}
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-1 py-1.5 shadow-lg backdrop-blur"
+        className="bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-1 py-1.5 shadow-lg backdrop-blur"
         aria-label={t("bottom_navigation") || "Bottom navigation"}
         data-no-auto-translate="true"
       >
@@ -1766,10 +1762,6 @@ export default function GreenNavbar() {
         </div>
       </nav>
 
-      <LocationSelector
-        isOpen={isLocationOpen}
-        onClose={() => setIsLocationOpen(false)}
-      />
     </>
   );
 }

@@ -46,6 +46,8 @@ export default function PostCard({ post }) {
             alt={title}
             className="w-full h-full object-cover"
             onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg"; }}
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -66,11 +68,11 @@ export default function PostCard({ post }) {
         <div className="flex items-start justify-between">
           <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
           <div className="text-right">
-            <p className="text-lg sm:text-2xl font-bold text-green-600">{formatPrice(price)}</p>
+            <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">{formatPrice(price)}</p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-gray-600">
+        <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-gray-600 dark:text-gray-400">
           <span>{brand}</span>
           <span>•</span>
           <span>{model}</span>
@@ -84,14 +86,14 @@ export default function PostCard({ post }) {
       <CardContent>
         <div className="space-y-2 sm:space-y-3">
           {/* Location */}
-          <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-gray-600">
+          <div className="flex items-center space-x-2 text-[11px] sm:text-sm text-gray-600 dark:text-gray-400">
             <MapPin className="w-4 h-4" />
             <span>{location}</span>
           </div>
 
           {/* Time Info */}
           <div className="flex items-center justify-between text-[11px] sm:text-sm">
-            <div className="flex items-center space-x-2 text-gray-600">
+            <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
               <Clock className="w-4 h-4" />
               <span>Posted {formatDate(createdAt)}</span>
             </div>

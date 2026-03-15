@@ -46,6 +46,8 @@ const PostImageCarousel = ({ imageUrls = [], title, postId, handleViewDetails })
           className="w-full h-full object-cover transition-opacity duration-300"
           // Add a simple error fallback if image fails to load
           onError={(e) => { e.target.src = '/placeholder-fallback.svg'; }}
+          loading="lazy"
+          decoding="async"
         />
       ) : (
         <div className="w-full h-full bg-gray-100 flex items-center justify-center">

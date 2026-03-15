@@ -27,7 +27,7 @@ const parseNumberEnv = (rawValue, fallback) => {
 };
 
 const CONFIG = {
-  maxAccuracyMetres: parseNumberEnv(process.env.MAX_ACCURACY_METRES, 20),
+  maxAccuracyMetres: parseNumberEnv(process.env.MAX_ACCURACY_METRES, 100),
   maxAgeMs: parseNumberEnv(process.env.LOCATION_MAX_AGE_MS, 10_000),
   targetRadiusMetres: parseNumberEnv(process.env.TARGET_RADIUS_METRES, 10),
   radiusToleranceMetres: parseNumberEnv(process.env.RADIUS_TOLERANCE_METRES, 5),
@@ -177,9 +177,38 @@ const computeSignature = (payload, secret) => {
   return crypto.createHmac("sha256", secret).update(canonical).digest("hex");
 };
 
+const SIGNATURE_MAX_AGE_MS = 60 * 1000;
+const usedNonces = new Map();
+const NONCE_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+
+// Periodically clean up expired nonces to prevent unbounded memory growth
+setInterval(() => {
+  const cutoff = Date.now() - SIGNATURE_MAX_AGE_MS * 2;
+  for (const [nonce, timestamp] of usedNonces) {
+    if (timestamp < cutoff) usedNonces.delete(nonce);
+  }
+}, NONCE_CLEANUP_INTERVAL_MS).unref();
+
 const verifySignature = (payload, signature, secret) => {
   if (!secret) return true;
   if (!signature) return false;
+
+  // Check nonce freshness to prevent replay attacks
+  const signedAt = Number(payload?._signed_at);
+  const nonce = String(payload?._nonce || "");
+  if (nonce && Number.isFinite(signedAt)) {
+    const ageMs = Date.now() - signedAt;
+    if (ageMs > SIGNATURE_MAX_AGE_MS || ageMs < -30000) {
+      logger.warn("[LocationVerification] Signature timestamp too old or in future", { ageMs });
+      return false;
+    }
+    if (usedNonces.has(nonce)) {
+      logger.warn("[LocationVerification] Replay detected — nonce already used");
+      return false;
+    }
+    usedNonces.set(nonce, signedAt);
+  }
+
   const expected = computeSignature(payload, secret);
   const expectedBuffer = Buffer.from(expected);
   const providedBuffer = Buffer.from(String(signature || ""));
@@ -556,18 +585,22 @@ const evaluateTrustDecision = (trustScore) => {
 const verifyLocationPayload = async ({ payload, req, userId }) => {
   await ensureLocationVerificationSchema();
 
-  const latitude = toFiniteNumber(payload.latitude ?? payload.lat);
-  const longitude = toFiniteNumber(payload.longitude ?? payload.lng);
+  const rawLatitude = toFiniteNumber(payload.latitude ?? payload.lat);
+  const rawLongitude = toFiniteNumber(payload.longitude ?? payload.lng);
   const accuracy = toFiniteNumber(payload.accuracy);
   const timestampMs = parseTimestamp(payload.timestamp);
 
-  if (!isValidCoordinate(latitude, longitude)) {
+  if (!isValidCoordinate(rawLatitude, rawLongitude)) {
     throw new LocationVerificationError(
       "Invalid latitude or longitude",
       400,
       "GPS_INVALID",
     );
   }
+
+  // Enforce 7-digit coordinate precision to prevent false precision claims
+  const latitude = Number(rawLatitude.toFixed(7));
+  const longitude = Number(rawLongitude.toFixed(7));
   if (!Number.isFinite(accuracy)) {
     throw new LocationVerificationError("Missing GPS accuracy", 400, "ACCURACY_MISSING");
   }

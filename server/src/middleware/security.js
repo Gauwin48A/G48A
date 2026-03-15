@@ -45,7 +45,10 @@ function verifyCandidateToken(token) {
   }
 
   try {
-    return verifyToken(token, JWT_CONFIG.SECRET);
+    return verifyToken(token, JWT_CONFIG.SECRET, {
+      issuer: JWT_CONFIG.ISSUER,
+      audience: JWT_CONFIG.AUDIENCE,
+    });
   } catch {
     return null;
   }
@@ -129,10 +132,16 @@ async function resolveAuthState(req) {
       };
     }
   } catch (policyError) {
-    logger.warn("[AUTH] Access-token policy check failed, continuing request", {
+    logger.warn("[AUTH] Access-token policy check failed, denying request", {
       message: policyError?.message,
       path: req.path,
     });
+    return {
+      ok: false,
+      state: "policy_error",
+      token: verifiedAuth.token,
+      payload: null,
+    };
   }
 
   return {
@@ -159,7 +168,10 @@ function getAuthenticatedRateLimitKey(req) {
   const token = getAccessTokenFromRequest(req, { preferCookie: true });
   if (token) {
     try {
-      const payload = verifyToken(token, JWT_CONFIG.SECRET);
+      const payload = verifyToken(token, JWT_CONFIG.SECRET, {
+        issuer: JWT_CONFIG.ISSUER,
+        audience: JWT_CONFIG.AUDIENCE,
+      });
       const userId =
         payload?.userId ??
         payload?.id ??
@@ -241,6 +253,12 @@ exports.authenticateToken = async (req, res, next) => {
       .json({ error: "Session expired due to password change. Please login again." });
   }
 
+  if (authState.state === "policy_error") {
+    return res
+      .status(500)
+      .json({ error: "Authentication service temporarily unavailable. Please try again." });
+  }
+
   req.user = authState.payload;
   req.authToken = authState.token;
   req.authState = authState.state;
@@ -273,9 +291,26 @@ exports.sanitizeInput = (req, res, next) => {
   next();
 };
 const helmet = require("helmet");
+const isProductionEnv = process.env.NODE_ENV === "production";
 exports.securityHeaders = helmet({
-  // Allow media loaded from API origin (5001) to render in frontend origin (8081).
   crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: isProductionEnv ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "https:", "wss:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  } : false,
+  hsts: isProductionEnv ? { maxAge: 63072000, includeSubDomains: true, preload: true } : false,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 });
 exports.loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1e3,

@@ -32,7 +32,7 @@ const tierPlans = [
     periodKey: "per_month",
     periodFallback: "per month",
     icon: Clock,
-    color: "bg-gray-100 border-gray-200",
+    color: "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700",
     buttonClass: "bg-gray-600 hover:bg-gray-700",
     ctaLabel: "Start Free",
     features: [
@@ -52,7 +52,7 @@ const tierPlans = [
     periodKey: "per_6_months",
     periodFallback: "per 6 months",
     icon: Shield,
-    color: "bg-blue-50 border-blue-200",
+    color: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
     buttonClass: "bg-blue-600 hover:bg-blue-700",
     popular: true,
     ctaLabel: "Get Silver",
@@ -98,7 +98,7 @@ const boostPlans = [
     description: "Lift a listing higher in search results for a quick visibility bump.",
     icon: Zap,
     accent: "text-emerald-600",
-    bg: "bg-emerald-50 border-emerald-200",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800",
   },
   {
     key: "featured",
@@ -107,7 +107,7 @@ const boostPlans = [
     description: "Featured badge + higher placement in feeds and category results.",
     icon: Sparkles,
     accent: "text-purple-600",
-    bg: "bg-purple-50 border-purple-200",
+    bg: "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800",
   },
   {
     key: "spotlight",
@@ -116,7 +116,7 @@ const boostPlans = [
     description: "Top visibility on the homepage featured slots.",
     icon: TrendingUp,
     accent: "text-orange-600",
-    bg: "bg-orange-50 border-orange-200",
+    bg: "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800",
   },
 ];
 
@@ -206,13 +206,13 @@ export default function TierSelection() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto mb-4">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigateBack(navigate)}
-          className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+          className="flex items-center gap-1 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -224,10 +224,10 @@ export default function TierSelection() {
             <TrendingUp className="w-8 h-8 text-white" />
           </div>
         </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
           {t("choose_your_selling_power")}
         </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
           {tr(
             "selling_power_subtitle_new",
             "Choose a membership plan. Boosts are purchased separately per listing.",
@@ -245,9 +245,9 @@ export default function TierSelection() {
       )}
 
       {activatedTier && (
-        <div className="max-w-md mx-auto mb-8 p-4 bg-green-100 border border-green-300 rounded-xl text-center">
-          <Sparkles className="w-8 h-8 text-green-600 mx-auto mb-2" />
-          <p className="text-green-800 font-semibold">
+        <div className="max-w-md mx-auto mb-8 p-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-xl text-center page-shell page-pad">
+          <Sparkles className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+          <p className="text-green-800 dark:text-green-300 font-semibold">
             {t("tier_activated_redirect", { plan: activatedTierLabel })}
           </p>
         </div>
@@ -255,14 +255,14 @@ export default function TierSelection() {
 
       {error && (
         <div
-          className="max-w-md mx-auto mb-8 p-4 bg-red-100 border border-red-300 rounded-xl text-center"
+          className="max-w-md mx-auto mb-8 p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-xl text-center page-shell page-pad"
           marker="error"
         >
           <div className="flex items-start gap-3 text-left">
-            <AlertTriangle className="w-5 h-5 text-red-700 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-red-700 dark:text-red-400 mt-0.5" />
             <div className="flex-1">
-              <p className="text-red-900 font-semibold">{t("upgrade_failed")}</p>
-              <p className="text-red-700 text-sm">{error}</p>
+              <p className="text-red-900 dark:text-red-300 font-semibold">{t("upgrade_failed")}</p>
+              <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
             </div>
           </div>
           <div className="mt-4 flex items-center justify-center gap-2">
@@ -285,7 +285,7 @@ export default function TierSelection() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-3 items-stretch">
+      <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-3 items-stretch page-shell page-pad">
         {tierPlans.map((plan) => {
           const Icon = plan.icon;
           const isProcessing = processingTier === plan.key;
@@ -312,7 +312,7 @@ export default function TierSelection() {
                 <div className="flex items-center gap-3 mb-2">
                   <div
                     className={`p-2 rounded-xl ${
-                      plan.featured ? "bg-yellow-400/20" : "bg-gray-100"
+                      plan.featured ? "bg-yellow-400/20" : "bg-gray-100 dark:bg-gray-700"
                     }`}
                   >
                     <Icon
@@ -321,12 +321,12 @@ export default function TierSelection() {
                   </div>
                   <div>
                     <CardTitle
-                      className={`text-xl font-bold ${plan.textColor || "text-gray-900"}`}
+                      className={`text-xl font-bold ${plan.textColor || "text-gray-900 dark:text-white"}`}
                     >
                       {tr(plan.nameKey, plan.nameFallback || plan.key)}
                     </CardTitle>
                     <p
-                      className={`text-sm ${plan.featured ? "text-yellow-400" : "text-gray-500"}`}
+                      className={`text-sm ${plan.featured ? "text-yellow-400" : "text-gray-500 dark:text-gray-400"}`}
                     >
                       {tr(plan.subtitleKey, plan.subtitleFallback || plan.subtitleKey)}
                     </p>
@@ -334,12 +334,12 @@ export default function TierSelection() {
                 </div>
                 <div className="mt-4 flex items-baseline">
                   <span
-                    className={`text-4xl font-extrabold tracking-tight ${plan.textColor || "text-gray-900"}`}
+                    className={`text-4xl font-extrabold tracking-tight ${plan.textColor || "text-gray-900 dark:text-white"}`}
                   >
                     {plan.price}
                   </span>
                   <span
-                    className={`ml-1 text-lg ${plan.featured ? "text-gray-400" : "text-gray-500"}`}
+                    className={`ml-1 text-lg ${plan.featured ? "text-gray-400" : "text-gray-500 dark:text-gray-400"}`}
                   >
                     {tr(plan.periodKey, plan.periodFallback || plan.periodKey)}
                   </span>
@@ -361,8 +361,8 @@ export default function TierSelection() {
                       <span
                         className={`${
                           feature.included
-                            ? plan.textColor || "text-gray-700"
-                            : "text-gray-400 line-through"
+                            ? plan.textColor || "text-gray-700 dark:text-gray-200"
+                            : "text-gray-400 dark:text-gray-500 line-through"
                         }`}
                       >
                         {tr(feature.key, feature.label || feature.key)}
@@ -398,14 +398,14 @@ export default function TierSelection() {
 
       <div className="max-w-6xl mx-auto mt-12">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             {tr("boost_listing_title", "Boost & Featured Listings")}
           </h2>
-          <span className="text-xs font-semibold text-gray-500">
+          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
             {tr("boost_listing_hint", "One-time visibility upgrades")}
           </span>
         </div>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
           {tr(
             "boost_listing_desc",
             "Boosts are separate from subscriptions and can be purchased per listing anytime.",
@@ -421,11 +421,11 @@ export default function TierSelection() {
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-white/80">
+                    <div className="p-2 rounded-xl bg-white/80 dark:bg-gray-800/80">
                       <Icon className={`w-5 h-5 ${boost.accent}`} />
                     </div>
                     <div>
-                      <CardTitle className="text-base font-semibold text-gray-900">
+                      <CardTitle className="text-base font-semibold text-gray-900 dark:text-white">
                         {boost.title}
                       </CardTitle>
                       <p className={`text-sm font-bold ${boost.accent}`}>
@@ -435,7 +435,7 @@ export default function TierSelection() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600">{boost.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{boost.description}</p>
                 </CardContent>
               </Card>
             );
@@ -444,7 +444,7 @@ export default function TierSelection() {
       </div>
 
       <div className="max-w-4xl mx-auto mt-16 text-center">
-        <p className="text-gray-500 text-sm">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
           {t("secure_payments")} | {t("priority_support")} | {t("instant_activation")}
         </p>
       </div>

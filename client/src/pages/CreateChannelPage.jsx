@@ -100,7 +100,7 @@ const W = () => {
         },
         e.createElement(
           "div",
-          { className: "max-w-2xl mx-auto space-y-4" },
+          { className: "max-w-2xl mx-auto space-y-4 page-shell page-pad" },
           e.createElement(
             m,
             {
@@ -109,7 +109,7 @@ const W = () => {
               className: "gap-2",
             },
             e.createElement(K, { className: "w-4 h-4" }),
-            "Back to Channels",
+            a("back_to_channels", "Back to Channels"),
           ),
           e.createElement(
             k,
@@ -121,7 +121,7 @@ const W = () => {
                 S,
                 { className: "flex items-center gap-2" },
                 e.createElement(O, { className: "w-5 h-5 text-blue-600" }),
-                "Create Channel",
+                a("create_channel", "Create Channel"),
               ),
               e.createElement(
                 T,
@@ -272,11 +272,11 @@ const W = () => {
           e.createElement(
             D,
             null,
-            e.createElement(S, null, "Create Channel"),
+            e.createElement(S, null, a("create_channel", "Create Channel")),
             e.createElement(
               T,
               null,
-              "Sign in to create and manage your own channel.",
+              a("sign_in_to_create_channel", "Sign in to create and manage your own channel."),
             ),
           ),
           e.createElement(
@@ -289,7 +289,7 @@ const W = () => {
                   n("/login", { state: { returnTo: "/channels/create" } }),
                 className: "w-full",
               },
-              "Sign In to Continue",
+              a("sign_in_to_continue", "Sign In to Continue"),
             ),
             e.createElement(
               m,
@@ -298,7 +298,7 @@ const W = () => {
                 className: "w-full",
                 onClick: () => n("/channels"),
               },
-              "Back to Channels",
+              a("back_to_channels", "Back to Channels"),
             ),
           ),
         ),

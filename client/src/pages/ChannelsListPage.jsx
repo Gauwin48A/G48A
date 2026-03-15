@@ -87,7 +87,7 @@ const $ = () => {
     }, []),
     e.createElement(
       "div",
-      { className: "container mx-auto max-w-5xl p-4 sm:p-6" },
+      { className: "min-h-screen bg-gray-50 dark:bg-gray-900 container mx-auto max-w-5xl p-4 sm:p-6 page-shell page-pad" },
       e.createElement(
         "div",
         {

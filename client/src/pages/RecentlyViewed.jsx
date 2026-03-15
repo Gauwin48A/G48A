@@ -245,7 +245,7 @@ const ye = 50,
       }),
       e.createElement(
         "div",
-        { className: "max-w-6xl mx-auto px-4 py-4" },
+        { className: "max-w-6xl mx-auto px-4 py-4 page-shell page-pad" },
         e.createElement(
           "div",
           {
@@ -279,7 +279,7 @@ const ye = 50,
       ),
       e.createElement(
         "div",
-        { className: "max-w-6xl mx-auto px-4 pb-32" },
+        { className: "max-w-6xl mx-auto px-4 pb-32 page-shell page-pad" },
         S
           ? e.createElement(
               "div",

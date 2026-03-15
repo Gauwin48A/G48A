@@ -47,19 +47,19 @@ const PostDetailView = () => {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         {tr("loading", "Loading...")}
       </div>
     );
   if (error)
     return (
-      <div className="flex items-center justify-center min-h-screen text-red-500">
+      <div className="flex items-center justify-center min-h-screen text-red-500 dark:bg-gray-900">
         {error}
       </div>
     );
   if (!post)
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-xl font-semibold text-gray-800 mb-4">
           {tr("post_not_found", "Post not found")}
         </div>
@@ -73,8 +73,8 @@ const PostDetailView = () => {
     );
 
   return (
-    <div className="bg-white min-h-screen flex flex-col items-center py-8">
-      <div className="w-full max-w-3xl mx-auto">
+    <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col items-center py-8">
+      <div className="w-full max-w-3xl mx-auto px-4">
         <Button className="mb-4" onClick={() => navigateBack(navigate)}>
           {tr("back", "Back")}
         </Button>

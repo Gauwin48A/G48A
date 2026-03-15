@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import api from "../services/api";
+import api, { setRefreshDelegate } from "../services/api";
 import { getAccessToken, hasAuthSession } from "@/utils/authStorage";
 import { mapAuthError } from "@/utils/authErrorMapper";
 import { logAuthDiagnostic } from "@/services/authDiagnostics";
@@ -187,6 +187,16 @@ export function AuthProvider({ children }) {
       return false;
     }
   }, [ensureCsrfToken, setUser]);
+
+  // Register this as the single refresh path so api.js interceptor delegates here
+  useEffect(() => {
+    setRefreshDelegate(async () => {
+      const ok = await refreshAccessToken();
+      if (!ok) throw new Error("Token refresh failed");
+      return localStorage.getItem("authToken");
+    });
+    return () => setRefreshDelegate(null);
+  }, [refreshAccessToken]);
 
   const fetchCurrentUser = useCallback(async () => {
     const profile = await api.get("/auth/me");

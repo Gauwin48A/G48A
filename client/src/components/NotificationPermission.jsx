@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, BellOff, X, Smartphone } from 'lucide-react';
-import { isFirebaseConfigured, requestNotificationPermission, registerTokenWithBackend } from '../lib/firebase';
+import { isPushConfigured as isFirebaseConfigured, requestNotificationPermission, registerTokenWithBackend } from '../lib/firebase';
 
 import { useTranslation } from 'react-i18next';
 

@@ -12,7 +12,7 @@ const NotFound = () => {
         404
       </h1>
       <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2">
-        {t("error")}
+        {t("page_not_found", "Page Not Found")}
       </h2>
       <p className="text-gray-600 dark:text-gray-300 mb-6">
         {t("page_not_found") || "The page you're looking for doesn't exist."}

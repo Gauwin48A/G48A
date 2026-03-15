@@ -176,7 +176,7 @@ const le = () => {
   return O
     ? e.createElement(
         "div",
-        { className: "container mx-auto max-w-4xl p-4 sm:p-6" },
+        { className: "min-h-screen bg-gray-50 dark:bg-gray-900 container mx-auto max-w-4xl p-4 sm:p-6 page-shell page-pad" },
         e.createElement(
           "div",
           { className: "space-y-3" },
@@ -202,7 +202,7 @@ const le = () => {
     : o
       ? e.createElement(
           "div",
-          { className: "container mx-auto max-w-4xl p-4 sm:p-6" },
+          { className: "min-h-screen bg-gray-50 dark:bg-gray-900 container mx-auto max-w-4xl p-4 sm:p-6 page-shell page-pad" },
           e.createElement(
             "div",
             { className: "mb-4 flex items-center gap-3" },
@@ -467,7 +467,7 @@ const le = () => {
         )
       : e.createElement(
           "div",
-          { className: "container mx-auto max-w-3xl p-4 sm:p-6" },
+          { className: "min-h-screen bg-gray-50 dark:bg-gray-900 container mx-auto max-w-3xl p-4 sm:p-6 page-shell page-pad" },
           e.createElement(
             m,
             null,

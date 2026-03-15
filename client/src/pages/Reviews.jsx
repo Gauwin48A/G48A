@@ -148,7 +148,7 @@ const R = () => {
         },
         e.createElement(
           "div",
-          { className: "w-full max-w-md px-4" },
+          { className: "w-full max-w-md px-4 page-shell page-pad" },
           e.createElement(Z, {
             marker: "loading",
             className: "bg-white dark:bg-gray-800",
@@ -166,7 +166,7 @@ const R = () => {
           },
           e.createElement(
             "div",
-            { className: "max-w-md w-full" },
+            { className: "max-w-md w-full page-shell page-pad" },
             e.createElement(Y, {
               marker: "error",
               className: "border-red-200 bg-red-50",
@@ -184,7 +184,7 @@ const R = () => {
         )
       : e.createElement(
           "div",
-          { className: "min-h-screen bg-gray-50 dark:bg-gray-900 pb-12" },
+          { className: "min-h-screen bg-gray-50 dark:bg-gray-900" },
           e.createElement(
             "div",
             {
@@ -237,7 +237,7 @@ const R = () => {
           ),
           e.createElement(
             "div",
-            { className: "max-w-4xl mx-auto px-4 mt-8 -translate-y-8" },
+            { className: "max-w-4xl mx-auto px-4 mt-8 -translate-y-8 page-shell page-pad" },
             e.createElement(
               "div",
               { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },

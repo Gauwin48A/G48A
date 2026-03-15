@@ -19,11 +19,13 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       {/* Image Section */}
-      <div className="aspect-video bg-gray-200 relative">
+      <div className="aspect-video bg-gray-200 dark:bg-gray-700 relative">
         <img
           src={post.images[0] || "/placeholder.svg"}
           alt={post.title}
           className="w-full h-full object-cover"
+          loading="lazy"
+          decoding="async"
         />
         <div className="absolute top-2 right-2">
           <Badge variant={post.status === "Active" ? "default" : "secondary"}>
@@ -42,7 +44,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
             </CardDescription>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-green-600">{post.price}</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{post.price}</p>
           </div>
         </div>
       </CardHeader>
@@ -59,7 +61,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
             </Avatar>
             <span className="text-sm">{post.sellerName}</span>
             {post.sellerVerified && (
-              <Shield className="w-3 h-3 text-green-600" />
+              <Shield className="w-3 h-3 text-green-600 dark:text-green-400" />
             )}
             <Badge variant="outline" className="text-xs">
               {post.sellerRank}
@@ -67,12 +69,12 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
           </div>
 
           {/* Location & Meta Info */}
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <MapPin className="w-4 h-4" />
             <span>{post.location}</span>
           </div>
 
-          <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center space-x-1">
               <Eye className="w-4 h-4" />
               <span>
@@ -99,7 +101,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
           </div>
 
           {/* Description */}
-          <p className="text-sm text-gray-600 line-clamp-2">
+          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
             {post.description}
           </p>
 
@@ -110,7 +112,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
                 variant="outline"
                 size="sm"
                 onClick={() => onContact && onContact(post)}
-                className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
+                className="flex-1 min-w-28 h-9 text-xs sm:text-sm"
               >
                 <Phone className="w-4 h-4 mr-1" />
                 {t("contact") || "Contact"}
@@ -118,7 +120,7 @@ const PostCard = ({ post, onContact, onBuy, showActions = true }) => {
               <Button
                 size="sm"
                 onClick={() => onBuy && onBuy(post.id)}
-                className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm"
+                className="flex-1 min-w-28 h-9 text-xs sm:text-sm"
                 disabled={post.status !== "Active"}
               >
                 {t("buy_now") || "Buy Now"}

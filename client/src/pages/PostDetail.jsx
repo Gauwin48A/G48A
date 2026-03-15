@@ -278,7 +278,7 @@ function PostDetail() {
         "div",
         {
           className:
-            "text-center p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md",
+            "text-center p-8 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-lg w-full page-shell page-pad",
         },
         e.createElement(
           "div",
@@ -498,7 +498,6 @@ function PostDetail() {
     {
       className:
         "min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900",
-      style: { paddingBottom: "180px" },
     },
     e.createElement(
       "div",
@@ -510,7 +509,7 @@ function PostDetail() {
         "div",
         {
           className:
-            "max-w-4xl mx-auto px-4 py-3 flex items-center justify-between",
+            "max-w-4xl mx-auto px-4 py-3 flex items-center justify-between page-shell page-pad",
         },
         e.createElement(
           l,
@@ -533,7 +532,7 @@ function PostDetail() {
                 variant: "ghost",
                 size: "icon",
                 onClick: toggleSavedPost,
-                className: `rounded-full w-10 h-10 ${savedPost ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30" : "text-gray-500"}`,
+                className: `rounded-full w-10 h-10 ${savedPost ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30" : "text-gray-500 dark:text-gray-400"}`,
               },
               savedPost
                 ? e.createElement(Xe, { className: "w-5 h-5" })
@@ -545,7 +544,7 @@ function PostDetail() {
                 variant: "ghost",
                 size: "icon",
                 onClick: () => setShowMenu((t) => !t),
-                className: "rounded-full w-10 h-10 text-gray-500",
+                className: "rounded-full w-10 h-10 text-gray-500 dark:text-gray-400",
               },
               e.createElement(Je, { className: "w-5 h-5" }),
             ),
@@ -605,7 +604,7 @@ function PostDetail() {
       ),
       e.createElement(
         "div",
-        { className: "max-w-4xl mx-auto px-4 py-6 space-y-5" },
+        { className: "max-w-4xl mx-auto px-4 py-6 space-y-5 page-shell page-pad" },
         e.createElement(
           "div",
           {
@@ -616,7 +615,7 @@ function PostDetail() {
             "div",
             {
               className:
-                "relative aspect-square max-h-[400px] bg-gray-100 dark:bg-gray-700 group",
+                "relative aspect-square max-h-96 bg-gray-100 dark:bg-gray-700 group",
             },
             e.createElement("img", {
               src: cee(r.images?.[b]),
@@ -749,7 +748,7 @@ function PostDetail() {
               r.originalPrice &&
                 e.createElement(
                   "span",
-                  { className: "text-lg text-gray-400 line-through" },
+                  { className: "text-lg text-gray-400 dark:text-gray-500 line-through" },
                   C(r.originalPrice),
                 ),
               r.discount &&
@@ -1035,7 +1034,7 @@ function PostDetail() {
               {
                 variant: "outline",
                 onClick: toggleSavedPost,
-                className: `py-3 rounded-xl font-medium ${savedPost ? "bg-blue-50 border-blue-200 text-blue-600" : "border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300"}`,
+                className: `py-3 rounded-xl font-medium ${savedPost ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400" : "border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300"}`,
               },
               savedPost
                 ? e.createElement(Xe, { className: "w-5 h-5 mr-2" })
@@ -1065,7 +1064,7 @@ function PostDetail() {
           {
             variant: "ghost",
             className:
-              "w-full text-gray-400 hover:text-red-500 py-3 rounded-xl",
+              "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 py-3 rounded-xl",
           },
           e.createElement(be, { className: "w-4 h-4 mr-2" }),
           tr("report_listing", "Report this listing"),
@@ -1114,13 +1113,13 @@ function PostDetail() {
             ownerInsightsLoading
               ? e.createElement(
                   "p",
-                  { className: "text-sm text-gray-500" },
+                  { className: "text-sm text-gray-500 dark:text-gray-400" },
                   tr("loading_leads", "Loading lead activity..."),
                 )
               : ownerInsightsError
                 ? e.createElement(
                     "p",
-                    { className: "text-sm text-gray-500" },
+                    { className: "text-sm text-gray-500 dark:text-gray-400" },
                     ownerInsightsError,
                   )
                 : e.createElement(
@@ -1137,7 +1136,7 @@ function PostDetail() {
                         { className: "flex items-center justify-between" },
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 uppercase" },
+                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase" },
                           tr("interested_users", "Interested"),
                         ),
                         e.createElement(
@@ -1202,7 +1201,7 @@ function PostDetail() {
                         { className: "flex items-center justify-between" },
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 uppercase" },
+                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase" },
                           tr("detail_views", "View details"),
                         ),
                         e.createElement(
@@ -1268,7 +1267,7 @@ function PostDetail() {
                         { className: "flex items-center justify-between" },
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 uppercase" },
+                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase" },
                           tr("lead_users", "Leads"),
                         ),
                         e.createElement(

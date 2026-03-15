@@ -370,7 +370,7 @@ export default function Support() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
-      <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 md:px-6 md:pt-8">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-6 md:px-6 md:pt-8">
         <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white shadow-lg md:p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>

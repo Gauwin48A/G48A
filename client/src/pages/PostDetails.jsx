@@ -39,56 +39,62 @@ const PostDetails = () => {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading post...
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-pulse space-y-4 max-w-2xl w-full px-4">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+          <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+        </div>
       </div>
     );
   if (error)
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
+          <Button onClick={() => navigateBack(navigate)}>{t("back", "Back")}</Button>
+        </div>
       </div>
     );
   if (!post)
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Post not found.
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <p className="text-gray-500 dark:text-gray-400">{t("post_not_found", "Post not found.")}</p>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center">
       <div className="max-w-2xl w-full px-4 py-8">
-        <Card className="shadow-lg border-0 rounded-2xl overflow-hidden mb-8">
+        <Card className="shadow-lg border-0 dark:border-gray-700 rounded-2xl overflow-hidden mb-8">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-blue-900 mb-2">
+            <CardTitle className="text-2xl font-bold text-blue-900 dark:text-blue-300 mb-2">
               {post.title}
             </CardTitle>
             <div className="flex gap-2 items-center mb-2">
-              <Badge className="bg-blue-100 text-blue-800">
+              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                 {post.category}
               </Badge>
-              <span className="text-gray-600 text-sm">by {post.author}</span>
-              <span className="text-gray-400 text-xs ml-2">
+              <span className="text-gray-600 dark:text-gray-400 text-sm">{t("by", "by")} {post.author}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs ml-2">
                 {new Date(post.created_at).toLocaleString()}
               </span>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-gray-800 mb-4 whitespace-pre-line">
+            <div className="text-gray-800 dark:text-gray-200 mb-4 whitespace-pre-line">
               {post.description}
             </div>
-            <div className="flex gap-6 text-xs text-gray-500 mb-2">
-              <span>Views: {post.views}</span>
-              <span>Likes: {post.likes || 0}</span>
-              <span>Comments: {post.comments_count || 0}</span>
+            <div className="flex gap-6 text-xs text-gray-500 dark:text-gray-400 mb-4">
+              <span>{t("views", "Views")}: {post.views}</span>
+              <span>{t("likes", "Likes")}: {post.likes || 0}</span>
+              <span>{t("comments", "Comments")}: {post.comments_count || 0}</span>
             </div>
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+            <Button
+              variant="outline"
               onClick={() => navigateBack(navigate)}
             >
-              Back
-            </button>
+              {t("back", "Back")}
+            </Button>
           </CardContent>
         </Card>
       </div>

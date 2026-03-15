@@ -412,7 +412,7 @@ const MyFeedPage = () => {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700">
-        <div className="w-full max-w-md p-4">
+        <div className="w-full max-w-md p-4 page-shell page-pad">
           <PageAuthGateState
             title={t("my_feed") || "My Feed"}
             description={t("view_manage_posts") || "View and manage your posts"}
@@ -441,9 +441,9 @@ const MyFeedPage = () => {
   }
 
   return (
-    <div className="bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
+    <div className="bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen nav-clearance">
       <div className="w-full bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-800 dark:via-emerald-800 dark:to-teal-800">
-        <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto px-4 py-8 page-shell page-pad">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
@@ -477,19 +477,19 @@ const MyFeedPage = () => {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-3xl mx-auto px-4 py-6 page-shell page-pad">
         <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border flex items-center justify-between">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {posts.length}
             </div>
-            <div className="text-xs text-gray-500">{t("posts") || "Posts"}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{t("posts") || "Posts"}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {Object.values(viewCounts).reduce((a, b) => a + b, 0)}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {t("total_views") || "Total Views"}
             </div>
           </div>
@@ -497,7 +497,7 @@ const MyFeedPage = () => {
             <div className="text-2xl font-bold text-red-500">
               {Object.values(likeCounts).reduce((a, b) => a + b, 0)}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {t("total_likes") || "Total Likes"}
             </div>
           </div>
@@ -757,7 +757,7 @@ const MyFeedPage = () => {
 
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-xl">
+          <Card className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-xl page-shell page-pad">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               {t("delete_post") || "Delete Post?"}
             </h3>
@@ -784,7 +784,7 @@ const MyFeedPage = () => {
       )}
 
       {shareToast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50">
           {shareToast}
         </div>
       )}

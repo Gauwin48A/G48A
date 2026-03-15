@@ -160,6 +160,17 @@ export default defineConfig({
   build: {
     sourcemap: false,
     modulePreload: false,
+    // Strip console.log/warn in production, keep errors
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+      },
+    },
+    // Warn on large chunks (250kb)
+    chunkSizeWarningLimit: 250,
     rollupOptions: {
       output: {
         manualChunks: resolveVendorChunk,

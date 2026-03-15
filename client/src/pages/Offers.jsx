@@ -251,8 +251,8 @@ const OffersPage = () => {
 
   if (!canUseOffers) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border p-6 text-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border p-6 text-center page-shell page-pad">
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">
             {tr("login_required", "Login required")}
@@ -276,7 +276,7 @@ const OffersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -322,7 +322,7 @@ const OffersPage = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 mt-2 -translate-y-2">
+      <div className="max-w-4xl mx-auto px-4 mt-2 -translate-y-2 page-shell page-pad">
         <TransactionStepper
           steps={localizedSteps}
           currentStep={1}
@@ -330,7 +330,7 @@ const OffersPage = () => {
         />
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-6 page-shell page-pad">
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />

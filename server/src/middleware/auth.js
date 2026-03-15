@@ -16,7 +16,10 @@ function verifyCandidateToken(token) {
     return null;
   }
   try {
-    return verifyToken(token, JWT_CONFIG.SECRET);
+    return verifyToken(token, JWT_CONFIG.SECRET, {
+      issuer: JWT_CONFIG.ISSUER,
+      audience: JWT_CONFIG.AUDIENCE,
+    });
   } catch {
     return null;
   }
@@ -91,8 +94,9 @@ const protect = async (req, res, next) => {
     }
   } catch (policyError) {
     if (authDebugEnabled) {
-      console.warn("[AUTH] Token policy check failed (continuing):", policyError?.message);
+      console.warn("[AUTH] Token policy check failed (denying):", policyError?.message);
     }
+    return res.status(500).json({ error: "Authentication service temporarily unavailable." });
   }
 
   req.user = verifiedAuth.payload;
