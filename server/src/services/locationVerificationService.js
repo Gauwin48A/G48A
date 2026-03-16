@@ -4,6 +4,7 @@ const geoip = require("geoip-lite");
 const requestIp = require("request-ip");
 const pool = require("../config/db");
 const logger = require("../utils/logger");
+const redisSession = require("../config/redisSession");
 
 const DB_QUERY_TIMEOUT_MS =
   Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
@@ -178,18 +179,37 @@ const computeSignature = (payload, secret) => {
 };
 
 const SIGNATURE_MAX_AGE_MS = 60 * 1000;
-const usedNonces = new Map();
+// In-memory fallback for when Redis is unavailable
+const localNonces = new Map();
 const NONCE_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+const NONCE_REDIS_PREFIX = "loc:nonce:";
+const NONCE_TTL_SECONDS = Math.ceil((SIGNATURE_MAX_AGE_MS * 2) / 1000);
 
-// Periodically clean up expired nonces to prevent unbounded memory growth
+// Clean up local fallback nonces periodically
 setInterval(() => {
   const cutoff = Date.now() - SIGNATURE_MAX_AGE_MS * 2;
-  for (const [nonce, timestamp] of usedNonces) {
-    if (timestamp < cutoff) usedNonces.delete(nonce);
+  for (const [nonce, timestamp] of localNonces) {
+    if (timestamp < cutoff) localNonces.delete(nonce);
   }
 }, NONCE_CLEANUP_INTERVAL_MS).unref();
 
-const verifySignature = (payload, signature, secret) => {
+const hasNonce = async (nonce) => {
+  if (redisSession.isRedisAvailable()) {
+    const val = await redisSession.get(`${NONCE_REDIS_PREFIX}${nonce}`);
+    return val !== null && val !== undefined;
+  }
+  return localNonces.has(nonce);
+};
+
+const storeNonce = async (nonce, signedAt) => {
+  if (redisSession.isRedisAvailable()) {
+    await redisSession.set(`${NONCE_REDIS_PREFIX}${nonce}`, String(signedAt), NONCE_TTL_SECONDS);
+  } else {
+    localNonces.set(nonce, signedAt);
+  }
+};
+
+const verifySignature = async (payload, signature, secret) => {
   if (!secret) return true;
   if (!signature) return false;
 
@@ -202,11 +222,11 @@ const verifySignature = (payload, signature, secret) => {
       logger.warn("[LocationVerification] Signature timestamp too old or in future", { ageMs });
       return false;
     }
-    if (usedNonces.has(nonce)) {
+    if (await hasNonce(nonce)) {
       logger.warn("[LocationVerification] Replay detected — nonce already used");
       return false;
     }
-    usedNonces.set(nonce, signedAt);
+    await storeNonce(nonce, signedAt);
   }
 
   const expected = computeSignature(payload, secret);

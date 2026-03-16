@@ -750,6 +750,11 @@ exports.createPost = async (req, res) => {
     if (!user_id) throw new Error("User ID required");
 
     const { getTierRules } = require("../config/tierRules");
+    const { stripReferralCodes } = require("../utils/referralCodeFilter");
+
+    // Strip referral codes from post content to prevent public spamming
+    const sanitizedTitle = stripReferralCodes(title);
+    const sanitizedDescription = stripReferralCodes(description);
 
     const userResult = await client.query(
       `SELECT tier, subscription_expiry, post_credits
@@ -840,8 +845,8 @@ exports.createPost = async (req, res) => {
       [
         user_id,
         category_id || 1,
-        title || "Update",
-        description || "",
+        sanitizedTitle || "Update",
+        sanitizedDescription || "",
         price || 0,
         location || null,
         type || "sale",

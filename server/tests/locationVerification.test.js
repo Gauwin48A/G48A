@@ -27,17 +27,17 @@ describe("Location verification service", () => {
   };
 
   describe("verifySignature", () => {
-    it("returns true when no secret is configured", () => {
-      expect(verifySignature({}, "any-sig", "")).toBe(true);
-      expect(verifySignature({}, null, "")).toBe(true);
+    it("returns true when no secret is configured", async () => {
+      await expect(verifySignature({}, "any-sig", "")).resolves.toBe(true);
+      await expect(verifySignature({}, null, "")).resolves.toBe(true);
     });
 
-    it("returns false when secret is set but no signature provided", () => {
-      expect(verifySignature({}, null, TEST_SECRET)).toBe(false);
-      expect(verifySignature({}, "", TEST_SECRET)).toBe(false);
+    it("returns false when secret is set but no signature provided", async () => {
+      await expect(verifySignature({}, null, TEST_SECRET)).resolves.toBe(false);
+      await expect(verifySignature({}, "", TEST_SECRET)).resolves.toBe(false);
     });
 
-    it("verifies a valid signature with nonce and timestamp", () => {
+    it("verifies a valid signature with nonce and timestamp", async () => {
       const payload = {
         latitude: 17.385044,
         longitude: 78.486671,
@@ -46,10 +46,10 @@ describe("Location verification service", () => {
         _signed_at: Date.now(),
       };
       const sig = computeTestSignature(payload, TEST_SECRET);
-      expect(verifySignature(payload, sig, TEST_SECRET)).toBe(true);
+      await expect(verifySignature(payload, sig, TEST_SECRET)).resolves.toBe(true);
     });
 
-    it("rejects a tampered payload", () => {
+    it("rejects a tampered payload", async () => {
       const payload = {
         latitude: 17.385044,
         longitude: 78.486671,
@@ -59,10 +59,10 @@ describe("Location verification service", () => {
       };
       const sig = computeTestSignature(payload, TEST_SECRET);
       payload.latitude = 18.0;
-      expect(verifySignature(payload, sig, TEST_SECRET)).toBe(false);
+      await expect(verifySignature(payload, sig, TEST_SECRET)).resolves.toBe(false);
     });
 
-    it("rejects expired signatures (timestamp too old)", () => {
+    it("rejects expired signatures (timestamp too old)", async () => {
       const payload = {
         latitude: 17.385044,
         longitude: 78.486671,
@@ -71,10 +71,10 @@ describe("Location verification service", () => {
         _signed_at: Date.now() - 120000,
       };
       const sig = computeTestSignature(payload, TEST_SECRET);
-      expect(verifySignature(payload, sig, TEST_SECRET)).toBe(false);
+      await expect(verifySignature(payload, sig, TEST_SECRET)).resolves.toBe(false);
     });
 
-    it("rejects replayed nonces", () => {
+    it("rejects replayed nonces", async () => {
       const nonce = crypto.randomBytes(16).toString("hex");
       const payload1 = {
         latitude: 17.385044,
@@ -85,11 +85,11 @@ describe("Location verification service", () => {
       };
       const sig = computeTestSignature(payload1, TEST_SECRET);
       // First use should succeed
-      expect(verifySignature(payload1, sig, TEST_SECRET)).toBe(true);
+      await expect(verifySignature(payload1, sig, TEST_SECRET)).resolves.toBe(true);
       // Replay should fail
       const payload2 = { ...payload1 };
       const sig2 = computeTestSignature(payload2, TEST_SECRET);
-      expect(verifySignature(payload2, sig2, TEST_SECRET)).toBe(false);
+      await expect(verifySignature(payload2, sig2, TEST_SECRET)).resolves.toBe(false);
     });
   });
 

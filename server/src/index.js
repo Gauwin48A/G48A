@@ -650,6 +650,18 @@ const startBackgroundJobs = () => {
     logger.warn("[Startup] Delayed background jobs are disabled.");
     return;
   }
+
+  // Cache warming — run immediately on startup
+  try {
+    const { warmCache } = require("./services/cacheWarming");
+    setTimeout(async () => {
+      logger.info("[Startup] Warming Redis cache...");
+      await warmCache();
+    }, 2000);
+  } catch (e) {
+    logger.warn(`Cache warming not loaded: ${e.message}`);
+  }
+
   try {
     const {
       checkExpiringSubscriptions,

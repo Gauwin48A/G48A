@@ -1,1 +1,26 @@
-import*as e from"react";import*as r from"@radix-ui/react-checkbox";import{Check as c}from"lucide-react";import{cn as o}from"@/lib/utils";const i=e.forwardRef(({className:t,...s},a)=>e.createElement(r.Root,{ref:a,className:o("peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",t),...s},e.createElement(r.Indicator,{className:o("flex items-center justify-center text-current")},e.createElement(c,{className:"h-4 w-4"}))));i.displayName=r.Root.displayName;export{i as Checkbox};
+import * as e from "react";
+import * as r from "@radix-ui/react-checkbox";
+import { Check as c } from "lucide-react";
+import { cn as o } from "@/lib/utils";
+
+const i = e.forwardRef(({ className: t, ...s }, a) =>
+  e.createElement(
+    r.Root,
+    {
+      ref: a,
+      className: o(
+        "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+        t
+      ),
+      ...s,
+    },
+    e.createElement(
+      r.Indicator,
+      { className: o("flex items-center justify-center text-current") },
+      e.createElement(c, { className: "h-4 w-4" })
+    )
+  )
+);
+i.displayName = r.Root.displayName;
+
+export { i as Checkbox };

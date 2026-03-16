@@ -1,0 +1,308 @@
+================================================================================
+MHub — PENDING GAPS & REMAINING WORK
+================================================================================
+Generated: March 16, 2026
+Status: Post-implementation analysis of all .md/.txt documentation files
+Build: ✅ PASSING (18.89s, zero errors)
+================================================================================
+
+Files Analyzed (17 .md + 3 .txt at root, 49+ under server/docs):
+  - IMPLEMENTATION_PLAN.md ✅ → ARCHIVED
+  - gaps.md ✅ → ARCHIVED
+  - further.md ✅ → ARCHIVED
+  - IMPLEMENTATION_STATUS_CHECKLIST.md ✅ → ARCHIVED
+  - SPRINT_PLAN_WEEK1_TO_WEEK10.md ✅ → ARCHIVED
+  - DETAILED_IMPLEMENTATION_STATUS.md ✅ → ARCHIVED
+  - UI_UX_PAGE_RATINGS.md ✅ → ARCHIVED
+  - CLOUDFLARE_MIGRATION_PLAN.md ✅ → ARCHIVED (future plan)
+  - cloudflare_setup.txt ✅ → ARCHIVED
+  - --Tier setup -subscription.txt ✅ → ARCHIVED
+  - verification_report.txt ✅ → ARCHIVED
+
+Files Retained (still have pending work):
+  - SPRINT_PLAN_PHASED.md — Active sprint plan
+  - MD_IMPLEMENTATION_MASTER_CHECKLIST.md — Master checklist phases C-G open
+  - LAUNCH_READINESS_CHECKLIST.md — Pre-launch checklist
+  - OPTIMIZATION_PLAN.md — Deminification plan
+  - PROJECT_STRUCTURE.md — Reference
+  - README.md — Project readme
+
+================================================================================
+THIS SESSION: IMPLEMENTATIONS COMPLETED
+================================================================================
+
+1. [SERVER] Deleted orphaned pushService.js
+   - Was dead code using in-memory Map, never imported
+   - fcm.js is the canonical push implementation
+
+2. [SERVER] Added upsell API endpoint
+   - GET /api/subscriptions/upsell — returns contextual upgrade message
+   - Uses getUpsellMessage() from tierRules.js
+   - Includes dynamic pricing (Night Owl flash sale)
+   - Route: server/src/routes/subscriptions.js
+   - Controller: server/src/controllers/subscriptionController.js
+
+3. [SERVER] Added dynamic pricing API endpoint
+   - GET /api/subscriptions/plans/:planName/price
+   - Returns current price + flash sale discount if applicable
+   - Uses getDynamicPrice() from tierRules.js (10% off 11pm-6am)
+
+4. [SERVER] Migrated nonce store from in-memory to Redis
+   - locationVerificationService.js now uses redisSession for nonce storage
+   - Falls back to in-memory Map when Redis unavailable
+   - Redis key prefix: loc:nonce: with auto-expiry TTL
+   - Fixes multi-instance replay vulnerability (gaps.md item)
+   - Updated locationVerificationController.js to await async verifySignature
+   - Updated tests to use async/await resolves pattern
+
+5. [CLIENT] Created UpsellBanner component
+   - client/src/components/UpsellBanner.jsx
+   - Fetches /api/subscriptions/upsell
+   - Shows contextual upgrade prompt with dynamic pricing
+   - Dismissible per session (sessionStorage)
+   - Integrated in RewardsPage and MyFeedPage
+
+6. [CLIENT] Added flash sale banner to TierSelection
+   - Fetches /api/subscriptions/plans/silver/price on load
+   - Shows animated "Night Owl Deal — 10% off" banner during 11pm-6am
+   - Added Zap icon import
+
+================================================================================
+CONFIRMED ALREADY IMPLEMENTED (from docs analysis)
+================================================================================
+
+These items were listed as pending in docs but verified as already complete:
+
+1. Express trust proxy — Already configured in server/src/index.js:110-122
+2. Post credit enforcement — createPost checks credits for basic tier
+3. Premium auto-featured in sponsored — getSponsoredPosts includes Premium sellers
+4. Free monthly boosts for Premium — quotaPeriodMonths:1, boostQuotaMonthly:5
+5. boost_level in ORDER BY — (tier_priority * 10 + boost_level) DESC
+6. Bottom nav padding — .app-main class with safe-area calculation in App.jsx
+7. Subscription expiry cron — subscriptionExpiry.js runs daily at 00:30 IST
+8. Coin welcome bonus auto-claim — fires during signup in authController.js
+9. Trial activation — POST /api/subscriptions/trial exists + UI buttons
+
+================================================================================
+REMAINING GAPS — CATEGORIZED BY PRIORITY
+================================================================================
+
+──────────────────────────────────────────────────────────────────
+P0 — REVENUE CRITICAL
+──────────────────────────────────────────────────────────────────
+
+[P0-1] Razorpay/UPI payment integration end-to-end
+  Status: Controller exists but client doesn't go through full payment flow
+  Impact: Boost purchases don't actually collect payment
+  Files: PostBoostPanel.jsx, PaymentPage.jsx, paymentController.js
+  Effort: Medium (2-3 days)
+
+[P0-2] Boost payment integration
+  Status: PostBoostPanel calls boost API directly (quota-based only)
+  Gap: No coin-payment or Razorpay flow for non-quota boosts
+  Impact: Revenue leak — boosts recorded without payment for non-subscribers
+  Effort: Medium
+
+──────────────────────────────────────────────────────────────────
+P1 — PRODUCT COMPLETENESS
+──────────────────────────────────────────────────────────────────
+
+[P1-1] Obfuscated pages — 33 files cannot be meaningfully edited
+  Pages: ForYou.jsx, AllPosts.jsx, FeedPage.jsx, Profile.jsx, Home.jsx,
+         Dashboard.jsx, Chat.jsx, Rewards.jsx, App.jsx, and 24+ more
+  Impact: Cannot implement UI improvements described in Deatiled_doc.txt
+  Fix: Need original source files or complete page rewrites
+  Effort: Extra Large
+
+[P1-2] Auth: Unify refresh token callers
+  Status: api.js interceptor + AuthContext both call /auth/refresh-token
+  Impact: Concurrent refresh causes session revocation
+  Fix: Single refresh coordinator via event bus
+  File: client/src/lib/api.js, client/src/context/AuthContext.jsx
+  Effort: Medium (2-3 hours)
+
+[P1-3] Auth: Consolidate 4 location call sites
+  Status: LocationContext, useLocationPermission, useFeed, NearbyPosts
+         each call GPS independently
+  Impact: Multiple concurrent watchPosition calls degrade accuracy
+  Fix: All callers consume LocationContext
+  Effort: Medium (3-4 hours)
+
+[P1-4] Google Maps API key proxy
+  Status: VITE_GOOGLE_MAPS_API_KEY used directly in browser fetch
+  Fix: Proxy through backend with referrer restrictions
+  Effort: Small (1 hour)
+
+[P1-5] Approximate location UI indicator
+  Status: When GPS fails, IP fallback accepted silently
+  Fix: Show "Approximate location" badge in UI
+  File: Already partial via AccuracyBadge in GreenNavbar
+  Effort: Small (1 hour)
+
+──────────────────────────────────────────────────────────────────
+P2 — SPRINT PLAN / QUALITY
+──────────────────────────────────────────────────────────────────
+
+[P2-1] Phase 5: Rewards/referral reliability testing
+  From: SPRINT_PLAN_PHASED.md Phase 3
+  Status: DB + controllers exist, needs integration testing
+  Items: Reward totals match ledger, referral tree renders
+  Effort: Medium
+
+[P2-2] Phase 7: Security hardening
+  From: SPRINT_PLAN_WEEK1_TO_WEEK10.md
+  Items: Rate-limit tuning, CSP enforcement (currently report-only),
+         location fraud mitigation (speed/distance anomaly detection)
+  Effort: Medium
+
+[P2-3] Phase 8: QA automation expansion
+  From: SPRINT_PLAN_WEEK1_TO_WEEK10.md
+  Status: Only top-10 journeys covered
+  Items: Route-level smoke tests, visual/snapshot checks, CI merge gates
+  Effort: Large
+
+[P2-4] Backup/restore drill
+  From: MD_IMPLEMENTATION_MASTER_CHECKLIST.md Phase E
+  Status: Documented but not executed
+  Items: Run drill, complete 6 manual validations, log evidence
+  Effort: Medium
+
+[P2-5] Release cleanup & worktree audit
+  From: MD_IMPLEMENTATION_MASTER_CHECKLIST.md Phase F
+  Items: Run release cleanup checklist, worktree audit, confirm deletions
+  Effort: Small
+
+[P2-6] Performance budget CI
+  From: LAUNCH_READINESS_CHECKLIST.md
+  Items: Automated performance budget checks, API caching audit
+  Effort: Medium
+
+──────────────────────────────────────────────────────────────────
+P3 — LOCALIZATION
+──────────────────────────────────────────────────────────────────
+
+[P3-1] Translation coverage: 80-84% for HI/TE/TA/KN/MR/BN
+  Status: 336-410 English fallback keys per language
+  Gap: ~16-20% keys still showing English
+  Fix: Professional translation of remaining keys
+  Effort: Large (external translators needed)
+
+[P3-2] Server-side hardcoded strings
+  From: MD_IMPLEMENTATION_MASTER_CHECKLIST.md Phase D
+  Status: 178 potential strings across 49 server files
+  Fix: Replace with i18n keys
+  Effort: Large
+
+──────────────────────────────────────────────────────────────────
+P4 — OPTIMIZATION / CODEBASE
+──────────────────────────────────────────────────────────────────
+
+[P4-1] Deminify server controllers (9 files)
+  From: OPTIMIZATION_PLAN.md Phase 1
+  Files: adminDocController, analyticsController, inquiryController,
+         paymentController, postGuaranteedReachController, rewardController,
+         translationController, twoFactorController, userController
+  Effort: Large
+
+[P4-2] Deminify server/src/index.js
+  From: OPTIMIZATION_PLAN.md Phase 2
+  Status: 17,975 chars on one line
+  Effort: Medium
+
+[P4-3] Deminify minified routes (~45 files)
+  From: OPTIMIZATION_PLAN.md Phase 3
+  Effort: Extra Large
+
+[P4-4] Deminify client pages (~50 files)
+  From: OPTIMIZATION_PLAN.md Phase 5
+  Status: Mangled variable names (n, E, K, W, r, i, q, F)
+  Effort: Extra Large
+
+[P4-5] Shared helper migration across server
+  From: OPTIMIZATION_PLAN.md Phase 6
+  Status: ~117 files still using local helpers instead of dbHelpers/parseHelpers
+  Effort: Large
+
+[P4-6] SQL injection audit
+  From: OPTIMIZATION_PLAN.md Phase 7
+  Items: String interpolation in INTERVAL queries, remaining controllers
+  Effort: Medium
+
+──────────────────────────────────────────────────────────────────
+P5 — INFRASTRUCTURE (Blocked/Future)
+──────────────────────────────────────────────────────────────────
+
+[P5-1] Multi-region active-active deployment
+  Status: BLOCKED on external infra provisioning
+  Items: MR-001/002/003/006
+  Effort: Extra Large (external dependency)
+
+[P5-2] ML fraud scoring pipeline
+  Status: Currently rule-based
+  Fix: Train model, integrate scoring
+  Effort: Extra Large
+
+[P5-3] Cloudflare migration (if pursued)
+  Status: Full plan documented in CLOUDFLARE_MIGRATION_PLAN.md (archived)
+  Items: Workers API migration, D1 database, R2 storage
+  Effort: Extra Large (full rewrite)
+
+[P5-4] Production monitoring dashboard
+  Status: Not deployed
+  Items: Sentry for errors, Grafana/Prometheus for metrics
+  Effort: Medium
+
+[P5-5] CI/CD pipeline
+  Status: Quality gates exist but no automated deploy pipeline
+  Items: GitHub Actions: lint → test → build → deploy
+  Effort: Medium
+
+──────────────────────────────────────────────────────────────────
+LAUNCH READINESS CHECKLIST (unchecked items)
+──────────────────────────────────────────────────────────────────
+
+UX & Visual:
+  [ ] Unify button sizes, radius, icon spacing across variants
+  [ ] Normalize card headers/padding across screens
+  [ ] Audit empty/loading/error states for consistency
+  [ ] Validate responsive breakpoints for top 10 routes
+
+Accessibility:
+  [ ] Run contrast audit (WCAG AA) — partial via CSS overrides
+  [ ] Keyboard navigation for tabs, modals, menus, forms
+  [ ] aria-label on icon-only buttons
+  [ ] Focus-visible styles on all interactive elements
+  [ ] Reduced motion preferences for animations
+
+Performance:
+  [ ] Lighthouse baseline complete (report generated but scores missing)
+  [ ] API caching strategy confirmation
+  [ ] Network timeout validation
+
+QA:
+  [ ] Cross-browser check (Chrome, Edge, Safari) for top 10 routes
+
+Ops:
+  [ ] Validate production env configs
+  [ ] Error reporting (Sentry) setup
+  [ ] Backup/restore verification
+  [ ] Rollback plan documentation
+
+================================================================================
+EFFORT KEY
+================================================================================
+  Small  = < 1 day
+  Medium = 1-3 days
+  Large  = 3-7 days
+  XL     = > 1 week
+
+================================================================================
+RECOMMENDED NEXT STEPS (in order)
+================================================================================
+1. P0-1/P0-2: Wire Razorpay payment flow for subscriptions + boosts
+2. P1-2: Unify refresh token callers (prevents session revocation bugs)
+3. P2-5: Release cleanup & worktree audit (quick win)
+4. P4-2: Deminify server/src/index.js (unlocks readability of entry point)
+5. P2-4: Backup/restore drill (ops readiness)
+6. P4-6: SQL injection audit (security critical)
+7. P3-1: Translation completion (user-facing quality)

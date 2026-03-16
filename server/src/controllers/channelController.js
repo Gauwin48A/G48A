@@ -1,18 +1,8 @@
-const pool = require('../config/db');
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require('../utils/logger');
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
-
-function getUserId(req) {
-  return req.user?.id || req.user?.userId || req.user?.user_id || null;
-}
+// Alias shared helper to match existing call sites
+const getUserId = getAuthUserId;
 
 exports.createChannel = async (req, res) => {
   try {

@@ -1,32 +1,11 @@
-﻿const pool = require("../config/db");
+﻿const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { parsePositiveInt, getScalarQueryValue, parseOptionalString } = require("../utils/parseHelpers");
 const logger = require("../utils/logger");
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 
 let recentlyViewedSchemaPromise = null;
-
-function runQuery(text, values = []) {
-  return pool.query({ text, values, query_timeout: DB_QUERY_TIMEOUT_MS });
-}
-
-function getScalarQueryValue(value) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
-  const scalar = getScalarQueryValue(value);
-  if (scalar === undefined || scalar === null) return fallback;
-
-  const normalized = (typeof scalar === "string" ? scalar : String(scalar)).trim();
-  if (!/^\d+$/.test(normalized)) return fallback;
-
-  const parsed = Number(normalized);
-  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
-
-  return Math.min(parsed, max);
-}
 
 function normalizeSource(value, fallback = null) {
   const scalar = getScalarQueryValue(value);
@@ -36,13 +15,7 @@ function normalizeSource(value, fallback = null) {
   return normalized || fallback;
 }
 
-function parseOptionalString(value) {
-  const scalar = getScalarQueryValue(value);
-  if (scalar === undefined || scalar === null) return null;
-
-  const normalized = String(scalar).trim();
-  return normalized || null;
-}
+// parseOptionalString imported from parseHelpers
 
 function normalizeUploadsPath(value) {
   const normalized = parseOptionalString(value);

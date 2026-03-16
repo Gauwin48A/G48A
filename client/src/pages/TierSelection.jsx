@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,6 +11,7 @@ import {
   Shield,
   Sparkles,
   TrendingUp,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -133,6 +134,23 @@ export default function TierSelection() {
   const [activatedTier, setActivatedTier] = useState(null);
   const [error, setError] = useState(null);
   const [lastAttemptedTier, setLastAttemptedTier] = useState(null);
+  const [flashSale, setFlashSale] = useState(null);
+
+  // Fetch dynamic pricing (checks for time-of-day flash sales)
+  useEffect(() => {
+    const checkFlashSale = async () => {
+      try {
+        const res = await api.get("/subscriptions/plans/silver/price");
+        const data = res?.data ?? res;
+        if (data?.isFlashSale) {
+          setFlashSale({ discount: data.discount, price: data.price, originalPrice: data.originalPrice });
+        }
+      } catch {
+        // Flash sale check is non-critical
+      }
+    };
+    checkFlashSale();
+  }, []);
 
   const activatedTierLabel = useMemo(() => {
     if (!activatedTier) {
@@ -313,6 +331,18 @@ export default function TierSelection() {
       )}
 
       <div className="max-w-7xl mx-auto grid gap-6 sm:grid-cols-2 lg:grid-cols-4 items-stretch page-shell page-pad">
+        {flashSale && (
+          <div className="sm:col-span-2 lg:col-span-4 mb-2">
+            <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 rounded-xl p-4 text-white text-center animate-pulse">
+              <div className="flex items-center justify-center gap-2 font-bold text-lg">
+                <Zap className="w-5 h-5" />
+                🌙 Night Owl Deal — {flashSale.discount}
+                <Zap className="w-5 h-5" />
+              </div>
+              <p className="text-sm mt-1 opacity-90">Limited time pricing available between 11 PM – 6 AM</p>
+            </div>
+          </div>
+        )}
         {tierPlans.map((plan) => {
           const Icon = plan.icon;
           const isProcessing = processingTier === plan.key;
@@ -460,6 +490,120 @@ export default function TierSelection() {
       </div>
 
       <div className="max-w-7xl mx-auto mt-12 grid gap-6 sm:grid-cols-2">
+        {/* Feature Comparison Table */}
+        <Card className="sm:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">
+              📊 {tr("compare_plans", "Compare All Plans")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto scrollbar-hide">
+              <table className="mhub-comparison-table" role="table">
+                <thead>
+                  <tr className="border-b-2 border-gray-200 dark:border-slate-600">
+                    <th className="text-left">{tr("feature", "Feature")}</th>
+                    <th>{tr("basic_plan", "Basic")}</th>
+                    <th>{tr("bronze_seller", "Bronze")}</th>
+                    <th className="highlight-col">{tr("silver_seller", "Silver")} ⭐</th>
+                    <th>{tr("premium", "Premium")} 👑</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-700 dark:text-slate-300">
+                  <tr>
+                    <td>{tr("active_listings", "Active Listings")}</td>
+                    <td>1</td><td>100</td><td className="highlight-col font-semibold">200</td><td className="font-bold">∞</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("listing_duration", "Listing Duration")}</td>
+                    <td>15d</td><td>30d</td><td className="highlight-col">30d</td><td>45d</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("boosts_month", "Boosts")}</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td className="text-gray-400 dark:text-slate-500">Coins</td>
+                    <td className="highlight-col">5/6mo</td>
+                    <td>5/mo</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("featured_month", "Featured")}</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td className="highlight-col">5/6mo</td>
+                    <td>5/mo</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("spotlight_month", "Spotlight")}</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td className="highlight-col">5/6mo</td>
+                    <td>5/mo</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("seller_badge_label", "Badge")}</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td>🏷️</td>
+                    <td className="highlight-col">✅</td>
+                    <td>👑</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("analytics_label", "Analytics")}</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td>Basic</td>
+                    <td className="highlight-col">Full</td>
+                    <td>Full</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("free_trial_label", "Free Trial")}</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td className="text-gray-400 dark:text-slate-500">—</td>
+                    <td className="highlight-col font-semibold text-blue-600 dark:text-blue-400">7 days</td>
+                    <td className="font-semibold text-yellow-600 dark:text-yellow-400">14 days</td>
+                  </tr>
+                  <tr>
+                    <td>{tr("monthly_cost_label", "Monthly Cost")}</td>
+                    <td>₹500/post</td>
+                    <td>~₹283</td>
+                    <td className="highlight-col font-bold text-green-600 dark:text-green-400">~₹200</td>
+                    <td className="font-bold text-green-600 dark:text-green-400">~₹125</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Feature Explanations */}
+        <Card className="sm:col-span-2 border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
+          <CardHeader>
+            <CardTitle className="text-lg text-gray-900 dark:text-white">
+              💡 {tr("understand_features", "Understanding Seller Features")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-4 text-sm">
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700">
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">🚀 Boost</p>
+                <p className="text-gray-600 dark:text-gray-300 text-xs">
+                  Pushes your listing to the top of search results for 24 hours. Increases inquiries by ~40%.
+                </p>
+              </div>
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700">
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">⭐ Featured</p>
+                <p className="text-gray-600 dark:text-gray-300 text-xs">
+                  Premium section placement with badge for 7 days. Increases inquiries by ~30%.
+                </p>
+              </div>
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-slate-700">
+                <p className="font-semibold text-gray-900 dark:text-white mb-1">💎 Spotlight</p>
+                <p className="text-gray-600 dark:text-gray-300 text-xs">
+                  Boost + Featured combined for maximum visibility. 7-day premium placement.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-dashed">
           <CardHeader>
             <CardTitle className="text-lg text-gray-900 dark:text-white">

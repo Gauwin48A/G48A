@@ -1,1 +1,158 @@
-import e,{useState as t}from"react";import{Button as m}from"@/components/ui/button";import{Input as x}from"@/components/ui/input";import{Label as T}from"@/components/ui/label";import{buildApiPath as b}from"@/lib/networkConfig";import{useTranslation as j}from"react-i18next";function B({onVerified:p,onError:c}){const{t:E}=j(),[n,N]=t(""),[P,A]=t(""),[o,h]=t("input"),[C,S]=t(""),[l,X]=t(""),[f,i]=t(!1),[d,r]=t(""),[v,u]=t(60),[k,g]=t(!1),L=s=>"XXXX XXXX "+s.slice(-4),y=async()=>{i(!0),r("");const a=await(await fetch(b("/aadhaar/send-otp"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({aadhaar:n})})).json();if(i(!1),a.success){S(a.txnId),A(L(n)),h("otp"),u(60),g(!1);const w=setInterval(()=>u(O=>O<=1?(clearInterval(w),g(!0),0):O-1),1e3)}else r(a.message||"Failed to send OTP")},I=async()=>{i(!0),r("");const a=await(await fetch(b("/aadhaar/verify-otp"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({aadhaar:n,otp:l,txnId:C})})).json();i(!1),a.verified?(h("verified"),p&&p(a)):(r(a.message||"Verification failed"),c&&c(a))};return e.createElement("div",{className:"space-y-4"},o==="input"&&e.createElement("div",null,e.createElement(T,{htmlFor:"aadhaar"},"Aadhaar Number"),e.createElement(x,{id:"aadhaar",maxLength:12,minLength:12,pattern:"\\d{12}",value:n,onChange:s=>N(s.target.value.replace(/\D/g,"")),placeholder:"Enter 12-digit Aadhaar"}),e.createElement(m,{className:"mt-2",onClick:y,disabled:n.length!==12||f},"Send OTP"),d&&e.createElement("div",{className:"text-red-500 text-sm mt-1"},d)),o==="otp"&&e.createElement("div",null,e.createElement("div",{className:"mb-2"},"OTP sent to mobile linked with Aadhaar ",P),e.createElement(T,{htmlFor:"otp"},"Enter OTP"),e.createElement(x,{id:"otp",maxLength:6,value:l,onChange:s=>X(s.target.value.replace(/\D/g,"")),placeholder:"Enter 6-digit OTP"}),e.createElement(m,{className:"mt-2",onClick:I,disabled:l.length!==6||f},"Verify"),e.createElement("div",{className:"mt-2 text-gray-500 text-xs"},v>0?`Resend OTP in ${v}s`:e.createElement(m,{size:"sm",onClick:y,disabled:!k},"Resend OTP")),d&&e.createElement("div",{className:"text-red-500 text-sm mt-1"},d)),o==="verified"&&e.createElement("div",{className:"text-green-600 font-bold"},"Aadhaar verified successfully!"))}export{B as default};
+import React, { useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { buildApiPath } from "@/lib/networkConfig";
+import { useTranslation } from "react-i18next";
+
+function AadhaarOtpVerify({ onVerified, onError }) {
+  const { t } = useTranslation();
+  const [aadhaar, setAadhaar] = useState("");
+  const [maskedAadhaar, setMaskedAadhaar] = useState("");
+  const [stage, setStage] = useState("input");
+  const [txnId, setTxnId] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [countdown, setCountdown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+
+  const maskAadhaar = (value) => "XXXX XXXX " + value.slice(-4);
+
+  const handleAadhaarChange = useCallback((e) => {
+    setAadhaar(e.target.value.replace(/\D/g, ""));
+  }, []);
+
+  const handleOtpChange = useCallback((e) => {
+    setOtp(e.target.value.replace(/\D/g, ""));
+  }, []);
+
+  const sendOtp = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    const response = await fetch(buildApiPath("/aadhaar/send-otp"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aadhaar }),
+    });
+    const data = await response.json();
+
+    setLoading(false);
+
+    if (data.success) {
+      setTxnId(data.txnId);
+      setMaskedAadhaar(maskAadhaar(aadhaar));
+      setStage("otp");
+      setCountdown(60);
+      setCanResend(false);
+
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setError(data.message || "Failed to send OTP");
+    }
+  }, [aadhaar]);
+
+  const verifyOtp = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    const response = await fetch(buildApiPath("/aadhaar/verify-otp"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ aadhaar, otp, txnId }),
+    });
+    const data = await response.json();
+
+    setLoading(false);
+
+    if (data.verified) {
+      setStage("verified");
+      onVerified && onVerified(data);
+    } else {
+      setError(data.message || "Verification failed");
+      onError && onError(data);
+    }
+  }, [aadhaar, otp, txnId, onVerified, onError]);
+
+  return (
+    <div className="space-y-4">
+      {stage === "input" && (
+        <div>
+          <Label htmlFor="aadhaar">Aadhaar Number</Label>
+          <Input
+            id="aadhaar"
+            maxLength={12}
+            minLength={12}
+            pattern="\d{12}"
+            value={aadhaar}
+            onChange={handleAadhaarChange}
+            placeholder="Enter 12-digit Aadhaar"
+          />
+          <Button
+            className="mt-2"
+            onClick={sendOtp}
+            disabled={aadhaar.length !== 12 || loading}
+          >
+            Send OTP
+          </Button>
+          {error && (
+            <div className="text-red-500 text-sm mt-1">{error}</div>
+          )}
+        </div>
+      )}
+
+      {stage === "otp" && (
+        <div>
+          <div className="mb-2">
+            OTP sent to mobile linked with Aadhaar {maskedAadhaar}
+          </div>
+          <Label htmlFor="otp">Enter OTP</Label>
+          <Input
+            id="otp"
+            maxLength={6}
+            value={otp}
+            onChange={handleOtpChange}
+            placeholder="Enter 6-digit OTP"
+          />
+          <Button
+            className="mt-2"
+            onClick={verifyOtp}
+            disabled={otp.length !== 6 || loading}
+          >
+            Verify
+          </Button>
+          <div className="mt-2 text-gray-500 text-xs">
+            {countdown > 0 ? (
+              `Resend OTP in ${countdown}s`
+            ) : (
+              <Button size="sm" onClick={sendOtp} disabled={!canResend}>
+                Resend OTP
+              </Button>
+            )}
+          </div>
+          {error && (
+            <div className="text-red-500 text-sm mt-1">{error}</div>
+          )}
+        </div>
+      )}
+
+      {stage === "verified" && (
+        <div className="text-green-600 font-bold">
+          Aadhaar verified successfully!
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default AadhaarOtpVerify;

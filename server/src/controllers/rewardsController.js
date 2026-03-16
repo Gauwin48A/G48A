@@ -1,4 +1,5 @@
-const pool = require("../config/db");
+const { pool, runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { parseOptionalString, parsePositiveInt } = require("../utils/parseHelpers");
 const logger = require("../utils/logger");
 const cacheService = require("../services/cacheService");
 const { subscribeToRewardUpdates } = require("../services/rewardsRealtimeService");
@@ -11,38 +12,13 @@ const DEFAULT_LOG_LIMIT = 50;
 const MAX_LOG_LIMIT = 200;
 const REWARDS_PROFILE_CACHE_TTL_SECONDS = 60;
 const REWARDS_LOG_CACHE_TTL_SECONDS = 30;
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const COMPLETED_TRANSACTION_STATUSES = ["completed", "success"];
 const IST_OFFSET_MINUTES = 330;
 
 let usersLegacyIdColumnAvailablePromise = null;
 
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS,
-  });
-}
-
-function parseOptionalString(value) {
-  if (value === undefined || value === null) return null;
-  const normalized = String(value).trim();
-  return normalized.length ? normalized : null;
-}
-
 function isUndefinedTableError(error) {
   return String(error?.code || "").toUpperCase() === "42P01";
-}
-
-function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
-  const normalized = parseOptionalString(value);
-  if (!normalized || !/^\d+$/.test(normalized)) return fallback;
-
-  const parsed = Number(normalized);
-  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
-
-  return Math.min(parsed, max);
 }
 
 function toInt(value, fallback = 0) {
