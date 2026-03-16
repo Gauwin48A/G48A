@@ -1,31 +1,14 @@
-const pool = require("../config/db");
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { parseOptionalString } = require("../utils/parseHelpers");
 const logger = require("../utils/logger");
 
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const DEFAULT_SESSION_LIMIT = Number.parseInt(process.env.AUTH_SESSION_LIST_LIMIT || "20", 10);
 const MAX_SESSION_LIMIT = Number.parseInt(process.env.AUTH_SESSION_LIST_MAX_LIMIT || "100", 10);
 const TERMINAL_REAUTH_STATES = new Set(["invalid_token", "revoked", "password_changed"]);
 const REFRESH_BLOCKED_STATES = new Set(["revoked", "password_changed"]);
 
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS,
-  });
-}
-
-function parseOptionalString(value) {
-  if (value === undefined || value === null) {
-    return null;
-  }
-  const normalized = String(value).trim();
-  return normalized.length ? normalized : null;
-}
-
-function parseUserId(req) {
-  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
-}
+// Alias shared helper to match existing call sites
+const parseUserId = getAuthUserId;
 
 function parseLimit(value) {
   const parsed = Number.parseInt(String(value ?? ""), 10);

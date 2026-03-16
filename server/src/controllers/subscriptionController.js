@@ -1,6 +1,6 @@
 const { pool, runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
-const { getTierRules, getSubscriptionExpiry, getAllTiersDisplay, TIER_ORDER } = require("../config/tierRules");
+const { getTierRules, getSubscriptionExpiry, getAllTiersDisplay, TIER_ORDER, getUpsellMessage: buildUpsellMessage, getDynamicPrice } = require("../config/tierRules");
 
 const normalizeQuotaPeriodMonths = (rules) => {
   const raw = Number.parseInt(rules?.quotaPeriodMonths, 10);
@@ -384,4 +384,42 @@ exports.checkQuota = async (userId, quotaType) => {
 
   const remaining = Math.max(0, quota.max - quota.used);
   return { hasQuota: remaining > 0, plan: sub.plan_name, remaining, used: quota.used, max: quota.max };
+};
+
+// GET /api/subscriptions/plans/:planName/price — dynamic pricing with time-of-day discounts
+exports.getDynamicPricing = async (req, res) => {
+  try {
+    const planName = String(req.params.planName || "").toLowerCase();
+    if (!TIER_ORDER.includes(planName)) {
+      return res.status(400).json({ error: `Invalid plan. Choose from: ${TIER_ORDER.join(", ")}` });
+    }
+    const pricing = getDynamicPrice(planName);
+    res.json({ success: true, plan: planName, ...pricing });
+  } catch (err) {
+    logger.error("[SUBSCRIPTION] getDynamicPricing error:", err);
+    res.status(500).json({ error: "Failed to load pricing" });
+  }
+};
+
+// GET /api/subscriptions/upsell — contextual upsell message for the current user
+exports.getUpsellMessage = async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  try {
+    const userResult = await runQuery(
+      "SELECT current_plan, tier FROM users WHERE user_id = $1",
+      [userId],
+    );
+    const currentPlan = userResult.rows[0]?.current_plan || userResult.rows[0]?.tier || "basic";
+    const upsell = buildUpsellMessage(currentPlan);
+    if (!upsell) {
+      return res.json({ success: true, upsell: null, message: "You're on the top plan!" });
+    }
+    const pricing = getDynamicPrice(upsell.tier);
+    res.json({ success: true, upsell: { ...upsell, dynamicPrice: pricing } });
+  } catch (err) {
+    logger.error("[SUBSCRIPTION] getUpsellMessage error:", err);
+    res.status(500).json({ error: "Failed to load upsell" });
+  }
 };

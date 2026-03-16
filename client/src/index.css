@@ -54,6 +54,8 @@
     --border: #334155;
     --input: #334155;
     --ring: #60a5fa;
+    --text-secondary: #e0e0e0;
+    --text-tertiary: #a0a0a0;
   }
 
   .page-shell {
@@ -321,6 +323,110 @@ html[data-layout-preview="mobile"] #root {
 /* 3. Low-contrast meta text: text-gray-500/600 → visible in dark */
 .dark .text-gray-500:not([class*="dark\:text-"]) {
   color: #94a3b8 !important; /* slate-400 */
+}
+
+/* ─── MHUB DESIGN SYSTEM ─── Spacing, WCAG contrast, compact cards, skeletons */
+
+/* === DARK MODE WCAG AA CONTRAST FIXES === */
+.dark .text-gray-400:not([class*="dark\:text-"]) {
+  color: #94a3b8 !important;
+}
+.dark .text-gray-600:not([class*="dark\:text-"]) {
+  color: #cbd5e1 !important;
+}
+.dark .text-gray-700:not([class*="dark\:text-"]) {
+  color: #e2e8f0 !important;
+}
+.dark .text-gray-800:not([class*="dark\:text-"]) {
+  color: #f1f5f9 !important;
+}
+.dark .border-gray-200:not([class*="dark\:border-"]) {
+  border-color: #334155 !important;
+}
+.dark .border-gray-100:not([class*="dark\:border-"]) {
+  border-color: #1e293b !important;
+}
+
+/* === COMPACT CARD SPACING (reduce 32-48px gaps to 8px) === */
+.mhub-compact-feed > * + * {
+  margin-top: 8px !important;
+}
+
+/* === SKELETON LOADER ANIMATION === */
+@keyframes mhub-skeleton {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+.mhub-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: mhub-skeleton 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+.dark .mhub-skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200px 100%;
+}
+
+/* === MOBILE FONT SIZE FLOOR (14px body minimum) === */
+@media (max-width: 640px) {
+  body { font-size: 14px; }
+  .text-xs { font-size: 12px !important; }
+  .text-sm { font-size: 13px !important; }
+}
+
+/* === COMPARISON TABLE (for TierSelection) === */
+.mhub-comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.mhub-comparison-table th,
+.mhub-comparison-table td {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.mhub-comparison-table th {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.mhub-comparison-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+.mhub-comparison-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.04);
+}
+.dark .mhub-comparison-table tbody tr:hover {
+  background: rgba(96, 165, 250, 0.08);
+}
+.mhub-comparison-table .highlight-col {
+  background: rgba(59, 130, 246, 0.06);
+}
+.dark .mhub-comparison-table .highlight-col {
+  background: rgba(96, 165, 250, 0.1);
+}
+@media (max-width: 640px) {
+  .mhub-comparison-table { font-size: 11px; }
+  .mhub-comparison-table th,
+  .mhub-comparison-table td { padding: 8px 4px; }
+}
+
+/* === CAROUSEL (horizontal scroll) === */
+.mhub-carousel {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+.mhub-carousel::-webkit-scrollbar { display: none; }
+.mhub-carousel > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
 }
 .dark .text-gray-600:not([class*="dark\:text-"]) {
   color: #cbd5e1 !important; /* slate-300 */

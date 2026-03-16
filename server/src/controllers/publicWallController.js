@@ -1,3 +1,4 @@
+const { runQuery } = require("../utils/dbHelpers");
 const pool = require("../config/db");
 const logger = require("../utils/logger");
 

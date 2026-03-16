@@ -1,1 +1,38 @@
-import r,{forwardRef as t}from"react";import*as f from"@radix-ui/react-avatar";import{cn as m}from"@/lib/utils";const s=t(({className:a,...e},l)=>r.createElement(f.Root,{ref:l,className:m("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",a),...e}));s.displayName="Avatar";const o=t(({className:a,...e},l)=>r.createElement(f.Image,{ref:l,className:m("aspect-square h-full w-full",a),...e}));o.displayName="AvatarImage";const i=t(({className:a,...e},l)=>r.createElement(f.Fallback,{ref:l,className:m("flex h-full w-full items-center justify-center rounded-full bg-muted",a),...e}));i.displayName="AvatarFallback";export{s as Avatar,i as AvatarFallback,o as AvatarImage};
+import r, { forwardRef as t } from "react";
+import * as f from "@radix-ui/react-avatar";
+import { cn as m } from "@/lib/utils";
+
+const s = t(({ className: a, ...e }, l) =>
+  r.createElement(f.Root, {
+    ref: l,
+    className: m(
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+      a
+    ),
+    ...e,
+  })
+);
+s.displayName = "Avatar";
+
+const o = t(({ className: a, ...e }, l) =>
+  r.createElement(f.Image, {
+    ref: l,
+    className: m("aspect-square h-full w-full", a),
+    ...e,
+  })
+);
+o.displayName = "AvatarImage";
+
+const i = t(({ className: a, ...e }, l) =>
+  r.createElement(f.Fallback, {
+    ref: l,
+    className: m(
+      "flex h-full w-full items-center justify-center rounded-full bg-muted",
+      a
+    ),
+    ...e,
+  })
+);
+i.displayName = "AvatarFallback";
+
+export { s as Avatar, i as AvatarFallback, o as AvatarImage };

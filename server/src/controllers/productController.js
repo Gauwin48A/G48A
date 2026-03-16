@@ -1,12 +1,7 @@
 const db = require('../config/db');
 const logger = require('../utils/logger');
+const { parsePositiveInt } = require("../utils/parseHelpers");
 const MAX_SEARCH_PAGE = 10000;
-
-function parsePositiveInt(value, fallback, max = Number.MAX_SAFE_INTEGER) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
-  return Math.min(parsed, max);
-}
 
 // GET /api/products/deals
 exports.getDeals = async (req, res) => {

@@ -1,26 +1,10 @@
-const pool = require('../config/db');
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { parseOptionalString } = require("../utils/parseHelpers");
 const { logSecurityEvent, EVENTS } = require('../config/auditLogger');
 const logger = require('../utils/logger');
 
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
-
-function parseOptionalString(value) {
-  if (value === undefined || value === null) return null;
-  const normalized = String(value).trim();
-  return normalized.length > 0 ? normalized : null;
-}
-
-function getAuthenticatedUserId(req) {
-  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
-}
+// Alias shared helper to match existing call sites
+const getAuthenticatedUserId = getAuthUserId;
 
 function loadBcrypt() {
   try {

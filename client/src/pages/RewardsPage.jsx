@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { getAccessToken, getUserId } from "@/utils/authStorage";
+import UpsellBanner from "@/components/UpsellBanner";
 
 const RewardsPage = () => {
   const { user, loading: authLoading } = useAuth(); // Use global auth state
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const tr = (key, fallback, options = {}) =>
     t(key, { defaultValue: fallback, ...options });
   const [rewards, setRewards] = useState({ points: 0 });
@@ -142,6 +144,8 @@ const RewardsPage = () => {
           {tr("my_rewards", "My Rewards")}
         </h1>
 
+        <UpsellBanner trigger="rewards" className="mb-6" />
+
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg rounded-xl p-6 mb-6 text-white">
           <h2 className="text-lg font-medium opacity-90">
             {tr("total_points", "Total Points")}
@@ -201,7 +205,7 @@ const RewardsPage = () => {
             </h2>
             {directReferrals.length === 0 ? (
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                {tr("no_direct_referrals", "No direct referrals yet")}
+                {tr("no_direct_referrals", "No direct referrals yet. Share your code to get started!")}
               </p>
             ) : (
               <ul className="space-y-1">
@@ -241,9 +245,134 @@ const RewardsPage = () => {
           </div>
         </div>
 
+        {/* Daily Challenges Section */}
+        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              📋 {tr("daily_challenges", "Daily Challenges")}
+            </h2>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {tr("earn_coins_xp", "Complete tasks to earn coins & XP")}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { icon: "🔑", title: tr("daily_login", "Daily Login"), desc: tr("visit_daily", "Visit MHub today"), reward: "+25 coins", done: true },
+              { icon: "📌", title: tr("create_listing", "Create Listing"), desc: tr("post_item", "Post an item"), reward: "+50 coins", done: false, action: () => navigate("/tier-selection") },
+              { icon: "⭐", title: tr("get_review", "Get Review"), desc: tr("complete_sale", "Complete a sale"), reward: "+100 coins", done: false },
+              { icon: "👥", title: tr("invite_friend", "Invite Friend"), desc: tr("share_code", "Share your code"), reward: "+75 coins", done: false },
+            ].map((challenge, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg border text-center transition-all ${
+                  challenge.done
+                    ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                    : "bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600"
+                }`}
+              >
+                <div className={`text-2xl mb-1 ${challenge.done ? "opacity-50" : ""}`}>
+                  {challenge.done ? "✅" : challenge.icon}
+                </div>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white">{challenge.title}</h3>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">{challenge.desc}</p>
+                <span className="inline-block text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
+                  {challenge.reward}
+                </span>
+                {!challenge.done && challenge.action && (
+                  <button
+                    onClick={challenge.action}
+                    className="block w-full mt-2 text-[10px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded py-1 transition-colors"
+                  >
+                    {tr("start", "Start")} →
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Rewards Store */}
+        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              🎁 {tr("rewards_store", "Rewards Store")}
+            </h2>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {tr("redeem_coins", "Redeem your coins for benefits")}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { icon: "🚀", title: tr("boost_24h", "Boost (24h)"), desc: tr("top_search", "Top of search"), coins: 250, badge: "50% OFF" },
+              { icon: "⭐", title: tr("featured_7d", "Featured (7d)"), desc: tr("premium_placement", "Premium section"), coins: 500, badge: "40% OFF" },
+              { icon: "📌", title: tr("free_listing", "Free Listing"), desc: tr("one_listing", "1 free listing (15d)"), coins: 150 },
+              { icon: "📦", title: tr("listing_bundle", "5 Listing Bundle"), desc: tr("five_listings", "5 listings (30d each)"), coins: 1000, badge: "POPULAR" },
+              { icon: "✅", title: tr("fast_verify", "Fast Verification"), desc: tr("expedited", "Verified in 1 day"), coins: 300 },
+              { icon: "👑", title: tr("premium_1mo", "Premium (1 month)"), desc: tr("premium_upgrade", "Premium tier upgrade"), coins: 2000, badge: "LIMITED" },
+            ].map((reward, idx) => (
+              <div
+                key={idx}
+                className="relative p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 hover:shadow-md transition-shadow"
+              >
+                {reward.badge && (
+                  <span className="absolute -top-2 -right-2 text-[9px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">
+                    {reward.badge}
+                  </span>
+                )}
+                <div className="text-2xl mb-1">{reward.icon}</div>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white">{reward.title}</h3>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2">{reward.desc}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">
+                    🪙 {reward.coins}
+                  </span>
+                  <button
+                    disabled={rewards.points < reward.coins}
+                    className="text-[10px] font-semibold px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {tr("redeem", "Redeem")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Achievements Section */}
+        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 mb-6">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            🏆 {tr("achievements", "Achievements")}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { icon: "🎯", title: tr("first_listing", "First Listing"), desc: tr("post_first", "Post your first item"), unlocked: false, progress: "0/1" },
+              { icon: "⭐", title: tr("five_star_seller", "5-Star Seller"), desc: tr("ten_reviews", "Get 10 five-star reviews"), unlocked: false, progress: "0/10" },
+              { icon: "🔥", title: tr("streak_master", "Streak Master"), desc: tr("thirty_day_streak", "30-day visit streak"), unlocked: false, progress: "0/30" },
+              { icon: "👑", title: tr("elite_seller", "Elite Seller"), desc: tr("reach_premium", "Reach Premium tier"), unlocked: false, progress: "Locked" },
+            ].map((achievement, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg border text-center ${
+                  achievement.unlocked
+                    ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+                    : "bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
+                }`}
+              >
+                <div className={`text-2xl mb-1 ${achievement.unlocked ? "" : "opacity-30"}`}>
+                  {achievement.icon}
+                </div>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white">{achievement.title}</h3>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">{achievement.desc}</p>
+                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">{achievement.progress}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Reward History */}
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700">
           <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
-            {tr("reward_history", "Reward History")}
+            📊 {tr("reward_history", "Reward History")}
           </h2>
           {rewardLog.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">

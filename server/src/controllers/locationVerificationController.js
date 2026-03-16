@@ -25,7 +25,7 @@ exports.verifyLocation = async (req, res) => {
 
     if (
       CONFIG.requireSignature &&
-      !verifySignature(payload, signature, CONFIG.signatureSecret)
+      !(await verifySignature(payload, signature, CONFIG.signatureSecret))
     ) {
       return res.status(401).json({
         error: "Invalid signature",

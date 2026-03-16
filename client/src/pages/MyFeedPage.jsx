@@ -41,6 +41,10 @@ import {
   PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
 import { useTranslatedPosts } from "@/hooks/useTranslatedContent";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import useInfiniteScroll from "@/hooks/useInfiniteScroll";
+import SkeletonLoader from "@/components/SkeletonLoader";
+import UpsellBanner from "@/components/UpsellBanner";
 
 const getPostKey = (post) => post?.post_id ?? post?.id ?? null;
 
@@ -297,6 +301,12 @@ const MyFeedPage = () => {
     };
   }, [isLoggedIn, loadMorePosts]);
 
+  // Pull-to-refresh for mobile
+  const { pullIndicator } = usePullToRefresh({
+    onRefresh: () => fetchPosts({ page: 1, refresh: true }),
+    disabled: !isLoggedIn,
+  });
+
   const toggleExpand = (postId) => {
     setExpandedPosts((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
@@ -442,6 +452,7 @@ const MyFeedPage = () => {
 
   return (
     <div className="bg-gradient-to-b from-green-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen nav-clearance">
+      {pullIndicator}
       <div className="w-full bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-800 dark:via-emerald-800 dark:to-teal-800">
         <div className="max-w-3xl mx-auto px-4 py-8 page-shell page-pad">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -478,6 +489,7 @@ const MyFeedPage = () => {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 page-shell page-pad">
+        <UpsellBanner trigger="feed" className="mb-4" />
         <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border flex items-center justify-between">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -503,7 +515,7 @@ const MyFeedPage = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2 mhub-compact-feed">
           {loading && currentPage === 1 ? (
             <PageLoadingState
               title={t("loading") || "Loading..."}
@@ -742,9 +754,7 @@ const MyFeedPage = () => {
           )}
 
           {loading && currentPage > 1 && (
-            <div className="text-center py-4">
-              <div className="w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto" />
-            </div>
+            <SkeletonLoader type="card" count={2} />
           )}
 
           {!hasMore && posts.length > 0 && (
