@@ -26,8 +26,6 @@ const MIME_EXTENSION_MAP = {
   "audio/webm": ".webm",
   "audio/ogg": ".ogg",
   "application/pdf": ".pdf",
-  "application/xml": ".xml",
-  "text/xml": ".xml",
 };
 
 const resolveFileExtension = (file) => {
@@ -76,10 +74,10 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
   } else if (mimeType.startsWith("audio/")) {
     cb(null, true);
-  } else if (mimeType === "application/xml" || mimeType === "text/xml" || mimeType === "application/pdf") {
+  } else if (mimeType === "application/pdf") {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type. Only images, audio, XML, and PDF are allowed."));
+    cb(new Error("Invalid file type. Only images, audio, and PDF are allowed."));
   }
 };
 

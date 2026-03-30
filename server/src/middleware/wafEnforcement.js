@@ -6,7 +6,7 @@ const SQLI_PATTERNS = [
   /\bdrop\b\s+\btable\b/i,
   /\binsert\b\s+\binto\b/i,
   /\bdelete\b\s+\bfrom\b/i,
-  /--\s/,
+  /--\s*\b(select|drop|insert|delete|update|union|alter|create)\b/i,
   /\/\*[^*]*\*\//
 ];
 
