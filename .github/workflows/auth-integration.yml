@@ -1,0 +1,86 @@
+name: Auth Integration Tests
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".github/workflows/auth-integration.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/auth-integration.yml"
+  workflow_dispatch:
+
+jobs:
+  auth-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: mhub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d mhub_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    defaults:
+      run:
+        working-directory: server
+
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_NAME: mhub_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: ci_access_secret_x9k3f2m8n1v6p4r7t2w5z8q1y3u6i9o
+      REFRESH_SECRET: ci_refresh_secret_m4b7n2c9x6v1z8a5s3d0f7g4h9j2k6
+      CLIENT_URL: http://localhost:5173
+      DISABLE_BACKGROUND_JOBS: "true"
+      AUTH_EXPOSE_TEST_SECRETS: "true"
+      RETURN_REFRESH_TOKEN_IN_BODY: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        working-directory: .
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..20}; do
+            pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" && exit 0
+            sleep 2
+          done
+          echo "PostgreSQL did not become ready in time."
+          exit 1
+        working-directory: .
+
+      - name: Initialize database
+        run: |
+          psql "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}" -v ON_ERROR_STOP=1 -f database/MHUB_ULTIMATE.sql
+          psql "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}" -v ON_ERROR_STOP=1 -f database/migrations/fix_user_sessions_user_id_type.sql
+
+      - name: Run real auth integration tests
+        run: npm run test:auth:integration

@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+Allow: /post/
+Allow: /profile/
+Allow: /all-posts
+Allow: /feed
+Allow: /for-you
+
+# Block private/auth pages from indexing
+Disallow: /admin
+Disallow: /admin-panel
+Disallow: /chat
+Disallow: /my-home
+Disallow: /profile/edit
+Disallow: /verification
+Disallow: /tier-selection
+Disallow: /payment
+Disallow: /otp-verify
+Disallow: /dashboard
+Disallow: /rewards
+Disallow: /notifications
+
+# Block API endpoints
+Disallow: /api/
+
+Sitemap: /sitemap.xml

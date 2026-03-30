@@ -1,0 +1,493 @@
+{
+  "base": "http://127.0.0.1:8081",
+  "outDir": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T10-24-39-906Z",
+  "login": {
+    "attempted": false,
+    "ok": false
+  },
+  "routes": [
+    {
+      "path": "/login",
+      "name": "login",
+      "url": "http://127.0.0.1:8081/login",
+      "status": "ok",
+      "file": "login-dark.png"
+    },
+    {
+      "path": "/signup",
+      "name": "signup",
+      "url": "http://127.0.0.1:8081/signup",
+      "status": "ok",
+      "file": "signup-dark.png"
+    },
+    {
+      "path": "/invite/demo",
+      "name": "invite-code",
+      "url": "http://127.0.0.1:8081/invite/demo",
+      "status": "ok",
+      "file": "invite-code-dark.png"
+    },
+    {
+      "path": "/forgot-password",
+      "name": "forgot-password",
+      "url": "http://127.0.0.1:8081/forgot-password",
+      "status": "ok",
+      "file": "forgot-password-dark.png"
+    },
+    {
+      "path": "/reset-password",
+      "name": "reset-password",
+      "url": "http://127.0.0.1:8081/reset-password",
+      "status": "ok",
+      "file": "reset-password-dark.png"
+    },
+    {
+      "path": "/reset-password/demo",
+      "name": "reset-password-token",
+      "url": "http://127.0.0.1:8081/reset-password/demo",
+      "status": "ok",
+      "file": "reset-password-token-dark.png"
+    },
+    {
+      "path": "/",
+      "name": "root",
+      "url": "http://127.0.0.1:8081/",
+      "status": "ok",
+      "file": "root-dark.png"
+    },
+    {
+      "path": "/all-posts",
+      "name": "all-posts",
+      "url": "http://127.0.0.1:8081/all-posts",
+      "status": "ok",
+      "file": "all-posts-dark.png"
+    },
+    {
+      "path": "/post/123",
+      "name": "post-id",
+      "url": "http://127.0.0.1:8081/post/123",
+      "status": "ok",
+      "file": "post-id-dark.png"
+    },
+    {
+      "path": "/dashboard",
+      "name": "dashboard",
+      "url": "http://127.0.0.1:8081/dashboard",
+      "status": "ok",
+      "file": "dashboard-dark.png"
+    },
+    {
+      "path": "/activity",
+      "name": "activity",
+      "url": "http://127.0.0.1:8081/activity",
+      "status": "ok",
+      "file": "activity-dark.png"
+    },
+    {
+      "path": "/profile",
+      "name": "profile",
+      "url": "http://127.0.0.1:8081/profile",
+      "status": "ok",
+      "file": "profile-dark.png"
+    },
+    {
+      "path": "/security",
+      "name": "security",
+      "url": "http://127.0.0.1:8081/security",
+      "status": "ok",
+      "file": "security-dark.png"
+    },
+    {
+      "path": "/add-post",
+      "name": "add-post",
+      "url": "http://127.0.0.1:8081/add-post",
+      "status": "ok",
+      "file": "add-post-dark.png"
+    },
+    {
+      "path": "/post-welcome",
+      "name": "post-welcome",
+      "url": "http://127.0.0.1:8081/post-welcome",
+      "status": "ok",
+      "file": "post-welcome-dark.png"
+    },
+    {
+      "path": "/category-mode",
+      "name": "category-mode",
+      "url": "http://127.0.0.1:8081/category-mode",
+      "status": "ok",
+      "file": "category-mode-dark.png"
+    },
+    {
+      "path": "/category-hub",
+      "name": "category-hub",
+      "url": "http://127.0.0.1:8081/category-hub",
+      "status": "ok",
+      "file": "category-hub-dark.png"
+    },
+    {
+      "path": "/edit-post/123",
+      "name": "edit-post-postId",
+      "url": "http://127.0.0.1:8081/edit-post/123",
+      "status": "ok",
+      "file": "edit-post-postId-dark.png"
+    },
+    {
+      "path": "/tier-selection",
+      "name": "tier-selection",
+      "url": "http://127.0.0.1:8081/tier-selection",
+      "status": "ok",
+      "file": "tier-selection-dark.png"
+    },
+    {
+      "path": "/tiers",
+      "name": "tiers",
+      "url": "http://127.0.0.1:8081/tiers",
+      "status": "ok",
+      "file": "tiers-dark.png"
+    },
+    {
+      "path": "/pricing",
+      "name": "pricing",
+      "url": "http://127.0.0.1:8081/pricing",
+      "status": "ok",
+      "file": "pricing-dark.png"
+    },
+    {
+      "path": "/my-home",
+      "name": "my-home",
+      "url": "http://127.0.0.1:8081/my-home",
+      "status": "ok",
+      "file": "my-home-dark.png"
+    },
+    {
+      "path": "/home",
+      "name": "home",
+      "url": "http://127.0.0.1:8081/home",
+      "status": "ok",
+      "file": "home-dark.png"
+    },
+    {
+      "path": "/for-you",
+      "name": "for-you",
+      "url": "http://127.0.0.1:8081/for-you",
+      "status": "ok",
+      "file": "for-you-dark.png"
+    },
+    {
+      "path": "/bought-posts",
+      "name": "bought-posts",
+      "url": "http://127.0.0.1:8081/bought-posts",
+      "status": "ok",
+      "file": "bought-posts-dark.png"
+    },
+    {
+      "path": "/sold-posts",
+      "name": "sold-posts",
+      "url": "http://127.0.0.1:8081/sold-posts",
+      "status": "ok",
+      "file": "sold-posts-dark.png"
+    },
+    {
+      "path": "/buyer-view",
+      "name": "buyer-view",
+      "url": "http://127.0.0.1:8081/buyer-view",
+      "status": "ok",
+      "file": "buyer-view-dark.png"
+    },
+    {
+      "path": "/saledone",
+      "name": "saledone",
+      "url": "http://127.0.0.1:8081/saledone",
+      "status": "ok",
+      "file": "saledone-dark.png"
+    },
+    {
+      "path": "/saleundone",
+      "name": "saleundone",
+      "url": "http://127.0.0.1:8081/saleundone",
+      "status": "ok",
+      "file": "saleundone-dark.png"
+    },
+    {
+      "path": "/admin-panel",
+      "name": "admin-panel",
+      "url": "http://127.0.0.1:8081/admin-panel",
+      "status": "ok",
+      "file": "admin-panel-dark.png"
+    },
+    {
+      "path": "/aadhaar-verify",
+      "name": "aadhaar-verify",
+      "url": "http://127.0.0.1:8081/aadhaar-verify",
+      "status": "ok",
+      "file": "aadhaar-verify-dark.png"
+    },
+    {
+      "path": "/public-wall",
+      "name": "public-wall",
+      "url": "http://127.0.0.1:8081/public-wall",
+      "status": "ok",
+      "file": "public-wall-dark.png"
+    },
+    {
+      "path": "/notifications",
+      "name": "notifications",
+      "url": "http://127.0.0.1:8081/notifications",
+      "status": "ok",
+      "file": "notifications-dark.png"
+    },
+    {
+      "path": "/complaints",
+      "name": "complaints",
+      "url": "http://127.0.0.1:8081/complaints",
+      "status": "ok",
+      "file": "complaints-dark.png"
+    },
+    {
+      "path": "/feedback",
+      "name": "feedback",
+      "url": "http://127.0.0.1:8081/feedback",
+      "status": "ok",
+      "file": "feedback-dark.png"
+    },
+    {
+      "path": "/rewards",
+      "name": "rewards",
+      "url": "http://127.0.0.1:8081/rewards",
+      "status": "ok",
+      "file": "rewards-dark.png"
+    },
+    {
+      "path": "/my-recommendations",
+      "name": "my-recommendations",
+      "url": "http://127.0.0.1:8081/my-recommendations",
+      "status": "ok",
+      "file": "my-recommendations-dark.png"
+    },
+    {
+      "path": "/categories",
+      "name": "categories",
+      "url": "http://127.0.0.1:8081/categories",
+      "status": "ok",
+      "file": "categories-dark.png"
+    },
+    {
+      "path": "/subcategories",
+      "name": "subcategories",
+      "url": "http://127.0.0.1:8081/subcategories",
+      "status": "ok",
+      "file": "subcategories-dark.png"
+    },
+    {
+      "path": "/categories/demo",
+      "name": "categories-slug",
+      "url": "http://127.0.0.1:8081/categories/demo",
+      "status": "ok",
+      "file": "categories-slug-dark.png"
+    },
+    {
+      "path": "/feed",
+      "name": "feed",
+      "url": "http://127.0.0.1:8081/feed",
+      "status": "ok",
+      "file": "feed-dark.png"
+    },
+    {
+      "path": "/feed/123",
+      "name": "feed-id",
+      "url": "http://127.0.0.1:8081/feed/123",
+      "status": "ok",
+      "file": "feed-id-dark.png"
+    },
+    {
+      "path": "/my-feed",
+      "name": "my-feed",
+      "url": "http://127.0.0.1:8081/my-feed",
+      "status": "ok",
+      "file": "my-feed-dark.png"
+    },
+    {
+      "path": "/my-posts",
+      "name": "my-posts",
+      "url": "http://127.0.0.1:8081/my-posts",
+      "status": "ok",
+      "file": "my-posts-dark.png"
+    },
+    {
+      "path": "/post_add",
+      "name": "post_add",
+      "url": "http://127.0.0.1:8081/post_add",
+      "status": "ok",
+      "file": "post_add-dark.png"
+    },
+    {
+      "path": "/feed/feedpostadd",
+      "name": "feed-feedpostadd",
+      "url": "http://127.0.0.1:8081/feed/feedpostadd",
+      "status": "ok",
+      "file": "feed-feedpostadd-dark.png"
+    },
+    {
+      "path": "/wishlist",
+      "name": "wishlist",
+      "url": "http://127.0.0.1:8081/wishlist",
+      "status": "ok",
+      "file": "wishlist-dark.png"
+    },
+    {
+      "path": "/cart",
+      "name": "cart",
+      "url": "http://127.0.0.1:8081/cart",
+      "status": "ok",
+      "file": "cart-dark.png"
+    },
+    {
+      "path": "/recently-viewed",
+      "name": "recently-viewed",
+      "url": "http://127.0.0.1:8081/recently-viewed",
+      "status": "ok",
+      "file": "recently-viewed-dark.png"
+    },
+    {
+      "path": "/saved-searches",
+      "name": "saved-searches",
+      "url": "http://127.0.0.1:8081/saved-searches",
+      "status": "ok",
+      "file": "saved-searches-dark.png"
+    },
+    {
+      "path": "/verification",
+      "name": "verification",
+      "url": "http://127.0.0.1:8081/verification",
+      "status": "ok",
+      "file": "verification-dark.png"
+    },
+    {
+      "path": "/nearby",
+      "name": "nearby",
+      "url": "http://127.0.0.1:8081/nearby",
+      "status": "ok",
+      "file": "nearby-dark.png"
+    },
+    {
+      "path": "/chat",
+      "name": "chat",
+      "url": "http://127.0.0.1:8081/chat",
+      "status": "ok",
+      "file": "chat-dark.png"
+    },
+    {
+      "path": "/chats",
+      "name": "chats",
+      "url": "http://127.0.0.1:8081/chats",
+      "status": "ok",
+      "file": "chats-dark.png"
+    },
+    {
+      "path": "/t&c",
+      "name": "t-c",
+      "url": "http://127.0.0.1:8081/t&c",
+      "status": "ok",
+      "file": "t-c-dark.png"
+    },
+    {
+      "path": "/terms",
+      "name": "terms",
+      "url": "http://127.0.0.1:8081/terms",
+      "status": "ok",
+      "file": "terms-dark.png"
+    },
+    {
+      "path": "/terms-and-conditions",
+      "name": "terms-and-conditions",
+      "url": "http://127.0.0.1:8081/terms-and-conditions",
+      "status": "ok",
+      "file": "terms-and-conditions-dark.png"
+    },
+    {
+      "path": "/privacy-policy",
+      "name": "privacy-policy",
+      "url": "http://127.0.0.1:8081/privacy-policy",
+      "status": "ok",
+      "file": "privacy-policy-dark.png"
+    },
+    {
+      "path": "/refund-policy",
+      "name": "refund-policy",
+      "url": "http://127.0.0.1:8081/refund-policy",
+      "status": "ok",
+      "file": "refund-policy-dark.png"
+    },
+    {
+      "path": "/support-ticket-policy",
+      "name": "support-ticket-policy",
+      "url": "http://127.0.0.1:8081/support-ticket-policy",
+      "status": "ok",
+      "file": "support-ticket-policy-dark.png"
+    },
+    {
+      "path": "/search",
+      "name": "search",
+      "url": "http://127.0.0.1:8081/search",
+      "status": "ok",
+      "file": "search-dark.png"
+    },
+    {
+      "path": "/analytics",
+      "name": "analytics",
+      "url": "http://127.0.0.1:8081/analytics",
+      "status": "ok",
+      "file": "analytics-dark.png"
+    },
+    {
+      "path": "/channels",
+      "name": "channels",
+      "url": "http://127.0.0.1:8081/channels",
+      "status": "ok",
+      "file": "channels-dark.png"
+    },
+    {
+      "path": "/channels/create",
+      "name": "channels-create",
+      "url": "http://127.0.0.1:8081/channels/create",
+      "status": "ok",
+      "file": "channels-create-dark.png"
+    },
+    {
+      "path": "/channels/123",
+      "name": "channels-id",
+      "url": "http://127.0.0.1:8081/channels/123",
+      "status": "ok",
+      "file": "channels-id-dark.png"
+    },
+    {
+      "path": "/kyc",
+      "name": "kyc",
+      "url": "http://127.0.0.1:8081/kyc",
+      "status": "ok",
+      "file": "kyc-dark.png"
+    },
+    {
+      "path": "/payment",
+      "name": "payment",
+      "url": "http://127.0.0.1:8081/payment",
+      "status": "ok",
+      "file": "payment-dark.png"
+    },
+    {
+      "path": "/offers",
+      "name": "offers",
+      "url": "http://127.0.0.1:8081/offers",
+      "status": "ok",
+      "file": "offers-dark.png"
+    },
+    {
+      "path": "/reviews/123",
+      "name": "reviews-userId",
+      "url": "http://127.0.0.1:8081/reviews/123",
+      "status": "ok",
+      "file": "reviews-userId-dark.png"
+    }
+  ]
+}

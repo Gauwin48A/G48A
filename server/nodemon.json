@@ -1,0 +1,16 @@
+{
+  "watch": [
+    "src",
+    ".env"
+  ],
+  "ext": "js,mjs,json",
+  "ignore": [
+    "node_modules/**",
+    "docs/**",
+    "tests/load/results/**",
+    "scripts/runtime-logs/**",
+    "*.log"
+  ],
+  "exec": "node src/index.js",
+  "delay": "300"
+}

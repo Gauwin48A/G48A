@@ -1,0 +1,34 @@
+import { QueryClient } from "@tanstack/react-query";
+
+const DEFAULT_GC_TIME_MS = 5 * 60 * 1e3;
+const DEFAULT_STALE_TIME_MS = 30 * 1e3;
+
+/**
+ * Shared React Query client with default caching and retry settings.
+ */
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: DEFAULT_GC_TIME_MS,
+      staleTime: DEFAULT_STALE_TIME_MS,
+      retry: 1,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      refetchOnMount: true,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+
+const QUERY_CACHE_CLEAR_MARKER = "mhub-query-cache-cleared-v1";
+
+if (typeof window !== "undefined") {
+  if (!window.localStorage.getItem(QUERY_CACHE_CLEAR_MARKER)) {
+    window.localStorage.removeItem("mhub-query-cache");
+    window.localStorage.setItem(QUERY_CACHE_CLEAR_MARKER, "1");
+  }
+}
+
+export default queryClient;

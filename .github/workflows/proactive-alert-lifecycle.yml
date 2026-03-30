@@ -1,0 +1,118 @@
+name: Proactive Alert Lifecycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: 'Set true to force a failure and verify alert opening'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  lifecycle-check:
+    name: Lifecycle Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simulate failure
+        if: ${{ inputs.simulate_failure }}
+        run: |
+          echo "Simulating lifecycle failure."
+          exit 1
+
+      - name: Simulate success
+        if: ${{ !inputs.simulate_failure }}
+        run: echo "Lifecycle success run."
+
+  alert-on-failure:
+    name: Create Failure Issue
+    runs-on: ubuntu-latest
+    needs: lifecycle-check
+    if: always() && needs.lifecycle-check.result == 'failure'
+    steps:
+      - name: Create or update failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const title = '[Proactive Nightly] Failing';
+            const body = [
+              'Automated proactive lifecycle test failed.',
+              '',
+              `- Date (UTC): ${new Date().toISOString()}`,
+              `- Workflow: ${context.workflow}`,
+              `- Run: ${runUrl}`,
+              `- Branch: ${context.ref}`
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const openIssue = existing.data.find((issue) => issue.title === title);
+            if (openIssue) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: openIssue.number,
+                body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body
+              });
+            }
+
+  close-on-recovery:
+    name: Close Failure Issue On Recovery
+    runs-on: ubuntu-latest
+    needs: lifecycle-check
+    if: always() && needs.lifecycle-check.result == 'success'
+    steps:
+      - name: Close proactive failure issue if open
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = '[Proactive Nightly] Failing';
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const existing = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const openIssue = existing.data.find((issue) => issue.title === title);
+            if (!openIssue) {
+              core.info('No open proactive failure issue found.');
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: openIssue.number,
+              body: `Proactive lifecycle recovered on ${new Date().toISOString()} (${runUrl}). Closing this issue.`
+            });
+
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: openIssue.number,
+              state: 'closed'
+            });
