@@ -1,0 +1,839 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600&display=swap');
+
+/* ============================================================
+   Dark Mode v2 — App-wide design overhaul
+   This file intentionally overrides light-first styles to ensure
+   a consistent, modern dark theme across all pages.
+   ============================================================ */
+
+html.dark[data-theme="dark-v2"],
+:root.dark[data-theme="dark-v2"] {
+  color-scheme: dark;
+  font-family: 'Outfit', 'Noto Sans Telugu', 'Inter', system-ui, sans-serif;
+  --background: #0b0f17;
+  --foreground: #e6edf6;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #e6edf6;
+  --primary: #4f8cff;
+  --primary-foreground: #0b0f17;
+  --secondary: #1c2638;
+  --secondary-foreground: #d7e2f3;
+  --muted: #182134;
+  --muted-foreground: #9aa6bd;
+  --accent: #1c2638;
+  --accent-foreground: #e6edf6;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fee2e2;
+  --border: rgba(148, 163, 184, 0.22);
+  --input: rgba(148, 163, 184, 0.18);
+  --ring: #7db1ff;
+  --page-bg:
+    radial-gradient(circle at 15% -10%, rgba(79, 140, 255, 0.18), transparent 42%),
+    radial-gradient(circle at 85% 0%, rgba(34, 211, 238, 0.14), transparent 38%),
+    linear-gradient(180deg, #0b0f17 0%, #0b1324 100%);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 30px rgba(0, 0, 0, 0.35);
+  --card-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.05), 0 24px 38px rgba(0, 0, 0, 0.4);
+  --btn-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  --radius: 16px;
+  --radius-card: 20px;
+  --radius-btn: 12px;
+
+  --mhub-text-primary: #f8fafc;
+  --mhub-text-secondary: #dbe5f3;
+  --mhub-text-tertiary: #b8c3d8;
+  --mhub-text-muted: #9aa6bd;
+  --mhub-bg-primary: #0b0f17;
+  --mhub-bg-secondary: #111827;
+  --mhub-bg-tertiary: #162033;
+  --mhub-bg-card: #111827;
+  --mhub-surface-0: #0b0f17;
+  --mhub-surface-1: #0f172a;
+  --mhub-surface-2: #162033;
+  --mhub-surface-3: #1f2a3d;
+  --mhub-border: rgba(148, 163, 184, 0.26);
+  --mhub-border-light: rgba(148, 163, 184, 0.18);
+  --mhub-primary: #4f8cff;
+  --mhub-primary-hover: #6aa2ff;
+  --mhub-success: #22c55e;
+  --mhub-price: #34d399;
+  --mhub-chip-bg: #141e32;
+  --mhub-chip-border: rgba(148, 163, 184, 0.22);
+  --mhub-chip-text: #cbd5e1;
+  --mhub-chip-bg-active: #3b82f6;
+  --mhub-chip-text-active: #f8fafc;
+  --mhub-cta-bg: #4f8cff;
+  --mhub-cta-bg-hover: #6aa2ff;
+  --mhub-cta-text: #0b0f17;
+  --mhub-glass-bg: rgba(15, 23, 42, 0.68);
+  --mhub-gradient-surface:
+    radial-gradient(circle at 20% 10%, rgba(79, 140, 255, 0.18), transparent 45%),
+    radial-gradient(circle at 80% 0%, rgba(34, 211, 238, 0.14), transparent 38%),
+    linear-gradient(180deg, #0f172a 0%, #0b1324 100%);
+}
+
+html.dark[data-theme="dark-v2"] body {
+  background: var(--page-bg);
+  background-attachment: fixed;
+  color: var(--mhub-text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.6;
+}
+
+html.dark[data-theme="dark-v2"] h1,
+html.dark[data-theme="dark-v2"] h2,
+html.dark[data-theme="dark-v2"] h3,
+html.dark[data-theme="dark-v2"] h4,
+html.dark[data-theme="dark-v2"] h5 {
+  color: var(--mhub-text-primary);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+html.dark[data-theme="dark-v2"] p,
+html.dark[data-theme="dark-v2"] label,
+html.dark[data-theme="dark-v2"] small {
+  color: var(--mhub-text-secondary);
+}
+
+/* Global surface normalization */
+html.dark[data-theme="dark-v2"] [class*="bg-white"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-200"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-200"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-300"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-300"] {
+  background-color: var(--mhub-surface-1) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-white/"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-50/"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-50/"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-100/"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-100/"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-200/"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-200/"] {
+  background-color: var(--mhub-glass-bg) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="backdrop-blur"] {
+  background-color: var(--mhub-glass-bg) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+/* Darken common dark palettes to the new system */
+html.dark[data-theme="dark-v2"] [class*="bg-gray-900"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-900"],
+html.dark[data-theme="dark-v2"] [class*="bg-gray-800"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-800"] {
+  background-color: var(--mhub-surface-1) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-gray-700"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-700"] {
+  background-color: var(--mhub-surface-2) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-gray-600"],
+html.dark[data-theme="dark-v2"] [class*="bg-slate-600"] {
+  background-color: var(--mhub-surface-3) !important;
+}
+
+/* Override explicit dark: classes (Tailwind) */
+html.dark[data-theme="dark-v2"] [class*="dark:bg-gray-900"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-slate-900"] {
+  background-color: var(--mhub-surface-1) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:bg-gray-800"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-slate-800"] {
+  background-color: var(--mhub-surface-2) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:bg-gray-700"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-slate-700"] {
+  background-color: var(--mhub-surface-2) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:bg-gray-600"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-slate-600"] {
+  background-color: var(--mhub-surface-3) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:bg-blue-900"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-indigo-900"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-sky-900"] {
+  background-color: rgba(79, 140, 255, 0.12) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:bg-emerald-900"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-green-900"] {
+  background-color: rgba(34, 197, 94, 0.14) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:bg-yellow-900"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-amber-900"],
+html.dark[data-theme="dark-v2"] [class*="dark:bg-orange-900"] {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+}
+
+/* Accent-tinted surfaces */
+html.dark[data-theme="dark-v2"] [class*="bg-blue-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-blue-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-indigo-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-indigo-100"] {
+  background-color: rgba(79, 140, 255, 0.12) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-sky-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-sky-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-cyan-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-cyan-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-teal-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-teal-100"] {
+  background-color: rgba(56, 189, 248, 0.12) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-emerald-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-emerald-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-green-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-green-100"] {
+  background-color: rgba(34, 197, 94, 0.14) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-lime-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-lime-100"] {
+  background-color: rgba(163, 230, 53, 0.12) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-yellow-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-yellow-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-amber-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-amber-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-orange-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-orange-100"] {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-red-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-red-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-rose-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-rose-100"] {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-pink-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-pink-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-fuchsia-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-fuchsia-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-purple-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-purple-100"],
+html.dark[data-theme="dark-v2"] [class*="bg-violet-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-violet-100"] {
+  background-color: rgba(168, 85, 247, 0.12) !important;
+}
+
+/* Normalize large gradient surfaces to the new system */
+html.dark[data-theme="dark-v2"] [class*="min-h-screen"][class*="bg-gradient-to-"] {
+  background-image: var(--page-bg) !important;
+  background-color: var(--mhub-bg-primary) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-slate-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-gray-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-blue-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-sky-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-cyan-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-indigo-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-purple-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-pink-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-emerald-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-teal-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-amber-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-orange-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-yellow-50"],
+html.dark[data-theme="dark-v2"] [class*="bg-gradient-to-"][class*="from-red-50"] {
+  background-image: var(--mhub-gradient-surface) !important;
+  background-color: var(--mhub-bg-primary) !important;
+}
+
+/* Text normalization */
+html.dark[data-theme="dark-v2"] [class*="text-gray-900"],
+html.dark[data-theme="dark-v2"] [class*="text-slate-900"] {
+  color: var(--mhub-text-primary) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="text-gray-700"],
+html.dark[data-theme="dark-v2"] [class*="text-slate-700"],
+html.dark[data-theme="dark-v2"] [class*="text-gray-600"],
+html.dark[data-theme="dark-v2"] [class*="text-slate-600"] {
+  color: var(--mhub-text-secondary) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="text-gray-500"],
+html.dark[data-theme="dark-v2"] [class*="text-slate-500"],
+html.dark[data-theme="dark-v2"] [class*="text-gray-400"],
+html.dark[data-theme="dark-v2"] [class*="text-slate-400"] {
+  color: var(--mhub-text-muted) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-gray-200"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-slate-200"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-white"] {
+  color: var(--mhub-text-primary) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:text-gray-300"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-slate-300"] {
+  color: var(--mhub-text-secondary) !important;
+}
+html.dark[data-theme="dark-v2"] [class*="dark:text-gray-400"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-slate-400"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-gray-500"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-slate-500"] {
+  color: var(--mhub-text-muted) !important;
+}
+
+html.dark[data-theme="dark-v2"] a {
+  color: #8bb4ff;
+}
+
+html.dark[data-theme="dark-v2"] a:hover {
+  color: #a5c7ff;
+}
+
+html.dark[data-theme="dark-v2"] hr {
+  border-color: var(--mhub-border-light);
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-blue-"] {
+  color: #8bb4ff !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-sky-"],
+html.dark[data-theme="dark-v2"] [class*="text-cyan-"],
+html.dark[data-theme="dark-v2"] [class*="text-teal-"] {
+  color: #7dd3fc !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-indigo-"] {
+  color: #a5b4fc !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-purple-"] {
+  color: #c4b5fd !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-emerald-"],
+html.dark[data-theme="dark-v2"] [class*="text-green-"] {
+  color: #34d399 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-fuchsia-"],
+html.dark[data-theme="dark-v2"] [class*="text-pink-"],
+html.dark[data-theme="dark-v2"] [class*="text-rose-"] {
+  color: #f9a8d4 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-blue-"] {
+  color: #8bb4ff !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-indigo-"] {
+  color: #a5b4fc !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-purple-"] {
+  color: #c4b5fd !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-emerald-"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-green-"] {
+  color: #34d399 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-amber-"],
+html.dark[data-theme="dark-v2"] [class*="text-orange-"],
+html.dark[data-theme="dark-v2"] [class*="text-yellow-"] {
+  color: #fbbf24 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-red-"] {
+  color: #fca5a5 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="text-lime-"] {
+  color: #bef264 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-amber-"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-orange-"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-yellow-"] {
+  color: #fbbf24 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-red-"] {
+  color: #fca5a5 !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-sky-"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-cyan-"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-teal-"] {
+  color: #7dd3fc !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:text-fuchsia-"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-pink-"],
+html.dark[data-theme="dark-v2"] [class*="dark:text-rose-"] {
+  color: #f9a8d4 !important;
+}
+
+/* Border normalization */
+html.dark[data-theme="dark-v2"] [class*="border-gray-"],
+html.dark[data-theme="dark-v2"] [class*="border-slate-"] {
+  border-color: var(--mhub-border-light) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="dark:border-gray-"],
+html.dark[data-theme="dark-v2"] [class*="dark:border-slate-"] {
+  border-color: var(--mhub-border-light) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="border-blue-"],
+html.dark[data-theme="dark-v2"] [class*="border-indigo-"] {
+  border-color: rgba(147, 197, 253, 0.32) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="border-sky-"],
+html.dark[data-theme="dark-v2"] [class*="border-cyan-"],
+html.dark[data-theme="dark-v2"] [class*="border-teal-"] {
+  border-color: rgba(125, 211, 252, 0.3) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="border-emerald-"],
+html.dark[data-theme="dark-v2"] [class*="border-green-"],
+html.dark[data-theme="dark-v2"] [class*="border-lime-"] {
+  border-color: rgba(134, 239, 172, 0.3) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="border-amber-"],
+html.dark[data-theme="dark-v2"] [class*="border-orange-"],
+html.dark[data-theme="dark-v2"] [class*="border-yellow-"] {
+  border-color: rgba(253, 224, 71, 0.3) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="border-red-"] {
+  border-color: rgba(252, 165, 165, 0.3) !important;
+}
+
+html.dark[data-theme="dark-v2"] [class*="border-purple-"],
+html.dark[data-theme="dark-v2"] [class*="border-violet-"],
+html.dark[data-theme="dark-v2"] [class*="border-fuchsia-"],
+html.dark[data-theme="dark-v2"] [class*="border-pink-"],
+html.dark[data-theme="dark-v2"] [class*="border-rose-"] {
+  border-color: rgba(216, 180, 254, 0.3) !important;
+}
+
+/* Inputs */
+html.dark[data-theme="dark-v2"] input,
+html.dark[data-theme="dark-v2"] select,
+html.dark[data-theme="dark-v2"] textarea {
+  background: var(--mhub-surface-2);
+  color: var(--mhub-text-primary);
+  border-color: var(--mhub-border-light);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+html.dark[data-theme="dark-v2"] input::placeholder,
+html.dark[data-theme="dark-v2"] textarea::placeholder {
+  color: var(--mhub-text-muted);
+}
+
+html.dark[data-theme="dark-v2"] input:focus,
+html.dark[data-theme="dark-v2"] select:focus,
+html.dark[data-theme="dark-v2"] textarea:focus {
+  border-color: var(--mhub-primary);
+  box-shadow: 0 0 0 2px rgba(79, 140, 255, 0.22);
+  outline: none;
+}
+
+html.dark[data-theme="dark-v2"] select option {
+  background: var(--mhub-surface-2);
+  color: var(--mhub-text-primary);
+}
+
+/* Buttons */
+html.dark[data-theme="dark-v2"] .mhub-btn-primary {
+  background: linear-gradient(135deg, #4f8cff, #7db1ff);
+  color: var(--mhub-cta-text);
+  box-shadow: var(--mhub-shadow-md);
+}
+html.dark[data-theme="dark-v2"] .mhub-btn-secondary {
+  background: var(--mhub-surface-2);
+  color: var(--mhub-text-secondary);
+  border: 1px solid var(--mhub-border-light);
+}
+html.dark[data-theme="dark-v2"] .mhub-btn-outline {
+  border-color: var(--mhub-border-light);
+  color: var(--mhub-text-secondary);
+}
+html.dark[data-theme="dark-v2"] .mhub-btn-ghost:hover {
+  background: rgba(79, 140, 255, 0.12);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-btn-link {
+  color: #8bb4ff;
+}
+
+/* Shadows */
+html.dark[data-theme="dark-v2"] .shadow,
+html.dark[data-theme="dark-v2"] .shadow-sm,
+html.dark[data-theme="dark-v2"] .shadow-md,
+html.dark[data-theme="dark-v2"] .shadow-lg {
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* Rewards / Profile surfaces */
+html.dark[data-theme="dark-v2"] .rewards-hero-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.35);
+}
+html.dark[data-theme="dark-v2"] .rewards-stat-card,
+html.dark[data-theme="dark-v2"] .trust-card,
+html.dark[data-theme="dark-v2"] .earn-playbook-card,
+html.dark[data-theme="dark-v2"] .redeem-card,
+html.dark[data-theme="dark-v2"] .quick-action-card,
+html.dark[data-theme="dark-v2"] .checklist-item {
+  background: var(--mhub-surface-2);
+  border: 1px solid var(--mhub-border-light);
+}
+html.dark[data-theme="dark-v2"] .coin-history-item:hover {
+  background: rgba(79, 140, 255, 0.12);
+}
+html.dark[data-theme="dark-v2"] .checklist-item:not(:last-child)::after,
+html.dark[data-theme="dark-v2"] .verification-step-line {
+  background: var(--mhub-border-light);
+}
+html.dark[data-theme="dark-v2"] .profile-avatar-ring .ring-track {
+  stroke: rgba(148, 163, 184, 0.35);
+}
+
+/* Navigation */
+html.dark[data-theme="dark-v2"] nav[aria-label="main_navigation"] {
+  background: rgba(10, 16, 28, 0.92) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-bottom-nav {
+  background: rgba(10, 16, 28, 0.92) !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+/* Media placeholders */
+html.dark[data-theme="dark-v2"] .mhub-media-frame {
+  background: linear-gradient(110deg, #101826 8%, #1a2334 18%, #101826 33%);
+  background-size: 200% 100%;
+}
+
+/* Tables */
+html.dark[data-theme="dark-v2"] table {
+  color: var(--mhub-text-secondary);
+}
+
+html.dark[data-theme="dark-v2"] thead {
+  background: var(--mhub-surface-2);
+  color: var(--mhub-text-primary);
+}
+
+html.dark[data-theme="dark-v2"] tbody tr {
+  border-color: var(--mhub-border-light);
+}
+
+html.dark[data-theme="dark-v2"] tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Selection */
+html.dark[data-theme="dark-v2"] ::selection {
+  background: rgba(79, 140, 255, 0.32);
+  color: #ffffff;
+}
+
+/* Scrollbars */
+html.dark[data-theme="dark-v2"] *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark[data-theme="dark-v2"] *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.dark[data-theme="dark-v2"] *::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+}
+
+html.dark[data-theme="dark-v2"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* Icon color consistency */
+html.dark[data-theme="dark-v2"] button svg,
+html.dark[data-theme="dark-v2"] a svg {
+  color: currentColor;
+}
+
+/* Stronger shadow discipline for heavy glows */
+html.dark[data-theme="dark-v2"] .shadow-xl,
+html.dark[data-theme="dark-v2"] .shadow-2xl,
+html.dark[data-theme="dark-v2"] [class*="shadow-"][class*="shadow-"] {
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* Dark v2 page-level refinements */
+html.dark[data-theme="dark-v2"] .mhub-page-subcategories,
+html.dark[data-theme="dark-v2"] .mhub-page-addpost,
+html.dark[data-theme="dark-v2"] .mhub-page-tier,
+html.dark[data-theme="dark-v2"] .mhub-page-feedback,
+html.dark[data-theme="dark-v2"] .mhub-page-complaints {
+  background: var(--page-bg) !important;
+  color: var(--mhub-text-primary);
+}
+
+/* Subcategories */
+html.dark[data-theme="dark-v2"] .mhub-page-subcategories [class*="overflow-hidden rounded-2xl bg-gradient-to-r"] {
+  background: var(--mhub-gradient-surface) !important;
+  border: 1px solid var(--mhub-border-light);
+  box-shadow: var(--card-shadow);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-subcategories [class*="cursor-pointer overflow-hidden rounded-2xl"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+  box-shadow: var(--card-shadow);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-subcategories [class*="cursor-pointer overflow-hidden rounded-2xl"]:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-subcategories [class*="border-gray-200 bg-white"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-subcategories [class*="bg-gradient-to-br from-slate-50 to-blue-50"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-subcategories [class*="bg-white/15"] {
+  background-color: rgba(15, 23, 42, 0.55) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+/* Add Post */
+html.dark[data-theme="dark-v2"] .mhub-page-addpost [class*="border-2 border-dashed"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: rgba(125, 177, 255, 0.35) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-addpost [class*="border-orange-200"] {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-addpost [class*="bg-gradient-to-br from-orange-50 to-amber-50"] {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-addpost [class*="border-blue-200"] {
+  border-color: rgba(79, 140, 255, 0.35) !important;
+}
+
+/* Tier selection */
+html.dark[data-theme="dark-v2"] .mhub-page-tier [class*="relative flex flex-col rounded-2xl border-2"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+  box-shadow: var(--card-shadow);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-tier [class*="bg-gradient-to-r from-yellow-500"] {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(239, 68, 68, 0.22)) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-tier [class*="bg-gradient-to-r from-blue-600"] {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.35), rgba(99, 102, 241, 0.35)) !important;
+}
+
+/* Feedback */
+html.dark[data-theme="dark-v2"] .mhub-page-feedback [class*="bg-white/95"],
+html.dark[data-theme="dark-v2"] .mhub-page-feedback [class*="bg-white/90"] {
+  background: var(--mhub-surface-2) !important;
+  border: 1px solid var(--mhub-border-light);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-feedback [class*="bg-gradient-to-r from-blue-500"] {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.35), rgba(99, 102, 241, 0.35)) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-feedback [class*="from-green-50 to-emerald-50"],
+html.dark[data-theme="dark-v2"] .mhub-page-feedback [class*="from-purple-50 to-pink-50"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+/* Complaints */
+html.dark[data-theme="dark-v2"] .mhub-page-complaints [class*="bg-white/95"],
+html.dark[data-theme="dark-v2"] .mhub-page-complaints [class*="bg-white/90"] {
+  background: var(--mhub-surface-2) !important;
+  border: 1px solid var(--mhub-border-light);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-complaints [class*="bg-gradient-to-r from-red-500"] {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(245, 158, 11, 0.28)) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-complaints [class*="from-yellow-50 to-orange-50"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+/* Premium page wrappers using light utility backgrounds */
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-gray-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-slate-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-sky-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-blue-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-indigo-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-purple-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-pink-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-rose-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-emerald-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-teal-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-cyan-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-amber-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-orange-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-yellow-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-red-50"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-gray-100"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-slate-100"],
+html.dark[data-theme="dark-v2"] .mhub-premium-page[class*="bg-white"] {
+  background-color: transparent !important;
+  background-image: var(--page-bg) !important;
+}
+
+/* All Posts */
+html.dark[data-theme="dark-v2"] .mhub-page-allposts {
+  background: var(--page-bg) !important;
+  color: var(--mhub-text-primary);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-allposts [class*="bg-slate-50/80"],
+html.dark[data-theme="dark-v2"] .mhub-page-allposts [class*="bg-slate-900/40"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-allposts [class*="shadow-blue-"] {
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* My Posts (MyHome) */
+html.dark[data-theme="dark-v2"] .mhub-page-myposts {
+  background: var(--page-bg) !important;
+  color: var(--mhub-text-primary);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-myposts [class*="bg-gradient-to-r from-blue-600"] {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.32), rgba(99, 102, 241, 0.32)) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-myposts [class*="bg-white/90"],
+html.dark[data-theme="dark-v2"] .mhub-page-myposts [class*="bg-white/80"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-myposts [class*="border-blue-100"],
+html.dark[data-theme="dark-v2"] .mhub-page-myposts [class*="border-gray-100"] {
+  border-color: var(--mhub-border-light) !important;
+}
+
+/* Sale Done / Sale Undone */
+html.dark[data-theme="dark-v2"] .mhub-page-saledone,
+html.dark[data-theme="dark-v2"] .mhub-page-saleundone {
+  background: var(--page-bg) !important;
+  color: var(--mhub-text-primary);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-saledone [class*="bg-white/95"],
+html.dark[data-theme="dark-v2"] .mhub-page-saleundone [class*="bg-white/95"] {
+  background: var(--mhub-surface-2) !important;
+  border: 1px solid var(--mhub-border-light);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-saledone [class*="bg-white/80"],
+html.dark[data-theme="dark-v2"] .mhub-page-saleundone [class*="bg-white/80"] {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-saledone [class*="bg-gradient-to-r from-green-500"] {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.34), rgba(16, 185, 129, 0.32)) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-page-saleundone [class*="bg-gradient-to-r from-orange-500"],
+html.dark[data-theme="dark-v2"] .mhub-page-saleundone [class*="bg-gradient-to-r from-orange-600"] {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.32), rgba(239, 68, 68, 0.28)) !important;
+}
+
+/* Hamburger / More Menu */
+html.dark[data-theme="dark-v2"] .mhub-more-overlay-bg {
+  background: rgba(5, 10, 18, 0.78) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-more-panel {
+  background: var(--mhub-surface-2) !important;
+  border-left: 1px solid var(--mhub-border-light);
+  box-shadow: var(--card-shadow-hover);
+}
+
+html.dark[data-theme="dark-v2"] .mhub-more-panel h2 {
+  color: var(--mhub-text-primary) !important;
+  text-shadow: none !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-more-panel a,
+html.dark[data-theme="dark-v2"] .mhub-more-panel button {
+  color: var(--mhub-text-secondary) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-more-panel a:hover {
+  background: rgba(79, 140, 255, 0.16) !important;
+  color: var(--mhub-text-primary) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-more-panel [class*="bg-gray-100"],
+html.dark[data-theme="dark-v2"] .mhub-more-panel [class*="dark:bg-gray-700"] {
+  background: var(--mhub-surface-3) !important;
+}
+
+html.dark[data-theme="dark-v2"] .mhub-layout-menu {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+  color: var(--mhub-text-secondary) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* Dropdowns (Radix) */
+html.dark[data-theme="dark-v2"] [data-radix-popper-content-wrapper] > div {
+  background: var(--mhub-surface-2) !important;
+  border-color: var(--mhub-border-light) !important;
+  color: var(--mhub-text-secondary) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+html.dark[data-theme="dark-v2"] [data-radix-popper-content-wrapper] [data-highlighted] {
+  background: rgba(79, 140, 255, 0.18) !important;
+  color: var(--mhub-text-primary) !important;
+}

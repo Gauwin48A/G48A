@@ -1,0 +1,406 @@
+import e, { useCallback as A, useEffect as F, useState as n } from "react";
+import { useNavigate as I } from "react-router-dom";
+import P from "../../services/api";
+import { Button as s } from "@/components/ui/button";
+import {
+  Card as u,
+  CardContent as c,
+  CardHeader as K,
+  CardTitle as j,
+} from "@/components/ui/card";
+import { Input as f } from "@/components/ui/input";
+import { Label as p } from "@/components/ui/label";
+import {
+  PageAuthGateState as Y,
+  PageErrorState as q,
+  PageLoadingState as T,
+} from "@/components/page-state/PageStateBlocks";
+const V = () => {
+  const o = I(),
+    b = localStorage.getItem("authToken") || localStorage.getItem("token"),
+    [a, y] = n({
+      aadhaar_number: "",
+      pan_number: "",
+      kyc_front: null,
+      kyc_back: null,
+    }),
+    [h, v] = n(""),
+    [x, C] = n(""),
+    [k, N] = n(!1),
+    [B, g] = n(!0),
+    [m, _] = n(""),
+    [l, w] = n(null),
+    i = A(async () => {
+      if (!b) {
+        g(!1);
+        return;
+      }
+      g(!0), _("");
+      try {
+        const r = await P.get("/users/kyc/status");
+        w(r || null);
+      } catch (r) {
+        console.error("KYC status fetch failed", r),
+          _("Unable to load your KYC status right now. Please retry.");
+      } finally {
+        g(!1);
+      }
+    }, [b]);
+  F(() => {
+    i();
+  }, [i]);
+  const S = (r) => {
+      y((t) => ({ ...t, [r.target.name]: r.target.value }));
+    },
+    D = (r) => {
+      y((t) => ({ ...t, [r.target.name]: r.target.files?.[0] || null }));
+    },
+    L = async (r) => {
+      r.preventDefault(), v(""), C(""), N(!0);
+      const t = new FormData();
+      t.append("aadhaar_number", a.aadhaar_number.trim()),
+        t.append("pan_number", a.pan_number.trim().toUpperCase()),
+        a.kyc_front && t.append("kyc_front", a.kyc_front),
+        a.kyc_back && t.append("kyc_back", a.kyc_back);
+      try {
+        const d = await P.post("/users/kyc/submit", t, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        v(d?.message || "Documents submitted successfully."),
+          w((E) => ({ ...E, ...(d || {}), status: d?.status || "PENDING" })),
+          i();
+      } catch (d) {
+        console.error("KYC submission failed", d),
+          C("KYC submission failed. Please verify details and retry.");
+      } finally {
+        N(!1);
+      }
+    };
+  return b
+    ? B
+      ? e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-md w-full page-shell page-pad" },
+            e.createElement(T, {
+              marker: "loading",
+              title: "Loading KYC status...",
+              description: "Checking your latest verification status.",
+            }),
+          ),
+        )
+      : m && !l
+        ? e.createElement(
+            "div",
+            {
+              className:
+                "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
+            },
+            e.createElement(
+              "div",
+              { className: "max-w-md w-full page-shell page-pad" },
+              e.createElement(q, {
+                marker: "error",
+                className:
+                  "border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:border-red-600/40 dark:bg-red-950/20",
+                title: "KYC status unavailable",
+                description: m,
+                onRetry: i,
+                secondaryAction: e.createElement(
+                  s,
+                  { variant: "outline", onClick: () => o("/profile") },
+                  "Back to profile",
+                ),
+              }),
+            ),
+          )
+        : l?.status === "VERIFIED"
+          ? e.createElement(
+              "div",
+              {
+                className:
+                  "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
+              },
+              e.createElement(
+                u,
+                {
+                  className:
+                    "max-w-lg w-full border-green-200 bg-green-50 dark:border-emerald-400/30 dark:bg-emerald-500/10 page-shell page-pad dark:border-green-600/40 dark:bg-green-950/20",
+                },
+                e.createElement(
+                  c,
+                  { className: "pt-8 text-center space-y-4 dark:text-center" },
+                  e.createElement(
+                    "h2",
+                    { className: "text-3xl font-bold text-green-800 dark:text-3xl dark:text-green-200" },
+                    "KYC Verified",
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-green-700 dark:text-green-300" },
+                    "Your identity has been verified and your trust badge is active.",
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "flex flex-col sm:flex-row gap-3 justify-center",
+                    },
+                    e.createElement(
+                      s,
+                      {
+                        className: "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700/40 dark:hover:bg-green-700/40 dark:text-white",
+                        onClick: () => o("/profile"),
+                      },
+                      "View Profile",
+                    ),
+                    e.createElement(
+                      s,
+                      { variant: "outline", onClick: () => o("/dashboard") },
+                      "Open Dashboard",
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : l?.status === "PENDING"
+            ? e.createElement(
+                "div",
+                {
+                  className:
+                    "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
+                },
+                e.createElement(
+                  u,
+                  {
+                    className:
+                      "max-w-lg w-full border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 page-shell page-pad dark:border-amber-600/40 dark:bg-amber-950/20",
+                  },
+                  e.createElement(
+                    c,
+                    { className: "pt-8 text-center space-y-4 dark:text-center" },
+                    e.createElement(
+                      "h2",
+                      { className: "text-3xl font-bold text-amber-800 dark:text-3xl dark:text-amber-200" },
+                      "Verification in progress",
+                    ),
+                    e.createElement(
+                      "p",
+                      { className: "text-amber-700 dark:text-amber-300" },
+                      "We are reviewing your documents. Most requests are reviewed within 24 hours.",
+                    ),
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "flex flex-col sm:flex-row gap-3 justify-center",
+                      },
+                      e.createElement(
+                        s,
+                        {
+                          className:
+                            "bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-700/40 dark:hover:bg-amber-700/40 dark:text-white",
+                          onClick: i,
+                        },
+                        "Refresh status",
+                      ),
+                      e.createElement(
+                        s,
+                        { variant: "outline", onClick: () => o("/profile") },
+                        "Back to profile",
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : e.createElement(
+                "div",
+                { className: "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 py-8 px-4 dark:bg-gradient-to-br" },
+                e.createElement(
+                  "div",
+                  { className: "max-w-2xl mx-auto" },
+                  e.createElement(
+                    u,
+                    { className: "mb-6" },
+                    e.createElement(
+                      K,
+                      null,
+                      e.createElement(j, null, "Identity Verification (KYC)"),
+                    ),
+                    e.createElement(
+                      c,
+                      { className: "space-y-4" },
+                      e.createElement(
+                        "p",
+                        { className: "text-gray-600 dark:text-gray-200" },
+                        "Submit your Aadhaar and PAN details with clear front/back ID images to activate verified trust markers.",
+                      ),
+                      m &&
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-sm dark:text-red-300",
+                          },
+                          m,
+                        ),
+                      l?.rejection_reason &&
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-sm dark:text-red-300",
+                          },
+                          "Previous request rejected: ",
+                          l.rejection_reason,
+                        ),
+                    ),
+                  ),
+                  e.createElement(
+                    u,
+                    null,
+                    e.createElement(
+                      c,
+                      { className: "pt-6" },
+                      e.createElement(
+                        "form",
+                        { onSubmit: L, className: "space-y-5" },
+                        e.createElement(
+                          "div",
+                          null,
+                          e.createElement(
+                            p,
+                            { htmlFor: "aadhaar_number" },
+                            "Aadhaar Number",
+                          ),
+                          e.createElement(f, {
+                            id: "aadhaar_number",
+                            type: "text",
+                            name: "aadhaar_number",
+                            value: a.aadhaar_number,
+                            onChange: S,
+                            placeholder: "12-digit Aadhaar number",
+                            pattern: "\\d{12}",
+                            required: !0,
+                          }),
+                        ),
+                        e.createElement(
+                          "div",
+                          null,
+                          e.createElement(
+                            p,
+                            { htmlFor: "pan_number" },
+                            "PAN Number",
+                          ),
+                          e.createElement(f, {
+                            id: "pan_number",
+                            type: "text",
+                            name: "pan_number",
+                            value: a.pan_number,
+                            onChange: S,
+                            placeholder: "ABCDE1234F",
+                            pattern: "[A-Z]{5}[0-9]{4}[A-Z]{1}",
+                            required: !0,
+                          }),
+                        ),
+                        e.createElement(
+                          "div",
+                          null,
+                          e.createElement(
+                            p,
+                            { htmlFor: "kyc_front" },
+                            "ID Proof (Front)",
+                          ),
+                          e.createElement(f, {
+                            id: "kyc_front",
+                            type: "file",
+                            name: "kyc_front",
+                            onChange: D,
+                            accept: "image/*,.pdf",
+                            required: !0,
+                          }),
+                        ),
+                        e.createElement(
+                          "div",
+                          null,
+                          e.createElement(
+                            p,
+                            { htmlFor: "kyc_back" },
+                            "ID Proof (Back)",
+                          ),
+                          e.createElement(f, {
+                            id: "kyc_back",
+                            type: "file",
+                            name: "kyc_back",
+                            onChange: D,
+                            accept: "image/*,.pdf",
+                            required: !0,
+                          }),
+                        ),
+                        x &&
+                          e.createElement(
+                            "p",
+                            { className: "text-sm text-red-600 dark:text-sm dark:text-red-300" },
+                            x,
+                          ),
+                        h &&
+                          e.createElement(
+                            "p",
+                            { className: "text-sm text-green-600 dark:text-sm dark:text-green-300" },
+                            h,
+                          ),
+                        e.createElement(
+                          "div",
+                          { className: "flex flex-col sm:flex-row gap-3" },
+                          e.createElement(
+                            s,
+                            {
+                              type: "submit",
+                              disabled: k,
+                              className:
+                                "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white",
+                            },
+                            k ? "Submitting..." : "Submit Documents",
+                          ),
+                          e.createElement(
+                            s,
+                            { type: "button", variant: "outline", onClick: i },
+                            "Refresh status",
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+    : e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
+        },
+        e.createElement(
+          "div",
+          { className: "max-w-md w-full page-shell page-pad" },
+          e.createElement(Y, {
+            marker: "auth-gate",
+            title: "Login required",
+            description: "Please log in to start KYC verification.",
+            primaryAction: e.createElement(
+              s,
+              { onClick: () => o("/login", { state: { returnTo: "/kyc" } }) },
+              "Go to Login",
+            ),
+          }),
+        ),
+      );
+};
+var J = V;
+export { J as default };
+
+

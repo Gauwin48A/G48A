@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  workflow-contracts:
+    name: Workflow Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare doctor env
+        run: |
+          cat > server/.env <<'EOF'
+          PORT=5001
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_USER=ci
+          DB_PASSWORD=ci
+          DB_NAME=ci
+          JWT_SECRET=ci_jwt_secret
+          REFRESH_SECRET=ci_refresh_secret
+          EOF
+
+      - name: Run workspace doctor
+        run: npm run doctor
+
+      - name: No-secrets gate
+        run: npm run check:no-secrets
+
+      - name: Block new hardcoded UI strings
+        run: npm run check:hardcoded-strings
+
+      - name: UI screenshot evidence gate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run check:ui-screenshots
+
+      - name: Enforce tracked dependency hygiene
+        run: node server/workspace-scripts/guard-tracked-deps.js
+
+      - name: Enforce workspace footprint guard
+        run: node server/workspace-scripts/guard-footprint.js
+
+      - name: Validate locale consistency
+        run: node server/workspace-scripts/validate-locales.js
+
+      - name: Verify proactive workflow contract
+        run: node server/workspace-scripts/check-proactive-workflow-contract.js
+
+      - name: Enforce root repository structure
+        run: node server/workspace-scripts/check-repo-structure.js
+
+  client-quality:
+    name: Client Lint/Test/Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Block hardcoded localhost API URLs
+        run: npm run check:no-hardcoded-localhost
+
+      - name: Verify frontend network contract
+        run: npm run check:network-contract
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Bundle Budget Check
+        run: npm run check:bundle-budget
+
+  server-quality:
+    name: Server Test/Syntax
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      JWT_SECRET: ci_access_secret_x9k3f2m8n1v6p4r7t2w5z8q1y3u6i9o
+      REFRESH_SECRET: ci_refresh_secret_m4b7n2c9x6v1z8a5s3d0f7g4h9j2k6
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify backend route contract
+        run: npm run check:route-contract
+
+      - name: Probe backend runtime contract
+        run: npm run check:runtime-contract
+
+      - name: Probe backend page-flow contract
+        run: npm run check:page-flow-contract
+
+      - name: Run operations gate (advisory)
+        run: npm --prefix .. run ops:gate
+        env:
+          OPS_GATE_STRICT: "false"
+
+      - name: Run tests
+        run: npm test -- --runInBand
+
+      - name: Check syntax
+        run: node -c src/index.js

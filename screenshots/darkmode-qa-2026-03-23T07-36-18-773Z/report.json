@@ -1,0 +1,163 @@
+{
+  "baseUrl": "http://127.0.0.1:8081",
+  "outputDir": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z",
+  "results": [
+    {
+      "page": "AadhaarVerify.jsx",
+      "route": "/aadhaar-verify",
+      "auth": true,
+      "url": "http://127.0.0.1:8081/aadhaar-verify",
+      "finalUrl": "http://127.0.0.1:8081/aadhaar-verify",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\AadhaarVerify.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "Analytics.jsx",
+      "route": "/analytics",
+      "auth": false,
+      "url": "http://127.0.0.1:8081/analytics",
+      "finalUrl": "http://127.0.0.1:8081/login?expired=true",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\Analytics.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "BuyerView.jsx",
+      "route": "/buyer-view",
+      "auth": true,
+      "url": "http://127.0.0.1:8081/buyer-view",
+      "finalUrl": "http://127.0.0.1:8081/buyer-view",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\BuyerView.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "CategoryHub.jsx",
+      "route": "/category-hub",
+      "auth": false,
+      "url": "http://127.0.0.1:8081/category-hub",
+      "finalUrl": "http://127.0.0.1:8081/category-hub",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\CategoryHub.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "CategoryModeSelect.jsx",
+      "route": "/category-mode",
+      "auth": false,
+      "url": "http://127.0.0.1:8081/category-mode",
+      "finalUrl": "http://127.0.0.1:8081/category-mode",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\CategoryModeSelect.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "Chat.jsx",
+      "route": "/chat",
+      "auth": true,
+      "url": "http://127.0.0.1:8081/chat",
+      "finalUrl": "http://127.0.0.1:8081/chat",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\Chat.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "CreateChannelPage.jsx",
+      "route": "/channels/create",
+      "auth": true,
+      "url": "http://127.0.0.1:8081/channels/create",
+      "finalUrl": "http://127.0.0.1:8081/channels/create",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\CreateChannelPage.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "EditPost.jsx",
+      "route": "/edit-post/1",
+      "auth": true,
+      "url": "http://127.0.0.1:8081/edit-post/1",
+      "finalUrl": "http://127.0.0.1:8081/edit-post/1",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\EditPost.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "FeedPostAdd.jsx",
+      "route": null,
+      "auth": true,
+      "note": "No direct route (App.jsx does not reference FeedPostAdd.jsx)",
+      "status": "skipped",
+      "reason": "No direct route (App.jsx does not reference FeedPostAdd.jsx)"
+    },
+    {
+      "page": "GetVerified.jsx",
+      "route": null,
+      "auth": true,
+      "note": "No route defined in App.jsx",
+      "status": "skipped",
+      "reason": "No route defined in App.jsx"
+    },
+    {
+      "page": "index.jsx",
+      "route": "/",
+      "auth": false,
+      "note": "Redirects to /category-hub",
+      "url": "http://127.0.0.1:8081/",
+      "finalUrl": "http://127.0.0.1:8081/category-hub",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\index.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "InviteRedirect.jsx",
+      "route": "/invite/TESTCODE",
+      "auth": false,
+      "url": "http://127.0.0.1:8081/invite/TESTCODE",
+      "finalUrl": "http://127.0.0.1:8081/signup?ref=TESTCODE",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\InviteRedirect.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "KYC/KycVerification.jsx",
+      "route": "/kyc",
+      "auth": true,
+      "url": "http://127.0.0.1:8081/kyc",
+      "finalUrl": "http://127.0.0.1:8081/kyc",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\KYC_KycVerification.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "PostAdd.jsx",
+      "route": "/post_add",
+      "auth": true,
+      "url": "http://127.0.0.1:8081/post_add",
+      "finalUrl": "http://127.0.0.1:8081/post_add",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\PostAdd.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "PublicWall.jsx",
+      "route": "/public-wall",
+      "auth": false,
+      "url": "http://127.0.0.1:8081/public-wall",
+      "finalUrl": "http://127.0.0.1:8081/public-wall",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\PublicWall.png",
+      "status": "ok",
+      "error": null
+    },
+    {
+      "page": "Reviews.jsx",
+      "route": "/reviews/1",
+      "auth": false,
+      "url": "http://127.0.0.1:8081/reviews/1",
+      "finalUrl": "http://127.0.0.1:8081/reviews/1",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\screenshots\\darkmode-qa-2026-03-23T07-36-18-773Z\\Reviews.png",
+      "status": "ok",
+      "error": null
+    }
+  ]
+}

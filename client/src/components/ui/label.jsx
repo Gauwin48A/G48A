@@ -1,0 +1,16 @@
+import e from "react";
+import { cn as d } from "@/lib/utils";
+
+const a = e.forwardRef(({ className: o, ...r }, l) =>
+  e.createElement("label", {
+    ref: l,
+    className: d(
+      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+      o
+    ),
+    ...r,
+  })
+);
+a.displayName = "Label";
+
+export { a as Label };
