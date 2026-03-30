@@ -1,5 +1,0 @@
-﻿Missing Keys Report
-Date: 2026-03-14
-Locale: ta
-
-Result: 0 missing keys (client/src/locales/ta.json is in sync with base EN).
