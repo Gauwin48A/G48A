@@ -304,12 +304,9 @@ exports.optionalAuthenticateToken = async (req, _res, next) => {
   }
   return next();
 };
+const sanitizeHtml = require("sanitize-html");
 const sanitizeString = (value) =>
-  String(value)
-    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, "")
-    .replace(/javascript:/gi, "")
-    .replace(/onload=/gi, "")
-    .replace(/onerror=/gi, "");
+  sanitizeHtml(String(value), { allowedTags: [], allowedAttributes: {} });
 
 const sanitizeValue = (value) => {
   if (typeof value === "string") {

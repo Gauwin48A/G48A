@@ -19,11 +19,18 @@ const LanguageSheet = ({ isOpen, onClose }) => {
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleLanguageChange = (lang) => {
+        // Persist before changing so context providers pick up the value
+        localStorage.setItem('mhub_language', lang.code);
+        localStorage.setItem('lang', lang.code);
+
         i18n.changeLanguage(lang.code);
 
         // Dynamic RTL Support
         document.documentElement.dir = lang.dir;
         document.documentElement.lang = lang.code;
+
+        // Notify other parts of the app
+        window.dispatchEvent(new Event('languageChanged'));
 
         onClose?.();
     };

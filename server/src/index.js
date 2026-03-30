@@ -340,15 +340,54 @@ const io = new Server(server, {
 
 const socketDebugEnabled = process.env.NODE_ENV !== "production";
 
+// ── Socket.IO Authentication Middleware ──────────────────
+const { verifyToken: verifySocketToken } = require("./services/tokenVerificationCache");
+
+io.use((socket, next) => {
+  const token =
+    socket.handshake.auth?.token ||
+    (socket.handshake.headers?.authorization || "").replace(/^Bearer\s+/i, "") ||
+    null;
+  if (!token) {
+    return next(new Error("Authentication required"));
+  }
+  try {
+    const payload = verifySocketToken(token, JWT_CONFIG.SECRET, {
+      issuer: JWT_CONFIG.ISSUER,
+      audience: allowedAudiences,
+    });
+    socket.user = payload;
+    return next();
+  } catch {
+    return next(new Error("Invalid or expired token"));
+  }
+});
+
 io.on("connection", (socket) => {
   if (socketDebugEnabled) {
-    console.log(`User Connected: ${socket.id}`);
+    console.log(`User Connected: ${socket.id} (uid: ${socket.user?.userId || socket.user?.id})`);
   }
 
   socket.on("join_room", (data) => {
-    socket.join(data);
+    const roomId = String(data || "");
+    const userId = String(socket.user?.userId || socket.user?.id || "");
+
+    // Validate room membership: user must be the room ID or a participant
+    if (roomId && userId) {
+      const roomParts = roomId.split("_");
+      const isMember = roomId === userId || roomParts.includes(userId);
+      if (!isMember) {
+        if (socketDebugEnabled) {
+          console.warn(`[Socket] User ${userId} denied access to room: ${roomId}`);
+        }
+        socket.emit("error", { message: "Access denied to this room" });
+        return;
+      }
+    }
+
+    socket.join(roomId);
     if (socketDebugEnabled) {
-      console.log(`User with ID: ${socket.id} joined room: ${data}`);
+      console.log(`User with ID: ${socket.id} joined room: ${roomId}`);
     }
   });
 

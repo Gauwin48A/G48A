@@ -73,13 +73,16 @@ const LanguageSwitcher = () => {
       setIsOpen(false);
 
       try {
-        await i18n.changeLanguage(nextCode);
         localStorage.setItem('mhub_language', nextCode);
         localStorage.setItem('lang', nextCode);
+        await i18n.changeLanguage(nextCode);
 
         // RTL support
         document.documentElement.dir = RTL_CODES.has(nextCode) ? 'rtl' : 'ltr';
         document.documentElement.lang = nextCode;
+
+        // Notify other parts of the app (LanguageContext, etc.)
+        window.dispatchEvent(new Event('languageChanged'));
       } catch {
         // silently fail, keep current language
       } finally {
