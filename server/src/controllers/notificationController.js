@@ -217,7 +217,6 @@ exports.getNotifications = async (req, res) => {
         n.created_at,
         n.sender_id,
         n.post_id,
-        n.reference_id,
         n.thumbnail_url,
         n.action_path,
         n.group_key,
@@ -346,7 +345,7 @@ exports.getNotifications = async (req, res) => {
         ...row,
         group_key:
           row.group_key ||
-          `${row.type || "general"}:${row.post_id || row.reference_id || row.notification_id}`,
+          `${row.type || "general"}:${row.post_id || row.notification_id}`,
         post: row.post_id
           ? {
               post_id: row.post_id,

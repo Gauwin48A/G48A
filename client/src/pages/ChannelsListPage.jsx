@@ -92,13 +92,20 @@ const $ = ({ variant = "channels" } = {}) => {
               )
             : await u();
         } catch (t) {
-          import.meta.env.DEV &&
-            console.error("Failed to follow/unfollow channel:", t),
-            i(
-              t?.message ||
-                r("something_went_wrong") ||
-                "Failed to update follow state",
-            );
+          const _status = t?.response?.status || t?.status;
+          const _msg = String(t?.message || "").toLowerCase();
+          // 400 "own channel" errors are expected behaviour — don't surface as a page error.
+          if (_status === 400 && (_msg.includes("own") || _msg.includes("yourself") || _msg.includes("yourself") || _msg.includes("cannot follow your"))) {
+            import.meta.env.DEV && console.warn("[channels] self-follow blocked by server:", t?.message);
+          } else {
+            import.meta.env.DEV &&
+              console.error("Failed to follow/unfollow channel:", t),
+              i(
+                t?.message ||
+                  r("something_went_wrong") ||
+                  "Failed to update follow state",
+              );
+          }
         } finally {
           v(null);
         }

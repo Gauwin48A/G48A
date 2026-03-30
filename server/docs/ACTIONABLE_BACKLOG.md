@@ -181,9 +181,6 @@ client/src/services/api.js   ← "Defence" client (574 lines)
 |---|------|---------|
 | M17 | Hardcoded canonical URL `example.com` in `index.html` + `sitemap.xml` | 2 files |
 | M18 | Create `client/.env.example` (document required frontend env vars) | New file |
-| M19 | Remove `application/xml` from allowed uploads (XXE risk) | `upload.js` |
-| M20 | Fix `breachCheck.js` failing open when HIBP API is down | `breachCheck.js` |
-| M21 | Fix WAF false positives (`--` blocks legitimate text) | `wafEnforcement.js` |
 | M22 | PM2 `instances: 'max'` → `os.cpus().length - 1` | `ecosystem.config.js` |
 | M23 | Remove double compression (Express + Nginx both compress) | `index.js` + `nginx.conf` |
 

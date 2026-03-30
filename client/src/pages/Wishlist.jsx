@@ -113,6 +113,7 @@ const Wishlist = () => {
   const [hasMore, setHasMore] = useState(false);
 
   const fetchIdRef = useRef(0);
+  const cursorRef = useRef(null);
   const savedIdsRef = useRef(new Set());
   const syncingRef = useRef(0);
   const undoRef = useRef(new Map());
@@ -130,6 +131,7 @@ const Wishlist = () => {
       if (reset) {
         setLoading(true);
         setCursor(null);
+        cursorRef.current = null;
         setHasMore(false);
         setSelectedIds(new Set());
       } else {
@@ -140,21 +142,24 @@ const Wishlist = () => {
         const params = {
           userId,
           limit: PAGE_LIMIT,
-          search: searchQuery || undefined,
           sort: sortBy,
-          status: statusFilter !== "all" ? statusFilter : undefined,
         };
+        if (searchQuery) params.search = searchQuery;
+        if (statusFilter !== "all") params.status = statusFilter;
         if (hasCategoryMode && categoryModeCategory?.category_id) {
           params.category_id = categoryModeCategory.category_id;
         }
-        if (!reset && cursor) {
-          params.cursor = cursor;
+        const cursorValue = cursorRef.current;
+        if (!reset && cursorValue) {
+          params.cursor = cursorValue;
         }
         const res = await api.get("/wishlist", { params });
         if (currentId !== fetchIdRef.current) return;
         const data = res?.data ?? res;
         const list = Array.isArray(data?.items) ? data.items : [];
-        setCursor(data?.nextCursor || null);
+        const nextCursor = data?.nextCursor || null;
+        setCursor(nextCursor);
+        cursorRef.current = nextCursor;
         setHasMore(Boolean(data?.hasMore));
         setItems((prev) => {
           const next = reset ? list : [...prev, ...list];
@@ -180,7 +185,6 @@ const Wishlist = () => {
       }
     },
     [
-      cursor,
       categoryModeCategory,
       hasCategoryMode,
       searchQuery,

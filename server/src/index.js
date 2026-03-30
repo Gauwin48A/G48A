@@ -411,7 +411,14 @@ setNotificationSocket(io);
 
 const { burstLimiter, perUserLimiter, writeOperationLimiter } = require("./middleware/enhancedRateLimiter");
 
-app.use(compression());
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers["x-nginx-proxied"]) {
+      return false; // Skip compression if Nginx already handled it
+    }
+    return compression.filter(req, res);
+  }
+}));
 app.use(enforceHttps);
 app.use(securityHeaders);
 app.disable("x-powered-by");

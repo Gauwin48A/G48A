@@ -30,10 +30,10 @@ const isLocalhostRuntime = () =>
   LOCALHOST_HOSTNAMES.has(window.location.hostname);
 const shouldPreferLocalDevProxy = () =>
   Boolean(import.meta.env.DEV) && !FORCE_ABSOLUTE_LOCAL_API_ORIGIN;
-const getRuntimeApiOriginOverride = () => {
-  if (typeof window === "undefined") return "";
-  return normalize(window.__MHUB_API_ORIGIN_OVERRIDE__ || "");
-};
+const getRuntimeApiOriginOverride = () =>
+  typeof window === "undefined"
+    ? ""
+    : normalize(window.__MHUB_API_ORIGIN_OVERRIDE__ || "");
 export function getApiOriginBase() {
   const runtimeOverride = normalizeAbsoluteOrigin(
     getRuntimeApiOriginOverride(),

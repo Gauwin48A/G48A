@@ -22,6 +22,7 @@ import {
 } from "react-icons/fa";
 import { useTranslation as W } from "react-i18next";
 import api from "../lib/api";
+import { getUserId } from "@/utils/authStorage";
 import {
   PageErrorState as G,
   PageLoadingState as Q,
@@ -90,8 +91,7 @@ const X = () => {
     y(() => {
       if (!postId) return;
       api.post(`/posts/${postId}/view`).catch(() => {});
-      const t =
-        localStorage.getItem("userId") || localStorage.getItem("user_id");
+      const t = getUserId();
       t &&
         api.post(`/recently-viewed/track`, { postId: postId, userId: t, source: "feed" }).catch(() => {});
     }, [postId]);

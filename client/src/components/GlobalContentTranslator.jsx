@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RUNTIME_TRANSLATION_ENABLED, translateBatch } from '@/utils/translateContent';
 
@@ -32,7 +32,11 @@ const getNormalizedLanguage = (value) => String(value || 'en').trim().toLowerCas
 const isNodeConnected = (node) => Boolean(node && node.isConnected);
 
 function GlobalContentTranslator() {
-  const { i18n } = useTranslation();
+  // Use { bindI18n: false } so react-i18next does NOT subscribe to i18n events
+  // internally. This prevents react-i18next from calling forceUpdate() while a
+  // sibling component is in the middle of its render phase, which causes the
+  // "Cannot update a component while rendering a different component" warning.
+  const { i18n } = useTranslation(undefined, { bindI18n: false, useSuspense: false });
   const runtimeTranslationEnabled = RUNTIME_TRANSLATION_ENABLED;
   const rootNodeRef = useRef(null);
 
@@ -44,6 +48,21 @@ function GlobalContentTranslator() {
   const pendingRootsRef = useRef(new Set());
   const isWorkingRef = useRef(false);
   const latestLanguageRef = useRef(getNormalizedLanguage(i18n.language));
+
+  // Track language changes explicitly via i18n.on() instead of relying on
+  // react-i18next's internal subscription (which can fire during render).
+  const [currentLang, setCurrentLang] = useState(() => getNormalizedLanguage(i18n.language));
+  useEffect(() => {
+    const handleLanguageChanged = (lang) => {
+      const normalized = getNormalizedLanguage(lang);
+      latestLanguageRef.current = normalized;
+      setCurrentLang(normalized);
+    };
+    i18n.on('languageChanged', handleLanguageChanged);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChanged);
+    };
+  }, [i18n]);
 
   const cleanupDetachedState = () => {
     const textStates = textNodeStateRef.current;
@@ -343,7 +362,7 @@ function GlobalContentTranslator() {
   };
 
   useEffect(() => {
-    const normalizedLang = getNormalizedLanguage(i18n.language);
+    const normalizedLang = currentLang;
     latestLanguageRef.current = normalizedLang;
     const shouldRunRuntimeTranslation = runtimeTranslationEnabled && normalizedLang !== "en";
 
@@ -435,7 +454,7 @@ function GlobalContentTranslator() {
         observerRef.current = null;
       }
     };
-  }, [i18n.language, i18n.options?.supportedLngs, runtimeTranslationEnabled]);
+  }, [currentLang, i18n, runtimeTranslationEnabled]);
 
   return null;
 }
