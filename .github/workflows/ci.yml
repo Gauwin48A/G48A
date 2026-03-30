@@ -102,6 +102,13 @@ jobs:
       - name: Bundle Budget Check
         run: npm run check:bundle-budget
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E Smoke Tests
+        run: npx playwright test --reporter=list
+        continue-on-error: true
+
   server-quality:
     name: Server Test/Syntax
     runs-on: ubuntu-latest
@@ -145,3 +152,14 @@ jobs:
 
       - name: Check syntax
         run: node -c src/index.js
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+      - name: Guard AUTH_EXPOSE_TEST_SECRETS
+        run: |
+          if grep -rq 'AUTH_EXPOSE_TEST_SECRETS.*true' .env .env.production 2>/dev/null; then
+            echo "FATAL: AUTH_EXPOSE_TEST_SECRETS=true found in env files"
+            exit 1
+          fi
+          echo "OK: No test secrets exposed"

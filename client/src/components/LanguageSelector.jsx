@@ -143,6 +143,8 @@ export default function LanguageSelector({ className = "", compact = false }) {
       if (typeof i18n?.changeLanguage === "function") {
         await i18n.changeLanguage(nextCode);
       }
+      // Notify the rest of the app (pages with inline translation, LanguageContext, etc.)
+      window.dispatchEvent(new Event("languageChanged"));
     } catch {
       setActiveCode(selectedCode);
     } finally {
