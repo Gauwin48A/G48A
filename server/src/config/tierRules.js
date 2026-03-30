@@ -207,6 +207,82 @@ const formatTierDisplay = (tierName) => {
       boost: rules.boostQuotaMonthly || 0,
       featured: rules.featuredQuotaMonthly || 0,
       spotlight: rules.spotlightQuotaMonthly || 0,
+    },
+    boostQuotaMonthly: rules.boostQuotaMonthly,
+    featuredQuotaMonthly: rules.featuredQuotaMonthly,
+    spotlightQuotaMonthly: rules.spotlightQuotaMonthly,
+    hasAnalytics: rules.hasAnalytics,
+    hasPrioritySearch: rules.hasPrioritySearch,
+    hasPrioritySupport: rules.hasPrioritySupport,
+  };
+};
+
+const getAllTiersDisplay = () => TIER_ORDER.map(formatTierDisplay);
+
+const applyPromoCode = async (code, tierName, pool) => {
+  const promo = PROMO_CODES[code?.toUpperCase()];
+  if (!promo) return { valid: false, error: "Invalid promo code" };
+  if (promo.validUntil && new Date() > promo.validUntil) return { valid: false, error: "Promo code has expired" };
+  if (promo.tierOnly && promo.tierOnly !== tierName) return { valid: false, error: `This promo code is only valid for ${promo.tierOnly} tier` };
+
+  // Check usage limit — prefer DB for atomicity, fallback to in-memory
+  if (promo.maxUses !== null) {
+    let usedCount = promo.usedCount; // fallback
+    if (pool) {
+      try {
+        const result = await pool.query(
+          "SELECT used_count FROM promo_usages WHERE code = $1",
+          [code.toUpperCase()],
+        );
+        if (result.rows.length > 0) {
+          usedCount = parseInt(result.rows[0].used_count, 10) || 0;
+        }
+      } catch {
+        // Table may not exist — use in-memory fallback silently
+      }
+    }
+    if (usedCount >= promo.maxUses) return { valid: false, error: "Promo code usage limit reached" };
+  }
+
+  const rules = getTierRules(tierName);
+  const finalPrice = Math.round(rules.priceINR * (1 - promo.discount));
+  return { valid: true, discount: promo.discount, discountPercent: Math.round(promo.discount * 100), originalPrice: rules.priceINR, finalPrice };
+};
+
+const consumePromoCode = async (code, pool) => {
+  const promo = PROMO_CODES[code?.toUpperCase()];
+  if (!promo || promo.maxUses === null) return;
+
+  // Atomically increment in DB if available
+  if (pool) {
+    try {
+      await pool.query(
+        `INSERT INTO promo_usages (code, used_count) VALUES ($1, 1)
+         ON CONFLICT (code) DO UPDATE SET used_count = promo_usages.used_count + 1`,
+        [code.toUpperCase()],
+      );
+      return; // DB update succeeded — skip in-memory
+    } catch {
+      // Table may not exist — fall through to in-memory
+    }
+  }
+
+  // Fallback: in-memory increment
+  promo.usedCount++;
+};
+
+const getTrialExpiry = (tierName) => {
+  const rules = getTierRules(tierName);
+  if (!rules.trialDays) return null;
+  const d = new Date();
+  d.setDate(d.getDate() + rules.trialDays);
+  return d;
+};
+
+const isTrialEligible = async (userId, tierName, pool) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM payments WHERE user_id = $1 AND plan_purchased = $2 AND status = 'verified'`,
       [userId, tierName],
     );
     return parseInt(result.rows[0].count) === 0;

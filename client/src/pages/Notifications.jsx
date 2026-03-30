@@ -190,6 +190,7 @@ const NotificationsPage = () => {
   const [prefsLoading, setPrefsLoading] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const fetchCounterRef = useRef(0);
+  const cursorRef = useRef(null);
   const notificationRefs = useRef(new Map());
   const userId = useMemo(() => getUserId(user), [user]);
   const isAuth = useMemo(() => isAuthenticated(user), [user, userId]);
@@ -221,6 +222,7 @@ const NotificationsPage = () => {
       if (reset) {
         setIsLoading(true);
         setCursor(null);
+        cursorRef.current = null;
         setHasMore(false);
         setSelectedIds(new Set());
       } else {
@@ -231,11 +233,12 @@ const NotificationsPage = () => {
         const params = {
           userId,
           limit: PAGE_LIMIT,
-          search: searchQuery || undefined,
           sort: sortBy,
         };
-        if (!reset && cursor) {
-          params.cursor = cursor;
+        if (searchQuery) params.search = searchQuery;
+        const cursorValue = cursorRef.current;
+        if (!reset && cursorValue) {
+          params.cursor = cursorValue;
         }
         const response = await api.get("/notifications", { params });
         if (counter !== fetchCounterRef.current) return;
@@ -251,7 +254,9 @@ const NotificationsPage = () => {
             ? dedupeNotifications(normalized)
             : dedupeNotifications([...prev, ...normalized]),
         );
-        setCursor(data?.nextCursor || null);
+        const nextCursor = data?.nextCursor || null;
+        setCursor(nextCursor);
+        cursorRef.current = nextCursor;
         setHasMore(Boolean(data?.hasMore));
         setServerUnreadCount(Number(data?.unreadCount || 0));
       } catch (err) {
@@ -271,7 +276,7 @@ const NotificationsPage = () => {
         }
       }
     },
-    [cursor, isAuth, searchQuery, sortBy, userId],
+    [isAuth, searchQuery, sortBy, userId],
   );
 
   useEffect(

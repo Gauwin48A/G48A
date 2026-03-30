@@ -152,9 +152,9 @@ const RecentlyViewed = () => {
         const params = {
           userId,
           limit: PAGE_LIMIT,
-          search: searchQuery || undefined,
           sort: sortBy,
         };
+        if (searchQuery) params.search = searchQuery;
         if (sourceFilter !== "all") params.source = sourceFilter;
         const cursorValue = cursorRef.current;
         if (!reset && cursorValue) params.cursor = cursorValue;

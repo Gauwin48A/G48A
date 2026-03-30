@@ -734,10 +734,20 @@ api.interceptors.request.use(
       const activeApp = readStoredActiveApp();
       const activeCategory = readStoredActiveCategory();
       if (activeApp || activeCategory?.id || activeCategory?.name) {
-        const params =
-          config.params instanceof URLSearchParams
-            ? config.params
-            : new URLSearchParams(config.params || {});
+        let params;
+        if (config.params instanceof URLSearchParams) {
+          params = config.params;
+        } else {
+          // Strip undefined/null values before constructing URLSearchParams
+          // to prevent them from being serialized as the literal string "undefined"/"null".
+          const cleaned = {};
+          if (config.params && typeof config.params === "object") {
+            for (const [k, v] of Object.entries(config.params)) {
+              if (v !== undefined && v !== null) cleaned[k] = v;
+            }
+          }
+          params = new URLSearchParams(cleaned);
+        }
         const hasCategoryParam =
           params.has("category_id") ||
           params.has("categoryId") ||

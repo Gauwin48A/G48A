@@ -162,9 +162,6 @@ async function probeHealthUrl(healthUrl) {
     }
 
     const resolvedOrigin = getApiOriginFromHealthUrl(healthUrl);
-    if (typeof window !== "undefined" && resolvedOrigin) {
-      window.__MHUB_API_ORIGIN_OVERRIDE__ = resolvedOrigin;
-    }
 
     return {
       ok: true,

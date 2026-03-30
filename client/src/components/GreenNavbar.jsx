@@ -16,6 +16,8 @@ import { getAccessToken, getUserId, isAuthenticated } from '@/utils/authStorage'
 import { fetchAllSubcategories } from '@/services/subcategoriesService';
 import { buildActiveAppMatcher, normalizeCategoryText } from '@/utils/categoryModeFilters';
 import MiniCartPopover from '@/components/MiniCartPopover';
+import { useUnreadCount } from '@/hooks/useNotifications';
+import { readSavedPostIds, subscribeSavedPosts } from '@/utils/savedPosts';
 
 const parseStoredBoolean = (rawValue, fallback = false) => {
   if (rawValue === null || rawValue === undefined) return fallback;
@@ -79,7 +81,7 @@ const GreenNavbar = () => {
   ];
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const { totalCount } = useCart();
+  const { items: cartItems, totalCount } = useCart();
   const { filters, setFilters } = useFilter();
   const {
     activeApp,
@@ -189,6 +191,41 @@ const GreenNavbar = () => {
 
   // Check if user is logged in
   const isLoggedIn = useMemo(() => isAuthenticated(user), [user]);
+
+  // Notification unread count badge
+  const { data: unreadCount = 0 } = useUnreadCount({ enabled: isLoggedIn, refetchInterval: 60000 });
+
+  // Wishlist count badge — subscribe to savedPosts events so badge updates immediately
+  const [wishlistCount, setWishlistCount] = useState(() => readSavedPostIds().length);
+  useEffect(() => {
+    const unsubscribe = subscribeSavedPosts((savedMap) => {
+      setWishlistCount(Object.keys(savedMap).length);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Cart count filtered by active category mode (so the badge reflects the current
+  // category context rather than the total across all categories).
+  const categoryFilteredCartCount = useMemo(() => {
+    if (!activeApp && !activeCategory) return totalCount;
+    const filtered = (Array.isArray(cartItems) ? cartItems : []).filter((item) => {
+      if (activeCategory?.name) {
+        const catName = normalizeCategoryText(activeCategory.name);
+        if (item.category && normalizeCategoryText(item.category) === catName) return true;
+        if (item.category_group && normalizeCategoryText(item.category_group) === catName) return true;
+        return false;
+      }
+      if (activeApp) {
+        const matcher = buildActiveAppMatcher(activeApp, categoryModeCategories);
+        if (!matcher) return true;
+        if (item.category && matcher.categoryNames.has(normalizeCategoryText(item.category))) return true;
+        if (item.category_group && matcher.categoryNames.has(normalizeCategoryText(item.category_group))) return true;
+        return false;
+      }
+      return true;
+    });
+    return filtered.reduce((sum, entry) => sum + Number(entry.qty ?? 1), 0);
+  }, [cartItems, totalCount, activeApp, activeCategory, categoryModeCategories]);
   const navigate = useNavigate();
   const currentLayoutPreset = useMemo(
     () => LAYOUT_PRESETS.find((preset) => preset.key === layoutMode) || LAYOUT_PRESETS[2],
@@ -978,6 +1015,11 @@ const GreenNavbar = () => {
                   <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
                     <FiBell className="text-white w-5 h-5" />
                   </span>
+                  {isLoggedIn && Number(unreadCount) > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
+                      {Number(unreadCount) > 99 ? '99+' : Number(unreadCount)}
+                    </span>
+                  )}
                   <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('notifications')}
                   </span>
@@ -987,6 +1029,11 @@ const GreenNavbar = () => {
                   <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
                     <FiBookmark className="text-white w-5 h-5" />
                   </span>
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
                   <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('wishlist', { defaultValue: 'Wishlist' })}
                   </span>
@@ -997,9 +1044,9 @@ const GreenNavbar = () => {
                     <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
                       <FiShoppingCart className="text-white w-5 h-5" />
                     </span>
-                    {Number(totalCount) > 0 && (
+                    {Number(categoryFilteredCartCount) > 0 && (
                       <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
-                        {Number(totalCount) > 99 ? "99+" : Number(totalCount)}
+                        {Number(categoryFilteredCartCount) > 99 ? "99+" : Number(categoryFilteredCartCount)}
                       </span>
                     )}
                   </Link>

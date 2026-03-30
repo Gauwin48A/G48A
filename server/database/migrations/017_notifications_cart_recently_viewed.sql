@@ -5,15 +5,12 @@
 
 BEGIN;
 
--- Ensure UUID support
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- -------------------------------
 -- Notifications enhancements
 -- -------------------------------
 ALTER TABLE notifications
-  ADD COLUMN IF NOT EXISTS sender_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS post_id UUID REFERENCES posts(post_id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS sender_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS post_id INTEGER REFERENCES posts(post_id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS thumbnail_url TEXT,
   ADD COLUMN IF NOT EXISTS action_path TEXT,
   ADD COLUMN IF NOT EXISTS group_key TEXT,
@@ -30,7 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_snoozed
 -- Notification preferences
 -- -------------------------------
 CREATE TABLE IF NOT EXISTS notification_preferences (
-  user_id UUID PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+  user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
   email_enabled BOOLEAN DEFAULT true,
   push_enabled BOOLEAN DEFAULT true,
   sms_enabled BOOLEAN DEFAULT false,
@@ -46,9 +43,9 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 -- Cart tables
 -- -------------------------------
 CREATE TABLE IF NOT EXISTS cart_items (
-  cart_item_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-  post_id UUID REFERENCES posts(post_id) ON DELETE SET NULL,
+  cart_item_id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  post_id INTEGER REFERENCES posts(post_id) ON DELETE SET NULL,
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
   price_at_add NUMERIC(12,2),
   currency TEXT DEFAULT 'INR',
@@ -66,7 +63,7 @@ CREATE INDEX IF NOT EXISTS idx_cart_items_user_status
 
 -- Optional cart promotions table (for coupon validation)
 CREATE TABLE IF NOT EXISTS cart_promotions (
-  promo_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  promo_id SERIAL PRIMARY KEY,
   code TEXT UNIQUE NOT NULL,
   description TEXT,
   discount_type TEXT NOT NULL CHECK (discount_type IN ('percent', 'fixed')),
