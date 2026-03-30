@@ -35,24 +35,32 @@ const requireRole =
         });
       }
 
-      const result = await runQuery(
-        `
-          SELECT COALESCE(NULLIF(to_jsonb(u)->>'role', ''), 'user') AS role
-          FROM users u
-          WHERE u.user_id::text = $1
-          LIMIT 1
-        `,
-        [userId],
-      );
+      // Prefer role from JWT claims (avoids DB query on every request)
+      let userRole;
+      if (req.user.role) {
+        userRole = normalizeRole(req.user.role);
+      } else {
+        // Fallback: query DB if role not in JWT
+        const result = await runQuery(
+          `
+            SELECT COALESCE(NULLIF(to_jsonb(u)->>'role', ''), 'user') AS role
+            FROM users u
+            WHERE u.user_id::text = $1
+            LIMIT 1
+          `,
+          [userId],
+        );
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          error: "User not found",
-          code: "USER_NOT_FOUND",
-        });
+        if (result.rows.length === 0) {
+          return res.status(404).json({
+            error: "User not found",
+            code: "USER_NOT_FOUND",
+          });
+        }
+
+        userRole = normalizeRole(result.rows[0].role);
       }
 
-      const userRole = normalizeRole(result.rows[0].role);
       const roles = allowedRoles
         .flat()
         .map((role) => normalizeRole(role))

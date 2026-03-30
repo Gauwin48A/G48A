@@ -207,46 +207,6 @@ const formatTierDisplay = (tierName) => {
       boost: rules.boostQuotaMonthly || 0,
       featured: rules.featuredQuotaMonthly || 0,
       spotlight: rules.spotlightQuotaMonthly || 0,
-    },
-    boostQuotaMonthly: rules.boostQuotaMonthly,
-    featuredQuotaMonthly: rules.featuredQuotaMonthly,
-    spotlightQuotaMonthly: rules.spotlightQuotaMonthly,
-    hasAnalytics: rules.hasAnalytics,
-    hasPrioritySearch: rules.hasPrioritySearch,
-    hasPrioritySupport: rules.hasPrioritySupport,
-  };
-};
-
-const getAllTiersDisplay = () => TIER_ORDER.map(formatTierDisplay);
-
-const applyPromoCode = (code, tierName) => {
-  const promo = PROMO_CODES[code?.toUpperCase()];
-  if (!promo) return { valid: false, error: "Invalid promo code" };
-  if (promo.validUntil && new Date() > promo.validUntil) return { valid: false, error: "Promo code has expired" };
-  if (promo.maxUses !== null && promo.usedCount >= promo.maxUses) return { valid: false, error: "Promo code usage limit reached" };
-  if (promo.tierOnly && promo.tierOnly !== tierName) return { valid: false, error: `This promo code is only valid for ${promo.tierOnly} tier` };
-  const rules = getTierRules(tierName);
-  const finalPrice = Math.round(rules.priceINR * (1 - promo.discount));
-  return { valid: true, discount: promo.discount, discountPercent: Math.round(promo.discount * 100), originalPrice: rules.priceINR, finalPrice };
-};
-
-const consumePromoCode = (code) => {
-  const promo = PROMO_CODES[code?.toUpperCase()];
-  if (promo && promo.maxUses !== null) promo.usedCount++;
-};
-
-const getTrialExpiry = (tierName) => {
-  const rules = getTierRules(tierName);
-  if (!rules.trialDays) return null;
-  const d = new Date();
-  d.setDate(d.getDate() + rules.trialDays);
-  return d;
-};
-
-const isTrialEligible = async (userId, tierName, pool) => {
-  try {
-    const result = await pool.query(
-      `SELECT COUNT(*) FROM payments WHERE user_id = $1 AND plan_purchased = $2 AND status = 'verified'`,
       [userId, tierName],
     );
     return parseInt(result.rows[0].count) === 0;

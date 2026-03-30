@@ -1,6 +1,9 @@
 const { pool, runQuery } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 
+// --- SQL Injection Prevention: strict whitelist for dynamic column names ---
+const ALLOWED_PLAN_COLUMNS = new Set(["current_plan", "tier"]);
+
 const schemaCache = new Map();
 let userPlanColumnPromise = null;
 
@@ -245,6 +248,13 @@ async function setTierBasedExpiry() {
     const planColumn = await resolveUserPlanColumn();
     if (!planColumn) {
       logger.warn("[TierExpiry] users.current_plan/tier missing; skipping expiry update");
+      return { updatedCount: 0, skipped: true };
+    }
+
+    // Defense-in-depth: Validate against whitelist even though resolveUserPlanColumn
+    // only returns known values. Prevents SQL injection if future code adds new paths.
+    if (!ALLOWED_PLAN_COLUMNS.has(planColumn)) {
+      logger.error(`[TierExpiry] Unexpected plan column "${planColumn}" blocked by whitelist`);
       return { updatedCount: 0, skipped: true };
     }
 

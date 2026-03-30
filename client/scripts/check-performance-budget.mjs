@@ -67,7 +67,7 @@ const categoryScores = {
 };
 
 for (const [key, threshold] of Object.entries(thresholds)) {
-  if (!Number.isFinite(threshold) || threshold <= 0) continue;
+  if (!Number.isFinite(threshold) || threshold < 0) continue;
   const score = categoryScores[key];
   if (typeof score !== "number") {
     failures.push(
@@ -90,7 +90,7 @@ const metricValues = {
 };
 
 for (const [metric, budget] of Object.entries(metricBudgets)) {
-  if (!Number.isFinite(budget) || budget <= 0) continue;
+  if (!Number.isFinite(budget) || budget < 0) continue;
   const value = metricValues[metric];
   if (typeof value !== "number") {
     failures.push(
