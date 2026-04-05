@@ -22,6 +22,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { useCmsPage } from "@/hooks/useCmsPage";
+import { useTheme } from "@/context/ThemeContext";
 
 const CARD_GRADIENTS = [
   "from-blue-500 to-indigo-600",
@@ -71,11 +72,7 @@ export default function Subcategories() {
     activeApp,
     categories: categoryModeCategories,
   } = useCategoryMode();
-  const isDarkMode = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    if (document.documentElement.classList.contains("dark")) return true;
-    return window.localStorage.getItem("mhub-theme") === "dark";
-  }, []);
+  const { isDark: isDarkMode } = useTheme();
   const { data: cmsContent } = useCmsPage("subcategories");
   const cardGradients = useMemo(
     () =>

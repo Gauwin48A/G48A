@@ -23,6 +23,9 @@ const BACKGROUND_REFRESH_MS = 5 * 60 * 1000;
 const LOCATION_CAPTURE_TIMEOUT_MS = 65 * 1000;
 const STALE_LOCATION_THRESHOLD_MS = 10 * 60 * 1000; // L11: 10 min stale threshold
 const FOCUS_REFRESH_STALENESS_MS = 2 * 60 * 1000; // refresh on tab focus if older than 2 min
+const VERY_COARSE_ACCURACY_METERS = 5000;
+const COARSE_REFRESH_COOLDOWN_MS = 30 * 60 * 1000;
+const COARSE_REFRESH_COOLDOWN_KEY = "mhub_location_coarse_cooldown_until";
 const DEBUG = import.meta.env.DEV;
 
 const log = (...args) => {
@@ -192,6 +195,26 @@ const clearSkipFlag = () => {
     // ignore
   }
 };
+
+const readCoarseCooldownUntil = () => {
+  try {
+    const raw = localStorage.getItem(COARSE_REFRESH_COOLDOWN_KEY);
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const writeCoarseCooldownUntil = (untilMs) => {
+  try {
+    localStorage.setItem(COARSE_REFRESH_COOLDOWN_KEY, String(untilMs));
+  } catch {
+    // ignore
+  }
+};
+
+const isCoarseCooldownActive = () => Date.now() < readCoarseCooldownUntil();
 
 const buildLocationString = (location) => {
   const parts = [];
@@ -363,6 +386,15 @@ export function LocationProvider({ children }) {
         return null;
       }
 
+      if (silent && isCoarseCooldownActive()) {
+        const cached = getCachedLocation();
+        const cachedAcc = Number(cached?.accuracy);
+        if (Number.isFinite(cachedAcc) && cachedAcc > VERY_COARSE_ACCURACY_METERS) {
+          log("[LocationContext] Skipping silent capture — coarse cooldown active");
+          return cached;
+        }
+      }
+
       if (requestInFlightRef.current) {
         if (!silent) {
           setLoading(true);
@@ -399,21 +431,31 @@ export function LocationProvider({ children }) {
             throw new Error("Unable to normalize captured location");
           }
 
+          const normalizedAccuracy = Number(normalized.accuracy);
+          const isVeryCoarseAccuracy =
+            Number.isFinite(normalizedAccuracy) &&
+            normalizedAccuracy > VERY_COARSE_ACCURACY_METERS;
+          if (isVeryCoarseAccuracy) {
+            writeCoarseCooldownUntil(Date.now() + COARSE_REFRESH_COOLDOWN_MS);
+          }
+
           // If accuracy is worse than target, schedule background refinement
           const needsRefinement =
             location.accuracyTier === "coarse" ||
             location.accuracyTier === "very_coarse" ||
             location.accuracyTier === "moderate" ||
             (location.accuracyTier === "good" && !location.meetsTargetAccuracy);
-          if (needsRefinement && !silent) {
+          if (needsRefinement && !silent && !isVeryCoarseAccuracy) {
             log("[LocationContext] Location accuracy insufficient (" + (location.accuracyTier) + "), scheduling background GPS refinement");
             setTimeout(() => {
               requestLocation({ silent: true }).catch(() => {});
             }, 3000);
+          } else if (needsRefinement && !silent && isVeryCoarseAccuracy) {
+            log("[LocationContext] Location accuracy extremely coarse, deferring background refinement");
           }
 
           clearManualLocation();
-          // Only cache GPS-sourced locations — IP fallback is coarse (~5km)
+          // Only cache GPS-sourced locations — IP fallback is very coarse (~75km)
           // and produces identical results for all users on the same network.
           const isIpFallback = String(normalized.provider || "").toLowerCase() === "ip_fallback";
           if (!isIpFallback) {
@@ -611,6 +653,15 @@ export function LocationProvider({ children }) {
       const cacheAge = Date.now() - Number(cachedLocation.timestamp || 0);
       const isStale = cacheAge >= STALE_LOCATION_THRESHOLD_MS;
       const isVeryFresh = cacheAge < 30_000; // <30s — just captured, skip redundant refresh
+      const cachedAcc = Number(cachedLocation.accuracy);
+      const skipForCoarseCooldown =
+        isCoarseCooldownActive() &&
+        Number.isFinite(cachedAcc) &&
+        cachedAcc > VERY_COARSE_ACCURACY_METERS;
+      if (skipForCoarseCooldown) {
+        log("[LocationContext] Skipping background refresh due to coarse cooldown");
+        return;
+      }
       if (isStale) {
         log("[LocationContext] Cached location is stale (>10min), forcing GPS refresh");
         requestLocation({ silent: true }).catch(() => {});
@@ -635,6 +686,13 @@ export function LocationProvider({ children }) {
 
     const refreshIfNeeded = () => {
       if (permissionDenied) return; // Stop retrying once denied
+      if (isCoarseCooldownActive()) {
+        const cached = getCachedLocation();
+        const cachedAcc = Number(cached?.accuracy);
+        if (Number.isFinite(cachedAcc) && cachedAcc > VERY_COARSE_ACCURACY_METERS) {
+          return;
+        }
+      }
       const cachedLocation = getCachedLocation();
       const stale = !cachedLocation || Date.now() - Number(cachedLocation.timestamp || 0) >= FOCUS_REFRESH_STALENESS_MS;
       if (stale) {
