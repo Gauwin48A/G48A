@@ -106,6 +106,19 @@ function enqueueMissingTranslation(task) {
   }
 }
 
+function scheduleMissingKeyAddition(lng, ns, key, value) {
+  const taskKey = `add:${lng}:${ns}:${key}`;
+  if (missingKeyTasks.has(taskKey)) return;
+  missingKeyTasks.set(taskKey, true);
+  enqueueMissingTranslation(async () => {
+    try {
+      i18n.addResource(lng, ns, key, value);
+    } finally {
+      missingKeyTasks.delete(taskKey);
+    }
+  });
+}
+
 function scheduleMissingKeyTranslation(lng, ns, key, fallback) {
   if (isTestEnv) return;
   const normalizedLang = normalizeLanguageCode(lng);
@@ -185,7 +198,7 @@ if (!i18n.isInitialized && !globalScope[I18N_INIT_STARTED_FLAG]) {
         const defaultText = normalizeMissingFallback(key, fallbackValue);
         const hasEnResource = hasResourceCompat("en", ns, key);
         if (defaultText && !hasEnResource) {
-          i18n.addResource("en", ns, key, defaultText);
+          scheduleMissingKeyAddition("en", ns, key, defaultText);
         }
         const activeLang = normalizeLanguageCode(
           i18n.resolvedLanguage || i18n.language,

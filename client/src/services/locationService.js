@@ -59,6 +59,8 @@ const LOCATION_CACHE_KEYS = ["mhub_location", "user_location", "last_location"];
 const MIN_MOVEMENT_THRESHOLD = 8;
 /** Maximum accuracy we'll accept at all — beyond this is meaningless */
 const ABSOLUTE_MAX_ACCURACY_METERS = 50000;
+/** Accuracy beyond which watch-refinement / extra samples are pointless */
+const HOPELESS_ACCURACY_METERS = 10000;
 /** Accuracy tiers for quality classification */
 const ACCURACY_TIER_PRECISE = 30;
 const ACCURACY_TIER_GOOD = 100;
@@ -786,10 +788,21 @@ const getBrowserPosition = async (options = {}) => {
   const initialAccuracy = getPositionAccuracy(best);
   debugLog(`Initial browser fix: ${best.coords.latitude.toFixed(7)}, ${best.coords.longitude.toFixed(7)} ±${Number.isFinite(initialAccuracy) ? Math.round(initialAccuracy) + 'm' : '?'}`);
 
-  // Always try watch refinement if not yet at target accuracy
+  // When accuracy is hopeless (>10km, e.g. cell-tower/WiFi estimate on desktop),
+  // skip all refinement — watch and extra samples will never improve it and
+  // just waste 60+ seconds of CPU time.
+  if (Number.isFinite(initialAccuracy) && initialAccuracy > HOPELESS_ACCURACY_METERS) {
+    debugLog(`Skipping all refinement — accuracy ${Math.round(initialAccuracy)}m is beyond recovery (>${HOPELESS_ACCURACY_METERS}m).`);
+    return best;
+  }
+
+  const allowRefinement =
+    !Number.isFinite(initialAccuracy) || initialAccuracy <= ACCURACY_TIER_COARSE;
+
+  // Try watch refinement if not yet at target accuracy
   if (
-    !Number.isFinite(initialAccuracy) ||
-    initialAccuracy > targetAccuracy
+    allowRefinement &&
+    (!Number.isFinite(initialAccuracy) || initialAccuracy > targetAccuracy)
   ) {
     const refinedFix = await refineBrowserPositionWithWatch(
       best,
@@ -797,10 +810,18 @@ const getBrowserPosition = async (options = {}) => {
     );
     addCandidate(refinedFix);
     best = pickBestPosition(rawCandidates) || best;
+  } else if (!allowRefinement && Number.isFinite(initialAccuracy)) {
+    debugLog(
+      `Skipping watch refinement due to coarse accuracy (${Math.round(initialAccuracy)}m).`,
+    );
   }
 
+  const bestAccuracy = getPositionAccuracy(best);
+  const allowExtraSamples =
+    !Number.isFinite(bestAccuracy) || bestAccuracy <= ACCURACY_TIER_COARSE;
+
   // Take extra samples if still above target accuracy
-  if (getPositionAccuracy(best) > targetAccuracy) {
+  if (allowExtraSamples && bestAccuracy > targetAccuracy) {
     for (let attempt = 0; attempt < WEB_EXTRA_SAMPLE_ATTEMPTS; attempt += 1) {
       await sleep(WEB_EXTRA_SAMPLE_DELAY_MS + attempt * 500);
       try {
@@ -813,6 +834,10 @@ const getBrowserPosition = async (options = {}) => {
       }
     }
     best = pickBestPosition(rawCandidates) || best;
+  } else if (!allowExtraSamples && bestAccuracy > targetAccuracy) {
+    debugLog(
+      `Skipping extra samples due to coarse accuracy (${Math.round(bestAccuracy)}m).`,
+    );
   }
 
   debugLog(`Final browser position: ±${Math.round(getPositionAccuracy(best))}m from ${rawCandidates.length} candidates`);
@@ -999,6 +1024,9 @@ const getIPBasedFallbackLocation = async () => {
     } catch {
       debugLog("IP fallback reverse geocode failed, using city-level data");
     }
+    if (addressData) {
+      addressData = trimAddressForCoarseAccuracy(addressData);
+    }
 
     const area = addressData?.area || "";
     const locality = addressData?.locality || "";
@@ -1025,7 +1053,7 @@ const getIPBasedFallbackLocation = async () => {
       longitude: roundedLng,
       lat: roundedLat,
       lng: roundedLng,
-      accuracy: 5e3,
+      accuracy: 75e3,
       speed: 0,
       city,
       state,
@@ -1816,6 +1844,33 @@ const composeDisplayName = (placeName, addressData = null) => {
   }
   return [safePlaceName, baseName].filter(Boolean).join(", ");
 };
+const trimAddressForCoarseAccuracy = (addressData) => {
+  if (!addressData || typeof addressData !== "object") return addressData;
+  const city =
+    addressData.city ||
+    addressData.locality ||
+    addressData.district ||
+    "";
+  const state = addressData.state || "";
+  const country = addressData.country || "";
+  const displayName =
+    [city, state, country].filter(Boolean).join(", ") ||
+    addressData.displayName ||
+    addressData.formatted ||
+    "Unknown Location";
+  return {
+    ...addressData,
+    street: "",
+    area: "",
+    locality: "",
+    suburb: "",
+    colony: "",
+    village: "",
+    placeName: "",
+    poiName: "",
+    displayName,
+  };
+};
 // Also store the location object's suburb field for richer data
 
 const getNativePositionWithSampling = async (options = {}) => {
@@ -2006,7 +2061,12 @@ export const getCurrentLocation = async (options = {}) => {
     debugLog(`GPS fix: ${latitude.toFixed(7)}, ${longitude.toFixed(7)} ±${accuracy ? Math.round(accuracy) : '?'}m`);
     const normalizedLat = roundCoordinate(latitude);
     const normalizedLng = roundCoordinate(longitude);
-    const addressData = await resolveAddress(normalizedLat, normalizedLng);
+    const isVeryCoarseAccuracy =
+      Number.isFinite(accuracy) && accuracy > ACCURACY_TIER_COARSE;
+    let addressData = await resolveAddress(normalizedLat, normalizedLng);
+    if (isVeryCoarseAccuracy) {
+      addressData = trimAddressForCoarseAccuracy(addressData);
+    }
     debugLog("Reverse geocode result:", {
       source: addressData?.source,
       colony: addressData?.colony,
@@ -2019,7 +2079,9 @@ export const getCurrentLocation = async (options = {}) => {
       street: addressData?.street,
       displayName: addressData?.displayName,
     });
-    const placeName = await resolvePoiName(normalizedLat, normalizedLng, addressData);
+    const placeName = isVeryCoarseAccuracy
+      ? ""
+      : await resolvePoiName(normalizedLat, normalizedLng, addressData);
     const displayName = composeDisplayName(placeName, addressData);
     debugLog("Composed displayName:", displayName, "| placeName:", placeName);
     const enrichedAddress = {
@@ -2178,6 +2240,12 @@ export const getBestAvailableLocation = async (options = {}) => {
         errors.push(
           new Error(`Coarse location accuracy (${Math.round(accuracy)}m)`),
         );
+
+        // If accuracy is hopeless (>10km), retrying won't help — skip remaining attempts
+        if (Number.isFinite(accuracy) && accuracy > HOPELESS_ACCURACY_METERS) {
+          debugLog(`GPS accuracy ${Math.round(accuracy)}m is beyond recovery, skipping retry.`);
+          break;
+        }
       }
     } catch (err) {
       errors.push(err);

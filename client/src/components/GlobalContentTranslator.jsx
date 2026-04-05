@@ -36,7 +36,11 @@ function GlobalContentTranslator() {
   // internally. This prevents react-i18next from calling forceUpdate() while a
   // sibling component is in the middle of its render phase, which causes the
   // "Cannot update a component while rendering a different component" warning.
-  const { i18n } = useTranslation(undefined, { bindI18n: false, useSuspense: false });
+  const { i18n } = useTranslation(undefined, {
+    bindI18n: false,
+    bindI18nStore: false,
+    useSuspense: false,
+  });
   const runtimeTranslationEnabled = RUNTIME_TRANSLATION_ENABLED;
   const rootNodeRef = useRef(null);
 

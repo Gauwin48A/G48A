@@ -22,7 +22,9 @@ import { getUserId } from "@/utils/authStorage";
 const LAZY_CACHE_KEY_PREFIX = "mhub:lazy-retry:";
 const LAZY_RETRY_WINDOW_MS = 60 * 1000;
 const DEV_THROTTLE_MS = 1500;
+const SYNC_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes between background location syncs
 let lastDevSyncAt = 0;
+let lastSyncAt = 0;
 
 function lazyWithRetry(importFn, name) {
   return lazy(async () => {
@@ -254,12 +256,11 @@ function AppShell() {
     const syncLocation = async () => {
       const userId = getUserId(user);
       if (userId) {
+        const now = Date.now();
+        if (now - lastSyncAt < SYNC_THROTTLE_MS) return;
+        lastSyncAt = now;
         if (isDev) {
-          const now = Date.now();
-          if (now - lastDevSyncAt < DEV_THROTTLE_MS) return;
           lastDevSyncAt = now;
-        }
-        if (isDev) {
           console.log("[DEFENDER] App Active. Syncing Banking-Grade Location...");
         }
         requestLocation({ silent: true }).catch(() => {});

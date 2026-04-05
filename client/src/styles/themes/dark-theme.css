@@ -1,0 +1,184 @@
+@layer base {
+  :root[data-theme="dark"],
+  :root.dark {
+    color-scheme: dark;
+
+    /* Core palette */
+    --background: #0f1115;
+    --primary-bg: #121417;
+    --card: #1a1c21;
+    --card-foreground: #f1f1f1;
+    --popover: #1a1c21;
+    --popover-foreground: #f1f1f1;
+    --foreground: #f1f1f1;
+    --text-primary: #f1f1f1;
+    --text-secondary: #a1a1aa;
+    --text-faint: #8b8b95;
+    --border: #2c2f36;
+    --input: #202329;
+    --input-bg: #202329;
+    --hover: #2a2d33;
+
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-foreground: #ffffff;
+    --secondary: #121417;
+    --secondary-foreground: #f1f1f1;
+    --muted: #2a2d33;
+    --muted-foreground: #a1a1aa;
+    --accent: #202329;
+    --accent-foreground: #f1f1f1;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --ring: #60a5fa;
+
+    /* Surfaces + text hierarchy */
+    --surface-0: #0f1115;
+    --surface-1: #121417;
+    --surface-2: #1a1c21;
+    --surface-3: #202329;
+    --text-strong: #f1f1f1;
+    --text: #f1f1f1;
+    --text-muted: #a1a1aa;
+
+    /* Chips */
+    --chip-bg: #202329;
+    --chip-border: #2c2f36;
+    --chip-bg-active: #3b82f6;
+    --chip-text-active: #ffffff;
+
+    /* Effects */
+    --page-bg:
+      radial-gradient(1200px circle at 20% -10%, rgba(59, 130, 246, 0.16), transparent 55%),
+      radial-gradient(900px circle at 85% -20%, rgba(236, 72, 153, 0.12), transparent 45%),
+      radial-gradient(900px circle at 10% 85%, rgba(16, 185, 129, 0.1), transparent 45%),
+      linear-gradient(180deg, #0f1115 0%, #121417 100%);
+    --shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.35);
+    --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 18px 40px rgba(0, 0, 0, 0.5);
+    --card-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 24px 48px rgba(0, 0, 0, 0.55);
+    --btn-shadow: 0 14px 30px rgba(59, 130, 246, 0.35);
+
+    /* Icons */
+    --icon-color: #f1f1f1;
+    --icon-color-muted: #a1a1aa;
+
+    /* Navigation */
+    --nav-bg: #121417;
+    --nav-border: #2c2f36;
+    --nav-text: #f1f1f1;
+    --nav-pill-bg: #1a1c21;
+    --nav-pill-hover: #2a2d33;
+    --nav-pill-border: #2c2f36;
+    --nav-icon-bg: #202329;
+    --nav-icon-hover: #2a2d33;
+
+    /* MHub tokens */
+    --mhub-text-primary: var(--text-primary);
+    --mhub-text-secondary: var(--text-secondary);
+    --mhub-text-tertiary: #b8b8c4;
+    --mhub-text-muted: var(--text-secondary);
+
+    --mhub-bg-primary: var(--primary-bg);
+    --mhub-bg-secondary: var(--background);
+    --mhub-bg-tertiary: var(--hover);
+    --mhub-bg-card: var(--card);
+    --mhub-surface-0: var(--surface-0);
+    --mhub-surface-1: var(--surface-1);
+    --mhub-surface-2: var(--surface-2);
+    --mhub-surface-3: var(--surface-3);
+
+    --mhub-border: var(--border);
+    --mhub-border-light: var(--border);
+
+    --mhub-primary: var(--primary);
+    --mhub-primary-hover: var(--primary-hover);
+    --mhub-success: #22c55e;
+    --mhub-warning: #f59e0b;
+    --mhub-error: #ef4444;
+    --mhub-price: #34d399;
+
+    --mhub-chip-bg: var(--chip-bg);
+    --mhub-chip-border: var(--chip-border);
+    --mhub-chip-text: var(--text-secondary);
+    --mhub-chip-bg-active: var(--primary);
+    --mhub-chip-text-active: #ffffff;
+    --mhub-cta-bg: var(--primary);
+    --mhub-cta-bg-hover: var(--primary-hover);
+    --mhub-cta-text: #ffffff;
+
+    --mhub-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+    --mhub-shadow-md: 0 8px 16px rgba(0, 0, 0, 0.28);
+    --mhub-shadow-lg: 0 14px 28px rgba(0, 0, 0, 0.35);
+    --mhub-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 18px 30px rgba(0, 0, 0, 0.35);
+
+    /* Notification accents */
+    --mhub-accent-package: #60a5fa;
+    --mhub-accent-package-soft: rgba(96, 165, 250, 0.2);
+    --mhub-accent-package-border: rgba(96, 165, 250, 0.35);
+    --mhub-accent-package-glow: rgba(96, 165, 250, 0.25);
+    --mhub-accent-package-from: #93c5fd;
+    --mhub-accent-package-to: #3b82f6;
+
+    --mhub-accent-money: #34d399;
+    --mhub-accent-money-soft: rgba(52, 211, 153, 0.2);
+    --mhub-accent-money-border: rgba(52, 211, 153, 0.35);
+    --mhub-accent-money-glow: rgba(52, 211, 153, 0.25);
+    --mhub-accent-money-from: #6ee7b7;
+    --mhub-accent-money-to: #10b981;
+
+    --mhub-accent-gift: #c084fc;
+    --mhub-accent-gift-soft: rgba(192, 132, 252, 0.2);
+    --mhub-accent-gift-border: rgba(192, 132, 252, 0.35);
+    --mhub-accent-gift-glow: rgba(192, 132, 252, 0.25);
+    --mhub-accent-gift-from: #d8b4fe;
+    --mhub-accent-gift-to: #a855f7;
+
+    --mhub-accent-message: #818cf8;
+    --mhub-accent-message-soft: rgba(129, 140, 248, 0.2);
+    --mhub-accent-message-border: rgba(129, 140, 248, 0.35);
+    --mhub-accent-message-glow: rgba(129, 140, 248, 0.25);
+    --mhub-accent-message-from: #a5b4fc;
+    --mhub-accent-message-to: #6366f1;
+
+    --mhub-accent-security: #fb923c;
+    --mhub-accent-security-soft: rgba(251, 146, 60, 0.2);
+    --mhub-accent-security-border: rgba(251, 146, 60, 0.35);
+    --mhub-accent-security-glow: rgba(251, 146, 60, 0.25);
+    --mhub-accent-security-from: #fdba74;
+    --mhub-accent-security-to: #f97316;
+
+    --mhub-accent-heart: #f472b6;
+    --mhub-accent-heart-soft: rgba(244, 114, 182, 0.2);
+    --mhub-accent-heart-border: rgba(244, 114, 182, 0.35);
+    --mhub-accent-heart-glow: rgba(244, 114, 182, 0.25);
+    --mhub-accent-heart-from: #f9a8d4;
+    --mhub-accent-heart-to: #ec4899;
+
+    --mhub-accent-star: #fbbf24;
+    --mhub-accent-star-soft: rgba(251, 191, 36, 0.2);
+    --mhub-accent-star-border: rgba(251, 191, 36, 0.35);
+    --mhub-accent-star-glow: rgba(251, 191, 36, 0.25);
+    --mhub-accent-star-from: #fcd34d;
+    --mhub-accent-star-to: #f59e0b;
+
+    --mhub-accent-trending: #4ade80;
+    --mhub-accent-trending-soft: rgba(74, 222, 128, 0.2);
+    --mhub-accent-trending-border: rgba(74, 222, 128, 0.35);
+    --mhub-accent-trending-glow: rgba(74, 222, 128, 0.25);
+    --mhub-accent-trending-from: #86efac;
+    --mhub-accent-trending-to: #22c55e;
+
+    --mhub-accent-alert: #f87171;
+    --mhub-accent-alert-soft: rgba(248, 113, 113, 0.2);
+    --mhub-accent-alert-border: rgba(248, 113, 113, 0.35);
+    --mhub-accent-alert-glow: rgba(248, 113, 113, 0.25);
+    --mhub-accent-alert-from: #fca5a5;
+    --mhub-accent-alert-to: #ef4444;
+
+    --mhub-priority-high-from: #f87171;
+    --mhub-priority-high-to: #fbbf24;
+  }
+}
