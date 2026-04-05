@@ -13,11 +13,21 @@ export default {
     },
     extend: {
       colors: {
-        primary: 'var(--primary)',
-        secondary: '#FFFFFF',
+        primary: {
+          DEFAULT: 'var(--primary)',
+          hover: 'var(--primary-hover)',
+          foreground: 'var(--primary-foreground)',
+        },
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+        },
         light: '#F8F9FA',
         dark: '#212121',
-        accent: 'var(--accent)',
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
         border: 'var(--border)',
         background: 'var(--background)',
         foreground: 'var(--foreground)',
@@ -39,6 +49,12 @@ export default {
         },
         ring: 'var(--ring)',
         input: 'var(--input)',
+        surface: {
+          0: 'var(--surface-0)',
+          1: 'var(--surface-1)',
+          2: 'var(--surface-2)',
+          3: 'var(--surface-3)',
+        },
       },
       borderRadius: {
         lg: '16px',
@@ -52,6 +68,10 @@ export default {
         'elevation-0': 'none',
         'elevation-1': '0 1px 2px 0 rgba(76,175,80,0.08)',
         'elevation-2': '0 2px 8px 0 rgba(76,175,80,0.12)',
+        'theme-card': 'var(--card-shadow)',
+        'theme-card-hover': 'var(--card-shadow-hover)',
+        'theme-soft': 'var(--shadow-soft)',
+        'theme-btn': 'var(--btn-shadow)',
       },
     },
   },

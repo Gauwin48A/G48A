@@ -2,6 +2,7 @@ import e, {
   useCallback as P,
   useEffect as J,
   useMemo as K,
+  useRef as ue,
   useState as n,
 } from "react";
 import {
@@ -37,6 +38,8 @@ import { resolveMediaUrl } from "@/lib/mediaUrl";
 const le = ({ variant = "channel" } = {}) => {
   const { t } = ae(),
     tr = P((key, fallback) => t(key, { defaultValue: fallback }), [t]),
+    tRef = ue(t),
+    trRef = ue(tr),
     { toast: p } = oe(),
     { channelId: A, id: M } = Z(),
     i = A || M,
@@ -76,7 +79,7 @@ const le = ({ variant = "channel" } = {}) => {
     }, []),
     g = P(async () => {
       if (!i) {
-        d(t("something_went_wrong") || "Failed to load channel"),
+        d(tRef.current("something_went_wrong") || "Failed to load channel"),
           f(null),
           y([]),
           v(!1);
@@ -95,7 +98,7 @@ const le = ({ variant = "channel" } = {}) => {
           }
         }
         if (!a && isCentre) {
-          d(tr("centre_not_found", "CentrePage not found")),
+          d(trRef.current("centre_not_found", "CentrePage not found")),
             f(null),
             y([]);
           return;
@@ -104,14 +107,19 @@ const le = ({ variant = "channel" } = {}) => {
       } catch (a) {
         import.meta.env.DEV && console.error("Failed to fetch channel:", a),
           d(
-            a?.message || t("something_went_wrong") || "Failed to load channel",
+            a?.message || tRef.current("something_went_wrong") || "Failed to load channel",
           ),
           f(null),
           y([]);
       } finally {
         v(!1);
       }
-    }, [L, i, t, tr, isCentre]);
+    }, [L, i, isCentre]);
+
+  J(() => {
+    tRef.current = t;
+    trRef.current = tr;
+  }, [t, tr]);
   J(() => {
     g();
   }, [g]);
@@ -166,7 +174,7 @@ const le = ({ variant = "channel" } = {}) => {
       } catch (err) {
         if (!active) return;
         setListingsError(
-          err?.message || tr("listings_unavailable", "Listings unavailable"),
+          err?.message || trRef.current("listings_unavailable", "Listings unavailable"),
         );
         setListings([]);
       } finally {
@@ -185,7 +193,7 @@ const le = ({ variant = "channel" } = {}) => {
       } catch (err) {
         if (!active) return;
         setReviewsError(
-          err?.message || tr("reviews_unavailable", "Reviews unavailable"),
+          err?.message || trRef.current("reviews_unavailable", "Reviews unavailable"),
         );
         setReviews([]);
         setReviewsStats(null);
@@ -200,7 +208,7 @@ const le = ({ variant = "channel" } = {}) => {
     return () => {
       active = !1;
     };
-  }, [ownerId, tr, isCentre]);
+  }, [ownerId, isCentre]);
   const S = K(
       () =>
         [...F].sort((a, r) => {

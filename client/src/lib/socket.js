@@ -28,7 +28,7 @@ const SOCKET_CONNECT_TIMEOUT_MS = Number.parseInt(
  */
 export const socket = io(SOCKET_URL, {
   withCredentials: true,
-  autoConnect: true,
+  autoConnect: false,
   path: "/socket.io",
   transports: ["websocket", "polling"],
   reconnection: true,
@@ -43,6 +43,39 @@ export const socket = io(SOCKET_URL, {
       ? SOCKET_CONNECT_TIMEOUT_MS
       : 8e3,
 });
+
+const readStoredToken = () => {
+  try {
+    return localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+  } catch {
+    return "";
+  }
+};
+
+let lastAuthToken = "";
+
+export const connectSocketWithToken = (tokenOverride) => {
+  const token = String(tokenOverride || readStoredToken() || "").trim();
+  if (!token) return socket;
+  socket.auth = { token };
+  if (socket.connected) {
+    if (token !== lastAuthToken) {
+      socket.disconnect();
+      socket.connect();
+    }
+  } else {
+    socket.connect();
+  }
+  lastAuthToken = token;
+  return socket;
+};
+
+export const disconnectSocket = () => {
+  lastAuthToken = "";
+  if (socket.connected || socket.active) {
+    socket.disconnect();
+  }
+};
 
 if (import.meta.env.DEV) {
   socket.on("connect_error", (error) => {

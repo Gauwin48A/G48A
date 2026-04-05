@@ -1675,143 +1675,6 @@ const ProfilePage = () => {
             ),
           ),
         ),
-        e.createElement(
-          "div",
-          { className: "mt-3 grid gap-3 lg:grid-cols-2" },
-          e.createElement(
-            "div",
-            {
-              className:
-                "rounded-2xl border border-white/40 bg-white/95 p-3 shadow-md backdrop-blur-sm dark:border dark:border-white/40 dark:bg-slate-900/95",
-            },
-            e.createElement(
-              "div",
-              { className: "flex items-center justify-between" },
-              e.createElement(
-                "p",
-                {
-                  className:
-                    "text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-[11px] dark:text-slate-200",
-                },
-                tr("preferences_snapshot", "Preferences Snapshot"),
-              ),
-              e.createElement(
-                d,
-                {
-                  type: "button",
-                  variant: "ghost",
-                  size: "sm",
-                  onClick: () => Ae("preferences"),
-                  className: "text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-200",
-                },
-                tr("edit", "Edit"),
-              ),
-            ),
-            e.createElement(
-              "div",
-              { className: "mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5" },
-              preferencesSnapshotItems.map((item) =>
-                e.createElement(
-                  "div",
-                  {
-                    key: item.key,
-                    className:
-                      "flex items-center gap-3 rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border dark:border-slate-700/70 dark:bg-slate-950/80",
-                  },
-                  e.createElement(
-                    "div",
-                    {
-                        className:
-                          "flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm text-slate-600 dark:bg-slate-900 dark:text-slate-200",
-                    },
-                    e.createElement(item.icon, { className: "h-4 w-4" }),
-                  ),
-                  e.createElement(
-                    "div",
-                    { className: "min-w-0" },
-                    e.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[10px] dark:text-slate-300",
-                      },
-                      item.label,
-                    ),
-                    e.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-sm font-semibold text-slate-800 truncate dark:text-sm dark:text-slate-100",
-                      },
-                      item.value,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          e.createElement(
-            "div",
-            {
-              className:
-                "rounded-2xl border border-white/40 bg-white/95 p-3 shadow-md backdrop-blur-sm dark:border dark:border-white/40 dark:bg-slate-900/95",
-            },
-            e.createElement(
-              "div",
-              { className: "flex items-center justify-between" },
-              e.createElement(
-                "p",
-                {
-                  className:
-                    "text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-[11px] dark:text-slate-200",
-                },
-                tr("marketplace_pulse", "Marketplace Pulse"),
-              ),
-            ),
-            e.createElement(
-              "div",
-              { className: "mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5" },
-              marketplacePulseItems.map((item) =>
-                e.createElement(
-                  "div",
-                  {
-                    key: item.key,
-                    className:
-                      "rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border dark:border-slate-700/70 dark:bg-slate-950/80",
-                  },
-                  e.createElement(
-                    "div",
-                    { className: "flex items-center justify-between" },
-                    e.createElement(
-                      "div",
-                      {
-                        className:
-                          "flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm dark:bg-slate-900 dark:text-slate-200",
-                      },
-                      e.createElement(item.icon, { className: "h-4 w-4" }),
-                    ),
-                    e.createElement(
-                      "p",
-                      {
-                        className:
-                          "text-[10px] font-semibold uppercase tracking-wide text-slate-500 text-right dark:text-[10px] dark:text-slate-300 dark:text-right",
-                      },
-                      item.label,
-                    ),
-                  ),
-                  e.createElement(
-                    "p",
-                    {
-                      className:
-                        "mt-2 text-lg font-bold text-slate-900 dark:text-lg dark:text-slate-100",
-                    },
-                    item.value,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     ),
     e.createElement(
@@ -1940,406 +1803,6 @@ const ProfilePage = () => {
                     className: "space-y-5",
                     "data-profile-tab": "overview",
                   },
-                hasCategoryMode &&
-                  categoryModeCategory?.name &&
-                  e.createElement(
-                    "div",
-                    {
-                      className:
-                        "flex flex-col gap-3 rounded-2xl profile-panel border-indigo-200/60 dark:border-indigo-500/30 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-indigo-600/60",
-                    },
-                    e.createElement(
-                      "div",
-                      { className: "flex items-center gap-3" },
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-300",
-                        },
-                        e.createElement(Le, { className: "h-5 w-5" }),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
-                          },
-                          tr("category_mode", "Category mode"),
-                        ),
-                        e.createElement(
-                          "p",
-                          { className: "text-sm font-semibold text-slate-800 dark:text-white dark:text-sm dark:text-slate-100" },
-                          categoryModeCategory.name,
-                        ),
-                        e.createElement(
-                          "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300" },
-                          tr(
-                            "profile_category_mode_hint",
-                            "Profile stats are filtered to this category.",
-                          ),
-                        ),
-                      ),
-                    ),
-                    e.createElement(
-                      d,
-                      {
-                        type: "button",
-                        variant: "outline",
-                        onClick: () => p("/category-mode"),
-                      },
-                      tr("switch_category", "Switch category"),
-                    ),
-                  ),
-                e.createElement(
-                  "div",
-                  {
-                    className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-2 dark:border dark:border-slate-700 dark:bg-slate-900",
-                  },
-                  e.createElement(
-                    "div",
-                    { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
-                    e.createElement(
-                      "div",
-                      { className: "flex items-center gap-3" },
-                      e.createElement(
-                        "span",
-                        {
-                          className:
-                            "flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300",
-                        },
-                        e.createElement(ot, { className: "w-5 h-5" }),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300 dark:text-[11px]",
-                          },
-                          tr("account_status", "Account status"),
-                        ),
-                        e.createElement(
-                          "p",
-                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-sm dark:text-slate-200" },
-                          tr(
-                            "account_status_desc",
-                            "Keep plan, verification, and profile freshness visible at a glance.",
-                          ),
-                        ),
-                      ),
-                    ),
-                    e.createElement(
-                      z,
-                      {
-                        className:
-                          "self-start bg-emerald-600 text-white border-0 dark:bg-emerald-500 dark:bg-emerald-700/40 dark:text-white dark:border-0",
-                      },
-                      currentPlanLabel,
-                    ),
-                  ),
-                  e.createElement(
-                    "div",
-                    {
-                      className:
-                        "mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5",
-                    },
-                    [
-                      {
-                        key: "plan",
-                        icon: Se,
-                        label: tr("current_plan", "Current plan"),
-                        value: currentPlanLabel,
-                        tone:
-                          "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200",
-                      },
-                      {
-                        key: "expiry",
-                        icon: at,
-                        label: tr("subscription_expiry", "Subscription expiry"),
-                        value: subscriptionExpiryLabel,
-                        tone:
-                          "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200",
-                      },
-                      {
-                        key: "updated",
-                        icon: et,
-                        label: tr("profile_last_updated", "Profile last updated"),
-                        value: profileUpdatedLabel,
-                        tone:
-                          "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200",
-                      },
-                      {
-                        key: "member",
-                        icon: ot,
-                        label: tr("member_since", "Member since"),
-                        value: memberSinceLabel,
-                        tone:
-                          "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200",
-                      },
-                      {
-                        key: "listings",
-                        icon: lt,
-                        label: tr("listings", "Listings"),
-                        value: listingCountValue,
-                        tone:
-                          "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200",
-                      },
-                    ].map((r) =>
-              e.createElement(
-                "div",
-                {
-                  key: r.key,
-                  className:
-                    "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900",
-                },
-                        e.createElement(
-                          "div",
-                          { className: "flex items-center gap-2 text-slate-600 dark:text-slate-300 dark:text-slate-200" },
-                          e.createElement(
-                            "span",
-                            {
-                              className:
-                                `flex h-8 w-8 items-center justify-center rounded-lg ${r.tone}`,
-                            },
-                            e.createElement(r.icon, { className: "h-4 w-4" }),
-                          ),
-                          e.createElement(
-                            "span",
-                            {
-                              className:
-                                "text-[11px] font-bold uppercase tracking-[0.12em] dark:text-[11px]",
-                            },
-                            r.label,
-                          ),
-                        ),
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "mt-3 text-base font-semibold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
-                          },
-                          r.value,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                e.createElement(
-                  "div",
-                  {
-                    className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-3 dark:border dark:border-slate-700 dark:bg-slate-900",
-                  },
-                  e.createElement(
-                    "div",
-                    { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
-                    e.createElement(
-                      "div",
-                      { className: "flex items-center gap-3" },
-                      e.createElement(
-                        "span",
-                        {
-                          className:
-                            "flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200 dark:bg-violet-950/20 dark:text-violet-300",
-                        },
-                        e.createElement(Le, { className: "w-5 h-5" }),
-                      ),
-                      e.createElement(
-                        "div",
-                        null,
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300 dark:text-[11px]",
-                          },
-                          tr("finish_profile", "Profile completion"),
-                        ),
-                        e.createElement(
-                          "p",
-                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-sm dark:text-slate-200" },
-                          tr(
-                            "finish_profile_desc",
-                            "Convert missing trust signals into clear next actions.",
-                          ),
-                        ),
-                      ),
-                    ),
-                    e.createElement(
-                      "div",
-                      {
-                        className:
-                          "flex flex-col gap-2 sm:items-end sm:text-right sm:min-w-[240px] dark:sm:text-right",
-                      },
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "flex flex-wrap items-center gap-2 sm:justify-end w-full",
-                        },
-                        e.createElement(
-                          "span",
-                          {
-                            className:
-                              "text-sm font-semibold text-violet-700 dark:text-violet-200 dark:text-sm dark:text-violet-300",
-                          },
-                          profileCompletionPercent,
-                          "% ",
-                          tr("complete", "complete"),
-                        ),
-                        e.createElement(
-                          z,
-                          {
-                            className:
-                              "self-start rounded-full bg-violet-600 text-white border-0 shadow-sm dark:bg-violet-500 dark:bg-violet-700/40 dark:text-white dark:border-0",
-                          },
-                          profileChecklistDoneCount,
-                          "/",
-                          profileChecklistTotal,
-                        ),
-                        e.createElement(
-                          "button",
-                          {
-                            type: "button",
-                            onClick: () => toggleSection("finishProfile"),
-                            className:
-                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:text-[11px] dark:hover:bg-[var(--surface-2)]",
-                            "aria-expanded": !sectionCollapse.finishProfile,
-                            "aria-controls": "finish-profile-body",
-                          },
-                          sectionCollapse.finishProfile
-                            ? tr("expand", "Expand")
-                            : tr("collapse", "Collapse"),
-                          e.createElement(K, {
-                            className:
-                              `w-3.5 h-3.5 transition-transform ${sectionCollapse.finishProfile ? "" : "rotate-90"}`,
-                          }),
-                        ),
-                      ),
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "h-2.5 w-full sm:w-52 rounded-full bg-violet-100/80 overflow-hidden dark:bg-violet-900/40 dark:bg-violet-950/80",
-                          role: "progressbar",
-                          "aria-label": tr(
-                            "profile_completion",
-                            "Profile completion",
-                          ),
-                          "aria-valuenow": profileCompletionPercent,
-                          "aria-valuemin": 0,
-                          "aria-valuemax": 100,
-                        },
-                        e.createElement("div", {
-                          className:
-                            "h-full rounded-full bg-violet-500 transition-[width] duration-700 ease-out dark:bg-violet-800/30",
-                          style: { width: profileCompletionPercent + "%" },
-                        }),
-                      ),
-                      nextProfileAction
-                        ? e.createElement(
-                            "p",
-                            {
-                              className:
-                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-[11px] dark:text-slate-200",
-                            },
-                            tr("profile_next_step", "Next: {{step}}", {
-                              step: nextProfileAction.label,
-                            }),
-                          )
-                        : e.createElement(
-                            "p",
-                            {
-                              className:
-                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-[11px] dark:text-slate-200",
-                            },
-                            tr(
-                              "profile_all_set",
-                              "Everything important is already filled in.",
-                            ),
-                          ),
-                    ),
-                  ),
-                  !sectionCollapse.finishProfile &&
-                    e.createElement(
-                      "div",
-                      { className: "mt-4 space-y-3", id: "finish-profile-body" },
-                      profileChecklistItems.map((r) =>
-                        e.createElement(
-                          "div",
-                          {
-                            key: r.key,
-                            className:
-                              `checklist-item ${r.done ? "done" : ""} rounded-2xl border border-l-4 p-4 shadow-sm transition-all duration-200 dark:border dark:border-l-4${r.done ? "border-emerald-300/70 border-l-emerald-400 bg-emerald-50/80 dark:border-emerald-700/40 dark:bg-emerald-900/20" : "border-slate-200 border-l-indigo-300 bg-[var(--surface-1)] hover:border-indigo-300 hover:bg-[var(--surface-2)] dark:border-slate-700 dark:bg-[var(--surface-2)] dark:hover:bg-slate-800/60"}`,
-                          },
-                          e.createElement(
-                            "div",
-                            { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
-                            e.createElement(
-                              "div",
-                              { className: "min-w-0" },
-                              e.createElement(
-                                "div",
-                                { className: "flex items-center gap-2" },
-                                r.done
-                                  ? e.createElement(ne, { className: "h-4 w-4 text-emerald-600 dark:text-emerald-300" })
-                                  : e.createElement(XCircleIcon, { className: "h-4 w-4 text-amber-500 dark:text-amber-300" }),
-                                e.createElement(
-                                  "p",
-                                  {
-                                    className:
-                                      "text-sm font-semibold text-slate-800 dark:text-white dark:text-sm dark:text-slate-100",
-                                  },
-                                  r.label,
-                                ),
-                              ),
-                              e.createElement(
-                                "p",
-                                {
-                                  className:
-                                    "mt-1 text-xs text-slate-600 dark:text-slate-400 dark:text-xs dark:text-slate-200",
-                                },
-                                r.description,
-                              ),
-                            ),
-                            r.done
-                              ? e.createElement(
-                                  z,
-                                  {
-                                    className:
-                                      "self-start min-w-[96px] justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300",
-                                  },
-                                  tr("done", "Done"),
-                                )
-                              : e.createElement(
-                                  d,
-                                  {
-                                    type: "button",
-                                    size: "sm",
-                                    variant: "outline",
-                                    onClick: r.onClick,
-                                    className:
-                                      "min-w-[96px] justify-center rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-950",
-                                  },
-                                  r.actionLabel,
-                                ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ),
-              e.createElement("div", {
-                className:
-                  "my-4 h-px bg-slate-200/80 dark:bg-slate-700/60 dark:bg-slate-900/80",
-              }),
                 e.createElement(
         "div",
         {
@@ -2673,6 +2136,543 @@ const ProfilePage = () => {
                         ),
                       ),
                     ),
+                    ),
+                  ),
+                ),
+                hasCategoryMode &&
+                  categoryModeCategory?.name &&
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "flex flex-col gap-3 rounded-2xl profile-panel border-indigo-200/60 dark:border-indigo-500/30 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-indigo-600/60",
+                    },
+                    e.createElement(
+                      "div",
+                      { className: "flex items-center gap-3" },
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-300",
+                        },
+                        e.createElement(Le, { className: "h-5 w-5" }),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
+                          },
+                          tr("category_mode", "Category mode"),
+                        ),
+                        e.createElement(
+                          "p",
+                          { className: "text-sm font-semibold text-slate-800 dark:text-white dark:text-sm dark:text-slate-100" },
+                          categoryModeCategory.name,
+                        ),
+                        e.createElement(
+                          "p",
+                          { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300" },
+                          tr(
+                            "profile_category_mode_hint",
+                            "Profile stats are filtered to this category.",
+                          ),
+                        ),
+                      ),
+                    ),
+                    e.createElement(
+                      d,
+                      {
+                        type: "button",
+                        variant: "outline",
+                        onClick: () => p("/category-mode"),
+                      },
+                      tr("switch_category", "Switch category"),
+                    ),
+                  ),
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-3 dark:border dark:border-slate-700 dark:bg-slate-900",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
+                    e.createElement(
+                      "div",
+                      { className: "flex items-center gap-3" },
+                      e.createElement(
+                        "span",
+                        {
+                          className:
+                            "flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200 dark:bg-violet-950/20 dark:text-violet-300",
+                        },
+                        e.createElement(Le, { className: "w-5 h-5" }),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300 dark:text-[11px]",
+                          },
+                          tr("finish_profile", "Profile completion"),
+                        ),
+                        e.createElement(
+                          "p",
+                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-sm dark:text-slate-200" },
+                          tr(
+                            "finish_profile_desc",
+                            "Convert missing trust signals into clear next actions.",
+                          ),
+                        ),
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "flex flex-col gap-2 sm:items-end sm:text-right sm:min-w-[240px] dark:sm:text-right",
+                      },
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "flex flex-wrap items-center gap-2 sm:justify-end w-full",
+                        },
+                        e.createElement(
+                          "span",
+                          {
+                            className:
+                              "text-sm font-semibold text-violet-700 dark:text-violet-200 dark:text-sm dark:text-violet-300",
+                          },
+                          profileCompletionPercent,
+                          "% ",
+                          tr("complete", "complete"),
+                        ),
+                        e.createElement(
+                          z,
+                          {
+                            className:
+                              "self-start rounded-full bg-violet-600 text-white border-0 shadow-sm dark:bg-violet-500 dark:bg-violet-700/40 dark:text-white dark:border-0",
+                          },
+                          profileChecklistDoneCount,
+                          "/",
+                          profileChecklistTotal,
+                        ),
+                        e.createElement(
+                          "button",
+                          {
+                            type: "button",
+                            onClick: () => toggleSection("finishProfile"),
+                            className:
+                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:text-[11px] dark:hover:bg-[var(--surface-2)]",
+                            "aria-expanded": !sectionCollapse.finishProfile,
+                            "aria-controls": "finish-profile-body",
+                          },
+                          sectionCollapse.finishProfile
+                            ? tr("expand", "Expand")
+                            : tr("collapse", "Collapse"),
+                          e.createElement(K, {
+                            className:
+                              `w-3.5 h-3.5 transition-transform ${sectionCollapse.finishProfile ? "" : "rotate-90"}`,
+                          }),
+                        ),
+                      ),
+                      e.createElement(
+                        "div",
+                        {
+                          className:
+                            "h-2.5 w-full sm:w-52 rounded-full bg-violet-100/80 overflow-hidden dark:bg-violet-900/40 dark:bg-violet-950/80",
+                          role: "progressbar",
+                          "aria-label": tr(
+                            "profile_completion",
+                            "Profile completion",
+                          ),
+                          "aria-valuenow": profileCompletionPercent,
+                          "aria-valuemin": 0,
+                          "aria-valuemax": 100,
+                        },
+                        e.createElement("div", {
+                          className:
+                            "h-full rounded-full bg-violet-500 transition-[width] duration-700 ease-out dark:bg-violet-800/30",
+                          style: { width: profileCompletionPercent + "%" },
+                        }),
+                      ),
+                      nextProfileAction
+                        ? e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-[11px] dark:text-slate-200",
+                            },
+                            tr("profile_next_step", "Next: {{step}}", {
+                              step: nextProfileAction.label,
+                            }),
+                          )
+                        : e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-[11px] dark:text-slate-200",
+                            },
+                            tr(
+                              "profile_all_set",
+                              "Everything important is already filled in.",
+                            ),
+                          ),
+                    ),
+                  ),
+                  !sectionCollapse.finishProfile &&
+                    e.createElement(
+                      "div",
+                      { className: "mt-4 space-y-3", id: "finish-profile-body" },
+                      profileChecklistItems.map((r) =>
+                        e.createElement(
+                          "div",
+                          {
+                            key: r.key,
+                            className:
+                              `checklist-item ${r.done ? "done" : ""} rounded-2xl border border-l-4 p-4 shadow-sm transition-all duration-200 dark:border dark:border-l-4${r.done ? "border-emerald-300/70 border-l-emerald-400 bg-emerald-50/80 dark:border-emerald-700/40 dark:bg-emerald-900/20" : "border-slate-200 border-l-indigo-300 bg-[var(--surface-1)] hover:border-indigo-300 hover:bg-[var(--surface-2)] dark:border-slate-700 dark:bg-[var(--surface-2)] dark:hover:bg-slate-800/60"}`,
+                          },
+                          e.createElement(
+                            "div",
+                            { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
+                            e.createElement(
+                              "div",
+                              { className: "min-w-0" },
+                              e.createElement(
+                                "div",
+                                { className: "flex items-center gap-2" },
+                                r.done
+                                  ? e.createElement(ne, { className: "h-4 w-4 text-emerald-600 dark:text-emerald-300" })
+                                  : e.createElement(XCircleIcon, { className: "h-4 w-4 text-amber-500 dark:text-amber-300" }),
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-sm font-semibold text-slate-800 dark:text-white dark:text-sm dark:text-slate-100",
+                                  },
+                                  r.label,
+                                ),
+                              ),
+                              e.createElement(
+                                "p",
+                                {
+                                  className:
+                                    "mt-1 text-xs text-slate-600 dark:text-slate-400 dark:text-xs dark:text-slate-200",
+                                },
+                                r.description,
+                              ),
+                            ),
+                            r.done
+                              ? e.createElement(
+                                  z,
+                                  {
+                                    className:
+                                      "self-start min-w-[96px] justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300",
+                                  },
+                                  tr("done", "Done"),
+                                )
+                              : e.createElement(
+                                  d,
+                                  {
+                                    type: "button",
+                                    size: "sm",
+                                    variant: "outline",
+                                    onClick: r.onClick,
+                                    className:
+                                      "min-w-[96px] justify-center rounded-full border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-950",
+                                  },
+                                  r.actionLabel,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ),
+              e.createElement(
+                "div",
+                { className: "grid gap-3 lg:grid-cols-2" },
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border dark:border-slate-700 dark:bg-slate-900",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between" },
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-[11px] dark:text-slate-200",
+                      },
+                      tr("preferences_snapshot", "Preferences Snapshot"),
+                    ),
+                    e.createElement(
+                      d,
+                      {
+                        type: "button",
+                        variant: "ghost",
+                        size: "sm",
+                        onClick: () => Ae("preferences"),
+                        className: "text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-200",
+                      },
+                      tr("edit", "Edit"),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5" },
+                    preferencesSnapshotItems.map((item) =>
+                      e.createElement(
+                        "div",
+                        {
+                          key: item.key,
+                          className:
+                            "flex items-center gap-3 rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border dark:border-slate-700/70 dark:bg-slate-950/80",
+                        },
+                        e.createElement(
+                          "div",
+                          {
+                              className:
+                                "flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm text-slate-600 dark:bg-slate-900 dark:text-slate-200",
+                          },
+                          e.createElement(item.icon, { className: "h-4 w-4" }),
+                        ),
+                        e.createElement(
+                          "div",
+                          { className: "min-w-0" },
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[10px] dark:text-slate-300",
+                            },
+                            item.label,
+                          ),
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm font-semibold text-slate-800 truncate dark:text-sm dark:text-slate-100",
+                            },
+                            item.value,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border dark:border-slate-700 dark:bg-slate-900",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between" },
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-[11px] dark:text-slate-200",
+                      },
+                      tr("marketplace_pulse", "Marketplace Pulse"),
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5" },
+                    marketplacePulseItems.map((item) =>
+                      e.createElement(
+                        "div",
+                        {
+                          key: item.key,
+                          className:
+                            "rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border dark:border-slate-700/70 dark:bg-slate-950/80",
+                        },
+                        e.createElement(
+                          "div",
+                          { className: "flex items-center justify-between" },
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm dark:bg-slate-900 dark:text-slate-200",
+                            },
+                            e.createElement(item.icon, { className: "h-4 w-4" }),
+                          ),
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 text-right dark:text-[10px] dark:text-slate-300 dark:text-right",
+                            },
+                            item.label,
+                          ),
+                        ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "mt-2 text-lg font-bold text-slate-900 dark:text-lg dark:text-slate-100",
+                          },
+                          item.value,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              e.createElement("div", {
+                className:
+                  "my-4 h-px bg-slate-200/80 dark:bg-slate-700/60 dark:bg-slate-900/80",
+              }),
+                e.createElement(
+                  "div",
+                  {
+                    className:
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-2 dark:border dark:border-slate-700 dark:bg-slate-900",
+                  },
+                  e.createElement(
+                    "div",
+                    { className: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" },
+                    e.createElement(
+                      "div",
+                      { className: "flex items-center gap-3" },
+                      e.createElement(
+                        "span",
+                        {
+                          className:
+                            "flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300",
+                        },
+                        e.createElement(ot, { className: "w-5 h-5" }),
+                      ),
+                      e.createElement(
+                        "div",
+                        null,
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300 dark:text-[11px]",
+                          },
+                          tr("account_status", "Account status"),
+                        ),
+                        e.createElement(
+                          "p",
+                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-sm dark:text-slate-200" },
+                          tr(
+                            "account_status_desc",
+                            "Keep plan, verification, and profile freshness visible at a glance.",
+                          ),
+                        ),
+                      ),
+                    ),
+                    e.createElement(
+                      z,
+                      {
+                        className:
+                          "self-start bg-emerald-600 text-white border-0 dark:bg-emerald-500 dark:bg-emerald-700/40 dark:text-white dark:border-0",
+                      },
+                      currentPlanLabel,
+                    ),
+                  ),
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5",
+                    },
+                    [
+                      {
+                        key: "plan",
+                        icon: Se,
+                        label: tr("current_plan", "Current plan"),
+                        value: currentPlanLabel,
+                        tone:
+                          "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200",
+                      },
+                      {
+                        key: "expiry",
+                        icon: at,
+                        label: tr("subscription_expiry", "Subscription expiry"),
+                        value: subscriptionExpiryLabel,
+                        tone:
+                          "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200",
+                      },
+                      {
+                        key: "updated",
+                        icon: et,
+                        label: tr("profile_last_updated", "Profile last updated"),
+                        value: profileUpdatedLabel,
+                        tone:
+                          "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200",
+                      },
+                      {
+                        key: "member",
+                        icon: ot,
+                        label: tr("member_since", "Member since"),
+                        value: memberSinceLabel,
+                        tone:
+                          "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200",
+                      },
+                      {
+                        key: "listings",
+                        icon: lt,
+                        label: tr("listings", "Listings"),
+                        value: listingCountValue,
+                        tone:
+                          "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200",
+                      },
+                    ].map((r) =>
+              e.createElement(
+                "div",
+                {
+                  key: r.key,
+                  className:
+                    "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900",
+                },
+                        e.createElement(
+                          "div",
+                          { className: "flex items-center gap-2 text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                          e.createElement(
+                            "span",
+                            {
+                              className:
+                                `flex h-8 w-8 items-center justify-center rounded-lg ${r.tone}`,
+                            },
+                            e.createElement(r.icon, { className: "h-4 w-4" }),
+                          ),
+                          e.createElement(
+                            "span",
+                            {
+                              className:
+                                "text-[11px] font-bold uppercase tracking-[0.12em] dark:text-[11px]",
+                            },
+                            r.label,
+                          ),
+                        ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "mt-3 text-base font-semibold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                          },
+                          r.value,
+                        ),
+                      ),
                     ),
                   ),
                 ),

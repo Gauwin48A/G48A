@@ -75,7 +75,7 @@ export const useNotificationsList = (options = {}) => {
  * Fetch unread notification count
  */
 export const useUnreadCount = (options = {}) => {
-    const { enabled = true, refetchInterval = 30000 } = options;
+    const { enabled = false, refetchInterval = 30000 } = options;
 
     return useQuery({
         queryKey: notificationKeys.unreadCount(),

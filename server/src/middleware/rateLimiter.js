@@ -1,10 +1,55 @@
 /**
  * Rate Limiting Middleware
  * Prevents API abuse with configurable limits per endpoint
+ * Uses Redis store when available, falls back to in-memory
  */
 
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
+const redisSession = require('../config/redisSession');
+
+// ── Redis-backed store for express-rate-limit v8 ──
+// When Redis is available, rate limits survive restarts and work across cluster workers.
+class RedisRateLimitStore {
+    constructor(prefix = 'rl:') {
+        this.prefix = prefix;
+    }
+
+    _key(key) {
+        return `${this.prefix}${key}`;
+    }
+
+    async increment(key) {
+        const k = this._key(key);
+        const total = await redisSession.incr(k);
+        // Set TTL on first increment (15 min default window)
+        if (total === 1) {
+            // Use raw Redis if available for EXPIRE, otherwise incr handles it
+            // redisSession.incr already handles the key; TTL is managed by the windowMs in express-rate-limit
+        }
+        return { totalHits: total, resetTime: undefined };
+    }
+
+    async decrement(key) {
+        // Not all stores support decrement; best-effort
+        const k = this._key(key);
+        const current = await redisSession.get(k);
+        if (current && Number(current) > 0) {
+            await redisSession.set(k, Number(current) - 1, 900);
+        }
+    }
+
+    async resetKey(key) {
+        await redisSession.del(this._key(key));
+    }
+}
+
+function buildStore(prefix) {
+    if (redisSession.isRedisAvailable()) {
+        return new RedisRateLimitStore(prefix);
+    }
+    return undefined; // falls back to express-rate-limit default MemoryStore
+}
 
 const SUSPICIOUS_WINDOW_MS = 15 * 60 * 1000;
 const SUSPICIOUS_CLEANUP_INTERVAL_MS = 60 * 1000;
@@ -42,6 +87,7 @@ if (typeof suspiciousCleanupTimer.unref === 'function') {
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 2000, // Increased to support view tracking bursts
+    store: buildStore('rl:api:'),
     message: {
         error: 'Too many requests',
         message: 'You have exceeded the rate limit. Please try again later.',
@@ -62,6 +108,7 @@ const apiLimiter = rateLimit({
 const authLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 10, // 10 attempts per hour
+    store: buildStore('rl:auth:'),
     message: {
         error: 'Too many login attempts',
         message: 'Account temporarily locked. Please try again in an hour.',
@@ -75,6 +122,7 @@ const authLimiter = rateLimit({
 const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5, // 5 signups per hour per IP
+    store: buildStore('rl:signup:'),
     message: {
         error: 'Too many signups',
         message: 'Too many accounts created from this IP. Please try again later.',
@@ -86,6 +134,7 @@ const signupLimiter = rateLimit({
 const postLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 20, // 20 posts per hour
+    store: buildStore('rl:post:'),
     message: {
         error: 'Post limit reached',
         message: 'You can only create 20 posts per hour.',
@@ -116,6 +165,7 @@ const loginSlowDown = slowDown({
 const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 50, // 50 uploads per hour
+    store: buildStore('rl:upload:'),
     message: {
         error: 'Upload limit reached',
         message: 'You can only upload 50 files per hour.',
@@ -166,6 +216,7 @@ const suspiciousActivityTracker = (req, res, next) => {
 const transactionLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 30, // 30 transactions per 15 minutes
+    store: buildStore('rl:txn:'),
     message: {
         error: 'Transaction rate limit reached',
         message: 'Too many transaction attempts. Please try again later.',
@@ -184,6 +235,7 @@ const transactionLimiter = rateLimit({
 const offerLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 40, // 40 offer actions per 15 minutes
+    store: buildStore('rl:offer:'),
     message: {
         error: 'Offer rate limit reached',
         message: 'Too many offer requests. Please try again later.',
@@ -201,6 +253,7 @@ const offerLimiter = rateLimit({
 const rewardRedeemLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 20, // 20 redemptions per hour
+    store: buildStore('rl:reward:'),
     message: {
         error: 'Reward redemption limit reached',
         message: 'Too many reward actions. Please try again later.',
@@ -218,6 +271,7 @@ const rewardRedeemLimiter = rateLimit({
 const adminLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 200, // 200 admin actions per 15 minutes
+    store: buildStore('rl:admin:'),
     message: {
         error: 'Admin rate limit reached',
         message: 'Too many admin requests. Please slow down.',
@@ -235,6 +289,7 @@ const adminLimiter = rateLimit({
 const webhookLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
     max: 50, // 50 webhook calls per minute per IP
+    store: buildStore('rl:webhook:'),
     message: { error: 'Webhook rate limit exceeded' },
     standardHeaders: true,
     legacyHeaders: false

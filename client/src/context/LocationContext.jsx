@@ -12,7 +12,7 @@ import {
   verifyLocation,
 } from "../services/locationService";
 
-const LOCATION_CACHE_TTL_MS = 3 * 60 * 1000;
+const LOCATION_CACHE_TTL_MS = 30 * 60 * 1000;
 const AUTH_LOCATION_CACHE_TTL_MS = 60 * 1000;
 const SKIP_TTL_MS = 24 * 60 * 60 * 1000;
 // Accept "good" GPS accuracy (≤100m) for the initial display so users see
@@ -26,6 +26,8 @@ const FOCUS_REFRESH_STALENESS_MS = 2 * 60 * 1000; // refresh on tab focus if old
 const VERY_COARSE_ACCURACY_METERS = 5000;
 const COARSE_REFRESH_COOLDOWN_MS = 30 * 60 * 1000;
 const COARSE_REFRESH_COOLDOWN_KEY = "mhub_location_coarse_cooldown_until";
+const IP_FALLBACK_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const IP_FALLBACK_CACHE_KEY = "mhub_location_ip";
 const DEBUG = import.meta.env.DEV;
 
 const log = (...args) => {
@@ -132,16 +134,41 @@ const normalizeLocation = (location) => {
   };
 };
 
-const getCachedLocation = () => {
-  const cached = readJson("mhub_location");
-  if (!cached?.timestamp) return null;
-  if (Date.now() - Number(cached.timestamp) > LOCATION_CACHE_TTL_MS) return null;
-  return normalizeLocation(cached);
+const getCachedLocation = (options = {}) => {
+  const allowStale = options?.allowStale === true;
+  const now = Date.now();
+  const normalizeCached = (cached, ttlMs) => {
+    if (!cached?.timestamp) return null;
+    const ageMs = now - Number(cached.timestamp);
+    if (!allowStale && ageMs > ttlMs) return null;
+    const normalized = normalizeLocation(cached);
+    if (!normalized) return null;
+    if (ageMs > ttlMs) {
+      normalized.isStale = true;
+    }
+    return normalized;
+  };
+
+  const gpsCached = normalizeCached(readJson("mhub_location"), LOCATION_CACHE_TTL_MS);
+  if (gpsCached) return gpsCached;
+
+  const ipCached = normalizeCached(readJson(IP_FALLBACK_CACHE_KEY), IP_FALLBACK_CACHE_TTL_MS);
+  if (ipCached) return ipCached;
+
+  return null;
 };
 
 const cacheLocation = (location) => {
   writeJson("mhub_location", {
     ...location,
+    timestamp: Date.now(),
+  });
+};
+
+const cacheIpFallbackLocation = (location) => {
+  writeJson(IP_FALLBACK_CACHE_KEY, {
+    ...location,
+    provider: location?.provider || "ip_fallback",
     timestamp: Date.now(),
   });
 };
@@ -274,7 +301,7 @@ const sendLocationBestEffort = async (location) => {
 };
 
 export function LocationProvider({ children }) {
-  const cached = getCachedLocation();
+  const cached = getCachedLocation({ allowStale: true });
   const bootstrapLocation = cached;
 
   const [coords, setCoords] = useState(
@@ -312,6 +339,11 @@ export function LocationProvider({ children }) {
 
   const initializedRef = useRef(false);
   const requestInFlightRef = useRef(null);
+  const coordsRef = useRef(coords);
+
+  useEffect(() => {
+    coordsRef.current = coords;
+  }, [coords]);
 
   const setLocationState = useCallback((location) => {
     const normalized = normalizeLocation(location);
@@ -455,10 +487,10 @@ export function LocationProvider({ children }) {
           }
 
           clearManualLocation();
-          // Only cache GPS-sourced locations — IP fallback is very coarse (~75km)
-          // and produces identical results for all users on the same network.
           const isIpFallback = String(normalized.provider || "").toLowerCase() === "ip_fallback";
-          if (!isIpFallback) {
+          if (isIpFallback) {
+            cacheIpFallbackLocation(normalized);
+          } else {
             cacheLocation(normalized);
           }
           localStorage.setItem("mhub_user_city", normalized.colony || normalized.suburb || normalized.village || normalized.locality || normalized.area || normalized.city || "");
@@ -487,8 +519,11 @@ export function LocationProvider({ children }) {
             setLoading(false);
           }
 
-          setPermissionGranted(false);
-          setPermissionDenied(denied);
+          const hadLocation = Boolean(coordsRef.current);
+          if (!hadLocation) {
+            setPermissionGranted(false);
+            setPermissionDenied(denied);
+          }
 
           // Do NOT send (0,0) to backend — server rejects it and it creates noise
           if (denied) {
@@ -565,6 +600,7 @@ export function LocationProvider({ children }) {
     try {
       localStorage.removeItem("mhub_location");
       localStorage.removeItem("mhub_manual_location");
+      localStorage.removeItem(IP_FALLBACK_CACHE_KEY);
       localStorage.removeItem("mhub_user_city");
     } catch {
       // ignore
@@ -611,7 +647,8 @@ export function LocationProvider({ children }) {
       if (!normalized) throw new Error("Unable to normalize captured location");
       clearManualLocation();
       const isIpFallback = String(normalized.provider || "").toLowerCase() === "ip_fallback";
-      if (!isIpFallback) cacheLocation(normalized);
+      if (isIpFallback) cacheIpFallbackLocation(normalized);
+      else cacheLocation(normalized);
       localStorage.setItem("mhub_user_city", normalized.area || normalized.locality || normalized.city || "");
       sendLocationBestEffort({ ...normalized, provider: normalized.provider || "browser_gps" });
       setLoading(false);

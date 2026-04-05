@@ -1,5 +1,6 @@
 const axios = require("axios");
 const crypto = require("crypto");
+const { URL } = require("url");
 const redisSession = require("../config/redisSession");
 const { maskAadhaar, encryptAadhaar } = require("../utils/aadhaarUtils");
 
@@ -8,6 +9,31 @@ const KYC_API_KEY = process.env.KYC_API_KEY;
 const KYC_API_SECRET = process.env.KYC_API_SECRET;
 
 const MOCK_OTP_TTL_SECONDS = 10 * 60;
+
+// SSRF protection: only allow HTTPS calls to the configured KYC base
+function validateKycUrl(endpoint) {
+  const fullUrl = `${KYC_API_BASE}${endpoint}`;
+  const parsed = new URL(fullUrl);
+  if (parsed.protocol !== "https:") {
+    throw new Error("[AadhaarService] KYC_API_BASE must use HTTPS");
+  }
+  // Block private/internal IPs
+  const host = parsed.hostname.toLowerCase();
+  if (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.startsWith("10.") ||
+    host.startsWith("192.168.") ||
+    host.startsWith("172.") ||
+    host === "0.0.0.0" ||
+    host === "[::1]" ||
+    host.endsWith(".internal") ||
+    host.endsWith(".local")
+  ) {
+    throw new Error("[AadhaarService] KYC_API_BASE must not point to internal addresses");
+  }
+  return fullUrl;
+}
 
 const isConfigured = () =>
   Boolean(
@@ -48,8 +74,9 @@ async function sendOtp(aadhaar) {
     return { txnId, masked, encrypted, mock: true };
   }
 
+  const url = validateKycUrl("/aadhaar/send-otp");
   const res = await axios.post(
-    `${KYC_API_BASE}/aadhaar/send-otp`,
+    url,
     {
       aadhaar_number: aadhaar,
       consent: true,
@@ -81,8 +108,9 @@ async function verifyOtp(aadhaar, otp, txnId) {
     return { verified: true, mock: true };
   }
 
+  const url = validateKycUrl("/aadhaar/verify-otp");
   const res = await axios.post(
-    `${KYC_API_BASE}/aadhaar/verify-otp`,
+    url,
     {
       aadhaar_number: aadhaar,
       otp,

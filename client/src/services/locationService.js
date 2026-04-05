@@ -1004,9 +1004,14 @@ const getRecentCachedLocation = (maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS) => {
 };
 const getIPBasedFallbackLocation = async () => {
   try {
+    const token =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("authToken") || localStorage.getItem("token")
+        : null;
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const response = await fetchWithTimeout(
       buildApiPath("/location/ip-info"),
-      { mode: "cors", credentials: "include" },
+      { mode: "cors", credentials: "include", headers },
       IP_FALLBACK_TIMEOUT_MS,
     ).catch(() => null);
     if (!response || !response.ok) return null;

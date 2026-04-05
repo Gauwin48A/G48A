@@ -53,6 +53,7 @@
     --card-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
     --card-shadow-hover: 0 12px 32px rgba(15, 23, 42, 0.12);
     --btn-shadow: 0 6px 16px rgba(37, 99, 235, 0.22);
+    --glass-bg: rgba(255, 255, 255, 0.78);
 
     /* Icons */
     --icon-color: #333333;

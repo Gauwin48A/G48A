@@ -15,6 +15,7 @@ import { CartProvider } from "./context/CartContext.jsx";
 import { LocationProvider, useLocation } from "./context/LocationContext.jsx";
 import { useTranslation } from "react-i18next";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import PwaEnhancements from "./components/PwaEnhancements.jsx";
 import VPNBlocker from "./components/VPNBlocker.jsx";
 import { App as CapacitorApp } from "@capacitor/app";
 import { getUserId } from "@/utils/authStorage";
@@ -465,6 +466,7 @@ function App() {
             <CartProvider>
               <LocationGate>
                 <AppShell />
+                <PwaEnhancements />
               </LocationGate>
             </CartProvider>
           </AuthProvider>

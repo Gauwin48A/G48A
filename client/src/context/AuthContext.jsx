@@ -9,11 +9,12 @@ import React, {
 } from "react";
 import api, { setRefreshDelegate } from "../services/api";
 import { getAccessToken, hasAuthSession } from "@/utils/authStorage";
+import { clearWishlistCache, replaceSavedPostIds } from "@/utils/savedPosts";
 import { mapAuthError } from "@/utils/authErrorMapper";
 import { logAuthDiagnostic } from "@/services/authDiagnostics";
 import { getDeviceFingerprint, getDeviceInfo } from "@/services/deviceFingerprint";
-import { subscribeSubscriptionUpdated } from "@/utils/appStateEvents";
-import { socket } from "@/lib/socket";
+import { emitCoinBalanceUpdated, subscribeSubscriptionUpdated } from "@/utils/appStateEvents";
+import { socket, connectSocketWithToken, disconnectSocket } from "@/lib/socket";
 
 const AuthContext = createContext(null);
 const JWT_EXP_SKEW_SECONDS = 30;
@@ -27,6 +28,7 @@ const LOGIN_RATE_LIMIT_KEY = "mhub_login_rate_limit_until";
 const AUTH_RATE_LIMIT_STORAGE_KEY = "mhub_auth_rate_limit_until";
 const AUTH_SESSION_CACHE_TTL_MS = 60 * 1000;
 const AUTH_SESSION_LAST_CHECK_KEY = "mhub_auth_session_last_check";
+const AUTO_CHECKIN_COOLDOWN_KEY = "mhub_rewards_auto_checkin_until";
 const FORCE_DISABLE_AUTO_LOGOUT = false;
 const DISABLE_AUTO_LOGOUT =
   FORCE_DISABLE_AUTO_LOGOUT ||
@@ -43,6 +45,9 @@ const AUTH_STORAGE_KEYS = [
   "userProfile",
   "token",
   "authSession",
+  "mhub_cart_v1",
+  "mhub_user_city",
+  "mhub_wishlist_cooldown_until",
 ];
 
 function safeParseJson(rawValue) {
@@ -135,6 +140,34 @@ function readAuthRateLimitUntil() {
     return 0;
   }
 }
+
+function parseTimestamp(value) {
+  if (!value) return 0;
+  const asNumber = Number(value);
+  if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+  const asDate = Date.parse(String(value));
+  return Number.isFinite(asDate) ? asDate : 0;
+}
+
+function readAutoCheckinUntil() {
+  try {
+    const raw = localStorage.getItem(AUTO_CHECKIN_COOLDOWN_KEY);
+    const parsed = parseTimestamp(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeAutoCheckinUntil(value) {
+  const parsed = parseTimestamp(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return;
+  try {
+    localStorage.setItem(AUTO_CHECKIN_COOLDOWN_KEY, String(parsed));
+  } catch {
+    // ignore storage failures
+  }
+}
 function writeAuthRateLimitUntil(untilMs) {
   try {
     localStorage.setItem(AUTH_RATE_LIMIT_STORAGE_KEY, String(untilMs));
@@ -220,6 +253,7 @@ export function AuthProvider({ children }) {
   const lastAuthMeAtRef = useRef(0);
   const lastAuthSessionAtRef = useRef(0);
   const loginRateLimitUntilRef = useRef(0);
+  const autoCheckinInFlightRef = useRef(null);
 
   const applyCachedUser = useCallback(() => {
     const cached = safeParseJson(localStorage.getItem("user"));
@@ -279,7 +313,10 @@ export function AuthProvider({ children }) {
 
   const clearSession = useCallback(() => {
     clearAuthStorage();
+    clearWishlistCache();
+    replaceSavedPostIds([]);
     setUserState(null);
+    disconnectSocket();
   }, []);
   const clearSessionIfAllowed = useCallback(
     (reason, meta = {}, force = false) => {
@@ -346,6 +383,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem("authToken", response.token);
         localStorage.removeItem("token");
         localStorage.setItem("authSession", "true");
+        connectSocketWithToken(response.token);
 
         if (response.user) {
           setUser(response.user);
@@ -772,6 +810,71 @@ export function AuthProvider({ children }) {
   );
 
   useEffect(() => {
+    const token = getAccessToken();
+    if (token) {
+      connectSocketWithToken(token);
+    } else {
+      disconnectSocket();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) return;
+    if (autoCheckinInFlightRef.current) return;
+    const cooldownUntil = readAutoCheckinUntil();
+    if (cooldownUntil && Date.now() < cooldownUntil) return;
+
+    let cancelled = false;
+    autoCheckinInFlightRef.current = (async () => {
+      try {
+        const engagement = await api.get("/coins/engagement");
+        if (cancelled) return;
+        const nextAt = engagement?.dailyCheckIn?.nextCheckInAt;
+        if (nextAt) writeAutoCheckinUntil(nextAt);
+        const alreadyCheckedIn = Boolean(engagement?.dailyCheckIn?.hasCheckedInToday);
+
+        if (!alreadyCheckedIn) {
+          try {
+            const checkin = await api.post("/coins/daily-checkin");
+            if (cancelled) return;
+            const nextCheckInAt = checkin?.nextCheckInAt;
+            if (nextCheckInAt) writeAutoCheckinUntil(nextCheckInAt);
+            if (Number.isFinite(Number(checkin?.newBalance))) {
+              emitCoinBalanceUpdated(Number(checkin.newBalance), { source: "auto-checkin" });
+            }
+          } catch (error) {
+            const status = error?.status ?? error?.response?.status ?? null;
+            if (status === 409) {
+              const nextCheckInAt = error?.response?.data?.nextCheckInAt;
+              if (nextCheckInAt) writeAutoCheckinUntil(nextCheckInAt);
+            }
+          }
+        }
+
+        if (engagement?.referralMilestone?.eligible && !engagement?.referralMilestone?.claimed) {
+          try {
+            const milestone = await api.post("/coins/referral-milestones");
+            if (Number.isFinite(Number(milestone?.newBalance))) {
+              emitCoinBalanceUpdated(Number(milestone.newBalance), { source: "auto-milestone" });
+            }
+          } catch {
+            // ignore auto-claim failures
+          }
+        }
+      } catch {
+        // ignore engagement bootstrap failures
+      }
+    })().finally(() => {
+      autoCheckinInFlightRef.current = null;
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
     const userId = normalizeUserId(user);
     if (!userId) return undefined;
     socket.emit("join_room", `user_${userId}`);
@@ -875,6 +978,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem("authToken", token);
       localStorage.removeItem("token");
       localStorage.setItem("authSession", "true");
+      connectSocketWithToken(token);
       if (responseUser) {
         setUser(responseUser);
       } else {
@@ -943,6 +1047,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem("authToken", response.token);
         localStorage.removeItem("token");
         localStorage.setItem("authSession", "true");
+        connectSocketWithToken(response.token);
       }
       if (response?.user) {
         setUser(response.user);

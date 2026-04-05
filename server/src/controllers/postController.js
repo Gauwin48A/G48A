@@ -1042,9 +1042,8 @@ exports.getAllPosts = async (req, res) => {
         c.name as category_name,
         sc.name as subcategory_name,
         p.subcategory_id,
-        -- Verification fields temporarily disabled due to UUID migration
-        NULL as aadhaar_verified,
-        NULL as pan_verified,
+        COALESCE(u.isaadhaarverified, false) as aadhaar_verified,
+        false as pan_verified,
         NULL as verification_date
       FROM posts p
       LEFT JOIN users u ON p.user_id::text = u.user_id::text

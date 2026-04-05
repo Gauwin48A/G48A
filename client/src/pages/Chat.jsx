@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
-import { socket } from "../lib/socket";
+import { socket, connectSocketWithToken } from "../lib/socket";
 import { navigateBack } from "@/utils/navigation";
 const ChatPage = () => {
   const navigate = useNavigate(),
@@ -61,6 +61,10 @@ const ChatPage = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
   const fetchConversations = useCallback(async () => {
+      if (!currentUserId) {
+        setLoading(!1);
+        return;
+      }
       try {
         const response = await api.get("/chat/conversations"),
           data = response?.data ?? response;
@@ -71,7 +75,7 @@ const ChatPage = () => {
       } finally {
         setLoading(!1);
       }
-    }, []),
+    }, [currentUserId]),
     fetchMessages = useCallback(async (conversationId) => {
       const counter = ++fetchCounterRef.current;
       setLoadingMessages(!0), setMessagesError("");
@@ -93,7 +97,7 @@ const ChatPage = () => {
   }, [fetchConversations]),
     useEffect(() => {
       if (!currentUserId) return;
-      socket.connected ? setConnectionStatus("connected") : (setConnectionStatus("connecting"), socket.connect()),
+      socket.connected ? setConnectionStatus("connected") : (setConnectionStatus("connecting"), connectSocketWithToken()),
         socket.emit("join_room", `user_${currentUserId}`);
       const handleNewMessage = (payload) => {
           const currentConv = selectedConversationRef.current,
@@ -412,7 +416,7 @@ const ChatPage = () => {
                   className:
                     "border-amber-300 text-amber-800 dark:border-amber-400/40 dark:text-amber-200 dark:border-amber-600/40",
                   onClick: () => {
-                    setConnectionStatus("connecting"), socket.connect();
+                    setConnectionStatus("connecting"), connectSocketWithToken();
                   },
                 },
                 "Reconnect",
