@@ -11,7 +11,7 @@ const STRATIFIED_FEED_QUERY = `
 WITH config AS (
     SELECT
         $1::text AS uid,
-        EXTRACT(EPOCH FROM NOW())::bigint / 30
+        EXTRACT(EPOCH FROM NOW())::bigint / 300
           + COALESCE(($3::bigint % 2147483646), 0) AS time_seed
 ),
 -- Get ALL active posts with random scoring
@@ -149,7 +149,7 @@ function buildStratifiedFeedQuery(withGroupFilter = false) {
 WITH config AS (
     SELECT
         $1::text AS uid,
-        EXTRACT(EPOCH FROM NOW())::bigint / 30
+        EXTRACT(EPOCH FROM NOW())::bigint / 300
           + COALESCE(($3::bigint % 2147483646), 0) AS time_seed
 ),
 all_active_posts AS (

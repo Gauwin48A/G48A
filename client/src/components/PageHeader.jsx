@@ -9,6 +9,9 @@ const PageHeader = ({
   title,
   showBack = true,
   backTo,
+  backLabel,
+  backClassName = "",
+  backLabelClassName = "",
   rightAction,
   className = "",
   transparent = false,
@@ -23,6 +26,8 @@ const PageHeader = ({
     }
     navigateBack(navigate);
   };
+
+  const backButtonLabel = backLabel || "";
 
   return (
     <div
@@ -46,16 +51,22 @@ const PageHeader = ({
               variant="ghost"
               size="icon"
               className={`
-              rounded-full p-2 transition-all duration-200
+              rounded-full ${backButtonLabel ? "px-3 py-2 gap-2" : "p-2"} transition-all duration-200 inline-flex items-center
               ${
                 transparent
-                  ? "bg-black/20 hover:bg-black/40 text-white"
-                  : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                  ? "!bg-black/20 hover:!bg-black/40 !text-white"
+                  : "hover:!bg-slate-100 dark:hover:!bg-slate-800 !text-slate-700 dark:!text-slate-200"
               }
+              ${backClassName}
             `}
-              aria-label={t("go_back")}
+              aria-label={backButtonLabel ? `${backButtonLabel}` : t("go_back")}
             >
               <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
+              {backButtonLabel ? (
+                <span className={`text-xs font-semibold ${backLabelClassName}`}>
+                  {backButtonLabel}
+                </span>
+              ) : null}
             </Button>
           ) : null}
           {title ? (

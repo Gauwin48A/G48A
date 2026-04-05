@@ -1,3 +1,5 @@
+import { getAccessToken } from "@/utils/authStorage";
+
 const SAVED_POSTS_STORAGE_KEY = "mhub_saved_post_ids";
 const SAVED_POSTS_UPDATED_EVENT = "mhub:saved-posts-updated";
 const SAVED_POSTS_MUTATION_GUARD = new Set();
@@ -41,6 +43,10 @@ function canUseStorage() {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
 }
 
+function hasAuthToken() {
+  return Boolean(getAccessToken());
+}
+
 export function normalizeSavedPostId(postId) {
   if (postId === null || postId === undefined) {
     return "";
@@ -78,7 +84,7 @@ export function isSavedPostMutationInFlight(postId) {
 }
 
 export function readSavedPostIds() {
-  if (!canUseStorage()) {
+  if (!canUseStorage() || !hasAuthToken()) {
     return [];
   }
 
@@ -132,6 +138,17 @@ function emitSavedPostsUpdated(ids) {
 }
 
 export function replaceSavedPostIds(ids) {
+  if (!hasAuthToken()) {
+    if (canUseStorage()) {
+      try {
+        localStorage.removeItem(SAVED_POSTS_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    emitSavedPostsUpdated([]);
+    return {};
+  }
   const normalizedIds = Array.from(
     new Set(
       (Array.isArray(ids) ? ids : [])
@@ -153,6 +170,9 @@ export function replaceSavedPostIds(ids) {
 }
 
 export function setSavedPostStatus(postId, isSaved) {
+  if (!hasAuthToken()) {
+    return getSavedPostsMap();
+  }
   const normalizedId = normalizeSavedPostId(postId);
   if (!normalizedId) {
     return getSavedPostsMap();
@@ -237,6 +257,11 @@ function resolveRetryAfterMs(headerValue, fallbackMs = WISHLIST_COOLDOWN_FALLBAC
 }
 
 export function fetchWishlistIds(fetcher) {
+  if (!hasAuthToken()) {
+    clearWishlistCache();
+    replaceSavedPostIds([]);
+    return Promise.resolve([]);
+  }
   const now = Date.now();
   const cooldownUntil = readWishlistCooldown();
   if (cooldownUntil > now) {

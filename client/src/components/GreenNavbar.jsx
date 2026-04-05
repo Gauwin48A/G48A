@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
 import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiSun, FiMoon } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
@@ -72,7 +72,7 @@ const GreenNavbar = () => {
 
   const bottomNavLinks = [
     { key: 'home', path: '/category-hub', icon: <FiHome />, matchPaths: ['/category-hub', '/home'] },
-    { key: 'all_posts', path: '/all-posts', icon: <FiGrid />, matchPaths: ['/all-posts', '/'] },
+    { key: 'all_posts', path: '/all-posts', icon: <FiGrid />, matchPaths: ['/all-posts', '/listings', '/'] },
     { key: 'for_you', path: '/for-you', icon: <FiStar />, matchPaths: ['/for-you'] },
     { key: 'feed', path: '/feed', icon: <FiFileText />, matchPaths: ['/feed'] },
     { key: 'rewards', path: '/rewards', icon: <FiUserCheck />, matchPaths: ['/rewards'] },
@@ -192,16 +192,22 @@ const GreenNavbar = () => {
   const isLoggedIn = useMemo(() => isAuthenticated(user), [user]);
 
   // Notification unread count badge
-  const { data: unreadCount = 0 } = useUnreadCount({ enabled: isLoggedIn, refetchInterval: 60000 });
+  const { data: rawUnreadCount = 0 } = useUnreadCount({ enabled: isLoggedIn, refetchInterval: 60000 });
+  const unreadCount = isLoggedIn ? rawUnreadCount : 0;
 
   // Wishlist count badge — subscribe to savedPosts events so badge updates immediately
-  const [wishlistCount, setWishlistCount] = useState(() => readSavedPostIds().length);
+  const [wishlistCount, setWishlistCount] = useState(0);
   useEffect(() => {
+    if (!isLoggedIn) {
+      setWishlistCount(0);
+      return () => {};
+    }
+    setWishlistCount(readSavedPostIds().length);
     const unsubscribe = subscribeSavedPosts((savedMap) => {
       setWishlistCount(Object.keys(savedMap).length);
     });
     return unsubscribe;
-  }, []);
+  }, [isLoggedIn]);
 
   // Cart count filtered by active category mode (so the badge reflects the current
   // category context rather than the total across all categories).
@@ -461,14 +467,43 @@ const GreenNavbar = () => {
   // Show full navbar for home (all-posts), my-posts, and For You
   const showFullNavbar =
     routerLocation.pathname === '/all-posts' ||
+    routerLocation.pathname === '/listings' ||
     routerLocation.pathname === '/my-posts' ||
+    routerLocation.pathname === '/home' ||
     routerLocation.pathname === '/' ||
     routerLocation.pathname === '/for-you';
   const hideTopRibbon =
+    isAuthPage ||
     routerLocation.pathname === '/profile' ||
     routerLocation.pathname.startsWith('/profile/') ||
     routerLocation.pathname === '/rewards' ||
     routerLocation.pathname.startsWith('/rewards');
+  const topNavRef = useRef(null);
+  const topRibbonRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    if (!root) return;
+
+    const resolveHeight = () => {
+      if (hideChromeOnHub) return 0;
+      if (showFullNavbar && topNavRef.current) return topNavRef.current.offsetHeight || 0;
+      if (!hideTopRibbon && topRibbonRef.current) return topRibbonRef.current.offsetHeight || 0;
+      return 0;
+    };
+
+    const applyHeight = () => {
+      const height = resolveHeight();
+      const value = `${height}px`;
+      root.style.setProperty('--top-nav-height', value);
+      if (body) body.style.setProperty('--top-nav-height', value);
+    };
+
+    applyHeight();
+    window.addEventListener('resize', applyHeight);
+    return () => window.removeEventListener('resize', applyHeight);
+  }, [hideChromeOnHub, hideTopRibbon, showFullNavbar]);
 
   // Helper for ARIA and touch target
   const navButtonProps = (label) => ({
@@ -533,7 +568,7 @@ const GreenNavbar = () => {
       {/* Top Navbar and overlays remain as is */}
       {showFullNavbar ? (
         // Full Navbar
-        <nav className="mhub-top-nav sticky top-0 z-[120] transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
+        <nav ref={topNavRef} className="mhub-top-nav sticky top-0 z-[120] transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
           <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-3 py-2 md:px-4 md:py-3 lg:gap-4">
             {/* Logo and Location */}
             <div className="flex shrink-0 items-center gap-2.5 lg:gap-3">
@@ -565,7 +600,7 @@ const GreenNavbar = () => {
                 <button
                   type="button"
                   onClick={() => { if (forceRefreshLocation && !locationLoading) forceRefreshLocation().catch(() => {}); }}
-                  className={`mhub-nav-pill inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-full border px-2.5 transition-all active:scale-[0.97] ${
+                  className={`mhub-nav-pill relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-full border px-2.5 transition-all active:scale-[0.97] ${
                     locationLoading ? 'border-yellow-400/40 bg-yellow-500/20' :
                     isIpFallback ? 'border-orange-400/40 bg-orange-500/15' :
                     accuracyTier === 'precise' || accuracyTier === 'good' ? 'border-green-400/40 bg-green-500/15' :
@@ -1003,7 +1038,7 @@ const GreenNavbar = () => {
                   >
                     +
                   </span>
-                  <span className="absolute left-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('sell', { defaultValue: 'Sell' })}
                   </span>
                 </Link>
@@ -1019,7 +1054,7 @@ const GreenNavbar = () => {
                       {Number(unreadCount) > 99 ? '99+' : Number(unreadCount)}
                     </span>
                   )}
-                  <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('notifications')}
                   </span>
                 </Link>
@@ -1028,12 +1063,12 @@ const GreenNavbar = () => {
                   <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
                     <FiBookmark className="w-5 h-5" />
                   </span>
-                  {wishlistCount > 0 && (
+                  {isLoggedIn && wishlistCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
                       {wishlistCount > 99 ? '99+' : wishlistCount}
                     </span>
                   )}
-                  <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('wishlist', { defaultValue: 'Wishlist' })}
                   </span>
                 </Link>
@@ -1043,13 +1078,13 @@ const GreenNavbar = () => {
                     <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
                       <FiShoppingCart className="w-5 h-5" />
                     </span>
-                    {Number(categoryFilteredCartCount) > 0 && (
+                    {isLoggedIn && Number(categoryFilteredCartCount) > 0 && (
                       <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
                         {Number(categoryFilteredCartCount) > 99 ? "99+" : Number(categoryFilteredCartCount)}
                       </span>
                     )}
                   </Link>
-                  <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('cart', { defaultValue: 'Cart' })}
                   </span>
                   <MiniCartPopover />
@@ -1059,7 +1094,7 @@ const GreenNavbar = () => {
                   <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
                     <FiClock className="w-5 h-5" />
                   </span>
-                  <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
+                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('recently_viewed', { defaultValue: 'Recently Viewed' })}
                   </span>
                 </Link>
@@ -1172,7 +1207,7 @@ const GreenNavbar = () => {
         </nav >
       ) : (
         // Blank blue ribbon for other pages
-        hideTopRibbon ? null : <div className="h-14 w-full mhub-top-ribbon" />
+        hideTopRibbon ? null : <div ref={topRibbonRef} className="h-14 w-full mhub-top-ribbon" />
       )}
 
       {/* More Menu Fullscreen Overlay */}

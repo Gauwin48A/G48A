@@ -56,6 +56,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTrustScore, normalizeTrustPayload } from "@/hooks/useTrustScore";
 import {
   emitCoinBalanceUpdated,
+  subscribeCoinBalanceUpdated,
   subscribeSubscriptionUpdated,
 } from "@/utils/appStateEvents";
 import {
@@ -412,6 +413,16 @@ const RewardsPage = () => {
   const errorMessage = resolveMessage(errorObj);
   const engagementErrorMessage = resolveMessage(engagementError);
   const redeemDialogErrorMessage = resolveMessage(redeemDialogError);
+  useEffect(
+    () =>
+      isAuthed
+        ? subscribeCoinBalanceUpdated(() => {
+            fetchRewards({ silent: !0, allowRetry: !1 });
+            fetchEngagement({ silent: !0 });
+          })
+        : undefined,
+    [isAuthed, fetchRewards, fetchEngagement],
+  );
   const scrollToSection = useCallback((sectionKey, options = {}) => {
     if (typeof document === "undefined") {
       return false;
@@ -1318,13 +1329,17 @@ const RewardsPage = () => {
       : membershipPlanLightBadgeMap[membershipPlanKey]) ||
     membershipPlanLightBadgeMap.basic;
   const isBasicPlan = membershipPlanKey === "basic" && !isPlanLoading;
-  const xpProgressPercent = Math.min((rewardsUser.xpCurrent / rewardsUser.xpRequired) * 100, 100),
-    xpRemaining = Math.max(0, Number(rewardsUser.xpRequired || 0) - Number(rewardsUser.xpCurrent || 0)),
-    visitStreak = Number(rewardsUser.visitStreak ?? rewardsUser.streak ?? 0),
-    postStreak = Number(rewardsUser.postStreak || 0),
+  const xpCurrent = Number(r.xpCurrent || 0),
+    xpRequired = Number(r.xpRequired || 0),
+    xpProgressPercent = xpRequired
+      ? Math.min((xpCurrent / xpRequired) * 100, 100)
+      : 0,
+    xpRemaining = Math.max(0, xpRequired - xpCurrent),
+    visitStreak = Number(r.visitStreak ?? r.streak ?? 0),
+    postStreak = Number(r.postStreak || 0),
     maxStreak = Math.max(visitStreak, postStreak),
-    qualifiedReferrals = Number(rewardsUser.qualifiedReferrals ?? rewardsUser.successfulRefs ?? 0),
-    totalReferrals = Number(rewardsUser.totalReferrals || 0),
+    qualifiedReferrals = Number(r.qualifiedReferrals ?? r.successfulRefs ?? 0),
+    totalReferrals = Number(r.totalReferrals || 0),
     milestone = engagement?.referralMilestone || null,
     referralGoal = Number(milestone?.target || 3),
     referralReward = Number(milestone?.reward || 50),
@@ -1338,14 +1353,14 @@ const RewardsPage = () => {
       : 0,
     milestoneClaimed = Boolean(milestone?.claimed),
     milestoneEligible = Boolean(milestone?.eligible) && !milestoneClaimed,
-    chainEarnedPoints = Number(rewardsUser.chainEarnedPoints || 0),
-    chainPotentialPoints = Number(rewardsUser.potentialReferralPoints || 0),
+    chainEarnedPoints = Number(r.chainEarnedPoints || 0),
+    chainPotentialPoints = Number(r.potentialReferralPoints || 0),
     nextStreakTarget = [7, 14, 30].find((t) => maxStreak < t) || 30,
     streakProgress = nextStreakTarget
       ? Math.min(100, Math.round((maxStreak / nextStreakTarget) * 100))
       : 0,
-    displayCoins = coinBalance !== null ? coinBalance : rewardsUser.totalCoins,
-    currentLevel = Number(rewardsUser.level || 1),
+    displayCoins = coinBalance !== null ? coinBalance : r.totalCoins,
+    currentLevel = Number(r.level || 1),
     coinsGoal = 500,
     referralSummaryGoal = Math.max(5, referralGoal || 5),
     rewardLogItems = coinHistory.length
@@ -1440,20 +1455,20 @@ const RewardsPage = () => {
       {
         key: "share",
         label: tr("share_referral_code", "Share your referral code"),
-        done: !!rewardsUser.referralCode,
-        hint: rewardsUser.referralCode
+        done: !!r.referralCode,
+        hint: r.referralCode
           ? `${tr("code", "Code")} ${r.referralCode}`
           : tr("generate_from_referral_card", "Generate from referral card"),
       },
       {
         key: "invite",
         label: tr("invite_one_friend", "Invite at least 1 friend"),
-        done: Number(rewardsUser.totalReferrals || 0) > 0,
+        done: Number(r.totalReferrals || 0) > 0,
         hint: tr(
           "rewards_invited_count",
           `${Number(r.totalReferrals || 0)} invited`,
           {
-            count: Number(rewardsUser.totalReferrals || 0),
+            count: Number(r.totalReferrals || 0),
           },
         ),
       },
@@ -1503,15 +1518,14 @@ const RewardsPage = () => {
         ),
       },
     ],
-    activityStats = rewardsUser.activityStats || {},
+    activityStats = r.activityStats || {},
     salesCount = Number(activityStats.salesCount || 0),
     referralsCount = Number(activityStats.referralsCount || 0),
-    profileCompleted = Boolean(rewardsUser.profileComplete),
-    hasPosted = Boolean(rewardsUser.hasPosted),
+    profileCompleted = Boolean(r.profileComplete),
+    hasPosted = Boolean(r.hasPosted),
     canShareExistingPost =
       hasPosted || Number(activityStats.postsCount || 0) > 0,
-    goldOrBetter =
-      rewardsUser.rank === "Gold" || rewardsUser.rank === "Platinum",
+    goldOrBetter = r.rank === "Gold" || r.rank === "Platinum",
     directReferrals = referralChain.filter(
       (t) => t?.type === "direct" || t?.depth === 1 || t?.level === 1,
     ),
@@ -1551,11 +1565,11 @@ const RewardsPage = () => {
       }
       return stableCheckedInRef.current ?? Number(activityStats.visitsToday || 0) > 0;
     })(),
-    leaderboardHistory = Array.isArray(rewardsUser.leaderboard?.history)
-      ? rewardsUser.leaderboard.history
+    leaderboardHistory = Array.isArray(r.leaderboard?.history)
+      ? r.leaderboard.history
       : [],
-    nextLeaderboardPayout = rewardsUser.leaderboard?.nextPayoutAt || "",
-    lastLeaderboardPayout = rewardsUser.leaderboard?.lastPayoutAt || "",
+    nextLeaderboardPayout = r.leaderboard?.nextPayoutAt || "",
+    lastLeaderboardPayout = r.leaderboard?.lastPayoutAt || "",
     challengeConfigs = [
       {
         key: "invite",
@@ -1772,7 +1786,7 @@ const RewardsPage = () => {
         progressValue: goldOrBetter ? 1 : 0,
         progressMax: 1,
         meta: `${tr("rewards_rank", "Rewards rank")}: ${
-          rewardsUser.rank || tr("unknown", "Unknown")
+          r.rank || tr("unknown", "Unknown")
         }`,
       },
       {

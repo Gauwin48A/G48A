@@ -1,0 +1,237 @@
+@layer utilities {
+  html[data-theme="dark"] body {
+    background-color: var(--background);
+    background-image: var(--page-bg);
+    color: var(--foreground);
+  }
+
+  /* Neutral surface remap (backgrounds) */
+  html[data-theme="dark"] :is(
+    [class*="bg-gray-50"],
+    [class*="bg-slate-50"],
+    [class*="bg-zinc-50"],
+    [class*="bg-neutral-50"],
+    [class*="bg-stone-50"],
+    [class*="bg-gray-100"],
+    [class*="bg-slate-100"],
+    [class*="bg-zinc-100"],
+    [class*="bg-neutral-100"],
+    [class*="bg-stone-100"]
+  ) {
+    background-color: var(--primary-bg) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="bg-gray-200"],
+    [class*="bg-slate-200"],
+    [class*="bg-zinc-200"],
+    [class*="bg-neutral-200"],
+    [class*="bg-stone-200"],
+    [class*="bg-gray-300"],
+    [class*="bg-slate-300"],
+    [class*="bg-zinc-300"],
+    [class*="bg-neutral-300"],
+    [class*="bg-stone-300"]
+  ) {
+    background-color: var(--surface-2) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="bg-gray-400"],
+    [class*="bg-slate-400"],
+    [class*="bg-zinc-400"],
+    [class*="bg-neutral-400"],
+    [class*="bg-stone-400"],
+    [class*="bg-gray-500"],
+    [class*="bg-slate-500"],
+    [class*="bg-zinc-500"],
+    [class*="bg-neutral-500"],
+    [class*="bg-stone-500"]
+  ) {
+    background-color: var(--surface-3) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="bg-gray-600"],
+    [class*="bg-slate-600"],
+    [class*="bg-zinc-600"],
+    [class*="bg-neutral-600"],
+    [class*="bg-stone-600"],
+    [class*="bg-gray-700"],
+    [class*="bg-slate-700"],
+    [class*="bg-zinc-700"],
+    [class*="bg-neutral-700"],
+    [class*="bg-stone-700"]
+  ) {
+    background-color: var(--hover) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="bg-gray-800"],
+    [class*="bg-slate-800"],
+    [class*="bg-zinc-800"],
+    [class*="bg-neutral-800"],
+    [class*="bg-stone-800"],
+    [class*="bg-gray-900"],
+    [class*="bg-slate-900"],
+    [class*="bg-zinc-900"],
+    [class*="bg-neutral-900"],
+    [class*="bg-stone-900"],
+    [class*="bg-gray-950"],
+    [class*="bg-slate-950"],
+    [class*="bg-zinc-950"],
+    [class*="bg-neutral-950"],
+    [class*="bg-stone-950"]
+  ) {
+    background-color: var(--background) !important;
+  }
+
+  html[data-theme="dark"] [class*="bg-white"]:not([class*="bg-white/"]) {
+    background-color: var(--card) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="bg-white/"],
+    [class*="bg-gray-50/"],
+    [class*="bg-slate-50/"],
+    [class*="bg-zinc-50/"],
+    [class*="bg-neutral-50/"],
+    [class*="bg-stone-50/"],
+    [class*="bg-gray-100/"],
+    [class*="bg-slate-100/"],
+    [class*="bg-zinc-100/"],
+    [class*="bg-neutral-100/"],
+    [class*="bg-stone-100/"]
+  ) {
+    background-color: var(--glass-bg) !important;
+  }
+
+  html[data-theme="dark"] [class*="backdrop-blur"] {
+    background-color: var(--glass-bg) !important;
+    border-color: var(--border) !important;
+  }
+
+  /* Neutral text remap */
+  html[data-theme="dark"] :is(
+    [class*="text-gray-900"],
+    [class*="text-slate-900"],
+    [class*="text-zinc-900"],
+    [class*="text-neutral-900"],
+    [class*="text-stone-900"],
+    [class*="text-gray-800"],
+    [class*="text-slate-800"],
+    [class*="text-zinc-800"],
+    [class*="text-neutral-800"],
+    [class*="text-stone-800"]
+  ) {
+    color: var(--text-primary) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="text-gray-700"],
+    [class*="text-slate-700"],
+    [class*="text-zinc-700"],
+    [class*="text-neutral-700"],
+    [class*="text-stone-700"],
+    [class*="text-gray-600"],
+    [class*="text-slate-600"],
+    [class*="text-zinc-600"],
+    [class*="text-neutral-600"],
+    [class*="text-stone-600"]
+  ) {
+    color: var(--text-secondary) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="text-gray-500"],
+    [class*="text-slate-500"],
+    [class*="text-zinc-500"],
+    [class*="text-neutral-500"],
+    [class*="text-stone-500"],
+    [class*="text-gray-400"],
+    [class*="text-slate-400"],
+    [class*="text-zinc-400"],
+    [class*="text-neutral-400"],
+    [class*="text-stone-400"],
+    [class*="text-gray-300"],
+    [class*="text-slate-300"],
+    [class*="text-zinc-300"],
+    [class*="text-neutral-300"],
+    [class*="text-stone-300"]
+  ) {
+    color: var(--text-faint) !important;
+  }
+
+  html[data-theme="dark"] [class*="text-black"] {
+    color: var(--text-primary) !important;
+  }
+
+  /* Neutral borders/dividers */
+  html[data-theme="dark"] :is(
+    [class*="border-gray-"],
+    [class*="border-slate-"],
+    [class*="border-zinc-"],
+    [class*="border-neutral-"],
+    [class*="border-stone-"]
+  ) {
+    border-color: var(--border) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="divide-gray-"],
+    [class*="divide-slate-"],
+    [class*="divide-zinc-"],
+    [class*="divide-neutral-"],
+    [class*="divide-stone-"]
+  ) > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--border) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="ring-gray-"],
+    [class*="ring-slate-"],
+    [class*="ring-zinc-"],
+    [class*="ring-neutral-"],
+    [class*="ring-stone-"]
+  ) {
+    --tw-ring-color: var(--ring) !important;
+  }
+
+  html[data-theme="dark"] :is(
+    [class*="shadow"],
+    [class*="shadow-"]
+  ) {
+    box-shadow: var(--card-shadow) !important;
+  }
+
+  /* Neutral gradient remap */
+  html[data-theme="dark"] [class*="bg-gradient-to-"][class*="from-white"],
+  html[data-theme="dark"] [class*="bg-gradient-to-"][class*="from-gray-"],
+  html[data-theme="dark"] [class*="bg-gradient-to-"][class*="from-slate-"],
+  html[data-theme="dark"] [class*="bg-gradient-to-"][class*="from-zinc-"],
+  html[data-theme="dark"] [class*="bg-gradient-to-"][class*="from-neutral-"],
+  html[data-theme="dark"] [class*="bg-gradient-to-"][class*="from-stone-"] {
+    background-image: var(--page-bg) !important;
+    background-color: var(--background) !important;
+  }
+
+  /* Inputs + placeholders */
+  html[data-theme="dark"] input,
+  html[data-theme="dark"] select,
+  html[data-theme="dark"] textarea {
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border) !important;
+  }
+
+  html[data-theme="dark"] input::placeholder,
+  html[data-theme="dark"] textarea::placeholder {
+    color: var(--text-faint) !important;
+  }
+
+  /* Icons follow text color */
+  html[data-theme="dark"] button svg,
+  html[data-theme="dark"] a svg {
+    color: var(--icon-color);
+  }
+}

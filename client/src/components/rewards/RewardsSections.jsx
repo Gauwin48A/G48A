@@ -1102,6 +1102,10 @@ export function RewardsEarn({
                 <p className="text-xs text-slate-400">{tr("loading", "Loading...")}</p>
               ) : engagementErrorMessage ? (
                 <p className="text-xs text-rose-500">{engagementErrorMessage}</p>
+              ) : hasCheckedInToday ? (
+                <p className="text-xs text-emerald-600">
+                  {tr("checked_in_today", "Checked in today")}
+                </p>
               ) : dailyCheckInStatus?.nextReward && !hasCheckedInToday ? (
                 <p className="text-xs text-emerald-600">
                   {tr("next_reward", "Next reward")}: +{dailyCheckInStatus.nextReward}{" "}

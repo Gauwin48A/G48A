@@ -16,6 +16,7 @@ import { useCategoryMode } from "@/context/CategoryModeContext";
 import { buildActiveAppMatcher, matchesCategoryModeItem } from "@/utils/categoryModeFilters";
 import {
   Bell,
+  ArrowLeft,
   Check,
   Trash2,
   Package,
@@ -35,7 +36,6 @@ import {
   CheckCheck,
   X as XIcon,
 } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { socket } from "@/lib/socket";
+import { navigateBack } from "@/utils/navigation";
 
 const KNOWN_ROUTES = [
   "/all-posts",
@@ -887,13 +888,24 @@ const NotificationsPage = () => {
                 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
             }}
           />
-          <PageHeader
-            title=""
-            className="text-white dark:text-white"
-            transparent={true}
-          />
-          <div className="relative max-w-2xl mx-auto px-4 py-2 sm:px-6 sm:py-3 page-shell page-pad">
-            <div className="mb-2 max-w-2xl text-left dark:text-left">
+        <div className="relative max-w-2xl mx-auto px-4 py-4 sm:px-6 sm:py-5 page-shell page-pad">
+          <div className="mb-3 max-w-2xl text-left dark:text-left mhub-hero-card rounded-2xl px-4 py-3 sm:px-5 sm:py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => navigateBack(navigate)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)] hover:bg-white/30 transition"
+                aria-label={tr("back", "Back")}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {tr("back", "Back")}
+              </button>
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/80">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                {tr("loading", "Loading")}
+              </span>
+            </div>
+            <div className="mt-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70">
                 {tr("notifications_label", "Alerts")}
               </p>
@@ -913,6 +925,7 @@ const NotificationsPage = () => {
               </p>
             </div>
           </div>
+        </div>
         </div>
         <div className="max-w-2xl mx-auto px-4 pt-4">
           {/* Skeleton filter tabs */}
@@ -1005,52 +1018,58 @@ const NotificationsPage = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <PageHeader
-          title=""
-          rightAction={
-            <div className="flex items-center gap-2">
-              {selectedIds.size > 0 && (
-                <button
-                  type="button"
-                  onClick={deleteSelected}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white/15 hover:bg-white/25 rounded-2xl transition-colors duration-200 backdrop-blur-sm dark:bg-slate-900/15 dark:hover:bg-slate-900/25"
-                  aria-label="Delete selected notifications"
-                >
-                  <Trash2 className="w-5 h-5 text-white dark:text-white" />
-                </button>
-              )}
+        <div className="relative max-w-2xl mx-auto px-4 py-4 sm:px-6 sm:py-5 page-shell page-pad">
+          <div className="mb-3 max-w-2xl text-left dark:text-left mhub-hero-card rounded-2xl px-4 py-3 sm:px-5 sm:py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={fetchNotifications}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-2xl transition-all duration-200 active:scale-90 backdrop-blur-sm dark:bg-slate-900/10 dark:hover:bg-slate-900/20"
-                aria-label="Refresh notifications"
+                onClick={() => navigateBack(navigate)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)] hover:bg-white/30 transition"
+                aria-label={tr("back", "Back")}
               >
-                <RefreshCw className="w-5 h-5 text-white dark:text-white" />
+                <ArrowLeft className="w-4 h-4" />
+                {tr("back", "Back")}
               </button>
-            </div>
-          }
-          className="text-white dark:text-white"
-          transparent={true}
-        />
-        <div className="relative max-w-2xl mx-auto px-4 py-2 sm:px-6 sm:py-3 page-shell page-pad">
-          <div className="mb-2 max-w-2xl text-left dark:text-left">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70">
-              {tr("notifications_label", "Alerts")}
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/15">
-                <Bell className="w-5 h-5 text-white dark:text-white" />
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={deleteSelected}
+                    className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-xs font-semibold text-white/90 shadow-[0_8px_18px_rgba(15,23,42,0.15)] hover:bg-white/25 transition"
+                    aria-label="Delete selected notifications"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={fetchNotifications}
+                  className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 shadow-[0_8px_18px_rgba(15,23,42,0.15)] hover:bg-white/20 transition"
+                  aria-label="Refresh notifications"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white dark:text-lg dark:sm:text-xl dark:md:text-2xl dark:text-white">
-                {tr("notifications", "Notifications")}
-              </h1>
             </div>
-            <p className="text-sm sm:text-base text-white/80 mt-1 dark:text-sm dark:sm:text-base dark:text-white/80">
-              {tr(
-                "notifications_subtitle",
-                "Stay on top of updates, offers, and order activity.",
-              )}
-            </p>
+            <div className="mt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70">
+                {tr("notifications_label", "Alerts")}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/15">
+                  <Bell className="w-5 h-5 text-white dark:text-white" />
+                </div>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white dark:text-lg dark:sm:text-xl dark:md:text-2xl dark:text-white">
+                  {tr("notifications", "Notifications")}
+                </h1>
+              </div>
+              <p className="text-sm sm:text-base text-white/80 mt-1 dark:text-sm dark:sm:text-base dark:text-white/80">
+                {tr(
+                  "notifications_subtitle",
+                  "Stay on top of updates, offers, and order activity.",
+                )}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1242,7 +1261,7 @@ const NotificationsPage = () => {
         <div className="space-y-3">
           {groupedNotifications.length === 0 ? (
             /* Empty state — Premium illustration */
-            <div className="py-20 text-center dark:text-center">
+            <div className="pt-12 pb-[calc(var(--bottom-nav-height)+var(--bottom-nav-safe)+2rem)] text-center dark:text-center">
               {/* Concentric rings illustration */}
               <div className="relative w-36 h-36 mx-auto mb-10">
                 {/* Outer rotating dashed ring */}
@@ -1267,7 +1286,7 @@ const NotificationsPage = () => {
                   ? t("all_caught_up") || "All caught up!"
                   : t("no_notifications") || "No notifications"}
               </h3>
-              <p className="text-slate-400 dark:text-gray-400 max-w-xs mx-auto leading-relaxed mb-10 text-[15px] dark:text-slate-300 dark:text-[15px]">
+              <p className="text-slate-400 dark:text-gray-400 max-w-xs mx-auto leading-relaxed mb-6 text-[15px] dark:text-slate-300 dark:text-[15px]">
                 {activeFilter === "unread"
                   ? t("read_all_notifications") ||
                     "Great job! You've read all your notifications."

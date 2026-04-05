@@ -12,9 +12,9 @@ const GUARANTEED_REACH_QUERY = `
 WITH config AS (
     SELECT
         $1::text AS uid,
-        -- Time seed changes every 5 seconds for faster rotation
-        -- Combined with client refresh seed ($3) for instant variety on every refresh
-        EXTRACT(EPOCH FROM NOW())::bigint / 5 + COALESCE($3::bigint, 0) AS time_seed
+        -- Time seed changes every 5 minutes for stable pagination
+        -- Combined with client refresh seed ($3) for instant variety on explicit refresh
+        EXTRACT(EPOCH FROM NOW())::bigint / 300 + COALESCE($3::bigint, 0) AS time_seed
 ),
 -- Get ALL active posts with guaranteed reach scoring
 all_posts_scored AS (
