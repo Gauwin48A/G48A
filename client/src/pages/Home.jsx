@@ -58,7 +58,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:bg-gradient-to-br">
+      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-6xl mx-auto px-4 py-10 page-shell page-pad">
           <div className="mb-8 space-y-3">
             <div className="h-8 w-48 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse dark:bg-emerald-950/20" />
@@ -79,7 +79,7 @@ export default function Home() {
 
   if (error) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:bg-gradient-to-br">
+      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-lg w-full mhub-premium-surface rounded-3xl p-6 text-center dark:text-center">
           <h2 className="text-2xl font-bold text-rose-700 dark:text-rose-200 mb-2 dark:text-2xl dark:text-rose-300">
             Something went wrong
@@ -100,7 +100,7 @@ export default function Home() {
 
   if (posts.length === 0) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:bg-gradient-to-br">
+      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-4xl mx-auto px-4 py-12 page-shell page-pad">
           <EmptyState
             type="posts"
@@ -115,7 +115,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:bg-gradient-to-br">
+    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
       <div className="max-w-6xl mx-auto px-4 py-10 page-shell page-pad">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>

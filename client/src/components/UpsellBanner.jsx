@@ -75,7 +75,7 @@ export default function UpsellBanner({ trigger, className = "" }) {
         </div>
         <button
           onClick={() => navigate("/tier-selection")}
-          className="flex-shrink-0 bg-white text-blue-700 font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+          className="flex-shrink-0 bg-white dark:bg-white text-blue-700 dark:text-blue-200 font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-100 transition-colors"
         >
           Upgrade
         </button>

@@ -121,7 +121,8 @@ const GreenNavbar = () => {
     filters.verifiedOnly,
   ]);
   const hasActiveFilters = activeFilterCount > 0;
-  const { mode: themeMode, setThemeMode } = useTheme();
+  const { mode: themeMode, setThemeMode, resolvedTheme } = useTheme();
+  const isDarkNav = resolvedTheme === 'dark';
   const [layoutMode, setLayoutMode] = useState(() => {
     const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || '').trim().toLowerCase();
     return LAYOUT_PRESETS.some((preset) => preset.key === stored) ? stored : 'desktop';
@@ -568,16 +569,21 @@ const GreenNavbar = () => {
       {/* Top Navbar and overlays remain as is */}
       {showFullNavbar ? (
         // Full Navbar
-        <nav ref={topNavRef} className="mhub-top-nav sticky top-0 z-[120] transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
+        <nav
+          ref={topNavRef}
+          className={`sticky top-0 z-[120] shadow-lg overflow-visible ${isDarkNav ? 'bg-gray-900' : 'bg-blue-600'} transition-all duration-300`}
+          role="navigation"
+          aria-label={t('main_navigation')}
+        >
           <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-3 py-2 md:px-4 md:py-3 lg:gap-4">
             {/* Logo and Location */}
             <div className="flex shrink-0 items-center gap-2.5 lg:gap-3">
               <Link
                 to="/"
-                className="mhub-nav-pill flex items-center gap-2 rounded-full px-2.5 py-1.5 transition-colors"
+                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 transition-colors hover:bg-white/15"
                 aria-label="Home"
               >
-                <span className="mhub-nav-logo-chip rounded-xl p-2">
+                <span className="rounded-xl bg-white p-2 shadow-sm">
                   <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
                     <rect width="24" height="24" rx="6" fill="#2563eb" />
                     <path
@@ -590,7 +596,7 @@ const GreenNavbar = () => {
                     <circle cx="12" cy="13" r="2" fill="#fff" />
                   </svg>
                 </span>
-                <span className="hidden text-lg font-bold tracking-tight sm:block">
+                <span className="hidden text-lg font-bold tracking-tight text-white sm:block">
                   {t('home')}
                 </span>
               </Link>
@@ -600,11 +606,11 @@ const GreenNavbar = () => {
                 <button
                   type="button"
                   onClick={() => { if (forceRefreshLocation && !locationLoading) forceRefreshLocation().catch(() => {}); }}
-                  className={`mhub-nav-pill relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-full border px-2.5 transition-all active:scale-[0.97] ${
+                  className={`relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-full border px-2.5 text-white transition-all hover:bg-white/20 active:scale-[0.97] ${
                     locationLoading ? 'border-yellow-400/40 bg-yellow-500/20' :
                     isIpFallback ? 'border-orange-400/40 bg-orange-500/15' :
                     accuracyTier === 'precise' || accuracyTier === 'good' ? 'border-green-400/40 bg-green-500/15' :
-                    ''
+                    'border-white/20 bg-white/10'
                   }`}
                   aria-label={`${t('location', { defaultValue: 'Location' })}: ${resolvedLocationLabel}. ${t('tap_to_refresh', { defaultValue: 'Tap to refresh' })}`}
                   title={`${resolvedLocationLabel} - ${t('tap_to_refresh', { defaultValue: 'Tap to refresh GPS' })}`}
@@ -637,7 +643,7 @@ const GreenNavbar = () => {
                 <button
                   type="button"
                   onClick={cycleLayout}
-                  className="mhub-nav-action inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-white/20"
                   aria-label={`${t('layout', { defaultValue: 'Layout' })}: ${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })}`}
                   title={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
                 >
@@ -657,13 +663,13 @@ const GreenNavbar = () => {
                     openSearchPage();
                   }
                 }}
-                className="mhub-nav-search relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-4 py-2.5 transition-all cursor-pointer group"
+                className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full border border-blue-100/90 bg-white dark:bg-slate-800 dark:border-slate-600 px-4 py-2.5 shadow-sm transition-all hover:border-blue-200 dark:hover:border-slate-500 hover:shadow-md cursor-pointer group"
                 role="button"
                 tabIndex={0}
                 aria-label={t('search', { defaultValue: 'Search' })}
               >
-                <FiSearch className="w-5 h-5 text-[color:var(--icon-color-muted)]" />
-                <span className={`flex-1 truncate text-sm ${filters.search ? 'text-[color:var(--text-primary)]' : 'mhub-nav-search-placeholder'}`}>
+                <FiSearch className="w-5 h-5 text-gray-400" />
+                <span className={`flex-1 truncate text-sm ${filters.search ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}`}>
                   {navbarSearchLabel}
                 </span>
 
@@ -677,7 +683,7 @@ const GreenNavbar = () => {
                       navigate({ pathname: routerLocation.pathname, search: newParams.toString() });
                       setFilters(prev => ({ ...prev, search: '' }));
                     }}
-                    className="z-10 rounded-full p-1 text-[color:var(--text-faint)] transition-colors hover:bg-[var(--hover)] hover:text-[color:var(--text-primary)]"
+                    className="z-10 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                     aria-label="Clear search"
                     title="Clear search"
                   >
@@ -692,13 +698,13 @@ const GreenNavbar = () => {
                   <button
                     type="button"
                     onClick={() => setShowFilter(true)}
-                    className={`mhub-nav-action inline-flex h-11 items-center gap-2 rounded-full px-3.5 text-sm font-semibold backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters ? 'ring-2 ring-[color:var(--primary)] shadow-md' : ''}`}
+                    className={`inline-flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 ${hasActiveFilters ? 'ring-2 ring-white/70 shadow-md' : ''}`}
                     aria-label={`${t('filter', { defaultValue: 'Filter' })}${hasActiveFilters ? ` (${activeFilterCount})` : ''}`}
                   >
                     <FiFilter className="h-4 w-4" />
                     <span className="hidden lg:inline">{t('filter', { defaultValue: 'Filter' })}</span>
                     {hasActiveFilters && (
-                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[var(--primary)] text-white text-[10px] font-bold px-1.5">
+                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-white/90 text-blue-700 text-[10px] font-bold px-1.5">
                         {activeFilterCount}
                       </span>
                     )}
@@ -706,7 +712,10 @@ const GreenNavbar = () => {
                 </div>
               )}
               {!hideFilterOnGate && showFilter && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                <div
+                  className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-40 overflow-y-auto"
+                  style={{ paddingTop: 'calc(var(--top-nav-height) + 12px)', paddingBottom: '20px' }}
+                >
                   <div className="mhub-premium-surface rounded-2xl shadow-2xl border p-6 w-full max-w-sm mx-2 flex flex-col gap-3 relative animate-fadeIn">
                     <button className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 dark:hover:text-yellow-400" onClick={() => setShowFilter(false)} aria-label={t('close', { defaultValue: 'Close filter' })}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1030,7 +1039,7 @@ const GreenNavbar = () => {
               {isLoggedIn && (
                 <Link to="/post-welcome" aria-label="Add Post" className="relative group">
                   <span
-                    className="mhub-nav-cta inline-flex h-11 w-11 items-center justify-center rounded-full text-2xl font-extrabold transition-all duration-200 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-blue-400"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white text-2xl font-extrabold text-blue-600 shadow-lg transition-all duration-200 ring-2 ring-blue-300/80 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-blue-400"
                     style={{ cursor: 'pointer', zIndex: 20 }}
                     tabIndex={0}
                     role="button"
@@ -1043,11 +1052,11 @@ const GreenNavbar = () => {
                   </span>
                 </Link>
               )}
-              <div className="mhub-nav-pill hidden md:flex items-center gap-1 rounded-full px-1.5 py-1 backdrop-blur-sm">
+              <div className="hidden md:flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-1.5 py-1 backdrop-blur-sm">
                 {/* Notifications Bell */}
                 <Link to="/notifications" aria-label={t('notifications')} className="relative group">
-                  <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
-                    <FiBell className="w-5 h-5" />
+                  <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
+                    <FiBell className="text-white w-5 h-5" />
                   </span>
                   {isLoggedIn && Number(unreadCount) > 0 && (
                     <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
@@ -1060,8 +1069,8 @@ const GreenNavbar = () => {
                 </Link>
                 {/* Wishlist Bookmark */}
                 <Link to="/wishlist" aria-label={t('wishlist', { defaultValue: 'Wishlist' })} className="relative group">
-                  <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
-                    <FiBookmark className="w-5 h-5" />
+                  <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
+                    <FiBookmark className="text-white w-5 h-5" />
                   </span>
                   {isLoggedIn && wishlistCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
@@ -1075,8 +1084,8 @@ const GreenNavbar = () => {
                 {/* Cart */}
                 <div className="relative group">
                   <Link to="/cart" aria-label={t('cart', { defaultValue: 'Cart' })} className="relative">
-                    <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
-                      <FiShoppingCart className="w-5 h-5" />
+                    <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
+                      <FiShoppingCart className="text-white w-5 h-5" />
                     </span>
                     {isLoggedIn && Number(categoryFilteredCartCount) > 0 && (
                       <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
@@ -1091,8 +1100,8 @@ const GreenNavbar = () => {
                 </div>
                 {/* Recently Viewed Clock */}
                 <Link to="/recently-viewed" aria-label={t('recently_viewed', { defaultValue: 'Recently Viewed' })} className="relative group">
-                  <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
-                    <FiClock className="w-5 h-5" />
+                  <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
+                    <FiClock className="text-white w-5 h-5" />
                   </span>
                   <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('recently_viewed', { defaultValue: 'Recently Viewed' })}
@@ -1161,7 +1170,7 @@ const GreenNavbar = () => {
                   onClick={() => setIsLayoutMenuOpen((value) => !value)}
                   aria-expanded={isLayoutMenuOpen}
                   aria-haspopup="menu"
-                  className="mhub-nav-action inline-flex h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold"
+                  className="inline-flex h-10 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white hover:bg-white/20"
                   aria-label={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
                   title={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
                 >

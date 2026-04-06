@@ -666,7 +666,7 @@ export function RewardsOverview({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {primaryStats.map((stat) => {
                 const ringStyle = {
-                  background: `conic-gradient(${stat.ringColor} ${stat.progress}%, rgba(226,232,240,0.9) ${stat.progress}% 100%)`,
+                  background: `conic-gradient(${stat.ringColor} ${stat.progress}%, var(--border) ${stat.progress}% 100%)`,
                 };
 
                 return (
@@ -675,7 +675,7 @@ export function RewardsOverview({
                     className="rewards-stat-card rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-md bg-white dark:bg-slate-900/50"
                     style={{
                       "--card-accent": `linear-gradient(90deg, ${stat.ringColor}, ${stat.ringColor}99)`,
-                      background: `linear-gradient(135deg, ${stat.ringColor}12, #ffffff 55%)`,
+                      background: `linear-gradient(135deg, ${stat.ringColor}12, var(--card) 55%)`,
                     }}
                   >
                     <div className="flex items-center justify-between gap-3">

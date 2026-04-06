@@ -479,7 +479,7 @@ const normalizePrice = (value) => {
                   React.createElement(
                     "button",
                     {
-                      className: `absolute top-2 right-2 p-2 rounded-full shadow-md transition ${favorites[listing.id] ? "bg-red-50" : "bg-white hover:bg-gray-50"}`,
+                      className: `absolute top-2 right-2 p-2 rounded-full shadow-md transition ${favorites[listing.id] ? "bg-red-50 dark:bg-red-900/30" : "bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"}`,
                       onClick: () => toggleFavorite(listing.id),
                       "aria-label": favorites[listing.id]
                         ? tr("remove_from_favorites", "Remove from favorites")

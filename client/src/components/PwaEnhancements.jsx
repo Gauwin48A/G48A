@@ -60,32 +60,22 @@ export default function PwaEnhancements() {
     <>
       {/* Offline banner */}
       {offline && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: '#dc2626', color: '#fff', textAlign: 'center',
-          padding: '8px 16px', fontSize: '13px', fontWeight: 600,
-        }}>
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white text-center py-2 px-4 text-[13px] font-semibold">
           You're offline — browsing cached content
         </div>
       )}
 
       {/* Install prompt */}
       {installable && !dismissed.install && (
-        <div style={{
-          position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 9998,
-          background: '#1e293b', color: '#f8fafc', borderRadius: 16,
-          padding: '14px 18px', display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', gap: 12,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-        }}>
-          <span style={{ fontSize: 14 }}>📲 Install MHub for the best experience</span>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <div className="fixed bottom-20 left-4 right-4 z-[9998] bg-[var(--card,#1e293b)] text-[var(--text-primary,#f8fafc)] rounded-2xl py-3.5 px-4.5 flex items-center justify-between gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-[var(--border,transparent)]">
+          <span className="text-sm">📲 Install MHub for the best experience</span>
+          <div className="flex gap-2 shrink-0">
             <button onClick={() => setDismissed((d) => ({ ...d, install: true }))}
-              style={{ background: 'transparent', color: '#94a3b8', border: 'none', fontSize: 13, cursor: 'pointer' }}>
+              className="bg-transparent text-[var(--text-faint,#94a3b8)] border-none text-[13px] cursor-pointer">
               Later
             </button>
             <button onClick={handleInstall}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              className="bg-blue-500 text-white border-none rounded-lg px-4 py-1.5 text-[13px] font-semibold cursor-pointer hover:bg-blue-600 transition-colors">
               Install
             </button>
           </div>
@@ -94,21 +84,15 @@ export default function PwaEnhancements() {
 
       {/* SW update toast */}
       {updateReady && !dismissed.update && (
-        <div style={{
-          position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 9998,
-          background: '#1e293b', color: '#f8fafc', borderRadius: 16,
-          padding: '14px 18px', display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', gap: 12,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-        }}>
-          <span style={{ fontSize: 14 }}>🚀 New version available</span>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <div className="fixed bottom-20 left-4 right-4 z-[9998] bg-[var(--card,#1e293b)] text-[var(--text-primary,#f8fafc)] rounded-2xl py-3.5 px-4.5 flex items-center justify-between gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-[var(--border,transparent)]">
+          <span className="text-sm">🚀 New version available</span>
+          <div className="flex gap-2 shrink-0">
             <button onClick={() => setDismissed((d) => ({ ...d, update: true }))}
-              style={{ background: 'transparent', color: '#94a3b8', border: 'none', fontSize: 13, cursor: 'pointer' }}>
+              className="bg-transparent text-[var(--text-faint,#94a3b8)] border-none text-[13px] cursor-pointer">
               Later
             </button>
             <button onClick={handleUpdate}
-              style={{ background: '#10b981', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              className="bg-emerald-500 text-white border-none rounded-lg px-4 py-1.5 text-[13px] font-semibold cursor-pointer hover:bg-emerald-600 transition-colors">
               Update
             </button>
           </div>

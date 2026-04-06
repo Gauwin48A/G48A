@@ -52,16 +52,16 @@ const PasswordStrengthIndicator = ({ password }) => {
     if (!password) return null;
 
     return (
-        <div className="password-strength-indicator mt-2 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
+        <div className="password-strength-indicator mt-2 p-3 rounded-lg bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
             {/* Strength bar */}
             <div className="flex gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((i) => (
                     <div
                         key={i}
-                        className="h-1.5 flex-1 rounded-full transition-all duration-300"
-                        style={{
-                            backgroundColor: i <= analysis.score ? analysis.color : '#374151'
-                        }}
+                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                            i <= analysis.score ? '' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                        style={i <= analysis.score ? { backgroundColor: analysis.color } : undefined}
                     />
                 ))}
             </div>
@@ -79,12 +79,12 @@ const PasswordStrengthIndicator = ({ password }) => {
                 {analysis.checks.map((check, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-xs">
                         <span
-                            className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${check.met ? 'bg-green-500/20 text-green-400' : 'bg-gray-600/20 text-gray-500'
+                            className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${check.met ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-200 dark:bg-gray-600/20 text-gray-400 dark:text-gray-500'
                                 }`}
                         >
                             {check.met ? '✓' : '○'}
                         </span>
-                        <span className={check.met ? 'text-gray-300' : 'text-gray-500'}>
+                        <span className={check.met ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500'}>
                             {check.label}
                         </span>
                     </div>

@@ -3,7 +3,7 @@ import { Badge as S } from "@/components/ui/badge";
 import { Button as o } from "@/components/ui/button";
 import { useTranslation as _ } from "react-i18next";
 import { Link as k, useNavigate as C } from "react-router-dom";
-import { ArrowLeft as BackIcon } from "lucide-react";
+import { ArrowLeft as BackIcon, CheckCircle } from "lucide-react";
 import { navigateBack } from "@/utils/navigation";
 import { useAuth as A } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
@@ -129,45 +129,81 @@ const U = () => {
             "div",
             {
               className:
-                "mhub-premium-page bg-white min-h-screen flex flex-col items-center transition-colors duration-300 dark:bg-slate-900",
+                "mhub-premium-page bg-white min-h-screen mhub-page-pad-bottom flex flex-col items-center transition-colors duration-300 dark:bg-slate-900",
             },
             e.createElement(
               "div",
-              { className: "w-full max-w-2xl mx-auto py-6 px-4 page-shell page-pad" },
+              { className: "w-full max-w-3xl mx-auto px-4 py-5 page-shell page-pad" },
               e.createElement(
                 "div",
-                { className: "flex items-center justify-between gap-2 mb-4" },
+                { className: "mb-4 mhub-hero-card rounded-2xl px-4 py-4 sm:px-6 sm:py-5 text-left" },
                 e.createElement(
                   "div",
-                  { className: "flex items-center gap-2" },
+                  { className: "flex flex-wrap items-center justify-between gap-4 min-h-[34px]" },
                   e.createElement(
-                    o,
+                    "button",
                     {
                       type: "button",
-                      variant: "ghost",
-                      size: "sm",
                       onClick: () => navigateBack(i),
+                      className:
+                        "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-white transition dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-200",
+                      "aria-label": s("back") || "Back",
                     },
-                    e.createElement(BackIcon, { className: "w-4 h-4 mr-1" }),
+                    e.createElement(BackIcon, { className: "w-4 h-4" }),
                     s("back") || "Back",
                   ),
                   e.createElement(
-                    "h2",
+                    "button",
                     {
+                      type: "button",
+                      onClick: () => f((t) => t + 1),
                       className:
-                        "text-2xl font-bold text-gray-900 dark:text-white dark:text-2xl dark:text-gray-100",
+                        "inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-white transition dark:border-slate-700/60 dark:bg-slate-900/50 dark:text-slate-200",
+                      "aria-label": s("refresh") || "Refresh",
                     },
-                    s("sold_posts") || "Sold Posts",
+                    s("refresh") || "Refresh",
                   ),
                 ),
                 e.createElement(
-                  o,
-                  {
-                    type: "button",
-                    variant: "outline",
-                    onClick: () => f((t) => t + 1),
-                  },
-                  s("refresh") || "Refresh",
+                  "div",
+                  { className: "mt-3" },
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-[clamp(9px,0.95vw,11px)] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-1 dark:text-slate-400",
+                    },
+                    s("sales_history") || "Sales history",
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center gap-3" },
+                    e.createElement(
+                      "div",
+                      {
+                        className:
+                          "w-10 h-10 rounded-xl bg-slate-900/5 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/40",
+                      },
+                      e.createElement(CheckCircle, { className: "w-5 h-5 text-slate-700 dark:text-slate-200" }),
+                    ),
+                    e.createElement(
+                      "h2",
+                      {
+                        className:
+                          "text-[clamp(20px,2.1vw,28px)] leading-[1.1] font-bold text-slate-900 dark:text-white",
+                      },
+                      s("sold_posts") || "Sold Posts",
+                    ),
+                  ),
+                  e.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-slate-600 mt-1 dark:text-slate-300",
+                    },
+                    s("sold_posts_subtitle") ||
+                      "Track completed sales and revisit receipts.",
+                  ),
                 ),
               ),
               hasCategoryMode &&
@@ -278,58 +314,62 @@ const U = () => {
                   : B.length === 0
                     ? e.createElement(
                         "div",
-                        {
-                          className:
-                            "rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
-                        },
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-blue-900 dark:text-blue-200 font-semibold mb-2",
-                          },
-                          hasCategoryMode && categoryModeCategory?.name
-                            ? `No sold posts in ${categoryModeCategory.name} yet`
-                            : s("sold_posts_empty_title") ||
-                              s("no_posts_yet") ||
-                              "No sold posts yet",
-                        ),
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-sm text-blue-700 dark:text-blue-300 mb-4 dark:text-sm",
-                          },
-                          hasCategoryMode && categoryModeCategory?.name
-                            ? `Sold posts are filtered to ${categoryModeCategory.name}. Switch category to see more.`
-                            : s("sold_posts_empty_hint") ||
-                              "Marking sold listings will keep your completed sales history here.",
-                        ),
+                        { className: "mt-4 min-h-[28vh] flex items-start justify-center" },
                         e.createElement(
                           "div",
-                          { className: "flex flex-wrap justify-center gap-2" },
+                          {
+                            className:
+                              "w-full rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
+                          },
                           e.createElement(
-                            o,
+                            "p",
                             {
-                              type: "button",
                               className:
-                                "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
-                              onClick: () => i("/all-posts"),
+                                "text-blue-900 dark:text-blue-200 font-semibold mb-2",
                             },
-                            s("browse_listings") || "Explore listings",
+                            hasCategoryMode && categoryModeCategory?.name
+                              ? `No sold posts in ${categoryModeCategory.name} yet`
+                              : s("sold_posts_empty_title") ||
+                                s("no_posts_yet") ||
+                                "No sold posts yet",
                           ),
-                          hasCategoryMode &&
-                            categoryModeCategory?.name &&
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-blue-700 dark:text-blue-300 mb-4 dark:text-sm",
+                            },
+                            hasCategoryMode && categoryModeCategory?.name
+                              ? `Sold posts are filtered to ${categoryModeCategory.name}. Switch category to see more.`
+                              : s("sold_posts_empty_hint") ||
+                                "Marking sold listings will keep your completed sales history here.",
+                          ),
+                          e.createElement(
+                            "div",
+                            { className: "flex flex-wrap justify-center gap-2" },
                             e.createElement(
                               o,
                               {
                                 type: "button",
-                                variant: "outline",
-                                className: "border-indigo-200 text-indigo-700 dark:border-indigo-600/40 dark:text-indigo-300",
-                                onClick: () => i("/category-mode"),
+                                className:
+                                  "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
+                                onClick: () => i("/all-posts"),
                               },
-                              "Switch category",
+                              s("browse_listings") || "Explore listings",
                             ),
+                            hasCategoryMode &&
+                              categoryModeCategory?.name &&
+                              e.createElement(
+                                o,
+                                {
+                                  type: "button",
+                                  variant: "outline",
+                                  className: "border-indigo-200 text-indigo-700 dark:border-indigo-600/40 dark:text-indigo-300",
+                                  onClick: () => i("/category-mode"),
+                                },
+                                "Switch category",
+                              ),
+                          ),
                         ),
                       )
                     : e.createElement(
@@ -401,7 +441,7 @@ const U = () => {
             "div",
             {
               className:
-                "min-h-screen flex items-center justify-center mhub-premium-page bg-white px-4 dark:bg-slate-900",
+                "min-h-screen flex items-center justify-center mhub-premium-page mhub-page-pad-bottom bg-white px-4 dark:bg-slate-900",
             },
             e.createElement(
               "div",

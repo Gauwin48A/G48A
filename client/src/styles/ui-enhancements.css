@@ -94,9 +94,23 @@
    Global hierarchy helpers
    ============================================ */
 .mhub-surface {
-  background: var(--mhub-bg-card);
+  position: relative;
+  background: linear-gradient(180deg, var(--mhub-bg-card) 0%, var(--mhub-surface-3) 100%);
   border: 1px solid var(--mhub-border-light);
   box-shadow: var(--mhub-shadow-card);
+  overflow: hidden;
+}
+.mhub-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(130deg, rgba(255, 255, 255, 0.06), transparent 50%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.mhub-surface > * {
+  position: relative;
+  z-index: 1;
 }
 
 .mhub-card-title {
@@ -110,16 +124,67 @@
 }
 
 .mhub-hero-card {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 22px 42px rgba(15, 23, 42, 0.18);
+  min-height: clamp(132px, 15vw, 176px);
+}
+.mhub-hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(260px circle at 15% 20%, rgba(255, 255, 255, 0.35), transparent 60%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.mhub-hero-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(320px circle at 85% 10%, rgba(59, 130, 246, 0.25), transparent 60%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.mhub-hero-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .dark .mhub-hero-card {
-  background: rgba(15, 23, 42, 0.45);
-  border-color: rgba(148, 163, 184, 0.25);
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(135deg, rgba(20, 27, 38, 0.95), rgba(12, 17, 25, 0.7));
+  border-color: var(--glass-border);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+}
+.dark .mhub-hero-card::before {
+  background: radial-gradient(280px circle at 15% 20%, rgba(91, 141, 255, 0.35), transparent 60%);
+  opacity: 0.8;
+}
+.dark .mhub-hero-card::after {
+  background: radial-gradient(340px circle at 85% 10%, rgba(34, 197, 94, 0.28), transparent 60%);
+  opacity: 0.7;
+}
+
+.mhub-empty-card {
+  text-align: center;
+}
+
+.mhub-empty-icon {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16);
+}
+
+.dark .mhub-empty-icon {
+  background: linear-gradient(135deg, rgba(23, 32, 46, 0.95), rgba(14, 20, 30, 0.7));
+  border-color: rgba(148, 163, 184, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.mhub-page-pad-bottom {
+  padding-bottom: clamp(88px, 11vh, 140px) !important;
 }
 
 .mhub-chip {
@@ -192,6 +257,12 @@
   border-top: 1px solid var(--mhub-border-light);
   box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.12);
   backdrop-filter: blur(8px);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 120;
 }
 
 .dark .mhub-bottom-nav {
@@ -1198,6 +1269,10 @@ button[class*="border"]:hover {
   padding-bottom: 0.5rem;
 }
 
+.mhub-page-allposts {
+  overflow: visible;
+}
+
 .mhub-page-allposts .mhub-allposts-hero-card {
   position: relative;
   overflow: hidden;
@@ -1437,6 +1512,9 @@ button[class*="border"]:hover {
   box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
   backdrop-filter: blur(18px);
   padding-bottom: 0.35rem;
+  position: sticky;
+  top: calc(var(--top-nav-height, 60px) + 8px) !important;
+  z-index: 95;
 }
 
 .dark .mhub-page-allposts .mhub-allposts-toolbar {
@@ -2789,4 +2867,79 @@ button[class*="bg-green-500"] {
 
 .dark .mhub-post-detail .mhub-safety-hint {
   color: rgba(226, 232, 240, 0.75);
+}
+
+/* ─── Dark Mode: Additional overrides for uncovered rules ─── */
+
+/* Price tag in dark mode */
+.dark [class*="PRICE"] {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: #ffffff !important;
+}
+
+/* Quick filter dashed chip */
+.dark .mhub-quick-filters-shell .mhub-quick-filter-chip.border-dashed {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Quick filter sort text */
+.dark .mhub-quick-filters-shell .quick-filters-sort span {
+  color: var(--text-secondary);
+}
+
+/* Category/subcategory icon bg */
+.dark .mhub-category-icon,
+.dark .mhub-subcategory-icon {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.15);
+}
+
+/* Category/subcategory count badge */
+.dark .mhub-category-count,
+.dark .mhub-subcategory-count {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-secondary);
+}
+
+/* Hero primary CTA on AllPosts (white button on gradient) */
+.dark .mhub-page-allposts .mhub-hero-btn-primary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dark .mhub-page-allposts .mhub-hero-btn-primary:hover {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.45);
+}
+
+/* ForYou filter hover text */
+.dark .for-you-quick-filters-row button[data-active="false"]:hover {
+  color: #e2e8f0 !important;
+}
+
+/* Quick filter chip hover shadow in dark */
+.dark .mhub-quick-filters-shell .mhub-quick-filter-chip:hover {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Category item hover shadow in dark */
+.dark .mhub-category-item:hover,
+.dark .mhub-subcategory-item:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Active category shadow in dark */
+.dark .mhub-category-item-active,
+.dark .mhub-subcategory-item-active {
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* Dialog shadow in dark */
+.dark [role="dialog"] {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }

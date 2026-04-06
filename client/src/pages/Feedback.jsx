@@ -245,8 +245,8 @@ const me = () => {
         "div",
         {
           className:
-            "mhub-page-feedback mhub-premium-page bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 relative dark:bg-gradient-to-br",
-          style: { minHeight: "100vh", paddingBottom: "120px" },
+            "mhub-page-feedback min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 relative dark:bg-gradient-to-br",
+          style: { minHeight: "100vh" },
         },
         e.createElement(
           "div",
@@ -266,20 +266,19 @@ const me = () => {
         ),
         e.createElement(
           "div",
-          { className: "relative max-w-lg mx-auto p-4 sm:p-6 space-y-6" },
+          { className: "relative max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-7 space-y-6" },
           e.createElement(
             "div",
-            { className: "text-center pt-8 dark:text-center" },
+            { className: "text-center pt-6 mhub-hero-card rounded-3xl px-5 py-6 sm:px-7 sm:py-7" },
             e.createElement(
               "button",
               {
                 onClick: () => c("/"),
                 className:
-                  "inline-flex items-center text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 mb-8 group transition-all dark:hover:text-blue-300",
+                  "inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm hover:bg-white transition mb-6 dark:border-blue-400/30 dark:bg-slate-900/40 dark:text-blue-200 dark:hover:bg-slate-900/60",
               },
               e.createElement(X, {
-                className:
-                  "w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform",
+                className: "w-4 h-4 group-hover:-translate-x-1 transition-transform",
               }),
               t("back_to_home"),
             ),
@@ -287,15 +286,15 @@ const me = () => {
               "div",
               {
                 className:
-                  "inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 shadow-2xl shadow-blue-500/30 mb-6 dark:bg-gradient-to-br",
+                  "inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 shadow-2xl shadow-blue-500/30 mb-5 dark:bg-gradient-to-br",
               },
-              e.createElement(g, { className: "w-10 h-10 text-white dark:text-white" }),
+              e.createElement(g, { className: "w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" }),
             ),
             e.createElement(
               "h1",
               {
                 className:
-                  "text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3 dark:text-4xl dark:sm:text-5xl dark:text-gray-100",
+                  "text-[clamp(24px,2.6vw,36px)] font-black text-gray-900 dark:text-white mb-2 dark:text-gray-100",
               },
               t("share_your"),
               " ",
@@ -312,14 +311,14 @@ const me = () => {
               "p",
               {
                 className:
-                  "text-blue-700 dark:text-blue-200 text-lg max-w-md mx-auto dark:text-blue-300 dark:text-lg",
+                  "text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-blue-700 dark:text-blue-200 max-w-md mx-auto dark:text-blue-300",
               },
               t("help_us_improve"),
             ),
           ),
           e.createElement(
             "div",
-            { className: "flex flex-wrap justify-center gap-3" },
+            { className: "flex flex-wrap justify-center gap-2" },
             e.createElement(
               h,
               {
@@ -840,35 +839,35 @@ const me = () => {
         "div",
         {
           className:
-            "mhub-page-feedback min-h-screen mhub-premium-page bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 dark:bg-gradient-to-br",
-          style: { paddingBottom: "120px" },
+            "mhub-page-feedback min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 dark:bg-gradient-to-br",
+          style: { minHeight: "100vh" },
         },
         e.createElement(
           "div",
-          { className: "pt-16 pb-12 px-6 text-center dark:text-center" },
+          { className: "pt-10 pb-8 px-6 text-center mhub-hero-card rounded-3xl max-w-2xl mx-auto" },
           e.createElement(
             "div",
             {
               className:
-                "w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl dark:bg-gradient-to-br",
+                "w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl dark:bg-gradient-to-br",
             },
-            e.createElement(g, { className: "w-12 h-12 text-white dark:text-white" }),
+            e.createElement(g, { className: "w-8 h-8 text-white dark:text-white" }),
           ),
           e.createElement(
             "h1",
-            { className: "text-4xl font-bold text-white mb-3 dark:text-4xl dark:text-white" },
+            { className: "text-[clamp(24px,2.6vw,36px)] font-bold text-white mb-2" },
             t("feedback") || "Feedback",
           ),
           e.createElement(
             "p",
-            { className: "text-white/80 text-lg max-w-md mx-auto dark:text-white/80 dark:text-lg" },
+            { className: "text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-white/80 max-w-md mx-auto" },
             t("feedback_login_desc") ||
               "We value your feedback! Please login to share your thoughts.",
           ),
         ),
         e.createElement(
           "div",
-          { className: "max-w-lg mx-auto px-6 space-y-4" },
+          { className: "max-w-2xl mx-auto px-6 space-y-4" },
           e.createElement(
             I,
             {

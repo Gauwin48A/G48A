@@ -186,7 +186,7 @@ export default function EmptyPostsState({
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 text-gray-700 hover:bg-gray-50"
+            className="border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             onClick={() => navigate("/subcategories")}
           >
             <Package className="w-4 h-4 mr-1.5" />
@@ -199,7 +199,7 @@ export default function EmptyPostsState({
           <Button
             type="button"
             variant="outline"
-            className="border-gray-200 text-gray-700 hover:bg-gray-50"
+            className="border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             onClick={onRetry}
           >
             <RefreshCw className="w-4 h-4 mr-1.5" />

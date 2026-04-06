@@ -167,3 +167,68 @@
     padding: 1.5rem;
   }
 }
+
+/* ─── Dark mode ─── */
+html[data-theme="dark"] .kyc-container {
+  background: linear-gradient(135deg, var(--surface-0) 0%, var(--surface-1) 100%);
+}
+
+html[data-theme="dark"] .kyc-header h1 {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .kyc-header p {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .kyc-form {
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+}
+
+html[data-theme="dark"] .kyc-step-title {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .kyc-input-group label {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .kyc-input {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .kyc-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+html[data-theme="dark"] .kyc-file-upload {
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .kyc-file-upload:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.06);
+}
+
+html[data-theme="dark"] .kyc-file-upload-text {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .kyc-status.pending {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fde047;
+}
+
+html[data-theme="dark"] .kyc-status.verified {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+html[data-theme="dark"] .kyc-status.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}

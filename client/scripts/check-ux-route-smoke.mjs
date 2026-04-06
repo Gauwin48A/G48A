@@ -24,9 +24,9 @@ const ROUTE_TARGETS = [
   },
   {
     route: '/categories',
-    file: 'src/pages/Categories.jsx',
-    requiredStates: ['error && (', 'No categories match your search'],
-    requiredCtas: ['Retry', 'Clear']
+    file: 'src/pages/Subcategories.jsx',
+    requiredStates: ['error ? (', 'No subcategories match your search'],
+    requiredCtas: ['Retry', 'Reset search']
   },
   {
     route: '/channels',
@@ -43,8 +43,8 @@ const ROUTE_TARGETS = [
   {
     route: '/tier-selection',
     file: 'src/pages/TierSelection.jsx',
-    requiredStates: ['error && (', 'Failed to upgrade. Please try again.'],
-    requiredCtas: ["returnTo: '/tier-selection'", 'Buy 1 Post Credit']
+    requiredStates: ['error ? (', 'upgrade_failed'],
+    requiredCtas: ['Retry', 'Go Premium']
   },
   {
     route: '/dashboard',
@@ -145,8 +145,8 @@ const ROUTE_TARGETS = [
   {
     route: '/aadhaar-verify',
     file: 'src/pages/AadhaarVerify.jsx',
-    requiredStates: ['Verification successful', 'Verification failed'],
-    requiredCtas: ["returnTo: '/aadhaar-verify'", 'Upload and verify']
+    requiredStates: ['Verified', 'Verification failed'],
+    requiredCtas: ['Send OTP', 'Verify now']
   }
 ];
 

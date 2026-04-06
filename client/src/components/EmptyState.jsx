@@ -77,29 +77,31 @@ const EmptyState = React.memo(
       <div
         className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}
       >
-        <div className="w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
-          <Icon
-            className="w-10 h-10 text-gray-400 dark:text-gray-500"
-            strokeWidth={1.5}
-          />
+        <div className="mhub-empty-card mhub-premium-surface w-full max-w-md rounded-3xl px-6 py-8">
+          <div className="mhub-empty-icon w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center">
+            <Icon
+              className="w-10 h-10 text-gray-400 dark:text-gray-200"
+              strokeWidth={1.5}
+            />
+          </div>
+
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+            {resolvedTitle}
+          </h3>
+
+          <p className="text-sm text-gray-500 dark:text-gray-300 max-w-xs mx-auto mb-6">
+            {resolvedMessage}
+          </p>
+
+          {actionLabel && onAction && (
+            <Button
+              onClick={onAction}
+              className="mhub-btn-pill"
+            >
+              {actionLabel}
+            </Button>
+          )}
         </div>
-
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-          {resolvedTitle}
-        </h3>
-
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mb-6">
-          {resolvedMessage}
-        </p>
-
-        {actionLabel && onAction && (
-          <Button
-            onClick={onAction}
-            className="mhub-btn-pill"
-          >
-            {actionLabel}
-          </Button>
-        )}
       </div>
     );
   }

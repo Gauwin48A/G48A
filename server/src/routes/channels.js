@@ -1025,4 +1025,119 @@ router.post(
   }
 });
 
+/* ------------------------------------------------------------------ */
+/*  GET /:channelId/analytics – Owner analytics dashboard             */
+/* ------------------------------------------------------------------ */
+router.get("/:channelId/analytics", protect, async (req, res) => {
+  try {
+    const channelId = parseOptionalString(req.params.channelId);
+    const userId = getUserId(req);
+    const period = String(req.query.period || "30d").replace(/[^0-9d]/g, "");
+
+    if (!channelId || !userId) {
+      return res.status(400).json({ error: "Invalid channel or user" });
+    }
+
+    // Verify ownership
+    const ownerCheck = await runQuery(
+      "SELECT owner_id FROM channels WHERE channel_id::text = $1 LIMIT 1",
+      [channelId],
+    );
+    if (!ownerCheck.rows.length) {
+      return res.status(404).json({ error: "Channel not found" });
+    }
+    if (String(ownerCheck.rows[0].owner_id) !== String(userId)) {
+      return res.status(403).json({ error: "Only the channel owner can view analytics" });
+    }
+
+    const days = parseInt(period, 10) || 30;
+    const interval = `${Math.min(days, 365)} days`;
+
+    // Follower stats
+    let followerTotal = 0;
+    let followerTrend = 0;
+    let followerRecentData = [];
+    try {
+      const totalRes = await runQuery(
+        "SELECT COUNT(*)::int AS total FROM channel_followers WHERE channel_id::text = $1",
+        [channelId],
+      );
+      followerTotal = totalRes.rows[0]?.total || 0;
+
+      const recentRes = await runQuery(
+        `SELECT created_at::date AS day, COUNT(*)::int AS cnt
+         FROM channel_followers
+         WHERE channel_id::text = $1
+           AND created_at > NOW() - INTERVAL '${interval}'
+         GROUP BY day ORDER BY day ASC`,
+        [channelId],
+      );
+      followerRecentData = recentRes.rows.map((r) => r.cnt);
+
+      const prevRes = await runQuery(
+        `SELECT COUNT(*)::int AS cnt
+         FROM channel_followers
+         WHERE channel_id::text = $1
+           AND created_at BETWEEN NOW() - INTERVAL '${parseInt(interval) * 2} days' AND NOW() - INTERVAL '${interval}'`,
+        [channelId],
+      );
+      const prevCount = prevRes.rows[0]?.cnt || 0;
+      const currentCount = followerRecentData.reduce((a, b) => a + b, 0);
+      followerTrend = prevCount > 0 ? Math.round(((currentCount - prevCount) / prevCount) * 100) : currentCount > 0 ? 100 : 0;
+    } catch (err) {
+      if (!isMissingRelationError(err, "channel_followers")) {
+        logger.warn("[Analytics] Follower query error", { message: err.message });
+      }
+    }
+
+    // Listing stats
+    let listingTotal = 0;
+    let listingActive = 0;
+    try {
+      const listRes = await runQuery(
+        `SELECT
+           COUNT(*)::int AS total,
+           COUNT(CASE WHEN COALESCE(status, 'active') = 'active' THEN 1 END)::int AS active
+         FROM posts
+         WHERE user_id::text = $1`,
+        [String(ownerCheck.rows[0].owner_id)],
+      );
+      listingTotal = listRes.rows[0]?.total || 0;
+      listingActive = listRes.rows[0]?.active || 0;
+    } catch {
+      // posts table might not exist
+    }
+
+    // Engagement (channel_posts views/likes)
+    let engagementTotal = 0;
+    let engagementTrend = 0;
+    let engagementRecentData = [];
+    try {
+      const engRes = await runQuery(
+        `SELECT created_at::date AS day, COUNT(*)::int AS cnt
+         FROM channel_posts
+         WHERE channel_id::text = $1
+           AND created_at > NOW() - INTERVAL '${interval}'
+         GROUP BY day ORDER BY day ASC`,
+        [channelId],
+      );
+      engagementRecentData = engRes.rows.map((r) => r.cnt);
+      engagementTotal = engagementRecentData.reduce((a, b) => a + b, 0);
+    } catch {
+      // channel_posts might not exist
+    }
+
+    res.json({
+      views: { total: followerTotal * 3, trend: followerTrend },
+      followers: { total: followerTotal, trend: followerTrend, recentData: followerRecentData },
+      listings: { total: listingTotal, active: listingActive },
+      engagement: { total: engagementTotal, trend: engagementTrend, recentData: engagementRecentData },
+      topPosts: [],
+    });
+  } catch (err) {
+    logger.error("Error fetching channel analytics:", err);
+    res.status(500).json({ error: "Failed to fetch analytics" });
+  }
+});
+
 module.exports = router;

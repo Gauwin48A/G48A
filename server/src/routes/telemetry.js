@@ -62,6 +62,13 @@ function resolveEventsPayload(body) {
   return [];
 }
 
+function normalizeVitalsPayload(rawPayload) {
+  if (rawPayload && typeof rawPayload === "object" && !Array.isArray(rawPayload)) {
+    return rawPayload;
+  }
+  return {};
+}
+
 router.post("/ingest", verifyDeviceAttestation, (req, res) => {
   const events = resolveEventsPayload(req.body);
   if (events.length === 0) {
@@ -77,6 +84,47 @@ router.post("/ingest", verifyDeviceAttestation, (req, res) => {
     tenantId: resolveTenantId(req),
     deviceId: req.deviceIdentity?.deviceId || req.body?.deviceId || req.body?.device_id || null,
     source: "ingest",
+  });
+
+  return res.status(202).json(result);
+});
+
+router.post("/vitals", verifyDeviceAttestation, (req, res) => {
+  const events = resolveEventsPayload(req.body);
+  if (events.length === 0) {
+    return res.status(400).json({
+      error: "No telemetry events provided.",
+    });
+  }
+
+  const fallbackDeviceId =
+    req.deviceIdentity?.deviceId ||
+    req.body?.deviceId ||
+    req.body?.device_id ||
+    req.headers["x-device-id"] ||
+    "web";
+
+  const normalizedEvents = events.map((event) => {
+    const payload = normalizeVitalsPayload(
+      event?.payload || event?.metrics || event?.data
+    );
+    return {
+      ...event,
+      schema_version: event?.schema_version || event?.schemaVersion || "1",
+      event_type: event?.event_type || event?.eventType || "web_vitals",
+      device_id: event?.device_id || event?.deviceId || fallbackDeviceId,
+      timestamp: event?.timestamp || event?.occurred_at || event?.occurredAt || new Date().toISOString(),
+      payload,
+    };
+  });
+
+  const result = ingestTelemetryBatch({
+    events: normalizedEvents,
+    protocol: req.body?.protocol || req.headers["x-telemetry-protocol"] || "web",
+    schemaVersion: "1",
+    tenantId: resolveTenantId(req),
+    deviceId: fallbackDeviceId,
+    source: "vitals",
   });
 
   return res.status(202).json(result);

@@ -31,7 +31,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { navigateBack } from "@/utils/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import PageHeader from "../components/PageHeader";
 import TransactionStepper from "../components/TransactionStepper";
 import LanguageSelector from "@/components/LanguageSelector";
 import api from "@/services/api";
@@ -528,16 +527,16 @@ const SaleDone = () => {
 
   if (completedSale) {
     return (
-      <div className="mhub-page-saledone min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 dark:from-[#0b1220] dark:via-[#102a29] dark:to-[#0b1220] relative overflow-hidden dark:bg-gradient-to-br">
+      <div className="mhub-page-saledone min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-emerald-400 via-green-500 to-teal-600 dark:from-[#0b1220] dark:via-[#102a29] dark:to-[#0b1220] relative overflow-hidden dark:bg-gradient-to-br">
         {/* Celebration blobs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse dark:bg-slate-900/10" />
           <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-yellow-300/10 rounded-full blur-3xl animate-pulse dark:bg-yellow-900/10" style={{ animationDelay: "0.8s" }} />
           <div className="absolute top-1/3 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl animate-pulse dark:bg-slate-900/5" style={{ animationDelay: "1.4s" }} />
         </div>
-        <div className="relative max-w-3xl mx-auto page-shell page-pad pt-12 pb-10">
+        <div className="relative max-w-3xl mx-auto page-shell page-pad pt-10 pb-12">
           <Card className="mhub-premium-surface rounded-3xl overflow-hidden">
-            <CardContent className="p-10 text-center dark:text-center">
+            <CardContent className="p-8 sm:p-10 text-center dark:text-center">
               {/* Animated success icon */}
               <div className="relative inline-block mb-6">
                 <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-20 dark:bg-green-800/30" />
@@ -863,7 +862,7 @@ const SaleDone = () => {
 
   return (
     <div
-      className="mhub-page-saledone min-h-screen mhub-premium-page relative nav-clearance bg-gradient-to-b from-slate-50 via-emerald-50 to-white dark:from-slate-950 dark:via-emerald-950/40 dark:to-slate-950 dark:bg-gradient-to-b"
+      className="mhub-page-saledone min-h-screen mhub-premium-page mhub-page-pad-bottom relative nav-clearance bg-gradient-to-b from-slate-50 via-emerald-50 to-white dark:from-slate-950 dark:via-emerald-950/40 dark:to-slate-950 dark:bg-gradient-to-b"
     >
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 profile-hero-bg" />
@@ -874,27 +873,32 @@ const SaleDone = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <PageHeader
-          transparent={true}
-          className="text-white dark:text-white"
-          title=""
-          backTo="/my-home"
-          rightAction={<LanguageSelector compact className="shrink-0" />}
-        />
-        <div className="relative max-w-3xl mx-auto px-4 py-2 sm:px-6 sm:py-3 page-shell page-pad">
-          <div className="mb-2 max-w-2xl text-left dark:text-left">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70">
+        <div className="relative max-w-3xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
+          <div className="mb-2 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
+              <button
+                type="button"
+                onClick={() => navigateBack(navigate, "/my-home")}
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)] hover:bg-white/30 transition"
+                aria-label={tr("back", "Back")}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {tr("back", "Back")}
+              </button>
+              <LanguageSelector compact className="shrink-0" />
+            </div>
+            <p className="text-[clamp(9px,0.95vw,11px)] font-semibold uppercase tracking-[0.2em] text-white/70 mb-1 dark:text-white/70">
               {tr("sale_verification_label", "Sale verification")}
             </p>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/15">
+              <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/15">
                 <CheckCircle className="w-5 h-5 text-white dark:text-white" />
               </div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white dark:text-lg dark:sm:text-xl dark:md:text-2xl dark:text-white">
+              <h1 className="text-[clamp(20px,2.1vw,28px)] leading-[1.1] font-bold text-white dark:text-white">
                 {t("sale") || "Sale"} {t("confirmation") || "Confirmation"}
               </h1>
             </div>
-            <p className="text-sm sm:text-base text-white/80 mt-1 dark:text-sm dark:sm:text-base dark:text-white/80">
+            <p className="text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-white/80 mt-1 dark:text-white/80">
               {tr(
                 "sale_complete_desc",
                 "Use real transaction ID + OTP to complete sale.",
@@ -904,18 +908,7 @@ const SaleDone = () => {
         </div>
       </div>
 
-      <div className="relative max-w-3xl mx-auto page-shell page-pad pt-4 pb-10 space-y-6">
-        <div className="flex gap-2 items-center">
-          <button
-            type="button"
-            onClick={() => navigateBack(navigate, "/my-home")}
-            className="inline-flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors dark:text-sm dark:text-slate-200 dark:hover:text-slate-100"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {tr("back", "Back")}
-          </button>
-        </div>
-
+      <div className="relative max-w-3xl mx-auto page-shell page-pad pt-5 pb-10 space-y-6">
         <div className="profile-panel rounded-2xl p-4 sm:p-5 space-y-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-[10px] dark:text-slate-300">

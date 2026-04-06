@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft as BackIcon } from "lucide-react";
+import { ArrowLeft as BackIcon, ShoppingBag } from "lucide-react";
 import { navigateBack } from "@/utils/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
@@ -128,39 +128,81 @@ const BoughtPosts = () => {
             "div",
             {
               className:
-                "mhub-premium-page bg-white min-h-screen flex flex-col items-center transition-colors duration-300 dark:bg-slate-900",
+                "mhub-premium-page bg-white min-h-screen mhub-page-pad-bottom flex flex-col items-center transition-colors duration-300 dark:bg-slate-900",
             },
             React.createElement(
               "div",
-              { className: "w-full max-w-2xl mx-auto py-6 px-4 page-shell page-pad" },
+              { className: "w-full max-w-3xl mx-auto px-4 py-5 page-shell page-pad" },
               React.createElement(
                 "div",
-                { className: "flex items-center justify-between gap-2 mb-4" },
+                { className: "mb-4 mhub-hero-card rounded-2xl px-4 py-4 sm:px-6 sm:py-5 text-left" },
                 React.createElement(
                   "div",
-                  { className: "flex items-center gap-2" },
+                  { className: "flex flex-wrap items-center justify-between gap-4 min-h-[34px]" },
                   React.createElement(
-                    Button,
-                    { type: "button", variant: "ghost", size: "icon", onClick: () => navigateBack(navigate), className: "rounded-full" },
-                    React.createElement(BackIcon, { className: "w-5 h-5" })
+                    "button",
+                    {
+                      type: "button",
+                      onClick: () => navigateBack(navigate),
+                      className:
+                        "inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-white transition dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-200",
+                      "aria-label": translate("back") || "Back",
+                    },
+                    React.createElement(BackIcon, { className: "w-4 h-4" }),
+                    translate("back") || "Back",
                   ),
                   React.createElement(
-                    "h2",
+                    "button",
                     {
+                      type: "button",
+                      onClick: () => setRefreshCounter((prev) => prev + 1),
                       className:
-                        "text-2xl font-bold text-gray-900 dark:text-white dark:text-2xl dark:text-gray-100",
+                        "inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-white transition dark:border-slate-700/60 dark:bg-slate-900/50 dark:text-slate-200",
+                      "aria-label": translate("refresh") || "Refresh",
                     },
-                    translate("bought_posts") || "Bought Posts",
+                    translate("refresh") || "Refresh",
                   ),
                 ),
                 React.createElement(
-                  Button,
-                  {
-                    type: "button",
-                    variant: "outline",
-                    onClick: () => setRefreshCounter((prev) => prev + 1),
-                  },
-                  "Refresh",
+                  "div",
+                  { className: "mt-3" },
+                  React.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-[clamp(9px,0.95vw,11px)] font-semibold uppercase tracking-[0.2em] text-slate-500 mb-1 dark:text-slate-400",
+                    },
+                    translate("purchases_label") || "Purchases",
+                  ),
+                  React.createElement(
+                    "div",
+                    { className: "flex items-center gap-3" },
+                    React.createElement(
+                      "div",
+                      {
+                        className:
+                          "w-10 h-10 rounded-xl bg-slate-900/5 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/40",
+                      },
+                      React.createElement(ShoppingBag, { className: "w-5 h-5 text-slate-700 dark:text-slate-200" }),
+                    ),
+                    React.createElement(
+                      "h2",
+                      {
+                        className:
+                          "text-[clamp(20px,2.1vw,28px)] leading-[1.1] font-bold text-slate-900 dark:text-white",
+                      },
+                      translate("bought_posts") || "Bought Posts",
+                    ),
+                  ),
+                  React.createElement(
+                    "p",
+                    {
+                      className:
+                        "text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-slate-600 mt-1 dark:text-slate-300",
+                    },
+                    translate("bought_posts_subtitle") ||
+                      "Keep track of items you purchased and revisit listings.",
+                  ),
                 ),
               ),
               hasCategoryMode &&
@@ -271,55 +313,61 @@ const BoughtPosts = () => {
                   : filteredPosts.length === 0
                     ? React.createElement(
                         "div",
-                        {
-                          className:
-                            "rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
-                        },
-                        React.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-blue-900 dark:text-blue-200 font-semibold mb-2",
-                          },
-                          hasCategoryMode && categoryModeCategory?.name
-                            ? `No bought posts in ${categoryModeCategory.name} yet`
-                            : "No bought posts yet",
-                        ),
-                        React.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-sm text-blue-700 dark:text-blue-300 mb-4 dark:text-sm",
-                          },
-                          hasCategoryMode && categoryModeCategory?.name
-                            ? `Bought posts are filtered to ${categoryModeCategory.name}. Switch category to see more.`
-                            : "Once you complete purchases, they will appear here.",
-                        ),
+                        { className: "mt-4 min-h-[28vh] flex items-start justify-center" },
                         React.createElement(
                           "div",
-                          { className: "flex flex-wrap justify-center gap-2" },
+                          {
+                            className:
+                              "w-full rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
+                          },
                           React.createElement(
-                            Button,
+                            "p",
                             {
-                              type: "button",
                               className:
-                                "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
-                              onClick: () => navigate("/all-posts"),
+                                "text-blue-900 dark:text-blue-200 font-semibold mb-2",
                             },
-                            "Explore listings",
+                            hasCategoryMode && categoryModeCategory?.name
+                              ? `No bought posts in ${categoryModeCategory.name} yet`
+                              : translate("bought_posts_empty_title") ||
+                                "No bought posts yet",
                           ),
-                          hasCategoryMode &&
-                            categoryModeCategory?.name &&
+                          React.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-blue-700 dark:text-blue-300 mb-4 dark:text-sm",
+                            },
+                            hasCategoryMode && categoryModeCategory?.name
+                              ? `Bought posts are filtered to ${categoryModeCategory.name}. Switch category to see more.`
+                              : translate("bought_posts_empty_hint") ||
+                                "Once you complete purchases, they will appear here.",
+                          ),
+                          React.createElement(
+                            "div",
+                            { className: "flex flex-wrap justify-center gap-2" },
                             React.createElement(
                               Button,
                               {
                                 type: "button",
-                                variant: "outline",
-                                className: "border-indigo-200 text-indigo-700 dark:border-indigo-600/40 dark:text-indigo-300",
-                                onClick: () => navigate("/category-mode"),
+                                className:
+                                  "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
+                                onClick: () => navigate("/all-posts"),
                               },
-                              "Switch category",
+                              translate("browse_listings") || "Explore listings",
                             ),
+                            hasCategoryMode &&
+                              categoryModeCategory?.name &&
+                              React.createElement(
+                                Button,
+                                {
+                                  type: "button",
+                                  variant: "outline",
+                                  className: "border-indigo-200 text-indigo-700 dark:border-indigo-600/40 dark:text-indigo-300",
+                                  onClick: () => navigate("/category-mode"),
+                                },
+                                "Switch category",
+                              ),
+                          ),
                         ),
                       )
                     : React.createElement(
@@ -386,7 +434,7 @@ const BoughtPosts = () => {
             "div",
             {
               className:
-                "min-h-screen flex items-center justify-center mhub-premium-page bg-white px-4 dark:bg-slate-900",
+                "min-h-screen flex items-center justify-center mhub-premium-page mhub-page-pad-bottom bg-white px-4 dark:bg-slate-900",
             },
             React.createElement(
               "div",

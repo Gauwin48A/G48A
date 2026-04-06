@@ -53,6 +53,14 @@ function ensureReviewsModerationSchema() {
       await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS flag_count INTEGER DEFAULT 0`);
       await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS abuse_score INTEGER DEFAULT 0`);
 
+      // Enhanced rating fields: review_type + category ratings
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS review_type VARCHAR(20) DEFAULT 'seller'`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS communication_rating SMALLINT`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS quality_rating SMALLINT`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS value_rating SMALLINT`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS shipping_rating SMALLINT`);
+      await runQuery(`CREATE INDEX IF NOT EXISTS idx_reviews_review_type ON reviews(review_type)`);
+
       await runQuery(`
         CREATE TABLE IF NOT EXISTS review_helpful_votes (
           vote_id    BIGSERIAL PRIMARY KEY,
@@ -323,6 +331,13 @@ const createReview = async (req, res) => {
     const title = parseOptionalString(req.body.title);
     const comment = parseOptionalString(req.body.comment);
     const reviewerId = getAuthUserId(req);
+    const reviewType = ["seller", "buyer"].includes(String(req.body.review_type || req.body.reviewType || "").toLowerCase())
+      ? String(req.body.review_type || req.body.reviewType).toLowerCase()
+      : "seller";
+    const communicationRating = parseRating(req.body.communication_rating || req.body.communicationRating);
+    const qualityRating = parseRating(req.body.quality_rating || req.body.qualityRating);
+    const valueRating = parseRating(req.body.value_rating || req.body.valueRating);
+    const shippingRating = parseRating(req.body.shipping_rating || req.body.shippingRating);
 
     if (!reviewerId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -409,14 +424,19 @@ const createReview = async (req, res) => {
     // Upsert review
     const result = await runQuery(
       `
-      INSERT INTO reviews (reviewer_id, reviewee_id, post_id, rating, title, comment, verified_purchase)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO reviews (reviewer_id, reviewee_id, post_id, rating, title, comment, verified_purchase, review_type, communication_rating, quality_rating, value_rating, shipping_rating)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       ON CONFLICT (reviewer_id, reviewee_id, post_id)
       DO UPDATE SET
-        rating            = $4,
-        title             = $5,
-        comment           = $6,
-        verified_purchase = $7${getReviewUpdatedAtSetClause(hasReviewsUpdatedAt)}
+        rating                = $4,
+        title                 = $5,
+        comment               = $6,
+        verified_purchase     = $7,
+        review_type           = $8,
+        communication_rating  = $9,
+        quality_rating        = $10,
+        value_rating          = $11,
+        shipping_rating       = $12${getReviewUpdatedAtSetClause(hasReviewsUpdatedAt)}
       RETURNING
         review_id,
         reviewer_id,
@@ -435,10 +455,15 @@ const createReview = async (req, res) => {
         hidden_at,
         flag_count,
         abuse_score,
+        review_type,
+        communication_rating,
+        quality_rating,
+        value_rating,
+        shipping_rating,
         created_at,
         ${getReviewUpdatedAtSelectClause(hasReviewsUpdatedAt)}
       `,
-      [reviewerId, revieweeId, postId, rating, title, comment, verifiedPurchase]
+      [reviewerId, revieweeId, postId, rating, title, comment, verifiedPurchase, reviewType, communicationRating, qualityRating, valueRating, shippingRating]
     );
 
     invalidateReviewsCache(revieweeId);
@@ -817,6 +842,183 @@ const moderateReviewVisibility = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/reviews/buyer/:userId
+ * Fetch paginated buyer reviews for a user (reviews where they are the buyer).
+ */
+const getBuyerReviews = async (req, res) => {
+  try {
+    await ensureReviewsModerationSchema();
+
+    const userId = parseOptionalString(req.params.userId);
+    const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+    const limit = parsePositiveInt(req.query.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    const offset = (page - 1) * limit;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const cacheKey = `buyer-reviews:${userId}:page:${page}:limit:${limit}`;
+
+    const payload = await cacheService.getOrSetWithStampedeProtection(
+      cacheKey,
+      async () => {
+        const [reviewsResult, statsResult] = await Promise.all([
+          runQuery(
+            `
+            SELECT
+              r.*,
+              u.username       AS reviewer_name,
+              p.full_name      AS reviewer_full_name,
+              p.avatar_url     AS reviewer_avatar
+            FROM reviews r
+            JOIN users u    ON u.user_id::text = r.reviewer_id::text
+            LEFT JOIN profiles p ON p.user_id::text = r.reviewer_id::text
+            WHERE r.reviewee_id::text = $1
+              AND COALESCE(r.review_type, 'seller') = 'buyer'
+              AND COALESCE(r.is_hidden, false) = false
+            ORDER BY r.created_at DESC
+            LIMIT $2 OFFSET $3
+            `,
+            [userId, limit, offset]
+          ),
+          runQuery(
+            `
+            SELECT
+              COUNT(*)::int                              AS total_reviews,
+              COALESCE(AVG(rating), 0)                   AS average_rating,
+              COALESCE(AVG(communication_rating), 0)     AS avg_communication,
+              COALESCE(AVG(value_rating), 0)             AS avg_value,
+              COUNT(CASE WHEN rating = 5 THEN 1 END)::int AS five_star,
+              COUNT(CASE WHEN rating = 4 THEN 1 END)::int AS four_star,
+              COUNT(CASE WHEN rating = 3 THEN 1 END)::int AS three_star,
+              COUNT(CASE WHEN rating = 2 THEN 1 END)::int AS two_star,
+              COUNT(CASE WHEN rating = 1 THEN 1 END)::int AS one_star
+            FROM reviews
+            WHERE reviewee_id::text = $1
+              AND COALESCE(review_type, 'seller') = 'buyer'
+              AND COALESCE(is_hidden, false) = false
+            `,
+            [userId]
+          ),
+        ]);
+
+        const stats = statsResult.rows[0];
+        const totalReviews = stats?.total_reviews || 0;
+
+        return {
+          reviews: reviewsResult.rows,
+          stats: {
+            totalReviews,
+            averageRating: Number(stats?.average_rating || 0).toFixed(1),
+            avgCommunication: Number(stats?.avg_communication || 0).toFixed(1),
+            avgValue: Number(stats?.avg_value || 0).toFixed(1),
+            distribution: {
+              5: stats?.five_star || 0,
+              4: stats?.four_star || 0,
+              3: stats?.three_star || 0,
+              2: stats?.two_star || 0,
+              1: stats?.one_star || 0,
+            },
+          },
+          pagination: { page, limit, total: totalReviews },
+        };
+      },
+      REVIEWS_CACHE_TTL_SECONDS
+    );
+
+    return res.json(payload);
+  } catch (error) {
+    logger.error("Error fetching buyer reviews:", error);
+    return res.status(500).json({ error: "Failed to fetch buyer reviews" });
+  }
+};
+
+/**
+ * GET /api/reviews/stats/:userId
+ * Comprehensive rating stats for a user (both seller + buyer).
+ */
+const getUserRatingStats = async (req, res) => {
+  try {
+    await ensureReviewsModerationSchema();
+
+    const userId = parseOptionalString(req.params.userId);
+    if (!userId) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const cacheKey = `rating-stats:${userId}`;
+    const payload = await cacheService.getOrSetWithStampedeProtection(
+      cacheKey,
+      async () => {
+        const [sellerResult, buyerResult] = await Promise.all([
+          runQuery(
+            `
+            SELECT
+              COUNT(*)::int                              AS total,
+              COALESCE(AVG(rating), 0)                   AS avg_rating,
+              COALESCE(AVG(communication_rating), 0)     AS avg_communication,
+              COALESCE(AVG(quality_rating), 0)           AS avg_quality,
+              COALESCE(AVG(value_rating), 0)             AS avg_value,
+              COALESCE(AVG(shipping_rating), 0)          AS avg_shipping
+            FROM reviews
+            WHERE reviewee_id::text = $1
+              AND COALESCE(review_type, 'seller') = 'seller'
+              AND COALESCE(is_hidden, false) = false
+            `,
+            [userId]
+          ),
+          runQuery(
+            `
+            SELECT
+              COUNT(*)::int                              AS total,
+              COALESCE(AVG(rating), 0)                   AS avg_rating,
+              COALESCE(AVG(communication_rating), 0)     AS avg_communication,
+              COALESCE(AVG(value_rating), 0)             AS avg_value
+            FROM reviews
+            WHERE reviewee_id::text = $1
+              AND COALESCE(review_type, 'seller') = 'buyer'
+              AND COALESCE(is_hidden, false) = false
+            `,
+            [userId]
+          ),
+        ]);
+
+        const seller = sellerResult.rows[0] || {};
+        const buyer = buyerResult.rows[0] || {};
+
+        return {
+          seller: {
+            total: seller.total || 0,
+            avgRating: Number(seller.avg_rating || 0).toFixed(1),
+            avgCommunication: Number(seller.avg_communication || 0).toFixed(1),
+            avgQuality: Number(seller.avg_quality || 0).toFixed(1),
+            avgValue: Number(seller.avg_value || 0).toFixed(1),
+            avgShipping: Number(seller.avg_shipping || 0).toFixed(1),
+          },
+          buyer: {
+            total: buyer.total || 0,
+            avgRating: Number(buyer.avg_rating || 0).toFixed(1),
+            avgCommunication: Number(buyer.avg_communication || 0).toFixed(1),
+            avgValue: Number(buyer.avg_value || 0).toFixed(1),
+          },
+          overallRating: Number(
+            ((Number(seller.avg_rating || 0) + Number(buyer.avg_rating || 0)) /
+              (seller.total && buyer.total ? 2 : 1)) || 0
+          ).toFixed(1),
+        };
+      },
+      REVIEWS_CACHE_TTL_SECONDS
+    );
+
+    return res.json(payload);
+  } catch (error) {
+    logger.error("Error fetching rating stats:", error);
+    return res.status(500).json({ error: "Failed to fetch rating stats" });
+  }
+};
+
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
@@ -829,4 +1031,6 @@ module.exports = {
   respondToReview,
   flagReview,
   moderateReviewVisibility,
+  getBuyerReviews,
+  getUserRatingStats,
 };

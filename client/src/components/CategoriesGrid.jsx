@@ -90,7 +90,7 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
 
   if (loading) {
     return (
-      <div className="h-20 animate-pulse bg-gray-100 rounded-xl mb-6" />
+      <div className="h-20 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl mb-6" />
     );
   }
 
