@@ -444,6 +444,9 @@
   background: #e2e8f0;
   z-index: 0;
 }
+.dark .checklist-item:not(:last-child)::after {
+  background: var(--border);
+}
 .checklist-item.done:not(:last-child)::after {
   background: #10b981;
 }
@@ -461,9 +464,15 @@
   color: #10b981;
   font-weight: 700;
 }
+.dark .coin-history-item .amount-positive {
+  color: #34d399;
+}
 .coin-history-item .amount-negative {
   color: #ef4444;
   font-weight: 700;
+}
+.dark .coin-history-item .amount-negative {
+  color: #fca5a5;
 }
 
 /* ── Playbook cards (earn section) ── */
@@ -618,6 +627,9 @@
   height: 2px;
   background: #e2e8f0;
   transition: background 0.3s ease;
+}
+.dark .verification-step-line {
+  background: var(--border);
 }
 .verification-step-line.done {
   background: #10b981;

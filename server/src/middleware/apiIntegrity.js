@@ -185,6 +185,9 @@ const antiReplayProtection = (req, res, next) => {
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return next();
 
   const path = req.path || "";
+  if (!isProduction && path.includes("/telemetry/vitals")) {
+    return next();
+  }
   if (path === "/health" || path.endsWith("/health")) return next();
 
   // Timestamp is MANDATORY on all write operations

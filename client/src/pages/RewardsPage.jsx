@@ -5,6 +5,7 @@ import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { getAccessToken, getUserId } from "@/utils/authStorage";
 import UpsellBanner from "@/components/UpsellBanner";
+import ReferralChainTree from "@/components/referral/ReferralChainTree";
 
 const RewardsPage = () => {
   const { user, loading: authLoading } = useAuth(); // Use global auth state
@@ -20,6 +21,7 @@ const RewardsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -197,6 +199,32 @@ const RewardsPage = () => {
           )}
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide border-b border-gray-200 dark:border-gray-700 mb-6 pb-px">
+          {[
+            { key: "overview", label: tr("overview", "Overview"), icon: "📊" },
+            { key: "network", label: tr("referral_network", "Referral Network"), icon: "🌐" },
+            { key: "challenges", label: tr("challenges", "Challenges"), icon: "📋" },
+            { key: "store", label: tr("store", "Store"), icon: "🎁" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all ${
+                activeTab === tab.key
+                  ? "border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="mhub-premium-surface shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 dark:border">
             <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white dark:text-lg dark:text-gray-100">
@@ -245,6 +273,61 @@ const RewardsPage = () => {
           </div>
         </div>
 
+        {/* Reward History */}
+        <div className="mhub-premium-surface shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 dark:border">
+          <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white dark:text-lg dark:text-gray-100">
+            📊 {tr("reward_history", "Reward History")}
+          </h2>
+          {rewardLog.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300 dark:text-sm">
+              {tr("no_reward_history", "No reward history yet")}
+            </p>
+          ) : (
+            <div className="overflow-x-auto scrollbar-hide">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700 dark:border-b">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider dark:text-left dark:text-xs dark:text-gray-300">
+                      {tr("points", "Points")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider dark:text-left dark:text-xs dark:text-gray-300">
+                      {tr("reason", "Reason")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider dark:text-left dark:text-xs dark:text-gray-300">
+                      {tr("date", "Date")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {rewardLog.map((log, idx) => (
+                    <tr key={log.log_id || idx}>
+                      <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium dark:text-green-300">+{log.points}</td>
+                      <td className="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm dark:text-gray-200 dark:text-sm">
+                        {(log.reason || "").replace("_", " ")}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300 dark:text-sm">
+                        {log.created_at
+                          ? new Date(log.created_at).toLocaleDateString()
+                          : tr("not_available", "N/A")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+          </>
+        )}
+
+        {/* Referral Network Tab */}
+        {activeTab === "network" && (
+          <ReferralChainTree />
+        )}
+
+        {/* Challenges Tab */}
+        {activeTab === "challenges" && (
+          <>
         {/* Daily Challenges Section */}
         <div className="mhub-premium-surface shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 mb-6 dark:border">
           <div className="flex items-center justify-between mb-4">
@@ -291,6 +374,42 @@ const RewardsPage = () => {
           </div>
         </div>
 
+        {/* Achievements Section */}
+        <div className="mhub-premium-surface shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 mb-6 dark:border">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white dark:text-lg dark:text-gray-100">
+            🏆 {tr("achievements", "Achievements")}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { icon: "🎯", title: tr("first_listing", "First Listing"), desc: tr("post_first", "Post your first item"), unlocked: false, progress: "0/1" },
+              { icon: "⭐", title: tr("five_star_seller", "5-Star Seller"), desc: tr("ten_reviews", "Get 10 five-star reviews"), unlocked: false, progress: "0/10" },
+              { icon: "🔥", title: tr("streak_master", "Streak Master"), desc: tr("thirty_day_streak", "30-day visit streak"), unlocked: false, progress: "0/30" },
+              { icon: "👑", title: tr("elite_seller", "Elite Seller"), desc: tr("reach_premium", "Reach Premium tier"), unlocked: false, progress: "Locked" },
+            ].map((achievement, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg border text-center ${
+                  achievement.unlocked
+                    ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
+                    : "bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
+                }`}
+              >
+                <div className={`text-2xl mb-1 ${achievement.unlocked ? "" : "opacity-30"}`}>
+                  {achievement.icon}
+                </div>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white dark:text-xs dark:text-gray-100">{achievement.title}</h3>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1 dark:text-[10px] dark:text-gray-300">{achievement.desc}</p>
+                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 dark:text-[10px] dark:text-gray-300">{achievement.progress}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+          </>
+        )}
+
+        {/* Store Tab */}
+        {activeTab === "store" && (
+          <>
         {/* Rewards Store */}
         <div className="mhub-premium-surface shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 mb-6 dark:border">
           <div className="flex items-center justify-between mb-4">
@@ -337,82 +456,8 @@ const RewardsPage = () => {
             ))}
           </div>
         </div>
-
-        {/* Achievements Section */}
-        <div className="mhub-premium-surface shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 mb-6 dark:border">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white dark:text-lg dark:text-gray-100">
-            🏆 {tr("achievements", "Achievements")}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { icon: "🎯", title: tr("first_listing", "First Listing"), desc: tr("post_first", "Post your first item"), unlocked: false, progress: "0/1" },
-              { icon: "⭐", title: tr("five_star_seller", "5-Star Seller"), desc: tr("ten_reviews", "Get 10 five-star reviews"), unlocked: false, progress: "0/10" },
-              { icon: "🔥", title: tr("streak_master", "Streak Master"), desc: tr("thirty_day_streak", "30-day visit streak"), unlocked: false, progress: "0/30" },
-              { icon: "👑", title: tr("elite_seller", "Elite Seller"), desc: tr("reach_premium", "Reach Premium tier"), unlocked: false, progress: "Locked" },
-            ].map((achievement, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-lg border text-center ${
-                  achievement.unlocked
-                    ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800"
-                    : "bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
-                }`}
-              >
-                <div className={`text-2xl mb-1 ${achievement.unlocked ? "" : "opacity-30"}`}>
-                  {achievement.icon}
-                </div>
-                <h3 className="text-xs font-semibold text-gray-900 dark:text-white dark:text-xs dark:text-gray-100">{achievement.title}</h3>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1 dark:text-[10px] dark:text-gray-300">{achievement.desc}</p>
-                <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 dark:text-[10px] dark:text-gray-300">{achievement.progress}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Reward History */}
-        <div className="mhub-premium-surface shadow-sm rounded-xl p-6 border border-gray-100 dark:border-gray-700 dark:border">
-          <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white dark:text-lg dark:text-gray-100">
-            📊 {tr("reward_history", "Reward History")}
-          </h2>
-          {rewardLog.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300 dark:text-sm">
-              {tr("no_reward_history", "No reward history yet")}
-            </p>
-          ) : (
-            <div className="overflow-x-auto scrollbar-hide">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 dark:border-b">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider dark:text-left dark:text-xs dark:text-gray-300">
-                      {tr("points", "Points")}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider dark:text-left dark:text-xs dark:text-gray-300">
-                      {tr("reason", "Reason")}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider dark:text-left dark:text-xs dark:text-gray-300">
-                      {tr("date", "Date")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {rewardLog.map((log, idx) => (
-                    <tr key={log.log_id || idx}>
-                      <td className="px-4 py-3 text-green-600 dark:text-green-400 font-medium dark:text-green-300">+{log.points}</td>
-                      <td className="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm dark:text-gray-200 dark:text-sm">
-                        {(log.reason || "").replace("_", " ")}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300 dark:text-sm">
-                        {log.created_at
-                          ? new Date(log.created_at).toLocaleDateString()
-                          : tr("not_available", "N/A")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

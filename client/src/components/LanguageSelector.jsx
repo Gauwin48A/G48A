@@ -178,7 +178,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
       {open ? (
         <div
           role="listbox"
-          className={`absolute right-0 z-[70] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 ${
+          className={`absolute right-0 z-[200] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 ${
             compact ? "w-44" : "w-60"
           }`}
         >

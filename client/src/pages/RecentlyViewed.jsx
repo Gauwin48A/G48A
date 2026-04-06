@@ -564,7 +564,7 @@ const RecentlyViewed = () => {
   // ─── Render ───────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 dark:bg-gradient-to-b">
+    <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-b">
       <style>{`
         @keyframes toast-in {
           from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.95); }
@@ -585,9 +585,9 @@ const RecentlyViewed = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <div className="relative max-w-6xl mx-auto px-4 py-4 sm:px-6 sm:py-5 page-shell page-pad">
-          <div className="mb-3 max-w-3xl text-left dark:text-left mhub-hero-card rounded-2xl px-4 py-3 sm:px-5 sm:py-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative max-w-6xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
+          <div className="mb-3 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
               <button
                 type="button"
                 onClick={handleBack}
@@ -661,18 +661,18 @@ const RecentlyViewed = () => {
               </div>
             </div>
             <div className="mt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70">
+              <p className="text-[clamp(9px,0.95vw,11px)] font-semibold uppercase tracking-[0.2em] text-white/70 mb-1 dark:text-white/70">
                 {t("recently_viewed_label") || "Browsing history"}
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/15">
+                <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center dark:bg-slate-900/15">
                   <History className="w-5 h-5 text-white dark:text-white" />
                 </div>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white dark:text-lg dark:sm:text-xl dark:md:text-2xl dark:text-white">
+                <h1 className="text-[clamp(20px,2.1vw,28px)] leading-[1.1] font-bold text-white dark:text-white">
                   {t("recently_viewed") || "Recently Viewed"}
                 </h1>
               </div>
-              <p className="text-sm sm:text-base text-white/80 mt-1 dark:text-sm dark:sm:text-base dark:text-white/80">
+              <p className="text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-white/80 mt-1 dark:text-white/80">
                 {t("recently_viewed_subtitle") ||
                   "Pick up where you left off and compare items."}
               </p>

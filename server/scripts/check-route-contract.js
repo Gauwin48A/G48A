@@ -105,7 +105,7 @@ const checks = [
     id: 'auth-refresh-route-contract',
     file: 'src/routes/auth.js',
     patterns: [
-      /router\.post\(['"]\/refresh-token['"]/
+      /router\.post\(\s*['"]\/refresh-token['"]/
     ]
   },
   {
@@ -137,7 +137,7 @@ const checks = [
       /router\.get\(['"]\/owner\/:userId['"]/,
       /router\.put\(['"]\/:id['"]/,
       /router\.get\(['"]\/:id['"]/,
-      /router\.post\(['"]\/:id\/posts['"]/
+      /router\.post\(\s*['"]\/:id\/posts['"]/
     ]
   },
   {

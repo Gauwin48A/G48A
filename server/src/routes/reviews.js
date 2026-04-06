@@ -6,6 +6,12 @@ const reviewsController = require("../controllers/reviewsController");
 /** @route GET /user/:userId - Fetch all reviews for a given user (public) */
 router.get("/user/:userId", reviewsController.getReviewsForUser);
 
+/** @route GET /buyer/:userId - Fetch buyer reviews for a given user (public) */
+router.get("/buyer/:userId", reviewsController.getBuyerReviews);
+
+/** @route GET /stats/:userId - Comprehensive rating stats (seller + buyer) */
+router.get("/stats/:userId", reviewsController.getUserRatingStats);
+
 /** @route POST / - Create a new review */
 router.post("/", protect, reviewsController.createReview);
 

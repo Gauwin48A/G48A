@@ -202,7 +202,7 @@ export default function NotificationPermission({ userId, onDismiss }) {
                             <button
                                 onClick={handleEnable}
                                 disabled={status === 'requesting'}
-                                className="flex items-center gap-2 px-4 py-2 bg-white text-purple-600 rounded-lg font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white text-purple-600 dark:text-purple-400 rounded-lg font-medium hover:bg-white/90 dark:hover:bg-white/90 transition-colors disabled:opacity-50"
                             >
                                 {status === 'requesting' ? (
                                     <>

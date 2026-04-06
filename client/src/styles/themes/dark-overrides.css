@@ -86,7 +86,7 @@
     background-color: var(--background) !important;
   }
 
-  html[data-theme="dark"] [class*="bg-white"]:not([class*="bg-white/"]) {
+  html[data-theme="dark"] [class*="bg-white"]:not([class*="bg-white/"]):not([class*="dark:bg-white"]) {
     background-color: var(--card) !important;
   }
 
@@ -200,7 +200,7 @@
   html[data-theme="dark"] :is(
     [class*="shadow"],
     [class*="shadow-"]
-  ) {
+  ):not([class*="shadow-none"]) {
     box-shadow: var(--card-shadow) !important;
   }
 

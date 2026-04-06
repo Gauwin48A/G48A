@@ -371,8 +371,8 @@ const ve = () => {
         "div",
         {
           className:
-            "mhub-page-complaints mhub-premium-page bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative dark:bg-gradient-to-br",
-          style: { minHeight: "100vh", paddingBottom: "120px" },
+            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative dark:bg-gradient-to-br",
+          style: { minHeight: "100vh" },
         },
         e.createElement(
           "div",
@@ -392,20 +392,19 @@ const ve = () => {
         ),
         e.createElement(
           "div",
-          { className: "relative max-w-lg mx-auto p-4 sm:p-6 space-y-6" },
+          { className: "relative max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-7 space-y-6" },
           e.createElement(
             "div",
-            { className: "text-center pt-8 dark:text-center" },
+            { className: "text-center pt-6 mhub-hero-card rounded-3xl px-5 py-6 sm:px-7 sm:py-7" },
             e.createElement(
               "button",
               {
                 onClick: () => S("/"),
                 className:
-                  "inline-flex items-center text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-200 mb-8 group transition-all dark:hover:text-red-300",
+                  "inline-flex items-center gap-2 rounded-full border border-red-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm hover:bg-white transition mb-6 dark:border-red-400/30 dark:bg-slate-900/40 dark:text-red-200 dark:hover:bg-slate-900/60",
               },
               e.createElement(me, {
-                className:
-                  "w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform",
+                className: "w-4 h-4 group-hover:-translate-x-1 transition-transform",
               }),
               r("back_to_home"),
             ),
@@ -413,15 +412,15 @@ const ve = () => {
               "div",
               {
                 className:
-                  "inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-red-400 to-orange-600 shadow-2xl shadow-red-500/30 mb-6 dark:bg-gradient-to-br",
+                  "inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-red-400 to-orange-600 shadow-2xl shadow-red-500/30 mb-5 dark:bg-gradient-to-br",
               },
-              e.createElement(ue, { className: "w-10 h-10 text-white dark:text-white" }),
+              e.createElement(ue, { className: "w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" }),
             ),
             e.createElement(
               "h1",
               {
                 className:
-                  "text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-3 dark:text-4xl dark:sm:text-5xl dark:text-gray-100",
+                  "text-[clamp(24px,2.6vw,36px)] font-black text-gray-900 dark:text-white mb-2 dark:text-gray-100",
               },
               r("file_a"),
               " ",
@@ -438,14 +437,14 @@ const ve = () => {
               "p",
               {
                 className:
-                  "text-red-700 dark:text-red-200 text-lg max-w-md mx-auto dark:text-red-300 dark:text-lg",
+                  "text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-red-700 dark:text-red-200 max-w-md mx-auto dark:text-red-300",
               },
               r("report_issues_support"),
             ),
           ),
           e.createElement(
             "div",
-            { className: "flex flex-wrap justify-center gap-3" },
+            { className: "flex flex-wrap justify-center gap-2" },
             e.createElement(
               y,
               {
@@ -1086,35 +1085,35 @@ const ve = () => {
         "div",
         {
           className:
-            "mhub-page-complaints min-h-screen mhub-premium-page bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 dark:from-slate-950 dark:via-red-900 dark:to-orange-900 dark:bg-gradient-to-br",
-          style: { paddingBottom: "120px" },
+            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 dark:from-slate-950 dark:via-red-900 dark:to-orange-900 dark:bg-gradient-to-br",
+          style: { minHeight: "100vh" },
         },
         e.createElement(
           "div",
-          { className: "pt-16 pb-12 px-6 text-center dark:text-center" },
+          { className: "pt-10 pb-8 px-6 text-center mhub-hero-card rounded-3xl max-w-2xl mx-auto" },
           e.createElement(
             "div",
             {
               className:
-                "w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center shadow-2xl dark:bg-gradient-to-br",
+                "w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center shadow-2xl dark:bg-gradient-to-br",
             },
-            e.createElement(H, { className: "w-12 h-12 text-white dark:text-white" }),
+            e.createElement(H, { className: "w-8 h-8 text-white dark:text-white" }),
           ),
           e.createElement(
             "h1",
-            { className: "text-4xl font-bold text-white mb-3 dark:text-4xl dark:text-white" },
+            { className: "text-[clamp(24px,2.6vw,36px)] font-bold text-white mb-2" },
             r("complaints") || "Complaints",
           ),
           e.createElement(
             "p",
-            { className: "text-white/80 text-lg max-w-md mx-auto dark:text-white/80 dark:text-lg" },
+            { className: "text-[clamp(12px,1.3vw,16px)] leading-[1.5] text-white/80 max-w-md mx-auto" },
             r("complaints_login_desc") ||
               "Need to report an issue? Please login to file a complaint.",
           ),
         ),
         e.createElement(
           "div",
-          { className: "max-w-lg mx-auto px-6 space-y-4" },
+          { className: "max-w-2xl mx-auto px-6 space-y-4" },
           e.createElement(
             J,
             {

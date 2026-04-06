@@ -165,7 +165,7 @@ const AllPostsGreatDealsBanner = ({
                     {previewList.map((src, index) => (
                       <div
                         key={`${src}-${index}`}
-                        className={`${compact ? "w-12 h-9 sm:w-14 sm:h-10 md:w-16 md:h-12" : "w-16 h-12 sm:w-20 sm:h-14 md:w-24 md:h-18"} rounded-xl overflow-hidden ring-2 ring-white/70 shadow-sm bg-white`}
+                        className={`${compact ? "w-12 h-9 sm:w-14 sm:h-10 md:w-16 md:h-12" : "w-16 h-12 sm:w-20 sm:h-14 md:w-24 md:h-18"} rounded-xl overflow-hidden ring-2 ring-white/70 dark:ring-white/20 shadow-sm bg-white dark:bg-gray-800`}
                       >
                         <img
                           src={src}

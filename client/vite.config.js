@@ -1,10 +1,8 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
-const DEV_PROXY_TARGET = process.env.VITE_DEV_PROXY_TARGET || 'http://localhost:5001';
-const DEV_PORT = parseInt(process.env.PORT || process.env.VITE_PORT || '8081', 10);
-const FORCE_OPTIMIZE_DEPS = String(process.env.VITE_OPTIMIZE_DEPS_FORCE || '').toLowerCase() === 'true';
+const DEFAULT_DEV_PROXY_TARGET = 'http://localhost:5001';
 
 const REALTIME_VENDOR_PACKAGES = new Set([
   'socket.io-client',
@@ -118,6 +116,31 @@ function resolveVendorChunk(id) {
   return undefined;
 }
 
+function normalizeDevProxyTarget(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const withProtocol = /^[a-z]+:\/\//i.test(raw) ? raw : `http://${raw}`;
+  try {
+    const parsed = new URL(withProtocol);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return '';
+  }
+}
+
+function resolveDevProxyTarget(env) {
+  const candidates = [
+    env.VITE_DEV_PROXY_TARGET,
+    env.VITE_API_BASE_URL,
+    env.VITE_SOCKET_URL
+  ];
+  for (const candidate of candidates) {
+    const normalized = normalizeDevProxyTarget(candidate);
+    if (normalized) return normalized;
+  }
+  return DEFAULT_DEV_PROXY_TARGET;
+}
+
 /**
  * Strip component displayName and name properties in production.
  * This prevents React DevTools from showing readable component names.
@@ -137,85 +160,97 @@ function stripComponentNames() {
 }
 
 // MINIMAL CONFIG FOR BUILD TESTING
-export default defineConfig({
-  plugins: [react(), stripComponentNames()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-  server: {
-    host: true,
-    port: DEV_PORT,
-    strictPort: !process.env.PORT,
-    proxy: {
-      "/api": {
-        target: DEV_PROXY_TARGET,
-        changeOrigin: true,
-        secure: false,
-      },
-      "/socket.io": {
-        target: DEV_PROXY_TARGET,
-        changeOrigin: true,
-        secure: false,
-        ws: true,
-      },
-      "/uploads": {
-        target: DEV_PROXY_TARGET,
-        changeOrigin: true,
-        secure: false,
-      },
-      "/static": {
-        target: DEV_PROXY_TARGET,
-        changeOrigin: true,
-        secure: false,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const devProxyTarget = resolveDevProxyTarget(env);
+  const rawPort = env.PORT || env.VITE_PORT || process.env.PORT || process.env.VITE_PORT || '8081';
+  const parsedPort = Number.parseInt(rawPort, 10);
+  const devPort = Number.isFinite(parsedPort) ? parsedPort : 8081;
+  const forceOptimizeDeps =
+    String(env.VITE_OPTIMIZE_DEPS_FORCE || process.env.VITE_OPTIMIZE_DEPS_FORCE || '')
+      .toLowerCase() === 'true';
+  const hasPortEnv = Boolean(env.PORT || process.env.PORT);
+
+  return {
+    plugins: [react(), stripComponentNames()],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
       },
     },
-  },
-  optimizeDeps: {
-    force: FORCE_OPTIMIZE_DEPS,
-    // Keep known lazy UI/native deps pre-optimized to reduce stale on-demand dep fetches in dev.
-    include: ['@radix-ui/react-tabs', '@capacitor-community/contacts'],
-  },
-  build: {
-    sourcemap: false,
-    modulePreload: false,
-    // Strip console.log/warn in production, keep errors + mangle for obfuscation
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
-        passes: 3,
-        dead_code: true,
-        conditionals: true,
-        evaluate: true,
-        reduce_vars: true,
-        collapse_vars: true,
-        booleans_as_integers: true,
-        hoist_funs: true,
-        join_vars: true,
-        sequences: true,
-      },
-      mangle: {
-        toplevel: true,
-        properties: {
-          regex: /^_[a-z]/,  // Mangle private-style properties starting with _
+    server: {
+      host: true,
+      port: devPort,
+      strictPort: !hasPortEnv,
+      proxy: {
+        "/api": {
+          target: devProxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/socket.io": {
+          target: devProxyTarget,
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
+        "/uploads": {
+          target: devProxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/static": {
+          target: devProxyTarget,
+          changeOrigin: true,
+          secure: false,
         },
       },
-      format: {
-        comments: false,  // Remove all comments
-        ascii_only: true,
-        ecma: 2020,
-      },
     },
-    // Warn on large chunks (250kb)
-    chunkSizeWarningLimit: 250,
-    rollupOptions: {
-      output: {
-        manualChunks: resolveVendorChunk,
-      },
+    optimizeDeps: {
+      force: forceOptimizeDeps,
+      // Keep known lazy UI/native deps pre-optimized to reduce stale on-demand dep fetches in dev.
+      include: ['@radix-ui/react-tabs', '@capacitor-community/contacts'],
     },
-  }
+    build: {
+      sourcemap: false,
+      modulePreload: false,
+      // Strip console.log/warn in production, keep errors + mangle for obfuscation
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+          passes: 3,
+          dead_code: true,
+          conditionals: true,
+          evaluate: true,
+          reduce_vars: true,
+          collapse_vars: true,
+          booleans_as_integers: true,
+          hoist_funs: true,
+          join_vars: true,
+          sequences: true,
+        },
+        mangle: {
+          toplevel: true,
+          properties: {
+            regex: /^_[a-z]/,  // Mangle private-style properties starting with _
+          },
+        },
+        format: {
+          comments: false,  // Remove all comments
+          ascii_only: true,
+          ecma: 2020,
+        },
+      },
+      // Warn on large chunks (250kb)
+      chunkSizeWarningLimit: 250,
+      rollupOptions: {
+        output: {
+          manualChunks: resolveVendorChunk,
+        },
+      },
+    }
+  };
 });

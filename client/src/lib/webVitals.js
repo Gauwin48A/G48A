@@ -4,6 +4,8 @@
  * Fire-and-forget: call initWebVitals() once at app startup
  */
 
+import { getDeviceId } from "@/utils/device";
+
 const VITALS = {};
 
 function observe(type, callback) {
@@ -54,12 +56,39 @@ export function initWebVitals() {
   });
 
   // Report on page hide (most reliable)
+  const buildNonce = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
+
   const report = () => {
     if (Object.keys(VITALS).length === 0) return;
     // Use sendBeacon for reliable delivery on page close
-    const payload = JSON.stringify({ ...VITALS, url: location.pathname, ts: Date.now() });
+    const timestamp = Date.now();
+    let deviceId = "web";
+    try {
+      deviceId = getDeviceId();
+    } catch {
+      // ignore device id failures
+    }
+    const payload = JSON.stringify({
+      schema_version: "1",
+      event_type: "web_vitals",
+      device_id: deviceId || "web",
+      timestamp: new Date(timestamp).toISOString(),
+      payload: {
+        metrics: { ...VITALS },
+        url: location.pathname,
+        ts: timestamp,
+      },
+      _timestamp: timestamp,
+      _nonce: buildNonce(),
+    });
     if (navigator.sendBeacon) {
-      navigator.sendBeacon('/api/telemetry/vitals', payload);
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon("/api/telemetry/ingest", blob);
     }
   };
 

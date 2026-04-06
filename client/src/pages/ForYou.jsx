@@ -1376,7 +1376,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isUnder1000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       }`,
                       onClick: () =>
                         updateQueryParams(
@@ -1395,7 +1395,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isRange500to2000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       }`,
                       onClick: () =>
                         updateQueryParams(
@@ -1414,7 +1414,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isRange2000to10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       }`,
                       onClick: () =>
                         updateQueryParams(
@@ -1433,7 +1433,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isAbove10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       }`,
                       onClick: () =>
                         updateQueryParams(
@@ -1452,7 +1452,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isPostedTodayFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       }`,
                       onClick: () =>
                         updateQueryParams(
@@ -1475,7 +1475,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isLatest10Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       }`,
                       onClick: () =>
                         updateQueryParams(
@@ -1494,7 +1494,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isLatest50Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       }`,
                       onClick: () =>
                         updateQueryParams(
@@ -1514,7 +1514,7 @@ const te = 12,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         isNearMeFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
-                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700"
+                          : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                       } ${nearMeLocation ? "" : "cursor-not-allowed opacity-60"}`,
                       onClick: () =>
                         updateQueryParams(
@@ -1532,8 +1532,8 @@ const te = 12,
                       disabled: !_,
                       className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
                         _
-                          ? "border-slate-200 bg-white !text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:!text-slate-700"
-                          : "cursor-not-allowed border-slate-200 bg-slate-100 !text-slate-400"
+                          ? "border-slate-200 bg-white !text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
+                          : "cursor-not-allowed border-slate-200 bg-slate-100 !text-slate-400 dark:border-slate-600 dark:bg-slate-800/50 dark:!text-slate-500"
                       }`,
                       onClick: E,
                     },
