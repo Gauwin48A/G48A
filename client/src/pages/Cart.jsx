@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { rupeesToCoins } from "@/utils/coinConversion";
 import {
   Minus,
   ArrowLeft,
@@ -21,6 +22,8 @@ import { useCart } from "@/context/CartContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { buildActiveAppMatcher, matchesCategoryModeItem } from "@/utils/categoryModeFilters";
 import { navigateBack } from "@/utils/navigation";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 
 const formatCurrency = (value, currency = "INR") =>
   new Intl.NumberFormat(undefined, {
@@ -33,6 +36,8 @@ const Cart = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const handleBack = () => navigateBack(navigate);
+  const { density, setDensity } = usePageDensity("mhub_cart_density");
+  const densityClass = density === "compact" ? "mhub-compact" : "";
   const {
     items,
     savedItems,
@@ -201,7 +206,9 @@ const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br">
+    <div
+      className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
+    >
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 profile-hero-bg" />
         <div
@@ -234,6 +241,11 @@ const Cart = () => {
                     ? t("multi_currency") || "Multi-currency"
                     : formatCurrency(displaySubtotalValidated, summary?.currency || "INR")}
                 </span>
+                <PageDensityToggle
+                  value={density}
+                  onChange={setDensity}
+                  className="[&>span]:text-white/70 [&_select]:bg-white/15 [&_select]:text-white [&_select]:border-white/30"
+                />
               </div>
             </div>
             <div className="mt-3">
@@ -612,7 +624,7 @@ const Cart = () => {
                 })}
               </div>
               {displaySavedItems.length > 0 && (
-                <div className="mt-6">
+                <div data-density="extra" className="mt-6">
                   <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-3">
                     {t("saved_for_later") || "Saved for later"}
                   </h3>
@@ -761,6 +773,11 @@ const Cart = () => {
                   {formatCurrency(displayTotal, currency)}
                 </span>
               </div>
+              {currency === "INR" && displayTotal > 0 && (
+                <p className="text-[10px] text-center text-slate-400 dark:text-slate-500 mt-1">
+                  ≈ 🪙 {rupeesToCoins(displayTotal).toLocaleString()} coins value
+                </p>
+              )}
             </div>
 
             <form onSubmit={handleApplyCoupon} className="mb-4 space-y-2">

@@ -45,6 +45,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import { socket } from "@/lib/socket";
 import { navigateBack } from "@/utils/navigation";
 
@@ -163,6 +165,8 @@ const NotificationsPage = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { activeApp, activeCategory, categories: categoryModeCategories } = useCategoryMode();
+  const { density, setDensity } = usePageDensity("mhub_notifications_density");
+  const densityClass = density === "compact" ? "mhub-compact" : "";
   const tr = useCallback(
     (key, fallback) => {
       const value = t(key);
@@ -816,7 +820,9 @@ const NotificationsPage = () => {
   // --- Auth loading state ---
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-gray-950 dark:bg-slate-950">
+      <div
+        className={`min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-gray-950 dark:bg-slate-950 ${densityClass}`}
+      >
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-16 h-16">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 opacity-20 animate-ping dark:bg-gradient-to-br" />
@@ -835,7 +841,9 @@ const NotificationsPage = () => {
   // --- Not authenticated state ---
   if (!isAuth || !userId) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 dark:bg-gradient-to-br">
+      <div
+        className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 dark:bg-gradient-to-br ${densityClass}`}
+      >
         {/* Background blobs */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-500/[0.06] rounded-full blur-3xl dark:bg-[lue-500/[0.06]" />
@@ -878,7 +886,9 @@ const NotificationsPage = () => {
   // --- Loading state: Skeleton loader ---
   if (isLoading) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br">
+      <div
+        className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
+      >
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 profile-hero-bg" />
           <div
@@ -1000,7 +1010,9 @@ const NotificationsPage = () => {
 
   // --- Main content ---
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br">
+    <div
+      className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom dark:bg-gradient-to-br ${densityClass}`}
+    >
       {/* Background decorative blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-blue-500/[0.04] dark:bg-blue-500/[0.08] rounded-full blur-3xl dark:bg-[lue-500/[0.04]" />
@@ -1077,6 +1089,9 @@ const NotificationsPage = () => {
       {/* Main container */}
       <div className="relative z-10 max-w-3xl mx-auto px-4 pt-5">
         <div className="mb-4 flex flex-col gap-3">
+          <div className="flex justify-end">
+            <PageDensityToggle value={density} onChange={setDensity} />
+          </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Input
               value={searchQuery}
@@ -1104,8 +1119,11 @@ const NotificationsPage = () => {
             </Button>
           </div>
 
-          {showPreferences && (
-            <div className="mhub-premium-surface rounded-2xl p-4 border border-white/60 dark:border-white/[0.08]">
+            {showPreferences && (
+              <div
+                data-density="extra"
+                className="mhub-premium-surface rounded-2xl p-4 border border-white/60 dark:border-white/[0.08]"
+              >
               {prefsLoading ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   {t("loading") || "Loading..."}
@@ -1544,7 +1562,7 @@ const NotificationsPage = () => {
 
         {/* Stats cards */}
         {notifications.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 mt-10">
+          <div data-density="extra" className="grid grid-cols-3 gap-3 mt-10">
             {[
               { icon: Bell, label: t("total") || "Total", value: notifications.length, gradient: "from-blue-500 to-indigo-600", bgGradient: "from-blue-50 to-indigo-50", darkBg: "dark:from-blue-500/10 dark:to-indigo-500/10", shadow: "shadow-blue-500/15", labelColor: "text-blue-600/80 dark:text-blue-300/60" },
               { icon: Zap, label: t("unread") || "Unread", value: unreadCount, gradient: "from-purple-500 to-fuchsia-600", bgGradient: "from-purple-50 to-fuchsia-50", darkBg: "dark:from-purple-500/10 dark:to-fuchsia-500/10", shadow: "shadow-purple-500/15", labelColor: "text-purple-600/80 dark:text-purple-300/60" },
@@ -1570,7 +1588,10 @@ const NotificationsPage = () => {
         )}
 
         {/* Pro tip card */}
-        <div className="mt-8 relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 shadow-xl shadow-indigo-500/20 dark:bg-gradient-to-r">
+        <div
+          data-density="extra"
+          className="mt-8 relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 shadow-xl shadow-indigo-500/20 dark:bg-gradient-to-r"
+        >
           {/* Dot pattern overlay for texture */}
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-60" />
           {/* Gradient shimmer */}

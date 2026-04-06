@@ -28,6 +28,8 @@ import {
 } from "react-icons/fa";
 import { useNavigate as Ee } from "react-router-dom";
 import { useTranslation as Me } from "react-i18next";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import Fe from "@/components/LoginPromptModal";
 import {
   translatePosts as $e,
@@ -204,6 +206,7 @@ const Ve = 5,
       [sortBy, setSortBy] = i("shuffle"),
       [sortOrder, setSortOrder] = i("desc"),
       [categoryGroup, setCategoryGroup] = i("all"),
+      { density, setDensity } = usePageDensity("mhub_feed_density"),
       F = 10,
       G = w(Date.now()),
       v = w(0),
@@ -717,13 +720,14 @@ const Ve = 5,
       "div",
       {
         className:
-          "mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 min-h-screen dark:bg-gradient-to-b",
+          `mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 min-h-screen dark:bg-gradient-to-b ${density === "compact" ? "mhub-compact" : ""}`,
       },
       e.createElement(
         "div",
         {
           className:
             "w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 dark:from-[#0b1220] dark:via-[#1b2542] dark:to-[#0b1220] dark:bg-gradient-to-r",
+          "data-density": "extra",
         },
         e.createElement(
           "div",
@@ -796,7 +800,7 @@ const Ve = 5,
                 e.createElement(Be, null),
                 " ",
                 o("my_feed") || "My Feed",
-              ),
+                ),
               h &&
                 e.createElement(
                   c,
@@ -809,6 +813,11 @@ const Ve = 5,
                   " ",
                   o("share_update") || "Share Update",
                 ),
+              e.createElement(PageDensityToggle, {
+                value: density,
+                onChange: setDensity,
+                label: o("view", { defaultValue: "View" }),
+              }),
             ),
           ),
         ),

@@ -35,6 +35,8 @@ import { useNavigate as Je, useLocation as Ke } from "react-router-dom";
 import { useFilter as We } from "@/context/FilterContext";
 import { useCategoryMode as Zt } from "@/context/CategoryModeContext";
 import { useTranslation as Xe } from "react-i18next";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import Ze from "@/components/BuyerInterestModal";
 import LoginPromptModal from "@/components/LoginPromptModal";
 import {
@@ -907,6 +909,7 @@ const ve = 5,
       [autoRefreshEnabled, setAutoRefreshEnabled] = g(!1),
       [showBackToTop, setShowBackToTop] = g(!1),
       [showAllQuickFilters, setShowAllQuickFilters] = g(!1);
+    const { density, setDensity } = usePageDensity("mhub_allposts_density");
     const languageRef = k(l);
     const secondaryStickyRef = k(null);
     const pageMaxWidthClass = "max-w-[92rem]";
@@ -2565,7 +2568,7 @@ const ve = 5,
           dealsBannerNode = showTopDealsBanner
             ? r.createElement(
                 "div",
-                { id: "all-posts-deals", className: "mhub-allposts-deals-wrap" },
+                { id: "all-posts-deals", className: "mhub-allposts-deals-wrap", "data-density": "extra" },
                 r.createElement(AllPostsGreatDealsBanner, {
                   title: tr("great_deals", "Great Deals"),
                   subtitle: tr("up_to_off", "Up to 50% off"),
@@ -2751,8 +2754,8 @@ const ve = 5,
     return r.createElement(
       "div",
       {
-        className:
-          "mhub-page-allposts mhub-premium-page min-h-screen transition-colors duration-300 pb-24",
+          className:
+            `mhub-page-allposts mhub-premium-page min-h-screen transition-colors duration-300 pb-24 ${density === "compact" ? "mhub-compact" : ""}`,
       },
       showModeBanner &&
         r.createElement(
@@ -2818,6 +2821,7 @@ const ve = 5,
           "section",
           {
             className: "w-full mhub-allposts-hero",
+            "data-density": "extra",
             style: { paddingTop: `${contentTopOffset}px` },
           },
           r.createElement(
@@ -3014,6 +3018,12 @@ const ve = 5,
                     tr("price_high", "Price \u2193"),
                   ),
                 ),
+                r.createElement(PageDensityToggle, {
+                  value: density,
+                  onChange: setDensity,
+                  label: tr("view", "View"),
+                  className: "ml-1",
+                }),
                 activeFiltersCount > 0 &&
                   r.createElement(
                     "button",

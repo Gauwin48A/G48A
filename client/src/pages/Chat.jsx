@@ -28,8 +28,12 @@ import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { socket, connectSocketWithToken } from "../lib/socket";
 import { navigateBack } from "@/utils/navigation";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 const ChatPage = () => {
   const navigate = useNavigate(),
+    ({ density, setDensity } = usePageDensity("mhub_chat_density")),
+    densityClass = density === "compact" ? " mhub-compact" : "",
     [conversations, setConversations] = useState([]),
     [selectedConversation, setSelectedConversation] = useState(null),
     [messages, setMessages] = useState([]),
@@ -330,7 +334,8 @@ const ChatPage = () => {
         "div",
         {
           className:
-            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center dark:bg-gradient-to-br",
+            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center dark:bg-gradient-to-br" +
+            densityClass,
         },
         React.createElement("div", {
           className:
@@ -339,7 +344,11 @@ const ChatPage = () => {
       )
     : React.createElement(
         "div",
-        { className: "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" },
+        {
+          className:
+            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br" +
+            densityClass,
+        },
         React.createElement(
           "div",
           {
@@ -375,6 +384,16 @@ const ChatPage = () => {
                 { className: "text-blue-100 dark:text-blue-200" },
                 "Chat with buyers and sellers",
               ),
+            ),
+            React.createElement(
+              "div",
+              { className: "ml-auto" },
+              React.createElement(PageDensityToggle, {
+                value: density,
+                onChange: setDensity,
+                className:
+                  "[&>span]:text-white/80 [&_select]:bg-white/15 [&_select]:text-white [&_select]:border-white/30",
+              }),
             ),
           ),
         ),
@@ -913,5 +932,4 @@ const ChatPage = () => {
 };
 var ChatPageDefault = ChatPage;
 export { ChatPageDefault as default };
-
 

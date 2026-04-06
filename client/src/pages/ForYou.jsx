@@ -11,6 +11,8 @@ import {
   useSearchParams as be,
 } from "react-router-dom";
 import { useTranslation as xe } from "react-i18next";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import { readUserCity } from "@/utils/locationCache";
 import {
   Sparkles as K,
@@ -295,6 +297,7 @@ const te = 12,
       [loginPromptOpen, setLoginPromptOpen] = c(!1),
       [reportNotice, setReportNotice] = c(""),
       [carouselIndexByPost, setCarouselIndexByPost] = c({}),
+      { density, setDensity } = usePageDensity("mhub_foryou_density"),
       openPromote = A((postId, title) => {
         if (!postId) return;
         setPromotePostId(String(postId));
@@ -1127,8 +1130,8 @@ const te = 12,
       ? e.createElement(
           "div",
           {
-            className:
-              "min-h-screen mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-start justify-center p-4 pt-10 pb-24 relative dark:bg-gradient-to-br",
+              className:
+                `min-h-screen mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-start justify-center p-4 pt-10 pb-24 relative dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
           },
           e.createElement(
             "div",
@@ -1329,7 +1332,7 @@ const te = 12,
             "div",
             {
               className:
-                "min-h-screen mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br",
+                `min-h-screen mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
             },
           e.createElement(
             "div",
@@ -1361,7 +1364,11 @@ const te = 12,
                     },
                     tr("quick_filters", "Quick filters"),
                   ),
-                  null,
+                  e.createElement(PageDensityToggle, {
+                    value: density,
+                    onChange: setDensity,
+                    label: tr("view", "View"),
+                  }),
                 ),
                 e.createElement(
                   "div",
@@ -1544,23 +1551,27 @@ const te = 12,
               ),
             ),
             e.createElement(
-              AllPostsGreatDealsBanner,
-              {
-                title: tr("great_deals", "Great Deals"),
-                subtitle: tr("up_to_off", "Up to 50% off"),
-                contextLabel: dealsContextLabel,
-                collapsed: !1,
-                allowCollapse: !1,
-                onShopNow: () => {
-                  const t = document.getElementById("for-you-feed");
-                  t?.scrollIntoView({ behavior: "smooth", block: "start" });
+              "div",
+              { "data-density": "extra" },
+              e.createElement(
+                AllPostsGreatDealsBanner,
+                {
+                  title: tr("great_deals", "Great Deals"),
+                  subtitle: tr("up_to_off", "Up to 50% off"),
+                  contextLabel: dealsContextLabel,
+                  collapsed: !1,
+                  allowCollapse: !1,
+                  onShopNow: () => {
+                    const t = document.getElementById("for-you-feed");
+                    t?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  },
+                  maxWidthClass: "max-w-[92rem]",
+                  t: tr,
+                  compact: true,
+                  outerPaddingClass: "px-3",
+                  sticky: false,
                 },
-                maxWidthClass: "max-w-[92rem]",
-                t: tr,
-                compact: true,
-                outerPaddingClass: "px-3",
-                sticky: false,
-              },
+              ),
             ),
           ),
           reportNotice

@@ -14,6 +14,7 @@ import {
   CardTitle as te,
 } from "@/components/ui/card";
 import { Badge as z } from "@/components/ui/badge";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import {
   Avatar as Xe,
   AvatarFallback as Ze,
@@ -49,6 +50,7 @@ import { useToast as mt } from "@/hooks/use-toast";
 import { getInitials as gi } from "@/lib/userDisplay";
 import "../i18n";
 import { useTranslation as ct } from "react-i18next";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import gt from "../components/LanguageSelector";
 import AccountDataActions from "@/components/AccountDataActions";
 import { getChannelByUser as ut } from "../lib/api";
@@ -123,6 +125,7 @@ const ProfilePage = () => {
       finishProfile: !0,
       quickActions: !1,
     }),
+    { density, setDensity } = usePageDensity("mhub_profile_density"),
     [$, Ie] = n({
       postCount: 0,
       rank: "Bronze",
@@ -1306,7 +1309,7 @@ const ProfilePage = () => {
     "div",
     {
       className:
-        "profile-surface min-h-screen mhub-premium-page pb-32 sm:pb-36 page-fade-in",
+        `profile-surface min-h-screen mhub-premium-page pb-32 sm:pb-36 page-fade-in ${density === "compact" ? "mhub-compact" : ""}`,
       style: { "--top-nav-height": "0px" },
     },
     e.createElement(
@@ -1612,6 +1615,12 @@ const ProfilePage = () => {
                     e.createElement(et, { className: "w-4 h-4 mr-2" }),
                     tr("edit_profile", "Edit profile"),
                   ),
+                  e.createElement(PageDensityToggle, {
+                    value: density,
+                    onChange: setDensity,
+                    label: tr("view", "View"),
+                    className: "text-left",
+                  }),
                 ),
               ),
             ),
@@ -1626,6 +1635,7 @@ const ProfilePage = () => {
                 {
                     className:
                       "rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white shadow-md dark:border dark:border-white/20 dark:bg-slate-900/10 dark:text-white",
+                    "data-density": "extra",
                 },
                 e.createElement(
                   "div",
@@ -2199,6 +2209,7 @@ const ProfilePage = () => {
                   {
                     className:
                       "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-3 dark:border dark:border-slate-700 dark:bg-slate-900",
+                    "data-density": "extra",
                   },
                   e.createElement(
                     "div",

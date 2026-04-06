@@ -1,0 +1,490 @@
+[
+    {
+        "Component":  "AadhaarVerifyPage",
+        "Routes":  "/aadhaar-verify",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\GetVerified.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/useCmsPage, @/hooks/use-toast",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ActivityHubPage",
+        "Routes":  "/activity",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\ActivityHub.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "AddPostPage",
+        "Routes":  "/add-post, /sell",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\AddPost.jsx",
+        "Services":  "@/services/api, @/services/categoriesService, @/services/subcategoriesService",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "AllPostsPage",
+        "Routes":  "/all-posts, /listings",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\AllPosts.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext, @/context/CartContext, @/context/CategoryModeContext, @/context/FilterContext"
+    },
+    {
+        "Component":  "AnalyticsPage",
+        "Routes":  "/analytics",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Analytics.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/CategoryModeContext"
+    },
+    {
+        "Component":  "BoughtPostsPage",
+        "Routes":  "/bought-posts",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\BoughtPosts.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "BuyerViewPage",
+        "Routes":  "/buyer-view",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\BuyerView.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "CartPage",
+        "Routes":  "/cart",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Cart.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/CartContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "CategoryHubPage",
+        "Routes":  "/category-hub",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\CategoryHub.jsx",
+        "Services":  "@/services/api, @/services/categoriesService",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  "@/context/CategoryModeContext, @/context/FilterContext, @/context/ThemeContext"
+    },
+    {
+        "Component":  "CategoryModeSelectPage",
+        "Routes":  "/category-mode",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\CategoryModeSelect.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "CentreListingsPage",
+        "Routes":  "/centre/:id/listings",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\CentreListings.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ChannelPage",
+        "Routes":  "/centre/:id, /channels/:id",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\ChannelPage.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ChannelsListPage",
+        "Routes":  "/centre, /channels",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\ChannelsListPage.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ComplaintsPage",
+        "Routes":  "/complaints",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Complaints.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "CreateChannelPage",
+        "Routes":  "/centre/create, /channels/create",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\CreateChannelPage.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "DashboardPage",
+        "Routes":  "/dashboard",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Dashboard.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "EditPostPage",
+        "Routes":  "/edit-post/:postId",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\EditPost.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "FeedbackPage",
+        "Routes":  "/feedback",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Feedback.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "FeedPage",
+        "Routes":  "/feed",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\FeedPage.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "FeedPostDetailPage",
+        "Routes":  "/feed/:id",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\FeedPostDetail.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ForgotPasswordPage",
+        "Routes":  "/forgot-password",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Auth\\ForgotPassword.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ForYouPage",
+        "Routes":  "/for-you",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\ForYou.jsx",
+        "Services":  "@/services/categoriesService, @/services/preferencesService",
+        "Hooks":  "../hooks/useTranslatedContent",
+        "Contexts":  "@/context/AuthContext, @/context/CartContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "HomePage",
+        "Routes":  "/home",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Home.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "InviteRedirectPage",
+        "Routes":  "/invite/:code",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\InviteRedirect.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "KycVerificationPage",
+        "Routes":  "/kyc",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\KYC\\KycVerification.jsx",
+        "Services":  "../../services/api",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "LoginPage",
+        "Routes":  "/login",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Auth\\Login.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext, @/context/LocationContext"
+    },
+    {
+        "Component":  "MyFeedPage",
+        "Routes":  "/my-feed",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\MyFeedPage.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/usePullToRefresh, @/hooks/useTranslatedContent",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "MyHomePage",
+        "Routes":  "/my-home, /my-posts",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\MyHome.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/usePullToRefresh, @/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "Navigate-\u003e/all-posts",
+        "Routes":  "/categories/:slug",
+        "File":  "",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "Navigate-\u003e/category-hub",
+        "Routes":  "/",
+        "File":  "",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "Navigate-\u003e/for-you",
+        "Routes":  "/my-recommendations",
+        "File":  "",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "NearbyPostsPage",
+        "Routes":  "/nearby",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\NearbyPosts.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "",
+        "Contexts":  "@/context/CategoryModeContext, @/context/LocationContext"
+    },
+    {
+        "Component":  "NotificationsPage",
+        "Routes":  "/notifications",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Notifications.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "OffersPage",
+        "Routes":  "/offers",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Offers.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage, @/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "PaymentPage",
+        "Routes":  "/payment",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Payments\\PaymentPage.jsx",
+        "Services":  "../../services/api",
+        "Hooks":  "@/hooks/useCmsPage, @/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "PostAddPage",
+        "Routes":  "/feed/feedpostadd, /post_add",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\PostAdd.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "PostDetailPage",
+        "Routes":  "/listing/:id, /post/:id",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\PostDetail.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "PostWelcomePage",
+        "Routes":  "/post-welcome",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\PostWelcome.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "PrivacyPage",
+        "Routes":  "/privacy-policy",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\PrivacyPolicy.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ProfilePage",
+        "Routes":  "/profile",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Profile.jsx",
+        "Services":  "@/services/api, @/services/categoriesService, @/services/locationService, @/services/preferencesService",
+        "Hooks":  "@/hooks/use-toast, @/hooks/useTrustScore",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "ProtectedChatPage",
+        "Routes":  "/chat, /chats",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\ProtectedChat.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "PublicWallPage",
+        "Routes":  "/public-wall",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\PublicWall.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "RecentlyViewedPage",
+        "Routes":  "/recently-viewed",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\RecentlyViewed.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useTranslatedContent",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "RefundPage",
+        "Routes":  "/refund-policy",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\RefundPolicy.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "RequireAuth",
+        "Routes":  "/admin-panel",
+        "File":  "",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ResetPasswordPage",
+        "Routes":  "/reset-password, /reset-password/:token",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Auth\\ResetPassword.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "ReviewsPage",
+        "Routes":  "/reviews/:userId",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Reviews.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "RewardsPage",
+        "Routes":  "/rewards",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Rewards.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/use-toast, @/hooks/useTrustScore",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "SaledonePage",
+        "Routes":  "/saledone",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Saledone.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "SaleUndonePage",
+        "Routes":  "/saleundone",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\SaleUndone.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage, @/hooks/use-toast",
+        "Contexts":  "@/context/CategoryModeContext"
+    },
+    {
+        "Component":  "SavedSearchesPage",
+        "Routes":  "/saved-searches",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\SavedSearches.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "SearchPage",
+        "Routes":  "/search",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\SearchPage.jsx",
+        "Services":  "@/services/api, @/services/categoriesService",
+        "Hooks":  "",
+        "Contexts":  "@/context/CategoryModeContext, @/context/FilterContext"
+    },
+    {
+        "Component":  "SecuritySettingsPage",
+        "Routes":  "/security",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\SecuritySettings.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "SignUpPage",
+        "Routes":  "/signup",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Auth\\SignUp.jsx",
+        "Services":  "@/services/api",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "SoldPostsPage",
+        "Routes":  "/sold-posts",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\SoldPosts.jsx",
+        "Services":  "",
+        "Hooks":  "",
+        "Contexts":  "@/context/AuthContext, @/context/CategoryModeContext"
+    },
+    {
+        "Component":  "SubcategoriesPage",
+        "Routes":  "/categories, /subcategories",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Subcategories.jsx",
+        "Services":  "@/services/subcategoriesService",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  "@/context/CategoryModeContext, @/context/ThemeContext"
+    },
+    {
+        "Component":  "SupportTicketPage",
+        "Routes":  "/support-ticket-policy",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\SupportTicketPolicy.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "TermsPage",
+        "Routes":  "/t\u0026c, /terms, /terms-and-conditions",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\TermsAndConditions.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "TierSelectionPage",
+        "Routes":  "/pricing, /tiers, /tier-selection",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\TierSelection.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/useCmsPage, @/hooks/use-toast",
+        "Contexts":  ""
+    },
+    {
+        "Component":  "VerificationPage",
+        "Routes":  "/verification",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Verification.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/use-toast",
+        "Contexts":  "@/context/AuthContext"
+    },
+    {
+        "Component":  "WishlistPage",
+        "Routes":  "/wishlist",
+        "File":  "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\src\\pages\\Wishlist.jsx",
+        "Services":  "",
+        "Hooks":  "@/hooks/use-toast, @/hooks/useTranslatedContent",
+        "Contexts":  "@/context/AuthContext, @/context/CartContext, @/context/CategoryModeContext"
+    }
+]

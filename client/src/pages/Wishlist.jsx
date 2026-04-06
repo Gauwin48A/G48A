@@ -51,6 +51,8 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { navigateBack } from "@/utils/navigation";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 
 /* ─── helpers ─── */
 
@@ -94,6 +96,8 @@ const Wishlist = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { addItem: addToCart, isInCart } = useCart();
+  const { density, setDensity } = usePageDensity("mhub_wishlist_density");
+  const densityClass = density === "compact" ? "mhub-compact" : "";
   const {
     activeCategory: categoryModeCategory,
     activeApp,
@@ -519,7 +523,9 @@ const Wishlist = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-gray-950 dark:bg-slate-950">
+      <div
+        className={`min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-gray-950 dark:bg-slate-950 ${densityClass}`}
+      >
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin dark:border-2 dark:border-pink-600/40 dark:border-t-transparent" />
           <p className="text-gray-500 dark:text-gray-400 text-sm font-medium dark:text-gray-300 dark:text-sm">
@@ -534,7 +540,9 @@ const Wishlist = () => {
 
   if (!isAuth || !userId) {
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-pink-50 to-purple-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative overflow-hidden dark:bg-gradient-to-br">
+      <div
+        className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-pink-50 to-purple-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative overflow-hidden dark:bg-gradient-to-br ${densityClass}`}
+      >
         {/* Decorative blobs */}
         <div className="absolute top-20 -left-32 w-80 h-80 bg-pink-200/30 dark:bg-pink-500/10 rounded-full blur-3xl pointer-events-none dark:bg-pink-900/30" />
         <div className="absolute bottom-20 -right-32 w-96 h-96 bg-purple-200/30 dark:bg-purple-500/10 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/30" />
@@ -568,7 +576,9 @@ const Wishlist = () => {
   /* ─── main authenticated view ─── */
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom relative overflow-hidden dark:bg-gradient-to-b">
+    <div
+      className={`min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom relative overflow-hidden dark:bg-gradient-to-b ${densityClass}`}
+    >
       {/* Decorative background blobs */}
       <div className="absolute top-32 -left-40 w-96 h-96 bg-pink-200/20 dark:bg-pink-500/5 rounded-full blur-3xl pointer-events-none dark:bg-pink-900/20" />
       <div className="absolute top-96 -right-40 w-[28rem] h-[28rem] bg-purple-200/20 dark:bg-purple-500/5 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/20" />
@@ -612,6 +622,11 @@ const Wishlist = () => {
                     ? t("saved_item") || "saved item"
                     : t("saved_items") || "saved items"}
                 </span>
+                <PageDensityToggle
+                  value={density}
+                  onChange={setDensity}
+                  className="[&>span]:text-white/70 [&_select]:bg-white/15 [&_select]:text-white [&_select]:border-white/30"
+                />
               </div>
             </div>
             <div className="mt-3">
