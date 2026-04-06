@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +15,10 @@ import {
   Copy,
   Check,
   Share2,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -45,7 +49,41 @@ const LEVEL_TEXT = [
   "text-rose-700 dark:text-rose-300",
 ];
 
-function TreeNode({ node, depth = 0, isLast = false }) {
+const STATUS_CONFIG = {
+  rewarded: {
+    icon: CheckCircle2,
+    label: "Rewarded",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-100 dark:bg-emerald-900/30",
+  },
+  qualified: {
+    icon: ShieldCheck,
+    label: "Qualified",
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-100 dark:bg-amber-900/30",
+  },
+  pending: {
+    icon: Clock,
+    label: "Pending",
+    color: "text-gray-500 dark:text-gray-400",
+    bg: "bg-gray-100 dark:bg-gray-800/50",
+  },
+};
+
+function StatusBadge({ status }) {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const Icon = config.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${config.bg} ${config.color}`}
+    >
+      <Icon className="h-2.5 w-2.5" />
+      {config.label}
+    </span>
+  );
+}
+
+function TreeNode({ node, depth = 0, isLast = false, statusMap = {} }) {
   const [expanded, setExpanded] = useState(depth < 2);
   const hasChildren = node.children && node.children.length > 0;
   const colorIdx = Math.min(depth, LEVEL_COLORS.length - 1);
@@ -56,6 +94,7 @@ function TreeNode({ node, depth = 0, isLast = false }) {
         year: "numeric",
       })
     : "";
+  const nodeStatus = statusMap[node.id];
 
   return (
     <div className="relative">
@@ -105,24 +144,36 @@ function TreeNode({ node, depth = 0, isLast = false }) {
             >
               L{depth}
             </span>
+            {depth > 0 && nodeStatus && <StatusBadge status={nodeStatus.status} />}
             {hasChildren && (
               <span className="text-[10px] text-gray-500 dark:text-gray-400">
                 {node.children.length} referral{node.children.length !== 1 ? "s" : ""}
               </span>
             )}
           </div>
-          {joinDate && depth > 0 && (
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-              Joined {joinDate}
-            </p>
+          {depth > 0 && (
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              {joinDate && (
+                <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                  Joined {joinDate}
+                </p>
+              )}
+              {nodeStatus && (nodeStatus.postCount > 0 || nodeStatus.transactionCount > 0) && (
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                  {nodeStatus.transactionCount > 0
+                    ? `${nodeStatus.transactionCount} txn`
+                    : `${nodeStatus.postCount} posts`}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
         {/* Reward indicator */}
-        {depth > 0 && depth <= 3 && (
+        {depth > 0 && depth <= 5 && (
           <div className="flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold text-yellow-600 dark:text-yellow-400">
             <Gift className="h-3 w-3" />
-            {depth === 1 ? "+50" : depth === 2 ? "+10" : "+5"}
+            {depth === 1 ? "+100" : depth === 2 ? "+40" : depth === 3 ? "+20" : depth === 4 ? "+10" : "+5"}
           </div>
         )}
       </div>
@@ -136,6 +187,7 @@ function TreeNode({ node, depth = 0, isLast = false }) {
               node={child}
               depth={depth + 1}
               isLast={idx === node.children.length - 1}
+              statusMap={statusMap}
             />
           ))}
         </div>
@@ -144,7 +196,7 @@ function TreeNode({ node, depth = 0, isLast = false }) {
   );
 }
 
-function ChainStats({ stats }) {
+function ChainStats({ stats, statusSummary }) {
   const items = [
     {
       icon: UserPlus,
@@ -177,38 +229,90 @@ function ChainStats({ stats }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className={`${item.bg} rounded-xl p-3 border border-gray-200 dark:border-gray-700`}
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <item.icon className={`h-4 w-4 ${item.color}`} />
-            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              {item.label}
+    <div className="space-y-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {items.map((item) => (
+          <div
+            key={item.label}
+            className={`${item.bg} rounded-xl p-3 border border-gray-200 dark:border-gray-700`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <item.icon className={`h-4 w-4 ${item.color}`} />
+              <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                {item.label}
+              </span>
+            </div>
+            <p className={`text-lg font-bold ${item.color}`}>{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Referral validation status breakdown */}
+      {statusSummary && statusSummary.total > 0 && (
+        <div className="flex items-center gap-4 bg-white dark:bg-gray-900/40 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
+          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Validation Status:
+          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {statusSummary.rewarded} Rewarded
+            </span>
+            <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {statusSummary.qualified} Qualified
+            </span>
+            <span className="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+              <Clock className="h-3.5 w-3.5" />
+              {statusSummary.pending} Pending
             </span>
           </div>
-          <p className={`text-lg font-bold ${item.color}`}>{item.value}</p>
+          {/* Progress bar */}
+          <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex">
+            {statusSummary.rewarded > 0 && (
+              <div
+                className="h-full bg-emerald-500"
+                style={{ width: `${(statusSummary.rewarded / statusSummary.total) * 100}%` }}
+              />
+            )}
+            {statusSummary.qualified > 0 && (
+              <div
+                className="h-full bg-amber-500"
+                style={{ width: `${(statusSummary.qualified / statusSummary.total) * 100}%` }}
+              />
+            )}
+            {statusSummary.pending > 0 && (
+              <div
+                className="h-full bg-gray-400"
+                style={{ width: `${(statusSummary.pending / statusSummary.total) * 100}%` }}
+              />
+            )}
+          </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
 function RewardRulesCard() {
   const rules = [
-    { level: 1, label: "Direct Referral", reward: 50, desc: "When someone signs up with your code" },
-    { level: 2, label: "2nd Level", reward: 10, desc: "When your referral invites someone" },
-    { level: 3, label: "3rd Level", reward: 5, desc: "3rd generation referral joins" },
+    { level: 1, label: "Direct Referral", reward: 100, desc: "Your referred user completes a transaction or creates 2+ verified listings" },
+    { level: 2, label: "2nd Level", reward: 40, desc: "Your referral's referral becomes an active user" },
+    { level: 3, label: "3rd Level", reward: 20, desc: "3rd-generation referral generates real activity" },
+    { level: 4, label: "4th Level", reward: 10, desc: "4th-generation referral becomes active" },
+    { level: 5, label: "5th Level", reward: 5, desc: "5th-generation referral becomes active" },
   ];
 
   return (
     <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800 mb-6">
-      <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-200 mb-3 flex items-center gap-2">
+      <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-200 mb-2 flex items-center gap-2">
         <Gift className="h-4 w-4" />
         How Referral Rewards Work
       </h3>
+      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mb-3">
+        Coins are rewarded only for <strong>valid referrals</strong> — referred users must be verified and
+        have real activity (completed transaction or 2+ listings). No rewards for invite-only signups.
+      </p>
       <div className="space-y-2">
         {rules.map((rule) => (
           <div
@@ -232,6 +336,20 @@ function RewardRulesCard() {
           </div>
         ))}
       </div>
+      <div className="mt-3 flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+        <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <p className="text-[10px] text-amber-700 dark:text-amber-300">
+          <strong>Pending</strong> referrals haven't met activity requirements yet.
+          <strong> Qualified</strong> referrals are eligible — coins are distributed automatically.
+        </p>
+      </div>
+      <div className="mt-2 flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <ShieldCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+        <p className="text-[10px] text-blue-700 dark:text-blue-300">
+          <strong>Safety Caps:</strong> Max 500 coins/day · 5,000/month · 50,000 lifetime from referrals.
+          This prevents abuse while still generously rewarding active referrers.
+        </p>
+      </div>
     </div>
   );
 }
@@ -243,6 +361,8 @@ export default function ReferralChainTree() {
 
   const [treeData, setTreeData] = useState(null);
   const [stats, setStats] = useState(null);
+  const [statusSummary, setStatusSummary] = useState(null);
+  const [statusMap, setStatusMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -254,17 +374,32 @@ export default function ReferralChainTree() {
     setLoading(true);
     setError(null);
     try {
-      const [treeRes, refRes] = await Promise.all([
+      const [treeRes, refRes, chainStatusRes] = await Promise.all([
         api.get("/referral/tree"),
         api.get("/referral"),
+        api.get("/referral/chain-status").catch(() => ({ data: { referrals: [], summary: null } })),
       ]);
       const tree = treeRes?.data ?? treeRes;
       const ref = refRes?.data ?? refRes;
+      const chainStatus = chainStatusRes?.data ?? chainStatusRes;
 
-      setTreeData(tree);
+      setTreeData(tree?.tree || tree);
+
+      // Build statusMap keyed by userId
+      const newStatusMap = {};
+      if (Array.isArray(chainStatus?.referrals)) {
+        for (const r of chainStatus.referrals) {
+          if (r.userId) {
+            newStatusMap[r.userId] = r;
+          }
+        }
+      }
+      setStatusMap(newStatusMap);
+      setStatusSummary(chainStatus?.summary || null);
+
       setStats({
-        directCount: Number(ref?.referral_count || 0),
-        totalCount: countNodes(tree),
+        directCount: Number(ref?.referral_count || tree?.directCount || 0),
+        totalCount: tree?.total || countNodes(tree?.tree || tree),
         directEarnings: Number(ref?.direct_earnings || 0),
         indirectEarnings: Number(ref?.indirect_earnings || 0),
       });
@@ -329,7 +464,7 @@ export default function ReferralChainTree() {
                 {tr("grow_network", "Grow Your Network")}
               </h3>
               <p className="text-xs opacity-80 mt-1">
-                {tr("share_earn", "Share your referral code and earn coins on every signup in your chain!")}
+                {tr("share_earn", "Share your referral code and earn up to 100 coins for every active user in your chain!")}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -356,7 +491,7 @@ export default function ReferralChainTree() {
       )}
 
       {/* Stats */}
-      {stats && <ChainStats stats={stats} />}
+      {stats && <ChainStats stats={stats} statusSummary={statusSummary} />}
 
       {/* Reward Rules */}
       <RewardRulesCard />
@@ -370,7 +505,7 @@ export default function ReferralChainTree() {
 
         {treeData && (treeData.children?.length > 0 || treeData.id) ? (
           <div className="bg-white dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-            <TreeNode node={treeData} depth={0} />
+            <TreeNode node={treeData} depth={0} statusMap={statusMap} />
           </div>
         ) : (
           <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">

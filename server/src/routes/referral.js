@@ -62,4 +62,11 @@ router.post(
  */
 router.get("/leaderboard", referralController.getLeaderboard);
 
+/**
+ * @route   GET /chain-status
+ * @desc    Detailed status of each referral (pending/qualified/rewarded).
+ * @access  Protected
+ */
+router.get("/chain-status", protect, referralController.getReferralChainStatus);
+
 module.exports = router;

@@ -59,12 +59,12 @@ const LanguageSheet = ({ isOpen, onClose }) => {
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm"
                 onClick={onClose}
             />
 
             {/* Sheet */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[420px] animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95">
+            <div className="fixed bottom-0 left-0 right-0 z-[1010] sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[420px] animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95">
                 <div className="mhub-premium-surface rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
 
                     {/* Header */}

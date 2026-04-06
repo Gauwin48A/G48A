@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { FiChevronDown, FiGlobe } from "react-icons/fi";
 import { prefetchLanguage } from "@/i18n";
@@ -46,6 +47,9 @@ export default function LanguageSelector({ className = "", compact = false }) {
   const [open, setOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const rootRef = useRef(null);
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState(null);
   const hasWarmPrefetchedRef = useRef(false);
 
   const currentLanguageCode = i18n?.language || "en";
@@ -67,7 +71,11 @@ export default function LanguageSelector({ className = "", compact = false }) {
   useEffect(() => {
     const onDocumentClick = (event) => {
       if (!rootRef.current) return;
-      if (!rootRef.current.contains(event.target)) {
+      const target = event.target;
+      if (
+        !rootRef.current.contains(target) &&
+        !dropdownRef.current?.contains(target)
+      ) {
         setOpen(false);
       }
     };
@@ -86,6 +94,28 @@ export default function LanguageSelector({ className = "", compact = false }) {
       document.removeEventListener("keydown", onEscape);
     };
   }, []);
+
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return;
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      const nextTop = Math.round(rect.bottom + 8);
+      const nextRight = Math.max(12, Math.round(window.innerWidth - rect.right));
+      setDropdownStyle({
+        top: `${nextTop}px`,
+        right: `${nextRight}px`,
+        minWidth: Math.round(rect.width),
+      });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || hasWarmPrefetchedRef.current) {
@@ -164,6 +194,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
         disabled={isSwitching}
+        ref={buttonRef}
         className={`inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 font-semibold text-white shadow-sm transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 ${
           compact ? "h-8 text-[11px]" : "h-9 text-sm"
         }`}
@@ -175,41 +206,50 @@ export default function LanguageSelector({ className = "", compact = false }) {
         />
       </button>
 
-      {open ? (
-        <div
-          role="listbox"
-          className={`absolute right-0 z-[200] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 ${
-            compact ? "w-44" : "w-60"
-          }`}
-        >
-          {LANGUAGES.map((lang) => {
-            const active = lang.code === activeCode;
-            return (
-              <button
-                key={lang.code}
-                type="button"
-                role="option"
-                aria-selected={active}
-                disabled={isSwitching}
-                onMouseEnter={() => prefetchLanguage(lang.code)}
-                onClick={() => handleChange(lang.code)}
-                className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
-                  active
-                    ? "bg-blue-50 font-semibold text-blue-700 dark:bg-slate-800 dark:text-white"
-                    : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
-                }`}
-              >
-                <span className="whitespace-nowrap">{`${lang.label} (${lang.native})`}</span>
-                {active ? (
-                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-200">
-                    {t("selected", { defaultValue: "selected" })}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+      {open && typeof document !== "undefined" && dropdownStyle
+        ? createPortal(
+            <div
+              ref={dropdownRef}
+              role="listbox"
+              style={{
+                top: dropdownStyle.top,
+                right: dropdownStyle.right,
+                minWidth: dropdownStyle.minWidth,
+              }}
+              className={`fixed z-[1000] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 ${
+                compact ? "w-44" : "w-60"
+              }`}
+            >
+              {LANGUAGES.map((lang) => {
+                const active = lang.code === activeCode;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    disabled={isSwitching}
+                    onMouseEnter={() => prefetchLanguage(lang.code)}
+                    onClick={() => handleChange(lang.code)}
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                      active
+                        ? "bg-blue-50 font-semibold text-blue-700 dark:bg-slate-800 dark:text-white"
+                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70"
+                    }`}
+                  >
+                    <span className="whitespace-nowrap">{`${lang.label} (${lang.native})`}</span>
+                    {active ? (
+                      <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-200">
+                        {t("selected", { defaultValue: "selected" })}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import e, {
 } from "react";
 import { useNavigate as Q } from "react-router-dom";
 import { useTranslation as X } from "react-i18next";
+import { readUserCity } from "@/utils/locationCache";
 import {
   Sparkles as z,
   Lock as Y,
@@ -157,7 +158,7 @@ const be = () => {
     ),
     nearMeLocation = I(
       () =>
-        localStorage.getItem("mhub_user_city") ||
+        readUserCity() ||
         localStorage.getItem("city") ||
         s.location ||
         "",
@@ -1413,5 +1414,3 @@ const be = () => {
 };
 var je = be;
 export { je as default };
-
-

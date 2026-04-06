@@ -11,7 +11,7 @@ const REDEEM_COSTS = {
 
 const REFERRAL_DIRECT_COINS = parsePositiveNumber(
   process.env.REFERRAL_DIRECT_REWARD,
-  50,
+  100,
 );
 const REFERRAL_INDIRECT_COINS = parsePositiveNumber(
   process.env.REFERRAL_INDIRECT_REWARD,
@@ -20,13 +20,25 @@ const REFERRAL_INDIRECT_COINS = parsePositiveNumber(
 
 // Coin earn amounts
 const EARN_AMOUNTS = {
-  welcome_bonus: 90,
-  post: 1,
-  sale: 3,
-  purchase: 1,
+  welcome_bonus: 100,
+  post: 5,
+  sale: 25,
+  purchase: 10,
+  first_listing: 25,
+  first_sale: 50,
+  five_star_review: 15,
   referral_l1: REFERRAL_DIRECT_COINS,
-  referral_l2: REFERRAL_INDIRECT_COINS,
-  referral_l3: REFERRAL_INDIRECT_COINS,
+  referral_l2: 40,
+  referral_l3: 20,
+  referral_l4: 10,
+  referral_l5: 5,
+};
+
+// Daily earning caps per action type (anti-abuse)
+const DAILY_EARN_CAPS = {
+  post: 50,       // max 50 coins from listings per day (10 listings × 5)
+  sale: 250,      // max 250 coins from sales per day
+  purchase: 100,  // max 100 coins from purchases per day
 };
 
 const DAILY_CHECKIN_REWARDS = [5, 10, 15, 20, 30, 50, 100];
@@ -1147,3 +1159,48 @@ exports.spendCoins = spendCoins;
 exports.applyReferralMilestoneRewards = applyReferralMilestoneRewards;
 exports.EARN_AMOUNTS = EARN_AMOUNTS;
 exports.REDEEM_COSTS = REDEEM_COSTS;
+exports.DAILY_EARN_CAPS = DAILY_EARN_CAPS;
+
+// GET /api/coins/rewards-config — public config for frontend display
+exports.getRewardsConfig = async (req, res) => {
+  const {
+    CHAIN_COINS: chainCoins,
+    REFERRAL_CAP_DAILY: refCapDaily,
+    REFERRAL_CAP_MONTHLY: refCapMonthly,
+    REFERRAL_CAP_LIFETIME: refCapLifetime,
+  } = require("../services/referralJoinRewards");
+
+  const referralLadder = chainCoins.map((coins, idx) => ({
+    level: idx + 1,
+    coins,
+    label: idx === 0 ? "Direct Referral" : `Level ${idx + 1}`,
+  }));
+
+  res.json({
+    success: true,
+    earning: {
+      welcome_bonus: EARN_AMOUNTS.welcome_bonus,
+      post: EARN_AMOUNTS.post,
+      sale: EARN_AMOUNTS.sale,
+      purchase: EARN_AMOUNTS.purchase,
+      first_listing: EARN_AMOUNTS.first_listing,
+      first_sale: EARN_AMOUNTS.first_sale,
+      five_star_review: EARN_AMOUNTS.five_star_review,
+    },
+    dailyEarnCaps: DAILY_EARN_CAPS,
+    referralLadder,
+    referralCaps: {
+      daily: refCapDaily,
+      monthly: refCapMonthly,
+      lifetime: refCapLifetime,
+    },
+    dailyCheckinRewards: DAILY_CHECKIN_REWARDS,
+    tiers: [
+      { name: "Bronze", min: 0, max: 499 },
+      { name: "Silver", min: 500, max: 1999 },
+      { name: "Gold", min: 2000, max: 4999 },
+      { name: "Platinum", min: 5000, max: null },
+    ],
+    storeItems: Object.entries(STORE_REDEEM_COSTS).map(([type, cost]) => ({ type, cost })),
+  });
+};
