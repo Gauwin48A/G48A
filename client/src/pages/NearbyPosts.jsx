@@ -20,6 +20,8 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 
 const RADIUS_OPTIONS = [1, 2, 5, 10, 25, 50, 100];
 
@@ -38,6 +40,8 @@ const normalizeCategory = (value) =>
 
 export default function NearbyPosts() {
   const { t } = useTranslation();
+  const { density, setDensity } = usePageDensity("mhub_nearby_density");
+  const densityClass = density === "compact" ? "mhub-compact" : "";
   const tr = useCallback(
     (key, fallback, options = {}) =>
       t(key, { defaultValue: fallback, ...options }),
@@ -212,7 +216,7 @@ export default function NearbyPosts() {
   );
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950">
+    <div className={`min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950 ${densityClass}`}>
       <div className="sticky top-0 z-10 bg-gradient-to-r from-green-600 to-teal-600 dark:from-[#0b1220] dark:via-[#0f2a2a] dark:to-[#0b1220] px-4 py-6 dark:bg-gradient-to-r">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-4">
@@ -225,13 +229,20 @@ export default function NearbyPosts() {
                 <p className="text-green-100 text-sm dark:text-green-200 dark:text-sm">{t("find_items_close")}</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              className="text-white hover:bg-white/20 dark:text-white dark:hover:bg-slate-900/20"
-              onClick={requestFreshLocation}
-            >
-              <RefreshCw className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <PageDensityToggle
+                value={density}
+                onChange={setDensity}
+                className="[&>span]:text-white/80 [&_select]:bg-white/15 [&_select]:text-white [&_select]:border-white/30"
+              />
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-white/20 dark:text-white dark:hover:bg-slate-900/20"
+                onClick={requestFreshLocation}
+              >
+                <RefreshCw className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 dark:bg-slate-900/10">
             <div className="flex items-center gap-2 mb-3">

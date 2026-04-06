@@ -35,7 +35,8 @@ import { usePageDensity } from "@/hooks/usePageDensity";
 const ve = () => {
   const { t: r } = le(),
     tr = (t, s, l = {}) => r(t, { defaultValue: s, ...l }),
-    ({ density, setDensity } = usePageDensity("mhub_complaints_density")),
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    { density, setDensity } = usePageDensity("mhub_complaints_density"),
     densityClass = density === "compact" ? " mhub-compact" : "",
     { toast: d } = ne(),
     S = xe(),
@@ -1008,6 +1009,7 @@ const ve = () => {
             {
               className:
                 "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-200 dark:border-yellow-700 dark:border-0 dark:bg-gradient-to-r dark:border-2 dark:border-yellow-600/40",
+              "data-density": "extra",
             },
             e.createElement(
               w,

@@ -66,6 +66,7 @@ const me = () => {
       directContact: !0,
       thankYou: !0,
     }),
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     { density, setDensity } = usePageDensity("mhub_feedback_density"),
     P = (r, a) => {
       const l = String(r || "").trim();

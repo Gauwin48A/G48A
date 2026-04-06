@@ -81,10 +81,6 @@ const ResetPasswordPage = lazyWithRetry(
 );
 const AddPostPage = lazyWithRetry(() => import("./pages/AddPost.jsx"), "AddPost");
 const PostWelcomePage = lazyWithRetry(() => import("./pages/PostWelcome.jsx"), "PostWelcome");
-const CategoryModeSelectPage = lazyWithRetry(
-  () => import("./pages/CategoryModeSelect.jsx"),
-  "CategoryModeSelect",
-);
 const CategoryHubPage = lazyWithRetry(
   () => import("./pages/CategoryHub.jsx"),
   "CategoryHub",
@@ -379,7 +375,7 @@ function AppShell() {
                   <Route path="/add-post" element={<RequireAuth><AddPostPage /></RequireAuth>} />
                   <Route path="/post-welcome" element={<RequireAuth><PostWelcomePage /></RequireAuth>} />
                   <Route path="/sell" element={<RequireAuth><AddPostPage /></RequireAuth>} />
-                  <Route path="/category-mode" element={<CategoryModeSelectPage />} />
+                  <Route path="/category-mode" element={<Navigate to="/category-hub" replace />} />
                   <Route path="/category-hub" element={<CategoryHubPage />} />
                   <Route path="/edit-post/:postId" element={<RequireAuth><EditPostPage /></RequireAuth>} />
                   <Route path="/tier-selection" element={<RequireAuth><TierSelectionPage /></RequireAuth>} />
@@ -407,7 +403,6 @@ function AppShell() {
                   <Route path="/complaints" element={<RequireAuth><ComplaintsPage /></RequireAuth>} />
                   <Route path="/feedback" element={<RequireAuth><FeedbackPage /></RequireAuth>} />
                   <Route path="/rewards" element={<RequireAuth><RewardsPage /></RequireAuth>} />
-                  <Route path="/my-recommendations" element={<Navigate to="/for-you" replace />} />
                   <Route path="/categories" element={<SubcategoriesPage />} />
                   <Route path="/subcategories" element={<SubcategoriesPage />} />
                   <Route path="/categories/:slug" element={<Navigate to="/all-posts" replace />} />

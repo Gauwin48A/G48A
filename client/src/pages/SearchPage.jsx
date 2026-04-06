@@ -27,6 +27,8 @@ import {
   PageLoadingState as te,
 } from "@/components/page-state/PageStateBlocks";
 import { navigateBack } from "@/utils/navigation";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
@@ -167,6 +169,9 @@ const u = "recentSearches",
     const { t: n } = K(),
       s = X(),
       [w] = G(),
+      { density: densityValue, setDensity: setDensityValue } =
+        usePageDensity("mhub_search_density"), // eslint-disable-line react-hooks/rules-of-hooks
+      densityClass = densityValue === "compact" ? " mhub-compact" : "",
       { filters: a, setFilters: l } = V(),
       {
         activeCategory: categoryModeCategory,
@@ -802,7 +807,8 @@ const u = "recentSearches",
       "div",
       {
         className:
-          "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 dark:bg-gradient-to-br",
+          "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 dark:bg-gradient-to-br" +
+          densityClass,
       },
       e.createElement(
         "div",
@@ -860,6 +866,14 @@ const u = "recentSearches",
                 e.createElement(Z, { className: "w-5 h-5 text-white dark:text-white" }),
               ),
             ),
+          ),
+          e.createElement(
+            "div",
+            { className: "mt-2 flex justify-end" },
+            e.createElement(PageDensityToggle, {
+              value: densityValue,
+              onChange: setDensityValue,
+            }),
           ),
         ),
       ),
@@ -1470,6 +1484,7 @@ const u = "recentSearches",
           {
             className:
               "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-5 border border-blue-200 dark:border-blue-800 dark:bg-gradient-to-r dark:border dark:border-blue-600/40",
+            "data-density": "extra",
           },
           e.createElement(
             "h3",
