@@ -172,6 +172,10 @@ async function ensureCoinSchema() {
   await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_source_user ON coin_transactions(source_user_id)`).catch(() => {});
   await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_level ON coin_transactions(level)`).catch(() => {});
   await runQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS coins DECIMAL(10,2) DEFAULT 0`).catch(() => {});
+  // Expiry + FIFO columns
+  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ`).catch(() => {});
+  await runQuery(`ALTER TABLE coin_transactions ADD COLUMN IF NOT EXISTS remaining DECIMAL(10,2)`).catch(() => {});
+  await runQuery(`CREATE INDEX IF NOT EXISTS idx_coin_fifo ON coin_transactions(user_id, created_at ASC) WHERE amount > 0 AND remaining > 0`).catch(() => {});
 }
 
 // Cached promise pattern — avoids race condition with boolean flag
@@ -307,15 +311,20 @@ async function addCoins(
     }
   }
 
+  // Compute expiry based on coin type (promo vs earned)
+  const isPromo = PROMO_COIN_TYPES.has(type);
+  const expiryDays = isPromo ? EXPIRY_PROMO_DAYS : EXPIRY_EARNED_DAYS;
+  const expiresAt = new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000);
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     await client.query(
       `INSERT INTO coin_transactions (
-         user_id, amount, type, reference_id, description, source_user_id, level, metadata
+         user_id, amount, type, reference_id, description, source_user_id, level, metadata, remaining, expires_at
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         userId,
         Math.abs(amount),
@@ -325,6 +334,8 @@ async function addCoins(
         sourceUserId,
         level,
         metadata || {},
+        Math.abs(amount),  // remaining = full amount initially
+        expiresAt,
       ],
     );
 
@@ -340,8 +351,8 @@ async function addCoins(
     await client.query("COMMIT");
 
     const newBalance = parseFloat(result.rows[0]?.coins || 0);
-    logger.info(`[Coins] +${amount} ${type} for user ${userId} (balance: ${newBalance})`);
-    return { applied: true, newBalance };
+    logger.info(`[Coins] +${amount} ${type} for user ${userId} (balance: ${newBalance}, expires: ${expiresAt.toISOString().slice(0,10)})`);
+    return { applied: true, newBalance, expiresAt };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -383,6 +394,33 @@ async function spendCoins(userId, amount, type, referenceId = null, description 
       return { applied: false, reason: "insufficient_balance", currentBalance, required: amount };
     }
 
+    // FIFO deduction: consume oldest non-expired coins first
+    let toDeduct = Math.abs(amount);
+    const fifoRows = await client.query(
+      `SELECT id, remaining
+       FROM coin_transactions
+       WHERE user_id = $1
+         AND amount > 0
+         AND COALESCE(remaining, amount) > 0
+         AND (expires_at IS NULL OR expires_at > NOW())
+       ORDER BY created_at ASC
+       FOR UPDATE`,
+      [userId],
+    );
+
+    for (const row of fifoRows.rows) {
+      if (toDeduct <= 0) break;
+      const available = parseFloat(row.remaining ?? row.amount ?? 0);
+      if (available <= 0) continue;
+      const consume = Math.min(available, toDeduct);
+      await client.query(
+        `UPDATE coin_transactions SET remaining = COALESCE(remaining, amount) - $1 WHERE id = $2`,
+        [consume, row.id],
+      );
+      toDeduct -= consume;
+    }
+
+    // Record the spend transaction
     await client.query(
       `INSERT INTO coin_transactions (user_id, amount, type, reference_id, description)
        VALUES ($1, $2, $3, $4, $5)`,
@@ -401,7 +439,7 @@ async function spendCoins(userId, amount, type, referenceId = null, description 
     await client.query("COMMIT");
 
     const newBalance = parseFloat(result.rows[0]?.coins || 0);
-    logger.info(`[Coins] -${amount} ${type} for user ${userId} (balance: ${newBalance})`);
+    logger.info(`[Coins] -${amount} ${type} for user ${userId} (balance: ${newBalance}, FIFO)`);
     return { applied: true, newBalance };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1162,6 +1200,24 @@ exports.REDEEM_COSTS = REDEEM_COSTS;
 exports.DAILY_EARN_CAPS = DAILY_EARN_CAPS;
 
 // GET /api/coins/rewards-config — public config for frontend display
+// ---------- Coin-to-Rupee conversion ----------
+const COINS_PER_RUPEE = 100; // 100 coins = ₹1
+
+exports.COINS_PER_RUPEE = COINS_PER_RUPEE;
+
+// ---------- Expiry policy ----------
+const EXPIRY_EARNED_DAYS = 365;   // earned coins expire in 12 months
+const EXPIRY_PROMO_DAYS = 90;     // promo/bonus coins expire in 90 days
+const PROMO_COIN_TYPES = new Set([
+  "welcome_bonus", "daily_checkin", "spin_wheel", "scratch_card",
+  "referral_milestone_3",
+]);
+
+exports.EXPIRY_EARNED_DAYS = EXPIRY_EARNED_DAYS;
+exports.EXPIRY_PROMO_DAYS = EXPIRY_PROMO_DAYS;
+exports.PROMO_COIN_TYPES = PROMO_COIN_TYPES;
+
+// GET /api/coins/rewards-config — public config for frontend display
 exports.getRewardsConfig = async (req, res) => {
   const {
     CHAIN_COINS: chainCoins,
@@ -1178,6 +1234,9 @@ exports.getRewardsConfig = async (req, res) => {
 
   res.json({
     success: true,
+    version: "2.0.0",
+    currency: "INR",
+    coinsPerRupee: COINS_PER_RUPEE,
     earning: {
       welcome_bonus: EARN_AMOUNTS.welcome_bonus,
       post: EARN_AMOUNTS.post,
@@ -1194,13 +1253,32 @@ exports.getRewardsConfig = async (req, res) => {
       monthly: refCapMonthly,
       lifetime: refCapLifetime,
     },
+    referralValidation: {
+      tier1: "Referred user completes a real transaction (buy or sell)",
+      tier2: "Referred user creates 2+ listings AND is verified (phone/email/Aadhaar)",
+      notRewarded: "Invite-only signups, single listings, unverified users",
+    },
     dailyCheckinRewards: DAILY_CHECKIN_REWARDS,
+    spinRewardPool: SPIN_REWARD_POOL.map((s) => ({ amount: s.amount, weight: s.weight })),
+    scratchRewardPool: SCRATCH_REWARD_POOL.map((s) => ({ amount: s.amount, weight: s.weight })),
     tiers: [
-      { name: "Bronze", min: 0, max: 499 },
-      { name: "Silver", min: 500, max: 1999 },
-      { name: "Gold", min: 2000, max: 4999 },
-      { name: "Platinum", min: 5000, max: null },
+      { name: "Bronze", min: 0, max: 499, perks: ["Basic marketplace access"] },
+      { name: "Silver", min: 500, max: 1999, perks: ["Bronze perks", "Priority support", "5% boost discount"] },
+      { name: "Gold", min: 2000, max: 4999, perks: ["Silver perks", "Featured seller badge", "10% boost discount"] },
+      { name: "Platinum", min: 5000, max: null, perks: ["Gold perks", "Premium badge", "20% boost discount", "Early access to features"] },
     ],
-    storeItems: Object.entries(STORE_REDEEM_COSTS).map(([type, cost]) => ({ type, cost })),
+    storeItems: [
+      { type: "boost", cost: STORE_REDEEM_COSTS.boost, label: "Listing Boost", desc: "Top of search for 1 day", requiresPost: true },
+      { type: "badge", cost: STORE_REDEEM_COSTS.badge, label: "Profile Badge", desc: "Premium badge on your profile", requiresPost: false },
+      { type: "top_search", cost: STORE_REDEEM_COSTS.top_search, label: "Top Search Spotlight", desc: "Spotlight for 7 days", requiresPost: true },
+    ],
+    expiry: {
+      earnedDays: EXPIRY_EARNED_DAYS,
+      promoDays: EXPIRY_PROMO_DAYS,
+      promoTypes: Array.from(PROMO_COIN_TYPES),
+      spendOrder: "FIFO (oldest coins spent first)",
+    },
+    boostCosts: REDEEM_COSTS,
+    milestones: REFERRAL_MILESTONES,
   });
 };

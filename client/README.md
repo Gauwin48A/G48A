@@ -53,6 +53,7 @@
 - [Page Directory (All 67 Routes)](#-page-directory--all-67-routes)
 - [App Flow Atlas (User + Developer Lens)](#-app-flow-atlas-user--developer-lens)
 - [Product + Engineering Handbook (Printable Layout)](#-product--engineering-handbook-printable-layout)
+- [Page-by-Page Feature Map](#-page-by-page-feature-map)
 - [Navigation Architecture](#-navigation-architecture)
 - [Authentication & Access Control](#-authentication--access-control)
 
@@ -326,7 +327,7 @@ client/src/
 ├── utils/                  # 25 utility modules
 │   ├── authStorage.js      # Token & session helpers
 │   ├── savedPosts.js       # Wishlist local state
-│   ├── formatPrice.js      # ₹ currency formatting
+│   ├── formatPrice.js      # Rs currency formatting
 │   ├── relativeTime.js     # "2 hours ago" formatting
 │   └── ...
 │
@@ -841,14 +842,17 @@ This section documents end-to-end journeys in two voices: the **User View** (pla
 | 4 | Review reputation. | `/reviews/:userId` | Ratings and review aggregation. |
 | 5 | Report issues. | `/complaints` | Complaint intake and escalation. |
 
-### Flow 4: Rewards ? Loyalty ? Progression
+### Flow 4: Rewards → Loyalty → Progression
 
 | Step | User View | Pages | Developer View |
 |:----:|:----------|:------|:---------------|
-| 1 | Open rewards hub. | `/rewards` | Rewards ledger, coins, XP, tiers. |
-| 2 | Track activity milestones. | `/activity` | Activity feed with rewardable events. |
-| 3 | Receive updates. | `/notifications` | Reward notifications and streak reminders. |
-| 4 | See progress on profile. | `/profile?tab=overview` | Completion percentage and next actions. |
+| 1 | Open rewards hub. | `/rewards` | Loads coin balance, tier, config from `/coins/rewards-config`. |
+| 2 | Daily check-in / spin. | `/rewards` | `POST /coins/daily-checkin`, `POST /coins/spin`. Idempotent per IST day. |
+| 3 | Share referral code. | `/rewards` (Referral tab) | Deep link `/invite/:code` triggers chain on signup + activity. |
+| 4 | Track referral network. | `/rewards` (Network tab) | `ReferralChainTree` shows 5-level tree with status badges. |
+| 5 | Redeem coins in store. | `/rewards` (Store tab) | `POST /coins/redeem` — FIFO spend, oldest non-expired coins first. |
+| 6 | View history. | `/rewards` (History tab) | `GET /coins/history` — paginated ledger with earn/spend entries. |
+| 7 | See Rs value everywhere. | `/rewards`, `/cart` | `coinConversion.js` shows rupee equivalents (100 coins = Rs 1). |
 
 ### Flow 5: Community ? Social Signal ? Discovery
 
@@ -1025,7 +1029,7 @@ sequenceDiagram
 
 <div style="page-break-after: always;"></div>
 
-#### 3) Rewards Flow � Activity ? Ledger ? Progression
+#### 3) Rewards Flow — Activity → Ledger → Progression
 
 ```mermaid
 sequenceDiagram
@@ -1033,25 +1037,37 @@ sequenceDiagram
   actor User
   participant App
   participant API
-  participant Rewards
+  participant CoinCtrl as coinController
   participant DB
   participant Notif
 
-  User->>App: Open Rewards
-  App->>API: Get reward summary
-  API->>Rewards: Compute current tier
-  Rewards->>DB: Read ledger + streaks
-  DB-->>Rewards: Ledger data
-  Rewards-->>API: Reward state
-  API-->>App: Coins, XP, tier
+  User->>App: Open Rewards (/rewards)
+  App->>API: GET /coins/rewards-config
+  API-->>App: Config v2.0.0 (coinsPerRupee, tiers, expiry)
+  App->>API: GET /rewards (balance + tier)
+  API->>CoinCtrl: Compute tier from points
+  CoinCtrl->>DB: Read rewards + coin_transactions
+  DB-->>CoinCtrl: Ledger data
+  CoinCtrl-->>API: Coins, tier, XP
+  API-->>App: Balance (with Rs value), tier badge
 
-  User->>App: Complete activity
-  App->>API: Submit activity event
-  API->>Rewards: Validate + award points
-  Rewards->>DB: Append ledger entry
-  Rewards->>Notif: Send reward notification
+  User->>App: Daily check-in
+  App->>API: POST /coins/daily-checkin
+  API->>CoinCtrl: addCoins() with idempotency
+  CoinCtrl->>DB: INSERT coin_transactions (remaining, expires_at)
+  CoinCtrl->>DB: UPDATE users SET coins += amount
+  CoinCtrl-->>API: { applied, newBalance, expiresAt }
+  API->>Notif: Send reward notification
   Notif-->>App: In-app update
-  API-->>App: Updated balance
+
+  User->>App: Redeem boost (100 coins)
+  App->>API: POST /coins/redeem
+  API->>CoinCtrl: spendCoins() FIFO
+  CoinCtrl->>DB: SELECT oldest non-expired FOR UPDATE
+  CoinCtrl->>DB: Deduct remaining on each row
+  CoinCtrl->>DB: INSERT negative transaction
+  CoinCtrl-->>API: { applied, newBalance }
+  API-->>App: Redemption success
 ```
 
 ---
@@ -1088,12 +1104,17 @@ sequenceDiagram
 
 | ID | Scenario | Expected |
 |:---|:---------|:---------|
-| R1 | Open Rewards | Current coin balance, XP, tier, and streaks render correctly. |
-| R2 | Daily check-in | One check-in per day; repeated attempts are idempotent. |
-| R3 | Activity reward | Eligible actions add ledger entries with correct points. |
-| R4 | Leaderboard update | Weekly refresh reflects new ranks without duplicates. |
-| R5 | Reward notification | In-app notification appears with correct balance delta. |
-| R6 | Offline or error | Rewards view shows cached state and retry messaging. |
+| R1 | Open Rewards | Current coin balance with Rs value, tier badge, progress bar, and streaks render correctly. |
+| R2 | Daily check-in | One check-in per day; repeated attempts are idempotent. Streak day 1–7 awards 5–100 coins. |
+| R3 | Activity reward | Eligible actions add ledger entries with correct coin amounts and daily caps enforced. |
+| R4 | Spin wheel | Weighted random reward (5–100 coins); 1x/day limit enforced. |
+| R5 | Referral chain | Coins distributed to 5 ancestor levels (100/40/20/10/5) only after referred user has real activity. |
+| R6 | Coin expiry | Promo coins expire in 90 days; earned coins in 365 days. Expired coins not spendable. |
+| R7 | FIFO spend | Oldest non-expired coins consumed first when spending (boost, badge, etc.). |
+| R8 | Coin-to-Rs display | Hero card shows balance + Rs value. Store items show rupee equivalent. Cart shows coin equivalent. |
+| R9 | Leaderboard update | Weekly refresh reflects new ranks without duplicates. |
+| R10 | Reward notification | In-app notification appears with correct balance delta. |
+| R11 | Offline or error | Rewards view shows cached state and retry messaging. |
 
 <div style="page-break-after: always;"></div>
 
@@ -1236,6 +1257,639 @@ Each page below includes its intent, primary actions, and key states. This secti
 | `/` | `/category-hub` | Root redirect | � |
 | `/categories/:slug` | `/all-posts` | Category slug redirect | � |
 | `*` | `/category-hub` | Not found fallback | 404 |
+
+## 📄 Page-by-Page Feature Map
+
+Each page below follows the same spec so product, QA, and engineering have a shared reference.
+Auth legend: Public = no login required. Auth = login required. Admin = admin role required. Mixed = some features gated.
+
+### Redirects & Aliases (not pages)
+
+| Route | Target | Note |
+|-------|--------|------|
+| `/` | `/category-hub` | Root redirect |
+| `/categories/:slug` | `/all-posts` | Legacy category slug redirect |
+| `*` | `/category-hub` | 404 fallback |
+
+### /aadhaar-verify -- AadhaarVerifyPage
+- Routes: /aadhaar-verify
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\GetVerified.jsx`
+- Access: Auth
+- Purpose: Aadhaar-based identity verification flow with OTP.
+- Key Features: OTP send and verify, CMS-driven instructions, verification CTA.
+- User Flows: Review requirements, enter Aadhaar, verify OTP, get verified badge.
+- Data Sources / APIs: Services: api.post (send OTP, verify OTP). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /activity -- ActivityHubPage
+- Routes: /activity
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\ActivityHub.jsx`
+- Access: Auth
+- Purpose: Central shortcut hub for conversations, offers, reviews, and nearby.
+- Key Features: Quick-action cards, CMS-driven layout, jump links to Chat, Offers, Nearby, Reviews.
+- User Flows: Open hub, tap action card, navigate to destination page.
+- Data Sources / APIs: Services: useCmsPage("activity-hub"). Hooks: useCmsPage.
+- State & Context: Contexts: AuthContext.
+
+### /add-post, /sell -- AddPostPage
+- Routes: /add-post, /sell
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\AddPost.jsx`
+- Access: Auth
+- Purpose: Create a marketplace listing with media, location, pricing and category.
+- Key Features: Multi-image upload with compression, GPS auto-location, category/subcategory picker, condition selector, pricing, audio description, draft save.
+- User Flows: Fill form -> upload media -> select category -> set price -> submit -> redirect to My Posts.
+- Data Sources / APIs: Services: api.post (listing creation), fetchCategoriesCached, fetchSubcategories. Hooks: useToast.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /admin-panel -- AdminPanelPage
+- Routes: /admin-panel
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\AdminPanel.jsx`
+- Access: Admin (requires admin or super_admin role)
+- Purpose: Platform administration dashboard for moderation and management.
+- Key Features: User management, post moderation, platform metrics, system controls.
+- User Flows: Login as admin -> access panel -> manage users/posts/complaints.
+- Data Sources / APIs: Services: api (management endpoints). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /all-posts, /listings -- AllPostsPage
+- Routes: /all-posts, /listings
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\AllPosts.jsx`
+- Access: Public
+- Purpose: Primary marketplace listing feed with filtering and sorting.
+- Key Features: Hero context banner, category/subcategory bar, quick filters (price, condition, sort), shuffle, live refresh toggle, listing cards with infinite scroll.
+- User Flows: Browse listings -> apply filters -> sort -> open listing detail -> contact seller.
+- Data Sources / APIs: Services: api.get (posts with query params). Hooks: useInfiniteScroll.
+- State & Context: Contexts: AuthContext, CartContext, CategoryModeContext, FilterContext.
+
+### /analytics -- AnalyticsPage
+- Routes: /analytics
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Analytics.jsx`
+- Access: Public
+- Purpose: Seller analytics showing views, sales trends, and performance metrics.
+- Key Features: Charts, KPIs, time-range filters, export.
+- User Flows: View dashboard -> filter by date -> review metrics.
+- Data Sources / APIs: Services: api (seller metrics). Hooks: none.
+- State & Context: Contexts: CategoryModeContext.
+
+### /bought-posts -- BoughtPostsPage
+- Routes: /bought-posts
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\BoughtPosts.jsx`
+- Access: Auth
+- Purpose: History view of items purchased by the current user.
+- Key Features: Purchase list with status, price, date, and seller info.
+- User Flows: Browse purchase history -> open listing detail -> leave review.
+- Data Sources / APIs: Services: api.get (purchase history). Hooks: none.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /buyer-view -- BuyerViewPage
+- Routes: /buyer-view
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\BuyerView.jsx`
+- Access: Auth
+- Purpose: Buyer-centric browsing layout optimized for active transactions.
+- Key Features: Active transactions list, seller contact, status tracking.
+- User Flows: View active purchases -> track status -> contact seller.
+- Data Sources / APIs: Services: api.get (listings, transactions). Hooks: none.
+- State & Context: Contexts: none.
+
+### /cart -- CartPage
+- Routes: /cart
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Cart.jsx`
+- Access: Auth
+- Purpose: Shopping cart with category-scoped filtering, coupon support, and coin equivalent display.
+- Key Features: Category mode filtering, bulk ops, coupon codes, quantity management, delivery ETA, order summary with coin equivalent (100 coins = Rs 1).
+- User Flows: Review cart -> adjust quantities -> apply coupon -> view total (with coin equivalent) -> proceed.
+- Data Sources / APIs: Services: via CartContext (local state). Hooks: none.
+- State & Context: Contexts: CartContext, CategoryModeContext.
+
+### /category-hub -- CategoryHubPage
+- Routes: /category-hub
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\CategoryHub.jsx`
+- Access: Public
+- Purpose: Category discovery landing page and default home screen.
+- Key Features: Category grid with icons, trending sections, recent activity, CMS-driven hero banner.
+- User Flows: Browse categories -> select one -> navigate to filtered All Posts.
+- Data Sources / APIs: Services: fetchCategoriesCached, useCmsPage. Hooks: useCmsPage, useTheme.
+- State & Context: Contexts: CategoryModeContext, FilterContext, ThemeContext.
+
+### /centre -- CentreListPage
+- Routes: /centre
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\ChannelsListPage.jsx` (variant="centre")
+- Access: Auth
+- Purpose: List of seller Centre Pages (premium brand storefronts).
+- Key Features: Centre discovery, follow/unfollow, create new centre.
+- User Flows: Browse centres -> follow -> open centre detail.
+- Data Sources / APIs: Services: getAllChannels, getPremiumChannels, followChannel. Hooks: none.
+- State & Context: Contexts: none.
+
+### /centre/create -- CreateCentrePage
+- Routes: /centre/create
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\CreateChannelPage.jsx` (variant="centre")
+- Access: Auth
+- Purpose: Create or edit a Centre Page (premium brand storefront).
+- Key Features: Profile form, logo/cover upload, description, category selection.
+- User Flows: Fill form -> upload media -> save -> redirect to centre page.
+- Data Sources / APIs: Services: createChannel, updateChannel, uploadChannelMedia. Hooks: none.
+- State & Context: Contexts: AuthContext.
+
+### /centre/:id -- CentreDetailPage
+- Routes: /centre/:id
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\ChannelPage.jsx` (variant="centre")
+- Access: Auth
+- Purpose: Individual Centre Page profile with posts and listings.
+- Key Features: Centre profile, posts feed, follow/unfollow, post creation, links to centre listings.
+- User Flows: View centre -> browse posts -> follow -> view listings.
+- Data Sources / APIs: Services: getChannelById, createChannelPost, followChannel. Hooks: useToast.
+- State & Context: Contexts: none.
+
+### /centre/:id/listings -- CentreListingsPage
+- Routes: /centre/:id/listings
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\CentreListings.jsx`
+- Access: Auth
+- Purpose: Browse all marketplace listings belonging to a specific Centre.
+- Key Features: Filtered listing grid scoped to the centre, sorting.
+- User Flows: View centre listings -> open listing detail.
+- Data Sources / APIs: Services: getChannelById, api.get (listings). Hooks: none.
+- State & Context: Contexts: none.
+
+### /channels -- ChannelsListPage
+- Routes: /channels
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\ChannelsListPage.jsx`
+- Access: Public
+- Purpose: Discovery page for community channels.
+- Key Features: Channel list, follow/unfollow, premium badge, create channel CTA.
+- User Flows: Browse channels -> follow -> open channel detail.
+- Data Sources / APIs: Services: getAllChannels, getPremiumChannels, followChannel. Hooks: none.
+- State & Context: Contexts: none.
+
+### /channels/create -- CreateChannelPage
+- Routes: /channels/create
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\CreateChannelPage.jsx`
+- Access: Auth
+- Purpose: Create or edit a community channel.
+- Key Features: Channel form, media upload, description.
+- User Flows: Fill form -> save -> redirect to channel page.
+- Data Sources / APIs: Services: createChannel, updateChannel, uploadChannelMedia. Hooks: none.
+- State & Context: Contexts: AuthContext.
+
+### /channels/:id -- ChannelPage
+- Routes: /channels/:id
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\ChannelPage.jsx`
+- Access: Public
+- Purpose: Individual channel profile with posts and followers.
+- Key Features: Channel profile, posts feed, follow/unfollow, post creation.
+- User Flows: View channel -> browse posts -> follow -> create post.
+- Data Sources / APIs: Services: getChannelById, createChannelPost, followChannel. Hooks: useToast.
+- State & Context: Contexts: none.
+
+### /chat, /chats -- ProtectedChatPage
+- Routes: /chat, /chats
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\ProtectedChat.jsx`
+- Access: Auth
+- Purpose: Real-time messaging between buyers and sellers.
+- Key Features: Conversation list, 1-on-1 chat, typing indicators, online presence, audio recording, message history with infinite scroll.
+- User Flows: Open conversations -> select thread -> send message -> receive reply.
+- Data Sources / APIs: Services: Socket.IO (real-time). Hooks: useRealtimeChat.
+- State & Context: Contexts: AuthContext.
+
+### /complaints -- ComplaintsPage
+- Routes: /complaints
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Complaints.jsx`
+- Access: Auth
+- Purpose: Report issues with sellers, transactions, or platform behavior.
+- Key Features: Complaint form, category selection, file attachment, status tracking.
+- User Flows: Select complaint type -> fill details -> submit -> track status.
+- Data Sources / APIs: Services: api (complaint submission). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+- Known Issue: Backend /api/complaints/my returns 500. Investigating server-side handler.
+
+### /dashboard -- DashboardPage
+- Routes: /dashboard
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Dashboard.jsx`
+- Access: Auth
+- Purpose: Seller overview showing active listings, sales, views, and rewards summary.
+- Key Features: Stats cards, active listings, recent sales, engagement metrics.
+- User Flows: View stats -> manage listings -> view analytics.
+- Data Sources / APIs: Services: api.get (stats/user data). Hooks: none.
+- State & Context: Contexts: AuthContext.
+
+### /edit-post/:postId -- EditPostPage
+- Routes: /edit-post/:postId
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\EditPost.jsx`
+- Access: Auth
+- Purpose: Edit an existing marketplace listing.
+- Key Features: Pre-filled form, media management, field validation.
+- User Flows: Load listing -> edit fields -> save -> redirect.
+- Data Sources / APIs: Services: api.get (fetch post), api.put (update post). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /feed -- FeedPage
+- Routes: /feed
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\FeedPage.jsx`
+- Access: Public
+- Purpose: Social-style community feed showing marketplace updates and posts.
+- Key Features: Vertical scroll, reactions, comments, share, pull-to-refresh.
+- User Flows: Browse feed -> react/comment -> open detail -> share.
+- Data Sources / APIs: Services: api.get (social feed posts). Hooks: none.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /feed/:id -- FeedPostDetailPage
+- Routes: /feed/:id
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\FeedPostDetail.jsx`
+- Access: Public
+- Purpose: Detailed view of a single feed/social post.
+- Key Features: Full post content, comments, reactions, share.
+- User Flows: View post -> comment -> react -> navigate back.
+- Data Sources / APIs: Services: api.get (post detail). Hooks: none.
+- State & Context: Contexts: none.
+
+### /feed/feedpostadd -- PostAddPage (no image upload)
+- Routes: /feed/feedpostadd
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\PostAdd.jsx`
+- Access: Auth
+- Purpose: Simple text/media post creation for the social feed (no image upload variant).
+- Key Features: Text input, submit. No image upload when accessed via this route.
+- User Flows: Compose text -> submit -> redirect to feed.
+- Data Sources / APIs: Services: api.post (feed post submission). Hooks: none.
+- State & Context: Contexts: none.
+
+### /feedback -- FeedbackPage
+- Routes: /feedback
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Feedback.jsx`
+- Access: Auth
+- Purpose: General platform feedback and bug reporting form.
+- Key Features: Feedback form, category tags, submit CTA.
+- User Flows: Select type -> write feedback -> submit.
+- Data Sources / APIs: Services: api (feedback submission). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /for-you -- ForYouPage
+- Routes: /for-you
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\ForYou.jsx`
+- Access: Public (personalized for logged-in users)
+- Purpose: Algorithmic feed tailored to user interests, preferences, and browsing behavior.
+- Key Features: Personalized listing cards, preference-aware sorting, infinite scroll, translated posts.
+- User Flows: Browse personalized picks -> open listing -> contact seller.
+- Data Sources / APIs: Services: api.get (recommendations), fetchUserPreferencesCached. Hooks: useTranslatedPosts.
+- State & Context: Contexts: AuthContext, CartContext, CategoryModeContext.
+
+### /forgot-password -- ForgotPasswordPage
+- Routes: /forgot-password
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Auth\ForgotPassword.jsx`
+- Access: Public
+- Purpose: Password recovery via phone or email OTP.
+- Key Features: Phone/email input, OTP request.
+- User Flows: Enter phone/email -> request OTP -> redirect to reset page.
+- Data Sources / APIs: Services: api.post("/auth/forgot-password"). Hooks: useToast.
+- State & Context: Contexts: none.
+
+### /home -- HomePage
+- Routes: /home
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Home.jsx`
+- Access: Public
+- Purpose: Public landing page with featured content and platform highlights.
+- Key Features: Featured listings, platform value props, CTA sections.
+- User Flows: Browse featured -> navigate to category or listing.
+- Data Sources / APIs: Services: api.get("/posts"). Hooks: none.
+- State & Context: Contexts: AuthContext.
+
+### /invite/:code -- InviteRedirectPage
+- Routes: /invite/:code
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\InviteRedirect.jsx`
+- Access: Public
+- Purpose: Landing handler for referral invite links.
+- Key Features: Store referral code, CMS welcome content, redirect to signup.
+- User Flows: Click invite link -> store code -> redirect to /signup with referral param.
+- Data Sources / APIs: Services: useCmsPage("invite-redirect"). Hooks: useCmsPage.
+- State & Context: Contexts: none.
+
+### /kyc -- KycVerificationPage
+- Routes: /kyc
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\KYC\KycVerification.jsx`
+- Access: Auth
+- Purpose: File-upload based KYC verification form.
+- Key Features: Document upload (ID, address proof), status tracking.
+- User Flows: Upload documents -> submit -> track verification status.
+- Data Sources / APIs: Services: api.get("/users/kyc/status"), api.post (submission). Hooks: none.
+- State & Context: Contexts: none.
+
+### /login -- LoginPage
+- Routes: /login
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Auth\Login.jsx`
+- Access: Public
+- Purpose: User sign-in with mobile, password, OTP, or passkey.
+- Key Features: Phone/email input, password login, OTP login, WebAuthn/passkey, remember me.
+- User Flows: Enter credentials -> authenticate -> redirect to previous page or home.
+- Data Sources / APIs: Services: api.post (auth login), login() from AuthContext. Hooks: useToast.
+- State & Context: Contexts: AuthContext, LocationContext.
+
+### /my-feed -- MyFeedPage
+- Routes: /my-feed
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\MyFeedPage.jsx`
+- Access: Auth
+- Purpose: Private view of the user's own feed posts and interactions.
+- Key Features: Personal posts list, edit/delete, pull-to-refresh, translated content.
+- User Flows: Browse own posts -> edit -> delete.
+- Data Sources / APIs: Services: api.get (personal feed). Hooks: usePullToRefresh, useTranslatedPosts.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /my-home, /my-posts -- MyHomePage
+- Routes: /my-home, /my-posts
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\MyHome.jsx`
+- Access: Auth
+- Purpose: Manage your own marketplace listings.
+- Key Features: Listing grid, edit/pause/delete/boost controls, status filters, pull-to-refresh.
+- User Flows: View listings -> edit listing -> boost -> delete.
+- Data Sources / APIs: Services: api (personal listings management). Hooks: usePullToRefresh, useToast.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /nearby -- NearbyPostsPage
+- Routes: /nearby
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\NearbyPosts.jsx`
+- Access: Auth
+- Purpose: Location-based listing discovery using the logged-in user's detected GPS position.
+- Key Features: Same listing card layout as /all-posts and /for-you but filtered by proximity to the user's current location. Distance display, radius filter. Requires GPS permission.
+- User Flows: Grant GPS permission -> browse nearby listings -> open listing -> contact seller.
+- Data Sources / APIs: Services: api.get (location-based listings query with lat/lng). Hooks: none.
+- State & Context: Contexts: CategoryModeContext, LocationContext.
+
+### /notifications -- NotificationsPage
+- Routes: /notifications
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Notifications.jsx`
+- Access: Auth
+- Purpose: Inbox for user alerts, system updates, reward events, and social interactions.
+- Key Features: Paginated notification list, mark as read (single + bulk), delete, search, filter by type, unread count badge.
+- User Flows: Browse notifications -> mark read -> delete -> navigate to linked content.
+- Data Sources / APIs: Services: api.get (alerts), api.delete (remove). Hooks: useToast.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /offers -- OffersPage
+- Routes: /offers
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Offers.jsx`
+- Access: Public (full features require auth)
+- Purpose: Management of buy/sell price negotiation offers.
+- Key Features: Offer list (sent/received), accept/reject/counter, status tracking, CMS content.
+- User Flows: View offers -> accept/reject -> negotiate -> finalize.
+- Data Sources / APIs: Services: api (offers tracking), useCmsPage. Hooks: useCmsPage, useToast.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /payment -- PaymentPage
+- Routes: /payment
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Payments\PaymentPage.jsx`
+- Access: Auth
+- Purpose: Payment gateway interface for UPI and Razorpay transactions.
+- Key Features: Payment method management, transaction history, UPI integration, Razorpay checkout.
+- User Flows: Select payment method -> initiate payment -> confirm -> view receipt.
+- Data Sources / APIs: Services: api (payment config/history), useCmsPage. Hooks: useCmsPage, useToast.
+- State & Context: Contexts: AuthContext.
+
+### /post/:id, /listing/:id -- PostDetailPage
+- Routes: /post/:id, /listing/:id
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\PostDetail.jsx`
+- Access: Public
+- Purpose: Comprehensive detail view of a single marketplace listing.
+- Key Features: Image gallery, seller profile with trust badge, price, condition, specifications, contact seller CTA, share, wishlist toggle, similar listings.
+- User Flows: View listing -> view gallery -> contact seller -> make offer -> add to cart.
+- Data Sources / APIs: Services: api.get("/posts/:id"), api.post (interaction). Hooks: useTrustScore, useToast.
+- State & Context: Contexts: AuthContext.
+
+### /post-welcome -- PostWelcomePage
+- Routes: /post-welcome
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\PostWelcome.jsx`
+- Access: Auth
+- Purpose: Sell onboarding page explaining listing tiers and popular categories.
+- Key Features: Tier comparison, category highlights, CMS content, CTA to start posting.
+- User Flows: Review tiers -> choose plan -> proceed to add-post.
+- Data Sources / APIs: Services: useCmsPage. Hooks: useCmsPage.
+- State & Context: Contexts: AuthContext.
+
+### /post_add -- PostAddPage
+- Routes: /post_add
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\PostAdd.jsx`
+- Access: Auth
+- Purpose: Quick text/media post creation for social feed.
+- Key Features: Simple text input, optional media, submit.
+- User Flows: Compose -> submit -> redirect to feed.
+- Data Sources / APIs: Services: api.post (feed submission). Hooks: none.
+- State & Context: Contexts: none.
+
+### /pricing, /tiers, /tier-selection -- TierSelectionPage
+- Routes: /tier-selection, /tiers, /pricing
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\TierSelection.jsx`
+- Access: Auth
+- Purpose: Select listing promotion tier (Basic, Bronze, Silver, Premium).
+- Key Features: Tier comparison cards, feature lists, pricing, CMS content, coin discount display.
+- User Flows: Compare tiers -> choose plan -> proceed to payment.
+- Data Sources / APIs: Services: api.get (tiers), useCmsPage. Hooks: useCmsPage, useToast.
+- State & Context: Contexts: none.
+
+### /privacy-policy -- PrivacyPage
+- Routes: /privacy-policy
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\PrivacyPolicy.jsx`
+- Access: Public
+- Purpose: Privacy policy documentation.
+- Key Features: CMS-rendered legal content.
+- User Flows: Read policy.
+- Data Sources / APIs: Services: useCmsPage("privacy-policy"). Hooks: useCmsPage.
+- State & Context: Contexts: none.
+
+### /profile -- ProfilePage
+- Routes: /profile (with tabs: ?tab=overview, ?tab=personal, ?tab=preferences, ?tab=settings)
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Profile.jsx`
+- Access: Auth
+- Purpose: User account management with 4 tabs.
+- Key Features: Avatar with color generation, trust score badge, activity stats, edit personal info, notification preferences, language selection (26 languages), privacy controls, data export, account deletion.
+- User Flows: Navigate tabs -> edit fields -> save -> view trust score.
+- Data Sources / APIs: Services: getChannelByUser, api.get (profile data). Hooks: useToast.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /public-wall -- PublicWallPage
+- Routes: /public-wall
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\PublicWall.jsx`
+- Access: Public
+- Purpose: Social proof surface showing platform insights, top sellers, and activity.
+- Key Features: Public rankings, activity stream, platform stats.
+- User Flows: Browse top sellers/buyers -> view profiles.
+- Data Sources / APIs: Services: api.get (social/wall data). Hooks: none.
+- State & Context: Contexts: none.
+
+### /recently-viewed -- RecentlyViewedPage
+- Routes: /recently-viewed
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\RecentlyViewed.jsx`
+- Access: Auth
+- Purpose: Browsing history log of recently opened listings.
+- Key Features: Chronological list, open listing, translated posts.
+- User Flows: Browse history -> open listing.
+- Data Sources / APIs: Services: api.get (view history). Hooks: useTranslatedPosts.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /refund-policy -- RefundPage
+- Routes: /refund-policy
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\RefundPolicy.jsx`
+- Access: Public
+- Purpose: Refund policy documentation.
+- Key Features: CMS-rendered legal content.
+- User Flows: Read policy.
+- Data Sources / APIs: Services: useCmsPage("refund-policy"). Hooks: useCmsPage.
+- State & Context: Contexts: none.
+
+### /reset-password, /reset-password/:token -- ResetPasswordPage
+- Routes: /reset-password, /reset-password/:token
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Auth\ResetPassword.jsx`
+- Access: Public
+- Purpose: Token or OTP verified form for setting a new password.
+- Key Features: New password input, confirm password, token validation.
+- User Flows: Enter new password -> confirm -> submit -> redirect to login.
+- Data Sources / APIs: Services: api.post (password update). Hooks: useToast.
+- State & Context: Contexts: none.
+
+### /reviews/:userId -- ReviewsPage
+- Routes: /reviews/:userId
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Reviews.jsx`
+- Access: Public
+- Purpose: View seller/buyer ratings and review comments.
+- Key Features: Star rating display, review list, filter by rating, seller response, submit new review.
+- User Flows: View reviews -> filter -> submit review.
+- Data Sources / APIs: Services: api.get (user reviews), api.post (new review). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /rewards -- RewardsPage
+- Routes: /rewards
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Rewards.jsx`
+- Access: Auth
+- Purpose: Gamification hub showing coin balance, tiers, referral network, earning guide, store, and history.
+- Key Features: Hero card with balance and Rs value (100 coins = Rs 1), tier progress bar, daily check-in, spin wheel, referral code sharing (WhatsApp/Telegram/SMS), 5 tabs (Overview, Referral Network, Earn, Store, History).
+- User Flows: View balance -> daily check-in -> spin -> share referral -> redeem in store -> view history.
+- Data Sources / APIs: Services: GET /rewards, GET /coins/rewards-config, GET /coins/engagement, GET /coins/history, POST /coins/daily-checkin, POST /coins/spin. Hooks: none.
+- State & Context: Contexts: AuthContext.
+
+### /saledone -- SaledonePage
+- Routes: /saledone
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Saledone.jsx`
+- Access: Auth
+- Purpose: Sale completion confirmation page with transaction stepper.
+- Key Features: Transaction confirmation, status display, reward notification.
+- User Flows: Confirm sale -> view confirmation -> return to listings.
+- Data Sources / APIs: Services: api.get/post (transaction status). Hooks: useToast.
+- State & Context: Contexts: none.
+
+### /saleundone -- SaleUndonePage
+- Routes: /saleundone
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\SaleUndone.jsx`
+- Access: Auth
+- Purpose: Revert a transaction with audit trail.
+- Key Features: Cancellation form, reason selection, CMS content.
+- User Flows: Select reason -> confirm revert -> view updated status.
+- Data Sources / APIs: Services: api (transaction revert), useCmsPage. Hooks: useCmsPage, useToast.
+- State & Context: Contexts: CategoryModeContext.
+
+### /saved-searches -- SavedSearchesPage
+- Routes: /saved-searches
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\SavedSearches.jsx`
+- Access: Auth
+- Purpose: Manage saved search queries and automated alerts.
+- Key Features: Saved search list, re-run search, delete, create alert.
+- User Flows: View saved searches -> re-run -> delete.
+- Data Sources / APIs: Services: api.get (saved searches). Hooks: none.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /search -- SearchPage
+- Routes: /search
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\SearchPage.jsx`
+- Access: Public
+- Purpose: Global text search across all listings and content.
+- Key Features: Search input with history, suggestions, category-scoped results, filters.
+- User Flows: Type query -> view suggestions -> filter results -> open listing.
+- Data Sources / APIs: Services: api.get, fetchCategoriesCached. Hooks: none.
+- State & Context: Contexts: FilterContext, CategoryModeContext.
+
+### /security -- SecuritySettingsPage
+- Routes: /security
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\SecuritySettings.jsx`
+- Access: Auth
+- Purpose: Account security management (sessions, 2FA, passkeys).
+- Key Features: Active sessions list, revoke session, 2FA toggle, passkey management.
+- User Flows: View sessions -> revoke suspicious -> enable 2FA -> add passkey.
+- Data Sources / APIs: Services: api.get (sessions), api.post (revoke). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /signup -- SignUpPage
+- Routes: /signup
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Auth\SignUp.jsx`
+- Access: Public
+- Purpose: New user registration with optional referral code.
+- Key Features: Phone/email, password, name, referral code pre-fill from invite links.
+- User Flows: Fill form -> submit -> auto-login -> welcome bonus -> redirect to home.
+- Data Sources / APIs: Services: api (auth registration). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /sold-posts -- SoldPostsPage
+- Routes: /sold-posts
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\SoldPosts.jsx`
+- Access: Auth
+- Purpose: History of items successfully sold by the user.
+- Key Features: Sold items list with buyer info, price, date, revenue summary.
+- User Flows: Browse sold history -> view details.
+- Data Sources / APIs: Services: api.get (sales history). Hooks: none.
+- State & Context: Contexts: AuthContext, CategoryModeContext.
+
+### /subcategories, /categories -- SubcategoriesPage
+- Routes: /subcategories, /categories
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Subcategories.jsx`
+- Access: Public
+- Purpose: Deep-dive category/subcategory browser tree.
+- Key Features: Hierarchical category tree, search within categories, icons.
+- User Flows: Browse tree -> select subcategory -> navigate to filtered listings.
+- Data Sources / APIs: Services: fetchAllSubcategories, useCmsPage. Hooks: useCmsPage, useTheme.
+- State & Context: Contexts: CategoryModeContext, ThemeContext.
+
+### /support-ticket-policy -- SupportTicketPage
+- Routes: /support-ticket-policy
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\SupportTicketPolicy.jsx`
+- Access: Public
+- Purpose: Support ticket categorization and escalation guidelines.
+- Key Features: CMS-rendered policy content.
+- User Flows: Read policy.
+- Data Sources / APIs: Services: useCmsPage("support-ticket-policy"). Hooks: useCmsPage.
+- State & Context: Contexts: none.
+
+### /t&c, /terms, /terms-and-conditions -- TermsPage
+- Routes: /t&c, /terms, /terms-and-conditions
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\TermsAndConditions.jsx`
+- Access: Public
+- Purpose: Terms and conditions documentation.
+- Key Features: CMS-rendered legal content.
+- User Flows: Read terms.
+- Data Sources / APIs: Services: useCmsPage("terms-and-conditions"). Hooks: useCmsPage.
+- State & Context: Contexts: none.
+
+### /verification -- VerificationPage
+- Routes: /verification
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Verification.jsx`
+- Access: Auth
+- Purpose: Verification entry point with multiple paths (Aadhaar, KYC, PAN).
+- Key Features: Verification type selector, status display, start flow CTA.
+- User Flows: Choose verification type -> proceed to Aadhaar or KYC page.
+- Data Sources / APIs: Services: api.get (KYC status), api.post (uploads). Hooks: useToast.
+- State & Context: Contexts: AuthContext.
+
+### /wishlist -- WishlistPage
+- Routes: /wishlist
+- File: `C:\Users\laksh\GITHUB\MHUB\Mhub\client\src\pages\Wishlist.jsx`
+- Access: Auth
+- Purpose: User's collection of saved marketplace listings.
+- Key Features: Saved items grid, remove/open actions, translated post content.
+- User Flows: Browse saved items -> open listing -> remove from wishlist.
+- Data Sources / APIs: Services: api.get (wishlist items). Hooks: useToast, useTranslatedPosts.
+- State & Context: Contexts: AuthContext, CartContext, CategoryModeContext.
+- Known Issue: Page currently displays blank white. The /api/complaints/my endpoint returns 500 which may block page load if Wishlist shares a data-fetching pattern with Complaints. Under investigation.
+
+### Deprecated / Removed Routes
+- /category-mode (CategoryModeSelectPage): Removed. Category selection is handled within CategoryHub and GreenNavbar.
+- /my-recommendations: Removed. Redirects to /for-you.
+
+---
+
+
 ---
 ## 🧭 Navigation Architecture
 
@@ -1586,70 +2240,76 @@ Request
 
 ## 🏆 Rewards & Gamification System
 
-### System Architecture
+### Program Goals
+- Drive daily engagement and repeat visits without devaluing the coin economy.
+- Reward real marketplace outcomes (listings, sales, purchases, quality reviews).
+- Grow high-quality referrals while preventing abuse.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    REWARDS ENGINE                        │
-│                                                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │  Daily       │  │  Activity   │  │  Referral   │    │
-│  │  Check-in    │  │  Streaks    │  │  Chain      │    │
-│  │  (1x/day)    │  │  (Visit+    │  │  (3 levels) │    │
-│  │              │  │   Post)     │  │  2/1/0.5 pts│    │
-│  └──────┬───────┘  └──────┬──────┘  └──────┬──────┘    │
-│         └─────────────────┼─────────────────┘           │
-│                           │                             │
-│                    ┌──────┴──────┐                      │
-│                    │   Ledger    │  ← Idempotent        │
-│                    │  Service    │  ← Advisory locks    │
-│                    │ (Points +   │  ← Audit log         │
-│                    │  Tier calc) │                      │
-│                    └──────┬──────┘                      │
-│              ┌────────────┼────────────┐                │
-│         ┌────┴───┐  ┌────┴───┐  ┌────┴───┐            │
-│         │ Coins  │  │  XP    │  │  Tier  │            │
-│         │Balance │  │ Level  │  │ Badge  │            │
-│         └────────┘  └────────┘  └────────┘            │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │             LEADERBOARD ENGINE                    │  │
-│  │  Weekly Top Sellers: 500 / 300 / 150 pts         │  │
-│  │  Weekly Top Buyers:  300 / 150 / 75 pts          │  │
-│  └──────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-```
+### Coin Economics (Config-Driven)
+- Currency: Coins only (no "Points" terminology anywhere in codebase or UI).
+- Conversion: 100 coins = Rs 1 (default, server-configurable via COINS_PER_RUPEE).
+- Redemption: Coins can cover up to 10% of Silver or Premium plan cost only.
+- Eligible spend: Plan upgrades only (no cash-out).
+- Expiry: Earned coins expire after 12 months; promo coins expire after 90 days.
+- Spend order: FIFO -- oldest non-expired coins are consumed first.
+- Source of truth: GET /coins/rewards-config returns amounts, caps, tiers, and store items.
 
-### Reward Actions
+### Earn Methods
 
-| Action | Points | Frequency | Idempotency |
-|--------|:------:|:---------:|:-----------:|
-| Daily check-in | Variable | 1x/day | `checkin:daily:{userId}:{date}` |
-| Spin the wheel | 1-100 (weighted) | 1x/day | `spin:{userId}:{date}` |
-| Scratch card | Varies | Per referral | `scratch:{userId}:{referralId}` |
-| Visit streak: 3 days | +10 | Milestone | `visit:streak:{userId}:3` |
-| Visit streak: 7 days | +25 | Milestone | `visit:streak:{userId}:7` |
-| Visit streak: 14 days | +50 | Milestone | `visit:streak:{userId}:14` |
-| Visit streak: 30 days | +100 | Milestone | `visit:streak:{userId}:30` |
-| Post streak: 3 days | +20 | Milestone | `post:streak:{userId}:3` |
-| Post streak: 7 days | +50 | Milestone | `post:streak:{userId}:7` |
-| Referral chain L1 | +2 | Per event | `chain:{event}:{ref}:L1` |
-| Referral chain L2 | +1 | Per event | `chain:{event}:{ref}:L2` |
-| Referral chain L3 | +0.5 | Per event | `chain:{event}:{ref}:L3` |
-| Top seller #1 | +500 | Weekly | `leaderboard:{week}:seller:1` |
-| Top seller #2 | +300 | Weekly | `leaderboard:{week}:seller:2` |
-| Top seller #3 | +150 | Weekly | `leaderboard:{week}:seller:3` |
+| Action | Coins | Cap / Frequency | Notes |
+|--------|:-----:|:---------------:|-------|
+| Welcome bonus | 100 | Once | New user onboarding bonus |
+| Daily check-in | 5 to 100 | 1/day | 7-day streak: 5, 10, 15, 20, 30, 50, 100 |
+| Spin the wheel | 5-100 | 1/day | Weighted random pool |
+| Create listing | 5 | 50/day (10 listings) | Encourages supply growth |
+| Complete sale | 25 | 250/day | Strongest marketplace signal |
+| Make purchase | 10 | 100/day | Buyer activation |
+| 5-star review received | 15 | No daily cap | Quality signal |
+| First listing | 25 | Once | One-time seller activation |
+| First sale | 50 | Once | One-time seller milestone |
+| Referral L1 (direct) | 100 | Shared referral caps | Direct invite |
+| Referral L2 | 40 | Shared referral caps | 2nd-gen invite |
+| Referral L3 | 20 | Shared referral caps | 3rd-gen invite |
+| Referral L4 | 10 | Shared referral caps | 4th-gen invite |
+| Referral L5 | 5 | Shared referral caps | 5th-gen invite |
+| Referral milestone (3 refs) | 50 | Once | 3 qualified referrals bonus |
+
+### Referral Ladder and Anti-Abuse Caps
+- Ladder: L1 = 100, L2 = 40, L3 = 20, L4 = 10, L5 = 5 coins.
+- Referral rewards only trigger after the referred user completes real activity (transaction OR 2+ verified listings).
+- Caps: 500 coins/day, 5,000/month, 50,000 lifetime across all referral rewards per ancestor.
+- checkReferralCaps() in referralJoinRewards.js reads referral_rewards usage and clamps awards to remaining cap budget.
+
+### Expiry and FIFO
+- Promo coin types (90-day expiry): welcome_bonus, daily_checkin, spin_wheel, scratch_card, referral_milestone_3.
+- All other types (marketplace activity, referral chain) are earned coins with 365-day expiry.
+- Each credit row in coin_transactions has a remaining column tracking unspent balance.
+- spendCoins() queries oldest non-expired rows with remaining > 0 (ORDER BY created_at ASC FOR UPDATE) and deducts FIFO.
 
 ### Tier System
 
-| Tier | Points Required | Badge |
-|------|:--------------:|:-----:|
-| 🥉 Bronze | 0 - 499 | Default |
-| 🥈 Silver | 500 - 1,999 | Earned |
-| 🥇 Gold | 2,000 - 4,999 | Earned |
-| 💎 Platinum | 5,000+ | Elite |
+| Tier | Coins Required | Perks |
+|------|:--------------:|-------|
+| Bronze | 0-499 | Standard visibility |
+| Silver | 500-1,999 | Priority support, 5% boost discount |
+| Gold | 2,000-4,999 | Premium badge, 10% boost discount, featured profile |
+| Platinum | 5,000+ | VIP support, 20% boost discount, exclusive deals |
 
----
+### Backend Implementation
+- server/src/services/referralJoinRewards.js: 5-level referral distribution + daily/monthly/lifetime cap enforcement.
+- server/src/controllers/coinController.js: Earn events (addCoins with expiry), spend events (spendCoins with FIFO), daily caps, engagement (check-in, spin, scratch), store redemption, getRewardsConfig endpoint.
+- server/src/routes/coins.js: GET /coins/rewards-config (public, no auth), GET /coins/history, POST /coins/daily-checkin, POST /coins/spin, POST /coins/redeem.
+- Migration 020: index on referrer_id, created_at for fast cap queries; adds expires_at and remaining columns.
+
+### Frontend Experience
+- Rewards hub: client/src/pages/RewardsPage.jsx.
+- Hero card with coin balance, Rs equivalent (100 coins = Rs 1), tier badge, and progress bar to next tier.
+- Quick Actions: Daily check-in and Spin buttons with live availability state.
+- 5 Tabs: Overview, Referral Network, Earn, Store, History.
+- Earn tab is config-driven via GET /coins/rewards-config and shows exact amounts, caps, and anti-abuse rules.
+- History tab uses GET /coins/history (paginated ledger with earn/spend entries).
+- Referral Network tab: client/src/components/rewards/ReferralChainTree.jsx shows all 5 levels with status badges (pending/qualified/rewarded) and cap info.
+- Cart (client/src/pages/Cart.jsx) shows coin equivalent of the order total in the summary.
 
 ## 🔒 Trust & Safety Engine
 
@@ -1916,6 +2576,10 @@ Layer 9: Ops        → Fraud scoring, risk engine, zero trust
 
 | Date | Milestone |
 |------|-----------|
+| 2026-04 | Page-by-Page Feature Map (50+ pages documented), removed /category-mode and /my-recommendations |
+| 2026-04 | Rewards Config v2.0.0 schema + coin-to-Rs conversion (100 coins = Rs 1) |
+| 2026-04 | Coin expiry (365d earned / 90d promo) + FIFO spend logic |
+| 2026-04 | 5-level referral chain with validation + anti-abuse caps |
 | 2026-04 | Rewards chain infrastructure (migration 020) |
 | 2026-04 | Centre page premium redesign |
 | 2026-04 | Dark mode comprehensive system |
@@ -1963,6 +2627,8 @@ npm run preflight:schema        # Schema validation
 
 | Date | Change |
 |------|--------|
+| **2026-04-06** | Page-by-Page Feature Map with 50+ pages, updated Rewards section (coins-only, FIFO, expiry, ASCII-safe), removed /category-mode and /my-recommendations |
+| **2026-04-06** | Rewards Config v2.0.0 (expiry, FIFO, coin-to-Rs conversion), comprehensive rewards documentation |
 | **2026-04-05** | Navigation map refresh, app flow atlas, and dual-lens user/developer documentation |
 | **2026-04-05** | Rewards chain infrastructure (migration 020), Centre page premium redesign, auth-guard bug fixes |
 | **2026-04-04** | Dark mode comprehensive system, Tailwind token expansion |
@@ -1972,8 +2638,15 @@ npm run preflight:schema        # Schema validation
 
 <p align="center">
   <strong>Built with ❤️ by the MHub Team</strong><br/>
-  <sub>Last updated: April 5, 2026</sub>
+  <sub>Last updated: April 6, 2026</sub>
 </p>
+
+
+
+
+
+
+
 
 
 

@@ -251,6 +251,16 @@
   box-shadow: var(--mhub-shadow-lg);
 }
 
+/* Compact density helpers */
+.mhub-compact [data-density="extra"],
+.mhub-compact .mhub-density-extra {
+  display: none !important;
+}
+
+.mhub-compact .mhub-density-tight {
+  margin-top: 0.75rem !important;
+}
+
 /* Bottom navigation refinement */
 .mhub-bottom-nav {
   background: var(--mhub-bg-secondary);

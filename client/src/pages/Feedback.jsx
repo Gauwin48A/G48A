@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/card";
 import { Textarea as K } from "@/components/ui/textarea";
 import { Badge as h } from "@/components/ui/badge";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { useToast as Q } from "@/hooks/use-toast";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import {
   MessageSquare as g,
   Star as V,
@@ -57,6 +59,14 @@ const me = () => {
       subject: "",
       message: "",
     }),
+    [sectionCollapse, setSectionCollapse] = i({
+      feedbackCategory: !0,
+      heroHighlights: !0,
+      whyMatters: !0,
+      directContact: !0,
+      thankYou: !0,
+    }),
+    { density, setDensity } = usePageDensity("mhub_feedback_density"),
     P = (r, a) => {
       const l = String(r || "").trim();
       if (!l) return a;
@@ -113,6 +123,9 @@ const me = () => {
     },
     z = (r) => {
       b((a) => ({ ...a, rating: r }));
+    },
+    toggleSection = (r) => {
+      setSectionCollapse((a) => ({ ...a, [r]: !a[r] }));
     },
     E = async (r) => {
       if ((r.preventDefault(), !w)) {
@@ -239,13 +252,61 @@ const me = () => {
         color: "text-blue-500",
         bg: "bg-blue-50",
       },
+    ],
+    selectedFeedback =
+      M.find((r) => r.value === o.feedbackType) || M[M.length - 1],
+    whyMattersItems = [
+      {
+        key: "needs",
+        icon: te,
+        title: tr("your_needs_pain_points", "Your needs and pain points"),
+        description: tr(
+          "feedback_needs_desc",
+          "We map recurring pain points to product fixes.",
+        ),
+        iconWrap: "bg-indigo-50 text-indigo-600",
+        border: "border-indigo-100/80",
+      },
+      {
+        key: "build",
+        icon: j,
+        title: tr("what_to_build_next", "What to build next"),
+        description: tr(
+          "feedback_build_desc",
+          "Top requests guide our roadmap and experiments.",
+        ),
+        iconWrap: "bg-blue-50 text-blue-600",
+        border: "border-blue-100/80",
+      },
+      {
+        key: "everyone",
+        icon: ee,
+        title: tr("for_all_users", "For all users"),
+        description: tr(
+          "feedback_for_all_desc",
+          "We tune the experience for every segment.",
+        ),
+        iconWrap: "bg-emerald-50 text-emerald-600",
+        border: "border-emerald-100/80",
+      },
+      {
+        key: "trust",
+        icon: oe,
+        title: tr("a_better_safer_platform", "A better, safer platform"),
+        description: tr(
+          "feedback_trust_desc",
+          "Your reports help us improve safety and reliability.",
+        ),
+        iconWrap: "bg-amber-50 text-amber-600",
+        border: "border-amber-100/80",
+      },
     ];
   return w
     ? e.createElement(
         "div",
         {
           className:
-            "mhub-page-feedback min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 relative dark:bg-gradient-to-br",
+            `mhub-page-feedback min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 relative dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
           style: { minHeight: "100vh" },
         },
         e.createElement(
@@ -266,16 +327,16 @@ const me = () => {
         ),
         e.createElement(
           "div",
-          { className: "relative max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-7 space-y-6" },
+          { className: "relative max-w-3xl mx-auto px-4 py-5 sm:px-6 sm:py-6 space-y-4" },
           e.createElement(
             "div",
-            { className: "text-center pt-6 mhub-hero-card rounded-3xl px-5 py-6 sm:px-7 sm:py-7" },
+            { className: "text-center pt-4 mhub-hero-card rounded-3xl px-4 py-5 sm:px-6 sm:py-6" },
             e.createElement(
               "button",
               {
                 onClick: () => c("/"),
                 className:
-                  "inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm hover:bg-white transition mb-6 dark:border-blue-400/30 dark:bg-slate-900/40 dark:text-blue-200 dark:hover:bg-slate-900/60",
+                  "inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-white/80 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm hover:bg-white transition mb-4 dark:border-blue-400/30 dark:bg-slate-900/40 dark:text-blue-200 dark:hover:bg-slate-900/60",
               },
               e.createElement(X, {
                 className: "w-4 h-4 group-hover:-translate-x-1 transition-transform",
@@ -286,7 +347,7 @@ const me = () => {
               "div",
               {
                 className:
-                  "inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 shadow-2xl shadow-blue-500/30 mb-5 dark:bg-gradient-to-br",
+                  "inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 shadow-xl shadow-blue-500/25 mb-4 dark:bg-gradient-to-br",
               },
               e.createElement(g, { className: "w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" }),
             ),
@@ -318,38 +379,88 @@ const me = () => {
           ),
           e.createElement(
             "div",
-            { className: "flex flex-wrap justify-center gap-2" },
-            e.createElement(
-              h,
-              {
-                className:
-                  "bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-blue-800/10 dark:border-blue-500/20",
-              },
-              e.createElement(v, { className: "w-4 h-4 mr-2" }),
-              " ",
-              t("your_voice_matters"),
-            ),
-            e.createElement(
-              h,
-              {
-                className:
-                  "bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-purple-800/10 dark:border-purple-500/20",
-              },
-              e.createElement(ee, { className: "w-4 h-4 mr-2" }),
-              " ",
-              t("we_listen"),
-            ),
-            e.createElement(
-              h,
-              {
-                className:
-                  "bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-green-800/10 dark:border-green-500/20",
-              },
-              e.createElement(j, { className: "w-4 h-4 mr-2" }),
-              " ",
-              t("continuous_improvement"),
-            ),
+            { className: "flex justify-center sm:justify-end" },
+            e.createElement(PageDensityToggle, {
+              value: density,
+              onChange: setDensity,
+              label: tr("view", "View"),
+            }),
           ),
+          e.createElement(
+            "div",
+            { className: "flex flex-wrap items-center justify-center gap-2" },
+            e.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: () => toggleSection("heroHighlights"),
+                className:
+                  "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                "aria-expanded": !sectionCollapse.heroHighlights,
+                "aria-controls": "feedback-hero-highlights",
+              },
+              sectionCollapse.heroHighlights
+                ? tr("show_highlights", "Show highlights")
+                : tr("hide_highlights", "Hide highlights"),
+              e.createElement(L, {
+                className: `w-3.5 h-3.5 transition-transform ${
+                  sectionCollapse.heroHighlights ? "" : "rotate-90"
+                }`,
+              }),
+            ),
+            sectionCollapse.heroHighlights
+              ? e.createElement(
+                  "span",
+                  {
+                    className:
+                      "text-[11px] text-slate-600 dark:text-slate-300",
+                  },
+                  tr(
+                    "highlights_summary",
+                    "Your voice matters · We listen · Continuous improvement",
+                  ),
+                )
+              : null,
+          ),
+          sectionCollapse.heroHighlights
+            ? null
+            : e.createElement(
+                "div",
+                {
+                  id: "feedback-hero-highlights",
+                  className: "flex flex-wrap justify-center gap-2",
+                },
+                e.createElement(
+                  h,
+                  {
+                    className:
+                      "bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-blue-800/10 dark:border-blue-500/20",
+                  },
+                  e.createElement(v, { className: "w-4 h-4 mr-2" }),
+                  " ",
+                  t("your_voice_matters"),
+                ),
+                e.createElement(
+                  h,
+                  {
+                    className:
+                      "bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-purple-800/10 dark:border-blue-500/20",
+                  },
+                  e.createElement(ee, { className: "w-4 h-4 mr-2" }),
+                  " ",
+                  t("we_listen"),
+                ),
+                e.createElement(
+                  h,
+                  {
+                    className:
+                      "bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-green-800/10 dark:border-green-500/20",
+                  },
+                  e.createElement(j, { className: "w-4 h-4 mr-2" }),
+                  " ",
+                  t("continuous_improvement"),
+                ),
+              ),
           e.createElement(
             n,
             {
@@ -360,7 +471,7 @@ const me = () => {
               Z,
               {
                 className:
-                  "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white p-8 dark:bg-gradient-to-r dark:text-white",
+                  "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white p-6 dark:bg-gradient-to-r dark:text-white",
               },
               e.createElement(
                 G,
@@ -383,70 +494,190 @@ const me = () => {
             ),
             e.createElement(
               m,
-              { className: "p-8" },
+              { className: "p-6" },
               e.createElement(
                 "form",
-                { onSubmit: E, className: "space-y-6" },
+                { onSubmit: E, className: "space-y-4" },
                 e.createElement(
                   "div",
                   null,
                   e.createElement(
-                    p,
+                    "div",
                     {
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 block dark:text-sm",
+                        "flex flex-wrap items-center justify-between gap-2 mb-3",
                     },
-                    t("feedback_category"),
+                    e.createElement(
+                      p,
+                      {
+                        className:
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 block dark:text-sm",
+                      },
+                      t("feedback_category"),
+                    ),
+                    e.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => toggleSection("feedbackCategory"),
+                        className:
+                          "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                        "aria-expanded": !sectionCollapse.feedbackCategory,
+                        "aria-controls": "feedback-category-grid",
+                      },
+                      sectionCollapse.feedbackCategory
+                        ? tr("expand", "Expand")
+                        : tr("collapse", "Collapse"),
+                      e.createElement(L, {
+                        className: `w-3.5 h-3.5 transition-transform ${
+                          sectionCollapse.feedbackCategory ? "" : "rotate-90"
+                        }`,
+                      }),
+                    ),
                   ),
                   e.createElement(
                     "div",
-                    { className: "grid grid-cols-1 sm:grid-cols-2 gap-3" },
-                    M.map((r) =>
-                      e.createElement(
-                        "button",
-                        {
-                          key: r.value,
-                          type: "button",
-                          onClick: () =>
-                            b((a) => ({ ...a, feedbackType: r.value })),
-                          className: `p-4 rounded-xl border-2 transition-all text-left dark:border-2 dark:text-left${o.feedbackType === r.value ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-lg" : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"}`,
-                        },
-                        e.createElement(
-                          "div",
-                          { className: "flex items-center gap-3" },
-                          e.createElement(
+                    {
+                      className:
+                        "rounded-2xl border border-slate-200 bg-white/90 p-3 sm:p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70",
+                    },
+                    e.createElement(
+                      "div",
+                      { className: "flex items-start gap-3" },
+                      selectedFeedback?.icon
+                        ? e.createElement(
                             "div",
                             {
-                              className: `w-10 h-10 ${r.bg} dark:bg-opacity-20 rounded-lg flex items-center justify-center`,
+                              className:
+                                "w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center dark:bg-slate-800 dark:text-slate-200",
                             },
-                            e.createElement(r.icon, {
-                              className: `w-5 h-5 ${r.color}`,
+                            e.createElement(selectedFeedback.icon, {
+                              className: `w-5 h-5 ${selectedFeedback.color}`,
                             }),
-                          ),
-                          e.createElement(
-                            "div",
-                            null,
-                            e.createElement(
-                              "p",
-                              {
-                                className:
-                                  "font-semibold text-gray-800 dark:text-gray-100",
-                              },
-                              r.name,
-                            ),
-                            e.createElement(
-                              "p",
-                              {
-                                className:
-                                  "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300",
-                              },
-                              r.description,
-                            ),
-                          ),
+                          )
+                        : null,
+                      e.createElement(
+                        "div",
+                        { className: "flex-1" },
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-sm font-semibold text-slate-900 dark:text-white",
+                          },
+                          selectedFeedback?.name || t("general_feedback"),
+                        ),
+                        e.createElement(
+                          "p",
+                          {
+                            className:
+                              "text-xs text-slate-600 dark:text-slate-300",
+                          },
+                          selectedFeedback?.description ||
+                            t("share_general_thoughts"),
                         ),
                       ),
                     ),
+                    e.createElement(
+                      "div",
+                      { className: "mt-3 flex flex-wrap items-center gap-2" },
+                      e.createElement(
+                        "select",
+                        {
+                          name: "feedbackType",
+                          value: o.feedbackType,
+                          onChange: C,
+                          className:
+                            "mhub-input h-10 min-w-[180px] px-3 text-sm",
+                        },
+                        M.map((r) =>
+                          e.createElement(
+                            "option",
+                            { key: r.value, value: r.value },
+                            r.name,
+                          ),
+                        ),
+                      ),
+                      e.createElement(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => toggleSection("feedbackCategory"),
+                          className:
+                            "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                          "aria-expanded": !sectionCollapse.feedbackCategory,
+                          "aria-controls": "feedback-category-grid",
+                        },
+                        sectionCollapse.feedbackCategory
+                          ? tr("more_options", "More options")
+                          : tr("hide_cards", "Hide cards"),
+                        e.createElement(L, {
+                          className: `w-3.5 h-3.5 transition-transform ${
+                            sectionCollapse.feedbackCategory ? "" : "rotate-90"
+                          }`,
+                        }),
+                      ),
+                    ),
                   ),
+                  sectionCollapse.feedbackCategory
+                    ? null
+                    : e.createElement(
+                        "div",
+                        {
+                          id: "feedback-category-grid",
+                          className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
+                        },
+                        M.map((r) => {
+                          const isActive = o.feedbackType === r.value;
+                          return e.createElement(
+                            "button",
+                            {
+                              key: r.value,
+                              type: "button",
+                              onClick: () =>
+                                b((a) => ({ ...a, feedbackType: r.value })),
+                              className: `group p-4 rounded-2xl border transition-all text-left shadow-sm ${
+                                isActive
+                                  ? "border-blue-500 bg-blue-50 shadow-md"
+                                  : "border-slate-200 bg-white/80 hover:border-slate-300 hover:bg-white"
+                              } dark:border-slate-700 dark:bg-slate-900/60 dark:hover:bg-slate-900/80`,
+                            },
+                            e.createElement(
+                              "div",
+                              { className: "flex items-center gap-3" },
+                              e.createElement(
+                                "div",
+                                {
+                                  className: `w-10 h-10 ${r.bg} dark:bg-opacity-20 rounded-xl flex items-center justify-center border border-transparent group-hover:shadow-sm`,
+                                },
+                                e.createElement(r.icon, {
+                                  className: `w-5 h-5 ${r.color}`,
+                                }),
+                              ),
+                              e.createElement(
+                                "div",
+                                null,
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "font-semibold text-gray-900 dark:text-gray-100",
+                                  },
+                                  r.name,
+                                ),
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-xs text-slate-600 dark:text-slate-300",
+                                  },
+                                  r.description,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
                 ),
                 e.createElement(
                   "div",
@@ -463,7 +694,7 @@ const me = () => {
                     "div",
                     {
                       className:
-                        "flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl dark:bg-gray-950",
+                        "flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl dark:bg-gray-950",
                     },
                     e.createElement(
                       "div",
@@ -474,7 +705,7 @@ const me = () => {
                       "span",
                       {
                         className:
-                          "ml-4 text-lg font-semibold text-gray-700 dark:text-gray-200 dark:text-lg",
+                          "ml-4 text-base font-semibold text-gray-700 dark:text-gray-200 dark:text-base",
                       },
                       o.rating,
                       " / 5",
@@ -502,7 +733,7 @@ const me = () => {
                     onChange: C,
                     placeholder: t("brief_summary"),
                     className:
-                      "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                      "h-12 text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors dark:text-base dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
                     required: !0,
                   }),
                 ),
@@ -527,7 +758,7 @@ const me = () => {
                     placeholder: t("share_detailed_feedback"),
                     rows: 6,
                     className:
-                      "text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors resize-none dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                      "text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors resize-none dark:text-base dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
                     required: !0,
                   }),
                 ),
@@ -537,7 +768,7 @@ const me = () => {
                     type: "submit",
                     disabled: N,
                     className:
-                      "w-full h-16 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:shadow-blue-500/50 hover:scale-[1.02] dark:text-lg dark:bg-gradient-to-r",
+                      "w-full h-14 text-base font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:shadow-blue-500/50 hover:scale-[1.01] dark:text-base dark:bg-gradient-to-r",
                   },
                   N
                     ? e.createElement(
@@ -628,130 +859,228 @@ const me = () => {
             n,
             {
               className:
-                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-blue-500 to-indigo-600 dark:border-0 dark:bg-gradient-to-r",
+                "shadow-xl border border-slate-200/70 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/90 dark:border-slate-700 dark:bg-slate-900/80",
+              "data-density": "extra",
             },
             e.createElement(
               m,
-              { className: "p-8 text-white dark:text-white" },
+              { className: "p-6 sm:p-7" },
               e.createElement(
                 "div",
-                { className: "flex items-center gap-4 mb-6" },
+                { className: "flex flex-wrap items-start justify-between gap-3" },
                 e.createElement(
                   "div",
+                  { className: "flex items-start gap-3" },
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md",
+                    },
+                    e.createElement(v, { className: "w-6 h-6" }),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300",
+                      },
+                      tr("feedback_impact", "Impact"),
+                    ),
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-lg sm:text-xl font-bold text-slate-900 dark:text-white",
+                      },
+                      t("why_feedback_matters"),
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-sm text-slate-600 dark:text-slate-300",
+                      },
+                      tr(
+                        "feedback_matters_subtitle",
+                        "Every note you send shapes the product direction.",
+                      ),
+                    ),
+                  ),
+                ),
+                e.createElement(
+                  "button",
                   {
+                    type: "button",
+                    onClick: () => toggleSection("whyMatters"),
                     className:
-                      "w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center dark:bg-slate-900/20",
+                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                    "aria-expanded": !sectionCollapse.whyMatters,
+                    "aria-controls": "feedback-why-body",
                   },
-                  e.createElement(v, { className: "w-8 h-8" }),
-                ),
-                e.createElement(
-                  "h3",
-                  { className: "text-2xl font-bold dark:text-2xl" },
-                  t("why_feedback_matters"),
-                ),
-              ),
-              e.createElement(
-                "div",
-                { className: "grid sm:grid-cols-2 gap-4" },
-                e.createElement(
-                  "div",
-                  { className: "bg-white/10 rounded-xl p-4 dark:bg-slate-900/10" },
-                  e.createElement(
-                    "p",
-                    { className: "font-semibold mb-1" },
-                    "\uD83D\uDCA1 ",
-                    t("helps_us_understand"),
-                  ),
-                  e.createElement(
-                    "p",
-                    { className: "text-blue-100 text-sm dark:text-blue-200 dark:text-sm" },
-                    t("your_needs_pain_points"),
-                  ),
-                ),
-                e.createElement(
-                  "div",
-                  { className: "bg-white/10 rounded-xl p-4 dark:bg-slate-900/10" },
-                  e.createElement(
-                    "p",
-                    { className: "font-semibold mb-1" },
-                    "\uD83C\uDFAF ",
-                    t("guides_our_priorities"),
-                  ),
-                  e.createElement(
-                    "p",
-                    { className: "text-blue-100 text-sm dark:text-blue-200 dark:text-sm" },
-                    t("what_to_build_next"),
-                  ),
-                ),
-                e.createElement(
-                  "div",
-                  { className: "bg-white/10 rounded-xl p-4 dark:bg-slate-900/10" },
-                  e.createElement(
-                    "p",
-                    { className: "font-semibold mb-1" },
-                    "\uD83D\uDE80 ",
-                    t("improves_experience"),
-                  ),
-                  e.createElement(
-                    "p",
-                    { className: "text-blue-100 text-sm dark:text-blue-200 dark:text-sm" },
-                    t("for_all_users"),
-                  ),
-                ),
-                e.createElement(
-                  "div",
-                  { className: "bg-white/10 rounded-xl p-4 dark:bg-slate-900/10" },
-                  e.createElement(
-                    "p",
-                    { className: "font-semibold mb-1" },
-                    "\uD83D\uDD12 ",
-                    t("builds_trust"),
-                  ),
-                  e.createElement(
-                    "p",
-                    { className: "text-blue-100 text-sm dark:text-blue-200 dark:text-sm" },
-                    t("a_better_safer_platform"),
-                  ),
+                  sectionCollapse.whyMatters
+                    ? tr("expand", "Expand")
+                    : tr("collapse", "Collapse"),
+                  e.createElement(L, {
+                    className: `w-3.5 h-3.5 transition-transform ${
+                      sectionCollapse.whyMatters ? "" : "rotate-90"
+                    }`,
+                  }),
                 ),
               ),
+              sectionCollapse.whyMatters
+                ? e.createElement(
+                    "div",
+                    {
+                      className:
+                        "mt-4 flex flex-wrap gap-2 text-[11px] text-slate-600 dark:text-slate-300",
+                    },
+                    whyMattersItems.map((r) =>
+                      e.createElement(
+                        "span",
+                        {
+                          key: r.key,
+                          className:
+                            "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 shadow-sm dark:border-slate-700 dark:bg-slate-900/60",
+                        },
+                        e.createElement(r.icon, { className: "w-3.5 h-3.5" }),
+                        r.title,
+                      ),
+                    ),
+                  )
+                : e.createElement(
+                    "div",
+                    {
+                      id: "feedback-why-body",
+                      className: "mt-5 grid sm:grid-cols-2 gap-3",
+                    },
+                    whyMattersItems.map((r) =>
+                      e.createElement(
+                        "div",
+                        {
+                          key: r.key,
+                          className: `flex items-start gap-3 rounded-2xl border ${r.border} bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900/60`,
+                        },
+                        e.createElement(
+                          "div",
+                          {
+                            className: `w-10 h-10 rounded-xl ${r.iconWrap} flex items-center justify-center border border-white/40 shadow-sm dark:bg-slate-800/60 dark:text-slate-100`,
+                          },
+                          e.createElement(r.icon, { className: "w-5 h-5" }),
+                        ),
+                        e.createElement(
+                          "div",
+                          null,
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "font-semibold text-slate-900 dark:text-white",
+                            },
+                            r.title,
+                          ),
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-xs text-slate-600 dark:text-slate-300",
+                            },
+                            r.description,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
             ),
           ),
           e.createElement(
             n,
             {
               className:
-                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-2 border-green-200 dark:border-green-700 dark:border-0 dark:bg-gradient-to-r dark:border-2 dark:border-green-600/40",
+                "shadow-lg border border-emerald-100/70 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/90 dark:border-emerald-700/40 dark:bg-slate-900/70",
+              "data-density": "extra",
             },
             e.createElement(
               m,
               { className: "p-6" },
               e.createElement(
                 "div",
-                { className: "flex items-start gap-4" },
+                { className: "flex items-start justify-between gap-3" },
                 e.createElement(
                   "div",
-                  {
-                    className:
-                      "w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 dark:bg-green-950/20",
-                  },
-                  e.createElement(T, { className: "w-6 h-6 text-green-600 dark:text-green-300" }),
-                ),
-                e.createElement(
-                  "div",
-                  null,
-                  e.createElement(
-                    "h3",
-                    {
-                      className:
-                        "font-bold text-green-800 dark:text-green-300 text-lg mb-2 dark:text-green-200 dark:text-lg",
-                    },
-                    "\uD83D\uDCE7 ",
-                    t("direct_contact"),
-                  ),
+                  { className: "flex items-start gap-3" },
                   e.createElement(
                     "div",
                     {
-                      className: "space-y-1 text-green-700 dark:text-green-400 dark:text-green-300",
+                      className:
+                        "w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-200",
+                    },
+                    e.createElement(T, { className: "w-5 h-5" }),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "font-bold text-slate-900 dark:text-white text-lg",
+                      },
+                      "\uD83D\uDCE7 ",
+                      t("direct_contact"),
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-sm text-slate-600 dark:text-slate-300",
+                      },
+                      tr(
+                        "direct_contact_hint",
+                        "Reach us directly for urgent issues.",
+                      ),
+                    ),
+                  ),
+                ),
+                e.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => toggleSection("directContact"),
+                    className:
+                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                    "aria-expanded": !sectionCollapse.directContact,
+                    "aria-controls": "feedback-direct-contact",
+                  },
+                  sectionCollapse.directContact
+                    ? tr("expand", "Expand")
+                    : tr("collapse", "Collapse"),
+                  e.createElement(L, {
+                    className: `w-3.5 h-3.5 transition-transform ${
+                      sectionCollapse.directContact ? "" : "rotate-90"
+                    }`,
+                  }),
+                ),
+              ),
+              sectionCollapse.directContact
+                ? e.createElement(
+                    "p",
+                    {
+                      className:
+                        "mt-3 text-xs text-slate-600 dark:text-slate-300",
+                    },
+                    "feedback@mobilehub.com · ",
+                    t("24_48_hours"),
+                  )
+                : e.createElement(
+                    "div",
+                    {
+                      id: "feedback-direct-contact",
+                      className:
+                        "mt-4 space-y-1 text-slate-700 dark:text-slate-300 text-sm",
                     },
                     e.createElement(
                       "p",
@@ -789,38 +1118,97 @@ const me = () => {
                       t("verified_users_faster"),
                     ),
                   ),
-                ),
-              ),
             ),
           ),
           e.createElement(
             n,
             {
               className:
-                "shadow-2xl border-0 rounded-3xl overflow-hidden backdrop-blur-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border-2 border-purple-200 dark:border-purple-700 dark:border-0 dark:bg-gradient-to-r dark:border-2 dark:border-purple-600/40",
+                "shadow-lg border border-purple-100/70 rounded-3xl overflow-hidden backdrop-blur-xl bg-white/90 dark:border-purple-700/40 dark:bg-slate-900/70",
+              "data-density": "extra",
             },
             e.createElement(
               m,
-              { className: "p-8 text-center dark:text-center" },
-              e.createElement(v, {
-                className: "w-16 h-16 text-purple-500 mx-auto mb-4 dark:text-purple-300",
-              }),
+              { className: "p-6" },
               e.createElement(
-                "h3",
-                {
-                  className:
-                    "text-2xl font-bold text-purple-800 dark:text-purple-300 mb-2 dark:text-2xl dark:text-purple-200",
-                },
-                t("thank_you_community"),
+                "div",
+                { className: "flex items-start justify-between gap-3" },
+                e.createElement(
+                  "div",
+                  { className: "flex items-start gap-3" },
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center dark:bg-purple-900/30 dark:text-purple-200",
+                    },
+                    e.createElement(v, { className: "w-5 h-5" }),
+                  ),
+                  e.createElement(
+                    "div",
+                    null,
+                    e.createElement(
+                      "h3",
+                      {
+                        className:
+                          "text-lg font-bold text-slate-900 dark:text-white",
+                      },
+                      t("thank_you_community"),
+                    ),
+                    e.createElement(
+                      "p",
+                      {
+                        className:
+                          "text-sm text-slate-600 dark:text-slate-300",
+                      },
+                      tr(
+                        "thank_you_hint",
+                        "We read every message and share trends with the team.",
+                      ),
+                    ),
+                  ),
+                ),
+                e.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => toggleSection("thankYou"),
+                    className:
+                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                    "aria-expanded": !sectionCollapse.thankYou,
+                    "aria-controls": "feedback-thank-you",
+                  },
+                  sectionCollapse.thankYou
+                    ? tr("expand", "Expand")
+                    : tr("collapse", "Collapse"),
+                  e.createElement(L, {
+                    className: `w-3.5 h-3.5 transition-transform ${
+                      sectionCollapse.thankYou ? "" : "rotate-90"
+                    }`,
+                  }),
+                ),
               ),
-              e.createElement(
-                "p",
-                {
-                  className:
-                    "text-purple-700 dark:text-purple-400 max-w-md mx-auto dark:text-purple-300",
-                },
-                t("feedback_helps_build"),
-              ),
+              sectionCollapse.thankYou
+                ? e.createElement(
+                    "p",
+                    {
+                      className:
+                        "mt-3 text-xs text-slate-600 dark:text-slate-300",
+                    },
+                    tr(
+                      "thank_you_collapsed",
+                      "Thanks for helping us make the marketplace better.",
+                    ),
+                  )
+                : e.createElement(
+                    "p",
+                    {
+                      id: "feedback-thank-you",
+                      className:
+                        "mt-4 text-sm text-slate-600 dark:text-slate-300",
+                    },
+                    t("feedback_helps_build"),
+                  ),
             ),
           ),
         ),

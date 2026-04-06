@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { DEFAULT_FILTERS, useFilter } from "@/context/FilterContext";
 import { fetchCategoriesCached } from "@/services/categoriesService";
@@ -260,6 +262,7 @@ export default function CategoryHub() {
   const { setFilters } = useFilter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
+  const { density, setDensity } = usePageDensity("mhub_categoryhub_density");
   const {
     activeApp,
     setActiveApp,
@@ -375,7 +378,7 @@ export default function CategoryHub() {
   }, [clearCategory, clearSubcategory, setActiveApp, setFilters, navigate]);
 
   return (
-    <div className="h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100">
+    <div className={`h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100 ${density === "compact" ? "mhub-compact" : ""}`}>
       {/* Full-screen gradient aurora background */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
@@ -401,13 +404,20 @@ export default function CategoryHub() {
               <span className={isDark ? "text-white/45" : "text-slate-500"}>{t('switch_anytime', { defaultValue: 'Switch anytime from here' })}</span>
             </div>
           )}
+          <div className="mb-3 flex justify-center">
+            <PageDensityToggle
+              value={density}
+              onChange={setDensity}
+              label={t('view', { defaultValue: 'View' })}
+            />
+          </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none dark:text-2xl dark:md:text-3xl">
             {t('choose_your', { defaultValue: 'Choose Your' })}{" "}
             <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
               {t('world', { defaultValue: 'World' })}
             </span>
           </h1>
-          <p className="mt-2 text-sm text-slate-600 dark:text-white/60 max-w-xl mx-auto leading-relaxed dark:text-sm dark:text-slate-200">
+          <p className="mt-2 text-sm text-slate-600 dark:text-white/60 max-w-xl mx-auto leading-relaxed dark:text-sm dark:text-slate-200" data-density="extra">
             {t('category_hub_desc', { defaultValue: 'Select the app you want to open. Your choice becomes the active experience across feed, listings, chat, and every page until you switch to another app from this hub.' })}
           </p>
         </div>

@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { getAccessToken, getUserId } from "@/utils/authStorage";
 import UpsellBanner from "@/components/UpsellBanner";
 import ReferralChainTree from "@/components/referral/ReferralChainTree";
+import { formatCoinValue, setCoinsPerRupee, formatCoinWithRupee } from "@/utils/coinConversion";
 
 /* ── Tier helpers ─────────────────────────────────────────────────── */
 const TIERS = [
@@ -72,6 +75,7 @@ const RewardsPage = () => {
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [spinLoading, setSpinLoading] = useState(false);
   const [spinResult, setSpinResult] = useState(null);
+  const { density, setDensity } = usePageDensity("mhub_rewards_density");
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const requestIdRef = useRef(0);
 
@@ -108,7 +112,10 @@ const RewardsPage = () => {
 
       // Config
       const cfg = configRes?.data ?? configRes;
-      if (cfg?.success) setRewardsConfig(cfg);
+      if (cfg?.success) {
+        setRewardsConfig(cfg);
+        if (cfg.coinsPerRupee) setCoinsPerRupee(cfg.coinsPerRupee);
+      }
 
       // Engagement
       const eng = engagementRes?.data ?? engagementRes;
@@ -219,10 +226,19 @@ const RewardsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 ${density === "compact" ? "mhub-compact" : ""}`}>
       <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
 
-        <UpsellBanner trigger="rewards" className="mb-4" />
+        <div data-density="extra">
+          <UpsellBanner trigger="rewards" className="mb-4" />
+        </div>
+        <div className="flex justify-end mb-4">
+          <PageDensityToggle
+            value={density}
+            onChange={setDensity}
+            label={tr("view", "View")}
+          />
+        </div>
 
         {/* ═══ HERO CARD — Balance + Tier ═══ */}
         <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 shadow-xl rounded-2xl p-6 mb-6 text-white">
@@ -234,6 +250,7 @@ const RewardsPage = () => {
               <div>
                 <p className="text-sm font-medium opacity-80">{tr("your_balance", "Your Balance")}</p>
                 <p className="text-4xl font-extrabold mt-1 tracking-tight">🪙 {coins.toLocaleString()}</p>
+                <p className="text-sm opacity-70 mt-0.5">≈ {formatCoinValue(coins)} value</p>
               </div>
               <div className={`px-3 py-1.5 rounded-full bg-white/20 text-sm font-bold flex items-center gap-1.5`}>
                 <span>{tier.icon}</span> {tier.name}
@@ -333,7 +350,7 @@ const RewardsPage = () => {
         </div>
 
         {/* ═══ HOW IT WORKS — Toggleable for new users ═══ */}
-        <div className="mb-6">
+        <div className="mb-6" data-density="extra">
           <button
             onClick={() => setShowHowItWorks(!showHowItWorks)}
             className="w-full flex items-center justify-between px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl text-left hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
@@ -570,7 +587,11 @@ const RewardsPage = () => {
         )}
 
         {/* ═══════════ REFERRAL NETWORK TAB ═══════════ */}
-        {activeTab === "network" && <ReferralChainTree />}
+        {activeTab === "network" && (
+          <div data-density="extra">
+            <ReferralChainTree />
+          </div>
+        )}
 
         {/* ═══════════ EARN TAB ═══════════ */}
         {activeTab === "earn" && (
@@ -695,7 +716,10 @@ const RewardsPage = () => {
                     <h3 className="text-xs font-bold text-gray-900 dark:text-white">{item.title}</h3>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2.5 min-h-[24px]">{item.desc}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">🪙 {item.coins}</span>
+                      <div>
+                        <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">🪙 {item.coins}</span>
+                        <span className="text-[9px] text-gray-400 dark:text-gray-500 ml-1">({formatCoinValue(item.coins)})</span>
+                      </div>
                       <button
                         disabled={coins < item.coins}
                         className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -746,4 +770,3 @@ const RewardsPage = () => {
 };
 
 export default RewardsPage;
-

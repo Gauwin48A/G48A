@@ -30,9 +30,13 @@ import {
 import { Link as J, useNavigate as xe, useLocation as We } from "react-router-dom";
 import { useAuth as he } from "@/context/AuthContext";
 import api from "@/lib/api";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 const ve = () => {
   const { t: r } = le(),
     tr = (t, s, l = {}) => r(t, { defaultValue: s, ...l }),
+    ({ density, setDensity } = usePageDensity("mhub_complaints_density")),
+    densityClass = density === "compact" ? " mhub-compact" : "",
     { toast: d } = ne(),
     S = xe(),
     location = We(),
@@ -371,7 +375,8 @@ const ve = () => {
         "div",
         {
           className:
-            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative dark:bg-gradient-to-br",
+            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 relative dark:bg-gradient-to-br" +
+            densityClass,
           style: { minHeight: "100vh" },
         },
         e.createElement(
@@ -465,21 +470,29 @@ const ve = () => {
               " ",
               r("24_48h_response"),
             ),
-            e.createElement(
-              y,
-              {
-                className:
-                  "bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-green-800/10 dark:border-green-500/20",
-              },
-              e.createElement(ce, { className: "w-4 h-4 mr-2" }),
-              " ",
-              r("fair_resolution"),
-            ),
-          ),
           e.createElement(
-            v,
+            y,
             {
               className:
+                "bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/20 dark:border-green-500/30 px-4 py-2 rounded-full backdrop-blur-sm dark:bg-green-800/10 dark:border-green-500/20",
+            },
+            e.createElement(ce, { className: "w-4 h-4 mr-2" }),
+            " ",
+            r("fair_resolution"),
+          ),
+        ),
+        e.createElement(
+          "div",
+          { className: "mt-4 flex justify-center" },
+          e.createElement(PageDensityToggle, {
+            value: density,
+            onChange: setDensity,
+          }),
+        ),
+        e.createElement(
+          v,
+          {
+            className:
                 "mhub-premium-surface rounded-3xl overflow-hidden",
             },
             e.createElement(
@@ -1085,7 +1098,8 @@ const ve = () => {
         "div",
         {
           className:
-            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 dark:from-slate-950 dark:via-red-900 dark:to-orange-900 dark:bg-gradient-to-br",
+            "mhub-page-complaints min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-red-600 via-orange-600 to-amber-600 dark:from-slate-950 dark:via-red-900 dark:to-orange-900 dark:bg-gradient-to-br" +
+            densityClass,
           style: { minHeight: "100vh" },
         },
         e.createElement(
