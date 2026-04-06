@@ -43,6 +43,8 @@ import { useToast } from "@/hooks/use-toast";
 import { navigateBack } from "@/utils/navigation";
 import { emitSubscriptionUpdated } from "@/utils/appStateEvents";
 import { useCmsPage } from "@/hooks/useCmsPage";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 
 const tierPlans = [
   {
@@ -296,6 +298,8 @@ export default function TierSelection() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { density, setDensity } = usePageDensity("mhub_tier_density");
+  const densityClass = density === "compact" ? "mhub-compact" : "";
   // CRITICAL FIX: wrap tr in useCallback so it has a stable reference.
   // Without this, tr is a new function on every render → fetchCurrentSubscription
   // and fetchSubscriptionHistory (which list tr in their deps) also recreate every
@@ -973,7 +977,7 @@ export default function TierSelection() {
   }, [cmsContent, tr]);
 
   return (
-    <div className="mhub-page-tier min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-100 py-6 px-4 sm:px-6 dark:bg-gradient-to-b">
+    <div className={`mhub-page-tier min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-blue-50 to-indigo-100 py-6 px-4 sm:px-6 dark:bg-gradient-to-b ${densityClass}`}>
       <style>{`
         @keyframes tierFadeIn {
           from { opacity: 0; transform: translateY(16px); }
@@ -1017,6 +1021,11 @@ export default function TierSelection() {
                 >
                   {tr("see_rewards", "Rewards")}
                 </Button>
+                <PageDensityToggle
+                  value={density}
+                  onChange={setDensity}
+                  className="[&>span]:text-white/70 [&_select]:bg-white/15 [&_select]:text-white [&_select]:border-white/30"
+                />
                 <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
                   <DialogTrigger asChild>
                     <Button
@@ -1058,7 +1067,7 @@ export default function TierSelection() {
 
       {/* Flash sale banner */}
       {flashSale ? (
-        <div className="mx-auto max-w-6xl mb-6 page-shell page-pad">
+        <div data-density="extra" className="mx-auto max-w-6xl mb-6 page-shell page-pad">
           <div className="rounded-2xl bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 p-4 text-white text-center shadow-xl shadow-orange-500/20 relative overflow-hidden dark:bg-gradient-to-r dark:text-white dark:text-center">
             <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.15)_50%,transparent_75%)] bg-[length:250%_100%] animate-[shimmer_3s_ease-in-out_infinite] dark:bg-slate-900" />
             <div className="relative flex items-center justify-center gap-2 font-black text-lg dark:text-lg">
@@ -1593,7 +1602,7 @@ export default function TierSelection() {
       <div className="max-w-4xl mx-auto page-shell page-pad"><hr className="mhub-divider" /></div>
 
       {/* FAQ */}
-      <div className="max-w-2xl mx-auto mb-8 page-shell page-pad">
+      <div data-density="extra" className="max-w-2xl mx-auto mb-8 page-shell page-pad">
         <div className="mhub-premium-surface rounded-2xl px-6 py-4">
           <h2 className="text-base font-black text-slate-900 dark:text-white mb-2 dark:text-base dark:text-slate-100">
             {tr("faq_title", "Frequently asked questions")}

@@ -22,10 +22,14 @@ import AadhaarOtpVerify from "@/components/AadhaarOtpVerify";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { getAccessToken, getUserId } from "@/utils/authStorage";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 const Verification = () => {
   const navigate = useNavigate(),
     { toast } = useToast(),
     { t: translate } = useTranslation(),
+    { density, setDensity } = usePageDensity("mhub_verification_density"),
+    densityClass = density === "compact" ? " mhub-compact" : "",
     { user, loading: authLoading } = useAuth(),
     [statusLoading, setStatusLoading] = useState(!0),
     [submitting, setSubmitting] = useState(!1),
@@ -221,11 +225,12 @@ const Verification = () => {
     };
   return authLoading || statusLoading
     ? React.createElement(
-        "div",
-        {
-          className:
-            "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] dark:bg-gradient-to-br",
-        },
+          "div",
+          {
+            className:
+              "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] dark:bg-gradient-to-br" +
+              densityClass,
+          },
         React.createElement(
           "div",
           { className: "text-center dark:text-center" },
@@ -245,7 +250,8 @@ const Verification = () => {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] dark:bg-gradient-to-br",
+              "min-h-screen mhub-premium-page bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] dark:bg-gradient-to-br" +
+              densityClass,
             style: { paddingBottom: "120px" },
           },
           React.createElement(
@@ -271,6 +277,14 @@ const Verification = () => {
                 "p",
                 { className: "text-gray-400 dark:text-gray-300" },
                 translate("aadhaar_subtitle"),
+              ),
+              React.createElement(
+                "div",
+                { className: "mt-3 flex justify-center" },
+                React.createElement(PageDensityToggle, {
+                  value: density,
+                  onChange: setDensity,
+                }),
               ),
             ),
             isVerified &&
@@ -738,7 +752,8 @@ const Verification = () => {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4 dark:bg-gradient-to-br",
+              "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4 dark:bg-gradient-to-br" +
+              densityClass,
           },
           React.createElement(
             Card,

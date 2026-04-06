@@ -12,6 +12,8 @@ import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import { getCategoryIcon, getSubcategoryIcon } from "@/constants/categoryIcons";
 import { useCmsPage } from "@/hooks/useCmsPage";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 
 const GROUP_STYLES = {
   electronics: { label: "Electronics", accent: "from-blue-500 to-indigo-600", description: "Phones, laptops, gadgets" },
@@ -142,6 +144,8 @@ export default function CategoryModeSelect() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { density, setDensity } = usePageDensity("mhub_category_mode_density");
+  const densityClass = density === "compact" ? "mhub-compact" : "";
   const tr = (key, fallback, options = {}) => t(key, { defaultValue: fallback, ...options });
   const { categories, loading, selectCategory, selectSubcategory, clearCategory } = useCategoryMode();
   const { user } = useAuth();
@@ -331,7 +335,7 @@ export default function CategoryModeSelect() {
     const HeroIcon = getCategoryIcon(activeGroupData.primaryCategory?.name || activeGroupData.label, Grid3X3);
     const showCategoryName = (activeGroupData.categories?.length || 0) > 1;
     return (
-      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br">
+      <div className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br ${densityClass}`}>
         <div className="mx-auto w-full max-w-6xl px-4 py-10 md:py-14 page-shell page-pad">
           <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${activeGroupData.accent} px-6 py-8 text-white shadow-2xl`}>
             <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -401,12 +405,15 @@ export default function CategoryModeSelect() {
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br">
+    <div className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br ${densityClass}`}>
       <div className="mx-auto w-full max-w-6xl px-4 py-10 md:py-14 page-shell page-pad">
         <div className="flex flex-col gap-3">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm dark:bg-[var(--surface-2)] dark:text-slate-200 dark:bg-slate-900/80 dark:text-xs"><Grid3X3 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-300" />{isPostFlow ? tr("post_flow", "Post flow") : tr("browse_flow", "Browse flow")}</div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-4xl dark:text-3xl dark:text-slate-100 dark:md:text-4xl">{tr("pick_category_title", "Pick a category to start")}</h1>
           <p className="text-base text-slate-600 dark:text-slate-300 dark:text-base dark:text-slate-200">{isPostFlow ? tr("pick_category_subtitle", "Choose a category group to see the full subcategory grid.") : tr("pick_category_browse_subtitle", "Choose a category group to start browsing listings.")}</p>
+          <div className="flex justify-end">
+            <PageDensityToggle value={density} onChange={setDensity} />
+          </div>
         </div>
         {user && !isPostFlow ? (
           <Card className="mt-6 border border-slate-200/70 bg-white/90 shadow-sm dark:border-gray-700 dark:bg-gray-900/70 dark:border dark:border-slate-700/70 dark:bg-slate-900/90">

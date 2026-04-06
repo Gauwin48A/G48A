@@ -32,7 +32,7 @@ import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 const ChatPage = () => {
   const navigate = useNavigate(),
-    ({ density, setDensity } = usePageDensity("mhub_chat_density")),
+    { density, setDensity } = usePageDensity("mhub_chat_density"),
     densityClass = density === "compact" ? " mhub-compact" : "",
     [conversations, setConversations] = useState([]),
     [selectedConversation, setSelectedConversation] = useState(null),
@@ -932,4 +932,3 @@ const ChatPage = () => {
 };
 var ChatPageDefault = ChatPage;
 export { ChatPageDefault as default };
-

@@ -23,6 +23,8 @@ import {
 } from "@/utils/categoryModeFilters";
 import { useCmsPage } from "@/hooks/useCmsPage";
 import { useTheme } from "@/context/ThemeContext";
+import PageDensityToggle from "@/components/ui/PageDensityToggle";
+import { usePageDensity } from "@/hooks/usePageDensity";
 
 const CARD_GRADIENTS = [
   "from-blue-500 to-indigo-600",
@@ -73,6 +75,8 @@ export default function Subcategories() {
     categories: categoryModeCategories,
   } = useCategoryMode();
   const { isDark: isDarkMode } = useTheme();
+  const { density, setDensity } = usePageDensity("mhub_subcategories_density");
+  const densityClass = density === "compact" ? "mhub-compact" : "";
   const { data: cmsContent } = useCmsPage("subcategories");
   const cardGradients = useMemo(
     () =>
@@ -278,7 +282,7 @@ export default function Subcategories() {
       });
 
   return (
-    <div className="mhub-page-subcategories min-h-screen mhub-premium-page bg-gradient-to-br from-blue-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:bg-gradient-to-br">
+    <div className={`mhub-page-subcategories min-h-screen mhub-premium-page bg-gradient-to-br from-blue-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:bg-gradient-to-br ${densityClass}`}>
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(12px); }
@@ -303,6 +307,9 @@ export default function Subcategories() {
         ) : null}
         <div className="mb-4 mhub-premium-surface rounded-2xl px-4 py-3 shadow-sm">
           <BreadcrumbsBar tone={isDarkMode ? "dark" : "light"} />
+        </div>
+        <div className="mb-3 flex justify-end">
+          <PageDensityToggle value={density} onChange={setDensity} />
         </div>
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 dark:from-slate-900 dark:via-blue-900 dark:to-slate-800 px-6 py-5 sm:py-6 shadow-xl dark:bg-gradient-to-r">
           <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl pointer-events-none dark:bg-blue-800/10" />

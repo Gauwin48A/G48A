@@ -909,6 +909,7 @@ const ve = 5,
       [autoRefreshEnabled, setAutoRefreshEnabled] = g(!1),
       [showBackToTop, setShowBackToTop] = g(!1),
       [showAllQuickFilters, setShowAllQuickFilters] = g(!1);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { density, setDensity } = usePageDensity("mhub_allposts_density");
     const languageRef = k(l);
     const secondaryStickyRef = k(null);

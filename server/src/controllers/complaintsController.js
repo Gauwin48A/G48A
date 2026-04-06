@@ -536,11 +536,13 @@ exports.getComplaints = async (req, res) => {
       SELECT
         COUNT(*) OVER()::int AS total_count,
         c.*,
-        bu.full_name AS buyer_name,
-        su.full_name AS seller_name
+        COALESCE(bp.full_name, bu.name, bu.username) AS buyer_name,
+        COALESCE(sp.full_name, su.name, su.username) AS seller_name
       FROM complaints c
       LEFT JOIN users bu ON c.buyer_id::text = bu.user_id::text
+      LEFT JOIN profiles bp ON c.buyer_id::text = bp.user_id::text
       LEFT JOIN users su ON c.seller_id::text = su.user_id::text
+      LEFT JOIN profiles sp ON c.seller_id::text = sp.user_id::text
       ${whereClause}
       ORDER BY c.created_at DESC
       LIMIT $${params.length - 1} OFFSET $${params.length}
@@ -796,11 +798,12 @@ exports.getMyComplaints = async (req, res) => {
     const result = await runQuery(
       `
       SELECT c.*,
-             su.full_name AS seller_name,
+             COALESCE(sp.full_name, su.name, su.username) AS seller_name,
              p.title AS post_title
       FROM complaints c
       LEFT JOIN users su ON c.seller_id::text = su.user_id::text
-      LEFT JOIN posts p ON c.post_id = p.post_id
+      LEFT JOIN profiles sp ON c.seller_id::text = sp.user_id::text
+      LEFT JOIN posts p ON c.post_id::text = p.post_id::text
       WHERE c.buyer_id::text = $1
       ORDER BY c.created_at DESC
       `,
