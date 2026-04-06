@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
 import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiSun, FiMoon } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
@@ -18,6 +19,7 @@ import { buildActiveAppMatcher, normalizeCategoryText } from '@/utils/categoryMo
 import MiniCartPopover from '@/components/MiniCartPopover';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { readSavedPostIds, subscribeSavedPosts } from '@/utils/savedPosts';
+import { readUserCity } from '@/utils/locationCache';
 
 const parseStoredBoolean = (rawValue, fallback = false) => {
   if (rawValue === null || rawValue === undefined) return fallback;
@@ -42,7 +44,13 @@ const AUTH_ONLY_PATHS = new Set(['/login', '/signup', '/forgot-password', '/rese
 
 const GreenNavbar = () => {
   const { t } = useTranslation();
-  const currentPath = useRouterLocation().pathname;
+  const routerLocation = useRouterLocation();
+  const normalizedPath = useMemo(() => {
+    const raw = routerLocation.pathname || '/';
+    const trimmed = raw.replace(/\/+$/, '');
+    return trimmed === '' ? '/' : trimmed;
+  }, [routerLocation.pathname]);
+  const currentPath = normalizedPath;
   const isAuthPage = AUTH_ONLY_PATHS.has(currentPath) || currentPath.startsWith('/reset-password');
 
   const navLinks = [
@@ -121,14 +129,15 @@ const GreenNavbar = () => {
     filters.verifiedOnly,
   ]);
   const hasActiveFilters = activeFilterCount > 0;
-  const { mode: themeMode, setThemeMode, resolvedTheme } = useTheme();
-  const isDarkNav = resolvedTheme === 'dark';
+  const { mode: themeMode, setThemeMode } = useTheme();
   const [layoutMode, setLayoutMode] = useState(() => {
     const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || '').trim().toLowerCase();
     return LAYOUT_PRESETS.some((preset) => preset.key === stored) ? stored : 'desktop';
   });
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
   const layoutMenuRef = useRef(null);
+  const layoutMenuPanelRef = useRef(null);
+  const [layoutMenuStyle, setLayoutMenuStyle] = useState(null);
 
   // Large font mode for accessibility
   const [largeFont, setLargeFont] = useState(() => {
@@ -169,7 +178,8 @@ const GreenNavbar = () => {
 
   useEffect(() => {
     const onClickOutside = (event) => {
-      if (!layoutMenuRef.current || layoutMenuRef.current.contains(event.target)) return;
+      if (layoutMenuRef.current?.contains(event.target)) return;
+      if (layoutMenuPanelRef.current?.contains(event.target)) return;
       setIsLayoutMenuOpen(false);
     };
 
@@ -325,11 +335,10 @@ const GreenNavbar = () => {
   }, [moreOpen]);
 
   // Get location from context (for city display)
-  const { city, area, village, colony, locality, displayName, locationString, hasLocation, loading: locationLoading, permissionGranted, forceRefreshLocation, accuracyTier, isLiveLocation, isIpFallback, provider } = useLocation();
+  const { city, area, village, colony, locality, displayName, locationString, hasLocation, loading: locationLoading, permissionGranted, forceRefreshLocation, accuracyTier, isLiveLocation, isIpFallback, provider, isStaleLocation } = useLocation();
 
 
   // Router location for path detection
-  const routerLocation = useRouterLocation();
   useEffect(() => {
     setShowFilter(false);
     setMoreOpen(false);
@@ -374,11 +383,11 @@ const GreenNavbar = () => {
   }, [activeAppMatcher, activeCategoryId, subcategories]);
 
   // Check if currently on For You page
-  const isForYouPage = routerLocation.pathname === '/for-you';
+  const isForYouPage = normalizedPath === '/for-you';
   const hideFilterOnGate = isForYouPage && !isLoggedIn;
   const hideChromeOnHub =
-    routerLocation.pathname === '/category-hub' ||
-    routerLocation.pathname === '/category-mode';
+    normalizedPath === '/category-hub' ||
+    normalizedPath === '/category-mode';
   // Build the most specific area name — colony/neighbourhood > village > locality > area > city
   // Skip values that duplicate city/mandal level names (e.g. area = "Bachupally mandal" equals city)
   const bestAreaName = (() => {
@@ -407,17 +416,19 @@ const GreenNavbar = () => {
   })();
 
   // Build visible location label — prefer most specific area name
-  const resolvedLocationLabel = locationLoading
+  const cachedUserCity = readUserCity();
+  const showStalePlaceholder = isStaleLocation && !locationLoading;
+  const resolvedLocationLabel = (locationLoading || showStalePlaceholder)
     ? t('detecting_location', { defaultValue: 'Detecting location...' })
-    : (bestAreaName || displayName || locationString || localStorage.getItem('mhub_user_city') || t('location', { defaultValue: 'Location' }));
+    : (bestAreaName || displayName || locationString || cachedUserCity || t('location', { defaultValue: 'Location' }));
   // Short label for compact navbar display
-  const shortLocationLabel = locationLoading
+  const shortLocationLabel = (locationLoading || showStalePlaceholder)
     ? t('detecting', { defaultValue: 'Detecting...' })
-    : (bestAreaName || (displayName ? displayName.split(',')[0].trim() : '') || localStorage.getItem('mhub_user_city') || t('location', { defaultValue: 'Location' }));
+    : (bestAreaName || (displayName ? displayName.split(',')[0].trim() : '') || cachedUserCity || t('location', { defaultValue: 'Location' }));
   const navbarSearchLabel =
     filters.search || t('search_placeholder', { defaultValue: 'Search products or brands' });
   const openSearchPage = () => {
-    const context = routerLocation.pathname === '/for-you' ? 'for-you' : 'all-posts';
+    const context = normalizedPath === '/for-you' ? 'for-you' : 'all-posts';
     navigate(`/search?context=${context}`);
   };
 
@@ -467,18 +478,22 @@ const GreenNavbar = () => {
 
   // Show full navbar for home (all-posts), my-posts, and For You
   const showFullNavbar =
-    routerLocation.pathname === '/all-posts' ||
-    routerLocation.pathname === '/listings' ||
-    routerLocation.pathname === '/my-posts' ||
-    routerLocation.pathname === '/home' ||
-    routerLocation.pathname === '/' ||
-    routerLocation.pathname === '/for-you';
+    normalizedPath === '/all-posts' ||
+    normalizedPath.startsWith('/all-posts/') ||
+    normalizedPath === '/listings' ||
+    normalizedPath.startsWith('/listings/') ||
+    normalizedPath === '/my-posts' ||
+    normalizedPath.startsWith('/my-posts/') ||
+    normalizedPath === '/home' ||
+    normalizedPath === '/' ||
+    normalizedPath === '/for-you' ||
+    normalizedPath.startsWith('/for-you/');
   const hideTopRibbon =
     isAuthPage ||
-    routerLocation.pathname === '/profile' ||
-    routerLocation.pathname.startsWith('/profile/') ||
-    routerLocation.pathname === '/rewards' ||
-    routerLocation.pathname.startsWith('/rewards');
+    normalizedPath === '/profile' ||
+    normalizedPath.startsWith('/profile/') ||
+    normalizedPath === '/rewards' ||
+    normalizedPath.startsWith('/rewards');
   const topNavRef = useRef(null);
   const topRibbonRef = useRef(null);
 
@@ -506,6 +521,37 @@ const GreenNavbar = () => {
     return () => window.removeEventListener('resize', applyHeight);
   }, [hideChromeOnHub, hideTopRibbon, showFullNavbar]);
 
+  useLayoutEffect(() => {
+    if (!isLayoutMenuOpen || typeof window === 'undefined') {
+      setLayoutMenuStyle(null);
+      return;
+    }
+
+    const update = () => {
+      const anchor = layoutMenuRef.current;
+      if (!anchor) {
+        setLayoutMenuStyle(null);
+        return;
+      }
+      const rect = anchor.getBoundingClientRect();
+      const right = Math.max(12, window.innerWidth - rect.right);
+      const minWidth = Math.max(rect.width || 0, 176);
+      setLayoutMenuStyle({
+        top: rect.bottom + 8,
+        right,
+        minWidth,
+      });
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [isLayoutMenuOpen]);
+
   // Helper for ARIA and touch target
   const navButtonProps = (label) => ({
     'aria-label': label,
@@ -516,7 +562,7 @@ const GreenNavbar = () => {
 
   const isBottomNavLinkActive = (link) => {
     if (link.key === 'more') return moreOpen;
-    const currentPath = routerLocation.pathname;
+    const currentPath = normalizedPath;
     const matchPaths =
       Array.isArray(link.matchPaths) && link.matchPaths.length > 0
         ? link.matchPaths
@@ -569,21 +615,16 @@ const GreenNavbar = () => {
       {/* Top Navbar and overlays remain as is */}
       {showFullNavbar ? (
         // Full Navbar
-        <nav
-          ref={topNavRef}
-          className={`sticky top-0 z-[120] shadow-lg overflow-visible ${isDarkNav ? 'bg-gray-900' : 'bg-blue-600'} transition-all duration-300`}
-          role="navigation"
-          aria-label={t('main_navigation')}
-        >
+        <nav ref={topNavRef} className="mhub-top-nav mhub-top-nav--primary sticky top-0 z-[120] transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
           <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-3 py-2 md:px-4 md:py-3 lg:gap-4">
             {/* Logo and Location */}
             <div className="flex shrink-0 items-center gap-2.5 lg:gap-3">
               <Link
                 to="/"
-                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.5 transition-colors hover:bg-white/15"
+                className="mhub-nav-pill flex items-center gap-2 rounded-full px-2.5 py-1.5 transition-colors"
                 aria-label="Home"
               >
-                <span className="rounded-xl bg-white p-2 shadow-sm">
+                <span className="mhub-nav-logo-chip rounded-xl p-2">
                   <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
                     <rect width="24" height="24" rx="6" fill="#2563eb" />
                     <path
@@ -596,7 +637,7 @@ const GreenNavbar = () => {
                     <circle cx="12" cy="13" r="2" fill="#fff" />
                   </svg>
                 </span>
-                <span className="hidden text-lg font-bold tracking-tight text-white sm:block">
+                <span className="hidden text-lg font-bold tracking-tight sm:block">
                   {t('home')}
                 </span>
               </Link>
@@ -606,11 +647,11 @@ const GreenNavbar = () => {
                 <button
                   type="button"
                   onClick={() => { if (forceRefreshLocation && !locationLoading) forceRefreshLocation().catch(() => {}); }}
-                  className={`relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-full border px-2.5 text-white transition-all hover:bg-white/20 active:scale-[0.97] ${
+                  className={`mhub-nav-pill relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-full border px-2.5 transition-all active:scale-[0.97] ${
                     locationLoading ? 'border-yellow-400/40 bg-yellow-500/20' :
                     isIpFallback ? 'border-orange-400/40 bg-orange-500/15' :
                     accuracyTier === 'precise' || accuracyTier === 'good' ? 'border-green-400/40 bg-green-500/15' :
-                    'border-white/20 bg-white/10'
+                    ''
                   }`}
                   aria-label={`${t('location', { defaultValue: 'Location' })}: ${resolvedLocationLabel}. ${t('tap_to_refresh', { defaultValue: 'Tap to refresh' })}`}
                   title={`${resolvedLocationLabel} - ${t('tap_to_refresh', { defaultValue: 'Tap to refresh GPS' })}`}
@@ -643,7 +684,7 @@ const GreenNavbar = () => {
                 <button
                   type="button"
                   onClick={cycleLayout}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-white/20"
+                  className="mhub-nav-action inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                   aria-label={`${t('layout', { defaultValue: 'Layout' })}: ${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })}`}
                   title={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
                 >
@@ -663,13 +704,13 @@ const GreenNavbar = () => {
                     openSearchPage();
                   }
                 }}
-                className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full border border-blue-100/90 bg-white dark:bg-slate-800 dark:border-slate-600 px-4 py-2.5 shadow-sm transition-all hover:border-blue-200 dark:hover:border-slate-500 hover:shadow-md cursor-pointer group"
+                className="mhub-nav-search relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-4 py-2.5 transition-all cursor-pointer group"
                 role="button"
                 tabIndex={0}
                 aria-label={t('search', { defaultValue: 'Search' })}
               >
-                <FiSearch className="w-5 h-5 text-gray-400" />
-                <span className={`flex-1 truncate text-sm ${filters.search ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}`}>
+                <FiSearch className="w-5 h-5 text-[color:var(--icon-color-muted)]" />
+                <span className={`flex-1 truncate text-sm ${filters.search ? 'text-[color:var(--text-primary)]' : 'mhub-nav-search-placeholder'}`}>
                   {navbarSearchLabel}
                 </span>
 
@@ -683,7 +724,7 @@ const GreenNavbar = () => {
                       navigate({ pathname: routerLocation.pathname, search: newParams.toString() });
                       setFilters(prev => ({ ...prev, search: '' }));
                     }}
-                    className="z-10 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    className="z-10 rounded-full p-1 text-[color:var(--text-faint)] transition-colors hover:bg-[var(--hover)] hover:text-[color:var(--text-primary)]"
                     aria-label="Clear search"
                     title="Clear search"
                   >
@@ -698,339 +739,305 @@ const GreenNavbar = () => {
                   <button
                     type="button"
                     onClick={() => setShowFilter(true)}
-                    className={`inline-flex h-11 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 ${hasActiveFilters ? 'ring-2 ring-white/70 shadow-md' : ''}`}
+                    className={`mhub-nav-action inline-flex h-11 items-center gap-2 rounded-full px-3.5 text-sm font-semibold backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters ? 'ring-2 ring-[color:var(--primary)] shadow-md' : ''}`}
                     aria-label={`${t('filter', { defaultValue: 'Filter' })}${hasActiveFilters ? ` (${activeFilterCount})` : ''}`}
                   >
                     <FiFilter className="h-4 w-4" />
                     <span className="hidden lg:inline">{t('filter', { defaultValue: 'Filter' })}</span>
                     {hasActiveFilters && (
-                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-white/90 text-blue-700 text-[10px] font-bold px-1.5">
+                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[var(--primary)] text-white text-[10px] font-bold px-1.5">
                         {activeFilterCount}
                       </span>
                     )}
                   </button>
                 </div>
               )}
-              {!hideFilterOnGate && showFilter && (
-                <div
-                  className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-40 overflow-y-auto"
-                  style={{ paddingTop: 'calc(var(--top-nav-height) + 12px)', paddingBottom: '20px' }}
-                >
-                  <div className="mhub-premium-surface rounded-2xl shadow-2xl border p-6 w-full max-w-sm mx-2 flex flex-col gap-3 relative animate-fadeIn">
-                    <button className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 dark:hover:text-yellow-400" onClick={() => setShowFilter(false)} aria-label={t('close', { defaultValue: 'Close filter' })}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                    <h4 className="font-semibold text-blue-600 dark:text-yellow-300 mb-2">{t('filter_products', { defaultValue: 'Filter Products' })}</h4>
-                    <div className="mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('location')}</label>
-                      <select
-                        className="mhub-input w-full px-2 py-1.5 text-sm"
-                        value={filters.location || ''}
-                        onChange={e => setFilters(f => ({ ...f, location: e.target.value, page: 1 }))}
-                      >
-                        <option value="">{t('any_location', { defaultValue: 'Any Location' })}</option>
-                        <option value="Delhi">Delhi</option>
-                        <option value="Mumbai">Mumbai</option>
-                        <option value="Bangalore">Bangalore</option>
-                        <option value="Chennai">Chennai</option>
-                        <option value="Kolkata">Kolkata</option>
-                        <option value="Hyderabad">Hyderabad</option>
-                      </select>
-                    </div>
-                    <div className="mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('price_range', { defaultValue: 'Price Range' })}</label>
-                      <div className="flex gap-2 items-center">
-                        <div className="flex-1">
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder={t('min_price_placeholder')}
+              {!hideFilterOnGate && showFilter && typeof document !== 'undefined'
+                ? createPortal(
+                    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-40">
+                      <div className="mhub-premium-surface rounded-2xl shadow-2xl border p-6 w-full max-w-sm mx-2 flex flex-col gap-3 relative animate-fadeIn">
+                        <button className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 dark:hover:text-yellow-400" onClick={() => setShowFilter(false)} aria-label={t('close', { defaultValue: 'Close filter' })}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                        <h4 className="font-semibold text-blue-600 dark:text-yellow-300 mb-2">{t('filter_products', { defaultValue: 'Filter Products' })}</h4>
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('location')}</label>
+                          <select
                             className="mhub-input w-full px-2 py-1.5 text-sm"
-                            value={filters.minPrice || ''}
-                            onChange={e => setFilters(f => ({ ...f, minPrice: e.target.value, page: 1 }))}
-                          />
-                        </div>
-                        <span className="text-gray-400">to</span>
-                        <div className="flex-1">
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder={t('max_price_placeholder')}
-                            className="mhub-input w-full px-2 py-1.5 text-sm"
-                            value={filters.maxPrice || ''}
-                            onChange={e => setFilters(f => ({ ...f, maxPrice: e.target.value, page: 1 }))}
-                          />
-                        </div>
-                      </div>
-                      {/* Quick preset buttons */}
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '', maxPrice: '500', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('under_500')}</button>
-                        <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '500', maxPrice: '2000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('500_to_2k')}</button>
-                        <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '2000', maxPrice: '10000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('2k_to_10k')}</button>
-                        <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '10000', maxPrice: '', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('above_10k')}</button>
-                      </div>
-                    </div>
-
-                    <div className="mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('date_range', { defaultValue: 'Date Range' })}</label>
-                      {/* Quick Date Presets Dropdown */}
-                      <select
-                        className="mhub-input w-full px-2 py-1.5 text-sm mb-2"
-                        defaultValue=""
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const now = new Date();
-                          let startDate = '', endDate = now.toISOString().split('T')[0];
-
-                          if (val === 'today') {
-                            startDate = endDate;
-                          } else if (val === 'yesterday') {
-                            const yesterday = new Date(now);
-                            yesterday.setDate(yesterday.getDate() - 1);
-                            startDate = endDate = yesterday.toISOString().split('T')[0];
-                          } else if (val === '24h') {
-                            const past24h = new Date(now);
-                            past24h.setHours(past24h.getHours() - 24);
-                            startDate = past24h.toISOString().split('T')[0];
-                          } else if (val === '7d') {
-                            const past7d = new Date(now);
-                            past7d.setDate(past7d.getDate() - 7);
-                            startDate = past7d.toISOString().split('T')[0];
-                          } else if (val === '10d') {
-                            const past10d = new Date(now);
-                            past10d.setDate(past10d.getDate() - 10);
-                            startDate = past10d.toISOString().split('T')[0];
-                          } else if (val === '30d') {
-                            const past30d = new Date(now);
-                            past30d.setDate(past30d.getDate() - 30);
-                            startDate = past30d.toISOString().split('T')[0];
-                          } else if (val === 'custom') {
-                            // Keep existing dates or clear for custom selection
-                            return;
-                          } else {
-                            // "Any" - clear dates
-                            startDate = endDate = '';
-                          }
-                          setFilters(f => ({ ...f, startDate, endDate, page: 1 }));
-                        }}
-                      >
-                        <option value="">{t('any_time')}</option>
-                        <option value="today">{t('today')}</option>
-                        <option value="yesterday">{t('yesterday')}</option>
-                        <option value="24h">{t('last_24_hours')}</option>
-                        <option value="7d">{t('last_7_days')}</option>
-                        <option value="10d">{t('last_10_days')}</option>
-                        <option value="30d">{t('last_30_days')}</option>
-                        <option value="custom">{t('custom_range')}</option>
-                      </select>
-                      {/* Custom Date Range Pickers */}
-                      <details className="text-xs text-gray-500 dark:text-gray-400">
-                        <summary className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">{t('custom_date_range')}</summary>
-                        <div className="flex gap-2 mt-2">
-                          <input
-                            type="date"
-                            className="mhub-input w-1/2 px-2 py-1 text-sm"
-                            value={filters.startDate || ''}
-                            onChange={e => setFilters(f => ({ ...f, startDate: e.target.value, page: 1 }))}
-                          />
-                          <input
-                            type="date"
-                            className="mhub-input w-1/2 px-2 py-1 text-sm"
-                            value={filters.endDate || ''}
-                            onChange={e => setFilters(f => ({ ...f, endDate: e.target.value, page: 1 }))}
-                          />
-                        </div>
-                      </details>
-                    </div>
-                    <div className="mb-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('subcategories', { defaultValue: 'Subcategories' })}
-                      </label>
-                      {/* Show saved subcategory badges when on For You page */}
-                      {isForYouPage && visibleSavedPreferenceSubcategories.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          <span className="text-xs text-gray-500">{t('your_preferences', { defaultValue: 'Your preferences' })}:</span>
-                          {visibleSavedPreferenceSubcategories.map((cat, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full">
-                              {cat}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <select
-                        className="mhub-input w-full px-2 py-1.5 text-sm"
-                        value={selectedScopedSubcategory}
-                        onChange={e =>
-                          setFilters(f => ({
-                            ...f,
-                            category: 'All',
-                            subcategory: e.target.value || 'All',
-                            page: 1,
-                          }))
-                        }
-                      >
-                        <option value="">{t('all_subcategories', { defaultValue: 'All Subcategories' })}</option>
-                        {scopedSubcategories.map(sub => (
-                          <option key={sub.subcategory_id || sub.id || `${sub.category_name}-${sub.name}`} value={sub.name}>
-                            {sub.category_name ? `${sub.name} - ${sub.category_name}` : sub.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {/* F-04: Condition filter */}
-                    <div className="mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('condition', { defaultValue: 'Condition' })}</label>
-                      <div className="flex flex-wrap gap-2">
-                        {['', 'new', 'like_new', 'good', 'fair'].map(cond => (
-                          <button
-                            key={cond}
-                            type="button"
-                            onClick={() => setFilters(f => ({ ...f, condition: cond, page: 1 }))}
-                            className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                              (filters.condition || '') === cond
-                                ? 'bg-blue-600 text-white border-blue-600 dark:bg-yellow-400 dark:text-gray-900 dark:border-yellow-400'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600'
-                            }`}
+                            value={filters.location || ''}
+                            onChange={e => setFilters(f => ({ ...f, location: e.target.value, page: 1 }))}
                           >
-                            {cond === '' ? (t('any', { defaultValue: 'Any' })) :
-                             cond === 'new' ? (t('condition_new', { defaultValue: 'New' })) :
-                             cond === 'like_new' ? (t('condition_like_new', { defaultValue: 'Like New' })) :
-                             cond === 'good' ? (t('condition_good', { defaultValue: 'Good' })) :
-                             (t('condition_fair', { defaultValue: 'Fair' }))}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                            <option value="">{t('any_location', { defaultValue: 'Any Location' })}</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Kolkata">Kolkata</option>
+                            <option value="Hyderabad">Hyderabad</option>
+                          </select>
+                        </div>
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('price_range', { defaultValue: 'Price Range' })}</label>
+                          <div className="flex gap-2 items-center">
+                            <div className="flex-1">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder={t('min_price_placeholder')}
+                                className="mhub-input w-full px-2 py-1.5 text-sm"
+                                value={filters.minPrice || ''}
+                                onChange={e => setFilters(f => ({ ...f, minPrice: e.target.value, page: 1 }))}
+                              />
+                            </div>
+                            <span className="text-gray-400">to</span>
+                            <div className="flex-1">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder={t('max_price_placeholder')}
+                                className="mhub-input w-full px-2 py-1.5 text-sm"
+                                value={filters.maxPrice || ''}
+                                onChange={e => setFilters(f => ({ ...f, maxPrice: e.target.value, page: 1 }))}
+                              />
+                            </div>
+                          </div>
+                          {/* Quick preset buttons */}
+                          <div className="flex gap-1 mt-2 flex-wrap">
+                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '', maxPrice: '500', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('under_500')}</button>
+                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '500', maxPrice: '2000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('500_to_2k')}</button>
+                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '2000', maxPrice: '10000', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('2k_to_10k')}</button>
+                            <button type="button" onClick={() => setFilters(f => ({ ...f, minPrice: '10000', maxPrice: '', page: 1 }))} className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200">{t('above_10k')}</button>
+                          </div>
+                        </div>
 
-                    {/* F-04: Verified sellers only */}
-                    <div className="mb-2 flex items-center gap-3">
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={!!filters.verifiedOnly}
-                        onClick={() => setFilters(f => ({ ...f, verifiedOnly: !f.verifiedOnly, page: 1 }))}
-                        className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.verifiedOnly ? 'bg-blue-600 dark:bg-yellow-400' : 'bg-gray-300 dark:bg-gray-600'}`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${filters.verifiedOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                      </button>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 select-none cursor-pointer" onClick={() => setFilters(f => ({ ...f, verifiedOnly: !f.verifiedOnly, page: 1 }))}>
-                        <FiUserCheck className="inline w-3.5 h-3.5 mr-1 text-blue-600 dark:text-yellow-400" />
-                        {t('verified_sellers_only', { defaultValue: 'Verified sellers only' })}
-                      </label>
-                    </div>
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('date_range', { defaultValue: 'Date Range' })}</label>
+                          {/* Quick Date Presets Dropdown */}
+                          <select
+                            className="mhub-input w-full px-2 py-1.5 text-sm mb-2"
+                            defaultValue=""
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const now = new Date();
+                              let startDate = '', endDate = now.toISOString().split('T')[0];
 
-                    <div className="mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('sort_by')}</label>
-                      <select className="mhub-input w-full px-2 py-1.5 text-sm" value={filters.sortBy || ''} onChange={e => setFilters(f => ({ ...f, sortBy: e.target.value, page: 1 }))}>
-                        <option value="">{t('default', { defaultValue: 'Default' })}</option>
-                        <option value="price_asc">{t('price_low_high', { defaultValue: 'Price: Low to High' })}</option>
-                        <option value="price_desc">{t('price_high_low', { defaultValue: 'Price: High to Low' })}</option>
-                        <option value="date_desc">{t('newest_first', { defaultValue: 'Newest First' })}</option>
-                        <option value="date_asc">{t('oldest_first', { defaultValue: 'Oldest First' })}</option>
-                        {permissionGranted && <option value="distance">{t('sort_by_distance', { defaultValue: 'Nearest First' })}</option>}
-                      </select>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-                        onClick={() => {
-                          setShowFilter(false);
-
-                          // Sync preferences to DB if on For You page and logged in
-                          const loggedIn = isAuthenticated(user);
-                          const userId = getUserId(user);
-
-                          if (routerLocation.pathname === '/for-you' && loggedIn && userId) {
-                            const subcategoriesPayload =
-                              selectedScopedSubcategory
-                                ? [selectedScopedSubcategory]
-                                : [];
-
-                            if (subcategoriesPayload.length > 0) {
-                              api.post('/profile/preferences/update', {
-                                  userId,
-                                  location: filters.location,
-                                  minPrice: filters.minPrice,
-                                  maxPrice: filters.maxPrice,
-                                  subcategories: subcategoriesPayload
-                                })
-                              .then(() => {
-                                  clearUserPreferencesCache(userId);
-                                  setUserPreferences((prev) => ({
-                                    ...(prev || {}),
-                                    location: filters.location || "",
-                                    minPrice: filters.minPrice ?? "",
-                                    maxPrice: filters.maxPrice ?? "",
-                                    subcategories: subcategoriesPayload,
-                                  }));
-                                  toast({ title: t('preferences_updated', { defaultValue: 'Preferences Updated' }), description: t('for_you_synced', { defaultValue: 'Your For You feed preferences have been saved.' }) });
-                              })
-                              .catch(err => {
-                                if (import.meta.env.DEV) {
-                                  console.error("Failed to sync preferences", err);
-                                }
-                              });
-                            }
-                          }
-
-                          // If on For You page, navigate with filters as URL params
-                          if (routerLocation.pathname === '/for-you') {
-                            const params = new URLSearchParams();
-                            if (selectedScopedSubcategory) {
-                              const normalized = String(selectedScopedSubcategory).trim().toLowerCase();
-                              const match = scopedSubcategories.find((sub) => {
-                                const id = String(sub.subcategory_id || sub.id || '').trim().toLowerCase();
-                                const name = String(sub.name || sub.title || '').trim().toLowerCase();
-                                return id === normalized || name === normalized;
-                              });
-                              const parentCategoryId = match?.category_id || null;
-                              const subcategoryId = match?.subcategory_id || match?.id || null;
-                              if (parentCategoryId) {
-                                params.set('category_id', String(parentCategoryId));
-                              }
-                              if (subcategoryId) {
-                                params.set('subcategory_id', String(subcategoryId));
+                              if (val === 'today') {
+                                startDate = endDate;
+                              } else if (val === 'yesterday') {
+                                const yesterday = new Date(now);
+                                yesterday.setDate(yesterday.getDate() - 1);
+                                startDate = endDate = yesterday.toISOString().split('T')[0];
+                              } else if (val === '24h') {
+                                const past24h = new Date(now);
+                                past24h.setHours(past24h.getHours() - 24);
+                                startDate = past24h.toISOString().split('T')[0];
+                              } else if (val === '7d') {
+                                const past7d = new Date(now);
+                                past7d.setDate(past7d.getDate() - 7);
+                                startDate = past7d.toISOString().split('T')[0];
+                              } else if (val === '10d') {
+                                const past10d = new Date(now);
+                                past10d.setDate(past10d.getDate() - 10);
+                                startDate = past10d.toISOString().split('T')[0];
+                              } else if (val === '30d') {
+                                const past30d = new Date(now);
+                                past30d.setDate(past30d.getDate() - 30);
+                                startDate = past30d.toISOString().split('T')[0];
+                              } else if (val === 'custom') {
+                                // Keep existing dates or clear for custom selection
+                                return;
                               } else {
-                                params.set('subcategory', selectedScopedSubcategory);
+                                // "Any" - clear dates
+                                startDate = endDate = '';
                               }
-                            }
-                            if (filters.minPrice) params.set('minPrice', filters.minPrice);
-                            if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
-                            if (filters.location) params.set('location', filters.location);
-                            const queryString = params.toString();
-                            navigate(`/for-you${queryString ? '?' + queryString : ''}`);
-                          }
-                        }}
-                      >{t('apply', { defaultValue: 'Apply' })}</button>
-                      <button
-                        className="flex-1 bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-[var(--surface-2)] transition"
-                        onClick={() => {
-                          setFilters(f => ({
-                            ...f,
-                            location: '',
-                            minPrice: '',
-                            maxPrice: '',
-                            priceRange: '',
-                            startDate: '',
-                            endDate: '',
-                            category: 'All',
-                            subcategory: 'All',
-                            sortBy: '',
-                            condition: '',
-                            verifiedOnly: false,
-                            page: 1,
-                          }));
-                          setShowFilter(false);
-                          // Clear URL params if on For You page
-                          if (routerLocation.pathname === '/for-you') {
-                            navigate('/for-you');
-                          }
-                        }}
-                      >{t('reset', { defaultValue: 'Clear' })}</button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                              setFilters(f => ({ ...f, startDate, endDate, page: 1 }));
+                            }}
+                          >
+                            <option value="">{t('any_time')}</option>
+                            <option value="today">{t('today')}</option>
+                            <option value="yesterday">{t('yesterday')}</option>
+                            <option value="24h">{t('last_24_hours')}</option>
+                            <option value="7d">{t('last_7_days')}</option>
+                            <option value="10d">{t('last_10_days')}</option>
+                            <option value="30d">{t('last_30_days')}</option>
+                            <option value="custom">{t('custom_range')}</option>
+                          </select>
+                          <div className="flex gap-2 items-center">
+                            <div className="flex-1">
+                              <input
+                                type="date"
+                                className="mhub-input w-full px-2 py-1.5 text-sm"
+                                value={filters.startDate || ''}
+                                onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value, page: 1 }))}
+                              />
+                            </div>
+                            <span className="text-gray-400">to</span>
+                            <div className="flex-1">
+                              <input
+                                type="date"
+                                className="mhub-input w-full px-2 py-1.5 text-sm"
+                                value={filters.endDate || ''}
+                                onChange={(e) => setFilters(f => ({ ...f, endDate: e.target.value, page: 1 }))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('condition', { defaultValue: 'Condition' })}</label>
+                          <div className="flex flex-wrap gap-2">
+                            {['', 'new', 'like_new', 'good', 'fair'].map((cond) => (
+                              <button
+                                key={cond}
+                                type="button"
+                                onClick={() => setFilters(f => ({ ...f, condition: cond, page: 1 }))}
+                                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                                  (filters.condition || '') === cond
+                                    ? 'bg-blue-600 text-white border-blue-600 dark:bg-yellow-400 dark:text-gray-900 dark:border-yellow-400'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600'
+                                }`}
+                              >
+                                {cond === '' ? (t('any', { defaultValue: 'Any' })) :
+                                 cond === 'new' ? (t('condition_new', { defaultValue: 'New' })) :
+                                 cond === 'like_new' ? (t('condition_like_new', { defaultValue: 'Like New' })) :
+                                 cond === 'good' ? (t('condition_good', { defaultValue: 'Good' })) :
+                                 (t('condition_fair', { defaultValue: 'Fair' }))}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* F-04: Verified sellers only */}
+                        <div className="mb-2 flex items-center gap-3">
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={!!filters.verifiedOnly}
+                            onClick={() => setFilters(f => ({ ...f, verifiedOnly: !f.verifiedOnly, page: 1 }))}
+                            className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${filters.verifiedOnly ? 'bg-blue-600 dark:bg-yellow-400' : 'bg-gray-300 dark:bg-gray-600'}`}
+                          >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${filters.verifiedOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                          </button>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 select-none cursor-pointer" onClick={() => setFilters(f => ({ ...f, verifiedOnly: !f.verifiedOnly, page: 1 }))}>
+                            <FiUserCheck className="inline w-3.5 h-3.5 mr-1 text-blue-600 dark:text-yellow-400" />
+                            {t('verified_sellers_only', { defaultValue: 'Verified sellers only' })}
+                          </label>
+                        </div>
+
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('sort_by')}</label>
+                          <select className="mhub-input w-full px-2 py-1.5 text-sm" value={filters.sortBy || ''} onChange={e => setFilters(f => ({ ...f, sortBy: e.target.value, page: 1 }))}>
+                            <option value="">{t('default', { defaultValue: 'Default' })}</option>
+                            <option value="price_asc">{t('price_low_high', { defaultValue: 'Price: Low to High' })}</option>
+                            <option value="price_desc">{t('price_high_low', { defaultValue: 'Price: High to Low' })}</option>
+                            <option value="date_desc">{t('newest_first', { defaultValue: 'Newest First' })}</option>
+                            <option value="date_asc">{t('oldest_first', { defaultValue: 'Oldest First' })}</option>
+                            {permissionGranted && <option value="distance">{t('sort_by_distance', { defaultValue: 'Nearest First' })}</option>}
+                          </select>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+                            onClick={() => {
+                              setShowFilter(false);
+
+                              // Sync preferences to DB if on For You page and logged in
+                              const loggedIn = isAuthenticated(user);
+                              const userId = getUserId(user);
+
+                              if (normalizedPath === '/for-you' && loggedIn && userId) {
+                                const subcategoriesPayload =
+                                  selectedScopedSubcategory
+                                    ? [selectedScopedSubcategory]
+                                    : [];
+
+                                if (subcategoriesPayload.length > 0) {
+                                  api.post('/profile/preferences/update', {
+                                      userId,
+                                      location: filters.location,
+                                      minPrice: filters.minPrice,
+                                      maxPrice: filters.maxPrice,
+                                      subcategories: subcategoriesPayload
+                                    })
+                                  .then(() => {
+                                      clearUserPreferencesCache(userId);
+                                      setUserPreferences((prev) => ({
+                                        ...(prev || {}),
+                                        location: filters.location || "",
+                                        minPrice: filters.minPrice ?? "",
+                                        maxPrice: filters.maxPrice ?? "",
+                                        subcategories: subcategoriesPayload,
+                                      }));
+                                      toast({ title: t('preferences_updated', { defaultValue: 'Preferences Updated' }), description: t('for_you_synced', { defaultValue: 'Your For You feed preferences have been saved.' }) });
+                                  })
+                                  .catch(err => {
+                                    if (import.meta.env.DEV) {
+                                      console.error("Failed to sync preferences", err);
+                                    }
+                                  });
+                                }
+                              }
+
+                              // If on For You page, navigate with filters as URL params
+                              if (normalizedPath === '/for-you') {
+                                const params = new URLSearchParams();
+                                if (selectedScopedSubcategory) {
+                                  const normalized = String(selectedScopedSubcategory).trim().toLowerCase();
+                                  const match = scopedSubcategories.find((sub) => {
+                                    const id = String(sub.subcategory_id || sub.id || '').trim().toLowerCase();
+                                    const name = String(sub.name || sub.title || '').trim().toLowerCase();
+                                    return id === normalized || name === normalized;
+                                  });
+                                  const parentCategoryId = match?.category_id || null;
+                                  const subcategoryId = match?.subcategory_id || match?.id || null;
+                                  if (parentCategoryId) {
+                                    params.set('category_id', String(parentCategoryId));
+                                  }
+                                  if (subcategoryId) {
+                                    params.set('subcategory_id', String(subcategoryId));
+                                  } else {
+                                    params.set('subcategory', selectedScopedSubcategory);
+                                  }
+                                }
+                                if (filters.minPrice) params.set('minPrice', filters.minPrice);
+                                if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+                                if (filters.location) params.set('location', filters.location);
+                                const queryString = params.toString();
+                                navigate(`/for-you${queryString ? '?' + queryString : ''}`);
+                              }
+                            }}
+                          >{t('apply', { defaultValue: 'Apply' })}</button>
+                          <button
+                            className="flex-1 bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-[var(--surface-2)] transition"
+                            onClick={() => {
+                              setFilters(f => ({
+                                ...f,
+                                location: '',
+                                minPrice: '',
+                                maxPrice: '',
+                                priceRange: '',
+                                startDate: '',
+                                endDate: '',
+                                category: 'All',
+                                subcategory: 'All',
+                                sortBy: '',
+                                condition: '',
+                                verifiedOnly: false,
+                                page: 1,
+                              }));
+                              setShowFilter(false);
+                              // Clear URL params if on For You page
+                              if (normalizedPath === '/for-you') {
+                                navigate('/for-you');
+                              }
+                            }}
+                          >{t('reset', { defaultValue: 'Clear' })}</button>
+                        </div>
+                      </div>
+                    </div>,
+                    document.body,
+                  )
+                : null}
             </div>
 
             {/* Icons */}
@@ -1039,7 +1046,7 @@ const GreenNavbar = () => {
               {isLoggedIn && (
                 <Link to="/post-welcome" aria-label="Add Post" className="relative group">
                   <span
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white text-2xl font-extrabold text-blue-600 shadow-lg transition-all duration-200 ring-2 ring-blue-300/80 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-blue-400"
+                    className="mhub-nav-cta inline-flex h-11 w-11 items-center justify-center rounded-full text-2xl font-extrabold transition-all duration-200 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-blue-400"
                     style={{ cursor: 'pointer', zIndex: 20 }}
                     tabIndex={0}
                     role="button"
@@ -1052,11 +1059,11 @@ const GreenNavbar = () => {
                   </span>
                 </Link>
               )}
-              <div className="hidden md:flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-1.5 py-1 backdrop-blur-sm">
+              <div className="mhub-nav-pill hidden md:flex items-center gap-1 rounded-full px-1.5 py-1 backdrop-blur-sm">
                 {/* Notifications Bell */}
                 <Link to="/notifications" aria-label={t('notifications')} className="relative group">
-                  <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
-                    <FiBell className="text-white w-5 h-5" />
+                  <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
+                    <FiBell className="w-5 h-5" />
                   </span>
                   {isLoggedIn && Number(unreadCount) > 0 && (
                     <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
@@ -1069,8 +1076,8 @@ const GreenNavbar = () => {
                 </Link>
                 {/* Wishlist Bookmark */}
                 <Link to="/wishlist" aria-label={t('wishlist', { defaultValue: 'Wishlist' })} className="relative group">
-                  <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
-                    <FiBookmark className="text-white w-5 h-5" />
+                  <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
+                    <FiBookmark className="w-5 h-5" />
                   </span>
                   {isLoggedIn && wishlistCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
@@ -1084,8 +1091,8 @@ const GreenNavbar = () => {
                 {/* Cart */}
                 <div className="relative group">
                   <Link to="/cart" aria-label={t('cart', { defaultValue: 'Cart' })} className="relative">
-                    <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
-                      <FiShoppingCart className="text-white w-5 h-5" />
+                    <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
+                      <FiShoppingCart className="w-5 h-5" />
                     </span>
                     {isLoggedIn && Number(categoryFilteredCartCount) > 0 && (
                       <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
@@ -1100,8 +1107,8 @@ const GreenNavbar = () => {
                 </div>
                 {/* Recently Viewed Clock */}
                 <Link to="/recently-viewed" aria-label={t('recently_viewed', { defaultValue: 'Recently Viewed' })} className="relative group">
-                  <span className="p-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 transition-colors inline-flex items-center justify-center">
-                    <FiClock className="text-white w-5 h-5" />
+                  <span className="mhub-nav-icon-btn p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center justify-center">
+                    <FiClock className="w-5 h-5" />
                   </span>
                   <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
                     {t('recently_viewed', { defaultValue: 'Recently Viewed' })}
@@ -1170,7 +1177,7 @@ const GreenNavbar = () => {
                   onClick={() => setIsLayoutMenuOpen((value) => !value)}
                   aria-expanded={isLayoutMenuOpen}
                   aria-haspopup="menu"
-                  className="inline-flex h-10 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-semibold text-white hover:bg-white/20"
+                  className="mhub-nav-action inline-flex h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold"
                   aria-label={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
                   title={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
                 >
@@ -1180,35 +1187,46 @@ const GreenNavbar = () => {
                   </span>
                 </button>
 
-                {isLayoutMenuOpen ? (
-                  <div className="mhub-layout-menu absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl">
-                    {LAYOUT_PRESETS.map((preset) => {
-                      const Icon = preset.icon;
-                      const active = preset.key === layoutMode;
-                      return (
-                        <button
-                          key={preset.key}
-                          type="button"
-                          onClick={() => handleLayoutModeChange(preset.key)}
-                          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                            active
-                              ? 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300'
-                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span className="flex flex-1 flex-col">
-                            <span>{t(preset.labelKey, { defaultValue: preset.key })}</span>
-                            <span className="text-[11px] font-normal text-slate-500">
-                              {preset.width} x {preset.height}
-                            </span>
-                          </span>
-                          {active ? <FiCheck className="h-4 w-4" /> : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
+                {isLayoutMenuOpen && typeof document !== 'undefined' && layoutMenuStyle
+                  ? createPortal(
+                      <div
+                        ref={layoutMenuPanelRef}
+                        style={{
+                          top: `${layoutMenuStyle.top}px`,
+                          right: `${layoutMenuStyle.right}px`,
+                          minWidth: `${layoutMenuStyle.minWidth}px`,
+                        }}
+                        className="mhub-layout-menu fixed z-[1000] w-44 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl"
+                      >
+                        {LAYOUT_PRESETS.map((preset) => {
+                          const Icon = preset.icon;
+                          const active = preset.key === layoutMode;
+                          return (
+                            <button
+                              key={preset.key}
+                              type="button"
+                              onClick={() => handleLayoutModeChange(preset.key)}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                                active
+                                  ? 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300'
+                                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span className="flex flex-1 flex-col">
+                                <span>{t(preset.labelKey, { defaultValue: preset.key })}</span>
+                                <span className="text-[11px] font-normal text-slate-500">
+                                  {preset.width} x {preset.height}
+                                </span>
+                              </span>
+                              {active ? <FiCheck className="h-4 w-4" /> : null}
+                            </button>
+                          );
+                        })}
+                      </div>,
+                      document.body,
+                    )
+                  : null}
               </div>
               )}
             </div>
@@ -1222,7 +1240,7 @@ const GreenNavbar = () => {
       {/* More Menu Fullscreen Overlay */}
       {
         moreOpen && (
-          <div className="mhub-more-overlay fixed inset-0 z-[200]">
+          <div className="mhub-more-overlay fixed inset-0 z-[1000]">
             <div
               className="mhub-more-overlay-bg absolute inset-0 bg-black/30 backdrop-blur-sm"
               onClick={closeMoreMenu}
@@ -1230,7 +1248,7 @@ const GreenNavbar = () => {
             />
             {/* Right-side vertical sliding pane, with improved highlight and shadow */}
             <div
-              className="mhub-more-panel absolute top-0 right-0 z-[201] h-full w-80 max-w-full overflow-y-auto mhub-premium-surface p-8 pb-24 shadow-2xl ring-4 ring-blue-400 ring-opacity-80 animate-slideInRight dark:ring-yellow-400"
+              className="mhub-more-panel absolute top-0 right-0 z-[1010] h-full w-80 max-w-full overflow-y-auto mhub-premium-surface p-8 pb-24 shadow-2xl ring-4 ring-blue-400 ring-opacity-80 animate-slideInRight dark:ring-yellow-400"
               style={{ transition: 'transform 0.3s' }}
               onClick={(e) => e.stopPropagation()}
               role="dialog"
@@ -1403,3 +1421,4 @@ const GreenNavbar = () => {
 };
 
 export default GreenNavbar;
+

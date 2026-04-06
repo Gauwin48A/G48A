@@ -206,6 +206,22 @@ async function ensureChannelSchema() {
       await runQuery(
         "ALTER TABLE channels ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE"
       );
+      // Premium CentrePage columns
+      await runQuery(
+        "ALTER TABLE channels ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE"
+      );
+      await runQuery(
+        "ALTER TABLE channels ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE"
+      );
+      await runQuery(
+        "ALTER TABLE channels ADD COLUMN IF NOT EXISTS business_hours TEXT"
+      );
+      await runQuery(
+        "ALTER TABLE channels ADD COLUMN IF NOT EXISTS vanity_url TEXT"
+      );
+      await runQuery(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_channels_vanity_url ON channels(vanity_url) WHERE vanity_url IS NOT NULL"
+      );
       return true;
     } catch (error) {
       logger.warn("[ChannelService] Unable to auto-provision channel columns", {
@@ -243,6 +259,12 @@ async function ensureChannelPostsTable() {
       );
       await runQuery(
         "ALTER TABLE channel_posts ADD COLUMN IF NOT EXISTS image_urls JSONB"
+      );
+      await runQuery(
+        "ALTER TABLE channel_posts ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE"
+      );
+      await runQuery(
+        "ALTER TABLE channel_posts ADD COLUMN IF NOT EXISTS post_type VARCHAR(20) DEFAULT 'text'"
       );
       await runQuery(
         "CREATE INDEX IF NOT EXISTS idx_channel_posts_channel_created ON channel_posts(channel_id, created_at DESC)"

@@ -115,7 +115,7 @@ async function computeTrustScore(userId) {
     user?.aadhaar_verified === true ||
     String(user?.aadhaar_status || "").trim().toLowerCase() === "verified";
 
-  const [txnRow, complaintRows, sessionRow] = await Promise.all([
+  const [txnRow, complaintRows, sessionRow, reviewRow] = await Promise.all([
     safeQueryRow(
       "SELECT COUNT(*)::int AS count FROM transactions WHERE status = 'completed' AND (buyer_id = $1 OR seller_id = $1)",
       [userId],
@@ -130,6 +130,11 @@ async function computeTrustScore(userId) {
       "SELECT COUNT(*)::int AS session_count, COUNT(DISTINCT NULLIF(device_fingerprint, ''))::int AS device_count, COUNT(DISTINCT NULLIF(ip_address, ''))::int AS ip_count FROM user_sessions WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '30 days'",
       [userId],
       { session_count: 0, device_count: 0, ip_count: 0 },
+    ),
+    safeQueryRow(
+      "SELECT COUNT(*)::int AS review_count, COALESCE(AVG(rating), 0) AS avg_rating FROM reviews WHERE reviewee_id::text = $1 AND COALESCE(is_hidden, false) = false",
+      [userId],
+      { review_count: 0, avg_rating: 0 },
     ),
   ]);
 
@@ -165,12 +170,20 @@ async function computeTrustScore(userId) {
     openComplaints * 10 + resolvedComplaints * 5,
   );
 
+  // Review bonus: up to +15 based on review count and average rating
+  const reviewCount = Number(reviewRow?.review_count || 0);
+  const avgRating = Number(reviewRow?.avg_rating || 0);
+  const reviewBonus = reviewCount > 0
+    ? Math.min(15, Math.floor(reviewCount * (avgRating / 5) * 3))
+    : 0;
+
   const rawScore =
     TRUST_BASE_SCORE +
     (aadhaarVerified ? 20 : 0) +
     transactionBonus +
     ageBonus +
-    deviceBonus -
+    deviceBonus +
+    reviewBonus -
     complaintPenalty;
 
   const score = clampScore(rawScore);
@@ -192,6 +205,9 @@ async function computeTrustScore(userId) {
       deviceCount: Number(sessionRow?.device_count || 0),
       ipCount: Number(sessionRow?.ip_count || 0),
       deviceConsistencyBonus: deviceBonus,
+      reviewCount,
+      avgRating: Number(avgRating.toFixed(1)),
+      reviewBonus,
     };
   }
   return payload;

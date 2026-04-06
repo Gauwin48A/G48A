@@ -11,7 +11,7 @@ const {
 
 const DEFAULT_DIRECT_COINS = parsePositiveNumber(
   process.env.REFERRAL_DIRECT_REWARD,
-  50,
+  100,
 );
 const DEFAULT_INDIRECT_COINS = parsePositiveNumber(
   process.env.REFERRAL_INDIRECT_REWARD,
@@ -26,6 +26,11 @@ const REQUIRE_ACTIVITY_DEFAULT = parseBoolean(
   true,
 );
 
+// ---------- Referral earning caps (anti-abuse) ----------
+const REFERRAL_CAP_DAILY = parsePositiveInt(process.env.REFERRAL_CAP_DAILY, 500);
+const REFERRAL_CAP_MONTHLY = parsePositiveInt(process.env.REFERRAL_CAP_MONTHLY, 5000);
+const REFERRAL_CAP_LIFETIME = parsePositiveInt(process.env.REFERRAL_CAP_LIFETIME, 50000);
+
 function parseChainCoinsFromEnv() {
   const raw = parseOptionalString(process.env.REFERRAL_CHAIN_COINS);
   if (!raw) return null;
@@ -36,9 +41,9 @@ function parseChainCoinsFromEnv() {
   return parsed.length ? parsed : null;
 }
 
+// Reward ladder: L1=100, L2=40, L3=20, L4=10, L5=5
 const CHAIN_COINS =
-  parseChainCoinsFromEnv() ||
-  [DEFAULT_DIRECT_COINS, ...Array(Math.max(DEFAULT_MAX_CHAIN_DEPTH - 1, 0)).fill(DEFAULT_INDIRECT_COINS)];
+  parseChainCoinsFromEnv() || [100, 40, 20, 10, 5];
 
 const REFERRAL_CHAIN_MAX_DEPTH = parsePositiveInt(
   process.env.REFERRAL_CHAIN_MAX_DEPTH,
@@ -49,6 +54,61 @@ function getCoinsForDepth(depth) {
   const normalizedDepth = Number.parseInt(depth, 10);
   if (!Number.isFinite(normalizedDepth) || normalizedDepth < 1) return 0;
   return CHAIN_COINS[normalizedDepth - 1] || 0;
+}
+
+/**
+ * Check referral earning caps for a user (daily / monthly / lifetime).
+ * Returns { allowed: boolean, remaining, dailyUsed, monthlyUsed, lifetimeUsed }
+ */
+async function checkReferralCaps(client, userId) {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  let dailyUsed = 0, monthlyUsed = 0, lifetimeUsed = 0;
+  try {
+    const dailyRes = await client.query(
+      `SELECT COALESCE(SUM(reward_coins), 0)::int AS total
+       FROM referral_rewards
+       WHERE referrer_id::text = $1 AND created_at >= $2`,
+      [String(userId), todayStart],
+    );
+    dailyUsed = dailyRes.rows[0]?.total || 0;
+
+    const monthlyRes = await client.query(
+      `SELECT COALESCE(SUM(reward_coins), 0)::int AS total
+       FROM referral_rewards
+       WHERE referrer_id::text = $1 AND created_at >= $2`,
+      [String(userId), monthStart],
+    );
+    monthlyUsed = monthlyRes.rows[0]?.total || 0;
+
+    const lifetimeRes = await client.query(
+      `SELECT COALESCE(SUM(reward_coins), 0)::int AS total
+       FROM referral_rewards
+       WHERE referrer_id::text = $1`,
+      [String(userId)],
+    );
+    lifetimeUsed = lifetimeRes.rows[0]?.total || 0;
+  } catch (err) {
+    if (!isUndefinedTableError(err)) {
+      logger.warn("[ReferralJoinRewards] Cap check failed", { message: err.message });
+    }
+  }
+
+  const dailyRemaining = Math.max(0, REFERRAL_CAP_DAILY - dailyUsed);
+  const monthlyRemaining = Math.max(0, REFERRAL_CAP_MONTHLY - monthlyUsed);
+  const lifetimeRemaining = Math.max(0, REFERRAL_CAP_LIFETIME - lifetimeUsed);
+  const remaining = Math.min(dailyRemaining, monthlyRemaining, lifetimeRemaining);
+
+  return {
+    allowed: remaining > 0,
+    remaining,
+    dailyUsed,
+    monthlyUsed,
+    lifetimeUsed,
+    caps: { daily: REFERRAL_CAP_DAILY, monthly: REFERRAL_CAP_MONTHLY, lifetime: REFERRAL_CAP_LIFETIME },
+  };
 }
 
 const toBoolean = (value) => {
@@ -96,21 +156,9 @@ function isUndefinedTableError(error) {
 
 async function hasUserActivity(client, userId) {
   if (!userId) return false;
-  let hasPost = false;
+
+  // Tier 1 (strongest signal): Completed a real transaction as buyer or seller
   let hasTransaction = false;
-
-  try {
-    const postResult = await client.query(
-      "SELECT 1 FROM posts WHERE user_id::text = $1 LIMIT 1",
-      [userId],
-    );
-    hasPost = postResult.rows.length > 0;
-  } catch (err) {
-    if (!isUndefinedTableError(err)) {
-      logger.warn("[ReferralJoinRewards] Post activity check failed", { message: err.message });
-    }
-  }
-
   try {
     const txResult = await client.query(
       `SELECT 1
@@ -129,7 +177,29 @@ async function hasUserActivity(client, userId) {
     }
   }
 
-  return hasPost || hasTransaction;
+  if (hasTransaction) return true;
+
+  // Tier 2 (moderate signal): Created 2+ listings AND is verified
+  // A single post is too easy to game — require multiple to show intent
+  let hasMultiplePosts = false;
+  try {
+    const postResult = await client.query(
+      "SELECT COUNT(*)::int AS cnt FROM posts WHERE user_id::text = $1",
+      [userId],
+    );
+    hasMultiplePosts = (postResult.rows[0]?.cnt || 0) >= 2;
+  } catch (err) {
+    if (!isUndefinedTableError(err)) {
+      logger.warn("[ReferralJoinRewards] Post activity check failed", { message: err.message });
+    }
+  }
+
+  if (hasMultiplePosts) {
+    const verified = await isUserVerified(client, userId);
+    return verified;
+  }
+
+  return false;
 }
 
 async function recordReferralReward(client, { referrerId, referredUserId, depth, reward }) {
@@ -185,8 +255,20 @@ async function applyReferralJoinCoinRewards({
       const ancestorId = parseOptionalString(node.ancestor_user_id);
       if (!ancestorId || ancestorId === normalizedUserId) continue;
       const depth = Number.parseInt(node.depth, 10);
-      const reward = getCoinsForDepth(depth);
+      let reward = getCoinsForDepth(depth);
       if (!reward) continue;
+
+      // --- Enforce referral earning caps ---
+      const caps = await checkReferralCaps(client, ancestorId);
+      if (!caps.allowed) {
+        logger.info(`[ReferralJoinRewards] Skipping L${depth} reward for ${ancestorId}: cap reached`, {
+          dailyUsed: caps.dailyUsed, monthlyUsed: caps.monthlyUsed, lifetimeUsed: caps.lifetimeUsed,
+        });
+        continue;
+      }
+      // Clamp reward to remaining cap budget
+      reward = Math.min(reward, caps.remaining);
+      if (reward <= 0) continue;
 
       const referenceId = `referral_join:l${depth}:${normalizedUserId}:${ancestorId}`;
       const description = `Level ${depth} referral join reward for ${normalizedUserId}`;
@@ -233,4 +315,12 @@ async function applyReferralJoinCoinRewards({
   }
 }
 
-module.exports = { applyReferralJoinCoinRewards, isUserVerified };
+module.exports = {
+  applyReferralJoinCoinRewards,
+  isUserVerified,
+  checkReferralCaps,
+  CHAIN_COINS,
+  REFERRAL_CAP_DAILY,
+  REFERRAL_CAP_MONTHLY,
+  REFERRAL_CAP_LIFETIME,
+};

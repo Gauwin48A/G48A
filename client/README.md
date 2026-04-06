@@ -1,4 +1,4 @@
-﻿<p align="center">
+<p align="center">
   <img src="client/public/icons/icon-192x192.png" alt="MHub Logo" width="80" height="80" />
 </p>
 
@@ -10,10 +10,10 @@
 </p>
 
 <p align="center">
-  <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-â†’-blue?style=for-the-badge" alt="Quick Start" /></a>
-  <a href="#-architecture"><img src="https://img.shields.io/badge/Architecture-â†’-purple?style=for-the-badge" alt="Architecture" /></a>
-  <a href="#-features"><img src="https://img.shields.io/badge/Features-â†’-green?style=for-the-badge" alt="Features" /></a>
-  <a href="#-api-reference"><img src="https://img.shields.io/badge/API_Ref-â†’-orange?style=for-the-badge" alt="API" /></a>
+  <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-→-blue?style=for-the-badge" alt="Quick Start" /></a>
+  <a href="#-architecture"><img src="https://img.shields.io/badge/Architecture-→-purple?style=for-the-badge" alt="Architecture" /></a>
+  <a href="#-features"><img src="https://img.shields.io/badge/Features-→-green?style=for-the-badge" alt="Features" /></a>
+  <a href="#-api-reference"><img src="https://img.shields.io/badge/API_Ref-→-orange?style=for-the-badge" alt="API" /></a>
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@
 ---
 
 <details>
-<summary><strong>ðŸ“‘ Table of Contents</strong> <em>(click to expand)</em></summary>
+<summary><strong>📑 Table of Contents</strong> <em>(click to expand)</em></summary>
 
 ### Foundation
 - [Platform Vision](#-platform-vision)
@@ -91,19 +91,19 @@
 
 ---
 
-## ðŸŒŸ Platform Vision
+## 🌟 Platform Vision
 
 > **MHub is a category-native marketplace** that behaves like multiple specialized marketplace apps inside a single product.
 
-Unlike generic classifieds where all categories live in one undifferentiated feed, MHub pivots its entire UI â€” discovery, filters, recommendations, and seller flow â€” based on the user's chosen category context. This makes buying electronics feel different from buying fashion, which feels different from browsing real estate.
+Unlike generic classifieds where all categories live in one undifferentiated feed, MHub pivots its entire UI — discovery, filters, recommendations, and seller flow — based on the user's chosen category context. This makes buying electronics feel different from buying fashion, which feels different from browsing real estate.
 
 ### For Users
 - **Browse** thousands of listings across categories with intelligent discovery
 - **Sell** with a guided posting flow, tier-based visibility, and seller analytics
 - **Earn** coins & rewards through daily activity, referrals, and streaks
-- **Trust** â€” every seller has a computed trust score, verification badges, and review history
-- **Chat** â€” real-time messaging with buyers and sellers
-- **Save** â€” wishlists, saved searches, recently viewed, and price alerts
+- **Trust** — every seller has a computed trust score, verification badges, and review history
+- **Chat** — real-time messaging with buyers and sellers
+- **Save** — wishlists, saved searches, recently viewed, and price alerts
 
 ### For Developers
 - **67 distinct routes** across marketplace, social, commerce, and admin surfaces
@@ -116,16 +116,16 @@ Unlike generic classifieds where all categories live in one undifferentiated fee
 
 ---
 
-## ðŸš€ Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| **Node.js** | â‰¥ 18.x | Runtime |
-| **PostgreSQL** | â‰¥ 15 | Database |
-| **Redis** | â‰¥ 7.x | Cache & sessions |
-| **npm** | â‰¥ 9.x | Package manager |
+| **Node.js** | ≥ 18.x | Runtime |
+| **PostgreSQL** | ≥ 15 | Database |
+| **Redis** | ≥ 7.x | Cache & sessions |
+| **npm** | ≥ 9.x | Package manager |
 
 ### 1. Clone & Install
 
@@ -158,11 +158,11 @@ npm run seed:sample-data
 ### 3. Start Development
 
 ```bash
-# Terminal 1 â€” API Server (port 5001)
+# Terminal 1 — API Server (port 5001)
 cd server
 npm run dev
 
-# Terminal 2 â€” Client App (port 5173)
+# Terminal 2 — Client App (port 5173)
 cd client
 npm run dev
 ```
@@ -188,7 +188,7 @@ cd server && npm run preflight:schema
 
 ---
 
-## ðŸ§± Tech Stack
+## 🧱 Tech Stack
 
 ### Client Application
 
@@ -237,258 +237,258 @@ cd server && npm run preflight:schema
 
 ---
 
-## ðŸ— Architecture
+## 🏗 Architecture
 
 ### System Overview
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                         USER DEVICES                                â”‚
-â”‚           Web Browser  Â·  Android (Capacitor)  Â·  PWA              â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                               â”‚
-                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                    â”‚   CLIENT APP        â”‚
-                    â”‚   React + Vite      â”‚
-                    â”‚   67 Routes         â”‚
-                    â”‚   100+ Components   â”‚
-                    â”‚   6 Context Providersâ”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                               â”‚
-              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-              â”‚ HTTP/REST      â”‚ WebSocket       â”‚ Push
-              â”‚ (Axios)        â”‚ (Socket.IO)     â”‚ (FCM/VAPID)
-              â”‚                â”‚                 â”‚
-    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-    â”‚   EXPRESS API      â”‚  â”‚  REALTIME   â”‚  â”‚   PUSH      â”‚
-    â”‚   60+ Route Files  â”‚  â”‚  ENGINE     â”‚  â”‚   SERVICE   â”‚
-    â”‚   46 Controllers   â”‚  â”‚  Chat/Notif â”‚  â”‚   FCM/Web   â”‚
-    â”‚   40+ Middleware   â”‚  â”‚  Rewards SSEâ”‚  â”‚   Push      â”‚
-    â”‚   55+ Services     â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-              â”‚
-    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-    â”‚         â”‚                      â”‚
-â”Œâ”€â”€â”€â”´â”€â”€â”€â” â”Œâ”€â”€â”´â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚Postgreâ”‚ â”‚ Redis â”‚ â”‚ External Services                â”‚
-â”‚  SQL  â”‚ â”‚       â”‚ â”‚ Cloudinary Â· Aadhaar Â· Payments  â”‚
-â”‚ 20+   â”‚ â”‚ Cache â”‚ â”‚ FCM Â· VAPID Â· Geolocation        â”‚
-â”‚Tables â”‚ â”‚Sessionâ”‚ â”‚                                   â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌─────────────────────────────────────────────────────────────────────┐
+│                         USER DEVICES                                │
+│           Web Browser  ·  Android (Capacitor)  ·  PWA              │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │   CLIENT APP        │
+                    │   React + Vite      │
+                    │   67 Routes         │
+                    │   100+ Components   │
+                    │   6 Context Providers│
+                    └──────────┬──────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │ HTTP/REST      │ WebSocket       │ Push
+              │ (Axios)        │ (Socket.IO)     │ (FCM/VAPID)
+              │                │                 │
+    ┌─────────┴─────────┐  ┌──┴──────────┐  ┌──┴──────────┐
+    │   EXPRESS API      │  │  REALTIME   │  │   PUSH      │
+    │   60+ Route Files  │  │  ENGINE     │  │   SERVICE   │
+    │   46 Controllers   │  │  Chat/Notif │  │   FCM/Web   │
+    │   40+ Middleware   │  │  Rewards SSE│  │   Push      │
+    │   55+ Services     │  └─────────────┘  └─────────────┘
+    └─────────┬─────────┘
+              │
+    ┌─────────┼──────────────────────┐
+    │         │                      │
+┌───┴───┐ ┌──┴────┐ ┌───────────────┴─────────────────┐
+│Postgre│ │ Redis │ │ External Services                │
+│  SQL  │ │       │ │ Cloudinary · Aadhaar · Payments  │
+│ 20+   │ │ Cache │ │ FCM · VAPID · Geolocation        │
+│Tables │ │Session│ │                                   │
+└───────┘ └───────┘ └─────────────────────────────────────┘
 ```
 
 ### Frontend Architecture
 
 ```
 client/src/
-â”œâ”€â”€ App.jsx                 # Root: Router + Providers + 67 Routes
-â”œâ”€â”€ main.jsx                # Entry: React DOM + i18n bootstrap
-â”œâ”€â”€ index.css               # Global styles + theme imports
-â”‚
-â”œâ”€â”€ pages/                  # 60+ page-level components
-â”‚   â”œâ”€â”€ AllPosts.jsx        # Discovery feed
-â”‚   â”œâ”€â”€ PostDetail.jsx      # Listing detail
-â”‚   â”œâ”€â”€ Profile.jsx         # User account (4 tabs)
-â”‚   â”œâ”€â”€ Rewards.jsx         # Gamification hub
-â”‚   â”œâ”€â”€ Chat.jsx            # Realtime messaging
-â”‚   â””â”€â”€ ...
-â”‚
-â”œâ”€â”€ components/             # 100+ reusable UI components
-â”‚   â”œâ”€â”€ GreenNavbar.jsx     # Primary navigation (top + bottom)
-â”‚   â”œâ”€â”€ GreenProductCard.jsx# Listing card
-â”‚   â”œâ”€â”€ RequireAuth.jsx     # Auth guard HOC
-â”‚   â”œâ”€â”€ ui/                 # Radix UI primitives (shadcn)
-â”‚   â”œâ”€â”€ rewards/            # Rewards section components
-â”‚   â”œâ”€â”€ legal/              # Legal page components
-â”‚   â””â”€â”€ page-state/         # Loading/Error/Empty states
-â”‚
-â”œâ”€â”€ context/                # 6 React Context providers
-â”‚   â”œâ”€â”€ AuthContext.jsx     # Auth state, login, logout, refresh
-â”‚   â”œâ”€â”€ CartContext.jsx     # Shopping cart state
-â”‚   â”œâ”€â”€ CategoryModeContext.jsx  # Category app mode
-â”‚   â”œâ”€â”€ FilterContext.jsx   # Global filter state
-â”‚   â”œâ”€â”€ LocationContext.jsx # GPS & location state
-â”‚   â””â”€â”€ ThemeContext.jsx    # Dark/light/system theme
-â”‚
-â”œâ”€â”€ hooks/                  # 18 custom hooks
-â”‚   â”œâ”€â”€ useNotifications.js # TanStack Query notification hooks
-â”‚   â”œâ”€â”€ useRealtimeChat.js  # Socket.IO chat integration
-â”‚   â”œâ”€â”€ useTrustScore.js    # Trust badge computation
-â”‚   â”œâ”€â”€ useInfiniteScroll.js# Pagination hook
-â”‚   â””â”€â”€ ...
-â”‚
-â”œâ”€â”€ services/               # Client-side service layer
-â”‚   â”œâ”€â”€ api.js              # Axios instance + interceptors
-â”‚   â”œâ”€â”€ vpnDetection.js     # VPN/proxy detection
-â”‚   â”œâ”€â”€ deviceFingerprint.js# Browser fingerprinting
-â”‚   â””â”€â”€ nativeGpsService.js # Capacitor GPS bridge
-â”‚
-â”œâ”€â”€ utils/                  # 25 utility modules
-â”‚   â”œâ”€â”€ authStorage.js      # Token & session helpers
-â”‚   â”œâ”€â”€ savedPosts.js       # Wishlist local state
-â”‚   â”œâ”€â”€ formatPrice.js      # â‚¹ currency formatting
-â”‚   â”œâ”€â”€ relativeTime.js     # "2 hours ago" formatting
-â”‚   â””â”€â”€ ...
-â”‚
-â”œâ”€â”€ lib/                    # Core library integrations
-â”‚   â”œâ”€â”€ socket.js           # Socket.IO client setup
-â”‚   â”œâ”€â”€ firebase.js         # FCM integration
-â”‚   â”œâ”€â”€ pushService.js      # Web Push subscription
-â”‚   â””â”€â”€ requestSecurity.js  # Hardened request headers
-â”‚
-â”œâ”€â”€ styles/                 # Theme & design tokens
-â”‚   â””â”€â”€ themes/
-â”‚       â”œâ”€â”€ light-theme.css # 100+ CSS variable tokens
-â”‚       â”œâ”€â”€ dark-theme.css  # Dark palette tokens
-â”‚       â”œâ”€â”€ dark-overrides.css
-â”‚       â””â”€â”€ dark-comprehensive.css
-â”‚
-â”œâ”€â”€ locales/                # i18n translation files
-â”‚   â””â”€â”€ en.json             # 1,250+ translation keys
-â”‚
-â”œâ”€â”€ constants/              # App constants
-â”‚   â”œâ”€â”€ languages.js        # 26 supported languages
-â”‚   â””â”€â”€ categoryIcons.js    # Category â†’ icon mapping
-â”‚
-â””â”€â”€ i18n/                   # i18n configuration
-    â””â”€â”€ index.js            # i18next setup with backends
+├── App.jsx                 # Root: Router + Providers + 67 Routes
+├── main.jsx                # Entry: React DOM + i18n bootstrap
+├── index.css               # Global styles + theme imports
+│
+├── pages/                  # 60+ page-level components
+│   ├── AllPosts.jsx        # Discovery feed
+│   ├── PostDetail.jsx      # Listing detail
+│   ├── Profile.jsx         # User account (4 tabs)
+│   ├── Rewards.jsx         # Gamification hub
+│   ├── Chat.jsx            # Realtime messaging
+│   └── ...
+│
+├── components/             # 100+ reusable UI components
+│   ├── GreenNavbar.jsx     # Primary navigation (top + bottom)
+│   ├── GreenProductCard.jsx# Listing card
+│   ├── RequireAuth.jsx     # Auth guard HOC
+│   ├── ui/                 # Radix UI primitives (shadcn)
+│   ├── rewards/            # Rewards section components
+│   ├── legal/              # Legal page components
+│   └── page-state/         # Loading/Error/Empty states
+│
+├── context/                # 6 React Context providers
+│   ├── AuthContext.jsx     # Auth state, login, logout, refresh
+│   ├── CartContext.jsx     # Shopping cart state
+│   ├── CategoryModeContext.jsx  # Category app mode
+│   ├── FilterContext.jsx   # Global filter state
+│   ├── LocationContext.jsx # GPS & location state
+│   └── ThemeContext.jsx    # Dark/light/system theme
+│
+├── hooks/                  # 18 custom hooks
+│   ├── useNotifications.js # TanStack Query notification hooks
+│   ├── useRealtimeChat.js  # Socket.IO chat integration
+│   ├── useTrustScore.js    # Trust badge computation
+│   ├── useInfiniteScroll.js# Pagination hook
+│   └── ...
+│
+├── services/               # Client-side service layer
+│   ├── api.js              # Axios instance + interceptors
+│   ├── vpnDetection.js     # VPN/proxy detection
+│   ├── deviceFingerprint.js# Browser fingerprinting
+│   └── nativeGpsService.js # Capacitor GPS bridge
+│
+├── utils/                  # 25 utility modules
+│   ├── authStorage.js      # Token & session helpers
+│   ├── savedPosts.js       # Wishlist local state
+│   ├── formatPrice.js      # ₹ currency formatting
+│   ├── relativeTime.js     # "2 hours ago" formatting
+│   └── ...
+│
+├── lib/                    # Core library integrations
+│   ├── socket.js           # Socket.IO client setup
+│   ├── firebase.js         # FCM integration
+│   ├── pushService.js      # Web Push subscription
+│   └── requestSecurity.js  # Hardened request headers
+│
+├── styles/                 # Theme & design tokens
+│   └── themes/
+│       ├── light-theme.css # 100+ CSS variable tokens
+│       ├── dark-theme.css  # Dark palette tokens
+│       ├── dark-overrides.css
+│       └── dark-comprehensive.css
+│
+├── locales/                # i18n translation files
+│   └── en.json             # 1,250+ translation keys
+│
+├── constants/              # App constants
+│   ├── languages.js        # 26 supported languages
+│   └── categoryIcons.js    # Category → icon mapping
+│
+└── i18n/                   # i18n configuration
+    └── index.js            # i18next setup with backends
 ```
 
 ### Backend Architecture
 
 ```
 server/src/
-â”œâ”€â”€ index.js                # Express app + route mounting + Socket.IO
-â”‚
-â”œâ”€â”€ routes/                 # 60+ API route files
-â”‚   â”œâ”€â”€ auth.js             # /api/auth/*
-â”‚   â”œâ”€â”€ posts.js            # /api/posts/*
-â”‚   â”œâ”€â”€ chat.js             # /api/chat/*
-â”‚   â”œâ”€â”€ rewards.js          # /api/rewards/*
-â”‚   â”œâ”€â”€ coins.js            # /api/coins/*
-â”‚   â”œâ”€â”€ notifications.js    # /api/notifications/*
-â”‚   â”œâ”€â”€ payments.js         # /api/payments/*
-â”‚   â””â”€â”€ ...                 # 53 more route files
-â”‚
-â”œâ”€â”€ controllers/            # 46 controller files
-â”‚   â”œâ”€â”€ authController.js   # Auth logic (login, signup, OTP, passkeys)
-â”‚   â”œâ”€â”€ postController.js   # CRUD + search + boost
-â”‚   â”œâ”€â”€ chatController.js   # Conversations + messages
-â”‚   â”œâ”€â”€ rewardsController.js# Points, tiers, leaderboard
-â”‚   â”œâ”€â”€ coinController.js   # Coin economy (spin, checkin, scratch)
-â”‚   â””â”€â”€ ...
-â”‚
-â”œâ”€â”€ services/               # 55+ business logic services
-â”‚   â”œâ”€â”€ rewardsLedgerService.js     # Idempotent point mutations
-â”‚   â”œâ”€â”€ referralChainRewards.js     # Multi-level referral chain
-â”‚   â”œâ”€â”€ streakRewardsService.js     # Visit/post streak tracking
-â”‚   â”œâ”€â”€ leaderboardRewardsService.js# Weekly leaderboard rewards
-â”‚   â”œâ”€â”€ trustScoreService.js        # Trust score computation
-â”‚   â”œâ”€â”€ fraudService.js             # Fraud detection
-â”‚   â”œâ”€â”€ riskEngine.js               # Risk scoring engine
-â”‚   â””â”€â”€ ...
-â”‚
-â”œâ”€â”€ middleware/              # 40+ middleware layers
-â”‚   â”œâ”€â”€ auth.js             # JWT verification
-â”‚   â”œâ”€â”€ rbac.js             # Role-based access control
-â”‚   â”œâ”€â”€ wafEnforcement.js   # Web application firewall
-â”‚   â”œâ”€â”€ vpnBlocker.js       # VPN/proxy blocking
-â”‚   â”œâ”€â”€ deviceBinding.js    # Session-device pinning
-â”‚   â”œâ”€â”€ zeroTrust.js        # Zero-trust verification
-â”‚   â””â”€â”€ ...
-â”‚
-â”œâ”€â”€ utils/                  # Database helpers, logger, etc.
-â”‚   â”œâ”€â”€ dbHelpers.js        # Pool, query timeouts, helpers
-â”‚   â””â”€â”€ logger.js           # Structured logging
-â”‚
-â””â”€â”€ worker/                 # Background job processing
+├── index.js                # Express app + route mounting + Socket.IO
+│
+├── routes/                 # 60+ API route files
+│   ├── auth.js             # /api/auth/*
+│   ├── posts.js            # /api/posts/*
+│   ├── chat.js             # /api/chat/*
+│   ├── rewards.js          # /api/rewards/*
+│   ├── coins.js            # /api/coins/*
+│   ├── notifications.js    # /api/notifications/*
+│   ├── payments.js         # /api/payments/*
+│   └── ...                 # 53 more route files
+│
+├── controllers/            # 46 controller files
+│   ├── authController.js   # Auth logic (login, signup, OTP, passkeys)
+│   ├── postController.js   # CRUD + search + boost
+│   ├── chatController.js   # Conversations + messages
+│   ├── rewardsController.js# Points, tiers, leaderboard
+│   ├── coinController.js   # Coin economy (spin, checkin, scratch)
+│   └── ...
+│
+├── services/               # 55+ business logic services
+│   ├── rewardsLedgerService.js     # Idempotent point mutations
+│   ├── referralChainRewards.js     # Multi-level referral chain
+│   ├── streakRewardsService.js     # Visit/post streak tracking
+│   ├── leaderboardRewardsService.js# Weekly leaderboard rewards
+│   ├── trustScoreService.js        # Trust score computation
+│   ├── fraudService.js             # Fraud detection
+│   ├── riskEngine.js               # Risk scoring engine
+│   └── ...
+│
+├── middleware/              # 40+ middleware layers
+│   ├── auth.js             # JWT verification
+│   ├── rbac.js             # Role-based access control
+│   ├── wafEnforcement.js   # Web application firewall
+│   ├── vpnBlocker.js       # VPN/proxy blocking
+│   ├── deviceBinding.js    # Session-device pinning
+│   ├── zeroTrust.js        # Zero-trust verification
+│   └── ...
+│
+├── utils/                  # Database helpers, logger, etc.
+│   ├── dbHelpers.js        # Pool, query timeouts, helpers
+│   └── logger.js           # Structured logging
+│
+└── worker/                 # Background job processing
 ```
 
 ---
 
-## ðŸŽ¯ Features
+## 🎯 Features
 
 ### Feature Matrix
 
 | Category | Feature | Status | Auth | Route |
 |:---------|:--------|:------:|:----:|:------|
 | **Discovery** | | | | |
-| | Category Hub (Home) | âœ… | â€” | `/category-hub` |
-| | All Posts Feed | âœ… | â€” | `/all-posts` |
-| | Personalized For You | âœ… | â€” | `/for-you` |
-| | Community Feed | âœ… | â€” | `/feed` |
-| | Nearby Listings | âœ… | ðŸ”’ | `/nearby` |
-| | Global Search | âœ… | â€” | `/search` |
-| | Public Wall | âœ… | â€” | `/public-wall` |
-| | Home Discovery | âœ… | â€” | `/home` |
+| | Category Hub (Home) | ✅ | — | `/category-hub` |
+| | All Posts Feed | ✅ | — | `/all-posts` |
+| | Personalized For You | ✅ | — | `/for-you` |
+| | Community Feed | ✅ | — | `/feed` |
+| | Nearby Listings | ✅ | 🔒 | `/nearby` |
+| | Global Search | ✅ | — | `/search` |
+| | Public Wall | ✅ | — | `/public-wall` |
+| | Home Discovery | ✅ | — | `/home` |
 | **Listings** | | | | |
-| | Listing Detail | âœ… | â€” | `/post/:id` |
-| | Add Post (Sell) | âœ… | ðŸ”’ | `/add-post` |
-| | Quick Post | âœ… | ðŸ”’ | `/post_add` |
-| | Feed Post | âœ… | ðŸ”’ | `/feed/feedpostadd` |
-| | Edit Post | âœ… | ðŸ”’ | `/edit-post/:postId` |
-| | My Posts | âœ… | ðŸ”’ | `/my-home` |
-| | Seller Dashboard | âœ… | ðŸ”’ | `/dashboard` |
+| | Listing Detail | ✅ | — | `/post/:id` |
+| | Add Post (Sell) | ✅ | 🔒 | `/add-post` |
+| | Quick Post | ✅ | 🔒 | `/post_add` |
+| | Feed Post | ✅ | 🔒 | `/feed/feedpostadd` |
+| | Edit Post | ✅ | 🔒 | `/edit-post/:postId` |
+| | My Posts | ✅ | 🔒 | `/my-home` |
+| | Seller Dashboard | ✅ | 🔒 | `/dashboard` |
 | **Commerce** | | | | |
-| | Cart | âœ… | ðŸ”’ | `/cart` |
-| | Wishlist | âœ… | ðŸ”’ | `/wishlist` |
-| | Offers | âœ… | â€” | `/offers` |
-| | Buy History | âœ… | ðŸ”’ | `/bought-posts` |
-| | Sell History | âœ… | ðŸ”’ | `/sold-posts` |
-| | Sale Complete | âœ… | ðŸ”’ | `/saledone` |
-| | Sale Undo | âœ… | ðŸ”’ | `/saleundone` |
-| | Buyer View | âœ… | ðŸ”’ | `/buyer-view` |
+| | Cart | ✅ | 🔒 | `/cart` |
+| | Wishlist | ✅ | 🔒 | `/wishlist` |
+| | Offers | ✅ | — | `/offers` |
+| | Buy History | ✅ | 🔒 | `/bought-posts` |
+| | Sell History | ✅ | 🔒 | `/sold-posts` |
+| | Sale Complete | ✅ | 🔒 | `/saledone` |
+| | Sale Undo | ✅ | 🔒 | `/saleundone` |
+| | Buyer View | ✅ | 🔒 | `/buyer-view` |
 | **Social** | | | | |
-| | Realtime Chat | âœ… | ðŸ”’ | `/chat` |
-| | Channels | âœ… | â€” | `/channels` |
-| | Centre Pages | âœ… | ðŸ”’ | `/centre` |
-| | Activity Hub | âœ… | ðŸ”’ | `/activity` |
-| | Reviews | âœ… | â€” | `/reviews/:userId` |
-| | My Feed | âœ… | ðŸ”’ | `/my-feed` |
+| | Realtime Chat | ✅ | 🔒 | `/chat` |
+| | Channels | ✅ | — | `/channels` |
+| | Centre Pages | ✅ | 🔒 | `/centre` |
+| | Activity Hub | ✅ | 🔒 | `/activity` |
+| | Reviews | ✅ | — | `/reviews/:userId` |
+| | My Feed | ✅ | 🔒 | `/my-feed` |
 | **Rewards** | | | | |
-| | Rewards Dashboard | âœ… | ðŸ”’ | `/rewards` |
-| | Daily Check-in | âœ… | ðŸ”’ | API |
-| | Spin the Wheel | âœ… | ðŸ”’ | API |
-| | Scratch Cards | âœ… | ðŸ”’ | API |
-| | Referral Chain | âœ… | ðŸ”’ | API |
-| | Streak Bonuses | âœ… | ðŸ”’ | API |
-| | Leaderboard | âœ… | ðŸ”’ | API |
-| | Tier System | âœ… | ðŸ”’ | API |
+| | Rewards Dashboard | ✅ | 🔒 | `/rewards` |
+| | Daily Check-in | ✅ | 🔒 | API |
+| | Spin the Wheel | ✅ | 🔒 | API |
+| | Scratch Cards | ✅ | 🔒 | API |
+| | Referral Chain | ✅ | 🔒 | API |
+| | Streak Bonuses | ✅ | 🔒 | API |
+| | Leaderboard | ✅ | 🔒 | API |
+| | Tier System | ✅ | 🔒 | API |
 | **Account** | | | | |
-| | Profile (4 tabs) | âœ… | ðŸ”’ | `/profile` |
-| | Notifications | âœ… | ðŸ”’ | `/notifications` |
-| | Security Settings | âœ… | ðŸ”’ | `/security` |
-| | Payments | âœ… | ðŸ”’ | `/payment` |
-| | KYC Verification | âœ… | ðŸ”’ | `/kyc` |
-| | Aadhaar Verify | âœ… | ðŸ”’ | `/aadhaar-verify` |
-| | Posting Plans | âœ… | ðŸ”’ | `/tier-selection` |
+| | Profile (4 tabs) | ✅ | 🔒 | `/profile` |
+| | Notifications | ✅ | 🔒 | `/notifications` |
+| | Security Settings | ✅ | 🔒 | `/security` |
+| | Payments | ✅ | 🔒 | `/payment` |
+| | KYC Verification | ✅ | 🔒 | `/kyc` |
+| | Aadhaar Verify | ✅ | 🔒 | `/aadhaar-verify` |
+| | Posting Plans | ✅ | 🔒 | `/tier-selection` |
 | **Admin** | | | | |
-| | Admin Panel | âœ… | ðŸ”’ðŸ‘‘ | `/admin-panel` |
-| | Analytics | âœ… | â€” | `/analytics` |
-| | Seller Analytics | âœ… | ðŸ”’ | API |
+| | Admin Panel | ✅ | 🔒👑 | `/admin-panel` |
+| | Analytics | ✅ | — | `/analytics` |
+| | Seller Analytics | ✅ | 🔒 | API |
 
-> ðŸ”’ = Requires authentication &nbsp;&nbsp; ðŸ‘‘ = Requires admin role &nbsp;&nbsp; âœ… = Implemented
+> 🔒 = Requires authentication &nbsp;&nbsp; 👑 = Requires admin role &nbsp;&nbsp; ✅ = Implemented
 
 ---
 
 ### 1. Category-Native Marketplace
 
-> *The core differentiator â€” MHub pivots its entire experience based on category context.*
+> *The core differentiator — MHub pivots its entire experience based on category context.*
 
 ```
-User selects "Electronics" â†’ UI shows tech-optimized filters, specs,
+User selects "Electronics" → UI shows tech-optimized filters, specs,
   price comparisons, and electronics-specific discovery
 
-User switches to "Fashion" â†’ UI pivots to size filters, style
+User switches to "Fashion" → UI pivots to size filters, style
   recommendations, and fashion-optimized card layouts
 ```
 
 **Key Behaviors:**
-- **Category Mode Selector** â€” Full-screen mode picker at `/category-mode`
-- **Scoped Filtering** â€” Search, price range, subcategories, and condition filters scope to active category
-- **Cart Scoping** â€” Cart badge reflects items in current category context
-- **Feed Scoping** â€” Discovery feeds filter by active category mode
-- **Persistent Selection** â€” Category mode persists across sessions via localStorage
+- **Category Mode Selector** — Full-screen mode picker at `/category-mode`
+- **Scoped Filtering** — Search, price range, subcategories, and condition filters scope to active category
+- **Cart Scoping** — Cart badge reflects items in current category context
+- **Feed Scoping** — Discovery feeds filter by active category mode
+- **Persistent Selection** — Category mode persists across sessions via localStorage
 
 **Technical Implementation:**
 - `CategoryModeContext` provides `activeApp`, `activeCategory`, and `categories` to all components
@@ -526,12 +526,12 @@ User switches to "Fashion" â†’ UI pivots to size filters, style
 
 ### 3. Listing & Seller Workflow
 
-> *From posting to sale completion â€” a full listing lifecycle.*
+> *From posting to sale completion — a full listing lifecycle.*
 
 ```
-Sell Welcome â†’ Add Post â†’ My Posts â†’ Offers â†’ Sale Done
-     â”‚              â”‚          â”‚                  â”‚
-     â–¼              â–¼          â–¼                  â–¼
+Sell Welcome → Add Post → My Posts → Offers → Sale Done
+     │              │          │                  │
+     ▼              ▼          ▼                  ▼
   Guide &      Multi-image   Manage &        Transaction
   tier info    upload, GPS   boost, edit      stepper
                auto-location
@@ -547,11 +547,11 @@ Sell Welcome â†’ Add Post â†’ My Posts â†’ Offers â†’ Sale D
 - Draft saving and edit capability
 
 **Seller Tools:**
-- **My Posts** (`/my-home`) â€” View, edit, delete, boost listings
-- **Dashboard** (`/dashboard`) â€” Sales analytics, view counts, engagement
-- **Seller Analytics** â€” Revenue tracking, performance metrics
-- **Post Boost** â€” Visibility enhancement via coin spending
-- **Guaranteed Reach** â€” Premium visibility tier
+- **My Posts** (`/my-home`) — View, edit, delete, boost listings
+- **Dashboard** (`/dashboard`) — Sales analytics, view counts, engagement
+- **Seller Analytics** — Revenue tracking, performance metrics
+- **Post Boost** — Visibility enhancement via coin spending
+- **Guaranteed Reach** — Premium visibility tier
 
 ---
 
@@ -576,9 +576,9 @@ Sell Welcome â†’ Add Post â†’ My Posts â†’ Offers â†’ Sale D
 - Price subtotals
 
 **Transaction History:**
-- **Bought Posts** â€” All purchases with status tracking
-- **Sold Posts** â€” All sales with revenue summary
-- **Buyer View** â€” Buyer-centric interface for active transactions
+- **Bought Posts** — All purchases with status tracking
+- **Sold Posts** — All sales with revenue summary
+- **Buyer View** — Buyer-centric interface for active transactions
 
 ---
 
@@ -610,10 +610,10 @@ Sell Welcome â†’ Add Post â†’ My Posts â†’ Offers â†’ Sale D
 
 ```
 /profile
-â”œâ”€â”€ ?tab=overview     # Activity summary, trust score, stats
-â”œâ”€â”€ ?tab=personal     # Name, email, phone, avatar
-â”œâ”€â”€ ?tab=preferences  # Category preferences, notifications, language
-â””â”€â”€ ?tab=settings     # Privacy, security, data export, delete
+├── ?tab=overview     # Activity summary, trust score, stats
+├── ?tab=personal     # Name, email, phone, avatar
+├── ?tab=preferences  # Category preferences, notifications, language
+└── ?tab=settings     # Privacy, security, data export, delete
 ```
 
 **Profile Features:**
@@ -650,23 +650,23 @@ Sell Welcome â†’ Add Post â†’ My Posts â†’ Offers â†’ Sale D
 
 ---
 
-## 📍 Page Directory — All 67 Routes
+## ?? Page Directory � All 67 Routes
 
 This is the authoritative navigation inventory used by product, QA, and engineering.
 
-Auth legend: `🔒` = authenticated, `🔐` = authenticated + role, `—` = public.
+Auth legend: `??` = authenticated, `??` = authenticated + role, `�` = public.
 
 ### Primary Nav (Bottom Bar)
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 1 | **Category Hub** | `/category-hub` | — | Category landing / discovery home |
-| 2 | **All Posts** | `/all-posts`, `/listings` | — | Product listing feed |
-| 3 | **For You** | `/for-you` (alias: `/my-recommendations` → `/for-you`) | — | Personalized recommendations |
-| 4 | **Feed** | `/feed` | — | Community/activity feed |
-| 5 | **Rewards** | `/rewards` | 🔒 | Loyalty & gamification hub |
-| 6 | **Profile** | `/profile` | 🔒 | User account hub |
-| 7 | **More** | Hamburger menu | — | Secondary navigation drawer |
+| 1 | **Category Hub** | `/category-hub` | � | Category landing / discovery home |
+| 2 | **All Posts** | `/all-posts`, `/listings` | � | Product listing feed |
+| 3 | **For You** | `/for-you` (alias: `/my-recommendations` ? `/for-you`) | � | Personalized recommendations |
+| 4 | **Feed** | `/feed` | � | Community/activity feed |
+| 5 | **Rewards** | `/rewards` | ?? | Loyalty & gamification hub |
+| 6 | **Profile** | `/profile` | ?? | User account hub |
+| 7 | **More** | Hamburger menu | � | Secondary navigation drawer |
 
 ### Profile Tabs (Inside /profile)
 
@@ -681,18 +681,18 @@ Auth legend: `🔒` = authenticated, `🔐` = authenticated + role, `—` = publ
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 8 | **Sell Welcome** | `/post-welcome` | 🔒 | Start selling flow |
-| 9 | **Posting Plans** | `/tier-selection`, `/tiers`, `/pricing` | 🔒 | Tier selection and pricing |
-| 10 | **Centre** | `/centre` | 🔒 | Centre channel list |
-| 11 | **Nearby** | `/nearby` | 🔒 | Nearby listings |
-| 12 | **Category Mode** | `/category-mode` | — | App/category mode selector |
-| 13 | **Subcategories** | `/subcategories`, `/categories` | — | Category browser |
-| 14 | **Chat** | `/chat`, `/chats` | 🔒 | Messaging |
-| 15 | **Feedback** | `/feedback` | 🔒 | Feedback form |
-| 16 | **Complaints** | `/complaints` | 🔒 | Issue reporting |
-| 17 | **Verification** | `/verification` | 🔒 | Verification entry point |
-| 18 | **Dashboard** | `/dashboard` | 🔒 | Seller dashboard |
-| 19 | **Admin Panel** | `/admin-panel` | 🔐 | Admin tools |
+| 8 | **Sell Welcome** | `/post-welcome` | ?? | Start selling flow |
+| 9 | **Posting Plans** | `/tier-selection`, `/tiers`, `/pricing` | ?? | Tier selection and pricing |
+| 10 | **Centre** | `/centre` | ?? | Centre channel list |
+| 11 | **Nearby** | `/nearby` | ?? | Nearby listings |
+| 12 | **Category Mode** | `/category-mode` | � | App/category mode selector |
+| 13 | **Subcategories** | `/subcategories`, `/categories` | � | Category browser |
+| 14 | **Chat** | `/chat`, `/chats` | ?? | Messaging |
+| 15 | **Feedback** | `/feedback` | ?? | Feedback form |
+| 16 | **Complaints** | `/complaints` | ?? | Issue reporting |
+| 17 | **Verification** | `/verification` | ?? | Verification entry point |
+| 18 | **Dashboard** | `/dashboard` | ?? | Seller dashboard |
+| 19 | **Admin Panel** | `/admin-panel` | ?? | Admin tools |
 
 ### Auth & Access
 
@@ -708,71 +708,71 @@ Auth legend: `🔒` = authenticated, `🔐` = authenticated + role, `—` = publ
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 25 | **Home Discovery** | `/home` | — | Curated discovery landing |
-| 26 | **Activity Hub** | `/activity` | 🔒 | Shortcut hub (chat/offers/reviews/nearby) |
-| 27 | **Public Wall** | `/public-wall` | — | Public listings/social wall |
-| 28 | **Search** | `/search` | — | Global search |
+| 25 | **Home Discovery** | `/home` | � | Curated discovery landing |
+| 26 | **Activity Hub** | `/activity` | ?? | Shortcut hub (chat/offers/reviews/nearby) |
+| 27 | **Public Wall** | `/public-wall` | � | Public listings/social wall |
+| 28 | **Search** | `/search` | � | Global search |
 
 ### Listings & Post Flow
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 29 | **Listing Detail** | `/post/:id`, `/listing/:id` | — | Item detail view |
-| 30 | **Add Post** | `/add-post`, `/sell` | 🔒 | Create listing form |
-| 31 | **Quick Post** | `/post_add` | 🔒 | Alternate add-post flow |
-| 32 | **Feed Post Add** | `/feed/feedpostadd` | 🔒 | Feed-only post creation (no image upload) |
-| 33 | **Edit Post** | `/edit-post/:postId` | 🔒 | Edit listing |
+| 29 | **Listing Detail** | `/post/:id`, `/listing/:id` | � | Item detail view |
+| 30 | **Add Post** | `/add-post`, `/sell` | ?? | Create listing form |
+| 31 | **Quick Post** | `/post_add` | ?? | Alternate add-post flow |
+| 32 | **Feed Post Add** | `/feed/feedpostadd` | ?? | Feed-only post creation (no image upload) |
+| 33 | **Edit Post** | `/edit-post/:postId` | ?? | Edit listing |
 
 ### My Inventory & Transactions
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 34 | **My Posts** | `/my-home`, `/my-posts` | 🔒 | Manage your listings |
-| 35 | **Bought Posts** | `/bought-posts` | 🔒 | Purchase history |
-| 36 | **Sold Posts** | `/sold-posts` | 🔒 | Sold history |
-| 37 | **Buyer View** | `/buyer-view` | 🔒 | Buyer-centric view |
-| 38 | **Sale Done** | `/saledone` | 🔒 | Mark sale complete |
-| 39 | **Sale Undone** | `/saleundone` | 🔒 | Revert sale |
+| 34 | **My Posts** | `/my-home`, `/my-posts` | ?? | Manage your listings |
+| 35 | **Bought Posts** | `/bought-posts` | ?? | Purchase history |
+| 36 | **Sold Posts** | `/sold-posts` | ?? | Sold history |
+| 37 | **Buyer View** | `/buyer-view` | ?? | Buyer-centric view |
+| 38 | **Sale Done** | `/saledone` | ?? | Mark sale complete |
+| 39 | **Sale Undone** | `/saleundone` | ?? | Revert sale |
 
 ### Feed & Social Extensions
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 40 | **Feed Detail** | `/feed/:id` | — | Feed post detail |
-| 41 | **My Feed** | `/my-feed` | 🔒 | Personal feed |
-| 42 | **Offers** | `/offers` | — | Transaction offers |
-| 43 | **Reviews** | `/reviews/:userId` | — | User reviews/ratings |
+| 40 | **Feed Detail** | `/feed/:id` | � | Feed post detail |
+| 41 | **My Feed** | `/my-feed` | ?? | Personal feed |
+| 42 | **Offers** | `/offers` | � | Transaction offers |
+| 43 | **Reviews** | `/reviews/:userId` | � | User reviews/ratings |
 
 ### Commerce & Saved
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 44 | **Wishlist** | `/wishlist` | 🔒 | Saved items |
-| 45 | **Cart** | `/cart` | 🔒 | Cart |
-| 46 | **Recently Viewed** | `/recently-viewed` | 🔒 | Browsing history |
-| 47 | **Saved Searches** | `/saved-searches` | 🔒 | Stored searches |
+| 44 | **Wishlist** | `/wishlist` | ?? | Saved items |
+| 45 | **Cart** | `/cart` | ?? | Cart |
+| 46 | **Recently Viewed** | `/recently-viewed` | ?? | Browsing history |
+| 47 | **Saved Searches** | `/saved-searches` | ?? | Stored searches |
 
 ### Messaging & Channels
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 48 | **Channels** | `/channels` | — | Channel list |
-| 49 | **Channel Create** | `/channels/create` | 🔒 | Create channel |
-| 50 | **Channel Detail** | `/channels/:id` | — | Channel page |
-| 51 | **Centre Create** | `/centre/create` | 🔒 | Create centre page |
-| 52 | **Centre Detail** | `/centre/:id` | 🔒 | Centre page |
-| 53 | **Centre Listings** | `/centre/:id/listings` | 🔒 | Centre listings |
+| 48 | **Channels** | `/channels` | � | Channel list |
+| 49 | **Channel Create** | `/channels/create` | ?? | Create channel |
+| 50 | **Channel Detail** | `/channels/:id` | � | Channel page |
+| 51 | **Centre Create** | `/centre/create` | ?? | Create centre page |
+| 52 | **Centre Detail** | `/centre/:id` | ?? | Centre page |
+| 53 | **Centre Listings** | `/centre/:id/listings` | ?? | Centre listings |
 
 ### Account, Trust & Payments
 
 | # | Page | Route(s) | Auth | Description |
 |:-:|:-----|:---------|:----:|:------------|
-| 54 | **Notifications** | `/notifications` | 🔒 | Notification center |
-| 55 | **Security Settings** | `/security` | 🔒 | Account security |
-| 56 | **Payment Methods** | `/payment` | 🔒 | Payments |
-| 57 | **KYC Verification** | `/kyc` | 🔒 | KYC flow |
-| 58 | **Aadhaar Verify** | `/aadhaar-verify` | 🔒 | Aadhaar verification |
-| 59 | **Analytics** | `/analytics` | — | Analytics insights |
+| 54 | **Notifications** | `/notifications` | ?? | Notification center |
+| 55 | **Security Settings** | `/security` | ?? | Account security |
+| 56 | **Payment Methods** | `/payment` | ?? | Payments |
+| 57 | **KYC Verification** | `/kyc` | ?? | KYC flow |
+| 58 | **Aadhaar Verify** | `/aadhaar-verify` | ?? | Aadhaar verification |
+| 59 | **Analytics** | `/analytics` | � | Analytics insights |
 
 ### Legal & Policies
 
@@ -794,7 +794,7 @@ Auth legend: `🔒` = authenticated, `🔐` = authenticated + role, `—` = publ
 
 ---
 
-## 🧭 App Flow Atlas (User + Developer Lens)
+## ?? App Flow Atlas (User + Developer Lens)
 
 This section documents end-to-end journeys in two voices: the **User View** (plain language) and the **Developer View** (implementation lens).
 
@@ -808,7 +808,7 @@ This section documents end-to-end journeys in two voices: the **User View** (pla
 | Close transactions with clear states. | Offers + sale state changes create audit trails and ledger updates. |
 | Stay engaged with rewards and streaks. | Rewards engine tracks events, streaks, and leaderboards. |
 
-### Flow 1: Discover → Decide → Contact (Guest & Buyer)
+### Flow 1: Discover ? Decide ? Contact (Guest & Buyer)
 
 | Step | User View | Pages | Developer View |
 |:----:|:----------|:------|:---------------|
@@ -819,7 +819,7 @@ This section documents end-to-end journeys in two voices: the **User View** (pla
 | 5 | Start a conversation or offer. | `/chat`, `/chats`, `/offers` | Socket.IO chat + offers state updates. |
 | 6 | Complete or revert a sale. | `/saledone`, `/saleundone` | Transaction state changes with audit logging. |
 
-### Flow 2: Sell → Manage → Close (Seller)
+### Flow 2: Sell ? Manage ? Close (Seller)
 
 | Step | User View | Pages | Developer View |
 |:----:|:----------|:------|:---------------|
@@ -831,7 +831,7 @@ This section documents end-to-end journeys in two voices: the **User View** (pla
 | 6 | Mark transactions complete. | `/saledone`, `/saleundone` | Sale confirmation and reversal with audit. |
 | 7 | Build a premium presence. | `/centre`, `/centre/create`, `/centre/:id` | Centre page creation and premium branding. |
 
-### Flow 3: Trust & Safety → Account Confidence
+### Flow 3: Trust & Safety ? Account Confidence
 
 | Step | User View | Pages | Developer View |
 |:----:|:----------|:------|:---------------|
@@ -841,7 +841,7 @@ This section documents end-to-end journeys in two voices: the **User View** (pla
 | 4 | Review reputation. | `/reviews/:userId` | Ratings and review aggregation. |
 | 5 | Report issues. | `/complaints` | Complaint intake and escalation. |
 
-### Flow 4: Rewards → Loyalty → Progression
+### Flow 4: Rewards ? Loyalty ? Progression
 
 | Step | User View | Pages | Developer View |
 |:----:|:----------|:------|:---------------|
@@ -850,7 +850,7 @@ This section documents end-to-end journeys in two voices: the **User View** (pla
 | 3 | Receive updates. | `/notifications` | Reward notifications and streak reminders. |
 | 4 | See progress on profile. | `/profile?tab=overview` | Completion percentage and next actions. |
 
-### Flow 5: Community → Social Signal → Discovery
+### Flow 5: Community ? Social Signal ? Discovery
 
 | Step | User View | Pages | Developer View |
 |:----:|:----------|:------|:---------------|
@@ -858,7 +858,7 @@ This section documents end-to-end journeys in two voices: the **User View** (pla
 | 2 | Deep dive into a post. | `/feed/:id` | Feed detail with comments and reactions. |
 | 3 | Explore public activity. | `/public-wall` | Public visibility layer. |
 
-### Flow 6: Support → Resolution
+### Flow 6: Support ? Resolution
 
 | Step | User View | Pages | Developer View |
 |:----:|:----------|:------|:---------------|
@@ -897,9 +897,9 @@ flowchart TD
   G --> S["Admin Panel"]
 ```
 
-## 📘 Product + Engineering Handbook (Printable Layout)
+## ?? Product + Engineering Handbook (Printable Layout)
 
-This layout is optimized for printing or PDF export while remaining readable in‑repo.
+This layout is optimized for printing or PDF export while remaining readable in-repo.
 
 ### Printable Cover Sheet
 
@@ -909,7 +909,7 @@ This layout is optimized for printing or PDF export while remaining readable in�
 | Version | v2026.04.05 |
 | Owners | Product + Engineering |
 | Audience | Product, Engineering, QA, Ops |
-| Scope | End‑to‑end app flows, navigation, architecture, trust, rewards |
+| Scope | End-to-end app flows, navigation, architecture, trust, rewards |
 | Classification | Internal |
 
 **How to use this handbook:**
@@ -921,17 +921,17 @@ This layout is optimized for printing or PDF export while remaining readable in�
 
 ### Print Guide
 
-1. Use your browser’s print dialog and select “Save as PDF.”
+1. Use your browser�s print dialog and select �Save as PDF.�
 2. Enable background graphics for consistent diagrams and tables.
-3. Set scale to 90–95% for tighter page flow.
+3. Set scale to 90�95% for tighter page flow.
 4. Prefer portrait orientation for tables; use landscape only for wide diagrams.
 
-### Handbook Structure (At‑a‑Glance)
+### Handbook Structure (At-a-Glance)
 
-| Part | Audience | What You’ll Get |
+| Part | Audience | What You�ll Get |
 |:-----|:---------|:----------------|
 | Product Overview | Everyone | Platform vision, value proposition, and user promise |
-| User Journeys | Product + QA | End‑to‑end flows and expected outcomes |
+| User Journeys | Product + QA | End-to-end flows and expected outcomes |
 | Navigation + Pages | Product + Eng | Complete route inventory and purpose |
 | System Architecture | Engineering | Frontend, backend, realtime, and data layout |
 | Data + APIs | Engineering | Service boundaries, data contracts, and core endpoints |
@@ -942,9 +942,9 @@ This layout is optimized for printing or PDF export while remaining readable in�
 
 <div style="page-break-after: always;"></div>
 
-### End‑to‑End Sequence Diagrams
+### End-to-End Sequence Diagrams
 
-#### 1) Buy Flow — Discover → Decide → Contact → Complete
+#### 1) Buy Flow � Discover ? Decide ? Contact ? Complete
 
 ```mermaid
 sequenceDiagram
@@ -957,7 +957,7 @@ sequenceDiagram
   participant Rewards
 
   Buyer->>App: Open Category Hub
-  App->>API: Fetch listings (category‑scoped)
+  App->>API: Fetch listings (category-scoped)
   API->>DB: Query listings + trust metadata
   DB-->>API: Listings
   API-->>App: Feed data
@@ -985,7 +985,7 @@ sequenceDiagram
 
 <div style="page-break-after: always;"></div>
 
-#### 2) Sell Flow — Onboard → List → Manage → Close
+#### 2) Sell Flow � Onboard ? List ? Manage ? Close
 
 ```mermaid
 sequenceDiagram
@@ -1025,7 +1025,7 @@ sequenceDiagram
 
 <div style="page-break-after: always;"></div>
 
-#### 3) Rewards Flow — Activity → Ledger → Progression
+#### 3) Rewards Flow � Activity ? Ledger ? Progression
 
 ```mermaid
 sequenceDiagram
@@ -1050,20 +1050,20 @@ sequenceDiagram
   API->>Rewards: Validate + award points
   Rewards->>DB: Append ledger entry
   Rewards->>Notif: Send reward notification
-  Notif-->>App: In‑app update
+  Notif-->>App: In-app update
   API-->>App: Updated balance
 ```
 
 ---
 
-### Acceptance Criteria (Print‑Ready)
+### Acceptance Criteria (Print-Ready)
 
 #### Buy Flow Acceptance Criteria
 
 | ID | Scenario | Expected |
 |:---|:---------|:---------|
 | B1 | Open Category Hub | Categories and discovery shortcuts render with loading skeletons then data. |
-| B2 | Apply category filters | Listing feed updates to category‑scoped results with correct counts. |
+| B2 | Apply category filters | Listing feed updates to category-scoped results with correct counts. |
 | B3 | Open listing detail | Gallery, price, seller, and trust indicators render without layout shift. |
 | B4 | Start chat or offer (guest) | User is prompted to log in before message/offer submission. |
 | B5 | Start chat or offer (auth) | Conversation or offer is created and visible in `/chat` or `/offers`. |
@@ -1089,15 +1089,15 @@ sequenceDiagram
 | ID | Scenario | Expected |
 |:---|:---------|:---------|
 | R1 | Open Rewards | Current coin balance, XP, tier, and streaks render correctly. |
-| R2 | Daily check‑in | One check‑in per day; repeated attempts are idempotent. |
+| R2 | Daily check-in | One check-in per day; repeated attempts are idempotent. |
 | R3 | Activity reward | Eligible actions add ledger entries with correct points. |
 | R4 | Leaderboard update | Weekly refresh reflects new ranks without duplicates. |
-| R5 | Reward notification | In‑app notification appears with correct balance delta. |
+| R5 | Reward notification | In-app notification appears with correct balance delta. |
 | R6 | Offline or error | Rewards view shows cached state and retry messaging. |
 
 <div style="page-break-after: always;"></div>
 
-### Page Specs (Condensed, Print‑Ready)
+### Page Specs (Condensed, Print-Ready)
 
 Each page below includes its intent, primary actions, and key states. This section complements the route inventory.
 
@@ -1107,9 +1107,9 @@ Each page below includes its intent, primary actions, and key states. This secti
 |:-----|:---------|:----------|:------------|:-----------|
 | Category Hub | `/category-hub` | Choose discovery path | Browse categories, jump to feed | Loading, empty, error |
 | All Posts | `/all-posts`, `/listings` | Browse listings | Filter, sort, open listing | Loading, empty, error |
-| For You | `/for-you` | Personalized picks | Refresh, open listing | Loading, cold‑start, error |
+| For You | `/for-you` | Personalized picks | Refresh, open listing | Loading, cold-start, error |
 | Feed | `/feed` | Community updates | Open post, react | Loading, empty, error |
-| Rewards | `/rewards` | See rewards | Check‑in, view ledger | Loading, auth required, error |
+| Rewards | `/rewards` | See rewards | Check-in, view ledger | Loading, auth required, error |
 | Profile | `/profile` | Manage account | Edit profile, navigate tabs | Loading, auth required, error |
 | More | Hamburger | Reach secondary pages | Open drawer, navigate | Open, closed |
 
@@ -1137,7 +1137,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 | Complaints | `/complaints` | Report issues | Submit complaint | Validation, success |
 | Verification | `/verification` | Verify identity | Start verification flow | Loading, error |
 | Dashboard | `/dashboard` | Seller analytics | View stats, manage listings | Loading, empty |
-| Admin Panel | `/admin-panel` | Admin tools | Manage platform | Role‑gated, error |
+| Admin Panel | `/admin-panel` | Admin tools | Manage platform | Role-gated, error |
 
 #### Auth & Access Specs
 
@@ -1195,7 +1195,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 | Wishlist | `/wishlist` | Saved items | Remove, open | Loading, empty |
 | Cart | `/cart` | Cart actions | Update quantity | Loading, empty |
 | Recently Viewed | `/recently-viewed` | Recall items | Open listing | Loading, empty |
-| Saved Searches | `/saved-searches` | Re‑run searches | Open, delete | Loading, empty |
+| Saved Searches | `/saved-searches` | Re-run searches | Open, delete | Loading, empty |
 
 #### Messaging & Channels Specs
 
@@ -1223,29 +1223,29 @@ Each page below includes its intent, primary actions, and key states. This secti
 
 | Page | Route(s) | User Goal | Key Actions | Key States |
 |:-----|:---------|:----------|:------------|:-----------|
-| Terms (Short) | `/t&c` | Review summary | Read | — |
-| Terms | `/terms`, `/terms-and-conditions` | Read terms | Read | — |
-| Privacy Policy | `/privacy-policy` | Understand privacy | Read | — |
-| Refund Policy | `/refund-policy` | Review refunds | Read | — |
-| Support Ticket Policy | `/support-ticket-policy` | Review support policy | Read | — |
+| Terms (Short) | `/t&c` | Review summary | Read | � |
+| Terms | `/terms`, `/terms-and-conditions` | Read terms | Read | � |
+| Privacy Policy | `/privacy-policy` | Understand privacy | Read | � |
+| Refund Policy | `/refund-policy` | Review refunds | Read | � |
+| Support Ticket Policy | `/support-ticket-policy` | Review support policy | Read | � |
 
 #### Redirects & Fallbacks Specs
 
 | Route | Target | Purpose | Key States |
 |:------|:-------|:--------|:-----------|
-| `/` | `/category-hub` | Root redirect | — |
-| `/categories/:slug` | `/all-posts` | Category slug redirect | — |
+| `/` | `/category-hub` | Root redirect | � |
+| `/categories/:slug` | `/all-posts` | Category slug redirect | � |
 | `*` | `/category-hub` | Not found fallback | 404 |
 ---
-## ðŸ§­ Navigation Architecture
+## 🧭 Navigation Architecture
 
 ### Top Navigation Bar (`GreenNavbar`)
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  ðŸ” Search  â”‚  ðŸ“ Location  â”‚  ðŸ”” â¤ï¸ ðŸ›’ â°  â”‚  ðŸŒ™/â˜€ï¸  â”‚ ðŸŒ â”‚
-â”‚             â”‚  Filter Panel â”‚  Badges        â”‚  Theme  â”‚Langâ”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌────────────────────────────────────────────────────────────┐
+│  🔍 Search  │  📍 Location  │  🔔 ❤️ 🛒 ⏰  │  🌙/☀️  │ 🌐 │
+│             │  Filter Panel │  Badges        │  Theme  │Lang│
+└────────────────────────────────────────────────────────────┘
 ```
 
 **Elements:**
@@ -1262,67 +1262,67 @@ Each page below includes its intent, primary actions, and key states. This secti
 ### Bottom Navigation Bar
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚  ðŸ  Hub  â”‚  ðŸ“‹ Posts  â”‚  â­ For You  â”‚  ðŸ“° Feed  â”‚  â‹®More â”‚
-â”‚          â”‚           â”‚             â”‚          â”‚       â”‚
-â”‚ rewards  â”‚  profile  â”‚             â”‚          â”‚       â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌──────────────────────────────────────────────────────────┐
+│  🏠 Hub  │  📋 Posts  │  ⭐ For You  │  📰 Feed  │  ⋮More │
+│          │           │             │          │       │
+│ rewards  │  profile  │             │          │       │
+└──────────────────────────────────────────────────────────┘
 ```
 
 **7 Primary Tabs:**
-1. **Category Hub** — Category discovery home (`/category-hub`)
-2. **All Posts** — Listing feed (`/all-posts`, `/listings`)
-3. **For You** — Personalized recommendations (`/for-you`, alias `/my-recommendations`)
-4. **Feed** — Community/activity feed (`/feed`)
-5. **Rewards** — Loyalty & gamification (`/rewards`, auth-gated)
-6. **Profile** — Account hub with Overview, Personal, Preferences, Settings tabs (`/profile`)
-7. **More** — Secondary navigation drawer
+1. **Category Hub** � Category discovery home (`/category-hub`)
+2. **All Posts** � Listing feed (`/all-posts`, `/listings`)
+3. **For You** � Personalized recommendations (`/for-you`, alias `/my-recommendations`)
+4. **Feed** � Community/activity feed (`/feed`)
+5. **Rewards** � Loyalty & gamification (`/rewards`, auth-gated)
+6. **Profile** � Account hub with Overview, Personal, Preferences, Settings tabs (`/profile`)
+7. **More** � Secondary navigation drawer
 
 ### More Menu (Hamburger)
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ TRADE                    â”‚
-â”‚  + Sell    â˜… Plans       â”‚
-â”‚  ðŸª Centre  ðŸ“ Nearby    â”‚
-â”‚  ðŸ§­ Category  ðŸ“‚ Subcats â”‚
-â”‚                          â”‚
-â”‚ SOCIAL                   â”‚
-â”‚  ðŸ’¬ Chat   â­ Feedback   â”‚
-â”‚  ðŸ“‹ Complaints           â”‚
-â”‚                          â”‚
-â”‚ ACCOUNT                  â”‚
-â”‚  âœ“ Verification          â”‚
-â”‚  ðŸ“Š Dashboard            â”‚
-â”‚  ðŸ” Admin Panel          â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌──────────────────────────┐
+│ TRADE                    │
+│  + Sell    ★ Plans       │
+│  🏪 Centre  📍 Nearby    │
+│  🧭 Category  📂 Subcats │
+│                          │
+│ SOCIAL                   │
+│  💬 Chat   ⭐ Feedback   │
+│  📋 Complaints           │
+│                          │
+│ ACCOUNT                  │
+│  ✓ Verification          │
+│  📊 Dashboard            │
+│  🔐 Admin Panel          │
+└──────────────────────────┘
 ```
 
 ---
 
-## ðŸ” Authentication & Access Control
+## 🔐 Authentication & Access Control
 
 ### Auth Flow
 
 ```
-                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                    â”‚   Login     â”‚
-                    â”‚  /login     â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
-                           â”‚
-            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-            â”‚              â”‚              â”‚
-     â”Œâ”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”
-     â”‚  Password  â”‚ â”‚   OTP      â”‚ â”‚  Passkey  â”‚
-     â”‚  + Argon2  â”‚ â”‚  delivery  â”‚ â”‚  WebAuthn â”‚
-     â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
-            â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                           â”‚
-                    â”Œâ”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”
-                    â”‚ JWT Access  â”‚
-                    â”‚ + Refresh   â”‚
-                    â”‚ Token Pair  â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                    ┌─────────────┐
+                    │   Login     │
+                    │  /login     │
+                    └──────┬──────┘
+                           │
+            ┌──────────────┼──────────────┐
+            │              │              │
+     ┌──────┴─────┐ ┌─────┴──────┐ ┌────┴──────┐
+     │  Password  │ │   OTP      │ │  Passkey  │
+     │  + Argon2  │ │  delivery  │ │  WebAuthn │
+     └──────┬─────┘ └─────┬──────┘ └────┬──────┘
+            └──────────────┼──────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │ JWT Access  │
+                    │ + Refresh   │
+                    │ Token Pair  │
+                    └─────────────┘
 ```
 
 ### Token Architecture
@@ -1345,12 +1345,12 @@ Each page below includes its intent, primary actions, and key states. This secti
 
 ---
 
-## ðŸ“¡ API Reference
+## 📡 API Reference
 
 ### Route File Index (60+ Files)
 
 <details>
-<summary><strong>ðŸ” Authentication & Identity</strong></summary>
+<summary><strong>🔐 Authentication & Identity</strong></summary>
 
 | File | Base Path | Key Endpoints |
 |------|-----------|---------------|
@@ -1363,7 +1363,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 </details>
 
 <details>
-<summary><strong>ðŸ›ï¸ Marketplace & Commerce</strong></summary>
+<summary><strong>🛍️ Marketplace & Commerce</strong></summary>
 
 | File | Base Path | Key Endpoints |
 |------|-----------|---------------|
@@ -1382,7 +1382,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 </details>
 
 <details>
-<summary><strong>ðŸ’¬ Social & Communication</strong></summary>
+<summary><strong>💬 Social & Communication</strong></summary>
 
 | File | Base Path | Key Endpoints |
 |------|-----------|---------------|
@@ -1396,7 +1396,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 </details>
 
 <details>
-<summary><strong>ðŸ† Rewards & Gamification</strong></summary>
+<summary><strong>🏆 Rewards & Gamification</strong></summary>
 
 | File | Base Path | Key Endpoints |
 |------|-----------|---------------|
@@ -1408,7 +1408,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 </details>
 
 <details>
-<summary><strong>ðŸ”’ Trust & Safety</strong></summary>
+<summary><strong>🔒 Trust & Safety</strong></summary>
 
 | File | Base Path | Key Endpoints |
 |------|-----------|---------------|
@@ -1421,7 +1421,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 </details>
 
 <details>
-<summary><strong>ðŸ“Š Analytics & Discovery</strong></summary>
+<summary><strong>📊 Analytics & Discovery</strong></summary>
 
 | File | Base Path | Key Endpoints |
 |------|-----------|---------------|
@@ -1438,7 +1438,7 @@ Each page below includes its intent, primary actions, and key states. This secti
 </details>
 
 <details>
-<summary><strong>âš™ï¸ Platform Operations</strong></summary>
+<summary><strong>⚙️ Platform Operations</strong></summary>
 
 | File | Base Path | Key Endpoints |
 |------|-----------|---------------|
@@ -1460,59 +1460,59 @@ Each page below includes its intent, primary actions, and key states. This secti
 
 ---
 
-## ðŸ’¾ Database Schema
+## 💾 Database Schema
 
 ### Core Tables
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚    users     â”‚    â”‚    posts     â”‚    â”‚ transactions â”‚
-â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤    â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤    â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-â”‚ user_id (PK) â”‚â—„â”€â”€â”¤ author (FK)  â”‚    â”‚ buyer_id(FK) â”‚
-â”‚ email        â”‚    â”‚ title        â”‚    â”‚ seller_id(FK)â”‚
-â”‚ password_hashâ”‚    â”‚ description  â”‚    â”‚ post_id (FK) â”‚
-â”‚ phone        â”‚    â”‚ price        â”‚    â”‚ agreed_price â”‚
-â”‚ coins        â”‚    â”‚ category     â”‚    â”‚ status       â”‚
-â”‚ xp           â”‚    â”‚ subcategory  â”‚    â”‚ otp_hash     â”‚
-â”‚ level        â”‚    â”‚ location     â”‚    â”‚ completed_at â”‚
-â”‚ tier         â”‚    â”‚ images       â”‚    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-â”‚ referred_by  â”‚    â”‚ condition    â”‚
-â”‚ created_at   â”‚    â”‚ status       â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚ created_at   â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│    users     │    │    posts     │    │ transactions │
+├──────────────┤    ├──────────────┤    ├──────────────┤
+│ user_id (PK) │◄──┤ author (FK)  │    │ buyer_id(FK) │
+│ email        │    │ title        │    │ seller_id(FK)│
+│ password_hash│    │ description  │    │ post_id (FK) │
+│ phone        │    │ price        │    │ agreed_price │
+│ coins        │    │ category     │    │ status       │
+│ xp           │    │ subcategory  │    │ otp_hash     │
+│ level        │    │ location     │    │ completed_at │
+│ tier         │    │ images       │    └──────────────┘
+│ referred_by  │    │ condition    │
+│ created_at   │    │ status       │
+└──────────────┘    │ created_at   │
+                    └──────────────┘
 ```
 
 ### Rewards Tables
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚     rewards      â”‚   â”‚   reward_log     â”‚   â”‚ reward_idempot.  â”‚
-â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤   â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤   â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-â”‚ user_id (PK)     â”‚   â”‚ id (PK)          â”‚   â”‚ id (PK)          â”‚
-â”‚ points           â”‚   â”‚ user_id          â”‚   â”‚ user_id          â”‚
-â”‚ tier             â”‚   â”‚ action           â”‚   â”‚ idempotency_key  â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚ points           â”‚   â”‚ action           â”‚
-                       â”‚ description      â”‚   â”‚ points_delta     â”‚
-                       â”‚ created_at       â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                       â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│     rewards      │   │   reward_log     │   │ reward_idempot.  │
+├──────────────────┤   ├──────────────────┤   ├──────────────────┤
+│ user_id (PK)     │   │ id (PK)          │   │ id (PK)          │
+│ points           │   │ user_id          │   │ user_id          │
+│ tier             │   │ action           │   │ idempotency_key  │
+└──────────────────┘   │ points           │   │ action           │
+                       │ description      │   │ points_delta     │
+                       │ created_at       │   └──────────────────┘
+                       └──────────────────┘
 
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ daily_checkins   â”‚   â”‚ spin_history     â”‚   â”‚ scratch_claims   â”‚
-â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤   â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤   â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-â”‚ user_id (PK)     â”‚   â”‚ id (PK)          â”‚   â”‚ id (PK)          â”‚
-â”‚ last_checkin_dateâ”‚   â”‚ user_id          â”‚   â”‚ user_id          â”‚
-â”‚ streak           â”‚   â”‚ spin_date        â”‚   â”‚ referral_user_id â”‚
-â”‚ best_streak      â”‚   â”‚ reward_amount    â”‚   â”‚ reward_amount    â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│ daily_checkins   │   │ spin_history     │   │ scratch_claims   │
+├──────────────────┤   ├──────────────────┤   ├──────────────────┤
+│ user_id (PK)     │   │ id (PK)          │   │ id (PK)          │
+│ last_checkin_date│   │ user_id          │   │ user_id          │
+│ streak           │   │ spin_date        │   │ referral_user_id │
+│ best_streak      │   │ reward_amount    │   │ reward_amount    │
+└──────────────────┘   └──────────────────┘   └──────────────────┘
 
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚ referral_rewards â”‚   â”‚ referral_closure â”‚   â”‚  user_streaks    â”‚
-â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤   â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤   â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-â”‚ referrer_id      â”‚   â”‚ ancestor_id      â”‚   â”‚ user_id (PK)     â”‚
-â”‚ referred_user_id â”‚   â”‚ descendant_id    â”‚   â”‚ visit_streak     â”‚
-â”‚ level            â”‚   â”‚ depth            â”‚   â”‚ post_streak      â”‚
-â”‚ reward_coins     â”‚   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜   â”‚ last_visit_date  â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│ referral_rewards │   │ referral_closure │   │  user_streaks    │
+├──────────────────┤   ├──────────────────┤   ├──────────────────┤
+│ referrer_id      │   │ ancestor_id      │   │ user_id (PK)     │
+│ referred_user_id │   │ descendant_id    │   │ visit_streak     │
+│ level            │   │ depth            │   │ post_streak      │
+│ reward_coins     │   └──────────────────┘   │ last_visit_date  │
+└──────────────────┘                          └──────────────────┘
 ```
 
 ### Migration History (20 Migrations)
@@ -1542,30 +1542,30 @@ Each page below includes its intent, primary actions, and key states. This secti
 
 ---
 
-## ðŸ›¡ Middleware Pipeline
+## 🛡 Middleware Pipeline
 
 ### Request Processing Order
 
 ```
 Request
-  â”‚
-  â”œâ”€ 1. Helmet (security headers)
-  â”œâ”€ 2. CORS (origin validation)
-  â”œâ”€ 3. Rate Limiter (flood protection)
-  â”œâ”€ 4. WAF Enforcement (payload scanning)
-  â”œâ”€ 5. VPN Blocker (proxy detection)
-  â”œâ”€ 6. Request Logger (audit trail)
-  â”œâ”€ 7. CSRF Validation (state-changing ops)
-  â”œâ”€ 8. Auth (JWT verification)
-  â”œâ”€ 9. Device Binding (session-device pin)
-  â”œâ”€ 10. RBAC (role check)
-  â”œâ”€ 11. Runtime Budget (performance guard)
-  â”œâ”€ 12. API Contract (version validation)
-  â”‚
-  â”œâ”€ â†’ Controller Logic
-  â”‚
-  â”œâ”€ 13. Error Handler (structured errors)
-  â””â”€ Response
+  │
+  ├─ 1. Helmet (security headers)
+  ├─ 2. CORS (origin validation)
+  ├─ 3. Rate Limiter (flood protection)
+  ├─ 4. WAF Enforcement (payload scanning)
+  ├─ 5. VPN Blocker (proxy detection)
+  ├─ 6. Request Logger (audit trail)
+  ├─ 7. CSRF Validation (state-changing ops)
+  ├─ 8. Auth (JWT verification)
+  ├─ 9. Device Binding (session-device pin)
+  ├─ 10. RBAC (role check)
+  ├─ 11. Runtime Budget (performance guard)
+  ├─ 12. API Contract (version validation)
+  │
+  ├─ → Controller Logic
+  │
+  ├─ 13. Error Handler (structured errors)
+  └─ Response
 ```
 
 ### Middleware Inventory (40+ Files)
@@ -1584,40 +1584,40 @@ Request
 
 ---
 
-## ðŸ† Rewards & Gamification System
+## 🏆 Rewards & Gamification System
 
 ### System Architecture
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                    REWARDS ENGINE                        â”‚
-â”‚                                                         â”‚
-â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”‚
-â”‚  â”‚  Daily       â”‚  â”‚  Activity   â”‚  â”‚  Referral   â”‚    â”‚
-â”‚  â”‚  Check-in    â”‚  â”‚  Streaks    â”‚  â”‚  Chain      â”‚    â”‚
-â”‚  â”‚  (1x/day)    â”‚  â”‚  (Visit+    â”‚  â”‚  (3 levels) â”‚    â”‚
-â”‚  â”‚              â”‚  â”‚   Post)     â”‚  â”‚  2/1/0.5 ptsâ”‚    â”‚
-â”‚  â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜    â”‚
-â”‚         â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜           â”‚
-â”‚                           â”‚                             â”‚
-â”‚                    â”Œâ”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”                      â”‚
-â”‚                    â”‚   Ledger    â”‚  â† Idempotent        â”‚
-â”‚                    â”‚  Service    â”‚  â† Advisory locks    â”‚
-â”‚                    â”‚ (Points +   â”‚  â† Audit log         â”‚
-â”‚                    â”‚  Tier calc) â”‚                      â”‚
-â”‚                    â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜                      â”‚
-â”‚              â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                â”‚
-â”‚         â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”´â”€â”€â”€â”            â”‚
-â”‚         â”‚ Coins  â”‚  â”‚  XP    â”‚  â”‚  Tier  â”‚            â”‚
-â”‚         â”‚Balance â”‚  â”‚ Level  â”‚  â”‚ Badge  â”‚            â”‚
-â”‚         â””â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”˜            â”‚
-â”‚                                                         â”‚
-â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
-â”‚  â”‚             LEADERBOARD ENGINE                    â”‚  â”‚
-â”‚  â”‚  Weekly Top Sellers: 500 / 300 / 150 pts         â”‚  â”‚
-â”‚  â”‚  Weekly Top Buyers:  300 / 150 / 75 pts          â”‚  â”‚
-â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+┌─────────────────────────────────────────────────────────┐
+│                    REWARDS ENGINE                        │
+│                                                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
+│  │  Daily       │  │  Activity   │  │  Referral   │    │
+│  │  Check-in    │  │  Streaks    │  │  Chain      │    │
+│  │  (1x/day)    │  │  (Visit+    │  │  (3 levels) │    │
+│  │              │  │   Post)     │  │  2/1/0.5 pts│    │
+│  └──────┬───────┘  └──────┬──────┘  └──────┬──────┘    │
+│         └─────────────────┼─────────────────┘           │
+│                           │                             │
+│                    ┌──────┴──────┐                      │
+│                    │   Ledger    │  ← Idempotent        │
+│                    │  Service    │  ← Advisory locks    │
+│                    │ (Points +   │  ← Audit log         │
+│                    │  Tier calc) │                      │
+│                    └──────┬──────┘                      │
+│              ┌────────────┼────────────┐                │
+│         ┌────┴───┐  ┌────┴───┐  ┌────┴───┐            │
+│         │ Coins  │  │  XP    │  │  Tier  │            │
+│         │Balance │  │ Level  │  │ Badge  │            │
+│         └────────┘  └────────┘  └────────┘            │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │             LEADERBOARD ENGINE                    │  │
+│  │  Weekly Top Sellers: 500 / 300 / 150 pts         │  │
+│  │  Weekly Top Buyers:  300 / 150 / 75 pts          │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ### Reward Actions
@@ -1644,14 +1644,14 @@ Request
 
 | Tier | Points Required | Badge |
 |------|:--------------:|:-----:|
-| ðŸ¥‰ Bronze | 0 - 499 | Default |
-| ðŸ¥ˆ Silver | 500 - 1,999 | Earned |
-| ðŸ¥‡ Gold | 2,000 - 4,999 | Earned |
-| ðŸ’Ž Platinum | 5,000+ | Elite |
+| 🥉 Bronze | 0 - 499 | Default |
+| 🥈 Silver | 500 - 1,999 | Earned |
+| 🥇 Gold | 2,000 - 4,999 | Earned |
+| 💎 Platinum | 5,000+ | Elite |
 
 ---
 
-## ðŸ”’ Trust & Safety Engine
+## 🔒 Trust & Safety Engine
 
 ### Trust Score System
 
@@ -1670,47 +1670,47 @@ Trust Score = f(
 
 | Level | Score Range | Badge | Effect |
 |-------|:----------:|:-----:|--------|
-| **Verified** | 70-100 | ðŸŸ¢ | Full access, premium visibility |
-| **New** | 40-69 | ðŸŸ¡ | Standard access, building trust |
-| **Risky** | 0-39 | ðŸ”´ | Restricted visibility, flagged |
-| **Under Review** | â€” | âš ï¸ | Active investigation |
-| **Frozen** | â€” | â„ï¸ | Account suspended |
+| **Verified** | 70-100 | 🟢 | Full access, premium visibility |
+| **New** | 40-69 | 🟡 | Standard access, building trust |
+| **Risky** | 0-39 | 🔴 | Restricted visibility, flagged |
+| **Under Review** | — | ⚠️ | Active investigation |
+| **Frozen** | — | ❄️ | Account suspended |
 
 ### Security Layers
 
 ```
-Layer 1: Network     â†’ Helmet, CORS, HSTS
-Layer 2: Input       â†’ WAF enforcement, input validation, CAPTCHA
-Layer 3: Identity    â†’ VPN blocking, device fingerprinting, geo-alert
-Layer 4: Auth        â†’ JWT + Refresh, Argon2, 2FA, Passkeys/WebAuthn
-Layer 5: Session     â†’ Device binding, session retention, token rotation
-Layer 6: Access      â†’ RBAC, risk restrictions, anomaly throttle
-Layer 7: Data        â†’ Parameterized queries, advisory locks, idempotency
-Layer 8: Audit       â†’ Request logging, auth audit, activity tracking
-Layer 9: Operations  â†’ Breach check, fraud scoring, risk engine, zero trust
+Layer 1: Network     → Helmet, CORS, HSTS
+Layer 2: Input       → WAF enforcement, input validation, CAPTCHA
+Layer 3: Identity    → VPN blocking, device fingerprinting, geo-alert
+Layer 4: Auth        → JWT + Refresh, Argon2, 2FA, Passkeys/WebAuthn
+Layer 5: Session     → Device binding, session retention, token rotation
+Layer 6: Access      → RBAC, risk restrictions, anomaly throttle
+Layer 7: Data        → Parameterized queries, advisory locks, idempotency
+Layer 8: Audit       → Request logging, auth audit, activity tracking
+Layer 9: Operations  → Breach check, fraud scoring, risk engine, zero trust
 ```
 
 ---
 
-## âš¡ Realtime Infrastructure
+## ⚡ Realtime Infrastructure
 
 ### Socket.IO Architecture
 
 ```
 Client                          Server
-  â”‚                                â”‚
-  â”œâ”€â”€ connect (with JWT) â”€â”€â”€â”€â”€â–º   â”œâ”€â”€ authenticate
-  â”‚                                â”œâ”€â”€ join_room user_{id}
-  â”œâ”€â”€ send_message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–º  â”œâ”€â”€ persist + broadcast
-  â—„â”€â”€ receive_message â”€â”€â”€â”€â”€â”€â”€â”€    â”‚
-  â”œâ”€â”€ typing_start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–º  â”œâ”€â”€ broadcast to room
-  â—„â”€â”€ reward_update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€   â”œâ”€â”€ SSE from rewards engine
-  â—„â”€â”€ notification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€   â”œâ”€â”€ notification service
+  │                                │
+  ├── connect (with JWT) ─────►   ├── authenticate
+  │                                ├── join_room user_{id}
+  ├── send_message ────────────►  ├── persist + broadcast
+  ◄── receive_message ────────    │
+  ├── typing_start ────────────►  ├── broadcast to room
+  ◄── reward_update ───────────   ├── SSE from rewards engine
+  ◄── notification ────────────   ├── notification service
 ```
 
 ---
 
-## ðŸ“± Mobile & PWA
+## 📱 Mobile & PWA
 
 ### Capacitor Config
 
@@ -1738,7 +1738,7 @@ Client                          Server
 
 ---
 
-## ðŸŽ¨ Theming & Design System
+## 🎨 Theming & Design System
 
 ### Theme Architecture
 
@@ -1766,7 +1766,7 @@ Client                          Server
 
 ---
 
-## ðŸŒ Internationalization
+## 🌍 Internationalization
 
 ### 26 Supported Languages
 
@@ -1782,7 +1782,7 @@ Client                          Server
 
 ---
 
-## ðŸ§ª Testing Strategy
+## 🧪 Testing Strategy
 
 ### Client
 
@@ -1813,34 +1813,34 @@ npm run backup:drill                # Backup/restore drill
 
 ---
 
-## ðŸ” Security Architecture
+## 🔐 Security Architecture
 
 ### Defense-in-Depth
 
 ```
-Layer 1: Network    â†’ Helmet (headers), CORS, HSTS
-Layer 2: Input      â†’ WAF, validation, CAPTCHA
-Layer 3: Identity   â†’ VPN block, device fingerprint, geo-alert
-Layer 4: Auth       â†’ JWT, Argon2, 2FA, Passkeys
-Layer 5: Session    â†’ Device binding, token rotation
-Layer 6: Access     â†’ RBAC, risk restrictions
-Layer 7: Data       â†’ Parameterized queries, advisory locks
-Layer 8: Audit      â†’ Request/auth logging
-Layer 9: Ops        â†’ Fraud scoring, risk engine, zero trust
+Layer 1: Network    → Helmet (headers), CORS, HSTS
+Layer 2: Input      → WAF, validation, CAPTCHA
+Layer 3: Identity   → VPN block, device fingerprint, geo-alert
+Layer 4: Auth       → JWT, Argon2, 2FA, Passkeys
+Layer 5: Session    → Device binding, token rotation
+Layer 6: Access     → RBAC, risk restrictions
+Layer 7: Data       → Parameterized queries, advisory locks
+Layer 8: Audit      → Request/auth logging
+Layer 9: Ops        → Fraud scoring, risk engine, zero trust
 ```
 
 ### Auth Methods
 
 | Method | Implementation | Strength |
 |--------|---------------|:--------:|
-| Password + Argon2id | `authController.js` | â¬›â¬›â¬› |
-| OTP (SMS/Email) | `otpService.js` | â¬›â¬›â¬œ |
-| WebAuthn/Passkeys | `webauthnController.js` | â¬›â¬›â¬›â¬› |
-| 2FA (TOTP) | `twoFactorController.js` | â¬›â¬›â¬› |
+| Password + Argon2id | `authController.js` | ⬛⬛⬛ |
+| OTP (SMS/Email) | `otpService.js` | ⬛⬛⬜ |
+| WebAuthn/Passkeys | `webauthnController.js` | ⬛⬛⬛⬛ |
+| 2FA (TOTP) | `twoFactorController.js` | ⬛⬛⬛ |
 
 ---
 
-## ðŸš„ Performance & Optimization
+## 🚄 Performance & Optimization
 
 ### Client-Side
 
@@ -1869,7 +1869,7 @@ Layer 9: Ops        â†’ Fraud scoring, risk engine, zero trust
 
 ---
 
-## ðŸŒŸ World-Class Repo Inspirations
+## 🌟 World-Class Repo Inspirations
 
 | Repository | Inspiration For |
 |-----------|-----------------|
@@ -1899,18 +1899,18 @@ Layer 9: Ops        â†’ Fraud scoring, risk engine, zero trust
 
 ---
 
-## ðŸ—º Roadmap
+## 🗺 Roadmap
 
 ### Active Development
 
 | Priority | Initiative | Status |
 |:--------:|-----------|:------:|
-| ðŸ”´ | Server-backed cart with stock/price validation | Planned |
-| ðŸ”´ | Notification real-time sync + reliable pagination | In Progress |
-| ðŸŸ¡ | Wishlist management features (sort, filter, bulk) | Planned |
-| ðŸŸ¡ | Sale confirmation with transaction evidence | Planned |
-| ðŸŸ¢ | Large list virtualization | Partial |
-| ðŸŸ¢ | Offline-first PWA guarantees | Partial |
+| 🔴 | Server-backed cart with stock/price validation | Planned |
+| 🔴 | Notification real-time sync + reliable pagination | In Progress |
+| 🟡 | Wishlist management features (sort, filter, bulk) | Planned |
+| 🟡 | Sale confirmation with transaction evidence | Planned |
+| 🟢 | Large list virtualization | Partial |
+| 🟢 | Offline-first PWA guarantees | Partial |
 
 ### Completed Milestones
 
@@ -1927,7 +1927,7 @@ Layer 9: Ops        â†’ Fraud scoring, risk engine, zero trust
 
 ---
 
-## ðŸ¤ Contributing
+## 🤝 Contributing
 
 ### Pre-PR Checklist
 
@@ -1959,7 +1959,7 @@ npm run preflight:schema        # Schema validation
 
 ---
 
-## ðŸ“‹ Changelog
+## 📋 Changelog
 
 | Date | Change |
 |------|--------|
@@ -1971,7 +1971,7 @@ npm run preflight:schema        # Schema validation
 ---
 
 <p align="center">
-  <strong>Built with â¤ï¸ by the MHub Team</strong><br/>
+  <strong>Built with ❤️ by the MHub Team</strong><br/>
   <sub>Last updated: April 5, 2026</sub>
 </p>
 

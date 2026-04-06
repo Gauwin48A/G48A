@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { buildApiPath } from "@/lib/networkConfig";
 import { buildRequestSecurity } from "@/lib/requestSecurity";
+import { readUserCity } from "@/utils/locationCache";
 
 const DEVICE_INFO_KEY = "mhub_device_info_sent";
 
@@ -61,6 +62,7 @@ function LocationGate({ children }) {
     isLiveLocation,
     isIpFallback,
     lastRefreshedAt,
+    isStaleLocation,
   } = useLocation();
 
   const [deviceInfoSent, setDeviceInfoSent] = useState(false);
@@ -171,9 +173,9 @@ function LocationGate({ children }) {
         ? React.createElement(Loader2, { size: 14, className: "spin", style: { color: badge.color } })
         : React.createElement(BadgeIcon, { size: 14, style: { color: badge.color } }),
       React.createElement("span", { style: { color: badge.color } },
-        loading ? "Detecting..." : (() => {
+        loading || isStaleLocation ? "Detecting..." : (() => {
           // Show the most specific area name available
-          const areaName = colony || village || suburb || locality || area || city || localStorage.getItem("mhub_user_city") || "";
+          const areaName = colony || village || suburb || locality || area || city || readUserCity() || "";
           const cleanName = areaName.replace(/\s+(mandal|district|municipality|tehsil|taluk|block)$/i, "").trim();
           const accuracyText = accuracy ? ` ±${Math.round(accuracy)}m` : "";
           const parts = [];

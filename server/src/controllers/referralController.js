@@ -679,3 +679,116 @@ exports.getReferralTransactions = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch referral transactions" });
   }
 };
+
+/**
+ * Get detailed status of each referred user in the chain:
+ * - pending: signed up but not verified / no activity
+ * - qualified: verified + has real activity (2+ posts or 1 transaction)
+ * - rewarded: coins already distributed for this referral
+ */
+exports.getReferralChainStatus = async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  try {
+    const rows = await loadReferralDescendants(userId, REFERRAL_TREE_MAX_DEPTH);
+
+    if (!rows.length) {
+      return res.json({ referrals: [], summary: { pending: 0, qualified: 0, rewarded: 0, total: 0 } });
+    }
+
+    const referralUserIds = rows
+      .map((r) => parseOptionalString(r.user_id))
+      .filter(Boolean);
+
+    if (!referralUserIds.length) {
+      return res.json({ referrals: [], summary: { pending: 0, qualified: 0, rewarded: 0, total: 0 } });
+    }
+
+    // Batch-fetch verification status
+    const verificationResult = await runQuery(
+      `SELECT
+         u.user_id::text AS user_id,
+         u.username,
+         p.full_name,
+         p.avatar_url,
+         COALESCE(u.phone_verified, false) AS phone_verified,
+         COALESCE(u.email_verified, false) AS email_verified,
+         (SELECT COUNT(*)::int FROM posts WHERE user_id::text = u.user_id::text) AS post_count,
+         (SELECT COUNT(*)::int FROM transactions
+          WHERE (buyer_id::text = u.user_id::text OR seller_id::text = u.user_id::text)
+            AND status IN ('completed', 'success')) AS transaction_count
+       FROM users u
+       LEFT JOIN profiles p ON p.user_id::text = u.user_id::text
+       WHERE u.user_id::text = ANY($1)`,
+      [referralUserIds],
+    );
+
+    const userMap = new Map();
+    for (const row of verificationResult.rows) {
+      userMap.set(String(row.user_id), row);
+    }
+
+    // Batch-fetch reward status
+    let rewardedSet = new Set();
+    try {
+      const rewardResult = await runQuery(
+        `SELECT DISTINCT referred_user_id::text AS ref_id
+         FROM referral_rewards
+         WHERE referrer_id::text = $1`,
+        [String(userId)],
+      );
+      rewardedSet = new Set(rewardResult.rows.map((r) => r.ref_id));
+    } catch (err) {
+      if (!isUndefinedTableError(err)) {
+        logger.warn("[Referral] reward lookup failed", { message: err.message });
+      }
+    }
+
+    const referrals = rows.map((row) => {
+      const refUserId = parseOptionalString(row.user_id);
+      const depth = Number.parseInt(row.depth, 10) || 0;
+      const userData = userMap.get(refUserId) || {};
+      const postCount = Number(userData.post_count || 0);
+      const txnCount = Number(userData.transaction_count || 0);
+      const isVerified =
+        Boolean(userData.phone_verified) || Boolean(userData.email_verified);
+      const hasRealActivity = txnCount >= 1 || (postCount >= 2 && isVerified);
+      const isRewarded = rewardedSet.has(refUserId);
+
+      let status = "pending";
+      if (isRewarded) {
+        status = "rewarded";
+      } else if (hasRealActivity && isVerified) {
+        status = "qualified";
+      }
+
+      return {
+        userId: refUserId,
+        username: userData.username || row.username || null,
+        fullName: userData.full_name || row.full_name || null,
+        avatarUrl: userData.avatar_url || null,
+        depth,
+        status,
+        isVerified,
+        postCount,
+        transactionCount: txnCount,
+        joinDate: row.created_at || null,
+      };
+    });
+
+    const summary = {
+      pending: referrals.filter((r) => r.status === "pending").length,
+      qualified: referrals.filter((r) => r.status === "qualified").length,
+      rewarded: referrals.filter((r) => r.status === "rewarded").length,
+      total: referrals.length,
+    };
+
+    res.json({ referrals, summary });
+  } catch (err) {
+    logger.error("Referral chain status error:", err);
+    res.status(500).json({ error: "Failed to fetch referral chain status" });
+  }
+};

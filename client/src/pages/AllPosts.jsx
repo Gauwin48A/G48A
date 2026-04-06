@@ -2051,187 +2051,188 @@ const ve = 5,
       return () => clearInterval(e);
     }, [E, latestWindow, autoRefreshEnabled]);
     const filteredPosts = N(() => {
-        if (!Array.isArray(f) || f.length === 0) return [];
-        const e = normalizeSearchText(t.search);
-        const rawActiveSubcategory = String(t.subcategory || "").trim();
-        const hasActiveSubcategory =
-          !!rawActiveSubcategory && rawActiveSubcategory !== "All";
-        const activeSubcategoryId =
-          hasActiveSubcategory && /^\d+$/.test(rawActiveSubcategory)
-            ? rawActiveSubcategory
-            : hasActiveSubcategory
-              ? subcategoryIdByName[normalizeName(rawActiveSubcategory)] || ""
-              : "";
-        const activeSubcategoryName = hasActiveSubcategory
-          ? normalizeName(
-              !/^\d+$/.test(rawActiveSubcategory)
-                ? rawActiveSubcategory
-                : subcategoryNameById[String(activeSubcategoryId)] || "",
-            )
-          : "";
-        const locationFilter = normalizeSearchText(t.location);
-        const hasLocationFilter = !!locationFilter;
-        const conditionFilter = normalizeConditionValue(t.condition);
-        const hasConditionFilter = !!conditionFilter;
-        const verifiedOnly = !!t.verifiedOnly;
-        const hasMinPrice =
-          t.minPrice !== "" && t.minPrice !== null && t.minPrice !== undefined;
-        const hasMaxPrice =
-          t.maxPrice !== "" && t.maxPrice !== null && t.maxPrice !== undefined;
-        let minPriceValue = hasMinPrice ? parsePriceValue(t.minPrice) : null;
-        let maxPriceValue = hasMaxPrice ? parsePriceValue(t.maxPrice) : null;
-        if (!hasMinPrice && !hasMaxPrice && t.priceRange) {
-          const [rangeMinRaw, rangeMaxRaw] = String(t.priceRange)
-            .split("-")
-            .map((a) => String(a || "").trim());
-          if (rangeMinRaw !== "") {
-            const rangeMinValue = parsePriceValue(rangeMinRaw);
-            if (Number.isFinite(rangeMinValue)) minPriceValue = rangeMinValue;
-          }
-          if (rangeMaxRaw !== "") {
-            const rangeMaxValue = parsePriceValue(rangeMaxRaw);
-            if (Number.isFinite(rangeMaxValue)) maxPriceValue = rangeMaxValue;
-          }
+      if (!Array.isArray(f) || f.length === 0) return [];
+      const e = normalizeSearchText(t.search);
+      const rawActiveSubcategory = String(t.subcategory || "").trim();
+      const hasActiveSubcategory =
+        !!rawActiveSubcategory && rawActiveSubcategory !== "All";
+      const activeSubcategoryId =
+        hasActiveSubcategory && /^\d+$/.test(rawActiveSubcategory)
+          ? rawActiveSubcategory
+          : hasActiveSubcategory
+            ? subcategoryIdByName[normalizeName(rawActiveSubcategory)] || ""
+            : "";
+      const activeSubcategoryName = hasActiveSubcategory
+        ? normalizeName(
+            !/^\d+$/.test(rawActiveSubcategory)
+              ? rawActiveSubcategory
+              : subcategoryNameById[String(activeSubcategoryId)] || "",
+          )
+        : "";
+      const locationFilter = normalizeSearchText(t.location);
+      const hasLocationFilter = !!locationFilter;
+      const conditionFilter = normalizeConditionValue(t.condition);
+      const hasConditionFilter = !!conditionFilter;
+      const verifiedOnly = !!t.verifiedOnly;
+      const hasMinPrice =
+        t.minPrice !== "" && t.minPrice !== null && t.minPrice !== undefined;
+      const hasMaxPrice =
+        t.maxPrice !== "" && t.maxPrice !== null && t.maxPrice !== undefined;
+      let minPriceValue = hasMinPrice ? parsePriceValue(t.minPrice) : null;
+      let maxPriceValue = hasMaxPrice ? parsePriceValue(t.maxPrice) : null;
+      if (!hasMinPrice && !hasMaxPrice && t.priceRange) {
+        const [rangeMinRaw, rangeMaxRaw] = String(t.priceRange)
+          .split("-")
+          .map((a) => String(a || "").trim());
+        if (rangeMinRaw !== "") {
+          const rangeMinValue = parsePriceValue(rangeMinRaw);
+          if (Number.isFinite(rangeMinValue)) minPriceValue = rangeMinValue;
         }
-        const hasPriceFilter = minPriceValue !== null || maxPriceValue !== null;
-        const startDateValue = parseFilterDateValue(t.startDate, !1);
-        const endDateValue = parseFilterDateValue(t.endDate, !0);
-        const hasDateFilter = startDateValue !== null || endDateValue !== null;
-        const shouldApplyClientAppFilter = !t.categoryGroup;
-        const o = f.filter((a) => {
-          if (
-            !matchesCategoryModeItem(a, {
-              activeCategory:
-                hasActiveCategory && effectiveCategoryLabel !== "All"
-                  ? { id: activeCategoryId || null, name: effectiveCategoryLabel }
-                  : null,
-              activeCategoryId,
-              activeAppMatcher: shouldApplyClientAppFilter ? activeAppMatcher : null,
-            })
-          ) {
+        if (rangeMaxRaw !== "") {
+          const rangeMaxValue = parsePriceValue(rangeMaxRaw);
+          if (Number.isFinite(rangeMaxValue)) maxPriceValue = rangeMaxValue;
+        }
+      }
+      const hasPriceFilter = minPriceValue !== null || maxPriceValue !== null;
+      const startDateValue = parseFilterDateValue(t.startDate, !1);
+      const endDateValue = parseFilterDateValue(t.endDate, !0);
+      const hasDateFilter = startDateValue !== null || endDateValue !== null;
+      const shouldApplyClientAppFilter = !t.categoryGroup;
+
+      const o = f.filter((a) => {
+        if (
+          !matchesCategoryModeItem(a, {
+            activeCategory:
+              hasActiveCategory && effectiveCategoryLabel !== "All"
+                ? { id: activeCategoryId || null, name: effectiveCategoryLabel }
+                : null,
+            activeCategoryId,
+            activeAppMatcher: shouldApplyClientAppFilter ? activeAppMatcher : null,
+          })
+        ) {
+          return !1;
+        }
+        if (hasActiveSubcategory) {
+          const itemSubcategoryId =
+            a?.subcategory_id ?? a?.subcategoryId ?? a?.subcategoryID ?? null;
+          const itemSubcategoryNameRaw =
+            a?.subcategory_name ??
+            a?.subcategoryName ??
+            a?.subcategory ??
+            "";
+          const itemSubcategoryName = normalizeName(
+            itemSubcategoryNameRaw ||
+              (itemSubcategoryId != null
+                ? subcategoryNameById[String(itemSubcategoryId)] || ""
+                : ""),
+          );
+          const itemHasSubcategory =
+            itemSubcategoryId != null || !!itemSubcategoryName;
+          if (!itemHasSubcategory) {
             return !1;
           }
-          if (hasActiveSubcategory) {
-            const itemSubcategoryId =
-              a?.subcategory_id ?? a?.subcategoryId ?? a?.subcategoryID ?? null;
-            const itemSubcategoryNameRaw =
-              a?.subcategory_name ??
-              a?.subcategoryName ??
-              a?.subcategory ??
-              "";
-            const itemSubcategoryName = normalizeName(
-              itemSubcategoryNameRaw ||
-                (itemSubcategoryId != null
-                  ? subcategoryNameById[String(itemSubcategoryId)] || ""
-                  : ""),
-            );
-            const itemHasSubcategory =
-              itemSubcategoryId != null || !!itemSubcategoryName;
-            if (!itemHasSubcategory) {
-              return !1;
-            }
-            if (activeSubcategoryId && itemSubcategoryId != null) {
-              if (String(itemSubcategoryId) !== String(activeSubcategoryId)) {
-                if (!itemSubcategoryName || itemSubcategoryName !== activeSubcategoryName) {
-                  return !1;
-                }
-              }
-            } else if (activeSubcategoryName) {
+          if (activeSubcategoryId && itemSubcategoryId != null) {
+            if (String(itemSubcategoryId) !== String(activeSubcategoryId)) {
               if (!itemSubcategoryName || itemSubcategoryName !== activeSubcategoryName) {
                 return !1;
               }
-            } else if (activeSubcategoryId) {
+            }
+          } else if (activeSubcategoryName) {
+            if (!itemSubcategoryName || itemSubcategoryName !== activeSubcategoryName) {
               return !1;
             }
+          } else if (activeSubcategoryId) {
+            return !1;
           }
-          if (hasLocationFilter) {
-            const locationValues = [
-              a?.location,
-              a?.city,
-              a?.area,
-              a?.state,
-              a?.country,
-              a?.user?.location,
-              a?.user?.city,
-              a?.seller?.location,
-              a?.seller?.city,
-              a?.seller?.area,
-            ].filter(Boolean);
-            const locationText = normalizeSearchText(locationValues.join(" "));
-            if (!locationText || !locationText.includes(locationFilter)) {
-              return !1;
-            }
+        }
+        if (hasLocationFilter) {
+          const locationValues = [
+            a?.location,
+            a?.city,
+            a?.area,
+            a?.state,
+            a?.country,
+            a?.user?.location,
+            a?.user?.city,
+            a?.seller?.location,
+            a?.seller?.city,
+            a?.seller?.area,
+          ].filter(Boolean);
+          const locationText = normalizeSearchText(locationValues.join(" "));
+          if (!locationText || !locationText.includes(locationFilter)) {
+            return !1;
           }
-          if (hasPriceFilter) {
-            const priceValue = resolvePostPriceValue(a);
-            if (!Number.isFinite(priceValue) || priceValue <= 0) return !1;
-            if (minPriceValue !== null && priceValue < minPriceValue) return !1;
-            if (maxPriceValue !== null && priceValue > maxPriceValue) return !1;
+        }
+        if (hasPriceFilter) {
+          const priceValue = resolvePostPriceValue(a);
+          if (!Number.isFinite(priceValue) || priceValue <= 0) return !1;
+          if (minPriceValue !== null && priceValue < minPriceValue) return !1;
+          if (maxPriceValue !== null && priceValue > maxPriceValue) return !1;
+        }
+        if (hasDateFilter) {
+          const postDateValue = resolvePostDateValue(a);
+          if (postDateValue == null) return !1;
+          if (startDateValue !== null && postDateValue < startDateValue) return !1;
+          if (endDateValue !== null && postDateValue > endDateValue) return !1;
+        }
+        if (hasConditionFilter) {
+          const conditionValue =
+            a?.condition || a?.item_condition || a?.itemCondition || "";
+          if (!matchesConditionFilter(conditionValue, conditionFilter)) {
+            return !1;
           }
-          if (hasDateFilter) {
-            const postDateValue = resolvePostDateValue(a);
-            if (postDateValue == null) return !1;
-            if (startDateValue !== null && postDateValue < startDateValue) return !1;
-            if (endDateValue !== null && postDateValue > endDateValue) return !1;
-          }
-          if (hasConditionFilter) {
-            const conditionValue =
-              a?.condition || a?.item_condition || a?.itemCondition || "";
-            if (!matchesConditionFilter(conditionValue, conditionFilter)) {
-              return !1;
-            }
-          }
-          if (verifiedOnly) {
-            const isVerified = !!(
-              a?.is_verified ||
-              a?.isVerified ||
-              a?.verified ||
-              a?.seller_verified ||
-              a?.sellerVerified ||
-              a?.user?.is_verified ||
-              a?.user?.isVerified ||
-              a?.user?.verified ||
-              a?.aadhaar_verified ||
-              a?.pan_verified
-            );
-            if (!isVerified) return !1;
-          }
-          if (!e) return !0;
-          const n = [];
-          const i = a?.category_id ?? a?.categoryId ?? a?.categoryID ?? null;
-          if (i != null) {
-            const p = categoryNameById[String(i)];
-            p && n.push(p);
-          }
-          const F =
-            a?.subcategory_id ?? a?.subcategoryId ?? a?.subcategoryID ?? null;
-          if (F != null) {
-            const M = subcategoryNameById[String(F)];
-            M && n.push(M);
-          }
-          return matchesSearchQuery(a, e, n);
+        }
+        if (verifiedOnly) {
+          const isVerified = !!(
+            a?.is_verified ||
+            a?.isVerified ||
+            a?.verified ||
+            a?.seller_verified ||
+            a?.sellerVerified ||
+            a?.user?.is_verified ||
+            a?.user?.isVerified ||
+            a?.user?.verified ||
+            a?.aadhaar_verified ||
+            a?.pan_verified
+          );
+          if (!isVerified) return !1;
+        }
+        if (!e) return !0;
+        const l = [];
+        const n = a?.category_id ?? a?.categoryId ?? a?.categoryID ?? null;
+        if (n != null) {
+          const i = categoryNameById[String(n)];
+          i && l.push(i);
+        }
+        const p = a?.subcategory_id ?? a?.subcategoryId ?? a?.subcategoryID ?? null;
+        if (p != null) {
+          const i = subcategoryNameById[String(p)];
+          i && l.push(i);
+        }
+        return matchesSearchQuery(a, e, l);
+      });
+
+      const sortKey = t.sortBy || (latestWindow ? "date_desc" : "");
+      if (!sortKey) return o;
+      const n = [...o];
+      if (sortKey === "price_asc" || sortKey === "price_desc") {
+        n.sort((a, i) => {
+          const p = resolvePostPriceValue(a);
+          const F = resolvePostPriceValue(i);
+          return sortKey === "price_asc" ? p - F : F - p;
         });
-        const sortKey = t.sortBy || (latestWindow ? "date_desc" : "");
-        if (!sortKey) return o;
-        const n = [...o];
-        if (sortKey === "price_asc" || sortKey === "price_desc") {
-          n.sort((a, i) => {
-            const p = resolvePostPriceValue(a);
-            const F = resolvePostPriceValue(i);
-            return sortKey === "price_asc" ? p - F : F - p;
-          });
-          return n;
-        }
-        if (sortKey === "date_asc" || sortKey === "date_desc") {
-          n.sort((a, i) => {
-            const p = resolvePostDateValue(a) || 0;
-            const F = resolvePostDateValue(i) || 0;
-            return sortKey === "date_asc" ? p - F : F - p;
-          });
-          return n;
-        }
-        return o;
-      }, [
+        return n;
+      }
+      if (sortKey === "date_asc" || sortKey === "date_desc") {
+        n.sort((a, i) => {
+          const p = resolvePostDateValue(a) || 0;
+          const F = resolvePostDateValue(i) || 0;
+          return sortKey === "date_asc" ? p - F : F - p;
+        });
+        return n;
+      }
+      return o;
+    }, [
         f,
         t.search,
         t.subcategory,
@@ -4084,5 +4085,3 @@ const ve = 5,
   };
 var Nt = it;
 export { Nt as default };
-
-

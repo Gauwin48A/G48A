@@ -3,6 +3,12 @@ import { Capacitor } from "@capacitor/core";
 import { buildApiPath } from "@/lib/networkConfig";
 import { getDeviceId } from "@/utils/device";
 import { analyzeLocationForSpoofing, recordLocationReading, getLocationTrustScore } from "@/utils/locationGuard";
+import {
+  attachOwner,
+  clearUserCity,
+  isOwnerMatch,
+  writeUserCity,
+} from "@/utils/locationCache";
 const GEO_OPTIONS = {
   enableHighAccuracy: true,
   timeout: 20e3,
@@ -962,11 +968,16 @@ const getRecentCachedLocation = (maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS) => {
       if (!raw) return null;
       try {
         const parsed = JSON.parse(raw);
+        if (!isOwnerMatch(parsed?.ownerKey)) return null;
         const normalized = normalizeLocationShape(parsed, {
           provider: "cached_location",
         });
         if (!normalized) return null;
-        return { ...normalized, originalProvider: parsed?.provider || null };
+        return {
+          ...normalized,
+          ownerKey: parsed?.ownerKey || "",
+          originalProvider: parsed?.provider || null,
+        };
       } catch {
         return null;
       }
@@ -2636,11 +2647,8 @@ export async function captureLocation(userId = null) {
       provider: loc.provider || "browser_gps",
       permission_status: permissionStatus,
     });
-    localStorage.setItem("user_location", JSON.stringify(loc));
-    localStorage.setItem(
-      "mhub_user_city",
-      loc.area || loc.locality || loc.city || "",
-    );
+    localStorage.setItem("user_location", JSON.stringify(attachOwner(loc)));
+    writeUserCity(loc.area || loc.locality || loc.city || "");
     return { ...loc, backend: response };
   } catch (error) {
     console.warn("[LocationService] captureLocation failed:", error.message);
@@ -2650,14 +2658,18 @@ export async function captureLocation(userId = null) {
 export function clearCachedLocation() {
   console.log("[LocationService] Clearing cached location");
   LOCATION_CACHE_KEYS.forEach((key) => localStorage.removeItem(key));
-  localStorage.removeItem("mhub_user_city");
+  clearUserCity();
   runtimeBestLocation = null;
 }
 export function getCachedLocation() {
   try {
     const cached = localStorage.getItem("user_location");
     if (cached) {
-      return JSON.parse(cached);
+      const parsed = JSON.parse(cached);
+      if (!isOwnerMatch(parsed?.ownerKey)) {
+        return null;
+      }
+      return parsed;
     }
   } catch (e) {
     console.error("[LocationService] Failed to parse cached location:", e);
@@ -2732,8 +2744,7 @@ export async function syncLocationToBackend(userId, locationData = null) {
       permission_status: permissionStatus,
       last_active_at: new Date().toISOString(),
     });
-    localStorage.setItem(
-      "mhub_user_city",
+    writeUserCity(
       loc.address?.area ||
         loc.address?.locality ||
         loc.address?.city ||
@@ -2742,7 +2753,7 @@ export async function syncLocationToBackend(userId, locationData = null) {
         loc.city ||
         "",
     );
-    localStorage.setItem("user_location", JSON.stringify(loc));
+    localStorage.setItem("user_location", JSON.stringify(attachOwner(loc)));
     debugLog("Location synced:", loc.address?.city || loc.city || "Unknown");
     return loc;
   } catch (err) {

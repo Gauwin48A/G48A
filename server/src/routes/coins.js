@@ -4,6 +4,7 @@ const coinController = require("../controllers/coinController");
 
 router.get("/balance", authenticateToken, coinController.getBalance);
 router.get("/history", authenticateToken, coinController.getCoinHistory);
+router.get("/rewards-config", coinController.getRewardsConfig); // public — no auth needed
 router.post("/redeem", authenticateToken, coinController.redeemCoins);
 router.get("/engagement", authenticateToken, coinController.getEngagementStatus);
 router.post("/daily-checkin", authenticateToken, coinController.claimDailyCheckIn);

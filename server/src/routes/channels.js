@@ -1026,6 +1026,56 @@ router.post(
 });
 
 /* ------------------------------------------------------------------ */
+/*  PATCH /:channelId/posts/:postId/pin – Pin/unpin a channel post    */
+/* ------------------------------------------------------------------ */
+router.patch("/:channelId/posts/:postId/pin", protect, async (req, res) => {
+  try {
+    const channelId = parseOptionalString(req.params.channelId);
+    const postId = parseOptionalString(req.params.postId);
+    const userId = getUserId(req);
+    const pinned = req.body.pinned !== false;
+
+    if (!channelId || !postId || !userId) {
+      return res.status(400).json({ error: "Invalid parameters" });
+    }
+
+    // Verify ownership
+    const ownerCheck = await runQuery(
+      "SELECT owner_id FROM channels WHERE channel_id::text = $1 LIMIT 1",
+      [channelId],
+    );
+    if (!ownerCheck.rows.length || String(ownerCheck.rows[0].owner_id) !== String(userId)) {
+      return res.status(403).json({ error: "Only the channel owner can pin posts" });
+    }
+
+    // If pinning, unpin any existing pinned post first (max 1 pinned)
+    if (pinned) {
+      await runQuery(
+        "UPDATE channel_posts SET is_pinned = FALSE WHERE channel_id::text = $1 AND is_pinned = TRUE",
+        [channelId],
+      );
+    }
+
+    const result = await runQuery(
+      `UPDATE channel_posts
+       SET is_pinned = $1
+       WHERE post_id::text = $2 AND channel_id::text = $3
+       RETURNING post_id, is_pinned`,
+      [pinned, postId, channelId],
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    res.json({ success: true, postId, pinned: result.rows[0].is_pinned });
+  } catch (err) {
+    logger.error("Error pinning channel post:", err);
+    res.status(500).json({ error: "Failed to update pin status" });
+  }
+});
+
+/* ------------------------------------------------------------------ */
 /*  GET /:channelId/analytics – Owner analytics dashboard             */
 /* ------------------------------------------------------------------ */
 router.get("/:channelId/analytics", protect, async (req, res) => {

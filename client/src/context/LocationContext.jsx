@@ -11,6 +11,12 @@ import {
   sendLocation,
   verifyLocation,
 } from "../services/locationService";
+import {
+  attachOwner,
+  clearUserCity,
+  isOwnerMatch,
+  writeUserCity,
+} from "@/utils/locationCache";
 
 const LOCATION_CACHE_TTL_MS = 30 * 60 * 1000;
 const AUTH_LOCATION_CACHE_TTL_MS = 60 * 1000;
@@ -129,6 +135,7 @@ const normalizeLocation = (location) => {
     street: safeText(location.street || location.address?.street),
     displayName: safeText(location.displayName || location.address?.displayName),
     provider: safeText(location.provider || "browser_gps"),
+    ownerKey: safeText(location.ownerKey || location.owner_key || ""),
     speed: Number(location.speed) || 0,
     timestamp: Number(location.timestamp) || Date.now(),
   };
@@ -143,6 +150,7 @@ const getCachedLocation = (options = {}) => {
     if (!allowStale && ageMs > ttlMs) return null;
     const normalized = normalizeLocation(cached);
     if (!normalized) return null;
+    if (!isOwnerMatch(normalized.ownerKey)) return null;
     if (ageMs > ttlMs) {
       normalized.isStale = true;
     }
@@ -159,18 +167,24 @@ const getCachedLocation = (options = {}) => {
 };
 
 const cacheLocation = (location) => {
-  writeJson("mhub_location", {
-    ...location,
-    timestamp: Date.now(),
-  });
+  writeJson(
+    "mhub_location",
+    attachOwner({
+      ...location,
+      timestamp: Date.now(),
+    }),
+  );
 };
 
 const cacheIpFallbackLocation = (location) => {
-  writeJson(IP_FALLBACK_CACHE_KEY, {
-    ...location,
-    provider: location?.provider || "ip_fallback",
-    timestamp: Date.now(),
-  });
+  writeJson(
+    IP_FALLBACK_CACHE_KEY,
+    attachOwner({
+      ...location,
+      provider: location?.provider || "ip_fallback",
+      timestamp: Date.now(),
+    }),
+  );
 };
 
 const readManualLocation = () => {
@@ -179,11 +193,14 @@ const readManualLocation = () => {
 };
 
 const saveManualLocation = (location) => {
-  writeJson("mhub_manual_location", {
-    ...location,
-    isManual: true,
-    timestamp: Date.now(),
-  });
+  writeJson(
+    "mhub_manual_location",
+    attachOwner({
+      ...location,
+      isManual: true,
+      timestamp: Date.now(),
+    }),
+  );
 };
 
 const clearManualLocation = () => {
@@ -328,6 +345,7 @@ export function LocationProvider({ children }) {
   const [displayName, setDisplayName] = useState(bootstrapLocation?.displayName || "");
   const [provider, setProvider] = useState(bootstrapLocation?.provider || "");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(bootstrapLocation?.timestamp || null);
+  const [isStaleLocation, setIsStaleLocation] = useState(Boolean(bootstrapLocation?.isStale));
 
   const [loading, setLoading] = useState(!bootstrapLocation);
   const [error, setError] = useState(null);
@@ -388,6 +406,7 @@ export function LocationProvider({ children }) {
     setDisplayName(normalized.displayName || buildLocationString(normalized));
     setProvider(normalized.provider);
     setLastUpdatedAt(normalized.timestamp || Date.now());
+    setIsStaleLocation(Boolean(normalized.isStale));
     setLastRefreshedAt(Date.now());
     setPermissionGranted(true);
     setPermissionDenied(false);
@@ -493,7 +512,15 @@ export function LocationProvider({ children }) {
           } else {
             cacheLocation(normalized);
           }
-          localStorage.setItem("mhub_user_city", normalized.colony || normalized.suburb || normalized.village || normalized.locality || normalized.area || normalized.city || "");
+          writeUserCity(
+            normalized.colony ||
+              normalized.suburb ||
+              normalized.village ||
+              normalized.locality ||
+              normalized.area ||
+              normalized.city ||
+              "",
+          );
 
           sendLocationBestEffort({
             ...normalized,
@@ -594,6 +621,7 @@ export function LocationProvider({ children }) {
     setDisplayName("");
     setProvider("");
     setLastUpdatedAt(null);
+    setIsStaleLocation(false);
     setPermissionGranted(false);
     setPermissionDenied(false);
 
@@ -601,7 +629,7 @@ export function LocationProvider({ children }) {
       localStorage.removeItem("mhub_location");
       localStorage.removeItem("mhub_manual_location");
       localStorage.removeItem(IP_FALLBACK_CACHE_KEY);
-      localStorage.removeItem("mhub_user_city");
+      clearUserCity();
     } catch {
       // ignore
     }
@@ -623,7 +651,7 @@ export function LocationProvider({ children }) {
 
       saveManualLocation(normalized);
       cacheLocation(normalized);
-      localStorage.setItem("mhub_user_city", normalized.city || normalized.area || "");
+      writeUserCity(normalized.city || normalized.area || "");
     },
     [setLocationState],
   );
@@ -649,7 +677,7 @@ export function LocationProvider({ children }) {
       const isIpFallback = String(normalized.provider || "").toLowerCase() === "ip_fallback";
       if (isIpFallback) cacheIpFallbackLocation(normalized);
       else cacheLocation(normalized);
-      localStorage.setItem("mhub_user_city", normalized.area || normalized.locality || normalized.city || "");
+      writeUserCity(normalized.area || normalized.locality || normalized.city || "");
       sendLocationBestEffort({ ...normalized, provider: normalized.provider || "browser_gps" });
       setLoading(false);
       return normalized;
@@ -791,6 +819,7 @@ export function LocationProvider({ children }) {
     provider,
     lastUpdatedAt,
     lastRefreshedAt,
+    isStaleLocation,
     isLiveLocation: provider && !String(provider).toLowerCase().includes('cache') && !String(provider).toLowerCase().includes('ip_fallback'),
     isCachedLocation: String(provider).toLowerCase().includes('cache'),
     isIpFallback: String(provider).toLowerCase() === 'ip_fallback',

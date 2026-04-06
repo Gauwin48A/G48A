@@ -59,6 +59,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_referral_rewards_unique
 CREATE INDEX IF NOT EXISTS idx_referral_rewards_referred
   ON referral_rewards(referred_user_id, created_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer_date
+  ON referral_rewards(referrer_id, created_at DESC);
+
 -- 5) user_streaks table
 CREATE TABLE IF NOT EXISTS user_streaks (
   user_id TEXT PRIMARY KEY,

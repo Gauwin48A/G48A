@@ -11,6 +11,7 @@ import {
   useSearchParams as be,
 } from "react-router-dom";
 import { useTranslation as xe } from "react-i18next";
+import { readUserCity } from "@/utils/locationCache";
 import {
   Sparkles as K,
   Lock as pe,
@@ -344,7 +345,7 @@ const te = 12,
       }, []),
       nearMeLocation = J(
         () =>
-          localStorage.getItem("mhub_user_city") ||
+          readUserCity() ||
           localStorage.getItem("city") ||
           b.location ||
           "",
@@ -2684,4 +2685,3 @@ const te = 12,
   };
 var Ve = Ee;
 export { Ve as default };
-
