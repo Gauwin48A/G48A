@@ -1381,7 +1381,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isUnder1000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isUnder1000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1400,7 +1400,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isRange500to2000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isRange500to2000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1419,7 +1419,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isRange2000to10000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isRange2000to10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1438,7 +1438,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isAbove10000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isAbove10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1457,7 +1457,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isPostedTodayFilter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isPostedTodayFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1480,7 +1480,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isLatest10Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isLatest10Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1499,7 +1499,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isLatest50Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isLatest50Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1519,7 +1519,7 @@ const te = 12,
                       type: "button",
                       "data-active": isNearMeFilter ? "true" : "false",
                       disabled: !nearMeLocation,
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         isNearMeFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1538,7 +1538,7 @@ const te = 12,
                     {
                       type: "button",
                       disabled: !_,
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
                         _
                           ? "border-slate-200 bg-white !text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                           : "cursor-not-allowed border-slate-200 bg-slate-100 !text-slate-400 dark:border-slate-600 dark:bg-slate-800/50 dark:!text-slate-500"

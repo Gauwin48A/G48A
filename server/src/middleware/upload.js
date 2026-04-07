@@ -70,7 +70,9 @@ if (isCloudinaryConfigured) {
 const fileFilter = (req, file, cb) => {
   const mimeType = String(file?.mimetype || "").toLowerCase();
 
-  if (mimeType.startsWith("image/")) {
+  if (mimeType === "image/svg+xml") {
+    cb(new Error("SVG files are not allowed due to security risks."));
+  } else if (mimeType.startsWith("image/")) {
     cb(null, true);
   } else if (mimeType.startsWith("audio/")) {
     cb(null, true);

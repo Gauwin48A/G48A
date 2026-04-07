@@ -24,13 +24,13 @@ export default [
     rules: {
       ...reactHooks.configs.recommended.rules,
       ...reactRefresh.configs.vite.rules,
-      'no-unused-vars': 'off',
+      'no-unused-vars': 'warn',
       'react-refresh/only-export-components': 'off',
-      'react-hooks/exhaustive-deps': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
       'no-empty': 'off',
       'no-case-declarations': 'off',
       'no-useless-escape': 'off',
-      'no-debugger': 'off',
+      'no-debugger': 'error',
     },
   },
 ]

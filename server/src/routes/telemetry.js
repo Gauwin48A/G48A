@@ -25,7 +25,7 @@ function resolveTenantId(req) {
 function authorizeReplayRequest(req, res, next) {
   const configuredReplayToken = String(process.env.TELEMETRY_REPLAY_TOKEN || "").trim();
   if (!configuredReplayToken) {
-    return next();
+    return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
 
   const providedReplayToken = String(req.headers["x-telemetry-replay-token"] || "").trim();

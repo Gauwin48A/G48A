@@ -1069,7 +1069,7 @@ const Xe = 2 * 1024 * 1024,
                       "div",
                       {
                         key: r.key,
-                        className: `rounded-lg border px-3 py-2 text-xs transition-all duration-300 dark:border dark:text-xs${r.met ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900" : "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"}`,
+                        className: `rounded-lg border px-3 py-2 text-xs transition-all duration-300 dark:border dark:text-xs ${r.met ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900" : "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"}`,
                       },
                       e.createElement(
                         "p",
@@ -1918,7 +1918,7 @@ const Xe = 2 * 1024 * 1024,
                           "p",
                           {
                             className:
-                              `text-xs mt-1 transition-colors duration-300 dark:text-xs${t.description.trim().length > 900 ? "text-red-500 dark:text-red-400" : t.description.trim().length > 750 ? "text-amber-500 dark:text-amber-400" : "text-gray-500 dark:text-gray-400"}`,
+                              `text-xs mt-1 transition-colors duration-300 dark:text-xs ${t.description.trim().length > 900 ? "text-red-500 dark:text-red-400" : t.description.trim().length > 750 ? "text-amber-500 dark:text-amber-400" : "text-gray-500 dark:text-gray-400"}`,
                           },
                           "Share condition, accessories, and reason for selling. ",
                           t.description.trim().length,
@@ -2014,7 +2014,7 @@ const Xe = 2 * 1024 * 1024,
                       v,
                       {
                         onClick: me,
-                        className: `bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 font-bold px-6 py-3 text-base shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:bg-gradient-to-r dark:text-base${k ? "opacity-60 cursor-not-allowed" : ""}`,
+                        className: `bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 font-bold px-6 py-3 text-base shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:bg-gradient-to-r dark:text-base ${k ? "opacity-60 cursor-not-allowed" : ""}`,
                         disabled: k,
                         style: { minWidth: 140 },
                         "aria-busy": k,

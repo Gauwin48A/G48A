@@ -18,7 +18,7 @@ const router = express.Router();
 function authorizeFleetAdmin(req, res, next) {
   const configuredToken = String(process.env.FLEET_ADMIN_TOKEN || "").trim();
   if (!configuredToken) {
-    return next();
+    return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-fleet-admin-token"] || "").trim();
   if (providedToken !== configuredToken) {

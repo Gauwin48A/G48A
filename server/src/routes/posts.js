@@ -147,7 +147,7 @@ router.get("/search-v2", async (req, res) => {
     });
   } catch (error) {
     logger.error("[Posts] search-v2 error:", error);
-    res.status(500).json({ error: "Search failed", details: error.message });
+    res.status(500).json({ error: "Search failed" });
   }
 });
 
@@ -257,7 +257,7 @@ router.get("/nearby-v2", async (req, res) => {
     logger.error("[Posts] nearby-v2 error:", error);
     res
       .status(500)
-      .json({ error: "Nearby search failed", details: error.message });
+      .json({ error: "Nearby search failed" });
   }
 });
 

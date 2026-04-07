@@ -17,6 +17,6 @@ module.exports = async (req, res, next) => {
     next();
   } catch (err) {
     logger.error('[validatePost] Validation failed:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

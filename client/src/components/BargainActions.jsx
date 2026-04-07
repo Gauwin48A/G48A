@@ -8,10 +8,8 @@ import {
   HandCoins,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getApiOriginBase } from "@/lib/networkConfig";
+import api from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-
-const API_BASE = getApiOriginBase();
 
 const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
   const { toast } = useToast();
@@ -47,34 +45,19 @@ const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
       setSending(true);
 
       try {
-        const token =
-          localStorage.getItem("authToken") ||
-          localStorage.getItem("token");
-
-        const response = await fetch(`${API_BASE}/api/offers`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            post_id: post.post_id || post.id,
-            seller_id: post.user_id,
-            offer_amount: amount,
-            original_price: basePrice,
-            discount_percent: discountPercent,
-            message: `\u26A1 OFFER: I want to buy "${post.title}" for \u20B9${amount.toLocaleString("en-IN")}`,
-          }),
+        const response = await api.post("/offers", {
+          post_id: post.post_id || post.id,
+          seller_id: post.user_id,
+          offer_amount: amount,
+          original_price: basePrice,
+          discount_percent: discountPercent,
+          message: `\u26A1 OFFER: I want to buy "${post.title}" for \u20B9${amount.toLocaleString("en-IN")}`,
         });
 
-        if (response.ok) {
+        if (response) {
           setOfferSent(true);
           setSentAmount(amount);
           navigator.vibrate && navigator.vibrate(50);
-        } else {
-          const data = await response.json();
-          toast({ description: data.message || "Failed to send offer", variant: "destructive" });
         }
       } catch (err) {
         console.error("Offer error:", err);

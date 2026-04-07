@@ -185,6 +185,10 @@ const CentreListingsPage = lazyWithRetry(
   () => import("./pages/CentreListings.jsx"),
   "CentreListings",
 );
+const NotFoundPage = lazyWithRetry(
+  () => import("./pages/NotFound.jsx"),
+  "NotFound",
+);
 
 function RouteBoundary() {
   return (
@@ -447,7 +451,7 @@ function AppShell() {
                   <Route path="/payment" element={<RequireAuth><PaymentPage /></RequireAuth>} />
                   <Route path="/offers" element={<OffersPage />} />
                   <Route path="/reviews/:userId" element={<ReviewsPage />} />
-                  <Route path="*" element={<Navigate to="/category-hub" replace />} />
+                  <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Routes>
             </Suspense>

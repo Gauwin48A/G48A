@@ -104,14 +104,13 @@ const Z = () => {
       }
     },
     Q = async (r) => {
-      if (window.confirm("Delete this saved search?"))
-        try {
-          await h.delete(`/saved-searches/${r}`),
-            m((a) => a.filter((o) => o.search_id !== r)),
-            l("Search deleted");
-        } catch {
-          l("Failed to delete", "error");
-        }
+      try {
+        await h.delete(`/saved-searches/${r}`),
+          m((a) => a.filter((o) => o.search_id !== r)),
+          l("Search deleted");
+      } catch {
+        l("Failed to delete", "error");
+      }
     },
     I = async (r) => {
       try {

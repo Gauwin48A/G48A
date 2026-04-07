@@ -12,7 +12,7 @@ router.get("/trending", feedController.getTrendingPosts);
 router.get("/random", feedController.getRandomFeed);
 router.get("/nearby", feedController.getNearbyFeed);
 router.get("/search", feedController.searchPosts);
-router.post("/impression", feedController.trackImpression);
+router.post("/impression", optionalAuth, feedController.trackImpression);
 router.post("/add", protect, async (req, res) => {
   try {
     const userId = req.user?.id || req.user?.userId || req.user?.user_id;
@@ -82,7 +82,7 @@ router.post("/add", protect, async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 module.exports = router;

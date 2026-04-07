@@ -1180,7 +1180,7 @@ const Ve = 5,
                           oe,
                           {
                             className:
-                              `w-11 h-11 shrink-0 bg-gradient-to-br dark:bg-gradient-to-br${getAvatarGradient(
+                              `w-11 h-11 shrink-0 bg-gradient-to-br dark:bg-gradient-to-br ${getAvatarGradient(
                                 sellerName || r,
                               )}`,
                           },
