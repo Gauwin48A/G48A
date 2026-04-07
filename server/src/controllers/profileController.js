@@ -739,7 +739,7 @@ exports.updatePreferences = async (req, res) => {
     });
   } catch (err) {
     logger.error("Error updating preferences:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -803,6 +803,6 @@ exports.uploadAvatar = async (req, res) => {
     return res.json({ avatar_url: result.rows[0].avatar_url });
   } catch (err) {
     logger.error("Error uploading avatar:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

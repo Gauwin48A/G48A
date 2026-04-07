@@ -34,6 +34,8 @@ const parseStoredBoolean = (rawValue, fallback = false) => {
 };
 
 const LAYOUT_STORAGE_KEY = 'mhub_layout_preview_mode';
+const LAYOUT_USER_KEY = 'mhub_layout_preview_user';
+const LAYOUT_SESSION_KEY = 'mhub_layout_preview_session';
 const LAYOUT_PRESETS = [
   { key: 'mobile', labelKey: 'mobile', icon: FiSmartphone, width: 390, height: 844 },
   { key: 'tablet', labelKey: 'tablet', icon: FiTablet, width: 834, height: 1112 },
@@ -68,7 +70,6 @@ const GreenNavbar = () => {
     { key: 'plans', path: '/tier-selection', icon: FiStar, group: 'trade' },
     { key: 'centre', path: '/centre', icon: FiUser, group: 'trade', label: t('centre_page', { defaultValue: 'CentrePage' }) },
     { key: 'nearby', path: '/nearby', icon: FiMapPin, group: 'trade' },
-    { key: 'category_mode', path: '/category-mode', icon: FiNavigation, group: 'trade', label: t('category_mode', { defaultValue: 'Category mode' }) },
     { key: 'subcategories', path: '/subcategories', icon: FiGrid, group: 'trade' },
     { key: 'chat', path: '/chat', icon: FiMessageCircle, group: 'social' },
     { key: 'feedback', path: '/feedback', icon: FiStar, group: 'social' },
@@ -85,7 +86,6 @@ const GreenNavbar = () => {
     { key: 'feed', path: '/feed', icon: <FiFileText />, matchPaths: ['/feed'] },
     { key: 'rewards', path: '/rewards', icon: <FiUserCheck />, matchPaths: ['/rewards'] },
     { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile'] },
-    { key: 'more', path: '#', icon: <FiMenu /> },
   ];
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -170,7 +170,30 @@ const GreenNavbar = () => {
 
   // Dark mode is now managed by ThemeContext
 
+  const hasLayoutUserOverride = () => {
+    try {
+      return (
+        localStorage.getItem(LAYOUT_USER_KEY) === '1' ||
+        sessionStorage.getItem(LAYOUT_SESSION_KEY) === '1'
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const markLayoutUserOverride = () => {
+    try {
+      localStorage.setItem(LAYOUT_USER_KEY, '1');
+      sessionStorage.setItem(LAYOUT_SESSION_KEY, '1');
+    } catch {}
+  };
+
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (layoutMode !== 'desktop' && window.innerWidth >= 1100 && !hasLayoutUserOverride()) {
+      setLayoutMode('desktop');
+      return;
+    }
     document.documentElement.setAttribute('data-layout-preview', layoutMode);
     document.body?.setAttribute('data-layout-preview', layoutMode);
     localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode);
@@ -254,6 +277,7 @@ const GreenNavbar = () => {
       currentIndex === -1
         ? LAYOUT_PRESETS[0]
         : LAYOUT_PRESETS[(currentIndex + 1) % LAYOUT_PRESETS.length];
+    markLayoutUserOverride();
     setLayoutMode(nextPreset.key);
   };
 
@@ -288,6 +312,7 @@ const GreenNavbar = () => {
   const handleLayoutModeChange = (modeKey) => {
     const next = LAYOUT_PRESETS.find((preset) => preset.key === modeKey);
     if (!next) return;
+    markLayoutUserOverride();
     setLayoutMode(next.key);
     setIsLayoutMenuOpen(false);
   };
@@ -1236,116 +1261,6 @@ const GreenNavbar = () => {
         // Blank blue ribbon for other pages
         hideTopRibbon ? null : <div ref={topRibbonRef} className="h-14 w-full mhub-top-ribbon" />
       )}
-
-      {/* More Menu Fullscreen Overlay */}
-      {
-        moreOpen && (
-          <div className="mhub-more-overlay fixed inset-0 z-[1000]">
-            <div
-              className="mhub-more-overlay-bg absolute inset-0 bg-black/30 backdrop-blur-sm"
-              onClick={closeMoreMenu}
-              aria-hidden="true"
-            />
-            {/* Right-side vertical sliding pane, with improved highlight and shadow */}
-            <div
-              className="mhub-more-panel absolute top-0 right-0 z-[1010] h-full w-80 max-w-full overflow-y-auto mhub-premium-surface p-8 pb-24 shadow-2xl ring-4 ring-blue-400 ring-opacity-80 animate-slideInRight dark:ring-yellow-400"
-              style={{ transition: 'transform 0.3s' }}
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-label={t('more_options', { defaultValue: 'More options' })}
-            >
-              <button
-                type="button"
-                className="mhub-more-close absolute top-3 right-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-gray-700 dark:hover:text-yellow-400"
-                aria-label={t('close', { defaultValue: 'Close' })}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  closeMoreMenu();
-                }}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  closeMoreMenu();
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-              <h2 className="text-2xl font-bold text-blue-600 dark:text-yellow-300 mb-4 drop-shadow-lg">{t('more_options')}</h2>
-              {(() => {
-                const restrictedKeys = ['sell', 'centre', 'chat', 'verification', 'feedback', 'complaints', 'dashboard', 'admin_panel'];
-                const groupLabels = { trade: t('trade', { defaultValue: 'Trade' }), social: t('social', { defaultValue: 'Social' }), account: t('account', { defaultValue: 'Account' }) };
-                const filtered = moreMenuLinks.filter(link => {
-                  if (isLoggedIn && (link.key === 'login' || link.key === 'signup')) return false;
-                  return true;
-                });
-                let lastGroup = null;
-                return filtered.map(link => {
-                  const isRestricted = !isLoggedIn && restrictedKeys.includes(link.key);
-                  const LinkIcon = link.icon;
-                  const showGroupHeader = link.group !== lastGroup;
-                  lastGroup = link.group;
-                  return (
-                    <React.Fragment key={link.key}>
-                      {showGroupHeader && (
-                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-2 pt-2 pb-1 mt-1">
-                          {groupLabels[link.group] || link.group}
-                        </p>
-                      )}
-                      <Link
-                        to={isRestricted ? '#' : link.path}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-base shadow transition-all duration-150 ${isRestricted ? 'opacity-50 cursor-not-allowed bg-[var(--chip-bg)]' : ''}`}
-                        onClick={(e) => {
-                          if (isRestricted) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toast({
-                              description: t('login_required', { defaultValue: 'Please login to access this feature' }),
-                              variant: "destructive",
-                            });
-                          } else {
-                            closeMoreMenu();
-                          }
-                        }}
-                        tabIndex={0}
-                      >
-                        {isRestricted
-                          ? <FiLock className="w-4 h-4 text-gray-400 shrink-0" />
-                          : LinkIcon && <LinkIcon className="w-4 h-4 shrink-0" />}
-                        {link.label || t(link.key)}
-                      </Link>
-                    </React.Fragment>
-                  );
-                });
-              })()}
-              {isLoggedIn && (
-                <button
-                  className="block w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-semibold text-center text-base shadow transition-colors duration-150"
-                  onClick={handleLogout}
-                >
-                  {t('logout', { defaultValue: 'Logout' })}
-                </button>
-              )}
-              {/* Accessibility: Font Size Toggle */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">♿ {t('accessibility', { defaultValue: 'Accessibility' })}</p>
-                <button
-                  className={`block w-full px-4 py-3 rounded-lg font-semibold text-center text-base shadow transition-all duration-150 ${largeFont ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                  onClick={() => setLargeFont(!largeFont)}
-                  title={largeFont ? "Switch to normal font size" : "Increase font size for easier reading"}
-                >
-                  {largeFont ? (t('normal_size', { defaultValue: '🔤 Normal Size' })) : (t('larger_text', { defaultValue: '🔠 Larger Text' }))}
-                  <span className="block text-xs font-normal opacity-75 mt-1">
-                    {largeFont ? (t('using_large_fonts', { defaultValue: 'Currently using large fonts' })) : (t('easier_to_read', { defaultValue: 'Easier to read for everyone' }))}
-                  </span>
-                </button>
-              </div>
-              <button className="mt-4 px-4 py-2 bg-blue-600 dark:bg-yellow-400 text-white dark:text-gray-900 rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-yellow-500 shadow transition-colors duration-150" onClick={closeMoreMenu}>{t('close')}</button>
-            </div>
-          </div>
-        )
-      }
 
       {/* --- Bottom Navbar: hidden on auth-only pages --- */}
       {!isAuthPage && <nav className="mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-between items-center px-2 py-1 animate-fadeIn" role="navigation" aria-label={t('bottom_navigation')}>

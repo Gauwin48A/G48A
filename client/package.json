@@ -39,6 +39,7 @@
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "dompurify": "^3.3.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-chained-backend": "^4.6.3",
     "i18next-http-backend": "^3.0.2",

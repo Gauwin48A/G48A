@@ -39,7 +39,8 @@ const validationGuard = (req, res, next) => {
 
 const LOCALHOST_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 const ALLOW_LOCALHOST_AUTH_BYPASS =
-  String(process.env.AUTH_RATE_LIMIT_BYPASS_LOCALHOST || "true").toLowerCase() ===
+  process.env.NODE_ENV !== "production" &&
+  String(process.env.AUTH_RATE_LIMIT_BYPASS_LOCALHOST || "false").toLowerCase() ===
   "true";
 
 const resolveHostname = (req) => {

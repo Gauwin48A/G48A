@@ -45,7 +45,7 @@ const W = ({ variant = "channel" } = {}) => {
       return raw ? String(raw).trim() : "";
     }, [S.search]),
     userTier = String(L?.current_plan || L?.tier || "").toLowerCase(),
-    isPremium = !0, // TODO: remove override once payments/tiers are enforced
+    isPremium = ["premium", "pro", "business"].includes(userTier),
     [l, F] = s(""),
     [u, P] = s(""),
     [o, H] = s(""),

@@ -419,7 +419,7 @@ const safeNum = (val) => {
                                     },
                                     React.createElement(
                                       Badge,
-                                      { className: `border dark:border${getRankStyle(seller.rank)}` },
+                                      { className: `border dark:border ${getRankStyle(seller.rank)}` },
                                       React.createElement(
                                         "div",
                                         {

@@ -883,7 +883,7 @@ exports.getUserPosts = async (req, res) => {
     res.json({ posts: enrichedPosts, total, page: pageNumber, limit: limitNumber });
   } catch (err) {
     logError("[getUserPosts] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -989,7 +989,7 @@ exports.getUserPostTotals = async (req, res) => {
     res.json({ totals });
   } catch (err) {
     logError("[getUserPostTotals] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1100,7 +1100,7 @@ exports.getAllPosts = async (req, res) => {
     res.json({ posts: enrichedPosts, total, page: pageNumber, limit: limitNumber });
   } catch (err) {
     logError("Error fetching posts:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1507,7 +1507,7 @@ exports.getPostById = async (req, res) => {
     res.json({ post: enrichedPost || post });
   } catch (err) {
     logError("Error fetching post by ID:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1573,7 +1573,7 @@ exports.getNearbyPosts = async (req, res) => {
     });
   } catch (err) {
     logError("[getNearbyPosts] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1605,7 +1605,7 @@ exports.getUserTrustScore = async (req, res) => {
     res.json(payload);
   } catch (err) {
     logError("[getUserTrustScore] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1682,7 +1682,7 @@ exports.getSimilarPosts = async (req, res) => {
     });
   } catch (err) {
     logError("[SimilarPosts] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1857,7 +1857,7 @@ exports.markAsSold = async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     logError("[MarkAsSold] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   } finally {
     client.release();
   }
@@ -1932,7 +1932,7 @@ exports.reactivatePost = async (req, res) => {
     });
   } catch (err) {
     logError("[Reactivate] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -1950,7 +1950,7 @@ exports.deletePost = async (req, res) => {
     }
 
     const postCheck = await runQuery(
-      "SELECT post_id, user_id FROM posts WHERE post_id = $1",
+      "SELECT post_id, user_id, images FROM posts WHERE post_id = $1",
       [id]
     );
 
@@ -1969,11 +1969,25 @@ exports.deletePost = async (req, res) => {
       [id]
     );
 
+    // Async file cleanup — fire-and-forget to avoid blocking the response
+    const postImages = postCheck.rows[0].images;
+    if (postImages) {
+      const { resolveUploadsFilePath } = require("../utils/uploads");
+      const fs = require("fs").promises;
+      const imageList = Array.isArray(postImages) ? postImages : [];
+      for (const imgPath of imageList) {
+        const filePath = resolveUploadsFilePath(imgPath);
+        if (filePath) {
+          fs.unlink(filePath).catch(() => {});
+        }
+      }
+    }
+
     logInfo(`[DeletePost] Post ${id} deleted by user ${userId}`);
 
     res.json({ success: true, message: "Post deleted", post_id: id });
   } catch (err) {
     logError("[DeletePost] Error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Bell, BellOff, Check } from 'lucide-react';
 import api from '../lib/api';
 import { getAccessToken } from '@/utils/authStorage';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * PriceAlertButton - Subscribe to price drop notifications
@@ -15,12 +16,13 @@ const PriceAlertButton = ({ postId, initialSubscribed = false }) => {
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const successTimeoutRef = useRef(null);
+    const { toast } = useToast();
 
     useEffect(() => () => clearTimeout(successTimeoutRef.current), []);
 
     const handleToggle = async () => {
         if (!getAccessToken()) {
-            alert('Please login to set price alerts');
+            toast({ description: 'Please login to set price alerts', variant: 'destructive' });
             return;
         }
 

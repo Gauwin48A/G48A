@@ -233,7 +233,7 @@ exports.getWishlist = async (req, res) => {
     });
   } catch (err) {
     logger.error("[Wishlist] Get error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -272,7 +272,7 @@ exports.addToWishlist = async (req, res) => {
     res.status(201).json({ message: "Added to wishlist", item: result.rows[0] });
   } catch (err) {
     logger.error("[Wishlist] Add error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -298,7 +298,7 @@ exports.removeFromWishlist = async (req, res) => {
     res.json({ message: "Removed from wishlist" });
   } catch (err) {
     logger.error("[Wishlist] Remove error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -324,6 +324,6 @@ exports.checkWishlist = async (req, res) => {
     res.json({ inWishlist: result.rows.length > 0 });
   } catch (err) {
     logger.error("[Wishlist] Check error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

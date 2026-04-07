@@ -474,8 +474,8 @@ const Wishlist = () => {
   const gridClassName = isListView
     ? "grid-cols-1"
     : displayItems.length <= 2
-      ? "grid-cols-1 sm:grid-cols-2 max-w-2xl"
-      : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+      ? "grid-cols-1 sm:grid-cols-2 max-w-5xl"
+      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3";
 
   const removeSelected = useCallback(async () => {
     const ids = Array.from(selectedIds);
@@ -584,8 +584,8 @@ const Wishlist = () => {
       <div className="absolute top-96 -right-40 w-[28rem] h-[28rem] bg-purple-200/20 dark:bg-purple-500/5 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/20" />
       <div className="absolute bottom-40 left-1/3 w-80 h-80 bg-rose-100/20 dark:bg-rose-500/5 rounded-full blur-3xl pointer-events-none dark:bg-rose-950/20" />
 
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 profile-hero-bg" />
+      <div className="relative overflow-hidden" style={{ minHeight: "180px" }}>
+        <div className="absolute inset-0 profile-hero-bg" style={{ background: "linear-gradient(90deg, rgba(14,165,233,0.96) 0%, rgba(59,130,246,0.96) 50%, rgba(139,92,246,0.96) 100%)" }} />
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -593,8 +593,8 @@ const Wishlist = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <div className="relative max-w-6xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
-          <div className="mb-3 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+        <div className="relative max-w-[92rem] mx-auto px-4 py-4 sm:px-6 sm:py-5 page-shell page-pad">
+          <div className="mb-2 max-w-4xl text-left dark:text-left mhub-hero-card min-h-[116px] sm:min-h-[132px] rounded-2xl px-4 py-3.5 sm:px-6 sm:py-4.5">
             <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
               <button
                 type="button"
@@ -651,7 +651,7 @@ const Wishlist = () => {
       </div>
 
       {/* ── subheader ── */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 pt-5 pb-1 sm:px-6 lg:px-8 page-shell page-pad">
+      <div className="relative z-10 max-w-[92rem] mx-auto px-4 pt-3 pb-0.5 sm:px-6 lg:px-8 page-shell page-pad">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-7 h-7 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center shadow-sm shadow-pink-500/20 dark:bg-gradient-to-br">
             <Heart className="w-3.5 h-3.5 text-white fill-white shrink-0 dark:text-white" />
@@ -829,10 +829,10 @@ const Wishlist = () => {
       </div>
 
       {/* ── main content ── */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4 page-shell page-pad">
+      <div className="relative z-10 max-w-[92rem] mx-auto px-4 sm:px-6 lg:px-8 pt-1.5 pb-4 page-shell page-pad">
         {loading ? (
           /* ── loading skeleton ── */
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4">
             {[...Array(8)].map((_, idx) => (
               <div
                 key={idx}

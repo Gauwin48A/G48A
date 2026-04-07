@@ -272,7 +272,7 @@ const envCorsOrigins = parseOriginList(
 );
 
 const configuredCorsOrigins = new Set(
-  [process.env.CLIENT_URL, ...envCorsOrigins, ...defaultCorsOrigins]
+  [process.env.CLIENT_URL, ...envCorsOrigins, ...(isDevelopment ? defaultCorsOrigins : [])]
     .map((origin) => sanitizeOrigin(origin))
     .filter(Boolean)
 );

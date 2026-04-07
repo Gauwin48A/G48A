@@ -26,6 +26,6 @@ exports.getSaleUndone = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     logger.error('Error fetching saleundone posts:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
