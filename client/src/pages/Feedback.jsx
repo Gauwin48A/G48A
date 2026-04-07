@@ -143,7 +143,7 @@ const me = () => {
       }
       y(!0);
       try {
-        const l = await api.post("/api/feedback", {
+        const l = await api.post("/feedback", {
             subject: o.subject,
             message: o.message,
             rating: o.rating,
@@ -315,15 +315,15 @@ const me = () => {
           { className: "absolute inset-0 pointer-events-none" },
           e.createElement("div", {
             className:
-              "absolute top-20 left-10 w-72 h-72 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-3xl animate-pulse dark:bg-blue-800/10",
+              "absolute top-20 left-10 w-72 h-72 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-2xl opacity-60 dark:bg-blue-800/10",
           }),
           e.createElement("div", {
             className:
-              "absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 dark:bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000 dark:bg-purple-800/10",
+              "absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 dark:bg-purple-500/20 rounded-full blur-2xl opacity-60 dark:bg-purple-800/10",
           }),
           e.createElement("div", {
             className:
-              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl dark:bg-indigo-800/5",
+              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-2xl dark:bg-indigo-800/5",
           }),
         ),
         e.createElement(
@@ -476,7 +476,7 @@ const me = () => {
               },
               e.createElement(
                 G,
-                { className: "flex items-center space-x-3 text-2xl dark:text-2xl" },
+                { className: "flex items-center space-x-3 text-2xl" },
                 e.createElement(
                   "div",
                   {
@@ -489,7 +489,7 @@ const me = () => {
               ),
               e.createElement(
                 Y,
-                { className: "text-blue-100 text-base mt-2 dark:text-blue-200 dark:text-base" },
+                { className: "text-blue-100 text-base mt-2 dark:text-blue-200" },
                 t("opinion_matters"),
               ),
             ),
@@ -512,7 +512,7 @@ const me = () => {
                       p,
                       {
                         className:
-                          "text-sm font-bold text-gray-700 dark:text-gray-200 block dark:text-sm",
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 block",
                       },
                       t("feedback_category"),
                     ),
@@ -687,7 +687,7 @@ const me = () => {
                     p,
                     {
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     t("overall_rating"),
                   ),
@@ -706,7 +706,7 @@ const me = () => {
                       "span",
                       {
                         className:
-                          "ml-4 text-base font-semibold text-gray-700 dark:text-gray-200 dark:text-base",
+                          "ml-4 text-base font-semibold text-gray-700 dark:text-gray-200",
                       },
                       o.rating,
                       " / 5",
@@ -721,7 +721,7 @@ const me = () => {
                     {
                       htmlFor: "subject",
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     t("subject"),
                     " *",
@@ -734,7 +734,7 @@ const me = () => {
                     onChange: C,
                     placeholder: t("brief_summary"),
                     className:
-                      "h-12 text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors dark:text-base dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                      "h-12 text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
                     required: !0,
                   }),
                 ),
@@ -746,7 +746,7 @@ const me = () => {
                     {
                       htmlFor: "message",
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     t("your_feedback"),
                     " *",
@@ -759,7 +759,7 @@ const me = () => {
                     placeholder: t("share_detailed_feedback"),
                     rows: 6,
                     className:
-                      "text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors resize-none dark:text-base dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                      "text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors resize-none dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
                     required: !0,
                   }),
                 ),
@@ -769,7 +769,7 @@ const me = () => {
                     type: "submit",
                     disabled: N,
                     className:
-                      "w-full h-14 text-base font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:shadow-blue-500/50 hover:scale-[1.01] dark:text-base dark:bg-gradient-to-r",
+                      "w-full h-14 text-base font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:shadow-blue-500/50 hover:scale-[1.01] dark:bg-gradient-to-r",
                   },
                   N
                     ? e.createElement(
@@ -817,7 +817,7 @@ const me = () => {
                 e.createElement(
                   "p",
                   {
-                    className: "text-sm text-blue-800 dark:text-blue-300 mb-1 dark:text-sm dark:text-blue-200",
+                    className: "text-sm text-blue-800 dark:text-blue-300 mb-1 dark:text-blue-200",
                   },
                   tr("latest_feedback_reference", "Latest feedback reference"),
                 ),
@@ -825,7 +825,7 @@ const me = () => {
                   "p",
                   {
                     className:
-                      "font-mono text-lg font-bold text-blue-900 dark:text-blue-200 dark:text-lg",
+                      "font-mono text-lg font-bold text-blue-900 dark:text-blue-200",
                   },
                   u,
                 ),
@@ -834,7 +834,7 @@ const me = () => {
                     "p",
                     {
                       className:
-                        "text-xs text-blue-700 dark:text-blue-300 mt-1 dark:text-xs",
+                        "text-xs text-blue-700 dark:text-blue-300 mt-1",
                     },
                     tr("submitted", "Submitted"),
                     " ",
@@ -1280,12 +1280,12 @@ const me = () => {
                 { className: "flex-1" },
                 e.createElement(
                   "h3",
-                  { className: "text-xl font-bold text-gray-900 dark:text-xl dark:text-gray-100" },
+                  { className: "text-xl font-bold text-gray-900 dark:text-gray-100" },
                   t("login") || "Login",
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-gray-500 text-sm dark:text-gray-300 dark:text-sm" },
+                  { className: "text-gray-500 text-sm dark:text-gray-300" },
                   t("login_desc") || "Already have an account? Sign in here",
                 ),
               ),
@@ -1315,12 +1315,12 @@ const me = () => {
                 { className: "flex-1" },
                 e.createElement(
                   "h3",
-                  { className: "text-xl font-bold text-white dark:text-xl dark:text-white" },
+                  { className: "text-xl font-bold text-white dark:text-white" },
                   t("signup") || "Create Account",
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-white/70 text-sm dark:text-white/70 dark:text-sm" },
+                  { className: "text-white/70 text-sm dark:text-white/70" },
                   t("signup_desc") || "New user? Join us in just a few steps",
                 ),
               ),

@@ -237,3 +237,11 @@ html[data-theme="dark"] .gallery-thumb.active {
 html[data-theme="dark"] .gallery-thumb:hover:not(.active) {
     border-color: var(--border);
 }
+
+html[data-theme="dark"] .gallery-counter {
+    background: rgba(0, 0, 0, 0.75);
+}
+
+html[data-theme="dark"] .lightbox-counter {
+    color: rgba(255, 255, 255, 0.85);
+}

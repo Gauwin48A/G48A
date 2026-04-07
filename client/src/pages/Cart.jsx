@@ -272,7 +272,7 @@ const Cart = () => {
       {/* Info banner */}
       {items.length > 0 && (
         <div className="bg-amber-50/80 dark:bg-amber-950/30 border-b border-amber-100 dark:border-amber-900/40 backdrop-blur-sm dark:bg-amber-950/80 dark:border-b dark:border-amber-600/40">
-          <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2 max-w-6xl mx-auto px-4 py-2.5 dark:text-xs dark:text-amber-300">
+          <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2 max-w-6xl mx-auto px-4 py-2.5 dark:text-amber-300">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 flex-shrink-0 dark:bg-amber-950/20">
               <Info className="w-3 h-3" />
             </span>
@@ -299,7 +299,7 @@ const Cart = () => {
                 <ShoppingCart className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-white font-semibold text-sm tracking-wide dark:text-white dark:text-sm">
+                <p className="text-white font-semibold text-sm tracking-wide dark:text-white">
                   {displaySummary.itemCount ?? displayCount}{" "}
                   {(displaySummary.itemCount ?? displayCount) === 1
                     ? t("item") || "item"
@@ -307,7 +307,7 @@ const Cart = () => {
                   <span className="ml-2 text-blue-100 font-normal dark:text-blue-200">
                     &middot;
                   </span>
-                  <span className="ml-2 text-white font-bold text-base dark:text-white dark:text-base">
+                  <span className="ml-2 text-white font-bold text-base dark:text-white">
                     {mixedCurrency
                       ? t("multi_currency") || "Multi-currency"
                       : formatCurrency(displaySubtotalValidated, currency)}
@@ -367,17 +367,17 @@ const Cart = () => {
                 <div className="absolute bottom-3 -left-2 w-2.5 h-2.5 bg-blue-400 rounded-full opacity-40 animate-[bounce_3s_ease-in-out_infinite_0.5s] dark:bg-blue-800/30" />
                 <div className="absolute top-8 -left-1 w-2 h-2 bg-indigo-300 rounded-full opacity-50 dark:bg-indigo-900/30" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3 dark:text-2xl dark:text-slate-100">
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3 dark:text-slate-100">
                 {t("cart_empty_title") || "Your cart is empty"}
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 max-w-[300px] mx-auto leading-relaxed text-center dark:text-sm dark:text-slate-300 dark:text-center">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 max-w-[300px] mx-auto leading-relaxed text-center dark:text-slate-300 dark:text-center">
                 {t("cart_empty_desc") ||
                   "Explore listings and add items you'd like to purchase."}
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <Button
                   asChild
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-8 h-12 text-sm font-semibold shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0 dark:bg-gradient-to-r dark:text-white dark:text-sm"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl px-8 h-12 text-sm font-semibold shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0 dark:bg-gradient-to-r dark:text-white"
                 >
                   <Link to="/all-posts">
                     <ShoppingBag className="w-4 h-4 mr-2" />
@@ -387,7 +387,7 @@ const Cart = () => {
                 <Button
                   asChild
                   variant="outline"
-                  className="border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 rounded-xl px-6 h-12 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-200 dark:border-slate-700 dark:text-slate-200 dark:text-sm dark:hover:bg-slate-950"
+                  className="border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 rounded-xl px-6 h-12 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-200 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-950"
                 >
                   <Link to="/wishlist">
                     <Heart className="w-4 h-4 mr-2" />
@@ -403,15 +403,15 @@ const Cart = () => {
           <div className="mhub-premium-surface rounded-2xl p-4 md:p-6">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-100 dark:border-gray-700/60 dark:border-b dark:border-slate-700">
-                  <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest dark:text-xs dark:text-slate-300">
+                  <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest dark:text-slate-300">
                     {t("cart_items") || "Cart Items"}
                   </h2>
-                  <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-gray-700/60 px-2.5 py-1 rounded-full font-medium dark:text-xs dark:text-slate-300 dark:bg-slate-950">
+                  <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-gray-700/60 px-2.5 py-1 rounded-full font-medium dark:text-slate-300 dark:bg-slate-950">
                     {displayCount} {displayCount === 1 ? "item" : "items"}
                   </span>
                 </div>
                 {cartError && (
-                  <div className="rounded-xl border border-red-200/70 dark:border-red-800/40 bg-red-50/70 dark:bg-red-950/20 p-3 text-xs text-red-600 dark:text-red-300 dark:text-xs">
+                  <div className="rounded-xl border border-red-200/70 dark:border-red-800/40 bg-red-50/70 dark:bg-red-950/20 p-3 text-xs text-red-600 dark:text-red-300">
                     {cartError}
                   </div>
                 )}
@@ -487,7 +487,7 @@ const Cart = () => {
                           }}
                         />
                         {item.category_name && (
-                          <Badge className="absolute top-2 left-2 bg-black/60 text-white border-0 text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm font-medium dark:bg-black/60 dark:text-white dark:border-0 dark:text-[10px]">
+                          <Badge className="absolute top-2 left-2 bg-black/60 text-white border-0 text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm font-medium dark:bg-black/60 dark:text-white dark:border-0">
                             {item.category_name}
                           </Badge>
                         )}
@@ -496,7 +496,7 @@ const Cart = () => {
                       {/* Details */}
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <h3
-                          className="font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 text-[15px] dark:text-slate-100 dark:hover:text-indigo-300 dark:text-[15px]"
+                          className="font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 text-[15px] dark:text-slate-100 dark:hover:text-indigo-300"
                           onClick={() =>
                             (item.post_id || item.id) &&
                             navigate(`/post/${item.post_id || item.id}`)
@@ -504,7 +504,7 @@ const Cart = () => {
                         >
                           {item.title}
                         </h3>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5 dark:text-xs dark:text-slate-300">
+                        <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5 dark:text-slate-300">
                           <span>{item.seller || t("seller") || "Seller"}</span>
                           {item.location && (
                             <>
@@ -514,11 +514,11 @@ const Cart = () => {
                           )}
                         </p>
                         <div className="flex items-center gap-3 pt-0.5 flex-wrap">
-                          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 dark:text-sm dark:text-indigo-300">
+                          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 dark:text-indigo-300">
                             {formatCurrency(item.price, itemCurrency)}
                           </span>
                           {item.originalPrice && Number(item.originalPrice) > Number(item.price) && (
-                            <span className="text-xs text-slate-400 dark:text-slate-500 line-through dark:text-xs dark:text-slate-300">
+                            <span className="text-xs text-slate-400 dark:text-slate-500 line-through dark:text-slate-300">
                               {formatCurrency(item.originalPrice, itemCurrency)}
                             </span>
                           )}
@@ -537,7 +537,7 @@ const Cart = () => {
                             </Badge>
                           )}
                           {Number(item.qty ?? 1) > 1 && (
-                            <span className="text-[11px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-gray-700/40 px-2 py-0.5 rounded-full dark:text-[11px] dark:text-slate-300 dark:bg-slate-950">
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-gray-700/40 px-2 py-0.5 rounded-full dark:text-slate-300 dark:bg-slate-950">
                               &times; {item.qty} ={" "}
                               <span className="font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200">
                                 {formatCurrency(lineTotal, itemCurrency)}
@@ -581,7 +581,7 @@ const Cart = () => {
                             );
                           }}
                           aria-label={`${t("quantity") || "Quantity"} ${item.title}`}
-                          className="h-8 w-12 text-center rounded-lg border-0 bg-transparent font-semibold text-slate-800 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/30 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none dark:text-center dark:border-0 dark:bg-transparent dark:text-slate-100 dark:text-sm"
+                          className="h-8 w-12 text-center rounded-lg border-0 bg-transparent font-semibold text-slate-800 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500/30 dark:focus:ring-indigo-400/30 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none dark:text-center dark:border-0 dark:bg-transparent dark:text-slate-100"
                         />
                         <button
                           type="button"
@@ -604,7 +604,7 @@ const Cart = () => {
                       {/* Remove button */}
                       <button
                         type="button"
-                        className="text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-sm hover:shadow-red-100 dark:hover:shadow-none dark:text-slate-300 dark:hover:text-red-300 dark:hover:bg-red-950/20 dark:text-xs"
+                        className="text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-sm hover:shadow-red-100 dark:hover:shadow-none dark:text-slate-300 dark:hover:text-red-300 dark:hover:bg-red-950/20"
                         onClick={() => removeItem(item.id)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -676,7 +676,7 @@ const Cart = () => {
             className="rounded-2xl p-5 md:p-6 h-fit md:sticky bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-xl shadow-indigo-500/5 dark:shadow-black/20 ring-1 ring-black/[0.03] dark:ring-white/[0.05] dark:bg-slate-900/80 dark:border dark:border-white/60"
             style={{ top: "calc(var(--top-nav-height, 56px) + 1rem)" }}
           >
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2.5 dark:text-lg dark:text-slate-100">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center gap-2.5 dark:text-slate-100">
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/30 dark:bg-indigo-950/20">
                 <Tag className="w-4 h-4 text-indigo-600 dark:text-indigo-400 dark:text-indigo-300" />
               </span>
@@ -690,7 +690,7 @@ const Cart = () => {
             )}
 
             <div className="space-y-3.5 mb-5">
-              <div className="flex items-center justify-between text-sm dark:text-sm">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500 dark:text-slate-400 dark:text-slate-300">
                   {t("subtotal") || "Subtotal"} ({displayCount}{" "}
                   {displayCount === 1 ? "item" : "items"})
@@ -699,7 +699,7 @@ const Cart = () => {
                   {formatCurrency(displaySubtotalValidated, currency)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm dark:text-sm">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5 dark:text-slate-300">
                   <Package className="w-3.5 h-3.5" />
                   {t("shipping") || "Shipping"}
@@ -741,7 +741,7 @@ const Cart = () => {
                 </div>
               )}
               {displayTax > 0 && (
-                <div className="flex items-center justify-between text-sm dark:text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-500 dark:text-slate-400 dark:text-slate-300">
                     {t("tax") || "Tax"}
                   </span>
@@ -751,7 +751,7 @@ const Cart = () => {
                 </div>
               )}
               {displayDiscount > 0 && (
-                <div className="flex items-center justify-between text-sm dark:text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-500 dark:text-slate-400 dark:text-slate-300">
                     {t("discount") || "Discount"}
                   </span>
@@ -764,12 +764,12 @@ const Cart = () => {
 
             <div className="border-t border-dashed border-slate-200/80 dark:border-gray-600/50 pt-4 mb-5 dark:border-t dark:border-dashed dark:border-slate-700/80">
               <div className="flex items-center justify-between bg-gradient-to-r from-blue-50/60 to-indigo-50/60 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl px-4 py-3 -mx-1 dark:bg-gradient-to-r">
-                <span className="text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100">
+                <span className="text-base font-bold text-slate-900 dark:text-white dark:text-slate-100">
                   {mixedCurrency
                     ? t("total_primary_currency") || "Total (primary)"
                     : t("total") || "Total"}
                 </span>
-                <span className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent dark:text-xl dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
+                <span className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
                   {formatCurrency(displayTotal, currency)}
                 </span>
               </div>
@@ -805,7 +805,7 @@ const Cart = () => {
             </form>
 
             <Button
-              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:via-indigo-700 hover:to-violet-700 text-white rounded-xl h-12 text-base font-bold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 active:scale-[0.98] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg dark:bg-gradient-to-r dark:text-white dark:text-base"
+              className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:via-indigo-700 hover:to-violet-700 text-white rounded-xl h-12 text-base font-bold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 active:scale-[0.98] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg dark:bg-gradient-to-r dark:text-white"
               disabled={displayItems.length === 0}
               onClick={() => navigate("/payment?returnTo=/cart")}
             >
@@ -840,7 +840,7 @@ const Cart = () => {
               ].map((badge) => (
                 <div
                   key={badge.label}
-                  className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300"
+                  className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300"
                 >
                   <div
                     className={`w-1.5 h-1.5 rounded-full ring-2 ring-offset-1 ring-offset-white dark:ring-offset-gray-800 ${badge.dotClass}`}

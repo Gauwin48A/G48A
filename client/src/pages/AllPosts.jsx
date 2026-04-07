@@ -2804,7 +2804,7 @@ const ve = 5,
                 "div",
                 {
                   className:
-                    "text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-xs dark:sm:text-sm",
+                    "text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200",
                 },
                 hasCategoryMode
                   ? `${tr("category_mode", "Category mode")}: ${categoryModeLabel}`
@@ -2815,7 +2815,7 @@ const ve = 5,
                 {
                   type: "button",
                   className:
-                    "inline-flex items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 transition-colors dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:text-xs dark:hover:bg-[var(--surface-2)]",
+                    "inline-flex items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 transition-colors dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                   onClick: () => y(hasCategoryMode ? "/category-mode" : "/category-hub"),
                 },
                 hasCategoryMode
@@ -2828,7 +2828,7 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "mt-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-300 dark:text-[11px] dark:sm:text-xs",
+                      "mt-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-300",
                   },
                   tr("loading", "Loading"),
                 )
@@ -2837,7 +2837,7 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "mt-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-300 dark:text-[11px] dark:sm:text-xs",
+                      "mt-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-300",
                   },
                   `${allPostsSubcategoryBarList.length} `,
                   tr("subcategories", "subcategories"),
@@ -3011,11 +3011,11 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "quick-filters-sort inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)] dark:text-[10px]",
+                      "quick-filters-sort inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                   },
                   r.createElement(
                     "span",
-                    { className: "px-1.5 text-[10px] uppercase tracking-wide dark:text-[10px]" },
+                    { className: "px-1.5 text-[10px] uppercase tracking-wide" },
                     tr("sort", "Sort"),
                   ),
                   r.createElement(
@@ -3058,7 +3058,7 @@ const ve = 5,
                     {
                       type: "button",
                       className:
-                        "quick-filters-clear inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-800/60 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40 transition-colors dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-[11px] dark:text-red-300 dark:hover:bg-red-950/20",
+                        "quick-filters-clear inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-800/60 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40 transition-colors dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300 dark:hover:bg-red-950/20",
                       onClick: Y,
                     },
                     tr("clear_all_filters", "Clear all filters"),
@@ -3073,7 +3073,7 @@ const ve = 5,
                   "span",
                   {
                     className:
-                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-indigo-200 bg-indigo-50 text-[10px] font-semibold text-indigo-700 dark:border-indigo-800/60 dark:bg-indigo-900/30 dark:text-indigo-200 dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20 dark:text-[10px] dark:text-indigo-300",
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-indigo-200 bg-indigo-50 text-[10px] font-semibold text-indigo-700 dark:border-indigo-800/60 dark:bg-indigo-900/30 dark:text-indigo-200 dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20 dark:text-indigo-300",
                   },
                   `${tr("subcategory", "Subcategory")}: ${activeSubcategoryLabel}`,
                 ),
@@ -3086,7 +3086,7 @@ const ve = 5,
                       b({ subcategory: "All" });
                     },
                     className:
-                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[10px] font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:text-[10px] dark:hover:bg-[var(--surface-2)]",
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[10px] font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                   },
                   tr("show_all_in_category", "Show all in category"),
                 ),
@@ -3096,7 +3096,7 @@ const ve = 5,
                     type: "button",
                     onClick: () => y(browseOtherSubcategoriesPath),
                     className:
-                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800/60 dark:bg-sky-900/30 dark:text-slate-200 dark:border dark:border-sky-600/40 dark:bg-sky-950/20 dark:text-[10px] dark:text-sky-300 dark:hover:bg-sky-950/20",
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800/60 dark:bg-sky-900/30 dark:text-slate-200 dark:border dark:border-sky-600/40 dark:bg-sky-950/20 dark:text-sky-300 dark:hover:bg-sky-950/20",
                   },
                   tr("browse_other_subcategories", "Browse other subcategories"),
                 ),
@@ -3113,7 +3113,7 @@ const ve = 5,
                       type: "button",
                       onClick: () => Te(e.key),
                       className:
-                        "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[11px] font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:text-[11px] dark:hover:bg-[var(--surface-2)]",
+                        "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[11px] font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                       title: tr("remove_filter", "Remove filter"),
                     },
                     r.createElement("span", null, e.label),
@@ -3214,7 +3214,7 @@ const ve = 5,
                       "p",
                       {
                         className:
-                          "text-sm text-red-700 dark:text-red-300 mb-3 dark:text-sm",
+                          "text-sm text-red-700 dark:text-red-300 mb-3",
                       },
                       V,
                     ),
@@ -3254,7 +3254,7 @@ const ve = 5,
                         "h3",
                         {
                           className:
-                            "text-base md:text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2 dark:text-base dark:md:text-lg",
+                            "text-base md:text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2",
                         },
                         activeSubcategoryLabel !== "All"
                           ? tr(
@@ -3272,7 +3272,7 @@ const ve = 5,
                         "p",
                         {
                           className:
-                            "text-sm text-blue-700 dark:text-blue-300 mb-4 dark:text-sm",
+                            "text-sm text-blue-700 dark:text-blue-300 mb-4",
                         },
                         activeSubcategoryLabel !== "All"
                           ? tr(
@@ -3532,7 +3532,7 @@ const ve = 5,
                               ze,
                               {
                                 className:
-                                  "bg-[var(--surface-2)] text-slate-600 dark:text-slate-100 text-[10px] dark:bg-[var(--surface-2)] dark:text-slate-200 dark:text-[10px]",
+                                  "bg-[var(--surface-2)] text-slate-600 dark:text-slate-100 text-[10px] dark:bg-[var(--surface-2)] dark:text-slate-200",
                               },
                               n || "U",
                             ),
@@ -3547,7 +3547,7 @@ const ve = 5,
                                 "span",
                                 {
                                   className:
-                                    "font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base md:text-base truncate dark:text-sm dark:sm:text-base dark:md:text-base",
+                                    "font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base md:text-base truncate",
                                 },
                                 o,
                               ),
@@ -3556,7 +3556,7 @@ const ve = 5,
                                   "span",
                                   {
                                     className:
-                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full border border-blue-200 dark:border-blue-700 dark:text-xs shadow-sm",
+                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full border border-blue-200 dark:border-blue-700 shadow-sm",
                                     title: `Verified Seller${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
                                   },
                                   r.createElement(
@@ -3579,7 +3579,7 @@ const ve = 5,
                                   "span",
                                   {
                                     className:
-                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-semibold rounded-full border border-amber-200 dark:border-amber-700 dark:text-[10px]",
+                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-semibold rounded-full border border-amber-200 dark:border-amber-700",
                                   },
                                   s("new_seller", { defaultValue: "New Seller" }),
                                 ),
@@ -3618,7 +3618,7 @@ const ve = 5,
                                   "span",
                                   {
                                     className:
-                                      "mhub-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-yellow-700 dark:text-yellow-300 text-[10px] font-semibold dark:text-[10px]",
+                                      "mhub-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-yellow-700 dark:text-yellow-300 text-[10px] font-semibold",
                                   },
                                   "\u2605",
                                   ratingLabel,
@@ -3627,13 +3627,13 @@ const ve = 5,
                                 "span",
                                 {
                                   className:
-                                    "mhub-price-pill inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] sm:text-sm font-semibold sm:ml-auto dark:text-[11px] dark:sm:text-sm",
+                                    "mhub-price-pill inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] sm:text-sm font-semibold sm:ml-auto",
                                 },
                                 r.createElement(
                                   "span",
                                   {
                                     className:
-                                      "uppercase tracking-wide text-[9px] sm:text-[10px] text-emerald-600/80 dark:text-emerald-300/80 dark:text-[9px] dark:sm:text-[10px]",
+                                      "uppercase tracking-wide text-[9px] sm:text-[10px] text-emerald-600/80 dark:text-emerald-300/80",
                                   },
                                   tr("price", "Price"),
                                 ),
@@ -3641,7 +3641,7 @@ const ve = 5,
                                   "span",
                                   {
                                     className:
-                                      "font-bold text-emerald-900 dark:text-emerald-100 text-sm sm:text-base dark:text-emerald-200 dark:text-sm dark:sm:text-base",
+                                      "font-bold text-emerald-900 dark:text-emerald-100 text-sm sm:text-base dark:text-emerald-200",
                                   },
                                   priceValue,
                                 ),
@@ -3651,7 +3651,7 @@ const ve = 5,
                             "h3",
                             {
                               className:
-                                "mhub-card-title mt-1 text-lg sm:text-xl md:text-2xl leading-tight truncate dark:text-lg dark:sm:text-xl dark:md:text-2xl",
+                                "mhub-card-title mt-1 text-lg sm:text-xl md:text-2xl leading-tight truncate",
                             },
                             title,
                           ),
@@ -3659,7 +3659,7 @@ const ve = 5,
                             "div",
                             {
                               className:
-                                "mhub-card-meta mt-1 flex flex-wrap items-center gap-1 text-[10px] sm:text-[11px] dark:text-[10px] dark:sm:text-[11px]",
+                                "mhub-card-meta mt-1 flex flex-wrap items-center gap-1 text-[10px] sm:text-[11px]",
                             },
                             shownMetaChips.map((X) =>
                               r.createElement(
@@ -3740,7 +3740,7 @@ const ve = 5,
                                 {
                                   onSelect: () => handleSharePost(a),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:text-sm dark:hover:bg-[var(--surface-2)]",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
                                 },
                                 s("share", { defaultValue: "Share" }),
                               ),
@@ -3749,7 +3749,7 @@ const ve = 5,
                                 {
                                   onSelect: () => toggleSave(a),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:text-sm dark:hover:bg-[var(--surface-2)]",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
                                 },
                                 savedPosts[a]
                                   ? s("saved", { defaultValue: "Saved" })
@@ -3764,7 +3764,7 @@ const ve = 5,
                                       setMenuPostId(null);
                                     },
                                     className:
-                                      "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:text-sm dark:hover:bg-[var(--surface-2)]",
+                                      "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
                                   },
                                   tr("promote", "Promote"),
                                 ),
@@ -3773,7 +3773,7 @@ const ve = 5,
                                 {
                                   onSelect: () => handleCartToggle(e),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:text-sm dark:hover:bg-[var(--surface-2)]",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
                                 },
                                 inCart
                                   ? s("in_cart", { defaultValue: "In Cart" })
@@ -3784,7 +3784,7 @@ const ve = 5,
                                 {
                                   onSelect: () => handleReportPost(a),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-sm dark:text-red-300 dark:hover:bg-red-950/20",
+                                    "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
                                 },
                                 s("report", { defaultValue: "Report" }),
                               ),
@@ -3885,7 +3885,7 @@ const ve = 5,
                                 "div",
                                 {
                                   className:
-                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-[11px] font-medium dark:bg-black/55 dark:text-white dark:text-[11px]",
+                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-[11px] font-medium dark:bg-black/55 dark:text-white",
                                 },
                                 activeImageIndex + 1,
                                 "/",
@@ -3933,7 +3933,7 @@ const ve = 5,
                             "button",
                               {
                                 className:
-                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none dark:bg-[var(--chip-bg)] dark:text-[10px] dark:sm:text-xs",
+                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none dark:bg-[var(--chip-bg)]",
                                 onClick: () => Me(a),
                               },
                               ae[a]
@@ -3951,7 +3951,7 @@ const ve = 5,
                               ),
                               r.createElement(
                                 "span",
-                                { className: "text-[10px] sm:text-xs dark:text-[10px] dark:sm:text-xs" },
+                                { className: "text-[10px] sm:text-xs" },
                                 Ae[a] || 0,
                               ),
                             ),
@@ -3959,7 +3959,7 @@ const ve = 5,
                               "button",
                               {
                                 className:
-                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:bg-emerald-950/20 dark:text-[10px] dark:sm:text-xs dark:hover:bg-emerald-950/20",
+                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/20",
                                 onClick: () => {
                                   ie(e), le(!0);
                                 },
@@ -4042,7 +4042,7 @@ const ve = 5,
                               "span",
                               {
                                 className:
-                                  "mhub-chip shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full text-gray-600 dark:text-gray-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold dark:text-gray-200 dark:text-[10px] dark:sm:text-xs",
+                                  "mhub-chip shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full text-gray-600 dark:text-gray-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold dark:text-gray-200",
                               },
                               r.createElement(Qe, { className: "w-4 h-4" }),
                               De[a] || 0,
@@ -4052,7 +4052,7 @@ const ve = 5,
                               {
                                 size: "sm",
                                 className:
-                                  "mhub-cta shrink-0 inline-flex items-center gap-1 rounded-full px-3 text-[10px] sm:text-xs font-semibold sm:ml-auto w-auto dark:text-[10px] dark:sm:text-xs",
+                                  "mhub-cta shrink-0 inline-flex items-center gap-1 rounded-full px-3 text-[10px] sm:text-xs font-semibold sm:ml-auto w-auto",
                                 onClick: () => je(a),
                               },
                               r.createElement(Bo, { className: "w-3.5 h-3.5" }),
@@ -4118,7 +4118,7 @@ const ve = 5,
                 ),
                 r.createElement(
                   "p",
-                  { className: "text-sm text-blue-700 dark:text-blue-300 dark:text-sm" },
+                  { className: "text-sm text-blue-700 dark:text-blue-300" },
                   s("login_for_full_feed", { defaultValue: "Sign in to browse the full feed, save searches, and get personalized recommendations." }),
                 ),
               ),
@@ -4140,7 +4140,7 @@ const ve = 5,
             {
               type: "button",
               className:
-                "fixed bottom-28 right-4 z-50 inline-flex items-center gap-2 rounded-full mhub-premium-surface px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-[var(--surface-2)] dark:text-slate-200 sm:bottom-24 dark:text-xs dark:hover:bg-[var(--surface-2)]",
+                "fixed bottom-28 right-4 z-50 inline-flex items-center gap-2 rounded-full mhub-premium-surface px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-[var(--surface-2)] dark:text-slate-200 sm:bottom-24 dark:hover:bg-[var(--surface-2)]",
               onClick: () => {
                 if (typeof window !== "undefined") {
                   window.scrollTo({ top: 0, behavior: "smooth" });

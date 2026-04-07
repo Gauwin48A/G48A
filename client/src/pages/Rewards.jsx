@@ -1135,12 +1135,12 @@ const RewardsPage = () => {
         ),
         React.createElement(
           "h2",
-          { className: "text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-3xl dark:text-gray-100" },
+          { className: "text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-gray-100" },
           tFunc("rewards_referrals"),
         ),
         React.createElement(
           "p",
-          { className: "text-gray-600 dark:text-gray-300 text-lg mb-4 dark:text-gray-200 dark:text-lg" },
+          { className: "text-gray-600 dark:text-gray-300 text-lg mb-4 dark:text-gray-200" },
           tFunc("earn_coins_unlock_rewards"),
         ),
         React.createElement(
@@ -1151,7 +1151,7 @@ const RewardsPage = () => {
             {
               to: "/login",
               className:
-                "bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition dark:bg-gradient-to-r dark:text-white dark:text-lg",
+                "bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition dark:bg-gradient-to-r dark:text-white",
             },
             tFunc("login_to_continue"),
           ),
@@ -1160,7 +1160,7 @@ const RewardsPage = () => {
             {
               to: "/signup",
               className:
-                "border-2 border-blue-200 text-blue-700 dark:text-blue-200 text-lg px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 dark:hover:bg-white/10 transition dark:border-2 dark:border-blue-600/40 dark:text-blue-300 dark:text-lg dark:hover:bg-blue-950/20",
+                "border-2 border-blue-200 text-blue-700 dark:text-blue-200 text-lg px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 dark:hover:bg-white/10 transition dark:border-2 dark:border-blue-600/40 dark:text-blue-300 dark:hover:bg-blue-950/20",
             },
             tFunc("create_account"),
           ),
@@ -1205,12 +1205,12 @@ const RewardsPage = () => {
         ),
         React.createElement(
           "h3",
-          { className: "text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-xl dark:text-gray-100" },
+          { className: "text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100" },
           tr("rewards_error_title", "Unable to load rewards"),
         ),
         React.createElement(
           "p",
-          { className: "text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed dark:text-gray-300 dark:text-sm" },
+          { className: "text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed dark:text-gray-300" },
           errorMessage,
         ),
         React.createElement(
@@ -1249,12 +1249,12 @@ const RewardsPage = () => {
         },
         React.createElement(
           "h2",
-          { className: "text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 dark:text-xl" },
+          { className: "text-xl font-bold text-slate-800 dark:text-slate-100 mb-2" },
           tr("rewards_profile_unavailable", "Rewards profile unavailable"),
         ),
         React.createElement(
           "p",
-          { className: "text-sm text-slate-600 dark:text-slate-300 mb-5 dark:text-sm dark:text-slate-200" },
+          { className: "text-sm text-slate-600 dark:text-slate-300 mb-5 dark:text-slate-200" },
           tr(
             "rewards_profile_unavailable_desc",
             tr(
@@ -2125,10 +2125,10 @@ const RewardsPage = () => {
           >
             <div className="rounded-[24px] border border-white/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/75 backdrop-blur-xl shadow-[0_12px_28px_rgba(15,23,42,0.12)] px-2.5 py-2 dark:border dark:border-white/70 dark:bg-slate-900/80">
               <div className="flex items-center justify-between px-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300 dark:text-[10px]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
                   {tr("jump_to_section", "Jump to section")}
                 </p>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-[10px] dark:text-slate-300">
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-300">
                   {tr("sticky_tabs_hint", "Scroll to switch")}
                 </span>
               </div>
@@ -2332,7 +2332,7 @@ const RewardsPage = () => {
 
           <div className="space-y-3">
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-4 py-3 dark:border dark:bg-slate-950">
-              <div className="flex items-center justify-between text-sm dark:text-sm">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-600 dark:text-slate-300 dark:text-slate-200">
                   {tr("cost", "Cost")}
                 </span>
@@ -2340,7 +2340,7 @@ const RewardsPage = () => {
                   {redeemDialogReward?.cost || 0} {tr("coins", "coins")}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs mt-2 dark:text-xs">
+              <div className="flex items-center justify-between text-xs mt-2">
                 <span className="text-slate-500 dark:text-slate-300">
                   {tr("available_coins", "Available coins")}
                 </span>
@@ -2350,11 +2350,11 @@ const RewardsPage = () => {
 
             {redeemDialogReward?.requiresPost ? (
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200">
                   {tr("select_listing", "Select a listing")}
                 </p>
                 {redeemDialogLoading ? (
-                  <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-xs dark:text-slate-200">{tr("loading", "Loading...")}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-slate-200">{tr("loading", "Loading...")}</p>
                 ) : redeemDialogPosts.length ? (
                   <div className="max-h-56 overflow-y-auto space-y-2">
                     {redeemDialogPosts.map((post) => {
@@ -2372,10 +2372,10 @@ const RewardsPage = () => {
                               : "border-slate-200 hover:border-indigo-200")
                           }
                         >
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 dark:text-sm">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                             {post?.title || tr("untitled_post", "Untitled post")}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-300 dark:text-xs">
+                          <p className="text-xs text-slate-500 dark:text-slate-300">
                             {tr("price", "Price")}: {Number(post?.price || 0).toLocaleString()}
                           </p>
                         </button>
@@ -2383,7 +2383,7 @@ const RewardsPage = () => {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-xs dark:text-slate-200">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-slate-200">
                     {tr(
                       "no_active_posts",
                       "No active posts available for redemption.",
@@ -2394,7 +2394,7 @@ const RewardsPage = () => {
             ) : null}
 
             {redeemDialogErrorMessage ? (
-              <p className="text-xs text-rose-500 dark:text-xs dark:text-rose-300">{redeemDialogErrorMessage}</p>
+              <p className="text-xs text-rose-500 dark:text-rose-300">{redeemDialogErrorMessage}</p>
             ) : null}
           </div>
 
@@ -2423,7 +2423,7 @@ const RewardsPage = () => {
         <div className="max-w-6xl mx-auto px-4 mb-3">
           <div className="rounded-2xl border border-slate-200 bg-white/90 dark:bg-gray-900/60 px-4 py-3 shadow-sm dark:border dark:border-slate-700 dark:bg-slate-900/90">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 {tr("rewards_diagnostics", "Rewards diagnostics")}
               </p>
               <span
@@ -2451,7 +2451,7 @@ const RewardsPage = () => {
               ))}
             </div>
             {lastSseUpdate ? (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-300 dark:text-xs">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">
                 {tr("last_update", "Last update")}: {new Date(lastSseUpdate).toLocaleString()}
               </p>
             ) : null}

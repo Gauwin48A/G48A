@@ -163,10 +163,10 @@ const EditPost = () => {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br">
         <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 p-6 text-center page-shell page-pad dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-center">
-          <h2 className="text-xl font-bold text-amber-800 dark:text-amber-200 mb-2 dark:text-xl">
+          <h2 className="text-xl font-bold text-amber-800 dark:text-amber-200 mb-2">
             Login required
           </h2>
-          <p className="text-sm text-amber-700 dark:text-amber-200 mb-4 dark:text-sm dark:text-amber-300">
+          <p className="text-sm text-amber-700 dark:text-amber-200 mb-4 dark:text-amber-300">
             Sign in to edit your listing.
           </p>
           <Button
@@ -198,11 +198,11 @@ const EditPost = () => {
       <div className="max-w-2xl mx-auto p-4 pt-8 page-shell page-pad">
         <Card className="shadow-lg border-0 dark:border-0">
           <CardHeader>
-            <CardTitle className="text-2xl dark:text-2xl">{t("edit_listing")}</CardTitle>
+            <CardTitle className="text-2xl">{t("edit_listing")}</CardTitle>
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-sm dark:text-red-300">
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300">
                 {error}
               </div>
             )}
@@ -255,7 +255,7 @@ const EditPost = () => {
                     name="status"
                     value={form.status}
                     onChange={onChange}
-                    className="mhub-input mt-1 h-11 w-full rounded-xl px-3 text-sm dark:text-sm"
+                    className="mhub-input mt-1 h-11 w-full rounded-xl px-3 text-sm"
                   >
                     <option value="active">{t("active")}</option>
                     <option value="sold">{t("sold")}</option>

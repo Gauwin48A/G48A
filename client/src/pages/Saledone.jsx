@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -75,7 +75,7 @@ const SaleDone = () => {
       `Receipt ID: ${receipt.receiptId || receipt.transactionId || "-"}`,
       `Transaction ID: ${receipt.transactionId || sale.transactionId || "-"}`,
       `Amount: ${formatCurrency(receipt.amount, receipt.currency || "INR")}`,
-      `Completed At: ${receipt.completedAt || sale.completedAt || "—"}`,
+      `Completed At: ${receipt.completedAt || sale.completedAt || "�"}`,
       `Item: ${item.title || "-"}`,
       `Buyer: ${buyer.name || buyer.username || "-"}`,
     ].join("\n");
@@ -545,21 +545,21 @@ const SaleDone = () => {
                 </div>
               </div>
 
-              <div className="text-4xl mb-2 dark:text-4xl">🎉</div>
-              <h2 className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-3 dark:text-4xl dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
+              <div className="text-4xl mb-2">??</div>
+              <h2 className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-3 dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
                 {t("sale_confirmed") || "Sale Confirmed!"}
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-lg mb-6 dark:text-gray-200 dark:text-lg">
+              <p className="text-gray-600 dark:text-gray-400 text-lg mb-6 dark:text-gray-200">
                 {t("both_verified") || "Buyer verification completed. Post moved to Sold."}
               </p>
 
               {/* Transaction ID with copy button */}
               <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 text-left mb-6 dark:border dark:border-green-600/40 dark:bg-green-950/20 dark:text-left">
-                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-1 dark:text-xs">
+                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-1">
                   {tr("transaction_id", "Transaction ID")}
                 </p>
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-mono text-green-900 dark:text-green-100 break-all text-sm flex-1 dark:text-green-200 dark:text-sm">
+                  <p className="font-mono text-green-900 dark:text-green-100 break-all text-sm flex-1 dark:text-green-200">
                     {completedSale.transactionId || "-"}
                   </p>
                   {completedSale.transactionId && (
@@ -577,18 +577,18 @@ const SaleDone = () => {
 
               <div className="grid gap-3 sm:grid-cols-2 mb-6 text-left dark:text-left">
                 <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-gray-900/40 p-4 dark:border dark:border-emerald-600/40 dark:bg-slate-900/80">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-1 dark:text-xs">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-1">
                     {tr("listing_status", "Listing Status")}
                   </p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
                     {(completedSale.postStatus || "sold").toUpperCase()}
                   </p>
                 </div>
                 <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-gray-900/40 p-4 dark:border dark:border-emerald-600/40 dark:bg-slate-900/80">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-1 dark:text-xs">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-1">
                     {tr("completed_at", "Completed At")}
                   </p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
                     {completedSale.completedAt
                       ? new Date(completedSale.completedAt).toLocaleString()
                       : "Just now"}
@@ -617,7 +617,7 @@ const SaleDone = () => {
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                             {saleItem.category_name || tr("category", "Category")}
-                            {saleItem.subcategory_name ? ` • ${saleItem.subcategory_name}` : ""}
+                            {saleItem.subcategory_name ? ` � ${saleItem.subcategory_name}` : ""}
                           </p>
                           <p className="text-sm text-slate-900 dark:text-slate-100 mt-1">
                             {tr("agreed_price", "Agreed")}: {formatCurrency(saleItem.agreed_price || completedSale.agreedPrice)}
@@ -805,16 +805,16 @@ const SaleDone = () => {
 
               {/* Next steps */}
               <div className="rounded-xl border border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 text-left mb-8 dark:border dark:border-emerald-600/40 dark:bg-emerald-950/20 dark:text-left">
-                <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 mb-3 dark:text-sm">
+                <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 mb-3">
                   {tr("next_steps", "What's next?")}
                 </p>
                 <div className="space-y-2">
                   {[
-                    { icon: Home, text: tr("next_view_sold", "View your post in My Home → Sold tab") },
+                    { icon: Home, text: tr("next_view_sold", "View your post in My Home ? Sold tab") },
                     { icon: Star, text: tr("next_leave_review", "Leave a review for the buyer") },
                     { icon: TrendingUp, text: tr("next_list_more", "List more items to grow your sales") },
                   ].map(({ icon: Icon, text }, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300 dark:text-sm">
+                    <div key={i} className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
                       <Icon className="w-4 h-4 flex-shrink-0" />
                       <span>{text}</span>
                     </div>
@@ -911,10 +911,10 @@ const SaleDone = () => {
       <div className="relative max-w-3xl mx-auto page-shell page-pad pt-5 pb-10 space-y-6">
         <div className="profile-panel rounded-2xl p-4 sm:p-5 space-y-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-[10px] dark:text-slate-300">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300">
               {tr("sale_progress_label", "Sale progress")}
             </p>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white dark:text-base dark:sm:text-lg dark:text-slate-100">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100">
               {tr("sale_progress_title", "Complete the verification")}
             </h2>
           </div>
@@ -937,10 +937,10 @@ const SaleDone = () => {
 
         <Card className="profile-panel rounded-3xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-6 dark:bg-gradient-to-r dark:text-white">
-            <CardTitle className="text-2xl dark:text-2xl">
+            <CardTitle className="text-2xl">
               {t("dual_verification_process") || "Dual Verification Process"}
             </CardTitle>
-            <CardDescription className="text-green-100 text-base mt-2 dark:text-green-200 dark:text-base">
+            <CardDescription className="text-green-100 text-base mt-2 dark:text-green-200">
               {tr(
                 "sale_dual_verification_desc",
                 "Seller initiates sale. Buyer confirms with OTP.",
@@ -949,26 +949,26 @@ const SaleDone = () => {
           </CardHeader>
 
           <CardContent className="p-6 space-y-5">
-            {/* ── Testing Guide ── */}
+            {/* -- Testing Guide -- */}
             <details className="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 overflow-hidden dark:border dark:border-blue-600/40 dark:bg-blue-950/20">
-              <summary className="flex items-center gap-2 cursor-pointer px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200 select-none dark:text-sm">
+              <summary className="flex items-center gap-2 cursor-pointer px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200 select-none">
                 <Info className="w-4 h-4 shrink-0" />
                 {tr(
                   "testing_guide_title",
-                  "How to test this page — click to expand",
+                  "How to test this page � click to expand",
                 )}
               </summary>
-              <div className="px-4 pb-4 space-y-3 text-sm text-blue-900 dark:text-blue-100 dark:text-sm dark:text-blue-200">
+              <div className="px-4 pb-4 space-y-3 text-sm text-blue-900 dark:text-blue-100 dark:text-blue-200">
                 <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step1_title", "Step 1 — Find your Post ID")}
+                    {tr("sale_test_step1_title", "Step 1 � Find your Post ID")}
                   </p>
                   <p>
                     {tr("sale_test_step1_prefix", "Go to")}{" "}
                     <strong>{tr("my_home", "My Home")}</strong>{" "}
                     {tr(
                       "sale_test_step1_middle",
-                      "→ tap any of your active listings → the URL ends in",
+                      "? tap any of your active listings ? the URL ends in",
                     )}{" "}
                     <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded dark:bg-blue-950/20">
                       /post/&#123;post_id&#125;
@@ -980,7 +980,7 @@ const SaleDone = () => {
                   <p className="font-bold">
                     {tr(
                       "sale_test_step2_title",
-                      "Step 2 — Find the Buyer's User ID",
+                      "Step 2 � Find the Buyer's User ID",
                     )}
                   </p>
                   <p>
@@ -988,7 +988,7 @@ const SaleDone = () => {
                     <strong>
                       {tr(
                         "profile_settings_account_info",
-                        "Profile → Settings → Account Info",
+                        "Profile ? Settings ? Account Info",
                       )}
                     </strong>{" "}
                     {tr(
@@ -999,7 +999,7 @@ const SaleDone = () => {
                 </div>
                 <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step3_title", "Step 3 — Seller initiates")}
+                    {tr("sale_test_step3_title", "Step 3 � Seller initiates")}
                   </p>
                   <p>
                     {tr(
@@ -1009,13 +1009,13 @@ const SaleDone = () => {
                     <strong>{tr("initiate_sale", "Initiate Sale")}</strong>.{" "}
                     {tr(
                       "sale_test_step3_suffix",
-                      "A Transaction ID and OTP will appear — share both with the buyer.",
+                      "A Transaction ID and OTP will appear � share both with the buyer.",
                     )}
                   </p>
                 </div>
                 <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step4_title", "Step 4 — Buyer confirms")}
+                    {tr("sale_test_step4_title", "Step 4 � Buyer confirms")}
                   </p>
                   <p>
                     {tr(
@@ -1037,7 +1037,7 @@ const SaleDone = () => {
                     )}
                   </p>
                 </div>
-                <p className="text-xs text-blue-600 dark:text-blue-300 pt-1 dark:text-xs">
+                <p className="text-xs text-blue-600 dark:text-blue-300 pt-1">
                   {tr(
                     "sale_test_otp_expiry",
                     "OTPs expire in 24 hours. If expired, seller must re-initiate.",
@@ -1054,13 +1054,13 @@ const SaleDone = () => {
               <TabsList className="rewards-tab-bar grid w-full grid-cols-2 mb-6 bg-white/80 dark:bg-slate-900/70 rounded-2xl p-1.5 h-12 border border-slate-200/70 dark:border-slate-800/60 dark:bg-slate-900/80 dark:border dark:border-slate-700/70">
                 <TabsTrigger
                   value="seller"
-                  className="rewards-tab-btn rounded-xl text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all dark:text-sm dark:sm:text-base dark:text-slate-200 dark:data-[state=active]:bg-emerald-700/40 dark:data-[state=active]:text-white"
+                  className="rewards-tab-btn rounded-xl text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all dark:text-slate-200 dark:data-[state=active]:bg-emerald-700/40 dark:data-[state=active]:text-white"
                 >
                   {t("im_the_seller") || "I am the Seller"}
                 </TabsTrigger>
                 <TabsTrigger
                   value="buyer"
-                  className="rewards-tab-btn rounded-xl text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all dark:text-sm dark:sm:text-base dark:text-slate-200 dark:data-[state=active]:bg-blue-700/40 dark:data-[state=active]:text-white"
+                  className="rewards-tab-btn rounded-xl text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all dark:text-slate-200 dark:data-[state=active]:bg-blue-700/40 dark:data-[state=active]:text-white"
                 >
                   {t("im_the_buyer") || "I am the Buyer"}
                 </TabsTrigger>
@@ -1068,7 +1068,7 @@ const SaleDone = () => {
 
               <TabsContent value="seller" className="space-y-6">
                 <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 dark:border dark:border-green-600/40 dark:bg-green-950/20">
-                  <p className="text-sm text-green-800 font-medium dark:text-sm dark:text-green-200">
+                  <p className="text-sm text-green-800 font-medium dark:text-green-200">
                     {tr(
                       "seller_details_hint",
                       "Enter seller details to create a real pending transaction.",
@@ -1081,7 +1081,7 @@ const SaleDone = () => {
                     <div>
                       <Label
                         htmlFor="sellerPostId"
-                        className="text-sm font-bold mb-2 block dark:text-sm"
+                        className="text-sm font-bold mb-2 block"
                       >
                         {tr("post_id", "Post ID")}
                       </Label>
@@ -1102,7 +1102,7 @@ const SaleDone = () => {
                     <div>
                       <Label
                         htmlFor="sellerBuyerId"
-                        className="text-sm font-bold mb-2 block dark:text-sm"
+                        className="text-sm font-bold mb-2 block"
                       >
                         {tr("buyer_user_id", "Buyer User ID")}
                       </Label>
@@ -1128,7 +1128,7 @@ const SaleDone = () => {
                   <div>
                     <Label
                       htmlFor="sellerAmount"
-                      className="text-sm font-bold mb-2 block dark:text-sm"
+                      className="text-sm font-bold mb-2 block"
                     >
                       {t("sale_amount") || "Sale Amount"} (INR)
                     </Label>
@@ -1152,7 +1152,7 @@ const SaleDone = () => {
                   <Button
                     type="submit"
                     disabled={isInitiating}
-                    className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-600 dark:text-lg dark:bg-gradient-to-r"
+                    className="w-full h-14 text-lg font-bold bg-gradient-to-r from-green-500 to-emerald-600 dark:bg-gradient-to-r"
                   >
                     {isInitiating
                       ? tr("sale_initiating", "Initiating...")
@@ -1162,24 +1162,24 @@ const SaleDone = () => {
 
                 {initiatedSale && (
                   <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-2 dark:border dark:border-blue-600/40 dark:bg-blue-950/20">
-                    <p className="text-sm font-semibold text-blue-800 dark:text-sm dark:text-blue-200">
+                    <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
                       {tr("transaction_created", "Transaction created")}
                     </p>
-                    <p className="text-sm text-blue-700 break-all dark:text-sm dark:text-blue-300">
+                    <p className="text-sm text-blue-700 break-all dark:text-blue-300">
                       {tr("transaction_id", "Transaction ID")}:{" "}
                       <span className="font-mono">
                         {initiatedSale.transactionId}
                       </span>
                     </p>
                     {initiatedSale.secretOTP ? (
-                      <p className="text-sm text-blue-700 dark:text-sm dark:text-blue-300">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
                         {tr("otp_to_share_with_buyer", "OTP to share with buyer")}:{" "}
                         <span className="font-mono font-bold">
                           {initiatedSale.secretOTP}
                         </span>
                       </p>
                     ) : (
-                      <p className="text-sm text-blue-700 dark:text-sm dark:text-blue-300">
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
                         {tr(
                           "otp_sent_to_buyer",
                           "OTP sent to buyer notification channel. Ask buyer to use received OTP.",
@@ -1187,7 +1187,7 @@ const SaleDone = () => {
                       </p>
                     )}
                     {initiatedSale.otpExpiresIn && (
-                      <p className="text-xs text-blue-600 dark:text-xs dark:text-blue-300">
+                      <p className="text-xs text-blue-600 dark:text-blue-300">
                         {tr("expires_in", "Expires in")}:{" "}
                         {initiatedSale.otpExpiresIn}
                       </p>
@@ -1198,7 +1198,7 @@ const SaleDone = () => {
 
               <TabsContent value="buyer" className="space-y-6">
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border dark:border-blue-600/40 dark:bg-blue-950/20">
-                  <p className="text-sm text-blue-800 font-medium dark:text-sm dark:text-blue-200">
+                  <p className="text-sm text-blue-800 font-medium dark:text-blue-200">
                     {tr(
                       "buyer_confirm_hint",
                       "Buyer confirms using Transaction ID + OTP from seller.",
@@ -1210,7 +1210,7 @@ const SaleDone = () => {
                   <div>
                       <Label
                         htmlFor="buyerTransactionId"
-                        className="text-sm font-bold mb-2 block dark:text-sm"
+                        className="text-sm font-bold mb-2 block"
                       >
                       {tr("transaction_id", "Transaction ID")}
                       </Label>
@@ -1235,7 +1235,7 @@ const SaleDone = () => {
                   <div>
                       <Label
                         htmlFor="buyerOtp"
-                        className="text-sm font-bold mb-2 block dark:text-sm"
+                        className="text-sm font-bold mb-2 block"
                       >
                       <KeyRound className="w-4 h-4 inline mr-1" />{" "}
                       {tr("otp", "OTP")}
@@ -1258,7 +1258,7 @@ const SaleDone = () => {
                   <Button
                     type="submit"
                     disabled={isConfirming}
-                    className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 dark:text-lg dark:bg-gradient-to-r"
+                    className="w-full h-14 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 dark:bg-gradient-to-r"
                   >
                     {isConfirming
                       ? t("confirming") || "Confirming..."
@@ -1270,7 +1270,7 @@ const SaleDone = () => {
 
             <Card className="border border-gray-200 dark:border-gray-700 dark:border">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base dark:text-base">
+                <CardTitle className="text-base">
                   {tr("pending_sales_title", "Pending sales for your account")}
                 </CardTitle>
                 <CardDescription>
@@ -1282,13 +1282,13 @@ const SaleDone = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 dark:text-sm dark:text-gray-200">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 dark:text-gray-200">
                     <RefreshCw className="w-4 h-4 animate-spin" />{" "}
                     {tr("pending_sales_loading", "Loading pending sales...")}
                   </div>
                 ) : pendingErrorMessage ? (
                   <div className="space-y-2">
-                    <p className="text-sm text-red-600 dark:text-sm dark:text-red-300">
+                    <p className="text-sm text-red-600 dark:text-red-300">
                       {pendingErrorMessage}
                     </p>
                     <Button
@@ -1301,7 +1301,7 @@ const SaleDone = () => {
                     </Button>
                   </div>
                 ) : pendingSales.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
                     {tr("pending_sales_empty", "No pending sales right now.")}
                   </p>
                 ) : (
@@ -1317,11 +1317,11 @@ const SaleDone = () => {
                         className="rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-3 dark:border dark:border-gray-700"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 break-all dark:text-sm dark:text-gray-100">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 break-all dark:text-gray-100">
                             {sale.post_title ||
                               tr("untitled_post", "Untitled post")}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 break-all font-mono dark:text-xs dark:text-gray-300">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 break-all font-mono dark:text-gray-300">
                             {transactionId}
                           </p>
                         </div>

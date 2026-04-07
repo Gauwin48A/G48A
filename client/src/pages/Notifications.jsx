@@ -830,7 +830,7 @@ const NotificationsPage = () => {
               <Bell className="w-7 h-7 text-white animate-pulse dark:text-white" />
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-400 dark:text-gray-400 tracking-wide dark:text-sm dark:text-gray-300">
+          <p className="text-sm font-medium text-gray-400 dark:text-gray-400 tracking-wide dark:text-gray-300">
             {t("loading") || "Loading..."}
           </p>
         </div>
@@ -863,10 +863,10 @@ const NotificationsPage = () => {
             </div>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight dark:text-2xl dark:text-gray-100">
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight dark:text-gray-100">
             {t("login_required") || "Login Required"}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed text-[15px] dark:text-gray-300 dark:text-[15px]">
+          <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed text-[15px] dark:text-gray-300">
             {t("please_login_to_continue") ||
               "Please sign in to view your notifications."}
           </p>
@@ -874,7 +874,7 @@ const NotificationsPage = () => {
             onClick={() =>
               navigate("/login", { state: { returnTo: "/notifications" } })
             }
-            className="w-full min-h-[48px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98] dark:bg-gradient-to-r dark:text-white dark:text-[15px]"
+            className="w-full min-h-[48px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98] dark:bg-gradient-to-r dark:text-white"
           >
             {t("sign_in") || "Sign In"}
           </button>
@@ -1219,7 +1219,7 @@ const NotificationsPage = () => {
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500 dark:bg-blue-800/30" />
               </span>
             )}
-            <p className="text-slate-500 dark:text-blue-300/80 text-sm font-medium dark:text-slate-300 dark:text-sm">
+            <p className="text-slate-500 dark:text-blue-300/80 text-sm font-medium dark:text-slate-300">
               {unreadCount > 0
                 ? `${unreadCount} ${t("new_updates") || "new updates"}`
                 : t("all_caught_up") || "You're all caught up!"}
@@ -1266,7 +1266,7 @@ const NotificationsPage = () => {
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="flex items-center gap-1.5 px-3.5 min-h-[36px] py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-500/20 rounded-full transition-all duration-200 active:scale-[0.97] dark:text-xs dark:text-blue-300 dark:border dark:border-blue-600/40 dark:hover:bg-blue-800/30 dark:hover:text-white"
+                className="flex items-center gap-1.5 px-3.5 min-h-[36px] py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-500/20 rounded-full transition-all duration-200 active:scale-[0.97] dark:text-blue-300 dark:border dark:border-blue-600/40 dark:hover:bg-blue-800/30 dark:hover:text-white"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 {t("mark_all_as_read") || "Mark all as read"}
@@ -1299,12 +1299,12 @@ const NotificationsPage = () => {
                 <div className="absolute top-1/4 -left-1 w-1.5 h-1.5 rounded-full bg-blue-300/40 animate-bounce dark:bg-blue-900/40" style={{ animationDelay: "1.5s", animationDuration: "3.2s" }} />
               </div>
 
-              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight dark:text-2xl dark:text-gray-100">
+              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight dark:text-gray-100">
                 {activeFilter === "unread"
                   ? t("all_caught_up") || "All caught up!"
                   : t("no_notifications") || "No notifications"}
               </h3>
-              <p className="text-slate-400 dark:text-gray-400 max-w-xs mx-auto leading-relaxed mb-6 text-[15px] dark:text-slate-300 dark:text-[15px]">
+              <p className="text-slate-400 dark:text-gray-400 max-w-xs mx-auto leading-relaxed mb-6 text-[15px] dark:text-slate-300">
                 {activeFilter === "unread"
                   ? t("read_all_notifications") ||
                     "Great job! You've read all your notifications."
@@ -1315,14 +1315,14 @@ const NotificationsPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate("/all-posts")}
-                  className="mhub-btn-primary min-h-[48px] px-7 py-3 rounded-2xl text-sm font-bold transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.97] dark:text-sm"
+                  className="mhub-btn-primary min-h-[48px] px-7 py-3 rounded-2xl text-sm font-bold transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.97]"
                 >
                   Browse Listings
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate("/chat")}
-                  className="min-h-[48px] px-7 py-3 rounded-2xl border-2 border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-gray-300 text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/15 transition-all duration-300 active:scale-[0.97] hover:shadow-md dark:border-2 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-200 dark:text-sm dark:hover:bg-gray-950 dark:hover:border-gray-600"
+                  className="min-h-[48px] px-7 py-3 rounded-2xl border-2 border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-gray-300 text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/15 transition-all duration-300 active:scale-[0.97] hover:shadow-md dark:border-2 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-gray-950 dark:hover:border-gray-600"
                 >
                   Open Chat
                 </button>
@@ -1332,7 +1332,7 @@ const NotificationsPage = () => {
             groupedNotifications.map((group, groupIdx) => (
               <div key={`group-${group.label}-${groupIdx}`} className="space-y-3">
                 <div className="flex items-center gap-3 my-5 px-1">
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-gray-400 uppercase tracking-[0.18em] whitespace-nowrap dark:text-[10px] dark:text-slate-300">
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-gray-400 uppercase tracking-[0.18em] whitespace-nowrap dark:text-slate-300">
                     {group.label}
                   </span>
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 dark:from-white/10 to-transparent dark:bg-gradient-to-r" />
@@ -1575,7 +1575,7 @@ const NotificationsPage = () => {
                   <div className={`w-9 h-9 mx-auto mb-2.5 bg-gradient-to-br ${stat.gradient} rounded-xl flex items-center justify-center shadow-md ${stat.shadow}`}>
                     <stat.icon className="w-4 h-4 text-white dark:text-white" />
                   </div>
-                  <div className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1 dark:text-2xl dark:text-gray-100">
+                  <div className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1 dark:text-gray-100">
                     {stat.value}
                   </div>
                   <span className={`text-[10px] font-semibold uppercase tracking-widest ${stat.labelColor}`}>
@@ -1602,10 +1602,10 @@ const NotificationsPage = () => {
               <Sparkles className="w-5 h-5 text-white drop-shadow-sm dark:text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-white/95 text-[13px] tracking-wide uppercase mb-1.5 dark:text-white/95 dark:text-[13px]">
+              <h4 className="font-bold text-white/95 text-[13px] tracking-wide uppercase mb-1.5 dark:text-white/95">
                 {t("pro_tip") || "Pro Tip"}
               </h4>
-              <p className="text-[13px] text-white/70 leading-relaxed dark:text-[13px] dark:text-white/70">
+              <p className="text-[13px] text-white/70 leading-relaxed dark:text-white/70">
                 {t("enable_push_notifications") ||
                   "Enable push notifications to never miss a buyer inquiry or price drop on your wishlist items!"}
               </p>

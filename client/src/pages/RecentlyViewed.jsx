@@ -686,10 +686,10 @@ const RecentlyViewed = () => {
         <div className="max-w-6xl mx-auto px-4 pt-3 page-shell page-pad">
           <div className="rounded-2xl border border-blue-200/60 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/20 backdrop-blur-sm p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 dark:border dark:border-blue-600/60 dark:bg-blue-950/50">
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
                 Category mode: {categoryModeCategory.name}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-xs dark:text-slate-300">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-300">
                 Recently viewed is filtered to this marketplace.
               </p>
             </div>
@@ -724,7 +724,7 @@ const RecentlyViewed = () => {
                 <Icon className={`h-3.5 w-3.5 transition-colors duration-300 ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`} />
                 <span>{tab.label}</span>
                 {isActive && displayItems.length > 0 && (
-                  <span className="ml-0.5 min-w-[20px] px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums bg-gray-800 dark:bg-white text-white dark:text-gray-900 dark:text-[11px] dark:bg-gray-700 dark:text-white">
+                  <span className="ml-0.5 min-w-[20px] px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums bg-gray-800 dark:bg-white text-white dark:text-gray-900 dark:bg-gray-700 dark:text-white">
                     {displayItems.length}
                   </span>
                 )}
@@ -866,10 +866,10 @@ const RecentlyViewed = () => {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-xl dark:text-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100">
                   {t("session_expired") || "Session Expired"}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-8 text-[13px] leading-relaxed max-w-[260px] mx-auto dark:text-gray-300 dark:text-[13px]">
+                <p className="text-gray-500 dark:text-gray-400 mb-8 text-[13px] leading-relaxed max-w-[260px] mx-auto dark:text-gray-300">
                   {t("login_to_view_history") ||
                     "Please login to view your browsing history."}
                 </p>
@@ -896,10 +896,10 @@ const RecentlyViewed = () => {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-xl dark:text-gray-100">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100">
                   {t("something_went_wrong")}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-8 text-[13px] leading-relaxed dark:text-gray-300 dark:text-[13px]">
+                <p className="text-gray-500 dark:text-gray-400 mb-8 text-[13px] leading-relaxed dark:text-gray-300">
                   {t("try_again_later") || "Check your connection and try again"}
                 </p>
                 <Button
@@ -933,12 +933,12 @@ const RecentlyViewed = () => {
               <div className="absolute bottom-4 -left-1 w-2 h-2 bg-indigo-400 rounded-full opacity-40 dark:bg-indigo-800/30" />
             </div>
 
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-xl dark:text-gray-100">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100">
               {isFilteredEmpty
                   ? `No ${categoryModeCategory?.name || "category"} items viewed yet`
                   : t("no_browsing_history")}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-[280px] mx-auto text-[13px] leading-relaxed dark:text-gray-300 dark:text-[13px]">
+            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-[280px] mx-auto text-[13px] leading-relaxed dark:text-gray-300">
               {isFilteredEmpty
                   ? "Switch category or view items in this marketplace."
                   : t("posts_you_view_appear")}
@@ -1059,7 +1059,7 @@ const RecentlyViewed = () => {
                     {isSold && (
                       <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px] flex items-center justify-center dark:bg-black/45">
                         <div className="flex flex-col items-center gap-1">
-                          <div className="bg-red-500 text-white text-lg font-bold tracking-wider px-8 py-2 rounded-2xl shadow-xl dark:bg-red-800/40 dark:text-white dark:text-lg">
+                          <div className="bg-red-500 text-white text-lg font-bold tracking-wider px-8 py-2 rounded-2xl shadow-xl dark:bg-red-800/40 dark:text-white">
                             {(t("sold") || "Sold").toUpperCase()}
                           </div>
                           <span className="text-[11px] text-white/80">
@@ -1070,7 +1070,7 @@ const RecentlyViewed = () => {
                     )}
 
                     {/* View count */}
-                    <div className="absolute top-3 left-3 bg-black/30 backdrop-blur-md text-white/90 px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 dark:bg-black/30 dark:text-white/90 dark:text-[11px]">
+                    <div className="absolute top-3 left-3 bg-black/30 backdrop-blur-md text-white/90 px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 dark:bg-black/30 dark:text-white/90">
                       <Eye className="h-3 w-3" />
                       {item.view_count || 1}
                       {t("x_viewed")}
@@ -1085,7 +1085,7 @@ const RecentlyViewed = () => {
                     {/* Price */}
                     <div className="absolute bottom-3 left-3">
                       <p
-                        className={`text-lg font-bold text-white drop-shadow-lg tracking-tight bg-black/20 backdrop-blur-sm px-2.5 py-0.5 rounded-lg dark:text-lg dark:text-white dark:bg-black/20 ${
+                        className={`text-lg font-bold text-white drop-shadow-lg tracking-tight bg-black/20 backdrop-blur-sm px-2.5 py-0.5 rounded-lg dark:text-white dark:bg-black/20 ${
                           isSold ? "line-through text-white/70" : ""
                         }`}
                       >
@@ -1111,7 +1111,7 @@ const RecentlyViewed = () => {
                   <div className="p-3 sm:p-4">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5 sm:mb-2">
                       {item.category_name && (
-                        <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/20 text-[10px] sm:text-[11px] font-medium px-1.5 sm:px-2 py-0.5 rounded-lg dark:bg-blue-950/20 dark:border dark:border-blue-600/60 dark:text-[10px] dark:sm:text-[11px]">
+                        <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-500/20 text-[10px] sm:text-[11px] font-medium px-1.5 sm:px-2 py-0.5 rounded-lg dark:bg-blue-950/20 dark:border dark:border-blue-600/60">
                           {item.category_name}
                         </Badge>
                       )}
@@ -1125,7 +1125,7 @@ const RecentlyViewed = () => {
                       )}
                     </div>
                     <h3
-                      className={`text-gray-900 dark:text-white font-semibold text-[13px] sm:text-base truncate mb-1.5 sm:mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-gray-100 dark:text-[13px] dark:sm:text-base dark:group-hover:text-blue-300 ${
+                      className={`text-gray-900 dark:text-white font-semibold text-[13px] sm:text-base truncate mb-1.5 sm:mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-gray-100 dark:group-hover:text-blue-300 ${
                         isSold ? "line-through text-gray-400 dark:text-gray-500" : ""
                       }`}
                     >
@@ -1135,11 +1135,11 @@ const RecentlyViewed = () => {
                     {item.seller_name && (
                       <div className="flex items-center gap-2 mb-2 sm:mb-3">
                         <Avatar className="h-5 w-5 bg-gradient-to-br from-violet-500 to-fuchsia-500 ring-2 ring-white dark:ring-gray-900 dark:bg-gradient-to-br">
-                          <AvatarFallback className="text-white text-[10px] font-bold dark:text-white dark:text-[10px]">
+                          <AvatarFallback className="text-white text-[10px] font-bold dark:text-white">
                             {item.seller_name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate font-medium dark:text-xs dark:text-gray-300">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate font-medium dark:text-gray-300">
                           {item.seller_name}
                         </span>
                       </div>
@@ -1153,7 +1153,7 @@ const RecentlyViewed = () => {
                       underReview={item.under_review ?? item.user?.under_review ?? null}
                     />
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-gray-100 dark:border-white/5 dark:text-xs dark:border-t dark:border-gray-700">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-gray-100 dark:border-white/5 dark:border-t dark:border-gray-700">
                       <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 dark:text-gray-300">
                         <MapPin className="h-3 w-3" />
                         {item.location || t("unknown")}
@@ -1243,7 +1243,7 @@ const RecentlyViewed = () => {
                     <div className="flex-1 min-w-0 py-0.5">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         {item.category_name && (
-                          <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20 text-[10px] font-medium px-1.5 py-0 rounded-md dark:bg-blue-950/20 dark:text-blue-300 dark:border dark:border-blue-600/60 dark:text-[10px]">
+                          <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20 text-[10px] font-medium px-1.5 py-0 rounded-md dark:bg-blue-950/20 dark:text-blue-300 dark:border dark:border-blue-600/60">
                             {item.category_name}
                           </Badge>
                         )}
@@ -1257,7 +1257,7 @@ const RecentlyViewed = () => {
                         )}
                       </div>
                       <h3
-                        className={`text-gray-900 dark:text-white font-semibold text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-gray-100 dark:text-sm dark:group-hover:text-blue-300 ${
+                        className={`text-gray-900 dark:text-white font-semibold text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-gray-100 dark:group-hover:text-blue-300 ${
                           isSold ? "line-through text-gray-400 dark:text-gray-500" : ""
                         }`}
                       >
@@ -1277,11 +1277,11 @@ const RecentlyViewed = () => {
                           {t("price_drop") || "Price drop"} {priceDropLabel}
                         </Badge>
                       )}
-                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 dark:text-[11px] dark:text-gray-300">
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 dark:text-gray-300">
                         {item.seller_name && (
                           <span className="flex items-center gap-1">
                             <Avatar className="h-3.5 w-3.5 bg-gradient-to-br from-violet-500 to-fuchsia-500 dark:bg-gradient-to-br">
-                              <AvatarFallback className="text-white text-[7px] font-bold dark:text-white dark:text-[7px]">
+                              <AvatarFallback className="text-white text-[7px] font-bold dark:text-white">
                                 {item.seller_name.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>

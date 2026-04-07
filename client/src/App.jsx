@@ -213,13 +213,13 @@ function LocationBanner() {
   if (permissionGranted || userSkipped) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-100 border-b-2 border-yellow-400 shadow-lg">
+    <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-100 dark:bg-yellow-900/30 border-b-2 border-yellow-400 dark:border-yellow-600 shadow-lg">
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="text-2xl">📍</span>
           <div>
-            <p className="font-semibold text-yellow-900">{t("location_required")}</p>
-            <p className="text-sm text-yellow-800">
+            <p className="font-semibold text-yellow-900 dark:text-yellow-200">{t("location_required")}</p>
+            <p className="text-sm text-yellow-800 dark:text-yellow-300">
               {loading ? t("requesting_location") : error || t("grant_permission")}
             </p>
           </div>
@@ -229,21 +229,21 @@ function LocationBanner() {
             <>
               <button
                 onClick={retry}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition"
+                className="px-4 py-2 bg-yellow-500 dark:bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-600 dark:hover:bg-yellow-500 transition"
               >
                 {t("allow_location")}
               </button>
               <button
                 onClick={skipForNow}
-                className="px-3 py-2 text-yellow-700 hover:text-yellow-900 font-medium"
+                className="px-3 py-2 text-yellow-700 dark:text-yellow-300 hover:text-yellow-900 dark:hover:text-yellow-100 font-medium"
               >
                 {t("later")}
               </button>
             </>
           )}
           {loading && (
-            <div className="flex items-center gap-2 text-yellow-700">
-              <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
+              <div className="w-4 h-4 border-2 border-yellow-600 dark:border-yellow-400 border-t-transparent rounded-full animate-spin" />
               <span className="text-sm">{t("loading")}</span>
             </div>
           )}
@@ -319,7 +319,7 @@ function AppShell() {
         title: notification.title,
         description: notification.message,
         variant: notification.type === "error" ? "destructive" : "default",
-        className: "bg-gradient-to-r from-purple-500/90 to-pink-500/90 text-white border-none",
+        className: "bg-gradient-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-700/90 dark:to-pink-700/90 text-white border-none",
         duration: 4000,
       });
     });
@@ -363,8 +363,9 @@ function AppShell() {
           >
             <Suspense
               fallback={
-                <div className="flex justify-center items-center h-full py-20">
-                  {t("loading")}
+                <div className="flex flex-col justify-center items-center h-full py-20 gap-3">
+                  <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-muted-foreground">{t("loading")}</span>
                 </div>
               }
             >

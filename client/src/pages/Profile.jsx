@@ -865,12 +865,12 @@ const ProfilePage = () => {
         ),
         e.createElement(
           "h1",
-          { className: "text-4xl font-bold text-white mb-3 dark:text-4xl dark:text-white" },
+          { className: "text-4xl font-bold text-white mb-3 dark:text-white" },
           t("profile") || "Profile",
         ),
         e.createElement(
           "p",
-          { className: "text-white/80 text-lg max-w-md mx-auto dark:text-white/80 dark:text-lg" },
+          { className: "text-white/80 text-lg max-w-md mx-auto dark:text-white/80" },
           t("profile_desc") || "Manage your account, preferences, and settings",
         ),
       ),
@@ -900,12 +900,12 @@ const ProfilePage = () => {
               { className: "flex-1" },
               e.createElement(
                 "h3",
-                { className: "text-xl font-bold text-slate-900 dark:text-xl dark:text-slate-100" },
+                { className: "text-xl font-bold text-slate-900 dark:text-slate-100" },
                 t("login") || "Login",
               ),
               e.createElement(
                 "p",
-                { className: "text-slate-600 dark:text-slate-300 text-sm dark:text-slate-200 dark:text-sm" },
+                { className: "text-slate-600 dark:text-slate-300 text-sm dark:text-slate-200" },
                 t("login_desc") || "Already have an account? Sign in here",
               ),
             ),
@@ -935,12 +935,12 @@ const ProfilePage = () => {
               { className: "flex-1" },
               e.createElement(
                 "h3",
-                { className: "text-xl font-bold text-white dark:text-xl dark:text-white" },
+                { className: "text-xl font-bold text-white dark:text-white" },
                 t("signup") || "Create Account",
               ),
               e.createElement(
                 "p",
-                { className: "text-white/70 text-sm dark:text-white/70 dark:text-sm" },
+                { className: "text-white/70 text-sm dark:text-white/70" },
                 t("signup_desc") || "New user? Join us in just a few steps",
               ),
             ),
@@ -953,7 +953,7 @@ const ProfilePage = () => {
         { className: "max-w-lg mx-auto px-6 mt-3 page-shell page-pad" },
         e.createElement(
           "p",
-          { className: "text-center text-white/60 text-sm mb-3 dark:text-center dark:text-white/60 dark:text-sm" },
+          { className: "text-center text-white/60 text-sm mb-3 dark:text-center dark:text-white/60" },
           t("features") || "Features you unlock with an account",
         ),
         e.createElement(
@@ -972,7 +972,7 @@ const ProfilePage = () => {
               }),
               e.createElement(
                 "p",
-                { className: "text-white/80 text-xs font-medium dark:text-white/80 dark:text-xs" },
+                { className: "text-white/80 text-xs font-medium dark:text-white/80" },
                 r.label,
               ),
             ),
@@ -1337,7 +1337,7 @@ const ProfilePage = () => {
             "p",
             {
               className:
-                "text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70",
+                "text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70",
             },
             tr("profile_banner_label", "Your profile"),
           ),
@@ -1345,13 +1345,13 @@ const ProfilePage = () => {
             "h1",
             {
               className:
-                "text-lg sm:text-xl md:text-2xl font-bold text-white dark:text-lg dark:sm:text-xl dark:md:text-2xl dark:text-white",
+                "text-lg sm:text-xl md:text-2xl font-bold text-white dark:text-white",
             },
             tr("profile_dashboard_title", "Your profile dashboard"),
           ),
           e.createElement(
             "p",
-            { className: "text-sm sm:text-base text-white/80 mt-1 dark:text-sm dark:sm:text-base dark:text-white/80" },
+            { className: "text-sm sm:text-base text-white/80 mt-1 dark:text-white/80" },
             tr(
               "profile_dashboard_subtitle",
               "Manage your account, preferences, and settings",
@@ -1417,7 +1417,7 @@ const ProfilePage = () => {
                         Ze,
                         {
                           className:
-                            "text-3xl font-bold text-white bg-gradient-to-br from-blue-500 to-indigo-600 dark:text-3xl dark:text-white dark:bg-gradient-to-br",
+                            "text-3xl font-bold text-white bg-gradient-to-br from-blue-500 to-indigo-600 dark:text-white dark:bg-gradient-to-br",
                         },
                         gi(i?.name || i?.full_name, "U"),
                       ),
@@ -1506,7 +1506,7 @@ const ProfilePage = () => {
                   "h2",
                   {
                     className:
-                      "text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight break-words dark:text-xl dark:sm:text-2xl dark:text-white",
+                      "text-xl sm:text-2xl font-bold tracking-tight text-white leading-tight break-words dark:text-white",
                     title: profileDisplayName,
                   },
                   profileDisplayName,
@@ -1545,7 +1545,7 @@ const ProfilePage = () => {
                     z,
                     {
                       className:
-                        "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-white/15 text-white border border-white/20 dark:text-xs dark:bg-slate-900/15 dark:text-white dark:border dark:border-white/20",
+                        "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-white/15 text-white border border-white/20 dark:bg-slate-900/15 dark:text-white dark:border dark:border-white/20",
                     },
                     e.createElement(B, { className: "w-3 h-3 mr-1" }),
                     " ",
@@ -1641,7 +1641,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "flex items-center justify-between text-xs text-white/80 dark:text-xs dark:text-white/80",
+                      "flex items-center justify-between text-xs text-white/80 dark:text-white/80",
                   },
                   e.createElement(
                     "span",
@@ -1678,7 +1678,7 @@ const ProfilePage = () => {
                 ),
                 e.createElement(
                   "p",
-                  { className: "mt-2 text-[11px] text-white/80 dark:text-[11px] dark:text-white/80" },
+                  { className: "mt-2 text-[11px] text-white/80 dark:text-white/80" },
                   profileCompletionHint,
                 ),
               ),
@@ -1725,13 +1725,13 @@ const ProfilePage = () => {
                   "p",
                   {
                     className:
-                      "text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300 dark:text-[10px]",
+                      "text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300",
                   },
                   tr("jump_to_section", "Jump to section"),
                 ),
                 e.createElement(
                   "span",
-                  { className: "text-[10px] text-slate-400 dark:text-slate-500 dark:text-[10px] dark:text-slate-300" },
+                  { className: "text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-300" },
                   tr("sticky_tabs_hint", "Scroll to switch"),
                 ),
               ),
@@ -1840,7 +1840,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "text-xs font-bold uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-300 dark:text-xs",
+                              "text-xs font-bold uppercase tracking-[0.14em] text-indigo-600 dark:text-indigo-300",
                           },
                           tr("quick_actions", "Quick actions"),
                         ),
@@ -1848,7 +1848,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "mt-1 text-xs text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200",
+                              "mt-1 text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200",
                           },
                           tr(
                             "quick_actions_desc",
@@ -1863,7 +1863,7 @@ const ProfilePage = () => {
                             type: "button",
                             onClick: () => toggleSection("quickActions"),
                             className:
-                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:text-[11px] dark:hover:bg-[var(--surface-2)]",
+                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
                             "aria-expanded": !sectionCollapse.quickActions,
                             "aria-controls": "quick-actions-body",
                           },
@@ -1906,12 +1906,12 @@ const ProfilePage = () => {
                         { className: "text-left min-w-0 dark:text-left" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-base dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
                           tr("my_home", "My Home"),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-xs dark:text-slate-200" },
+                          { className: "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200" },
                           tr("access_dashboard", "Access your personal dashboard"),
                         ),
                       ),
@@ -1938,14 +1938,14 @@ const ProfilePage = () => {
                         { className: "text-left min-w-0 dark:text-left" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-base dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
                           tr("my_feed", "My Feed"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-xs dark:text-slate-200",
+                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
                           },
                           tr("view_feed", "View your personalized feed"),
                         ),
@@ -1973,14 +1973,14 @@ const ProfilePage = () => {
               { className: "text-left min-w-0 dark:text-left" },
               e.createElement(
                 "p",
-                { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-base dark:text-slate-100" },
+                { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
                 tr("my_reviews", "My Reviews"),
               ),
               e.createElement(
                 "p",
                 {
                   className:
-                    "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-xs dark:text-slate-200",
+                    "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
                 },
                 tr("view_reputation_desc", "Check public ratings and trust signals"),
               ),
@@ -2017,7 +2017,7 @@ const ProfilePage = () => {
               { className: "text-left min-w-0 dark:text-left" },
               e.createElement(
                 "p",
-                { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-base dark:text-slate-100" },
+                { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
                 isPremiumPlan
                   ? centreChannelId
                     ? tr("view_centre_page", "View CentrePage")
@@ -2028,7 +2028,7 @@ const ProfilePage = () => {
                 "p",
                 {
                   className:
-                    "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-xs dark:text-slate-200",
+                    "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
                 },
                 isPremiumPlan
                   ? centreChannelId
@@ -2063,14 +2063,14 @@ const ProfilePage = () => {
                         { className: "text-left min-w-0 dark:text-left" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-base dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
                           tr("btn_sale_done", "Sale Done"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-xs dark:text-slate-200",
+                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
                           },
                           tr("sale_done_desc", "Mark a sale as completed"),
                         ),
@@ -2098,14 +2098,14 @@ const ProfilePage = () => {
                         { className: "text-left min-w-0 dark:text-left" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-base dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
                           tr("btn_sale_undone", "Sale Undone"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-xs dark:text-slate-200",
+                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
                           },
                           tr("profile_sale_undone_desc", "Report an issue with a sale"),
                         ),
@@ -2133,14 +2133,14 @@ const ProfilePage = () => {
                         { className: "text-left min-w-0 dark:text-left" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-base dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
                           tr("my_offers", "My Offers"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-xs dark:text-slate-200",
+                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
                           },
                           tr("my_offers_desc", "Review negotiations and incoming offers"),
                         ),
@@ -2175,18 +2175,18 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
+                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                           },
                           tr("category_mode", "Category mode"),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-sm font-semibold text-slate-800 dark:text-white dark:text-sm dark:text-slate-100" },
+                          { className: "text-sm font-semibold text-slate-800 dark:text-white dark:text-slate-100" },
                           categoryModeCategory.name,
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300" },
+                          { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
                           tr(
                             "profile_category_mode_hint",
                             "Profile stats are filtered to this category.",
@@ -2232,13 +2232,13 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300 dark:text-[11px]",
+                              "text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300",
                           },
                           tr("finish_profile", "Profile completion"),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-sm dark:text-slate-200" },
+                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-slate-200" },
                           tr(
                             "finish_profile_desc",
                             "Convert missing trust signals into clear next actions.",
@@ -2262,7 +2262,7 @@ const ProfilePage = () => {
                           "span",
                           {
                             className:
-                              "text-sm font-semibold text-violet-700 dark:text-violet-200 dark:text-sm dark:text-violet-300",
+                              "text-sm font-semibold text-violet-700 dark:text-violet-200 dark:text-violet-300",
                           },
                           profileCompletionPercent,
                           "% ",
@@ -2284,7 +2284,7 @@ const ProfilePage = () => {
                             type: "button",
                             onClick: () => toggleSection("finishProfile"),
                             className:
-                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:text-[11px] dark:hover:bg-[var(--surface-2)]",
+                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
                             "aria-expanded": !sectionCollapse.finishProfile,
                             "aria-controls": "finish-profile-body",
                           },
@@ -2322,7 +2322,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-[11px] dark:text-slate-200",
+                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-slate-200",
                             },
                             tr("profile_next_step", "Next: {{step}}", {
                               step: nextProfileAction.label,
@@ -2332,7 +2332,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-[11px] dark:text-slate-200",
+                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-slate-200",
                             },
                             tr(
                               "profile_all_set",
@@ -2369,7 +2369,7 @@ const ProfilePage = () => {
                                   "p",
                                   {
                                     className:
-                                      "text-sm font-semibold text-slate-800 dark:text-white dark:text-sm dark:text-slate-100",
+                                      "text-sm font-semibold text-slate-800 dark:text-white dark:text-slate-100",
                                   },
                                   r.label,
                                 ),
@@ -2378,7 +2378,7 @@ const ProfilePage = () => {
                                 "p",
                                 {
                                   className:
-                                    "mt-1 text-xs text-slate-600 dark:text-slate-400 dark:text-xs dark:text-slate-200",
+                                    "mt-1 text-xs text-slate-600 dark:text-slate-400 dark:text-slate-200",
                                 },
                                 r.description,
                               ),
@@ -2425,7 +2425,7 @@ const ProfilePage = () => {
                       "p",
                       {
                         className:
-                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-[11px] dark:text-slate-200",
+                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-200",
                       },
                       tr("preferences_snapshot", "Preferences Snapshot"),
                     ),
@@ -2467,7 +2467,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-[10px] dark:text-slate-300",
+                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                             },
                             item.label,
                           ),
@@ -2475,7 +2475,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-sm font-semibold text-slate-800 truncate dark:text-sm dark:text-slate-100",
+                                "text-sm font-semibold text-slate-800 truncate dark:text-slate-100",
                             },
                             item.value,
                           ),
@@ -2497,7 +2497,7 @@ const ProfilePage = () => {
                       "p",
                       {
                         className:
-                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-[11px] dark:text-slate-200",
+                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-200",
                       },
                       tr("marketplace_pulse", "Marketplace Pulse"),
                     ),
@@ -2528,7 +2528,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 text-right dark:text-[10px] dark:text-slate-300 dark:text-right",
+                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 text-right dark:text-slate-300 dark:text-right",
                             },
                             item.label,
                           ),
@@ -2537,7 +2537,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "mt-2 text-lg font-bold text-slate-900 dark:text-lg dark:text-slate-100",
+                              "mt-2 text-lg font-bold text-slate-900 dark:text-slate-100",
                           },
                           item.value,
                         ),
@@ -2577,13 +2577,13 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300 dark:text-[11px]",
+                              "text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300",
                           },
                           tr("account_status", "Account status"),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-sm dark:text-slate-200" },
+                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-slate-200" },
                           tr(
                             "account_status_desc",
                             "Keep plan, verification, and profile freshness visible at a glance.",
@@ -2670,7 +2670,7 @@ const ProfilePage = () => {
                             "span",
                             {
                               className:
-                                "text-[11px] font-bold uppercase tracking-[0.12em] dark:text-[11px]",
+                                "text-[11px] font-bold uppercase tracking-[0.12em]",
                             },
                             r.label,
                           ),
@@ -2679,7 +2679,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "mt-3 text-base font-semibold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                              "mt-3 text-base font-semibold text-slate-900 dark:text-white dark:text-slate-100",
                           },
                           r.value,
                         ),
@@ -2718,12 +2718,12 @@ const ProfilePage = () => {
                   null,
                   e.createElement(
                     te,
-                    { className: "text-lg font-bold text-slate-900 dark:text-white dark:text-lg dark:text-slate-100" },
+                    { className: "text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100" },
                     tr("personal_information", "Personal information"),
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200" },
+                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200" },
                     tr(
                       "personal_information_desc",
                       "Keep your contact details up to date for buyers.",
@@ -2762,7 +2762,7 @@ const ProfilePage = () => {
                           {
                             htmlFor: "full_name",
                             className:
-                              "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                              "text-sm font-semibold text-slate-700 dark:text-slate-200",
                           },
                           t("full_name") || "Full Name",
                         ),
@@ -2778,7 +2778,7 @@ const ProfilePage = () => {
                         A.full_name &&
                           e.createElement(
                             "p",
-                            { className: "text-rose-600 text-xs mt-1 dark:text-rose-300 dark:text-xs" },
+                            { className: "text-rose-600 text-xs mt-1 dark:text-rose-300" },
                             A.full_name,
                           ),
                       ),
@@ -2790,7 +2790,7 @@ const ProfilePage = () => {
                           {
                             htmlFor: "phone",
                             className:
-                              "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                              "text-sm font-semibold text-slate-700 dark:text-slate-200",
                           },
                           t("phone") || "Phone",
                         ),
@@ -2810,7 +2810,7 @@ const ProfilePage = () => {
                         A.phone &&
                           e.createElement(
                             "p",
-                            { className: "text-rose-600 text-xs mt-1 dark:text-rose-300 dark:text-xs" },
+                            { className: "text-rose-600 text-xs mt-1 dark:text-rose-300" },
                             A.phone,
                           ),
                       ),
@@ -2822,7 +2822,7 @@ const ProfilePage = () => {
                           {
                             htmlFor: "address",
                             className:
-                              "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                              "text-sm font-semibold text-slate-700 dark:text-slate-200",
                           },
                           t("address") || "Address",
                         ),
@@ -2847,7 +2847,7 @@ const ProfilePage = () => {
                           {
                             htmlFor: "bio",
                             className:
-                              "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                              "text-sm font-semibold text-slate-700 dark:text-slate-200",
                           },
                           t("bio") || "Bio",
                         ),
@@ -2865,7 +2865,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "mt-1 text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                              "mt-1 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                           },
                           tr("bio_character_counter", "{{count}} characters", {
                             count: String(f.bio || "").length,
@@ -2924,7 +2924,7 @@ const ProfilePage = () => {
                           "span",
                           {
                             className:
-                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
+                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                           },
                           tr("full_name", "Full name"),
                         ),
@@ -2933,7 +2933,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                         },
                         i.name || i.full_name || "-",
                       ),
@@ -2961,7 +2961,7 @@ const ProfilePage = () => {
                           "span",
                           {
                             className:
-                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
+                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                           },
                           tr("email", "Email"),
                         ),
@@ -2970,7 +2970,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                         },
                         i.email || "-",
                       ),
@@ -2998,7 +2998,7 @@ const ProfilePage = () => {
                           "span",
                           {
                             className:
-                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
+                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                           },
                           tr("phone", "Phone"),
                         ),
@@ -3007,7 +3007,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                         },
                         i.phone || "-",
                       ),
@@ -3035,7 +3035,7 @@ const ProfilePage = () => {
                           "span",
                           {
                             className:
-                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
+                              "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                           },
                           tr("address", "Address"),
                         ),
@@ -3044,7 +3044,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                         },
                         i.address || "-",
                       ),
@@ -3077,7 +3077,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-[10px]",
+                            "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                         },
                         tr("your_user_id", "Your user ID"),
                       ),
@@ -3085,7 +3085,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "font-bold text-indigo-700 dark:text-indigo-300 font-mono text-lg dark:text-lg",
+                            "font-bold text-indigo-700 dark:text-indigo-300 font-mono text-lg",
                         },
                         i.user_id || i.id || m?.user_id || m?.id || "-",
                       ),
@@ -3120,7 +3120,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "mt-2 flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                      "mt-2 flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                   },
                   e.createElement(Le, {
                     className: "mt-0.5 h-3.5 w-3.5 text-indigo-500/80 dark:text-indigo-300/80",
@@ -3170,7 +3170,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-sm text-green-600 dark:text-green-400 dark:text-sm dark:text-green-300",
+                            "text-sm text-green-600 dark:text-green-400 dark:text-green-300",
                         },
                         i.verified
                           ? t("account_verified") || "Your account is verified"
@@ -3226,14 +3226,14 @@ const ProfilePage = () => {
                     te,
                     {
                       className:
-                        "text-lg font-bold text-slate-900 dark:text-white dark:text-lg dark:text-slate-100",
+                        "text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100",
                     },
                     t("recommendation_preferences") ||
                       "Recommendation Preferences",
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200" },
+                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200" },
                     tr(
                       "preferences_desc_short",
                       "Tune what shows up in your For You feed and All Posts.",
@@ -3305,7 +3305,7 @@ const ProfilePage = () => {
                               x,
                               {
                                 className:
-                                  "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                                  "text-sm font-semibold text-slate-700 dark:text-slate-200",
                               },
                               t("preferred_location") || "Preferred Location",
                             ),
@@ -3371,7 +3371,7 @@ const ProfilePage = () => {
                               x,
                               {
                                 className:
-                                  "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                                  "text-sm font-semibold text-slate-700 dark:text-slate-200",
                               },
                               tr("search_radius", "Search radius"),
                             ),
@@ -3410,13 +3410,13 @@ const ProfilePage = () => {
                             x,
                             {
                               className:
-                                "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                                "text-sm font-semibold text-slate-700 dark:text-slate-200",
                             },
                             t("preferred_subcategories") || "Preferred Subcategories",
                           ),
                           e.createElement(
                             "p",
-                            { className: "mt-1 text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300" },
+                            { className: "mt-1 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
                             t("select_subcategories_desc") ||
                               "Select subcategories to see in For You page",
                           ),
@@ -3517,7 +3517,7 @@ const ProfilePage = () => {
                                             "p",
                                             {
                                               className:
-                                                "text-sm font-semibold text-slate-800 dark:text-slate-100 truncate dark:text-sm",
+                                                "text-sm font-semibold text-slate-800 dark:text-slate-100 truncate",
                                             },
                                             r.name,
                                           ),
@@ -3526,7 +3526,7 @@ const ProfilePage = () => {
                                               "p",
                                               {
                                                 className:
-                                                  "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                                  "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                                               },
                                               r.category_name,
                                             ),
@@ -3551,7 +3551,7 @@ const ProfilePage = () => {
                                 x,
                                 {
                                   className:
-                                    "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                                    "text-sm font-semibold text-slate-700 dark:text-slate-200",
                                 },
                                 t("min_price") || "Min Price",
                                 " (\u20B9)",
@@ -3573,7 +3573,7 @@ const ProfilePage = () => {
                                 x,
                                 {
                                   className:
-                                    "text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm",
+                                    "text-sm font-semibold text-slate-700 dark:text-slate-200",
                                 },
                                 t("max_price") || "Max Price",
                                 " (\u20B9)",
@@ -3611,7 +3611,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-100 dark:text-sm dark:text-indigo-200",
+                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-100 dark:text-indigo-200",
                               },
                               tr("live_preview", "Live preview"),
                             ),
@@ -3625,7 +3625,7 @@ const ProfilePage = () => {
                                 {
                                   key: `${r}-${a}`,
                                   className:
-                                    "text-xs text-indigo-800 dark:text-indigo-100/90 dark:text-xs dark:text-indigo-200",
+                                    "text-xs text-indigo-800 dark:text-indigo-100/90 dark:text-indigo-200",
                                 },
                                 r,
                               ),
@@ -3673,7 +3673,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
                               },
                               t("location") || "Location",
                             ),
@@ -3681,7 +3681,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                               },
                               c.location || t("any") || "Any",
                             ),
@@ -3708,7 +3708,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
                               },
                               tr("search_radius", "Search radius"),
                             ),
@@ -3716,7 +3716,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                               },
                               preferenceRadiusKm,
                               " km",
@@ -3744,7 +3744,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
                               },
                               t("min_price") || "Min Price",
                             ),
@@ -3752,7 +3752,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                               },
                               "\u20B9",
                               c.minPrice || "0",
@@ -3780,7 +3780,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
                               },
                               t("max_price") || "Max Price",
                             ),
@@ -3788,7 +3788,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                               },
                               "\u20B9",
                               c.maxPrice || "\u221E",
@@ -3808,7 +3808,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
                               },
                               t("preferred_subcategories") ||
                                 "Preferred Subcategories",
@@ -3819,7 +3819,7 @@ const ProfilePage = () => {
                                   "span",
                                   {
                                     className:
-                                      "rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 dark:bg-indigo-950/20 dark:text-[11px] dark:text-indigo-300",
+                                      "rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-300",
                                   },
                                   tr("selected_count", "{{count}} selected", {
                                     count: scopedPreferenceSelected.length,
@@ -3829,7 +3829,7 @@ const ProfilePage = () => {
                                   "span",
                                   {
                                     className:
-                                      "rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300 dark:bg-slate-950 dark:text-[11px]",
+                                      "rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300 dark:bg-slate-950",
                                   },
                                   tr("all_subcategories", "All"),
                                 ),
@@ -3855,7 +3855,7 @@ const ProfilePage = () => {
                                 "p",
                                 {
                                   className:
-                                "mt-2 text-xs italic text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                "mt-2 text-xs italic text-slate-500 dark:text-slate-400 dark:text-slate-300",
                               },
                               tr(
                                 "no_subcategories_selected",
@@ -3884,7 +3884,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-100 dark:text-sm dark:text-indigo-200",
+                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-100 dark:text-indigo-200",
                               },
                               tr("live_preview", "Live preview"),
                             ),
@@ -3898,7 +3898,7 @@ const ProfilePage = () => {
                                 {
                                   key: `${r}-${a}`,
                                   className:
-                                    "text-xs text-indigo-800 dark:text-indigo-100/90 dark:text-xs dark:text-indigo-200",
+                                    "text-xs text-indigo-800 dark:text-indigo-100/90 dark:text-indigo-200",
                                 },
                                 r,
                               ),
@@ -3940,13 +3940,13 @@ const ProfilePage = () => {
                     te,
                     {
                       className:
-                        "text-lg font-bold text-slate-900 dark:text-white dark:text-lg dark:text-slate-100",
+                        "text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100",
                     },
                     t("account_settings") || "Account Settings",
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200" },
+                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200" },
                     tr(
                       "account_settings_desc",
                       "Manage security, notifications, privacy, and language.",
@@ -4015,13 +4015,13 @@ const ProfilePage = () => {
                       "p",
                       {
                         className:
-                          "text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                          "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                       },
                       t("find_friends") || "Find Friends",
                     ),
                     e.createElement(
                       "p",
-                      { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-sm dark:text-slate-200" },
+                      { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200" },
                       t("sync_contacts_desc") ||
                         "Sync contacts to connect with friends",
                     ),
@@ -4109,13 +4109,13 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                         },
                         tr(r.labelKey, r.labelFallback || r.labelKey),
                       ),
                       e.createElement(
                         "p",
-                        { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-sm dark:text-slate-200" },
+                        { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200" },
                         tr(r.descKey, r.descFallback || r.descKey),
                       ),
                     ),
@@ -4128,7 +4128,7 @@ const ProfilePage = () => {
                         "span",
                           {
                             className:
-                              "hidden sm:inline-flex items-center rounded-full profile-chip px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-200 dark:text-[11px]",
+                              "hidden sm:inline-flex items-center rounded-full profile-chip px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-200",
                           },
                         r.action,
                       ),
@@ -4166,13 +4166,13 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-base dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
                         },
                         t("language") || "Language",
                       ),
                       e.createElement(
                         "p",
-                        { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-sm dark:text-slate-200" },
+                        { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200" },
                         t("choose_language") ||
                           "Choose your preferred language",
                       ),

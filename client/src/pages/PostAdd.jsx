@@ -89,12 +89,12 @@ const PostAdd = () => {
           </button>
 
           <div className="flex items-center gap-3">
-            <FaNewspaper className="text-3xl text-white/90 dark:text-3xl dark:text-white/90" />
+            <FaNewspaper className="text-3xl text-white/90 dark:text-white/90" />
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white dark:text-2xl dark:md:text-3xl dark:text-white">
+              <h1 className="text-2xl md:text-3xl font-bold text-white dark:text-white">
                 {t("create_feed_post") || "Create Feed Post"}
               </h1>
-              <p className="text-white/70 text-sm mt-1 dark:text-white/70 dark:text-sm">
+              <p className="text-white/70 text-sm mt-1 dark:text-white/70">
                 {t("share_update") ||
                   "Share an update, announcement, or thought with the community"}
               </p>
@@ -107,7 +107,7 @@ const PostAdd = () => {
         <Card className="mhub-premium-surface rounded-2xl overflow-hidden">
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 dark:text-sm dark:text-gray-200">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 dark:text-gray-200">
                 {t("title_optional") || "Title (Optional)"}
               </label>
               <input
@@ -121,7 +121,7 @@ const PostAdd = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 dark:text-sm dark:text-gray-200">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 dark:text-gray-200">
                 {t("content") || "Content"}{" "}
                 <span className="text-red-500 dark:text-red-300">*</span>
               </label>
@@ -151,7 +151,7 @@ const PostAdd = () => {
             </div>
 
             <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/20 dark:border dark:border-indigo-600/40">
-              <p className="text-indigo-700 dark:text-indigo-300 text-sm dark:text-sm">
+              <p className="text-indigo-700 dark:text-indigo-300 text-sm">
                 <strong>{t("tip") || "Tip"}:</strong>{" "}
                 {t("feed_tip") ||
                   'Feed posts are text-only. For selling items with images, use the main "Add Post" feature instead.'}

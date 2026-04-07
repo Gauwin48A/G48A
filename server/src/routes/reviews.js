@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
+const { requireAdmin } = require("../middleware/rbac");
 const reviewsController = require("../controllers/reviewsController");
 
 /** @route GET /user/:userId - Fetch all reviews for a given user (public) */
@@ -25,7 +26,7 @@ router.post("/:reviewId/respond", protect, reviewsController.respondToReview);
 router.post("/:reviewId/flag", protect, reviewsController.flagReview);
 
 /** @route PATCH /:reviewId/moderate - Moderate review visibility */
-router.patch("/:reviewId/moderate", protect, reviewsController.moderateReviewVisibility);
+router.patch("/:reviewId/moderate", protect, requireAdmin, reviewsController.moderateReviewVisibility);
 
 /** @route DELETE /:reviewId - Delete a review */
 router.delete("/:reviewId", protect, reviewsController.deleteReview);

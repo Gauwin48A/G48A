@@ -45,7 +45,7 @@ const GreenHeroBanner = () => {
             {buttonLabel}
           </button>
         </div>
-        <img src={banner.image} alt={t("banner_alt")} className="w-56 h-40 object-contain" />
+        <img src={banner.image} alt={t("banner_alt")} className="w-56 h-40 object-contain" onError={(e) => { e.target.style.opacity = '0.3'; }} />
       </div>
     </section>
   );

@@ -504,7 +504,7 @@ const ve = () => {
               },
               e.createElement(
                 O,
-                { className: "flex items-center space-x-3 text-2xl dark:text-2xl" },
+                { className: "flex items-center space-x-3 text-2xl" },
                 e.createElement(
                   "div",
                   {
@@ -517,7 +517,7 @@ const ve = () => {
               ),
               e.createElement(
                 M,
-                { className: "text-red-100 text-base mt-2 dark:text-red-200 dark:text-base" },
+                { className: "text-red-100 text-base mt-2 dark:text-red-200" },
                 r("provide_details_issue"),
               ),
             ),
@@ -538,7 +538,7 @@ const ve = () => {
                       {
                         htmlFor: "sellerId",
                         className:
-                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                       },
                       r("seller_id") || "Seller ID",
                     ),
@@ -552,7 +552,7 @@ const ve = () => {
                         "e.g., USER123456",
                       ),
                       className:
-                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
                     }),
                   ),
                   e.createElement(
@@ -563,7 +563,7 @@ const ve = () => {
                       {
                         htmlFor: "postId",
                         className:
-                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                       },
                       r("post_id") || "Post ID",
                       " *",
@@ -578,7 +578,7 @@ const ve = () => {
                         "e.g., POST001",
                       ),
                       className:
-                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
                       required: !0,
                     }),
                   ),
@@ -594,7 +594,7 @@ const ve = () => {
                       {
                         htmlFor: "secretCode",
                         className:
-                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                          "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                       },
                       r("transaction_code"),
                     ),
@@ -608,7 +608,7 @@ const ve = () => {
                         "e.g., ABC123",
                       ),
                       className:
-                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                        "h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
                     }),
                   ),
                 ),
@@ -620,7 +620,7 @@ const ve = () => {
                     {
                       htmlFor: "complaintType",
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     r("complaint_type"),
                   ),
@@ -632,7 +632,7 @@ const ve = () => {
                       value: a.complaintType,
                       onChange: p,
                       className:
-                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors px-4 bg-white dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40 dark:bg-slate-900",
+                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors px-4 bg-white dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40 dark:bg-slate-900",
                     },
                     e.createElement(
                       "option",
@@ -680,7 +680,7 @@ const ve = () => {
                     {
                       htmlFor: "description",
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     r("description"),
                     " *",
@@ -693,7 +693,7 @@ const ve = () => {
                     placeholder: r("describe_issue_detail"),
                     rows: 5,
                     className:
-                      "text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors resize-none dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
+                      "text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-red-500 transition-colors resize-none dark:border-2 dark:border-gray-700 dark:focus:border-red-500/40",
                     required: !0,
                   }),
                 ),
@@ -703,7 +703,7 @@ const ve = () => {
                     type: "submit",
                     disabled: L,
                     className:
-                      "w-full h-16 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 rounded-2xl shadow-xl shadow-red-500/30 transition-all hover:shadow-red-500/50 hover:scale-[1.02] dark:text-lg dark:bg-gradient-to-r",
+                      "w-full h-16 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 rounded-2xl shadow-xl shadow-red-500/30 transition-all hover:shadow-red-500/50 hover:scale-[1.02] dark:bg-gradient-to-r",
                   },
                   L
                     ? e.createElement(
@@ -738,7 +738,7 @@ const ve = () => {
                 e.createElement(
                   "p",
                   {
-                    className: "text-sm text-blue-800 dark:text-blue-300 mb-1 dark:text-sm dark:text-blue-200",
+                    className: "text-sm text-blue-800 dark:text-blue-300 mb-1 dark:text-blue-200",
                   },
                   tr(
                     "latest_complaint_reference",
@@ -749,7 +749,7 @@ const ve = () => {
                   "p",
                   {
                     className:
-                      "font-mono text-lg font-bold text-blue-900 dark:text-blue-200 dark:text-lg",
+                      "font-mono text-lg font-bold text-blue-900 dark:text-blue-200",
                   },
                   b,
                 ),
@@ -758,7 +758,7 @@ const ve = () => {
                     "p",
                     {
                       className:
-                        "text-xs text-blue-700 dark:text-blue-300 mt-1 dark:text-xs",
+                        "text-xs text-blue-700 dark:text-blue-300 mt-1",
                     },
                     tr("submitted", "Submitted"),
                     " ",
@@ -803,7 +803,7 @@ const ve = () => {
               },
               e.createElement(
                 O,
-                { className: "flex items-center space-x-3 text-xl dark:text-xl" },
+                { className: "flex items-center space-x-3 text-xl" },
                 e.createElement(de, { className: "w-6 h-6" }),
                 e.createElement("span", null, r("my_complaints")),
               ),
@@ -863,7 +863,7 @@ const ve = () => {
                           "p",
                           {
                             className:
-                              "text-gray-500 dark:text-gray-400 text-lg dark:text-gray-300 dark:text-lg",
+                              "text-gray-500 dark:text-gray-400 text-lg dark:text-gray-300",
                           },
                           r("no_complaints_yet"),
                         ),
@@ -871,7 +871,7 @@ const ve = () => {
                           "p",
                           {
                             className:
-                              "text-gray-400 dark:text-gray-500 text-sm mt-1 dark:text-gray-300 dark:text-sm",
+                              "text-gray-400 dark:text-gray-500 text-sm mt-1 dark:text-gray-300",
                           },
                           r("completed_your_complaints_here"),
                         ),
@@ -905,7 +905,7 @@ const ve = () => {
                                   "h4",
                                   {
                                     className:
-                                      "font-bold text-gray-900 dark:text-white text-lg dark:text-gray-100 dark:text-lg",
+                                      "font-bold text-gray-900 dark:text-white text-lg dark:text-gray-100",
                                   },
                                   ye(l),
                                 ),
@@ -913,7 +913,7 @@ const ve = () => {
                                   "p",
                                   {
                                     className:
-                                      "text-sm text-gray-500 dark:text-gray-400 font-mono dark:text-sm dark:text-gray-300",
+                                      "text-sm text-gray-500 dark:text-gray-400 font-mono dark:text-gray-300",
                                   },
                                   tr("complaint_id", "Complaint ID"),
                                   ": ",
@@ -935,7 +935,7 @@ const ve = () => {
                               "div",
                               {
                                 className:
-                                  "grid grid-cols-2 gap-4 mb-3 text-sm dark:text-sm",
+                                  "grid grid-cols-2 gap-4 mb-3 text-sm",
                               },
                               e.createElement(
                                 "div",
@@ -972,7 +972,7 @@ const ve = () => {
                               "p",
                               {
                                 className:
-                                  "text-gray-700 dark:text-gray-300 text-sm mb-3 dark:text-gray-200 dark:text-sm",
+                                  "text-gray-700 dark:text-gray-300 text-sm mb-3 dark:text-gray-200",
                               },
                               t.description,
                             ),
@@ -987,7 +987,7 @@ const ve = () => {
                                   "p",
                                   {
                                     className:
-                                      "text-sm font-semibold text-green-800 mb-1 flex items-center gap-2 dark:text-sm dark:text-green-200",
+                                      "text-sm font-semibold text-green-800 mb-1 flex items-center gap-2 dark:text-green-200",
                                   },
                                   e.createElement(n, { className: "w-4 h-4" }),
                                   r("admin_response"),
@@ -995,7 +995,7 @@ const ve = () => {
                                 ),
                                 e.createElement(
                                   "p",
-                                  { className: "text-sm text-green-700 dark:text-sm dark:text-green-300" },
+                                  { className: "text-sm text-green-700 dark:text-green-300" },
                                   U,
                                 ),
                               ),
@@ -1032,7 +1032,7 @@ const ve = () => {
                     "h3",
                     {
                       className:
-                        "font-bold text-yellow-800 dark:text-yellow-300 text-lg mb-3 dark:text-yellow-200 dark:text-lg",
+                        "font-bold text-yellow-800 dark:text-yellow-300 text-lg mb-3 dark:text-yellow-200",
                     },
                     "\uD83D\uDCCB ",
                     r("important_guidelines"),
@@ -1153,12 +1153,12 @@ const ve = () => {
                 { className: "flex-1" },
                 e.createElement(
                   "h3",
-                  { className: "text-xl font-bold text-gray-900 dark:text-xl dark:text-gray-100" },
+                  { className: "text-xl font-bold text-gray-900 dark:text-gray-100" },
                   r("login") || "Login",
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-gray-500 text-sm dark:text-gray-300 dark:text-sm" },
+                  { className: "text-gray-500 text-sm dark:text-gray-300" },
                   r("login_desc") || "Already have an account? Sign in here",
                 ),
               ),
@@ -1188,12 +1188,12 @@ const ve = () => {
                 { className: "flex-1" },
                 e.createElement(
                   "h3",
-                  { className: "text-xl font-bold text-white dark:text-xl dark:text-white" },
+                  { className: "text-xl font-bold text-white dark:text-white" },
                   r("signup") || "Create Account",
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-white/70 text-sm dark:text-white/70 dark:text-sm" },
+                  { className: "text-white/70 text-sm dark:text-white/70" },
                   r("signup_desc") || "New user? Join us in just a few steps",
                 ),
               ),

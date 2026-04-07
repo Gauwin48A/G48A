@@ -208,7 +208,7 @@ const X = () => {
                 { className: "flex-1 text-center dark:text-center" },
                 e.createElement(
                   "span",
-                  { className: "text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300 dark:text-sm" },
+                  { className: "text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300" },
                   tr("post", "Post"),
                 ),
               ),
@@ -238,7 +238,7 @@ const X = () => {
                   },
                   e.createElement(
                     M,
-                    { className: "text-white text-xl font-bold dark:text-white dark:text-xl" },
+                    { className: "text-white text-xl font-bold dark:text-white" },
                     post.user?.name?.[0] || post.username?.[0] || "U",
                   ),
                 ),
@@ -249,7 +249,7 @@ const X = () => {
                     "h3",
                     {
                       className:
-                        "font-bold text-lg text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                        "font-bold text-lg text-gray-900 dark:text-white dark:text-gray-100",
                     },
                     post.user?.name || post.username || tr("anonymous", "Anonymous"),
                   ),
@@ -257,20 +257,20 @@ const X = () => {
                     "div",
                     {
                       className:
-                        "flex flex-wrap items-center gap-3 text-gray-500 dark:text-gray-400 text-sm mt-1 dark:text-gray-300 dark:text-sm",
+                        "flex flex-wrap items-center gap-3 text-gray-500 dark:text-gray-400 text-sm mt-1 dark:text-gray-300",
                     },
                     post.location &&
                       e.createElement(
                         "span",
                         { className: "flex items-center gap-1" },
-                        e.createElement(V, { className: "text-xs dark:text-xs" }),
+                        e.createElement(V, { className: "text-xs" }),
                         " ",
                         post.location,
                       ),
                     e.createElement(
                       "span",
                       { className: "flex items-center gap-1" },
-                      e.createElement(J, { className: "text-xs dark:text-xs" }),
+                      e.createElement(J, { className: "text-xs" }),
                       " ",
                       formatDate(post.created_at),
                     ),
@@ -285,7 +285,7 @@ const X = () => {
                     "h1",
                     {
                       className:
-                        "text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight dark:text-2xl dark:md:text-3xl dark:text-gray-100",
+                        "text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight dark:text-gray-100",
                     },
                     post.title,
                   ),
@@ -296,7 +296,7 @@ const X = () => {
                     "p",
                     {
                       className:
-                        "text-gray-700 dark:text-gray-300 text-lg leading-relaxed whitespace-pre-wrap dark:text-gray-200 dark:text-lg",
+                        "text-gray-700 dark:text-gray-300 text-lg leading-relaxed whitespace-pre-wrap dark:text-gray-200",
                     },
                     post.description ||
                       tr("no_content_available", "No content available."),

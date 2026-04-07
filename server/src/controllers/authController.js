@@ -910,8 +910,8 @@ exports.setPassword = async (req, res) => {
   if (!userId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  if (!password || password.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  if (!password || password.length < 12) {
+    return res.status(400).json({ error: 'Password must be at least 12 characters' });
   }
   try {
     const strength = zxcvbn(password);
@@ -1052,8 +1052,8 @@ exports.resetPassword = async (req, res) => {
   if (!newPassword) {
     return res.status(400).json({ error: 'New password is required' });
   }
-  if (newPassword.length < 8) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  if (newPassword.length < 12) {
+    return res.status(400).json({ error: 'Password must be at least 12 characters' });
   }
   if (!token && (!phone || !otp)) {
     return res.status(400).json({ error: 'Token or Phone+OTP is required' });
@@ -1190,7 +1190,7 @@ const maskPanNumber = (value) => {
   return `XXXXX${normalized.slice(-4)}`;
 };
 const passwordMeetsPolicy = (password) => {
-  if (!password || password.length < 8) return false;
+  if (!password || password.length < 12) return false;
   if (!/\d/.test(password)) return false;
   if (!/[^A-Za-z0-9]/.test(password)) return false;
   return true;

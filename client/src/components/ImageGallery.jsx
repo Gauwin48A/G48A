@@ -67,7 +67,7 @@ const ImageGallery = ({ images = [], alt = 'Product image' }) => {
                                 type="button"
                                 aria-label={`${t("view_image") || "View image"} ${index + 1}`}
                             >
-                                <img src={img} alt={`Thumbnail ${index + 1}`} loading="lazy" decoding="async" />
+                                <img src={img} alt={`Thumbnail ${index + 1}`} loading="lazy" decoding="async" onError={(e) => { e.target.style.opacity = '0.3'; }} />
                             </button>
                         ))}
                     </div>
@@ -119,6 +119,7 @@ const ImageGallery = ({ images = [], alt = 'Product image' }) => {
                         src={imageArray[currentIndex]}
                         alt={`${alt} ${currentIndex + 1}`}
                         onClick={(e) => e.stopPropagation()}
+                        onError={(e) => { e.target.style.opacity = '0.3'; }}
                     />
                     {imageArray.length > 1 && (
                         <>

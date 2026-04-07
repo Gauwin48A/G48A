@@ -528,7 +528,7 @@ const Wishlist = () => {
       >
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin dark:border-2 dark:border-pink-600/40 dark:border-t-transparent" />
-          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium dark:text-gray-300 dark:text-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium dark:text-gray-300">
             {t("loading") || "Loading..."}
           </p>
         </div>
@@ -556,15 +556,15 @@ const Wishlist = () => {
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 dark:text-2xl dark:text-gray-100">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100">
             {t("sign_in_to_view_wishlist") || "Sign in to view Wishlist"}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed dark:text-sm dark:text-gray-300">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed dark:text-gray-300">
             {t("save_favorites") || "Save your favorite items for later"}
           </p>
           <Button
             onClick={() => navigate("/login", { state: { returnTo: "/wishlist" } })}
-            className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-pink-500/20 hover:shadow-xl hover:shadow-pink-500/30 transition-all duration-300 hover:-translate-y-0.5 dark:bg-gradient-to-r dark:text-white dark:text-base"
+            className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-pink-500/20 hover:shadow-xl hover:shadow-pink-500/30 transition-all duration-300 hover:-translate-y-0.5 dark:bg-gradient-to-r dark:text-white"
           >
             {t("sign_in") || "Sign In"}
           </Button>
@@ -656,13 +656,13 @@ const Wishlist = () => {
           <div className="w-7 h-7 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center shadow-sm shadow-pink-500/20 dark:bg-gradient-to-br">
             <Heart className="w-3.5 h-3.5 text-white fill-white shrink-0 dark:text-white" />
           </div>
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 dark:text-sm dark:text-gray-200">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 dark:text-gray-200">
             {hasCategoryMode && categoryModeCategory?.name
               ? `${displayItems.length} ${displayItems.length === 1 ? (t("saved_item") || "saved item") : (t("saved_items") || "saved items")} in ${categoryModeCategory.name}`
               : `${items.length} ${items.length === 1 ? (t("saved_item") || "saved item") : (t("saved_items") || "saved items")}`}
           </p>
           {isTranslating && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 ml-1 dark:text-xs dark:text-gray-300">
+            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 ml-1 dark:text-gray-300">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75 dark:bg-pink-800/30" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500 dark:bg-pink-800/30" />
@@ -676,17 +676,17 @@ const Wishlist = () => {
         {hasCategoryMode && categoryModeCategory?.name && (
           <div className="mb-3 rounded-xl border border-pink-200/60 dark:border-pink-900/30 mhub-premium-surface backdrop-blur-sm p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 dark:border dark:border-pink-600/60">
             <div>
-              <p className="text-sm font-medium text-gray-800 dark:text-white dark:text-sm dark:text-gray-100">
+              <p className="text-sm font-medium text-gray-800 dark:text-white dark:text-gray-100">
                 Category mode: {categoryModeCategory.name}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300">
+              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
                 Your wishlist is filtered to this category.
               </p>
             </div>
             <Button
               type="button"
               variant="outline"
-              className="border-pink-200 text-pink-700 dark:border-pink-800 dark:text-pink-300 w-fit rounded-lg text-xs h-8 dark:border-pink-600/40 dark:text-xs"
+              className="border-pink-200 text-pink-700 dark:border-pink-800 dark:text-pink-300 w-fit rounded-lg text-xs h-8 dark:border-pink-600/40"
               onClick={() => navigate("/category-mode")}
             >
               Switch category
@@ -701,13 +701,13 @@ const Wishlist = () => {
               <Heart className="w-4 h-4 text-red-400 dark:text-red-200" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 dark:text-sm dark:text-gray-100">{t("wishlist_load_error") || "Couldn't load your wishlist"}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 dark:text-xs dark:text-gray-300">{t("try_again_later") || "Check your connection and try again"}</p>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 dark:text-gray-100">{t("wishlist_load_error") || "Couldn't load your wishlist"}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 dark:text-gray-300">{t("try_again_later") || "Check your connection and try again"}</p>
             </div>
             <Button
               type="button"
               size="sm"
-              className="bg-red-500 hover:bg-red-600 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-sm flex-shrink-0 dark:bg-red-800/30 dark:hover:bg-red-700/40 dark:text-white dark:text-xs"
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-sm flex-shrink-0 dark:bg-red-800/30 dark:hover:bg-red-700/40 dark:text-white"
               onClick={() => fetchWishlist({ reset: true })}
             >
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
@@ -891,12 +891,12 @@ const Wishlist = () => {
               <Star className="absolute top-8 left-4 w-3 h-3 text-amber-400 opacity-60 dark:text-amber-200" />
             </div>
 
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center dark:text-xl dark:text-gray-100 dark:text-center">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center dark:text-gray-100 dark:text-center">
               {isFilteredEmpty
                 ? `No ${categoryModeCategory?.name || "category"} items saved yet`
                 : t("wishlist_empty") || "Your wishlist is empty"}
             </h3>
-            <p className="text-[13px] text-gray-500 dark:text-gray-400 mb-8 text-center max-w-[280px] leading-relaxed dark:text-[13px] dark:text-gray-300 dark:text-center">
+            <p className="text-[13px] text-gray-500 dark:text-gray-400 mb-8 text-center max-w-[280px] leading-relaxed dark:text-gray-300 dark:text-center">
               {isFilteredEmpty
                 ? "Switch category or save items in this marketplace."
                 : t("start_saving") || "Tap the heart icon on any listing to add it here."}
@@ -904,7 +904,7 @@ const Wishlist = () => {
             <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-xs">
               <Button
                 onClick={() => navigate("/all-posts")}
-                className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-6 h-11 rounded-xl text-sm font-semibold shadow-xl shadow-pink-500/20 transition-all duration-300 hover:shadow-2xl hover:shadow-pink-500/30 hover:-translate-y-0.5 dark:bg-gradient-to-r dark:text-white dark:text-sm"
+                className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-6 h-11 rounded-xl text-sm font-semibold shadow-xl shadow-pink-500/20 transition-all duration-300 hover:shadow-2xl hover:shadow-pink-500/30 hover:-translate-y-0.5 dark:bg-gradient-to-r dark:text-white"
               >
                 <ShoppingBag className="w-4 h-4 mr-2" />
                 {t("browse_products") || "Browse Products"}
@@ -912,7 +912,7 @@ const Wishlist = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full sm:w-auto px-5 h-11 rounded-xl border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium hover:border-pink-300 hover:text-pink-600 dark:hover:border-pink-700 dark:hover:text-pink-400 transition-all duration-200 hover:-translate-y-0.5 dark:text-gray-200 dark:text-sm dark:hover:border-pink-600/40 dark:hover:text-pink-300"
+                className="w-full sm:w-auto px-5 h-11 rounded-xl border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium hover:border-pink-300 hover:text-pink-600 dark:hover:border-pink-700 dark:hover:text-pink-400 transition-all duration-200 hover:-translate-y-0.5 dark:text-gray-200 dark:hover:border-pink-600/40 dark:hover:text-pink-300"
                 onClick={() => navigate("/for-you")}
               >
                 <Compass className="w-4 h-4 mr-2" />
@@ -977,7 +977,7 @@ const Wishlist = () => {
                         <div className="w-14 h-14 bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-500/10 dark:to-purple-500/10 rounded-2xl flex items-center justify-center mb-2 dark:bg-gradient-to-br">
                           <ImageIcon className="w-7 h-7 text-pink-300 dark:text-pink-500/40 dark:text-pink-200" />
                         </div>
-                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 dark:text-[10px] dark:text-gray-300">
+                        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 dark:text-gray-300">
                           {t("image_unavailable") || "Image coming soon"}
                         </span>
                       </div>
@@ -986,7 +986,7 @@ const Wishlist = () => {
                     {/* bottom gradient overlay with price */}
                     <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent pointer-events-none dark:bg-gradient-to-t" />
                     <span className="absolute bottom-2.5 left-3 inline-flex items-center">
-                      <span className="bg-black/20 backdrop-blur-md rounded-lg px-2.5 py-1 text-lg font-bold text-white dark:bg-black/20 dark:text-lg dark:text-white">
+                      <span className="bg-black/20 backdrop-blur-md rounded-lg px-2.5 py-1 text-lg font-bold text-white dark:bg-black/20 dark:text-white">
                         &#x20B9;{item.price?.toLocaleString() || "0"}
                       </span>
                     </span>
@@ -1015,14 +1015,14 @@ const Wishlist = () => {
                     </button>
 
                     {/* category badge - pill, semi-transparent with tint */}
-                    <Badge className="absolute top-2.5 left-2.5 bg-white/20 dark:bg-white/10 backdrop-blur-md text-white border border-white/20 text-[10px] font-medium px-2.5 py-0.5 rounded-full shadow-sm dark:bg-slate-900/20 dark:text-white dark:border dark:border-white/20 dark:text-[10px]">
+                    <Badge className="absolute top-2.5 left-2.5 bg-white/20 dark:bg-white/10 backdrop-blur-md text-white border border-white/20 text-[10px] font-medium px-2.5 py-0.5 rounded-full shadow-sm dark:bg-slate-900/20 dark:text-white dark:border dark:border-white/20">
                       {item.category_name || t("general") || "General"}
                     </Badge>
                   </div>
 
                   {/* ── card body ── */}
                   <div className={`p-3 sm:p-3.5 ${isListView ? "flex-1" : ""}`}>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-[13px] sm:text-sm leading-snug mb-1 line-clamp-1 transition-colors duration-200 group-hover:text-pink-600 dark:group-hover:text-pink-400 dark:text-[13px] dark:sm:text-sm dark:group-hover:text-pink-300">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-[13px] sm:text-sm leading-snug mb-1 line-clamp-1 transition-colors duration-200 group-hover:text-pink-600 dark:group-hover:text-pink-400 dark:group-hover:text-pink-300">
                       {item.title}
                     </h3>
                     {sellerName && (
@@ -1059,7 +1059,7 @@ const Wishlist = () => {
 
                     {/* rating */}
                     {rating > 0 && (
-                      <div className="flex items-center gap-1 text-xs mb-1.5 dark:text-xs">
+                      <div className="flex items-center gap-1 text-xs mb-1.5">
                         <Star className="w-3 h-3 text-amber-400 fill-amber-400 dark:text-amber-200" />
                         <span className="font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200">{rating.toFixed(1)}</span>
                         {reviews > 0 && (
@@ -1071,19 +1071,19 @@ const Wishlist = () => {
                     )}
 
                     {/* description */}
-                    <p className="text-gray-500 dark:text-gray-400 text-[11px] sm:text-xs leading-relaxed mb-2 line-clamp-2 dark:text-gray-300 dark:text-[11px] dark:sm:text-xs">
+                    <p className="text-gray-500 dark:text-gray-400 text-[11px] sm:text-xs leading-relaxed mb-2 line-clamp-2 dark:text-gray-300">
                       {item.description || t("no_description") || "No description"}
                     </p>
 
                     {/* notes */}
                     {notesText && (
-                      <p className="text-[10px] sm:text-[11px] italic text-pink-700 dark:text-pink-300 mb-2 border-l-2 border-pink-400 dark:border-pink-500 pl-2 py-0.5 bg-pink-50/50 dark:bg-pink-500/5 rounded-r-md line-clamp-2 dark:text-[10px] dark:sm:text-[11px] dark:border-l-2 dark:border-pink-600/40 dark:bg-pink-950/50">
+                      <p className="text-[10px] sm:text-[11px] italic text-pink-700 dark:text-pink-300 mb-2 border-l-2 border-pink-400 dark:border-pink-500 pl-2 py-0.5 bg-pink-50/50 dark:bg-pink-500/5 rounded-r-md line-clamp-2 dark:border-l-2 dark:border-pink-600/40 dark:bg-pink-950/50">
                         {notesText}
                       </p>
                     )}
 
                     {/* location + saved date */}
-                    <div className="flex items-center justify-between mb-2.5 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 dark:text-[10px] dark:sm:text-[11px] dark:text-gray-300">
+                    <div className="flex items-center justify-between mb-2.5 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 dark:text-gray-300">
                       <div className="flex items-center gap-1 truncate">
                         <MapPin className="w-3 h-3 shrink-0" />
                         <span className="truncate">{item.location || t("not_available") || "N/A"}</span>
@@ -1103,7 +1103,7 @@ const Wishlist = () => {
                               state: { source: "wishlist", returnTo: "/wishlist" },
                             })
                           }
-                          className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl text-[11px] sm:text-xs h-9 sm:h-10 font-semibold shadow-md shadow-pink-500/20 hover:shadow-lg hover:shadow-pink-500/25 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none dark:bg-gradient-to-r dark:text-white dark:text-[11px] dark:sm:text-xs"
+                          className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl text-[11px] sm:text-xs h-9 sm:h-10 font-semibold shadow-md shadow-pink-500/20 hover:shadow-lg hover:shadow-pink-500/25 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none dark:bg-gradient-to-r dark:text-white"
                         >
                           <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                           <span className="hidden sm:inline">{t("view_details") || "View Details"}</span>

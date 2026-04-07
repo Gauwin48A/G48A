@@ -10,7 +10,8 @@ function getKey() {
     throw new Error('AADHAAR_AES_SECRET must be set to a strong secret in environment variables');
   }
   // Derive a fixed-length key from the secret
-  return crypto.scryptSync(secret, 'mhub-aadhaar-salt', KEY_LENGTH);
+  const salt = process.env.AADHAAR_SCRYPT_SALT || 'mhub-aadhaar-salt';
+  return crypto.scryptSync(secret, salt, KEY_LENGTH);
 }
 
 function maskAadhaar(aadhaar) {

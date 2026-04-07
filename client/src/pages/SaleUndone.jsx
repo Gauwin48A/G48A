@@ -645,14 +645,14 @@ const SaleUndonePage = () => {
                 "h2",
                 {
                   className:
-                    "text-4xl font-black bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent mb-4 dark:text-4xl dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent",
+                    "text-4xl font-black bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent mb-4 dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent",
                 },
                 "\uD83D\uDD04 ",
                 tr("post_reactivated_title", "Post Reactivated!"),
               ),
               e.createElement(
                 "p",
-                { className: "text-gray-600 text-xl mb-8 max-w-md mx-auto dark:text-gray-200 dark:text-xl" },
+                { className: "text-gray-600 text-xl mb-8 max-w-md mx-auto dark:text-gray-200" },
                 tr(
                   "post_reactivated_success_desc",
                   "Your post is now active and visible to potential buyers again.",
@@ -675,12 +675,12 @@ const SaleUndonePage = () => {
                     }),
                     e.createElement(
                       "p",
-                      { className: "text-lg font-bold text-emerald-700 dark:text-lg dark:text-emerald-300" },
+                      { className: "text-lg font-bold text-emerald-700 dark:text-emerald-300" },
                       tr("active", "Active"),
                     ),
                     e.createElement(
                       "p",
-                      { className: "text-sm text-gray-500 dark:text-sm dark:text-gray-300" },
+                      { className: "text-sm text-gray-500 dark:text-gray-300" },
                       tr("post_status", "Post Status"),
                     ),
                   ),
@@ -695,12 +695,12 @@ const SaleUndonePage = () => {
                     }),
                     e.createElement(
                       "p",
-                      { className: "text-lg font-bold text-green-700 dark:text-lg dark:text-green-300" },
+                      { className: "text-lg font-bold text-green-700 dark:text-green-300" },
                       tr("visible", "Visible"),
                     ),
                     e.createElement(
                       "p",
-                      { className: "text-sm text-gray-500 dark:text-sm dark:text-gray-300" },
+                      { className: "text-sm text-gray-500 dark:text-gray-300" },
                       tr("to_buyers", "To Buyers"),
                     ),
                   ),
@@ -861,7 +861,7 @@ const SaleUndonePage = () => {
                 "p",
                 {
                   className:
-                    "text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100",
+                    "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
                 },
                 tr("category_mode_label", "Category mode: {{category}}", {
                   category: categoryModeCategory.name,
@@ -869,7 +869,7 @@ const SaleUndonePage = () => {
               ),
               e.createElement(
                 "p",
-                { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300" },
+                { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
                 tr(
                   "reactivation_filtered_category",
                   "Reactivation history is filtered to this category.",
@@ -897,7 +897,7 @@ const SaleUndonePage = () => {
               "p",
               {
                 className:
-                  "text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-[10px] dark:text-slate-300",
+                  "text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300",
               },
               tr("sale_undone_progress_label", "Reactivation progress"),
             ),
@@ -905,7 +905,7 @@ const SaleUndonePage = () => {
               "h2",
               {
                 className:
-                  "text-base sm:text-lg font-bold text-slate-900 dark:text-white dark:text-base dark:sm:text-lg dark:text-slate-100",
+                  "text-base sm:text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100",
               },
               tr("sale_undone_progress_title", "Confirm and reactivate"),
             ),
@@ -960,7 +960,7 @@ const SaleUndonePage = () => {
               },
               e.createElement(
                 P,
-                { className: "flex items-center space-x-3 text-2xl dark:text-2xl" },
+                { className: "flex items-center space-x-3 text-2xl" },
                 e.createElement(
                   "div",
                   {
@@ -973,7 +973,7 @@ const SaleUndonePage = () => {
               ),
               e.createElement(
                 O,
-                { className: "text-orange-100 text-base mt-2 dark:text-orange-200 dark:text-base" },
+                { className: "text-orange-100 text-base mt-2 dark:text-orange-200" },
                 t("enter_post_id_to_reactivate"),
               ),
             ),
@@ -1006,7 +1006,7 @@ const SaleUndonePage = () => {
                       "p",
                       {
                         className:
-                          "font-bold text-orange-800 dark:text-orange-300 text-lg mb-2 dark:text-orange-200 dark:text-lg",
+                          "font-bold text-orange-800 dark:text-orange-300 text-lg mb-2 dark:text-orange-200",
                       },
                       t("when_to_use_sale_undone"),
                     ),
@@ -1059,7 +1059,7 @@ const SaleUndonePage = () => {
                     {
                       htmlFor: "postId",
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     t("post_id"),
                     " *",
@@ -1073,7 +1073,7 @@ const SaleUndonePage = () => {
                       validationErrors.postId
                         ? "border-red-400 dark:border-red-500/60 focus:border-red-500"
                         : "border-gray-200 dark:border-gray-600 focus:border-orange-500"
-                    } dark:bg-gray-700 dark:text-white transition-colors dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40`,
+                    } dark:bg-gray-700 dark:text-white transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40`,
                     required: !0,
                     "aria-invalid": Boolean(validationErrors.postId),
                   }),
@@ -1082,7 +1082,7 @@ const SaleUndonePage = () => {
                       "p",
                       {
                         className:
-                          "text-sm text-red-600 dark:text-red-400 mt-2 dark:text-sm",
+                          "text-sm text-red-600 dark:text-red-400 mt-2",
                       },
                       validationErrors.postId,
                     ),
@@ -1090,7 +1090,7 @@ const SaleUndonePage = () => {
                     "p",
                     {
                       className:
-                        "text-sm text-gray-500 dark:text-gray-400 mt-2 dark:text-sm dark:text-gray-300",
+                        "text-sm text-gray-500 dark:text-gray-400 mt-2 dark:text-gray-300",
                     },
                     "\uD83D\uDCA1 ",
                     t("post_id_hint"),
@@ -1104,7 +1104,7 @@ const SaleUndonePage = () => {
                     {
                       htmlFor: "reason",
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     t("reason_for_undoing"),
                   ),
@@ -1115,7 +1115,7 @@ const SaleUndonePage = () => {
                       value: n.reason,
                       onChange: (r) => updateField("reason", r.target.value),
                       className:
-                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-orange-500 transition-colors px-4 bg-white dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40 dark:bg-slate-900",
+                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-orange-500 transition-colors px-4 bg-white dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40 dark:bg-slate-900",
                     },
                     e.createElement(
                       "option",
@@ -1178,7 +1178,7 @@ const SaleUndonePage = () => {
                     {
                       htmlFor: "description",
                       className:
-                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block dark:text-sm",
+                        "text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 block",
                     },
                     t("additional_notes"),
                   ),
@@ -1191,7 +1191,7 @@ const SaleUndonePage = () => {
                       validationErrors.description
                         ? "border-red-400 dark:border-red-500/60 focus:border-red-500"
                         : "border-gray-200 dark:border-gray-600 focus:border-orange-500"
-                    } dark:bg-gray-700 dark:text-white transition-colors px-4 py-3 resize-none dark:text-lg dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40`,
+                    } dark:bg-gray-700 dark:text-white transition-colors px-4 py-3 resize-none dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40`,
                     "aria-invalid": Boolean(validationErrors.description),
                   }),
                   validationErrors.description &&
@@ -1199,7 +1199,7 @@ const SaleUndonePage = () => {
                       "p",
                       {
                         className:
-                          "text-sm text-red-600 dark:text-red-400 mt-2 dark:text-sm",
+                          "text-sm text-red-600 dark:text-red-400 mt-2",
                       },
                       validationErrors.description,
                     ),
@@ -1210,7 +1210,7 @@ const SaleUndonePage = () => {
                     type: "submit",
                     disabled: y,
                     className:
-                      "w-full h-16 text-lg font-bold bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-2xl shadow-xl shadow-orange-500/30 transition-all hover:shadow-orange-500/50 hover:scale-[1.02] dark:text-lg dark:bg-gradient-to-r",
+                      "w-full h-16 text-lg font-bold bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-2xl shadow-xl shadow-orange-500/30 transition-all hover:shadow-orange-500/50 hover:scale-[1.02] dark:bg-gradient-to-r",
                   },
                   y
                     ? e.createElement(
@@ -1246,7 +1246,7 @@ const SaleUndonePage = () => {
               },
               e.createElement(
                 P,
-                { className: "flex items-center space-x-3 text-xl dark:text-xl" },
+                { className: "flex items-center space-x-3 text-xl" },
                 e.createElement(J, { className: "w-6 h-6" }),
                 e.createElement("span", null, t("previously_reactivated")),
               ),
@@ -1305,7 +1305,7 @@ const SaleUndonePage = () => {
                           "p",
                           {
                             className:
-                              "text-gray-500 dark:text-gray-400 text-lg dark:text-gray-300 dark:text-lg",
+                              "text-gray-500 dark:text-gray-400 text-lg dark:text-gray-300",
                           },
                           hasCategoryMode && categoryModeCategory?.name
                             ? tr(
@@ -1319,7 +1319,7 @@ const SaleUndonePage = () => {
                           "p",
                           {
                             className:
-                              "text-gray-400 dark:text-gray-500 text-sm mt-1 dark:text-gray-300 dark:text-sm",
+                              "text-gray-400 dark:text-gray-500 text-sm mt-1 dark:text-gray-300",
                           },
                           hasCategoryMode && categoryModeCategory?.name
                             ? tr(
@@ -1438,7 +1438,7 @@ const SaleUndonePage = () => {
                                   "div",
                                   {
                                     className:
-                                      "mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300",
+                                      "mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                   },
                                   priceLabel &&
                                     e.createElement(
@@ -1483,7 +1483,7 @@ const SaleUndonePage = () => {
                                   "p",
                                   {
                                     className:
-                                      "mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                      "mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                   },
                                   r.reason ||
                                     tr(

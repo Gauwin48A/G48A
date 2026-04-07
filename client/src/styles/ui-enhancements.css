@@ -1557,8 +1557,9 @@ button[class*="border"]:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.25rem 0.6rem;
-  font-size: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 2.75rem;
+  font-size: 0.75rem;
   font-weight: 700;
   border-radius: 999px;
   border: 1px solid transparent;

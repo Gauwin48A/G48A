@@ -32,9 +32,13 @@ module.exports = {
             error_file: './logs/error.log',
             out_file: './logs/out.log',
             merge_logs: true,
+            log_rotate: true,
+            max_size: '10M',
+            retain: 5,
+            compress: true,
 
             // Graceful restart
-            kill_timeout: 5000,
+            kill_timeout: 10000,
             wait_ready: true,
             listen_timeout: 10000,
 

@@ -112,6 +112,10 @@ const subscriptionRoutes = require("./routes/subscriptions.js");
 const coinRoutes = require("./routes/coins.js");
 const walletRoutes = require("./routes/wallet.js");
 const sellerAnalyticsRoutes = require("./routes/sellerAnalytics.js");
+const auditRoutes = require("./routes/audit.js");
+const dailyCodeRoutes = require("./routes/dailycode.js");
+const loginAuditRoutes = require("./routes/loginAudit.js");
+const saleUndoneRoutes = require("./routes/saleundone.js");
 const { setNotificationSocket } = require("./services/notificationEmitter");
 
 /* ─────────────────────────────────────────────────────────
@@ -391,7 +395,24 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Per-socket rate limiting for messages
+  const messageTimestamps = [];
+  const MSG_RATE_LIMIT = 30; // max messages
+  const MSG_RATE_WINDOW = 60000; // per 60 seconds
+
   socket.on("send_message", (data) => {
+    // Validate required fields
+    if (!data || typeof data !== "object" || !data.room || typeof data.room !== "string") return;
+    if (data.message && typeof data.message === "string" && data.message.length > 5000) return;
+
+    // Rate limit
+    const now = Date.now();
+    while (messageTimestamps.length && messageTimestamps[0] < now - MSG_RATE_WINDOW) {
+      messageTimestamps.shift();
+    }
+    if (messageTimestamps.length >= MSG_RATE_LIMIT) return;
+    messageTimestamps.push(now);
+
     socket.to(data.room).emit("receive_message", data);
   });
 
@@ -519,7 +540,7 @@ app.use(
 );
 app.use("/api/location", locationRoutes);
 app.use("/api/v1/location", locationVerificationRoutes);
-app.use("/api/location", locationVerificationRoutes);
+// Alias mounts for backwards compatibility
 app.use(
   "/api/channel",
   requireCriticalTenantWriteContext("channel write operations"),
@@ -624,6 +645,10 @@ const apiRouteMounts = [
   ["/api/coins", coinRoutes],
   ["/api/wallet", walletRoutes],
   ["/api/seller-analytics", sellerAnalyticsRoutes],
+  ["/api/audit", auditRoutes],
+  ["/api/dailycode", dailyCodeRoutes],
+  ["/api/login-audit", loginAuditRoutes],
+  ["/api/saleundone", saleUndoneRoutes],
 ];
 
 for (const [routePath, routeHandler] of apiRouteMounts) {
@@ -692,9 +717,9 @@ app.get("/api/health", async (req, res) => {
       time: time.rows[0].now,
     });
   } catch (err) {
-    res.status(200).json({
+    res.status(503).json({
       service: "mhub-backend",
-      status: "ok",
+      status: "degraded",
       db: "disconnected",
       time: null,
       error: "Database connection failed",
@@ -802,6 +827,7 @@ const DEV_FALLBACK_PORTS = isDevelopment
 
 let serverInstance = null;
 let shuttingDown = false;
+let dailySubInterval = null;
 
 /**
  * Attempts to listen on the given port.
@@ -858,7 +884,7 @@ const startBackgroundJobs = () => {
       logger.info("Subscription check complete");
     }, 5000);
 
-    setInterval(async () => {
+    dailySubInterval = setInterval(async () => {
       logger.info("Running daily subscription expiry check...");
       await checkExpiringSubscriptions();
     }, 24 * 60 * 60 * 1000);
@@ -964,6 +990,7 @@ const shutdown = (signal) => {
   if (shuttingDown) return;
   shuttingDown = true;
   logger.info(`${signal} received. Shutting down gracefully...`);
+  if (dailySubInterval) clearInterval(dailySubInterval);
 
   const finalize = () => {
     Promise.allSettled([cacheLayer.close?.(), sessionStore.close?.()]).finally(

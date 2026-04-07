@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const pino = require("../config/logger");
 
 /**
  * Log an Aadhaar verification event to the database.
@@ -24,23 +25,23 @@ async function logAadhaarVerification(userId, requestId, requestType, status) {
  * @param {...*} args - Values to log.
  */
 function warn(...args) {
-  console.warn("[WARN]", ...args);
+  pino.warn(args.length === 1 ? args[0] : args.join(" "));
 }
 
 /**
- * Log an error message to stderr with an [ERROR] prefix.
+ * Log an error message with an [ERROR] prefix.
  * @param {...*} args - Values to log.
  */
 function error(...args) {
-  console.error("[ERROR]", ...args);
+  pino.error(args.length === 1 ? args[0] : args.join(" "));
 }
 
 /**
- * Log an informational message to stdout with an [INFO] prefix.
+ * Log an informational message with an [INFO] prefix.
  * @param {...*} args - Values to log.
  */
 function info(...args) {
-  console.log("[INFO]", ...args);
+  pino.info(args.length === 1 ? args[0] : args.join(" "));
 }
 
 module.exports = {

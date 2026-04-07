@@ -44,7 +44,7 @@ export default function ResetPassword() {
       hasLowercase: /[a-z]/.test(password),
       hasNumber: /\d/.test(password),
       hasSpecial: /[!@#$%^&*]/.test(password),
-      isLongEnough: password.length >= 8,
+      isLongEnough: password.length >= 12,
     }),
     [password],
   );
@@ -92,7 +92,7 @@ export default function ResetPassword() {
       const payload = otpMode
         ? { phone, otp, newPassword: password }
         : { token, newPassword: password };
-      const response = await api.post("/api/auth/reset-password", payload);
+      const response = await api.post("/auth/reset-password", payload);
       const data = response?.data ?? response;
 
       setSuccess(true);
@@ -118,10 +118,10 @@ export default function ResetPassword() {
       <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 px-4 py-8 transition-colors duration-300 dark:bg-gradient-to-br">
         <Card className="max-w-md w-full shadow-xl border-0 rounded-2xl sm:rounded-3xl mhub-premium-surface dark:border-0">
           <CardContent className="p-6 sm:p-8 text-center dark:text-center">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 dark:text-xl dark:text-gray-100">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 dark:text-gray-100">
               {t("invalid_reset_link") || "Invalid Reset Link"}
             </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm dark:text-gray-200 dark:text-sm">
+            <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm dark:text-gray-200">
               {t("invalid_reset_link_desc") || "This password reset link is invalid or has expired."}
             </p>
             <Link to="/forgot-password">
@@ -147,14 +147,14 @@ export default function ResetPassword() {
                 <Lock className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
               )}
             </div>
-            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-xl dark:sm:text-2xl dark:text-white">
+            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-white">
               {success
                 ? t("password_reset_title") || "Password Reset!"
                 : otpMode
                   ? t("reset_with_otp") || "Reset with OTP"
                   : t("reset_password_title") || "Reset Password"}
             </CardTitle>
-            <CardDescription className="text-blue-100 text-sm dark:text-blue-200 dark:text-sm">
+            <CardDescription className="text-blue-100 text-sm dark:text-blue-200">
               {success
                 ? t("redirecting_to_login") || "Redirecting to login..."
                 : otpMode
@@ -166,7 +166,7 @@ export default function ResetPassword() {
           <CardContent className="p-5 sm:p-8">
             {success ? (
               <div className="text-center space-y-4 dark:text-center">
-                <p className="text-gray-600 dark:text-gray-300 text-sm dark:text-gray-200 dark:text-sm">
+                <p className="text-gray-600 dark:text-gray-300 text-sm dark:text-gray-200">
                   {t("password_reset_success_msg") ||
                     "Your password has been reset successfully. You will be redirected to the login page."}
                 </p>
@@ -179,7 +179,7 @@ export default function ResetPassword() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 {errorMessage && (
-                  <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-sm">
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
                     <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
@@ -188,7 +188,7 @@ export default function ResetPassword() {
                 {otpMode && (
                   <>
                     <div>
-                      <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200">
+                      <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
                         {t("phone") || "Phone Number"}
                       </Label>
                       <Input
@@ -203,7 +203,7 @@ export default function ResetPassword() {
                     </div>
 
                     <div>
-                      <Label htmlFor="otp" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200">
+                      <Label htmlFor="otp" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
                         {t("enter_otp") || "Enter OTP"}
                       </Label>
                       <Input
@@ -211,7 +211,7 @@ export default function ResetPassword() {
                         type="text"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
-                        className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40 dark:text-center dark:text-lg"
+                        className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40 dark:text-center"
                         placeholder="123456"
                         maxLength={6}
                         disabled={loading}
@@ -222,7 +222,7 @@ export default function ResetPassword() {
 
                 {/* New Password */}
                 <div>
-                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200">
+                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
                     {t("new_password_label") || "New Password"}
                   </Label>
                   <div className="relative mt-2">
@@ -249,7 +249,7 @@ export default function ResetPassword() {
 
                 {/* Confirm Password */}
                 <div>
-                  <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200">
+                  <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
                     {t("confirm_new_password_label") || "Confirm New Password"}
                   </Label>
                   <div className="relative mt-2">
@@ -273,14 +273,14 @@ export default function ResetPassword() {
                     </Button>
                   </div>
                   {confirmPassword && password !== confirmPassword && (
-                    <p className="text-xs text-red-500 mt-1 dark:text-xs dark:text-red-300">
+                    <p className="text-xs text-red-500 mt-1 dark:text-red-300">
                       {t("passwords_do_not_match") || "Passwords do not match"}
                     </p>
                   )}
                 </div>
 
                 {/* Requirements */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:text-xs dark:border dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:border dark:border-gray-700">
                   <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300 dark:text-gray-200">
                     {t("password_requirements") || "Password Requirements"}
                   </p>
@@ -306,7 +306,7 @@ export default function ResetPassword() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 sm:h-12 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-base sm:text-lg font-semibold dark:bg-gradient-to-r dark:text-white dark:text-base dark:sm:text-lg"
+                  className="w-full h-11 sm:h-12 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-base sm:text-lg font-semibold dark:bg-gradient-to-r dark:text-white"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">

@@ -42,11 +42,11 @@ function SessionCard({ session, isRevoking, onRevoke }) {
     <div className="mhub-premium-surface rounded-xl p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <p className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200 dark:text-sm dark:text-slate-100">
+          <p className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
             <Monitor className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-300" />
             {session.device_fingerprint || "Unknown device"}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300">
+          <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300">
             {session.user_agent || "Unknown user agent"}
           </p>
         </div>
@@ -54,14 +54,14 @@ function SessionCard({ session, isRevoking, onRevoke }) {
           type="button"
           onClick={() => onRevoke(session.session_id)}
           disabled={isRevoking}
-          className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-xs dark:text-red-300 dark:hover:bg-red-950/20"
+          className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {isRevoking ? "Revoking..." : "Revoke"}
         </button>
       </div>
 
-      <div className="mt-3 grid gap-1 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-2 dark:text-xs dark:text-slate-200">
+      <div className="mt-3 grid gap-1 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-2 dark:text-slate-200">
         <p className="flex items-center gap-1.5">
           <Clock3 className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-300" />
           Last active:{" "}
@@ -261,8 +261,8 @@ export default function SecuritySettings() {
       setPwError("All fields are required.");
       return;
     }
-    if (pwNew.length < 8) {
-      setPwError("New password must be at least 8 characters.");
+    if (pwNew.length < 12) {
+      setPwError("New password must be at least 12 characters.");
       return;
     }
     if (pwNew !== pwConfirm) {
@@ -335,13 +335,13 @@ export default function SecuritySettings() {
         <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-md dark:bg-gradient-to-r dark:text-white">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-wide text-blue-100 dark:text-xs dark:text-blue-200">
+              <p className="text-xs uppercase tracking-wide text-blue-100 dark:text-blue-200">
                 Security Center
               </p>
-              <h1 className="mt-1 text-2xl font-bold dark:text-2xl">
+              <h1 className="mt-1 text-2xl font-bold">
                 Authentication & Session Control
               </h1>
-              <p className="mt-2 text-sm text-blue-100 dark:text-sm dark:text-blue-200">
+              <p className="mt-2 text-sm text-blue-100 dark:text-blue-200">
                 Manage two-factor authentication and active sessions for your
                 account.
               </p>
@@ -352,7 +352,7 @@ export default function SecuritySettings() {
                 void loadTwoFaStatus();
                 void loadSessions();
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20 dark:border dark:border-white/40 dark:bg-slate-900/10 dark:text-sm dark:hover:bg-slate-900/20"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20 dark:border dark:border-white/40 dark:bg-slate-900/10 dark:hover:bg-slate-900/20"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
@@ -363,11 +363,11 @@ export default function SecuritySettings() {
         <section className="mhub-premium-surface rounded-2xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-lg dark:text-slate-100">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
                 <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400 dark:text-emerald-300" />
                 Two-Factor Authentication
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-sm dark:text-slate-300">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
                 Status:{" "}
                 <span className="font-semibold text-slate-700 dark:text-slate-300 dark:text-slate-200">
                   {statusBadge}
@@ -379,7 +379,7 @@ export default function SecuritySettings() {
                 type="button"
                 onClick={beginSetup}
                 disabled={setupLoading || statusLoading || !twoFaAvailable}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-700/40 dark:text-sm dark:text-white dark:hover:bg-blue-700/40"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40"
               >
                 <KeyRound className="h-4 w-4" />
                 {setupLoading ? "Preparing..." : "Enable 2FA"}
@@ -392,7 +392,7 @@ export default function SecuritySettings() {
                   setSetupQrCode("");
                   setBackupCodes([]);
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border dark:border-red-600/40 dark:text-sm dark:text-red-300 dark:hover:bg-red-950/20"
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
               >
                 <Trash2 className="h-4 w-4" />
                 {disableMode ? "Cancel Disable" : "Disable 2FA"}
@@ -445,7 +445,7 @@ export default function SecuritySettings() {
                     type="button"
                     data-ux-action="security_setup_dismiss_error"
                     onClick={() => setSetupError("")}
-                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-sm dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     Dismiss
                   </button>
@@ -456,7 +456,7 @@ export default function SecuritySettings() {
 
           {setupQrCode ? (
             <div className="mt-5 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 p-4 dark:border dark:border-slate-700 dark:bg-slate-950">
-              <p className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm">
+              <p className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Step 1: Scan QR code
               </p>
               <div className="flex justify-center rounded-lg border border-slate-200 dark:border-gray-600 bg-white p-4 dark:border dark:border-slate-700 dark:bg-slate-900">
@@ -466,7 +466,7 @@ export default function SecuritySettings() {
                   className="h-44 w-44"
                 />
               </div>
-              <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200 dark:text-sm">
+              <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Step 2: Verify code
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -479,13 +479,13 @@ export default function SecuritySettings() {
                     )
                   }
                   placeholder={t("enter_authenticator_code")}
-                  className="mhub-input w-56 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 dark:text-sm"
+                  className="mhub-input w-56 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 />
                 <button
                   type="button"
                   onClick={verifySetup}
                   disabled={verifyLoading}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-700/40 dark:text-sm dark:text-white dark:hover:bg-emerald-700/40"
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-700/40 dark:text-white dark:hover:bg-emerald-700/40"
                 >
                   {verifyLoading ? "Verifying..." : "Verify & Enable"}
                 </button>
@@ -514,7 +514,7 @@ export default function SecuritySettings() {
                     type="button"
                     data-ux-action="security_verify_clear_error"
                     onClick={() => setVerifyError("")}
-                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-sm dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     Dismiss
                   </button>
@@ -528,7 +528,7 @@ export default function SecuritySettings() {
               <p className="font-semibold text-amber-800 dark:text-amber-300 dark:text-amber-200">
                 Backup codes (save these now)
               </p>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 dark:text-xs">
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                 {backupCodes.map((code) => (
                   <div
                     key={code}
@@ -543,7 +543,7 @@ export default function SecuritySettings() {
 
           {disableMode ? (
             <div className="mt-5 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 dark:border dark:border-red-600/40 dark:bg-red-950/20">
-              <p className="text-sm font-semibold text-red-700 dark:text-red-300 dark:text-sm">
+              <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                 Confirm disable using authenticator code
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -556,13 +556,13 @@ export default function SecuritySettings() {
                     )
                   }
                   placeholder={t("enter_code")}
-                  className="mhub-input w-56 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 dark:text-sm"
+                  className="mhub-input w-56 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 />
                 <button
                   type="button"
                   onClick={disableTwoFa}
                   disabled={disableLoading}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-red-700/40 dark:text-sm dark:text-white dark:hover:bg-red-700/40"
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-red-700/40 dark:text-white dark:hover:bg-red-700/40"
                 >
                   {disableLoading ? "Disabling..." : "Disable 2FA"}
                 </button>
@@ -591,7 +591,7 @@ export default function SecuritySettings() {
                     type="button"
                     data-ux-action="security_disable_clear_error"
                     onClick={() => setDisableError("")}
-                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-sm dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     Dismiss
                   </button>
@@ -603,18 +603,18 @@ export default function SecuritySettings() {
 
         <section className="mhub-premium-surface rounded-2xl p-5">
           <div>
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-lg dark:text-slate-100">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
               <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400 dark:text-amber-300" />
               Change Password
             </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-sm dark:text-slate-300">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
               Update your account password. You will need to enter your current password.
             </p>
           </div>
 
           <div className="mt-4 space-y-3 max-w-md">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 dark:text-xs dark:text-slate-200">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 dark:text-slate-200">
                 Current Password
               </label>
               <input
@@ -622,26 +622,26 @@ export default function SecuritySettings() {
                 value={pwCurrent}
                 onChange={(e) => setPwCurrent(e.target.value)}
                 placeholder="Enter current password"
-                className="mhub-input w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 dark:text-sm"
+                className="mhub-input w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 autoComplete="current-password"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 dark:text-xs dark:text-slate-200">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 dark:text-slate-200">
                 New Password
               </label>
               <input
                 type="password"
                 value={pwNew}
                 onChange={(e) => setPwNew(e.target.value)}
-                placeholder="Enter new password (min 8 chars)"
-                className="mhub-input w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 dark:text-sm"
+                placeholder="Enter new password (min 12 chars)"
+                className="mhub-input w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 autoComplete="new-password"
-                minLength={8}
+                minLength={12}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 dark:text-xs dark:text-slate-200">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 dark:text-slate-200">
                 Confirm New Password
               </label>
               <input
@@ -649,23 +649,23 @@ export default function SecuritySettings() {
                 value={pwConfirm}
                 onChange={(e) => setPwConfirm(e.target.value)}
                 placeholder="Confirm new password"
-                className="mhub-input w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 dark:text-sm"
+                className="mhub-input w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 autoComplete="new-password"
               />
             </div>
 
             {pwError && (
-              <p className="text-xs text-red-600 dark:text-red-400 dark:text-xs dark:text-red-300">{pwError}</p>
+              <p className="text-xs text-red-600 dark:text-red-400 dark:text-red-300">{pwError}</p>
             )}
             {pwSuccess && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 dark:text-xs dark:text-emerald-300">{pwSuccess}</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 dark:text-emerald-300">{pwSuccess}</p>
             )}
 
             <button
               type="button"
               onClick={handleChangePassword}
               disabled={pwLoading || !pwCurrent || !pwNew || !pwConfirm}
-              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-amber-700/40 dark:text-sm dark:text-white dark:hover:bg-amber-700/40"
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-amber-700/40 dark:text-white dark:hover:bg-amber-700/40"
             >
               <Lock className="h-4 w-4" />
               {pwLoading ? "Changing..." : "Change Password"}
@@ -676,11 +676,11 @@ export default function SecuritySettings() {
         <section className="mhub-premium-surface rounded-2xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-lg dark:text-slate-100">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
                 <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400 dark:text-blue-300" />
                 Active Sessions
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-sm dark:text-slate-300">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
                 Revoke sessions you do not recognize.
               </p>
             </div>
@@ -690,7 +690,7 @@ export default function SecuritySettings() {
               disabled={
                 revokeAllLoading || sessionsLoading || sessions.length === 0
               }
-              className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-sm dark:text-red-300 dark:hover:bg-red-950/20"
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
             >
               <Trash2 className="h-4 w-4" />
               {revokeAllLoading ? "Revoking..." : "Revoke All"}
@@ -731,7 +731,7 @@ export default function SecuritySettings() {
                     onClick={() => {
                       void loadSessions();
                     }}
-                    className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-sm dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     <RefreshCw className="h-4 w-4" />
                     Refresh Sessions

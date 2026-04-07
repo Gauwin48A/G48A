@@ -315,10 +315,10 @@ export default function SignUp() {
       toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
       return;
     }
-    if (!/\d/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password) || form.password.length < 8) {
+    if (!/\d/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password) || form.password.length < 12) {
       const msg =
         t("password_policy") ||
-        "Password must be 8+ characters with at least 1 number and 1 special character.";
+        "Password must be 12+ characters with at least 1 number and 1 special character.";
       setErrorMessage(msg);
       toast({ title: t("weak_password") || "Weak Password", description: msg, variant: "destructive" });
       return;
@@ -372,7 +372,7 @@ export default function SignUp() {
         <button
           type="button"
           onClick={() => step > 1 ? setStep((s) => s - 1) : navigate(-1)}
-          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors dark:text-sm dark:text-gray-300"
+          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors dark:text-gray-300"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
           {step > 1 ? (t("back") || "Back") : (t("back") || "Back")}
@@ -383,10 +383,10 @@ export default function SignUp() {
               <Sparkles className="h-7 w-7 sm:h-8 sm:w-8 text-white dark:text-white" />
             </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 dark:text-2xl dark:sm:text-3xl dark:text-gray-100">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 dark:text-gray-100">
             {t("create_account") || "Create Account"}
           </h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 dark:text-sm dark:sm:text-base dark:text-gray-200">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 dark:text-gray-200">
             {t("aadhaar_signup_hint") || "Register with your Aadhaar and PAN details"}
           </p>
         </div>
@@ -420,7 +420,7 @@ export default function SignUp() {
                 <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
               )}
             </div>
-            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-xl dark:sm:text-2xl dark:text-white">
+            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-white">
               {step === 1
                 ? t("aadhaar_verification") || "Aadhaar Verification"
                 : step === 2
@@ -429,7 +429,7 @@ export default function SignUp() {
                     ? t("pan_verification") || "PAN Verification"
                     : t("create_password") || "Create Password"}
             </CardTitle>
-            <CardDescription className="text-purple-100 text-sm dark:text-purple-200 dark:text-sm">
+            <CardDescription className="text-purple-100 text-sm dark:text-purple-200">
               {step === 1
                 ? t("enter_aadhaar_details") || "Enter your Aadhaar details to continue"
                 : step === 2
@@ -442,7 +442,7 @@ export default function SignUp() {
 
           <CardContent className="p-5 sm:p-8">
             {errorMessage && (
-              <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-4 dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-sm">
+              <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-4 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
@@ -451,7 +451,7 @@ export default function SignUp() {
             {step === 1 && (
               <div className="space-y-5">
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-sm dark:text-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
                     {t("aadhaar_number") || "Aadhaar Number"}
                   </Label>
                   <div className="relative">
@@ -470,7 +470,7 @@ export default function SignUp() {
                       <FieldStatus status={aadhaarStatus} />
                     </div>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
                     {t("aadhaar_validation_hint") || "We validate Aadhaar in real time."}{" "}
                     <Link to="/privacy-policy" className="underline text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-300">
                       {t("privacy_policy") || "Privacy Policy"}
@@ -479,11 +479,11 @@ export default function SignUp() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-sm dark:text-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
                     {t("aadhaar_mobile") || "Aadhaar Registered Mobile"}
                   </Label>
                   <div className="relative flex">
-                    <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-2 dark:border-r-0 dark:border-gray-700 dark:text-sm">
+                    <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-2 dark:border-r-0 dark:border-gray-700">
                       +91
                     </span>
                     <Input
@@ -523,7 +523,7 @@ export default function SignUp() {
             {step === 2 && (
               <div className="space-y-5">
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-sm dark:text-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
                     {t("enter_otp") || "Enter OTP"}
                   </Label>
                   <Input
@@ -532,7 +532,7 @@ export default function SignUp() {
                     maxLength={6}
                     value={form.otp}
                     onChange={(e) => setForm((p) => ({ ...p, otp: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40 dark:text-center dark:text-lg"
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40 dark:text-center"
                     placeholder="123456"
                   />
                 </div>
@@ -553,7 +553,7 @@ export default function SignUp() {
                       t("verify_otp") || "Verify OTP"
                     )}
                   </Button>
-                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300">
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
                     <Button
                       type="button"
                       variant="ghost"
@@ -581,7 +581,7 @@ export default function SignUp() {
             {step === 3 && (
               <div className="space-y-5">
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-sm dark:text-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
                     {t("pan_number") || "PAN Number"}
                   </Label>
                   <div className="relative">
@@ -599,7 +599,7 @@ export default function SignUp() {
                       <FieldStatus status={panStatus} />
                     </div>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
                     {t("pan_verification_hint") || "We verify PAN in real time."}
                   </p>
                 </div>
@@ -638,7 +638,7 @@ export default function SignUp() {
                   </div>
                 ) : null}
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-sm dark:text-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
                     <Lock className="w-4 h-4 inline-block mr-1" /> {t("password") || "Password"}
                   </Label>
                   <Input
@@ -662,7 +662,7 @@ export default function SignUp() {
                           />
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
                         {t("password_strength") || "Password strength"}: {" "}
                         <span
                           className={`font-medium ${
@@ -681,7 +681,7 @@ export default function SignUp() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-sm dark:text-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
                     {t("confirm_new_password_label") || "Confirm Password"}
                   </Label>
                   <Input
@@ -694,7 +694,7 @@ export default function SignUp() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-sm dark:text-gray-200">
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
                     {t("referral_code_optional") || "Referral Code (optional)"}
                   </Label>
                   <Input
@@ -704,12 +704,12 @@ export default function SignUp() {
                     className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
                     placeholder={t("enter_referral_code") || "Enter referral code"}
                   />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
                     {t("referral_code_hint") || "Paste a referral code to credit your referrer."}
                   </p>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:text-xs dark:border dark:border-gray-700">
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:border dark:border-gray-700">
                   <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300 dark:text-gray-200">
                     {t("password_requirements") || "Password Requirements"}
                   </p>
@@ -744,7 +744,7 @@ export default function SignUp() {
               </form>
             )}
 
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6 dark:text-center dark:text-sm dark:text-gray-200">
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6 dark:text-center dark:text-gray-200">
               {t("already_have_account") || "Already have an account?"}{" "}
               <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:underline font-medium dark:text-purple-300">
                 {t("sign_in") || "Sign In"}

@@ -1,4 +1,4 @@
-const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { runQuery, getAuthUserId, pool } = require("../utils/dbHelpers");
 const { parseOptionalString } = require("../utils/parseHelpers");
 const { logSecurityEvent, EVENTS } = require('../config/auditLogger');
 const logger = require('../utils/logger');
@@ -42,7 +42,7 @@ exports.exportUserData = async (req, res) => {
 
     const postsResult = await runQuery(
       `SELECT post_id, title, description, price, location, status, created_at
-       FROM posts WHERE user_id = $1 ORDER BY created_at DESC`,
+       FROM posts WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1000`,
       [normalizedUserId]
     );
     userData.posts = postsResult.rows;
@@ -50,13 +50,13 @@ exports.exportUserData = async (req, res) => {
     const transactionsResult = await runQuery(
       `SELECT transaction_id, post_id, amount, status, created_at
        FROM transactions WHERE buyer_id = $1 OR seller_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY created_at DESC LIMIT 1000`,
       [normalizedUserId]
     );
     userData.transactions = transactionsResult.rows;
 
     const wishlistResult = await runQuery(
-      `SELECT post_id, created_at FROM wishlists WHERE user_id = $1`,
+      `SELECT post_id, created_at FROM wishlists WHERE user_id = $1 LIMIT 1000`,
       [normalizedUserId]
     );
     userData.wishlist = wishlistResult.rows;
@@ -113,12 +113,22 @@ exports.deleteUserData = async (req, res) => {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    await runQuery('DELETE FROM notifications WHERE user_id = $1', [normalizedUserId]);
-    await runQuery('DELETE FROM wishlists WHERE user_id = $1', [normalizedUserId]);
-    await runQuery('DELETE FROM transactions WHERE buyer_id = $1 OR seller_id = $1', [normalizedUserId]);
-    await runQuery('DELETE FROM posts WHERE user_id = $1', [normalizedUserId]);
-    await runQuery('DELETE FROM profiles WHERE user_id = $1', [normalizedUserId]);
-    await runQuery('DELETE FROM users WHERE user_id = $1', [normalizedUserId]);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM notifications WHERE user_id = $1', [normalizedUserId]);
+      await client.query('DELETE FROM wishlists WHERE user_id = $1', [normalizedUserId]);
+      await client.query('DELETE FROM transactions WHERE buyer_id = $1 OR seller_id = $1', [normalizedUserId]);
+      await client.query('DELETE FROM posts WHERE user_id = $1', [normalizedUserId]);
+      await client.query('DELETE FROM profiles WHERE user_id = $1', [normalizedUserId]);
+      await client.query('DELETE FROM users WHERE user_id = $1', [normalizedUserId]);
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
+    }
 
     logSecurityEvent(EVENTS.ACCOUNT_DELETED, {
       userId,

@@ -489,7 +489,7 @@ const le = ({ variant = "channel" } = {}) => {
               {
                 to: backPath,
                 className:
-                  "inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:border dark:text-sm dark:text-gray-200 dark:hover:bg-gray-950",
+                  "inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:border dark:text-gray-200 dark:hover:bg-gray-950",
               },
               e.createElement(T, { className: "h-4 w-4" }),
               backLabel,
@@ -551,7 +551,7 @@ const le = ({ variant = "channel" } = {}) => {
                       "h1",
                       {
                         className:
-                          "text-xl font-bold text-gray-900 dark:text-white dark:text-xl dark:text-gray-100",
+                          "text-xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
                       },
                       o.name,
                     ),
@@ -646,7 +646,7 @@ const le = ({ variant = "channel" } = {}) => {
               { className: "mb-5" },
               e.createElement(
                 c,
-                { className: "p-4 text-sm text-gray-600 dark:text-gray-300 dark:text-sm dark:text-gray-200" },
+                { className: "p-4 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200" },
                 o.bio || o.description,
               ),
             ),
@@ -667,7 +667,7 @@ const le = ({ variant = "channel" } = {}) => {
                   "h2",
                   {
                     className:
-                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                   },
                   tr("listings", "Listings"),
                 ),
@@ -776,7 +776,7 @@ const le = ({ variant = "channel" } = {}) => {
                   "h2",
                   {
                     className:
-                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                   },
                   tr("reviews", "Reviews"),
                 ),
@@ -886,7 +886,7 @@ const le = ({ variant = "channel" } = {}) => {
                   "h2",
                   {
                     className:
-                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                   },
                   tr("contact", "Contact"),
                 ),
@@ -964,7 +964,7 @@ const le = ({ variant = "channel" } = {}) => {
               "div",
               {
                 className:
-                  "mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-sm dark:text-red-300",
+                  "mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
               },
               C,
             ),
@@ -979,7 +979,7 @@ const le = ({ variant = "channel" } = {}) => {
                   "h2",
                   {
                     className:
-                      "mb-3 text-lg font-semibold text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                      "mb-3 text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                   },
                   createUpdateTitle,
                 ),
@@ -1014,7 +1014,7 @@ const le = ({ variant = "channel" } = {}) => {
                     "select",
                     {
                       className:
-                        "mhub-input w-full rounded-xl px-3 py-2 text-sm dark:text-sm",
+                        "mhub-input w-full rounded-xl px-3 py-2 text-sm",
                       value: u,
                       onChange: (a) => {
                         const nextType = a.target.value;
@@ -1068,7 +1068,7 @@ const le = ({ variant = "channel" } = {}) => {
               "h3",
               {
                 className:
-                  "mb-3 text-lg font-semibold text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                  "mb-3 text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
               },
               updatesLabel,
             ),
@@ -1103,7 +1103,7 @@ const le = ({ variant = "channel" } = {}) => {
                               "p",
                               {
                                 className:
-                                  "mb-2 whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-100 dark:text-sm",
+                                  "mb-2 whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-100",
                               },
                               a.description,
                             ),
@@ -1116,14 +1116,14 @@ const le = ({ variant = "channel" } = {}) => {
                                 target: "_blank",
                                 rel: "noopener noreferrer",
                                 className:
-                                  "mb-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-sm dark:text-blue-300",
+                                  "mb-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-300",
                               },
                               e.createElement(te, { className: "h-4 w-4" }),
                               t("view_video") || "View video",
                             ),
                           e.createElement(
                             "p",
-                            { className: "text-xs text-gray-400 dark:text-xs dark:text-gray-300" },
+                            { className: "text-xs text-gray-400 dark:text-gray-300" },
                             new Date(a.created_at).toLocaleString(),
                           ),
                         ),
@@ -1144,7 +1144,7 @@ const le = ({ variant = "channel" } = {}) => {
               { className: "flex flex-col items-center gap-3 p-8 text-center dark:text-center" },
               e.createElement(
                 "p",
-                { className: "text-sm text-red-600 dark:text-sm dark:text-red-300" },
+                { className: "text-sm text-red-600 dark:text-red-300" },
                 C || t("something_went_wrong") || "Failed to load channel",
               ),
               e.createElement(

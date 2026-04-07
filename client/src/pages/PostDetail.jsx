@@ -309,7 +309,7 @@ function PostDetail() {
                   u(null);
                 return;
               }
-              const a = await re.get(`/api/posts/${safeId}`),
+              const a = await re.get(`/posts/${safeId}`),
                 s = a?.post || a;
               if (!s || Object.keys(s).length === 0)
                 throw new Error("API returned no post data.");
@@ -379,9 +379,9 @@ function PostDetail() {
       setOwnerInsightsLoading(true);
       setOwnerInsightsError(null);
       Promise.allSettled([
-        re.get(`/api/inquiries/post/${postId}`),
-        re.get(`/api/offers/history/${postId}`),
-        re.get(`/api/recently-viewed/post/${postId}`),
+        re.get(`/inquiries/post/${postId}`),
+        re.get(`/offers/history/${postId}`),
+        re.get(`/recently-viewed/post/${postId}`),
       ])
         .then((results) => {
           if (cancelled) return;
@@ -468,7 +468,7 @@ function PostDetail() {
         }),
         e.createElement(
           "p",
-          { className: "text-lg font-medium text-gray-600 dark:text-gray-300 dark:text-lg dark:text-gray-200" },
+          { className: "text-lg font-medium text-gray-600 dark:text-gray-300 dark:text-gray-200" },
           tr("loading_product", "Loading product..."),
         ),
       ),
@@ -497,7 +497,7 @@ function PostDetail() {
         e.createElement(
           "h2",
           {
-            className: "text-2xl font-bold text-gray-800 dark:text-white mb-3 dark:text-2xl dark:text-gray-100",
+            className: "text-2xl font-bold text-gray-800 dark:text-white mb-3 dark:text-gray-100",
           },
           tr("product_not_found", "Product Not Found"),
         ),
@@ -512,7 +512,7 @@ function PostDetail() {
         errorMessage &&
           e.createElement(
             "p",
-            { className: "text-sm text-red-500 mb-4 dark:text-sm dark:text-red-300" },
+            { className: "text-sm text-red-500 mb-4 dark:text-red-300" },
             errorMessage,
           ),
         e.createElement(
@@ -1420,8 +1420,8 @@ function PostDetail() {
       setSavedPost(l), setSavedPostStatus(a, l);
       try {
         l
-          ? await re.post("/api/wishlist", { postId: a })
-          : await re.delete(`/api/wishlist/${a}`);
+          ? await re.post("/wishlist", { postId: a })
+          : await re.delete(`/wishlist/${a}`);
       } catch {
         setSavedPost(s), setSavedPostStatus(a, s);
         toast({
@@ -1673,7 +1673,7 @@ function PostDetail() {
               }),
               e.createElement(
                 "p",
-                { className: "text-sm font-semibold dark:text-sm" },
+                { className: "text-sm font-semibold" },
                 isOwnerView
                   ? tr(
                       "add_photos_prompt",
@@ -1683,7 +1683,7 @@ function PostDetail() {
               ),
               e.createElement(
                 "p",
-                { className: "text-xs text-gray-400 dark:text-xs dark:text-gray-300" },
+                { className: "text-xs text-gray-400 dark:text-gray-300" },
                 isOwnerView
                   ? tr(
                       "add_photos_hint",
@@ -1731,7 +1731,7 @@ function PostDetail() {
         e.createElement(
           te,
           {
-            className: `px-3 py-1 text-xs font-bold rounded-full dark:text-xs ${r.tier?.toLowerCase() === "premium" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" : r.tier?.toLowerCase() === "silver" ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white" : "bg-gradient-to-r from-green-400 to-emerald-500 text-white"}`,
+            className: `px-3 py-1 text-xs font-bold rounded-full ${r.tier?.toLowerCase() === "premium" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" : r.tier?.toLowerCase() === "silver" ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white" : "bg-gradient-to-r from-green-400 to-emerald-500 text-white"}`,
           },
           e.createElement(ve, { className: "w-3 h-3 mr-1 inline" }),
           tierLabel,
@@ -1746,7 +1746,7 @@ function PostDetail() {
                 {
                   key: t.key,
                   className:
-                    "inline-flex items-center rounded-full bg-white/90 text-gray-700 px-2.5 py-1 text-[11px] font-semibold shadow-sm dark:bg-slate-900/90 dark:text-gray-200 dark:text-[11px]",
+                    "inline-flex items-center rounded-full bg-white/90 text-gray-700 px-2.5 py-1 text-[11px] font-semibold shadow-sm dark:bg-slate-900/90 dark:text-gray-200",
                 },
                 t.label,
               ),
@@ -1757,7 +1757,7 @@ function PostDetail() {
         "div",
         {
           className:
-            "absolute top-3 right-3 bg-black/60 text-white px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 dark:bg-black/60 dark:text-white dark:text-xs",
+            "absolute top-3 right-3 bg-black/60 text-white px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 dark:bg-black/60 dark:text-white",
           title: tr("views", "Views"),
         },
         e.createElement(ce, { className: "w-3.5 h-3.5" }),
@@ -1768,7 +1768,7 @@ function PostDetail() {
           "div",
           {
             className:
-              "absolute bottom-3 right-3 bg-white/85 text-gray-700 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm dark:bg-slate-900/85 dark:text-gray-200 dark:text-xs",
+              "absolute bottom-3 right-3 bg-white/85 text-gray-700 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm dark:bg-slate-900/85 dark:text-gray-200",
           },
           activeIndex + 1,
           " / ",
@@ -1924,14 +1924,14 @@ function PostDetail() {
             "h1",
             {
               className:
-                "text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-snug dark:text-xl dark:sm:text-2xl dark:text-gray-100",
+                "text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-snug dark:text-gray-100",
             },
             r.title || tr("product_title_fallback", "Product Title"),
           ),
           e.createElement(
             "span",
             {
-              className: `inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold ring-1 ring-inset dark:text-sm ${statusBadgeClass}`,
+              className: `inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold ring-1 ring-inset ${statusBadgeClass}`,
             },
             e.createElement("span", {
               className: `w-2 h-2 rounded-full ${statusDotClass}`,
@@ -1949,7 +1949,7 @@ function PostDetail() {
             "span",
             {
               className:
-                "text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white dark:text-3xl dark:sm:text-4xl dark:text-gray-100",
+                "text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
             },
             C(r.price),
           ),
@@ -1959,7 +1959,7 @@ function PostDetail() {
               "span",
               {
                 className:
-                  "text-lg text-gray-400 dark:text-gray-500 line-through dark:text-lg dark:text-gray-300",
+                  "text-lg text-gray-400 dark:text-gray-500 line-through dark:text-gray-300",
               },
               C(originalPriceValue),
             ),
@@ -1968,7 +1968,7 @@ function PostDetail() {
               "span",
               {
                 className:
-                  "bg-green-600 text-white px-2.5 py-1 rounded-md text-sm font-bold dark:bg-green-700/40 dark:text-white dark:text-sm",
+                  "bg-green-600 text-white px-2.5 py-1 rounded-md text-sm font-bold dark:bg-green-700/40 dark:text-white",
               },
               tr("discount_percent", "{{count}}% OFF", {
                 count: discountValue,
@@ -1979,7 +1979,7 @@ function PostDetail() {
               "span",
               {
                 className:
-                  "text-xs font-semibold text-emerald-600 dark:text-emerald-400 dark:text-xs dark:text-emerald-300",
+                  "text-xs font-semibold text-emerald-600 dark:text-emerald-400 dark:text-emerald-300",
               },
               tr("you_save", "You save {{amount}}", {
                 amount: C(savingsValue),
@@ -2006,13 +2006,13 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-[10px] dark:text-gray-300",
+                    "text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
                 },
                 tr("delivery_meetup", "Delivery / Meetup"),
               ),
               e.createElement(
                 "p",
-                { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-sm dark:text-gray-100" },
+                { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-gray-100" },
                 deliveryDetail,
               ),
             ),
@@ -2031,13 +2031,13 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-[10px] dark:text-gray-300",
+                    "text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
                 },
                 tr("return_inspection", "Return / Inspection"),
               ),
               e.createElement(
                 "p",
-                { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-sm dark:text-gray-100" },
+                { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-gray-100" },
                 inspectionDetail,
               ),
             ),
@@ -2050,7 +2050,7 @@ function PostDetail() {
             "p",
             {
               className:
-                "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 dark:text-xs dark:text-gray-300",
+                "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 dark:text-gray-300",
             },
             tr("highlights", "Highlights"),
           ),
@@ -2063,7 +2063,7 @@ function PostDetail() {
                 {
                   key: fact.key,
                   className:
-                    "flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                    "flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-200",
                 },
                 fact.icon
                   ? e.createElement(fact.icon, {
@@ -2108,7 +2108,7 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 dark:text-[10px] dark:text-gray-300",
+                    "text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 dark:text-gray-300",
                 },
                 stat.label,
               ),
@@ -2116,7 +2116,7 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-xs font-semibold text-gray-700 dark:text-gray-200 dark:text-xs",
+                    "text-xs font-semibold text-gray-700 dark:text-gray-200",
                 },
                 stat.value,
               ),
@@ -2132,7 +2132,7 @@ function PostDetail() {
                 "div",
                 {
                   className:
-                    "inline-flex flex-wrap items-center gap-1 rounded-full bg-slate-50 dark:bg-gray-900/40 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 dark:bg-slate-950 dark:text-xs dark:text-gray-200",
+                    "inline-flex flex-wrap items-center gap-1 rounded-full bg-slate-50 dark:bg-gray-900/40 px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 dark:bg-slate-950 dark:text-gray-200",
                 },
                 freshnessLine,
               ),
@@ -2146,7 +2146,7 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 dark:text-xs dark:text-gray-300",
+                    "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 dark:text-gray-300",
                 },
                 tr("trustworthy_listing", "Why this listing is trustworthy"),
               ),
@@ -2165,7 +2165,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "flex items-center gap-2 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-[10px] dark:text-gray-300",
+                          "flex items-center gap-2 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
                       },
                       fact.icon &&
                         e.createElement(fact.icon, {
@@ -2177,7 +2177,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "text-xs font-semibold text-gray-700 dark:text-gray-200 mt-1 leading-tight dark:text-xs",
+                          "text-xs font-semibold text-gray-700 dark:text-gray-200 mt-1 leading-tight",
                       },
                       fact.value,
                     ),
@@ -2203,7 +2203,7 @@ function PostDetail() {
                     onClick: handleContactSeller,
                     disabled: contactCtaDisabled,
                     title: contactCtaDisabled ? contactCtaReason : undefined,
-                    className: `bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 px-3 rounded-xl shadow-sm text-[13px] sm:text-sm whitespace-nowrap dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:text-[13px] dark:sm:text-sm${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                    className: `bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 px-3 rounded-xl shadow-sm text-[13px] sm:text-sm whitespace-nowrap dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:sm:text-sm${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                   },
                   e.createElement(fe, { className: "w-4 h-4 mr-2" }),
                   tr("chat_seller", "Chat seller"),
@@ -2216,7 +2216,7 @@ function PostDetail() {
                     variant: "outline",
                     disabled: offerCtaDisabled,
                     title: offerCtaDisabled ? offerCtaReason : undefined,
-                    className: `border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900/40 font-semibold h-11 px-3 rounded-xl text-[13px] sm:text-sm whitespace-nowrap dark:border-gray-700 dark:hover:bg-gray-950 dark:text-[13px] dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                    className: `border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900/40 font-semibold h-11 px-3 rounded-xl text-[13px] sm:text-sm whitespace-nowrap dark:border-gray-700 dark:hover:bg-gray-950 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                   },
                   e.createElement(ke, { className: "w-4 h-4 mr-2" }),
                   tr("make_an_offer", "Make an Offer"),
@@ -2231,7 +2231,7 @@ function PostDetail() {
                     variant: "outline",
                     type: "button",
                     onClick: toggleSavedPost,
-                    className: `h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap dark:text-[13px] dark:sm:text-sm${savedPost ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400" : "border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300"}`,
+                    className: `h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap dark:sm:text-sm${savedPost ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400" : "border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300"}`,
                   },
                   savedPost
                     ? e.createElement(Xe, { className: "w-4 h-4 mr-2" })
@@ -2248,10 +2248,10 @@ function PostDetail() {
                       const t = buildShareUrl(J);
                       setShareUrl(t),
                         setShareDialogOpen(!0),
-                        re.post(`/api/posts/${J}/share`).catch(() => {});
+                        re.post(`/posts/${J}/share`).catch(() => {});
                     },
                     className:
-                      "h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:text-[13px] dark:sm:text-sm dark:border-gray-700 dark:text-gray-200",
+                      "h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:border-gray-700 dark:text-gray-200",
                   },
                   e.createElement(Qe, { className: "w-4 h-4 mr-2" }),
                   tr("share", "Share"),
@@ -2279,7 +2279,7 @@ function PostDetail() {
                   U("/complaints", { state: { postId: J } });
                 },
                 className:
-                  "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg text-sm dark:text-gray-300 dark:hover:text-red-300 dark:hover:bg-red-950/20 dark:text-sm",
+                  "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg text-sm dark:text-gray-300 dark:hover:text-red-300 dark:hover:bg-red-950/20",
               },
               e.createElement(be, { className: "w-4 h-4 mr-2" }),
               tr("report_listing", "Report this listing"),
@@ -2325,7 +2325,7 @@ function PostDetail() {
             "span",
             {
               className:
-                "hidden sm:inline text-xs text-gray-500 dark:text-gray-400 max-w-[240px] truncate dark:text-xs dark:text-gray-300",
+                "hidden sm:inline text-xs text-gray-500 dark:text-gray-400 max-w-[240px] truncate dark:text-gray-300",
             },
             backContextLabel,
           ),
@@ -2383,10 +2383,10 @@ function PostDetail() {
                       setShareUrl(t),
                         setShareDialogOpen(!0),
                         setShowMenu(!1),
-                        re.post(`/api/posts/${J}/share`).catch(() => {});
+                        re.post(`/posts/${J}/share`).catch(() => {});
                     },
                     className:
-                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                   },
                   tr("share_link", "Share link"),
                 ),
@@ -2398,7 +2398,7 @@ function PostDetail() {
                       toggleSavedPost(), setShowMenu(!1);
                     },
                     className:
-                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                   },
                   savedPost
                     ? tr("remove_from_saved", "Remove from saved")
@@ -2413,7 +2413,7 @@ function PostDetail() {
                         U("/complaints", { state: { postId: J } });
                     },
                     className:
-                      "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-sm dark:text-red-300 dark:hover:bg-red-950/20",
+                      "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
                   },
                   tr("report", "Report"),
                 ),
@@ -2461,7 +2461,7 @@ function PostDetail() {
                   se,
                   {
                     className:
-                      "bg-gradient-to-br from-blue-500 to-purple-600 text-white text-lg font-bold dark:bg-gradient-to-br dark:text-white dark:text-lg",
+                      "bg-gradient-to-br from-blue-500 to-purple-600 text-white text-lg font-bold dark:bg-gradient-to-br dark:text-white",
                   },
                   (o.name || "S").charAt(0).toUpperCase(),
                 ),
@@ -2520,7 +2520,7 @@ function PostDetail() {
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+                  { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                   S
                     ? tr("verified_profile", "Verified profile")
                     : tr("verification_pending", "Verification pending"),
@@ -2529,7 +2529,7 @@ function PostDetail() {
                   "div",
                   {
                     className:
-                      "flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-sm dark:text-gray-200",
+                      "flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-gray-200",
                   },
                   _ > 0 &&
                     e.createElement(ue, {
@@ -2555,7 +2555,7 @@ function PostDetail() {
                   "div",
                   {
                     className:
-                      "mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-300 dark:text-xs dark:text-gray-200",
+                      "mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-300 dark:text-gray-200",
                   },
                   sellerStats.map((t) =>
                     e.createElement(
@@ -2569,7 +2569,7 @@ function PostDetail() {
                         "p",
                         {
                           className:
-                            "text-[11px] uppercase text-gray-500 dark:text-gray-400 dark:text-[11px] dark:text-gray-300",
+                            "text-[11px] uppercase text-gray-500 dark:text-gray-400 dark:text-gray-300",
                         },
                         t.label,
                       ),
@@ -2616,7 +2616,7 @@ function PostDetail() {
                 "div",
                 {
                   className:
-                    "flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                    "flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                 },
                 e.createElement(fe, { className: "w-4 h-4 text-emerald-500 dark:text-emerald-300" }),
                 tr("ready_to_buy", "Ready to buy?"),
@@ -2627,7 +2627,7 @@ function PostDetail() {
                   onClick: handleContactSeller,
                   disabled: contactCtaDisabled,
                   title: contactCtaDisabled ? contactCtaReason : undefined,
-                  className: `w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 text-base rounded-xl shadow-lg hover:shadow-xl transition-all dark:bg-gradient-to-r dark:text-white dark:text-base ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+                  className: `w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 text-base rounded-xl shadow-lg hover:shadow-xl transition-all dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
                 e.createElement(fe, { className: "w-6 h-6 mr-3" }),
                 tr(
@@ -2642,7 +2642,7 @@ function PostDetail() {
                   variant: "outline",
                   disabled: offerCtaDisabled,
                   title: offerCtaDisabled ? offerCtaReason : undefined,
-                  className: `w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-4 text-base rounded-xl shadow-lg transition-all dark:bg-gradient-to-r dark:text-gray-100 dark:text-base ${offerCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+                  className: `w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-4 text-base rounded-xl shadow-lg transition-all dark:bg-gradient-to-r dark:text-gray-100 ${offerCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
                 e.createElement(ke, { className: "w-5 h-5 mr-2" }),
                 tr("make_an_offer", "Make an Offer"),
@@ -2651,7 +2651,7 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-center text-xs text-gray-500 dark:text-gray-400 dark:text-center dark:text-xs dark:text-gray-300",
+                    "text-center text-xs text-gray-500 dark:text-gray-400 dark:text-center dark:text-gray-300",
                 },
                 tr(
                   "secure_contact_details_hint",
@@ -2674,7 +2674,7 @@ function PostDetail() {
                       U("/complaints", { state: { postId: J } });
                     },
                     className:
-                      "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg text-sm dark:text-gray-300 dark:hover:text-red-300 dark:hover:bg-red-950/20 dark:text-sm",
+                      "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg text-sm dark:text-gray-300 dark:hover:text-red-300 dark:hover:bg-red-950/20",
                   },
                   e.createElement(be, { className: "w-4 h-4 mr-2" }),
                   tr("report_listing", "Report this listing"),
@@ -2715,13 +2715,13 @@ function PostDetail() {
                   "h3",
                   {
                     className:
-                      "text-lg font-bold text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                      "text-lg font-bold text-gray-900 dark:text-white dark:text-gray-100",
                   },
                   tr("lead_activity", "Lead activity"),
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+                  { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                   tr(
                     "lead_activity_hint",
                     "Track who viewed and engaged with your post.",
@@ -2732,7 +2732,7 @@ function PostDetail() {
                 "span",
                 {
                   className:
-                    "inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold dark:bg-emerald-950/20 dark:text-emerald-300 dark:text-xs",
+                    "inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold dark:bg-emerald-950/20 dark:text-emerald-300",
                 },
                 tr("total_leads", "Total leads"),
                 " : ",
@@ -2742,13 +2742,13 @@ function PostDetail() {
             ownerInsightsLoading
               ? e.createElement(
                   "p",
-                  { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300" },
+                  { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                   tr("loading_leads", "Loading lead activity..."),
                 )
               : ownerInsightsErrorMessage
                 ? e.createElement(
                     "p",
-                    { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300" },
+                    { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     ownerInsightsErrorMessage,
                   )
                 : e.createElement(
@@ -2765,14 +2765,14 @@ function PostDetail() {
                         { className: "flex items-center justify-between" },
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-xs dark:text-slate-300" },
+                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
                           tr("interested_users", "Interested"),
                         ),
                         e.createElement(
                           "span",
                           {
                             className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200",
+                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200",
                           },
                           ownerInquiries.length,
                         ),
@@ -2782,7 +2782,7 @@ function PostDetail() {
                             "div",
                             {
                               className:
-                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1 dark:text-xs",
+                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
                             },
                             ownerInquiries.map((t, s) =>
                               e.createElement(
@@ -2803,7 +2803,7 @@ function PostDetail() {
                                 t.phone
                                   ? e.createElement(
                                       "span",
-                                      { className: "text-[11px] dark:text-[11px]" },
+                                      { className: "text-[11px]" },
                                       t.phone,
                                     )
                                   : null,
@@ -2814,7 +2814,7 @@ function PostDetail() {
                             "p",
                             {
                               className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-xs dark:text-slate-300",
+                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-300",
                             },
                             tr("no_leads_yet", "No interactions yet."),
                           ),
@@ -2830,14 +2830,14 @@ function PostDetail() {
                         { className: "flex items-center justify-between" },
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-xs dark:text-slate-300" },
+                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
                           tr("detail_views", "View details"),
                         ),
                         e.createElement(
                           "span",
                           {
                             className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200",
+                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200",
                           },
                           ownerViewers.length,
                         ),
@@ -2847,7 +2847,7 @@ function PostDetail() {
                             "div",
                             {
                               className:
-                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1 dark:text-xs",
+                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
                             },
                             ownerViewers.map((t, s) =>
                               e.createElement(
@@ -2869,7 +2869,7 @@ function PostDetail() {
                                 t.viewed_at
                                   ? e.createElement(
                                       "span",
-                                      { className: "text-[11px] dark:text-[11px]" },
+                                      { className: "text-[11px]" },
                                       I(t.viewed_at),
                                     )
                                   : null,
@@ -2880,7 +2880,7 @@ function PostDetail() {
                             "p",
                             {
                               className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-xs dark:text-slate-300",
+                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-300",
                             },
                             tr("no_leads_yet", "No interactions yet."),
                           ),
@@ -2896,14 +2896,14 @@ function PostDetail() {
                         { className: "flex items-center justify-between" },
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-xs dark:text-slate-300" },
+                          { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
                           tr("lead_users", "Leads"),
                         ),
                         e.createElement(
                           "span",
                           {
                             className:
-                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-xs dark:text-slate-200",
+                              "text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200",
                           },
                           ownerLeadCount,
                         ),
@@ -2913,7 +2913,7 @@ function PostDetail() {
                             "div",
                             {
                               className:
-                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1 dark:text-xs",
+                                "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
                             },
                             ownerLeadList.map((t, s) =>
                               e.createElement(
@@ -2931,7 +2931,7 @@ function PostDetail() {
                                 t.types?.length
                                   ? e.createElement(
                                       "span",
-                                      { className: "text-[11px] dark:text-[11px]" },
+                                      { className: "text-[11px]" },
                                       t.types.join(", "),
                                     )
                                   : null,
@@ -2942,7 +2942,7 @@ function PostDetail() {
                             "p",
                             {
                               className:
-                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-xs dark:text-slate-300",
+                                "mt-2 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-300",
                             },
                             tr("no_leads_yet", "No interactions yet."),
                           ),
@@ -2981,7 +2981,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300",
+                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
                       },
                       t.icon &&
                         e.createElement(t.icon, { className: "w-3.5 h-3.5" }),
@@ -2991,7 +2991,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-sm dark:text-gray-100",
+                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-gray-100",
                       },
                       t.value,
                     ),
@@ -3028,7 +3028,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300",
+                          "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
                       },
                       item.icon &&
                         e.createElement(item.icon, { className: "w-3.5 h-3.5" }),
@@ -3038,7 +3038,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-sm dark:text-gray-100",
+                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-gray-100",
                       },
                       item.value,
                     ),
@@ -3075,7 +3075,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300",
+                          "text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
                       },
                       spec.label,
                     ),
@@ -3083,7 +3083,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-sm dark:text-gray-100",
+                          "text-sm font-semibold text-gray-900 dark:text-white mt-1 dark:text-gray-100",
                       },
                       spec.value,
                     ),
@@ -3120,14 +3120,14 @@ function PostDetail() {
                   "p",
                   {
                     className:
-                      "text-sm font-semibold text-gray-900 dark:text-white dark:text-sm dark:text-gray-100",
+                      "text-sm font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                   },
                   locationDisplay,
                 ),
                 hasCoords &&
                   e.createElement(
                     "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     tr("coordinates", "Coordinates"),
                     ": ",
                     latitude.toFixed(4),
@@ -3152,7 +3152,7 @@ function PostDetail() {
             ),
             e.createElement(
               "p",
-              { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+              { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
               locationHint,
             ),
             ),
@@ -3183,7 +3183,7 @@ function PostDetail() {
                 "p",
                 {
                   className:
-                    "text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-2 dark:text-xs",
+                    "text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-2",
                 },
                 tr("safety_at_a_glance", "Safety at a glance"),
               ),
@@ -3202,7 +3202,7 @@ function PostDetail() {
                       "div",
                       {
                         className:
-                          "mhub-safety-title flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-200 dark:text-[11px] dark:text-emerald-300",
+                          "mhub-safety-title flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-200 dark:text-emerald-300",
                       },
                       tip.icon &&
                         e.createElement(tip.icon, { className: "w-3.5 h-3.5" }),
@@ -3212,7 +3212,7 @@ function PostDetail() {
                       "p",
                       {
                         className:
-                          "mhub-safety-hint text-[11px] text-emerald-800/80 dark:text-emerald-100/80 mt-1 dark:text-[11px] dark:text-emerald-200/80",
+                          "mhub-safety-hint text-[11px] text-emerald-800/80 dark:text-emerald-100/80 mt-1 dark:text-emerald-200/80",
                       },
                       tip.hint,
                     ),
@@ -3233,14 +3233,14 @@ function PostDetail() {
                   },
                   e.createElement(
                     "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     t.label,
                   ),
                   e.createElement(
                     "p",
                     {
                       className:
-                        "text-sm font-semibold text-gray-900 dark:text-white dark:text-sm dark:text-gray-100",
+                        "text-sm font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                     },
                     t.value,
                   ),
@@ -3248,7 +3248,7 @@ function PostDetail() {
                     "p",
                     {
                       className:
-                        "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-xs dark:text-gray-300",
+                        "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
                     },
                     t.hint,
                   ),
@@ -3263,7 +3263,7 @@ function PostDetail() {
               },
               e.createElement(
                 "p",
-                { className: "text-xs text-amber-800 dark:text-amber-300 dark:text-xs dark:text-amber-200" },
+                { className: "text-xs text-amber-800 dark:text-amber-300 dark:text-amber-200" },
                 tr(
                   "safety_tip",
                   "Safety tip: avoid sharing sensitive details outside the app and verify the listing ID before payment handover.",
@@ -3337,7 +3337,7 @@ function PostDetail() {
                   type: "button",
                   onClick: () => setDescriptionExpanded((t) => !t),
                   className:
-                    "mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 dark:text-xs dark:text-blue-300",
+                    "mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 dark:text-blue-300",
                 },
                 descriptionExpanded
                   ? tr("show_less", "Show less")
@@ -3404,7 +3404,7 @@ function PostDetail() {
                         "h3",
                         {
                           className:
-                            "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-lg dark:text-gray-100",
+                            "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-gray-100",
                         },
                         e.createElement(xe, {
                           className: "w-5 h-5 text-blue-600 dark:text-blue-300",
@@ -3413,7 +3413,7 @@ function PostDetail() {
                       ),
                       e.createElement(
                         "p",
-                        { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+                        { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                         tr(
                           "sponsored_hint",
                           "Paid boosts (Boost/Featured/Spotlight) similar to this listing.",
@@ -3449,7 +3449,7 @@ function PostDetail() {
                     "div",
                     {
                       className:
-                        "mb-4 inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs text-blue-700 dark:text-blue-300 dark:bg-blue-950/20 dark:text-xs",
+                        "mb-4 inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs text-blue-700 dark:text-blue-300 dark:bg-blue-950/20",
                     },
                     e.createElement(xe, { className: "w-3.5 h-3.5" }),
                     sponsoredReason,
@@ -3493,7 +3493,7 @@ function PostDetail() {
                         "h3",
                         {
                           className:
-                            "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-lg dark:text-gray-100",
+                            "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-gray-100",
                         },
                         e.createElement(ve, {
                           className: "w-5 h-5 text-purple-600 dark:text-purple-300",
@@ -3502,7 +3502,7 @@ function PostDetail() {
                       ),
                       e.createElement(
                         "p",
-                        { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+                        { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                         tr(
                           "premium_hint",
                           "Premium-tier listings from top sellers in this category.",
@@ -3538,7 +3538,7 @@ function PostDetail() {
                     "div",
                     {
                       className:
-                        "mb-4 inline-flex items-center gap-2 rounded-full bg-purple-50 dark:bg-purple-900/30 px-3 py-1 text-xs text-purple-700 dark:text-purple-300 dark:bg-purple-950/20 dark:text-xs",
+                        "mb-4 inline-flex items-center gap-2 rounded-full bg-purple-50 dark:bg-purple-900/30 px-3 py-1 text-xs text-purple-700 dark:text-purple-300 dark:bg-purple-950/20",
                     },
                     e.createElement(ve, { className: "w-3.5 h-3.5" }),
                     premiumReason,
@@ -3568,7 +3568,7 @@ function PostDetail() {
             {
               href: "#top",
               className:
-                "text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-300 dark:text-xs dark:text-gray-300",
+                "text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-300 dark:text-gray-300",
             },
             tr("back_to_top", "Back to top"),
           ),
@@ -3589,13 +3589,13 @@ function PostDetail() {
               { className: "mhub-cta-bar-price min-w-0" },
               e.createElement(
                 "p",
-                { className: "text-lg font-bold text-gray-900 dark:text-white truncate dark:text-lg dark:text-gray-100" },
+                { className: "text-lg font-bold text-gray-900 dark:text-white truncate dark:text-gray-100" },
                 C(r.price),
               ),
               freshnessLine &&
                 e.createElement(
                   "p",
-                  { className: "text-[11px] text-gray-500 dark:text-gray-400 truncate dark:text-[11px] dark:text-gray-300" },
+                  { className: "text-[11px] text-gray-500 dark:text-gray-400 truncate dark:text-gray-300" },
                   freshnessLine,
                 ),
             ),
@@ -3608,7 +3608,7 @@ function PostDetail() {
                   onClick: handleContactSeller,
                   disabled: contactCtaDisabled,
                   title: contactCtaDisabled ? contactCtaReason : undefined,
-                  className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-white dark:text-xs dark:sm:text-sm ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+                  className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
                 tr("contact_seller", "Contact Seller"),
               ),
@@ -3618,7 +3618,7 @@ function PostDetail() {
                   onClick: handleMakeOffer,
                   disabled: offerCtaDisabled,
                   title: offerCtaDisabled ? offerCtaReason : undefined,
-                  className: `bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-gray-100 dark:text-xs dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                  className: `bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-gray-100 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                 },
                 tr("make_offer_short", "Make Offer"),
               ),

@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const {
   registerRule,
   setRuleActivation,
@@ -20,7 +21,7 @@ function authorizeAutomationAdmin(req, res, next) {
     return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-automation-admin-token"] || "").trim();
-  if (providedToken !== configuredToken) {
+  if (!providedToken || !crypto.timingSafeEqual(Buffer.from(configuredToken), Buffer.from(providedToken.padEnd(configuredToken.length).slice(0, configuredToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized automation admin request.",
     });
@@ -90,7 +91,7 @@ router.post("/rules/simulate", authorizeAutomationAdmin, (req, res) => {
   return res.status(200).json(result);
 });
 
-router.post("/events/evaluate", (req, res) => {
+router.post("/events/evaluate", authorizeAutomationAdmin, (req, res) => {
   const result = evaluateEvent(req.body?.event || req.body);
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -101,7 +102,7 @@ router.post("/events/evaluate", (req, res) => {
   return res.status(200).json(result);
 });
 
-router.post("/events/replay", (req, res) => {
+router.post("/events/replay", authorizeAutomationAdmin, (req, res) => {
   const result = replayExecution(req.body?.executionId || req.body?.execution_id);
   if (result.status === "disabled") {
     return res.status(403).json(result);
@@ -134,7 +135,7 @@ router.get("/alerts", (req, res) => {
   });
 });
 
-router.post("/alerts/:alertId/ack", (req, res) => {
+router.post("/alerts/:alertId/ack", authorizeAutomationAdmin, (req, res) => {
   const result = acknowledgeAlert(req.params.alertId, resolveActorId(req));
   if (result.status === "invalid") {
     return res.status(400).json(result);

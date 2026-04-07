@@ -333,7 +333,7 @@ const Ve = 5,
 
       try {
         const ids = await fetchWishlistIds(async () => {
-          const response = await api.get("/api/wishlist");
+          const response = await api.get("/wishlist");
           return response?.data ?? response;
         });
         setSavedPosts(buildSavedPostsMap(ids));
@@ -381,7 +381,7 @@ const Ve = 5,
             params.set("sortBy", sortBy);
             params.set("sortOrder", sortOrder);
           }
-          const k = await api.get("/api/feed", { params, signal: a.signal });
+          const k = await api.get("/feed", { params, signal: a.signal });
           const te = k?.data ?? k;
           let x = Array.isArray(te?.posts)
             ? te.posts
@@ -607,7 +607,7 @@ const Ve = 5,
         ge((l) => ({ ...l, [t]: !l[t] })),
           J((l) => ({ ...l, [t]: Math.max(0, s + (a ? 1 : -1)) }));
         try {
-          const l = await api.post(`/api/posts/${t}/like`);
+          const l = await api.post(`/posts/${t}/like`);
           const P = l?.data ?? null;
           if (typeof P?.liked == "boolean" && P.liked !== a) {
             ge((k) => ({ ...k, [t]: P.liked })),
@@ -631,7 +631,7 @@ const Ve = 5,
         setShareDialogUrl(s), setShareDialogOpen(!0);
         R(o("share_ready") || "Share link ready");
         try {
-          await api.post(`/api/posts/${r}/share`);
+          await api.post(`/posts/${r}/share`);
         } catch {}
       },
       toggleSaveFeed = async (t) => {
@@ -648,8 +648,8 @@ const Ve = 5,
         setSavedPosts((P) => ({ ...P, [s]: l })), setSavedPostStatus(s, l);
         try {
           l
-            ? await api.post("/api/wishlist", { postId: s })
-            : await api.delete(`/api/wishlist/${s}`);
+            ? await api.post("/wishlist", { postId: s })
+            : await api.delete(`/wishlist/${s}`);
           R(
             l
               ? o("saved_post_added") || "Saved to wishlist"
@@ -680,7 +680,7 @@ const Ve = 5,
       ke = (t) => {
         const r = n.find((s) => s.id === t || s.post_id === t);
         storeScrollPosition();
-        api.post(`/api/posts/${t}/view`).catch(() => {}),
+        api.post(`/posts/${t}/view`).catch(() => {}),
           g(`/feed/${t}`, { state: { post: r } });
       },
       Ne = (t) => {
@@ -747,16 +747,16 @@ const Ve = 5,
                   className:
                     "flex items-center justify-center md:justify-start gap-3 mb-2",
                 },
-                e.createElement(le, { className: "text-3xl text-white/90 dark:text-3xl dark:text-white/90" }),
+                e.createElement(le, { className: "text-3xl text-white/90 dark:text-white/90" }),
                 e.createElement(
                   "h1",
-                  { className: "text-2xl md:text-3xl font-bold text-white dark:text-2xl dark:md:text-3xl dark:text-white" },
+                  { className: "text-2xl md:text-3xl font-bold text-white dark:text-white" },
                   o("news_updates") || "News & Updates",
                 ),
               ),
               e.createElement(
                 "p",
-                { className: "text-white/70 text-sm dark:text-white/70 dark:text-sm" },
+                { className: "text-white/70 text-sm dark:text-white/70" },
                 o("share_knowledge") ||
                   "Share knowledge, news, and updates with the community",
               ),
@@ -842,7 +842,7 @@ const Ve = 5,
               "aria-label": o("refresh_feed") || "Refresh feed posts",
               "data-ux-action": "feed_refresh_posts",
               className:
-                "text-xs font-bold text-indigo-600 dark:text-indigo-400 px-6 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/40 shadow-sm border border-indigo-100 dark:border-indigo-800 active:scale-95 transition-transform flex items-center gap-2 dark:text-xs dark:text-indigo-300 dark:bg-indigo-950/20 dark:border dark:border-indigo-600/40",
+                "text-xs font-bold text-indigo-600 dark:text-indigo-400 px-6 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/40 shadow-sm border border-indigo-100 dark:border-indigo-800 active:scale-95 transition-transform flex items-center gap-2 dark:text-indigo-300 dark:bg-indigo-950/20 dark:border dark:border-indigo-600/40",
             },
             _ && f === 1
               ? e.createElement(
@@ -887,7 +887,7 @@ const Ve = 5,
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-sm text-indigo-700 dark:text-sm dark:text-indigo-300" },
+                  { className: "text-sm text-indigo-700 dark:text-indigo-300" },
                   "You can read a few posts now. Log in to keep scrolling and post updates.",
                 ),
               ),
@@ -1205,7 +1205,7 @@ const Ve = 5,
                             "p",
                             {
                               className:
-                                "text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 dark:text-[11px] dark:text-indigo-300",
+                                "text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 dark:text-indigo-300",
                             },
                             o("activity_update") || "Shared an update",
                           ),
@@ -1213,13 +1213,13 @@ const Ve = 5,
                             "div",
                             {
                               className:
-                                "text-gray-400 dark:text-gray-400 text-xs flex flex-wrap items-center gap-2 dark:text-gray-300 dark:text-xs",
+                                "text-gray-400 dark:text-gray-400 text-xs flex flex-wrap items-center gap-2 dark:text-gray-300",
                             },
                             e.createElement(
                               "span",
                               {
                               className:
-                                "inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:text-indigo-200 dark:bg-indigo-950/20 dark:text-[11px] dark:text-indigo-300",
+                                "inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:text-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-300",
                             },
                               e.createElement(Ge, { className: "w-3 h-3" }),
                               getPostLocationLabel(t) || o("global") || "Global",
@@ -1235,7 +1235,7 @@ const Ve = 5,
                                   "span",
                                   {
                                     className:
-                                      "inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 dark:bg-emerald-950/20 dark:text-[11px]",
+                                      "inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 dark:bg-emerald-950/20",
                                   },
                                   postPriceLabel,
                                 )
@@ -1277,7 +1277,7 @@ const Ve = 5,
                                   ye(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                               },
                               o("share") || "Share",
                             ),
@@ -1289,7 +1289,7 @@ const Ve = 5,
                                   toggleSaveFeed(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                               },
                               savedPosts[String(r)]
                                 ? o("saved") || "Saved"
@@ -1305,7 +1305,7 @@ const Ve = 5,
                                     setMenuPostId(null);
                                   },
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                                 },
                                 o("promote") || "Promote",
                               ),
@@ -1317,7 +1317,7 @@ const Ve = 5,
                                   handleReportPost(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-sm dark:text-red-300 dark:hover:bg-red-950/20",
+                                  "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
                               },
                               o("report") || "Report",
                             ),
@@ -1350,7 +1350,7 @@ const Ve = 5,
                             "h3",
                             {
                               className:
-                                "text-lg font-bold text-gray-900 dark:text-white mb-2 dark:text-lg dark:text-gray-100",
+                                "text-lg font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                             },
                             t.title,
                           ),
@@ -1409,7 +1409,7 @@ const Ve = 5,
                           "div",
                           {
                           className:
-                            "post-action-row flex flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap pr-2 py-1 text-[11px] sm:text-xs scrollbar-hide dark:text-[11px] dark:sm:text-xs",
+                            "post-action-row flex flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto whitespace-nowrap pr-2 py-1 text-[11px] sm:text-xs scrollbar-hide",
                           },
                           e.createElement(
                             "button",
@@ -1478,7 +1478,7 @@ const Ve = 5,
                             {
                               variant: "ghost",
                               className:
-                                "shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 font-medium dark:bg-gray-950 dark:text-[11px] dark:sm:text-xs dark:hover:bg-indigo-950/20",
+                                "shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 font-medium dark:bg-gray-950 dark:hover:bg-indigo-950/20",
                               onClick: () => ke(r),
                             },
                             e.createElement(Pe, { className: "w-4 h-4" }),
@@ -1502,12 +1502,12 @@ const Ve = 5,
               },
               e.createElement(
                 "p",
-                { className: "text-sm font-semibold text-indigo-800 dark:text-sm dark:text-indigo-200" },
+                { className: "text-sm font-semibold text-indigo-800 dark:text-indigo-200" },
                 o("guest_preview_limit_title") || "Preview limit reached",
               ),
               e.createElement(
                 "p",
-                { className: "mt-2 text-sm text-indigo-700 dark:text-sm dark:text-indigo-300" },
+                { className: "mt-2 text-sm text-indigo-700 dark:text-indigo-300" },
                 o("guest_preview_limit_desc") ||
                   "Log in to read the full community feed, save updates, and post your own news.",
               ),
@@ -1589,9 +1589,9 @@ const Ve = 5,
                 "div",
                 { className: "inline-flex flex-col items-center gap-2" },
                 e.createElement("div", { className: "w-12 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:bg-gradient-to-r" }),
-                e.createElement("span", { className: "text-2xl dark:text-2xl" }, "✨"),
-                e.createElement("p", { className: "text-sm font-medium text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300" }, o("end_of_feed") || "You've reached the end"),
-                e.createElement("p", { className: "text-xs text-gray-400 dark:text-gray-500 dark:text-xs dark:text-gray-300" }, o("check_back_later") || "Check back later for new listings"),
+                e.createElement("span", { className: "text-2xl" }, "✨"),
+                e.createElement("p", { className: "text-sm font-medium text-gray-500 dark:text-gray-400 dark:text-gray-300" }, o("end_of_feed") || "You've reached the end"),
+                e.createElement("p", { className: "text-xs text-gray-400 dark:text-gray-500 dark:text-gray-300" }, o("check_back_later") || "Check back later for new listings"),
                 e.createElement("div", { className: "w-12 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:bg-gradient-to-r" }),
               ),
             ),
