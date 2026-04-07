@@ -1208,7 +1208,7 @@ const te = 12,
                 "h1",
                 {
                   className:
-                    "text-3xl font-bold text-gray-900 dark:text-white text-center mb-3 dark:text-3xl dark:text-gray-100 dark:text-center",
+                    "text-3xl font-bold text-gray-900 dark:text-white text-center mb-3 dark:text-gray-100 dark:text-center",
                 },
                 r("access_restricted") || "Access Restricted",
               ),
@@ -1245,7 +1245,7 @@ const te = 12,
                         className: "w-4 h-4 text-blue-600 dark:text-purple-400 dark:text-blue-300",
                       }),
                     ),
-                    e.createElement("span", { className: "text-sm dark:text-sm" }, t.text),
+                    e.createElement("span", { className: "text-sm" }, t.text),
                   ),
                 ),
               ),
@@ -1253,7 +1253,7 @@ const te = 12,
                 "p",
                 {
                   className:
-                    "text-xs text-gray-500 dark:text-gray-400 text-center mb-4 dark:text-xs dark:text-gray-300 dark:text-center",
+                    "text-xs text-gray-500 dark:text-gray-400 text-center mb-4 dark:text-gray-300 dark:text-center",
                 },
                 r("filters_unlock_after_signin", "Filters unlock after sign-in."),
               ),
@@ -1270,7 +1270,7 @@ const te = 12,
                       key: t,
                       type: "button",
                       onClick: () => toggleGuestInterest(t),
-                      className: `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition dark:border dark:text-xs ${
+                      className: `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition dark:border ${
                         guestInterests.includes(t)
                           ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                           : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
@@ -1289,7 +1289,7 @@ const te = 12,
                       state: { returnTo: `${g.pathname}${g.search}` },
                     }),
                   className:
-                    "w-full h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold text-lg rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:scale-105 dark:bg-gradient-to-r dark:text-white dark:text-lg",
+                    "w-full h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold text-lg rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:scale-105 dark:bg-gradient-to-r dark:text-white",
                 },
                 e.createElement(we, { className: "w-5 h-5 mr-2" }),
                 r("sign_in_to_continue") || "Sign In to Continue",
@@ -1308,7 +1308,7 @@ const te = 12,
                 "p",
                 {
                   className:
-                    "text-gray-500 dark:text-gray-400 text-center mt-6 text-sm dark:text-gray-300 dark:text-center dark:text-sm",
+                    "text-gray-500 dark:text-gray-400 text-center mt-6 text-sm dark:text-gray-300 dark:text-center",
                 },
                 "Don't have an account?",
                 " ",
@@ -1360,7 +1360,7 @@ const te = 12,
                     "h3",
                     {
                       className:
-                        "text-base md:text-lg font-bold text-gray-900 dark:text-white dark:text-base dark:md:text-lg dark:text-gray-100",
+                        "text-base md:text-lg font-bold text-gray-900 dark:text-white dark:text-gray-100",
                     },
                     tr("quick_filters", "Quick filters"),
                   ),
@@ -1381,7 +1381,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isUnder1000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isUnder1000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1400,7 +1400,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isRange500to2000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isRange500to2000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1419,7 +1419,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isRange2000to10000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isRange2000to10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1438,7 +1438,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isAbove10000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isAbove10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1457,7 +1457,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isPostedTodayFilter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isPostedTodayFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1480,7 +1480,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isLatest10Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isLatest10Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1499,7 +1499,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isLatest50Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isLatest50Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1519,7 +1519,7 @@ const te = 12,
                       type: "button",
                       "data-active": isNearMeFilter ? "true" : "false",
                       disabled: !nearMeLocation,
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isNearMeFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1538,7 +1538,7 @@ const te = 12,
                     {
                       type: "button",
                       disabled: !_,
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border dark:text-sm ${
+                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         _
                           ? "border-slate-200 bg-white !text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                           : "cursor-not-allowed border-slate-200 bg-slate-100 !text-slate-400 dark:border-slate-600 dark:bg-slate-800/50 dark:!text-slate-500"
@@ -1582,7 +1582,7 @@ const te = 12,
                   "div",
                   {
                     className:
-                      "w-full max-w-[92rem] rounded-xl border border-amber-200/70 bg-amber-50 text-amber-800 px-3 py-2 text-[11px] font-semibold dark:border-amber-900/40 dark:bg-amber-900/30 dark:text-amber-200 dark:border dark:border-amber-600/70 dark:bg-amber-950/20 dark:text-[11px]",
+                      "w-full max-w-[92rem] rounded-xl border border-amber-200/70 bg-amber-50 text-amber-800 px-3 py-2 text-[11px] font-semibold dark:border-amber-900/40 dark:bg-amber-900/30 dark:text-amber-200 dark:border dark:border-amber-600/70 dark:bg-amber-950/20",
                   },
                   reportNotice,
                 ),
@@ -1596,7 +1596,7 @@ const te = 12,
                 "h2",
                 {
                   className:
-                    "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-[92rem] px-3 md:px-0 dark:text-lg dark:md:text-xl dark:text-gray-100",
+                    "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-[92rem] px-3 md:px-0 dark:text-gray-100",
                 },
                 tr("sponsored_deals", "Sponsored deals"),
               ),
@@ -1634,7 +1634,7 @@ const te = 12,
                       "div",
                       {
                         className:
-                          "font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2 dark:text-gray-100 dark:text-xs dark:md:text-base dark:text-center",
+                          "font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2 dark:text-gray-100 dark:text-center",
                       },
                       t.title,
                     ),
@@ -1642,7 +1642,7 @@ const te = 12,
                       "div",
                       {
                         className:
-                          "text-blue-900 dark:text-blue-300 text-base md:text-lg font-bold mb-1 dark:text-blue-200 dark:text-base dark:md:text-lg",
+                          "text-blue-900 dark:text-blue-300 text-base md:text-lg font-bold mb-1 dark:text-blue-200",
                       },
                       formatPrice(resolvePostPriceValue(t)),
                     ),
@@ -1650,7 +1650,7 @@ const te = 12,
                       o,
                       {
                         className:
-                          "bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2 dark:bg-blue-700/40 dark:text-white dark:text-xs dark:md:text-sm",
+                          "bg-blue-600 text-white w-full mt-1 md:mt-2 text-xs md:text-sm py-1 md:py-2 dark:bg-blue-700/40 dark:text-white",
                         onClick: (u) => {
                           u.stopPropagation();
                           i(`/post/${t.post_id || t.id}`);
@@ -1668,7 +1668,7 @@ const te = 12,
                   { className: "mb-4 flex items-center gap-2 flex-wrap" },
                   e.createElement(
                     "span",
-                    { className: "text-sm text-gray-600 dark:text-gray-400 dark:text-sm dark:text-gray-200" },
+                    { className: "text-sm text-gray-600 dark:text-gray-400 dark:text-gray-200" },
                     r("search_results_for") || "Search results for",
                     ":",
                   ),
@@ -1676,7 +1676,7 @@ const te = 12,
                     "span",
                     {
                       className:
-                        "inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium dark:bg-blue-950/20 dark:text-sm",
+                        "inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium dark:bg-blue-950/20",
                     },
                     '"',
                     d,
@@ -1731,7 +1731,7 @@ const te = 12,
               ? e.createElement(
                   "p",
                   {
-                    className: "mb-4 text-sm text-blue-700 dark:text-blue-300 dark:text-sm",
+                    className: "mb-4 text-sm text-blue-700 dark:text-blue-300",
                   },
                   "Updating post language...",
                 )
@@ -1809,7 +1809,7 @@ const te = 12,
                       "h4",
                       {
                         className:
-                          "text-lg font-semibold text-gray-900 dark:text-white mb-2 dark:text-lg dark:text-gray-100",
+                          "text-lg font-semibold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                       },
                       "Could not load recommendations",
                     ),
@@ -1817,7 +1817,7 @@ const te = 12,
                       "p",
                       {
                         className:
-                          "text-sm text-gray-600 dark:text-gray-300 mb-5 dark:text-sm dark:text-gray-200",
+                          "text-sm text-gray-600 dark:text-gray-300 mb-5 dark:text-gray-200",
                       },
                       L,
                     ),
@@ -1869,7 +1869,7 @@ const te = 12,
                           "h3",
                           {
                             className:
-                              "text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-xl dark:text-gray-100",
+                              "text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                           },
                           r("no_recommendations"),
                         ),
@@ -1896,7 +1896,7 @@ const te = 12,
                                   type: "button",
                                   onClick: E,
                                   className:
-                                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:border dark:text-sm dark:hover:bg-slate-950",
+                                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:border dark:hover:bg-slate-950",
                                 },
                                 e.createElement(F, { className: "w-4 h-4" }),
                                 "Reset Filters",
@@ -1908,7 +1908,7 @@ const te = 12,
                               type: "button",
                               onClick: () => i("/all-posts"),
                               className:
-                                "inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 dark:bg-blue-700/40 dark:text-sm dark:text-white dark:hover:bg-blue-700/40",
+                                "inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
                             },
                             "Browse All Posts",
                           ),
@@ -2055,7 +2055,7 @@ const te = 12,
                                   "span",
                                   {
                                       className:
-                                        "text-[9px] sm:text-[10px] md:text-[11px] uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300 dark:text-[9px] dark:sm:text-[10px] dark:md:text-[11px]",
+                                        "text-[9px] sm:text-[10px] md:text-[11px] uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300",
                                   },
                                   r("price") || "Price",
                                 ),
@@ -2095,7 +2095,7 @@ const te = 12,
                                     "span",
                                     {
                                       className:
-                                        "font-semibold text-blue-900 dark:text-blue-200 text-[12px] sm:text-[13px] truncate dark:text-[12px] dark:sm:text-[13px]",
+                                        "font-semibold text-blue-900 dark:text-blue-200 text-[12px] sm:text-[13px] truncate",
                                     },
                                     u,
                                   ),
@@ -2104,7 +2104,7 @@ const te = 12,
                                       "span",
                                       {
                                         className:
-                                          "inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-[10px] font-semibold rounded-full dark:bg-green-950/20 dark:text-[10px]",
+                                          "inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-[10px] font-semibold rounded-full dark:bg-green-950/20",
                                         title: `KYC Verified${
                                           t.user?.aadhaarVerified ? " (Aadhaar)" : ""
                                         }${t.user?.panVerified ? " (PAN)" : ""}`,
@@ -2129,7 +2129,7 @@ const te = 12,
                                       "span",
                                       {
                                         className:
-                                          "text-yellow-500 text-[10px] font-medium dark:text-yellow-300 dark:text-[10px]",
+                                          "text-yellow-500 text-[10px] font-medium dark:text-yellow-300",
                                       },
                                       "\u2605 ",
                                       k.toFixed(1),
@@ -2139,7 +2139,7 @@ const te = 12,
                                   "div",
                                   {
                                     className:
-                                      "mt-1 flex flex-wrap items-center gap-1 text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-300 dark:text-[9px] dark:sm:text-[10px]",
+                                      "mt-1 flex flex-wrap items-center gap-1 text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-300",
                                   },
                                   shownMetaChips.map((P) =>
                                     e.createElement(
@@ -2221,7 +2221,7 @@ const te = 12,
                                     setMenuPostId(null);
                                   },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                                     },
                                     r("share") || "Share",
                                   ),
@@ -2234,7 +2234,7 @@ const te = 12,
                                     setMenuPostId(null);
                                   },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                                     },
                                     savedPosts[a]
                                       ? r("saved") || "Saved"
@@ -2250,7 +2250,7 @@ const te = 12,
                                           setMenuPostId(null);
                                         },
                                         className:
-                                          "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                          "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                                       },
                                       r("promote") || "Promote",
                                     ),
@@ -2264,7 +2264,7 @@ const te = 12,
                                         setMenuPostId(null);
                                       },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                                     },
                                     r("interested") || "Interested",
                                   ),
@@ -2277,7 +2277,7 @@ const te = 12,
                                         setMenuPostId(null);
                                       },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:text-sm dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
                                     },
                                     inCart
                                       ? r("in_cart") || "In Cart"
@@ -2292,7 +2292,7 @@ const te = 12,
                                     setMenuPostId(null);
                                   },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-sm dark:text-red-300 dark:hover:bg-red-950/20",
+                                        "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
                                     },
                                     r("report") || "Report",
                                   ),
@@ -2387,7 +2387,7 @@ const te = 12,
                                     "div",
                                     {
                                       className:
-                                        "absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/55 dark:text-white dark:text-[10px]",
+                                        "absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/55 dark:text-white",
                                     },
                                     activeImageIndex + 1,
                                     "/",
@@ -2425,7 +2425,7 @@ const te = 12,
                               "div",
                               {
                                 className:
-                                  "px-2 py-1 text-gray-800 dark:text-gray-200 text-[10px] sm:text-xs md:text-sm leading-tight sm:px-2.5 sm:py-1.5 dark:text-gray-100 dark:text-[10px] dark:sm:text-xs dark:md:text-sm",
+                                  "px-2 py-1 text-gray-800 dark:text-gray-200 text-[10px] sm:text-xs md:text-sm leading-tight sm:px-2.5 sm:py-1.5 dark:text-gray-100",
                               },
                               expandedPostId === a || !Oe
                                 ? d ||
@@ -2470,7 +2470,7 @@ const te = 12,
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950 dark:text-[9px] dark:sm:text-[10px]",
+                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950",
                                     onClick: () => handleLike(t),
                                     "aria-label": r("like") || "Like",
                                   },
@@ -2484,7 +2484,7 @@ const te = 12,
                                       }),
                                   e.createElement(
                                     "span",
-                                    { className: "text-[9px] sm:text-[10px] dark:text-[9px] dark:sm:text-[10px]" },
+                                    { className: "text-[9px] sm:text-[10px]" },
                                     likeCounts[a] || 0,
                                   ),
                                 ),
@@ -2492,7 +2492,7 @@ const te = 12,
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950 dark:text-[9px] dark:sm:text-[10px]",
+                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950",
                                     onClick: () => handleSharePost(t),
                                     "aria-label": r("share") || "Share",
                                   },
@@ -2507,7 +2507,7 @@ const te = 12,
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950 dark:text-[9px] dark:sm:text-[10px]",
+                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950",
                                     onClick: () => toggleSave(t),
                                     "aria-label":
                                       savedPosts[a]
@@ -2531,7 +2531,7 @@ const te = 12,
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:bg-emerald-950/20 dark:text-[10px] dark:sm:text-xs dark:hover:bg-emerald-950/20",
+                                      "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/20",
                                     onClick: (P) => {
                                       P.stopPropagation();
                                       setInterestPost(t);
@@ -2550,7 +2550,7 @@ const te = 12,
                                   o,
                                   {
                                     variant: "outline",
-                                    className: `shrink-0 h-6 px-1 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold rounded inline-flex items-center gap-1 dark:text-[9px] dark:sm:text-[10px]${inCart ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-blue-200 text-blue-700 hover:bg-blue-50"}`,
+                                    className: `shrink-0 h-6 px-1 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold rounded inline-flex items-center gap-1 dark:sm:text-[10px]${inCart ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-blue-200 text-blue-700 hover:bg-blue-50"}`,
                                     onClick: (P) => {
                                       P.stopPropagation();
                                       handleCartToggle(t);
@@ -2574,7 +2574,7 @@ const te = 12,
                                   "span",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold dark:bg-gray-950 dark:text-gray-200 dark:text-[9px] dark:sm:text-[10px]",
+                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold dark:bg-gray-950 dark:text-gray-200",
                                   },
                                   e.createElement(Qe, { className: "w-4 h-4" }),
                                   viewCounts[a] || 0,
@@ -2583,7 +2583,7 @@ const te = 12,
                                   o,
                                   {
                                     className:
-                                      "shrink-0 h-6 bg-blue-600 text-white px-1.5 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-medium rounded hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-blue-700/40 dark:text-white dark:text-[9px] dark:sm:text-[10px] dark:hover:bg-blue-700/40",
+                                      "shrink-0 h-6 bg-blue-600 text-white px-1.5 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-medium rounded hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
                                     onClick: () => handleViewDetails(t),
                                     "aria-label":
                                       r("view_details") || "View Details",
@@ -2625,7 +2625,7 @@ const te = 12,
                                     "p",
                                     {
                                       className:
-                                        "text-sm font-semibold text-slate-900 dark:text-slate-100 dark:text-sm",
+                                        "text-sm font-semibold text-slate-900 dark:text-slate-100",
                                     },
                                     tr("more_recommendations", "More recommendations"),
                                   ),
@@ -2633,7 +2633,7 @@ const te = 12,
                                     "p",
                                     {
                                       className:
-                                        "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                                        "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                                     },
                                     tr(
                                       "load_more_recommendations_hint",
@@ -2648,7 +2648,7 @@ const te = 12,
                                     onClick: () => Y((t) => t + 1),
                                     disabled: D,
                                     className:
-                                      "inline-flex min-h-11 min-w-[180px] items-center justify-center rounded-xl border border-blue-200 bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70 dark:border-blue-500/40 dark:border dark:border-blue-600/40 dark:bg-blue-700/40 dark:text-sm dark:text-white dark:hover:bg-blue-700/40",
+                                      "inline-flex min-h-11 min-w-[180px] items-center justify-center rounded-xl border border-blue-200 bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70 dark:border-blue-500/40 dark:border dark:border-blue-600/40 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
                                   },
                                   D
                                     ? e.createElement(

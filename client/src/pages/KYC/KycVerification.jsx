@@ -137,7 +137,7 @@ const V = () => {
                   { className: "pt-8 text-center space-y-4 dark:text-center" },
                   e.createElement(
                     "h2",
-                    { className: "text-3xl font-bold text-green-800 dark:text-3xl dark:text-green-200" },
+                    { className: "text-3xl font-bold text-green-800 dark:text-green-200" },
                     "KYC Verified",
                   ),
                   e.createElement(
@@ -186,7 +186,7 @@ const V = () => {
                     { className: "pt-8 text-center space-y-4 dark:text-center" },
                     e.createElement(
                       "h2",
-                      { className: "text-3xl font-bold text-amber-800 dark:text-3xl dark:text-amber-200" },
+                      { className: "text-3xl font-bold text-amber-800 dark:text-amber-200" },
                       "Verification in progress",
                     ),
                     e.createElement(
@@ -245,7 +245,7 @@ const V = () => {
                           "div",
                           {
                             className:
-                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-sm dark:text-red-300",
+                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
                           },
                           m,
                         ),
@@ -254,7 +254,7 @@ const V = () => {
                           "div",
                           {
                             className:
-                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-sm dark:text-red-300",
+                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
                           },
                           "Previous request rejected: ",
                           l.rejection_reason,
@@ -345,13 +345,13 @@ const V = () => {
                         x &&
                           e.createElement(
                             "p",
-                            { className: "text-sm text-red-600 dark:text-sm dark:text-red-300" },
+                            { className: "text-sm text-red-600 dark:text-red-300" },
                             x,
                           ),
                         h &&
                           e.createElement(
                             "p",
-                            { className: "text-sm text-green-600 dark:text-sm dark:text-green-300" },
+                            { className: "text-sm text-green-600 dark:text-green-300" },
                             h,
                           ),
                         e.createElement(

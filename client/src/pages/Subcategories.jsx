@@ -297,10 +297,10 @@ export default function Subcategories() {
         {/* Post flow progress banner */}
         {isPostFlow ? (
           <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 dark:border-emerald-900/40 dark:bg-emerald-900/10 dark:border dark:border-emerald-600/40 dark:bg-emerald-950/20">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-white dark:bg-emerald-800/30 dark:text-xs dark:text-white">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-white dark:bg-emerald-800/30 dark:text-white">
               3
             </div>
-            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 dark:text-sm dark:text-emerald-200">
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 dark:text-emerald-200">
               {t("post_flow_step_3", { defaultValue: "Step 3 of 3 — Choose where your listing belongs" })}
             </p>
           </div>
@@ -328,13 +328,13 @@ export default function Subcategories() {
 
             <div className="flex flex-wrap items-center gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70">
                   {isPostFlow ? t("posting_flow_label", { defaultValue: "Posting flow" }) : t("browse_label", { defaultValue: "Browse" })}
                 </p>
-                <h1 className="mb-2 text-xl sm:text-2xl md:text-3xl font-bold text-white dark:text-xl dark:sm:text-2xl dark:md:text-3xl dark:text-white">
+                <h1 className="mb-2 text-xl sm:text-2xl md:text-3xl font-bold text-white dark:text-white">
                   {heroLabel}
                 </h1>
-                <p className="max-w-2xl text-base text-white/90 md:text-lg dark:text-base dark:text-white/90 dark:md:text-lg">
+                <p className="max-w-2xl text-base text-white/90 md:text-lg dark:text-white/90">
                   {heroDescription}
                 </p>
               </div>
@@ -390,7 +390,7 @@ export default function Subcategories() {
               </button>
             ) : null}
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs dark:text-xs">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className="font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
               {t("sort_by", { defaultValue: "Sort" })}
             </span>
@@ -420,7 +420,7 @@ export default function Subcategories() {
 
         {error ? (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30 dark:border dark:border-red-600/40 dark:bg-red-950/20">
-            <p className="mb-3 text-sm text-red-700 dark:text-red-300 dark:text-sm">{error}</p>
+            <p className="mb-3 text-sm text-red-700 dark:text-red-300">{error}</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -468,12 +468,12 @@ export default function Subcategories() {
         {!loading && filteredSubcategories.length === 0 ? (
           <Card className="mhub-premium-surface rounded-2xl p-6 text-center dark:text-center">
             <Search className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4 animate-pulse dark:text-slate-300" />
-            <h2 className="mb-2 text-lg font-semibold text-blue-900 dark:text-blue-200 dark:text-lg">
+            <h2 className="mb-2 text-lg font-semibold text-blue-900 dark:text-blue-200">
               {t("no_subcategories_match_search", {
                 defaultValue: "No subcategories match your search",
               })}
             </h2>
-            <p className="mb-4 text-sm text-blue-700 dark:text-blue-300 dark:text-sm">
+            <p className="mb-4 text-sm text-blue-700 dark:text-blue-300">
               {t("try_broader_subcategory_keyword", {
                 defaultValue: "Try a broader keyword or clear the current filter.",
               })}
@@ -497,7 +497,7 @@ export default function Subcategories() {
 
         {!loading && filteredSubcategories.length > 0 ? (
           <>
-            <h2 className="mb-6 flex items-center gap-2 text-xl font-bold mhub-gradient-text md:text-2xl dark:text-xl dark:md:text-2xl">
+            <h2 className="mb-6 flex items-center gap-2 text-xl font-bold mhub-gradient-text md:text-2xl">
               <span className="inline-block h-5 w-1 rounded-full bg-gradient-to-b from-blue-500 to-indigo-500 dark:bg-gradient-to-b" />
               {sortMode === "popular"
                 ? t("popular_subcategories", { defaultValue: "Popular Subcategories" })
@@ -542,18 +542,18 @@ export default function Subcategories() {
                         )}
                       </div>
 
-                      <h3 className="mb-1 line-clamp-1 text-base font-extrabold text-gray-900 md:text-lg dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-base dark:text-gray-100 dark:md:text-lg dark:group-hover:text-blue-300">
+                      <h3 className="mb-1 line-clamp-1 text-base font-extrabold text-gray-900 md:text-lg dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 dark:text-gray-100 dark:group-hover:text-blue-300">
                         {subcategory?.name || t("subcategory", { defaultValue: "Subcategory" })}
                       </h3>
 
-                      <p className="min-h-[2.25rem] line-clamp-2 text-xs text-gray-500 md:text-sm dark:text-gray-400 dark:text-xs dark:text-gray-300 dark:md:text-sm">
+                      <p className="min-h-[2.25rem] line-clamp-2 text-xs text-gray-500 md:text-sm dark:text-gray-400 dark:text-gray-300">
                         {subcategory?.description ||
                           t("browse_listings_subcategory", {
                             defaultValue: "Browse listings in this subcategory.",
                           })}
                       </p>
                       <p className="mt-2">
-                        <span className="inline-flex items-center gap-1 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-gray-700 dark:to-gray-600 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-xs font-bold dark:bg-gradient-to-r dark:text-slate-200 dark:text-xs">
+                        <span className="inline-flex items-center gap-1 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-gray-700 dark:to-gray-600 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-xs font-bold dark:bg-gradient-to-r dark:text-slate-200">
                         {count > 0 ? count : "\u2022"}
                         </span>
                       </p>
@@ -565,10 +565,10 @@ export default function Subcategories() {
 
             <div className="mt-8 text-center dark:text-center">
               <div className="mhub-premium-surface rounded-2xl p-6 md:p-8">
-                <h3 className="mb-3 text-xl font-bold mhub-gradient-text md:text-2xl dark:text-xl dark:md:text-2xl">
+                <h3 className="mb-3 text-xl font-bold mhub-gradient-text md:text-2xl">
                   {t("need_broader_results", { defaultValue: "Need broader results?" })}
                 </h3>
-                <p className="mb-5 text-sm text-gray-600 md:text-base dark:text-gray-300 dark:text-sm dark:text-gray-200 dark:md:text-base">
+                <p className="mb-5 text-sm text-gray-600 md:text-base dark:text-gray-300 dark:text-gray-200">
                   {t("return_to_home_hub_for_groups", {
                     defaultValue: "Return to the home hub to browse the top-level category groups.",
                   })}

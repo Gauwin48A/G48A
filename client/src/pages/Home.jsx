@@ -81,10 +81,10 @@ export default function Home() {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-lg w-full mhub-premium-surface rounded-3xl p-6 text-center dark:text-center">
-          <h2 className="text-2xl font-bold text-rose-700 dark:text-rose-200 mb-2 dark:text-2xl dark:text-rose-300">
+          <h2 className="text-2xl font-bold text-rose-700 dark:text-rose-200 mb-2 dark:text-rose-300">
             Something went wrong
           </h2>
-          <p className="text-sm text-rose-600 dark:text-rose-300 mb-6 dark:text-sm">
+          <p className="text-sm text-rose-600 dark:text-rose-300 mb-6">
             {error}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -104,9 +104,9 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 py-12 page-shell page-pad">
           <EmptyState
             type="posts"
-            title="No Posts Yet"
-            message="Be the first to create a listing and kickstart the marketplace."
-            actionLabel="Open All Posts"
+            title={t("no_posts_yet") || "No Posts Yet"}
+            message={t("be_first_to_list") || "Be the first to create a listing and kickstart the marketplace."}
+            actionLabel={t("open_all_posts") || "Open All Posts"}
             onAction={() => navigate("/all-posts")}
           />
         </div>
@@ -119,21 +119,20 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-4 py-10 page-shell page-pad">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
-            <p className="uppercase tracking-[0.3em] text-xs text-emerald-500 dark:text-emerald-300 dark:text-xs">
+            <p className="uppercase tracking-[0.3em] text-xs text-emerald-500 dark:text-emerald-300">
               Trust-First Marketplace
             </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white dark:text-3xl dark:md:text-4xl dark:text-gray-100">
-              Discover what is moving near you
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100">
+              {t("discover_near_you") || "Discover what is moving near you"}
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 max-w-lg dark:text-sm dark:text-gray-200">
-              Fresh listings, verified sellers, and quick actions. Browse the
-              latest posts or jump into curated discovery.
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 max-w-lg dark:text-gray-200">
+              {t("home_subtitle") || "Fresh listings, verified sellers, and quick actions. Browse the latest posts or jump into curated discovery."}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => navigate("/all-posts")}>Open All Posts</Button>
+            <Button onClick={() => navigate("/all-posts")}>{t("open_all_posts") || "Open All Posts"}</Button>
             <Button variant="outline" onClick={() => navigate("/for-you")}>
-              For You
+              {t("for_you") || "For You"}
             </Button>
           </div>
         </div>
@@ -166,19 +165,19 @@ export default function Home() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent dark:bg-gradient-to-t" />
                   <div className="absolute bottom-3 left-3">
-                    <p className="text-white text-lg font-semibold dark:text-white dark:text-lg">
+                    <p className="text-white text-lg font-semibold dark:text-white">
                       INR {Number(post.price || 0).toLocaleString("en-IN")}
                     </p>
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-base line-clamp-2 dark:text-gray-100 dark:text-base">
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-base line-clamp-2 dark:text-gray-100">
                     {post.title || "Untitled Listing"}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-xs dark:text-gray-300">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300">
                     {post.category_name || post.category || "General"}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-xs dark:text-gray-300">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300">
                     {post.location || "Location not specified"}
                   </p>
                 </div>

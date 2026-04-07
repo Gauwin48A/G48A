@@ -6,7 +6,7 @@
  */
 
 const logger = require("../utils/logger");
-const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { runQuery, getAuthUserId, pool } = require("../utils/dbHelpers");
 const { parseOptionalString, parsePositiveInt } = require("../utils/parseHelpers");
 const { computeTrustScore } = require("../services/trustScoreService");
 const { setUserRiskState } = require("../services/riskStateService");
@@ -567,7 +567,7 @@ exports.getComplaints = async (req, res) => {
       });
     }
     logger.error("Error fetching complaints:", err);
-    res.status(500).json({ error: "Failed to fetch complaints", details: err.message });
+    res.status(500).json({ error: "Failed to fetch complaints" });
   }
 };
 
@@ -773,7 +773,7 @@ exports.createComplaint = async (req, res) => {
       });
   } catch (err) {
     logger.error("Error creating complaint:", err);
-    res.status(500).json({ error: "Failed to submit complaint", details: err.message });
+    res.status(500).json({ error: "Failed to submit complaint" });
   }
 };
 
@@ -813,7 +813,7 @@ exports.getMyComplaints = async (req, res) => {
     res.json({ complaints: result.rows.map(mapComplaintForResponse) });
   } catch (err) {
     logger.error("Error fetching user complaints:", err);
-    res.status(500).json({ error: "Failed to fetch complaints", details: err.message });
+    res.status(500).json({ error: "Failed to fetch complaints" });
   }
 };
 
@@ -861,13 +861,18 @@ exports.updateComplaintStatus = async (req, res) => {
     }
 
     // Fetch current complaint for transition validation
-    const currentResult = await runQuery(
-      `SELECT complaint_id, status, evidence_metadata, status_history,
-              sla_due_at, sla_breached_at
-       FROM complaints
-       WHERE complaint_id::text = $1`,
-      [id]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const currentResult = await client.query(
+        `SELECT complaint_id, status, evidence_metadata, status_history,
+                sla_due_at, sla_breached_at
+         FROM complaints
+         WHERE complaint_id::text = $1
+         FOR UPDATE`,
+        [id]
+      );
 
     if (currentResult.rows.length === 0) {
       return res.status(404).json({ error: "Complaint not found" });
@@ -929,7 +934,7 @@ exports.updateComplaintStatus = async (req, res) => {
 
     const isTerminal = ["resolved", "rejected", "closed"].includes(nextStatus);
 
-    const result = await runQuery(
+    const result = await client.query(
       `
       UPDATE complaints
       SET status = $1,
@@ -965,7 +970,9 @@ exports.updateComplaintStatus = async (req, res) => {
       ]
     );
 
-    // Fire-and-forget audit log
+    await client.query("COMMIT");
+
+    // Fire-and-forget audit log (outside transaction)
     runQuery(
       `
       INSERT INTO audit_logs (user_id, action, details, ip_address, created_at)
@@ -983,9 +990,15 @@ exports.updateComplaintStatus = async (req, res) => {
       message: `Complaint status updated to ${status}`,
       complaint: mapComplaintForResponse(result.rows[0]),
     });
+    } catch (txErr) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     logger.error("Error updating complaint:", err);
-    res.status(500).json({ error: "Failed to update complaint", details: err.message });
+    res.status(500).json({ error: "Failed to update complaint" });
   }
 };
 
@@ -1085,6 +1098,6 @@ exports.addComplaintEvidence = async (req, res) => {
     logger.error("Error updating complaint evidence:", err);
     return res
       .status(500)
-      .json({ error: "Failed to update complaint evidence", details: err.message });
+      .json({ error: "Failed to update complaint evidence" });
   }
 };

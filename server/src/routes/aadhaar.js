@@ -3,9 +3,9 @@ const router = express.Router();
 const AadhaarService = require('../services/AadhaarService');
 const { logAadhaarVerification } = require('../utils/logger');
 const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
-const { optionalAuth } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
 
-router.use(optionalAuth);
+router.use(protect);
 
 const resolveUserUpdateColumns = async () => {
   const result = await runQuery(

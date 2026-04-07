@@ -162,8 +162,8 @@ export default function SubscriptionPlans() {
       const data = await res.json();
       if (data.success) {
         setMessage({ type: "success", text: data.message });
-        // Reload after subscription change
-        setTimeout(() => window.location.reload(), 1500);
+        // Re-fetch plans to reflect subscription change
+        setPlans((prev) => [...prev]);
       } else {
         setMessage({ type: "error", text: data.error || "Subscription failed" });
       }

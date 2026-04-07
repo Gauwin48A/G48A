@@ -196,13 +196,13 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
         {/* Top row: emoji + active badge */}
         <div className="flex items-start justify-between">
           <span
-            className="text-3xl md:text-5xl select-none dark:text-3xl dark:md:text-5xl"
+            className="text-3xl md:text-5xl select-none"
             style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.3))" }}
           >
             {app.emoji}
           </span>
           {isActive && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/25 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider backdrop-blur-sm dark:bg-slate-900/25 dark:text-[10px] dark:sm:text-[11px] dark:text-white">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/25 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider backdrop-blur-sm dark:bg-slate-900/25 dark:text-white">
               <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse dark:bg-green-900/30" />
               {t('active', { defaultValue: 'Active' })}
             </span>
@@ -211,10 +211,10 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
 
         {/* Title + tagline */}
         <div className="flex-1">
-          <h2 className="text-base md:text-2xl font-extrabold text-white leading-tight tracking-tight dark:text-base dark:md:text-2xl dark:text-white">
+          <h2 className="text-base md:text-2xl font-extrabold text-white leading-tight tracking-tight dark:text-white">
             {t(`app_${app.key}`, { defaultValue: app.label })}
           </h2>
-          <p className="text-xs sm:text-sm text-white/75 mt-0.5 line-clamp-1 dark:text-xs dark:sm:text-sm dark:text-white/75">{t(`app_${app.key}_tagline`, { defaultValue: app.tagline })}</p>
+          <p className="text-xs sm:text-sm text-white/75 mt-0.5 line-clamp-1 dark:text-white/75">{t(`app_${app.key}_tagline`, { defaultValue: app.tagline })}</p>
         </div>
 
         {/* Stats chips */}
@@ -230,13 +230,13 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
         </div>
 
         {/* Compact mobile stats */}
-        <p className="sm:hidden text-[11px] text-white/60 font-medium dark:text-[11px] dark:text-white/60">
+        <p className="sm:hidden text-[11px] text-white/60 font-medium dark:text-white/60">
           {fmtCount(s.active_count)} {t('listings', { defaultValue: 'listings' })}
         </p>
 
         {/* CTA row */}
         <div className="hidden sm:flex items-center justify-between mt-1">
-          <p className="text-[11px] text-white/60 leading-tight max-w-[70%] line-clamp-2 hidden md:block dark:text-[11px] dark:text-white/60">
+          <p className="text-[11px] text-white/60 leading-tight max-w-[70%] line-clamp-2 hidden md:block dark:text-white/60">
             {t(`app_${app.key}_desc`, { defaultValue: app.description })}
           </p>
           <span className={[
@@ -397,7 +397,7 @@ export default function CategoryHub() {
         >
           {currentApp && (
             <div className={`mb-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold backdrop-blur-sm ${headerPillClass}`}>
-              <span className="text-base leading-none dark:text-base" aria-hidden="true">
+              <span className="text-base leading-none" aria-hidden="true">
                 {currentApp.emoji}
               </span>
               <span>{t('active_app', { defaultValue: 'Active app:' })} {currentApp.label}</span>
@@ -411,13 +411,13 @@ export default function CategoryHub() {
               label={t('view', { defaultValue: 'View' })}
             />
           </div>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none dark:text-2xl dark:md:text-3xl">
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
             {t('choose_your', { defaultValue: 'Choose Your' })}{" "}
             <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
               {t('world', { defaultValue: 'World' })}
             </span>
           </h1>
-          <p className="mt-2 text-sm text-slate-600 dark:text-white/60 max-w-xl mx-auto leading-relaxed dark:text-sm dark:text-slate-200" data-density="extra">
+          <p className="mt-2 text-sm text-slate-600 dark:text-white/60 max-w-xl mx-auto leading-relaxed dark:text-slate-200" data-density="extra">
             {t('category_hub_desc', { defaultValue: 'Select the app you want to open. Your choice becomes the active experience across feed, listings, chat, and every page until you switch to another app from this hub.' })}
           </p>
         </div>

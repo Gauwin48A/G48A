@@ -220,7 +220,7 @@ const BoughtPosts = () => {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100",
+                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
                       },
                       "Category mode: ",
                       categoryModeCategory.name,
@@ -229,7 +229,7 @@ const BoughtPosts = () => {
                       "p",
                       {
                         className:
-                          "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                          "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                       },
                       "Bought posts are filtered to this category.",
                     ),
@@ -283,7 +283,7 @@ const BoughtPosts = () => {
                         "p",
                         {
                           className:
-                            "text-sm text-red-700 dark:text-red-300 mb-3 dark:text-sm",
+                            "text-sm text-red-700 dark:text-red-300 mb-3",
                         },
                         errorMessage,
                       ),
@@ -335,7 +335,7 @@ const BoughtPosts = () => {
                             "p",
                             {
                               className:
-                                "text-sm text-blue-700 dark:text-blue-300 mb-4 dark:text-sm",
+                                "text-sm text-blue-700 dark:text-blue-300 mb-4",
                             },
                             hasCategoryMode && categoryModeCategory?.name
                               ? `Bought posts are filtered to ${categoryModeCategory.name}. Switch category to see more.`
@@ -385,7 +385,7 @@ const BoughtPosts = () => {
                               "h3",
                               {
                                 className:
-                                  "font-bold text-lg text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                                  "font-bold text-lg text-gray-900 dark:text-white dark:text-gray-100",
                               },
                               post.title || "Untitled post",
                             ),
@@ -393,7 +393,7 @@ const BoughtPosts = () => {
                               "p",
                               {
                                 className:
-                                  "text-gray-500 dark:text-gray-400 text-sm line-clamp-2 dark:text-gray-300 dark:text-sm",
+                                  "text-gray-500 dark:text-gray-400 text-sm line-clamp-2 dark:text-gray-300",
                               },
                               post.description || "No description available.",
                             ),
@@ -443,7 +443,7 @@ const BoughtPosts = () => {
                 "h2",
                 {
                   className:
-                    "text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-2xl dark:text-gray-100",
+                    "text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-gray-100",
                 },
                 translate("bought_posts") || "Bought Posts",
               ),

@@ -16,10 +16,10 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen mhub-premium-page bg-white flex flex-col items-center justify-center p-8 transition-colors duration-300 dark:bg-slate-900">
-      <h1 className="text-6xl font-bold text-blue-600 dark:text-blue-400 mb-4 dark:text-6xl dark:text-blue-300">
+      <h1 className="text-6xl font-bold text-blue-600 dark:text-blue-400 mb-4 dark:text-blue-300">
         404
       </h1>
-      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2 dark:text-2xl dark:text-gray-100">
+      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-2 dark:text-gray-100">
         {title}
       </h2>
       <p className="text-gray-600 dark:text-gray-300 mb-6 dark:text-gray-200">

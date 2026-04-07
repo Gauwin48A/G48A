@@ -375,7 +375,7 @@ const ChatPage = () => {
                 "h1",
                 {
                   className:
-                    "text-2xl font-bold text-white flex items-center gap-2 dark:text-2xl dark:text-white",
+                    "text-2xl font-bold text-white flex items-center gap-2 dark:text-white",
                 },
                 React.createElement(MessageCircle, { className: "w-6 h-6" }),
                 " Messages",
@@ -413,7 +413,7 @@ const ChatPage = () => {
               },
               React.createElement(
                 "div",
-                { className: "flex items-center gap-2 text-sm dark:text-sm" },
+                { className: "flex items-center gap-2 text-sm" },
                 connectionStatus === "offline"
                   ? React.createElement(WifiOff, { className: "w-4 h-4" })
                   : React.createElement(Wifi, { className: "w-4 h-4" }),
@@ -499,7 +499,7 @@ const ChatPage = () => {
                         !searchFilter &&
                           React.createElement(
                             "p",
-                            { className: "text-sm dark:text-sm" },
+                            { className: "text-sm" },
                             "Start chatting by inquiring on a post",
                           ),
                         React.createElement(
@@ -571,13 +571,13 @@ const ChatPage = () => {
                                 ),
                                 React.createElement(
                                   "span",
-                                  { className: "text-xs text-gray-500 dark:text-xs dark:text-gray-300" },
+                                  { className: "text-xs text-gray-500 dark:text-gray-300" },
                                   formatTime(conv.last_message_time),
                                 ),
                               ),
                               React.createElement(
                                 "p",
-                                { className: "text-sm text-gray-500 truncate dark:text-sm dark:text-gray-300" },
+                                { className: "text-sm text-gray-500 truncate dark:text-gray-300" },
                                 conv.last_message,
                               ),
                               conv.post_title &&
@@ -585,7 +585,7 @@ const ChatPage = () => {
                                   Badge,
                                   {
                                     variant: "secondary",
-                                    className: "text-xs mt-1 dark:text-xs",
+                                    className: "text-xs mt-1",
                                   },
                                   conv.post_title,
                                 ),
@@ -642,7 +642,7 @@ const ChatPage = () => {
                           ),
                           React.createElement(
                             "p",
-                            { className: "text-sm text-gray-500 dark:text-sm dark:text-gray-300" },
+                            { className: "text-sm text-gray-500 dark:text-gray-300" },
                             selectedConversation.post_title ? `Re: ${selectedConversation.post_title} | ` : "",
                             isOtherUserOnline ? "Online" : "Offline",
                           ),
@@ -668,7 +668,7 @@ const ChatPage = () => {
                                 "div",
                                 {
                                   className:
-                                    "rounded-xl border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-4 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-sm dark:text-red-300",
+                                    "rounded-xl border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-4 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
                                 },
                                 React.createElement(
                                   "p",
@@ -718,7 +718,7 @@ const ChatPage = () => {
                                     ),
                                     React.createElement(
                                       "p",
-                                      { className: "text-sm mt-1 dark:text-sm" },
+                                      { className: "text-sm mt-1" },
                                       "Start the conversation to close this deal faster.",
                                     ),
                                     React.createElement(
@@ -788,7 +788,7 @@ const ChatPage = () => {
                                         "div",
                                         {
                                           className:
-                                            "mt-1 flex items-center justify-between gap-2 text-xs dark:text-xs",
+                                            "mt-1 flex items-center justify-between gap-2 text-xs",
                                         },
                                         React.createElement(
                                           "span",
@@ -818,7 +818,7 @@ const ChatPage = () => {
                         isTyping &&
                           React.createElement(
                             "p",
-                            { className: "text-xs text-gray-500 dark:text-xs dark:text-gray-300" },
+                            { className: "text-xs text-gray-500 dark:text-gray-300" },
                             typingUser || "Someone",
                             " is typing...",
                           ),
@@ -832,7 +832,7 @@ const ChatPage = () => {
                             "div",
                             {
                               className:
-                                "mb-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-2 text-xs text-red-700 flex items-center justify-between gap-2 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-xs dark:text-red-300",
+                                "mb-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-2 text-xs text-red-700 flex items-center justify-between gap-2 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
                             },
                             React.createElement(
                               "span",
@@ -893,7 +893,7 @@ const ChatPage = () => {
                         }),
                         React.createElement(
                           "p",
-                          { className: "text-lg dark:text-lg" },
+                          { className: "text-lg" },
                           "Select a conversation to start chatting",
                         ),
                         React.createElement(

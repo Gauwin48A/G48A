@@ -728,7 +728,7 @@ const Xe = 2 * 1024 * 1024,
                 "h1",
                 {
                   className:
-                    "text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-3xl dark:text-gray-100",
+                    "text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                 },
                 "Preview Your Post",
               ),
@@ -786,7 +786,7 @@ const Xe = 2 * 1024 * 1024,
                     "h3",
                     {
                       className:
-                        "text-2xl font-bold text-gray-900 dark:text-white mb-2 dark:text-2xl dark:text-gray-100",
+                        "text-2xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                     },
                     t.brand,
                     " ",
@@ -796,7 +796,7 @@ const Xe = 2 * 1024 * 1024,
                     "div",
                     {
                       className:
-                        "text-3xl font-bold text-green-600 dark:text-green-400 mb-4 dark:text-3xl dark:text-green-300",
+                        "text-3xl font-bold text-green-600 dark:text-green-400 mb-4 dark:text-green-300",
                     },
                     "\u20B9",
                     (Number.parseInt(t.price, 10) || 0).toLocaleString(),
@@ -805,7 +805,7 @@ const Xe = 2 * 1024 * 1024,
                     "div",
                     {
                       className:
-                        "grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                        "grid grid-cols-2 gap-4 mb-4 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-200",
                     },
                     e.createElement(
                       "div",
@@ -903,7 +903,7 @@ const Xe = 2 * 1024 * 1024,
                   "div",
                   {
                     className:
-                      "flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1 dark:text-xs",
+                      "flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1",
                   },
                   e.createElement("span", null, ae || "Uploading media..."),
                   e.createElement("span", null, f > 0 ? `${f}%` : ""),
@@ -948,14 +948,14 @@ const Xe = 2 * 1024 * 1024,
                   {
                     to: "/all-posts",
                     className:
-                      "inline-flex items-center text-white/80 hover:text-white mb-3 font-medium transition-colors duration-200 text-sm dark:text-white/80 dark:hover:text-white dark:text-sm",
+                      "inline-flex items-center text-white/80 hover:text-white mb-3 font-medium transition-colors duration-200 text-sm dark:text-white/80 dark:hover:text-white",
                   },
                   e.createElement(be, { className: "w-4 h-4 mr-2" }),
                   a("back_to_browse"),
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-[10px] dark:text-white/70" },
+                  { className: "text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70" },
                   "Create listing",
                 ),
                 e.createElement(
@@ -963,13 +963,13 @@ const Xe = 2 * 1024 * 1024,
                   { className: "flex items-center gap-3" },
                   e.createElement(
                     "h1",
-                    { className: "text-lg sm:text-xl font-bold text-white dark:text-lg dark:sm:text-xl dark:text-white" },
+                    { className: "text-lg sm:text-xl font-bold text-white dark:text-white" },
                     a("create_new_listing"),
                   ),
                   e.createElement(
                     H,
                     {
-                      className: `${g?.color || "bg-gray-400"} text-white text-xs px-3 py-1 shadow-lg shadow-current/20 rounded-lg font-bold dark:text-white dark:text-xs`,
+                      className: `${g?.color || "bg-gray-400"} text-white text-xs px-3 py-1 shadow-lg shadow-current/20 rounded-lg font-bold dark:text-white`,
                     },
                     g?.icon
                       ? e.createElement(g.icon, { className: "w-4 h-4 mr-1" })
@@ -979,7 +979,7 @@ const Xe = 2 * 1024 * 1024,
                 ),
                 e.createElement(
                   "p",
-                  { className: "text-white/70 text-sm mt-1 dark:text-white/70 dark:text-sm" },
+                  { className: "text-white/70 text-sm mt-1 dark:text-white/70" },
                   a("fill_details"),
                 ),
               ),
@@ -993,7 +993,7 @@ const Xe = 2 * 1024 * 1024,
                 },
                 e.createElement(
                   "p",
-                  { className: "text-sm text-amber-800 dark:text-amber-300 dark:text-sm dark:text-amber-200" },
+                  { className: "text-sm text-amber-800 dark:text-amber-300 dark:text-amber-200" },
                   Z,
                 ),
                 e.createElement(
@@ -1016,7 +1016,7 @@ const Xe = 2 * 1024 * 1024,
                 },
                 e.createElement(
                   "p",
-                  { className: "text-sm text-amber-800 dark:text-amber-300 dark:text-sm dark:text-amber-200" },
+                  { className: "text-sm text-amber-800 dark:text-amber-300 dark:text-amber-200" },
                   oe,
                 ),
                 e.createElement(
@@ -1046,7 +1046,7 @@ const Xe = 2 * 1024 * 1024,
                     "p",
                     {
                       className:
-                        "text-sm font-semibold text-sky-800 dark:text-sky-300 dark:text-sm dark:text-sky-200",
+                        "text-sm font-semibold text-sky-800 dark:text-sky-300 dark:text-sky-200",
                     },
                     a("pre_submit_checklist", "Pre-submit checklist"),
                   ),
@@ -1069,7 +1069,7 @@ const Xe = 2 * 1024 * 1024,
                       "div",
                       {
                         key: r.key,
-                        className: `rounded-lg border px-3 py-2 text-xs transition-all duration-300 dark:border dark:text-xs ${r.met ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900" : "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"}`,
+                        className: `rounded-lg border px-3 py-2 text-xs transition-all duration-300 dark:border ${r.met ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900" : "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900"}`,
                       },
                       e.createElement(
                         "p",
@@ -1093,7 +1093,7 @@ const Xe = 2 * 1024 * 1024,
                     "p",
                     {
                       className:
-                        "text-xs text-amber-700 dark:text-amber-300 mt-3 dark:text-xs",
+                        "text-xs text-amber-700 dark:text-amber-300 mt-3",
                     },
                     a("complete_pending_hint", "Complete pending fields above to reduce submit errors and rework."),
                   ),
@@ -1113,7 +1113,7 @@ const Xe = 2 * 1024 * 1024,
                 },
                 e.createElement(
                   Le,
-                  { className: "text-lg sm:text-xl font-bold dark:text-lg dark:sm:text-xl" },
+                  { className: "text-lg sm:text-xl font-bold" },
                   a("mobile_phone_details"),
                 ),
                 e.createElement(
@@ -1135,7 +1135,7 @@ const Xe = 2 * 1024 * 1024,
                       "h3",
                       {
                         className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-sm dark:text-gray-100 dark:before:bg-gradient-to-b",
+                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-gray-100 dark:before:bg-gradient-to-b",
                       },
                       a("basic_information"),
                     ),
@@ -1150,7 +1150,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "title",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("title"),
                           " *",
@@ -1172,14 +1172,14 @@ const Xe = 2 * 1024 * 1024,
                         i.title &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "title-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "title-error", "aria-live": "polite" },
                             i.title,
                           ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-xs dark:text-gray-300",
+                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
                           },
                           "Use a clear title with brand + model. ",
                           t.title.trim().length,
@@ -1193,7 +1193,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("category"),
                           " *",
@@ -1249,7 +1249,7 @@ const Xe = 2 * 1024 * 1024,
                         i.category &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "category-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "category-error", "aria-live": "polite" },
                             i.category,
                           ),
                       ),
@@ -1261,7 +1261,7 @@ const Xe = 2 * 1024 * 1024,
                             u,
                             {
                               className:
-                                "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                                "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                             },
                             a("subcategory", "Subcategory"),
                             Array.isArray(resolvedSubcategories) &&
@@ -1322,13 +1322,13 @@ const Xe = 2 * 1024 * 1024,
                           subcategoriesError &&
                             e.createElement(
                               "div",
-                              { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert" },
+                              { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert" },
                               subcategoriesError,
                             ),
                           i.subcategory_id &&
                             e.createElement(
                               "div",
-                              { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "subcategory-error", "aria-live": "polite" },
+                              { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "subcategory-error", "aria-live": "polite" },
                               i.subcategory_id,
                             ),
                         ),
@@ -1339,7 +1339,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("brand"),
                           " *",
@@ -1377,7 +1377,7 @@ const Xe = 2 * 1024 * 1024,
                         i.brand &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "brand-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "brand-error", "aria-live": "polite" },
                             i.brand,
                           ),
                       ),
@@ -1389,7 +1389,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "model",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("model"),
                           " *",
@@ -1409,7 +1409,7 @@ const Xe = 2 * 1024 * 1024,
                         i.model &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "model-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "model-error", "aria-live": "polite" },
                             i.model,
                           ),
                       ),
@@ -1420,7 +1420,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("condition"),
                           " *",
@@ -1462,7 +1462,7 @@ const Xe = 2 * 1024 * 1024,
                         i.condition &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "condition-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "condition-error", "aria-live": "polite" },
                             i.condition,
                           ),
                       ),
@@ -1475,7 +1475,7 @@ const Xe = 2 * 1024 * 1024,
                       "h3",
                       {
                         className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 dark:text-sm dark:text-gray-100",
+                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 dark:text-gray-100",
                       },
                       e.createElement("span", { className: "inline-block h-4 w-1 rounded-full bg-gradient-to-b from-blue-500 to-indigo-500 dark:bg-gradient-to-b" }),
                       a("additional_details"),
@@ -1491,7 +1491,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "age",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("age_months"),
                         ),
@@ -1515,7 +1515,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("warranty_status"),
                         ),
@@ -1564,7 +1564,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "dimensions",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           a("dimensions"),
                         ),
@@ -1587,7 +1587,7 @@ const Xe = 2 * 1024 * 1024,
                       "h3",
                       {
                         className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-sm dark:text-gray-100 dark:before:bg-gradient-to-b",
+                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-gray-100 dark:before:bg-gradient-to-b",
                       },
                       a("pricing_location"),
                     ),
@@ -1602,7 +1602,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "price",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           "Price (\u20B9) *",
                         ),
@@ -1622,14 +1622,14 @@ const Xe = 2 * 1024 * 1024,
                         i.price &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "price-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "price-error", "aria-live": "polite" },
                             i.price,
                           ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-xs dark:text-gray-300",
+                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
                           },
                           "Enter your expected final selling price.",
                         ),
@@ -1642,7 +1642,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "district",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           "District *",
                         ),
@@ -1661,7 +1661,7 @@ const Xe = 2 * 1024 * 1024,
                         i.district &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "district-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "district-error", "aria-live": "polite" },
                             i.district,
                           ),
                       ),
@@ -1673,7 +1673,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "state",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           "State *",
                         ),
@@ -1692,7 +1692,7 @@ const Xe = 2 * 1024 * 1024,
                         i.state &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "state-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "state-error", "aria-live": "polite" },
                             i.state,
                           ),
                       ),
@@ -1705,7 +1705,7 @@ const Xe = 2 * 1024 * 1024,
                       "h3",
                       {
                         className:
-                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-sm dark:text-gray-100 dark:before:bg-gradient-to-b",
+                          "text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 before:content-[''] before:w-1 before:h-4 before:rounded-full before:bg-gradient-to-b before:from-blue-500 before:to-indigo-500 dark:text-gray-100 dark:before:bg-gradient-to-b",
                       },
                       "Contact & Images",
                     ),
@@ -1720,7 +1720,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "contactNumber",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           "Contact Number *",
                         ),
@@ -1740,14 +1740,14 @@ const Xe = 2 * 1024 * 1024,
                         i.contactNumber &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "contactNumber-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "contactNumber-error", "aria-live": "polite" },
                             i.contactNumber,
                           ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-xs dark:text-gray-300",
+                              "text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300",
                           },
                           "Use a 10-digit Indian number starting with 6-9.",
                         ),
@@ -1759,7 +1759,7 @@ const Xe = 2 * 1024 * 1024,
                           u,
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           "Images (1-",
                           g?.maxImages || 1,
@@ -1818,7 +1818,7 @@ const Xe = 2 * 1024 * 1024,
                                   "p",
                                   {
                                     className:
-                                      "mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300",
+                                      "mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                   },
                                   "Selected: ",
                                   b.length,
@@ -1829,7 +1829,7 @@ const Xe = 2 * 1024 * 1024,
                                   "p",
                                   {
                                     className:
-                                      "mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                      "mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                   },
                                   "PNG, JPG up to 2MB each \u2022 Max ",
                                   g?.maxImages || 1,
@@ -1865,7 +1865,7 @@ const Xe = 2 * 1024 * 1024,
                                       type: "button",
                                       onClick: () => Ce(o),
                                       className:
-                                        "absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 hover:scale-110 dark:bg-red-800/30 dark:text-white dark:text-xs dark:hover:bg-red-950/20 dark:hover:text-red-300",
+                                        "absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-all duration-200 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 hover:scale-110 dark:bg-red-800/30 dark:text-white dark:hover:bg-red-950/20 dark:hover:text-red-300",
                                     },
                                     "\xD7",
                                   ),
@@ -1876,7 +1876,7 @@ const Xe = 2 * 1024 * 1024,
                         i.images &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-2 dark:text-red-300 dark:text-xs", role: "alert", id: "images-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-2 dark:text-red-300", role: "alert", id: "images-error", "aria-live": "polite" },
                             i.images,
                           ),
                       ),
@@ -1888,7 +1888,7 @@ const Xe = 2 * 1024 * 1024,
                           {
                             htmlFor: "description",
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                           },
                           "Description *",
                         ),
@@ -1911,14 +1911,14 @@ const Xe = 2 * 1024 * 1024,
                         i.description &&
                           e.createElement(
                             "div",
-                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300 dark:text-xs", role: "alert", id: "description-error", "aria-live": "polite" },
+                            { className: "text-red-500 dark:text-red-400 text-xs mt-1 dark:text-red-300", role: "alert", id: "description-error", "aria-live": "polite" },
                             i.description,
                           ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              `text-xs mt-1 transition-colors duration-300 dark:text-xs ${t.description.trim().length > 900 ? "text-red-500 dark:text-red-400" : t.description.trim().length > 750 ? "text-amber-500 dark:text-amber-400" : "text-gray-500 dark:text-gray-400"}`,
+                              `text-xs mt-1 transition-colors duration-300 ${t.description.trim().length > 900 ? "text-red-500 dark:text-red-400" : t.description.trim().length > 750 ? "text-amber-500 dark:text-amber-400" : "text-gray-500 dark:text-gray-400"}`,
                           },
                           "Share condition, accessories, and reason for selling. ",
                           t.description.trim().length,
@@ -1943,7 +1943,7 @@ const Xe = 2 * 1024 * 1024,
                             { className: "flex items-center gap-2" },
                             e.createElement(
                               "span",
-                              { className: "text-xl dark:text-xl" },
+                              { className: "text-xl" },
                               "\u23F3",
                             ),
                             e.createElement(
@@ -1953,7 +1953,7 @@ const Xe = 2 * 1024 * 1024,
                                 "h3",
                                 {
                                   className:
-                                    "text-sm font-semibold text-orange-800 dark:text-orange-300 dark:text-sm dark:text-orange-200",
+                                    "text-sm font-semibold text-orange-800 dark:text-orange-300 dark:text-orange-200",
                                 },
                                 a("flash_sale_label", "24-Hour Flash Sale"),
                               ),
@@ -1961,7 +1961,7 @@ const Xe = 2 * 1024 * 1024,
                                 "p",
                                 {
                                   className:
-                                    "text-xs text-gray-600 dark:text-gray-400 dark:text-xs dark:text-gray-200",
+                                    "text-xs text-gray-600 dark:text-gray-400 dark:text-gray-200",
                                 },
                                 "Auto-expires in 24 hours \u2022 Gets 2x visibility boost",
                               ),
@@ -1984,7 +1984,7 @@ const Xe = 2 * 1024 * 1024,
                             "div",
                             {
                               className:
-                                "text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg dark:text-xs dark:text-center dark:text-orange-300 dark:bg-orange-950/20",
+                                "text-xs text-center text-orange-600 bg-orange-100 dark:bg-orange-900/40 py-2 px-3 rounded-lg dark:text-center dark:text-orange-300 dark:bg-orange-950/20",
                             },
                             "\uD83D\uDD25 Your listing will appear at the TOP of feeds and auto-delete after 24 hours!",
                           ),
@@ -2004,7 +2004,7 @@ const Xe = 2 * 1024 * 1024,
                         onClick: Se,
                         variant: "outline",
                         className:
-                          "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold px-6 py-3 text-base shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:border-blue-600/40 dark:text-blue-300 dark:hover:bg-blue-950/20 dark:text-base",
+                          "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-semibold px-6 py-3 text-base shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 dark:border-blue-600/40 dark:text-blue-300 dark:hover:bg-blue-950/20",
                         style: { minWidth: 120 },
                       },
                       e.createElement(qe, { className: "w-5 h-5 mr-2" }),
@@ -2014,7 +2014,7 @@ const Xe = 2 * 1024 * 1024,
                       v,
                       {
                         onClick: me,
-                        className: `bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 font-bold px-6 py-3 text-base shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:bg-gradient-to-r dark:text-base ${k ? "opacity-60 cursor-not-allowed" : ""}`,
+                        className: `bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 font-bold px-6 py-3 text-base shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-200 active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:bg-gradient-to-r ${k ? "opacity-60 cursor-not-allowed" : ""}`,
                         disabled: k,
                         style: { minWidth: 140 },
                         "aria-busy": k,
@@ -2064,7 +2064,7 @@ const Xe = 2 * 1024 * 1024,
                         "div",
                         {
                           className:
-                            "flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1 dark:text-xs",
+                            "flex items-center justify-between text-xs text-sky-700 dark:text-sky-300 mb-1",
                         },
                         e.createElement(
                           "span",

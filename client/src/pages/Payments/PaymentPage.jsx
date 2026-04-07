@@ -443,10 +443,10 @@ const PaymentPage = () => {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 dark:bg-gradient-to-br">
               <Lock className="h-7 w-7 text-white dark:text-white" />
             </div>
-            <h2 className="mb-2 text-xl font-black mhub-gradient-text dark:text-xl">
+            <h2 className="mb-2 text-xl font-black mhub-gradient-text">
               {tr("login_required", "Please login to access this feature")}
             </h2>
-            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400 leading-relaxed dark:text-sm dark:text-slate-300">
+            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400 leading-relaxed dark:text-slate-300">
               {tr(
                 "payment_login_desc",
                 isBoostFlow
@@ -474,7 +474,7 @@ const PaymentPage = () => {
       <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 dark:bg-gradient-to-br">
         <div className="mhub-premium-surface rounded-3xl p-10 flex flex-col items-center gap-4 shadow-2xl">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-400 dark:border-4 dark:border-indigo-600/40 dark:border-t-indigo-600" />
-          <p className="text-slate-600 text-sm font-medium dark:text-slate-400 dark:text-slate-200 dark:text-sm">
+          <p className="text-slate-600 text-sm font-medium dark:text-slate-400 dark:text-slate-200">
             {tr("payment_loading_details", "Loading payment details...")}
           </p>
         </div>
@@ -490,10 +490,10 @@ const PaymentPage = () => {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/20 dark:bg-red-950/20">
               <ExternalLink className="h-6 w-6 text-red-500 dark:text-red-300" />
             </div>
-            <h2 className="mb-2 text-lg font-black text-red-700 dark:text-red-400 dark:text-lg dark:text-red-300">
+            <h2 className="mb-2 text-lg font-black text-red-700 dark:text-red-400 dark:text-red-300">
               {tr("payment_unable_to_load", "Unable to load payment details")}
             </h2>
-            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400 dark:text-sm dark:text-slate-300">
+            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
               {configError ||
                 tr(
                   "payment_unavailable",
@@ -721,12 +721,12 @@ const PaymentPage = () => {
       <div className="mx-auto max-w-4xl px-4 mt-4">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900 via-blue-900 to-purple-900 px-6 py-5 text-white shadow-xl dark:bg-gradient-to-r dark:text-white">
           <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl pointer-events-none dark:bg-slate-900/10" />
-          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-300 dark:text-xs dark:text-indigo-200">
+          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-300 dark:text-indigo-200">
             {isBoostFlow
               ? tr("payment_boost_title", "Boost Listing")
               : tr("payment_upgrade_title", "Upgrade Membership")}
           </p>
-          <h1 className="mt-1 text-xl sm:text-2xl font-black text-white dark:text-xl dark:sm:text-2xl dark:text-white">
+          <h1 className="mt-1 text-xl sm:text-2xl font-black text-white dark:text-white">
             {selectedOption
               ? tr("payment_paying_for", "Paying for {{plan}}", {
                   plan: isBoostFlow
@@ -742,7 +742,7 @@ const PaymentPage = () => {
           ) : null}
           <div className="flex items-center justify-center gap-3 mt-3 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-lg dark:bg-slate-900/20">
             <svg className="h-4 w-4 text-emerald-300 dark:text-emerald-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-            <span className="text-xs font-medium text-white/80 dark:text-xs dark:text-white/80">Secure Payment • SSL Encrypted • Verified</span>
+            <span className="text-xs font-medium text-white/80 dark:text-white/80">Secure Payment • SSL Encrypted • Verified</span>
           </div>
         </div>
       </div>
@@ -757,13 +757,13 @@ const PaymentPage = () => {
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-emerald-950/20">
                 <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-300" />
               </div>
-              <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 dark:text-2xl dark:text-gray-100">
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 dark:text-gray-100">
                 {tr("payment_submitted_title", "Payment Submitted!")}
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6 dark:text-gray-200">{submitState.message}</p>
               <div aria-live="polite" className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-center mb-6 flex items-center justify-center gap-2 dark:bg-blue-950/20 dark:border dark:border-blue-600/40 dark:text-center">
                 <svg className="h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span className="text-sm text-blue-700 dark:text-blue-300 dark:text-sm">{tr(
+                <span className="text-sm text-blue-700 dark:text-blue-300">{tr(
                   "payment_verification_notice",
                   "Our team will verify your payment within 2–24 hours and activate your plan.",
                 )}</span>
@@ -786,7 +786,7 @@ const PaymentPage = () => {
             <>
               {/* Plan / boost selector — horizontal pills */}
               <div className="rounded-2xl border border-slate-200 mhub-premium-surface mhub-shine p-5 shadow-sm dark:border-gray-700 dark:border dark:border-slate-700">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 dark:text-slate-300">
                   {isBoostFlow
                     ? tr("select_boost_label", "Select Boost")
                     : tr("select_plan_label", "Select Plan")}
@@ -818,20 +818,20 @@ const PaymentPage = () => {
                 {selectedOption ? (
                   <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-950/30 dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20">
                     <div className="flex items-baseline justify-between gap-2">
-                      <h3 className="font-bold text-lg capitalize text-gray-900 dark:text-white dark:text-lg dark:text-gray-100">
+                      <h3 className="font-bold text-lg capitalize text-gray-900 dark:text-white dark:text-gray-100">
                         {isBoostFlow
                           ? tr("payment_selected_boost", "{{boost}} Boost", { boost: selectedLabel })
                           : tr("payment_selected_plan", "{{plan}} Plan", { plan: selectedLabel })}
                       </h3>
-                      <span className="text-2xl font-black text-indigo-700 dark:text-2xl dark:text-indigo-300">
+                      <span className="text-2xl font-black text-indigo-700 dark:text-indigo-300">
                         ₹{selectedOption.amount}
                       </span>
                     </div>
                     {selectedOption.description ? (
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 dark:text-sm dark:text-gray-200">{selectedOption.description}</p>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200">{selectedOption.description}</p>
                     ) : null}
                     {isBoostFlow && selectedOption.durationDays ? (
-                      <p className="mt-1 text-xs text-gray-500 dark:text-xs dark:text-gray-300">
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">
                         {tr("payment_boost_duration", "Duration: {{days}} days", {
                           days: selectedOption.durationDays,
                         })}
@@ -840,7 +840,7 @@ const PaymentPage = () => {
                   </div>
                 ) : (
                   <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
-                    <p className="text-sm text-amber-700 dark:text-sm dark:text-amber-300">
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
                       {tr(
                         isBoostFlow
                           ? "payment_selected_boost_unavailable"
@@ -857,20 +857,20 @@ const PaymentPage = () => {
               {/* Gateway section */}
               {gatewayEnabled ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border dark:border-emerald-600/40 dark:bg-emerald-950/20">
-                  <h3 className="text-sm font-bold text-emerald-800 mb-1 dark:text-sm dark:text-emerald-200">
+                  <h3 className="text-sm font-bold text-emerald-800 mb-1 dark:text-emerald-200">
                     {tr("payment_gateway_title", "Instant payment")}
                   </h3>
-                  <p className="text-xs text-emerald-700 mb-3 dark:text-xs dark:text-emerald-300">
+                  <p className="text-xs text-emerald-700 mb-3 dark:text-emerald-300">
                     {tr(
                       "payment_gateway_desc",
                       "Pay instantly with UPI, cards, or netbanking. Verification happens automatically.",
                     )}
                   </p>
                   {gatewayState.error ? (
-                    <p role="alert" className="text-xs text-red-600 mb-2 dark:text-xs dark:text-red-300">{gatewayState.error}</p>
+                    <p role="alert" className="text-xs text-red-600 mb-2 dark:text-red-300">{gatewayState.error}</p>
                   ) : null}
                   {gatewayState.message ? (
-                    <p className="text-xs text-emerald-700 mb-2 dark:text-xs dark:text-emerald-300">{gatewayState.message}</p>
+                    <p className="text-xs text-emerald-700 mb-2 dark:text-emerald-300">{gatewayState.message}</p>
                   ) : null}
                   <Button
                     type="button"
@@ -886,10 +886,10 @@ const PaymentPage = () => {
                 </div>
               ) : (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
-                  <h3 className="text-sm font-bold text-amber-800 mb-1 dark:text-sm dark:text-amber-200">
+                  <h3 className="text-sm font-bold text-amber-800 mb-1 dark:text-amber-200">
                     {tr("payment_gateway_unavailable_title", "Instant pay paused")}
                   </h3>
-                  <p className="text-xs text-amber-700 dark:text-xs dark:text-amber-300">
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
                     {tr(
                       "payment_gateway_unavailable_desc",
                       "Instant payment is currently unavailable. Use the manual UPI flow below.",
@@ -900,7 +900,7 @@ const PaymentPage = () => {
 
               {/* UPI section */}
               <div className="rounded-2xl border border-slate-200 mhub-premium-surface p-5 shadow-sm dark:border-gray-700 dark:border dark:border-slate-700">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 dark:text-slate-300">
                   {tr("pay_via_upi", "Pay via UPI")}
                 </p>
 
@@ -913,17 +913,17 @@ const PaymentPage = () => {
                       className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] rounded-xl"
                       onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling && (e.target.nextElementSibling.style.display = 'flex'); }}
                     />
-                    <div className="hidden h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] rounded-xl border-2 border-dashed border-slate-300 items-center justify-center text-center text-xs text-slate-500 p-4 dark:border-gray-600 dark:text-slate-400 dark:border-2 dark:border-dashed dark:border-slate-600 dark:text-center dark:text-xs dark:text-slate-300">
+                    <div className="hidden h-[140px] w-[140px] sm:h-[160px] sm:w-[160px] rounded-xl border-2 border-dashed border-slate-300 items-center justify-center text-center text-xs text-slate-500 p-4 dark:border-gray-600 dark:text-slate-400 dark:border-2 dark:border-dashed dark:border-slate-600 dark:text-center dark:text-slate-300">
                       {tr("qr_unavailable", "QR unavailable — use UPI ID below")}
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300">
                     {tr("payment_scan_instructions", "Scan using GPay, PhonePe, or Paytm")}
                   </p>
 
                   {/* UPI ID chip */}
                   <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 px-4 py-3 rounded-xl dark:bg-indigo-950/20 dark:border dark:border-indigo-600/40">
-                    <span className="text-sm font-mono font-semibold text-slate-700 dark:text-gray-300 dark:text-sm dark:text-slate-200">
+                    <span className="text-sm font-mono font-semibold text-slate-700 dark:text-gray-300 dark:text-slate-200">
                       {paymentConfig.upi_id}
                     </span>
                     <button
@@ -951,7 +951,7 @@ const PaymentPage = () => {
                 {/* UTR form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200">
+                    <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300 dark:text-gray-200">
                       {tr("payment_transaction_label", "Transaction ID (UTR)")}
                     </label>
                     <input
@@ -963,14 +963,14 @@ const PaymentPage = () => {
                         "payment_transaction_placeholder_long",
                         "Enter 12-digit UTR / Transaction ID",
                       )}
-                      className="mhub-input w-full rounded-xl px-4 py-3 text-sm placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-4 focus:ring-indigo-400/30 focus:ring-offset-0 transition-all duration-200 dark:text-sm dark:placeholder:text-[var(--text-faint)]"
+                      className="mhub-input w-full rounded-xl px-4 py-3 text-sm placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-4 focus:ring-indigo-400/30 focus:ring-offset-0 transition-all duration-200 dark:placeholder:text-[var(--text-faint)]"
                       required
                       minLength={6}
                     />
                   </div>
 
                   {submitState.error ? (
-                    <p role="alert" className="text-sm text-red-600 font-medium dark:text-sm dark:text-red-300">{submitState.error}</p>
+                    <p role="alert" className="text-sm text-red-600 font-medium dark:text-red-300">{submitState.error}</p>
                   ) : null}
 
                   <Button
@@ -1000,7 +1000,7 @@ const PaymentPage = () => {
               <h3 className="mb-3 font-bold text-gray-900 dark:text-white dark:text-gray-100">
                 {tr("payment_how_it_works", "How it works")}
               </h3>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300 dark:text-sm dark:text-gray-200">
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200">
                 {(paymentConfig.instructions || []).map((instruction, index) => (
                   <li key={index} className="flex gap-2">
                     <span className="flex-shrink-0 font-bold text-indigo-500 dark:text-indigo-300">{index + 1}.</span>
@@ -1023,7 +1023,7 @@ const PaymentPage = () => {
               <span className="font-bold text-gray-900 dark:text-white dark:text-gray-100">
                 {tr("payment_history_title", "Payment History")}
                 {history.length > 0 ? (
-                  <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/20 dark:text-xs dark:text-indigo-300">
+                  <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-300">
                     {history.length}
                   </span>
                 ) : null}
@@ -1040,17 +1040,17 @@ const PaymentPage = () => {
                 >
                   <RefreshCw className="h-4 w-4" />
                 </span>
-                <span className="text-slate-400 text-sm dark:text-slate-300 dark:text-sm">{historyOpen ? "▲" : "▼"}</span>
+                <span className="text-slate-400 text-sm dark:text-slate-300">{historyOpen ? "▲" : "▼"}</span>
               </div>
             </button>
 
             {historyOpen ? (
               <div id="payment-history" className="border-t border-slate-100 px-5 pb-5 pt-3 dark:border-t dark:border-slate-700">
                 {historyLoading ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-sm dark:text-slate-300">{tr("payment_history_loading", "Loading history...")}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">{tr("payment_history_loading", "Loading history...")}</p>
                 ) : historyError ? (
                   <div className="rounded-xl border border-red-100 bg-red-50 p-3 dark:border dark:border-red-600/40 dark:bg-red-950/20">
-                    <p className="text-sm text-red-600 mb-2 dark:text-sm dark:text-red-300">{historyError}</p>
+                    <p className="text-sm text-red-600 mb-2 dark:text-red-300">{historyError}</p>
                     <div className="flex flex-wrap gap-2">
                       <Button
                         type="button"
@@ -1076,7 +1076,7 @@ const PaymentPage = () => {
                     </div>
                   </div>
                 ) : history.length === 0 ? (
-                  <p className="text-sm text-slate-400 dark:text-sm dark:text-slate-300">{tr("payment_history_empty", "No payments yet.")}</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-300">{tr("payment_history_empty", "No payments yet.")}</p>
                 ) : (
                   <div className="space-y-3">
                     {history.map((payment) => {
@@ -1101,20 +1101,20 @@ const PaymentPage = () => {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="font-semibold capitalize text-gray-900 dark:text-white text-sm dark:text-gray-100 dark:text-sm">{titleLabel}</p>
+                              <p className="font-semibold capitalize text-gray-900 dark:text-white text-sm dark:text-gray-100">{titleLabel}</p>
                               {isBoostPayment && postLabel ? (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-xs dark:text-slate-300">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-300">
                                   {tr("payment_boost_post", "Post: {{post}}", { post: postLabel })}
                                 </p>
                               ) : null}
-                              <p className="text-xs text-slate-400 mt-0.5 dark:text-xs dark:text-slate-300">
+                              <p className="text-xs text-slate-400 mt-0.5 dark:text-slate-300">
                                 {payment.created_at
                                   ? new Date(payment.created_at).toLocaleDateString()
                                   : "-"}
                               </p>
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                              <span className="font-bold text-sm text-gray-900 dark:text-white dark:text-sm dark:text-gray-100">
+                              <span className="font-bold text-sm text-gray-900 dark:text-white dark:text-gray-100">
                                 {tr("payment_amount_rupees", "Rs {{amount}}", {
                                   amount: payment.amount,
                                 })}

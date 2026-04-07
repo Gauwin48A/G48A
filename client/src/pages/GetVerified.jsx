@@ -223,7 +223,7 @@ const GetVerified = () => {
           <div className="w-16 h-16 bg-green-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-green-950/20">
             <Shield className="w-8 h-8 text-green-600 dark:text-emerald-300 dark:text-green-300" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2 dark:text-3xl dark:text-gray-100">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2 dark:text-gray-100">
             {heroTitle}
           </h1>
           <p className="text-gray-600 dark:text-slate-300 dark:text-gray-200">
@@ -297,7 +297,7 @@ const GetVerified = () => {
                       <Upload className="w-12 h-12 text-gray-400 dark:text-slate-400 mx-auto mb-4 dark:text-gray-300" />
                       <Label
                         htmlFor="aadhaarOtp"
-                        className="block text-sm font-medium mb-2 text-gray-700 dark:text-slate-200 dark:text-sm dark:text-gray-200"
+                        className="block text-sm font-medium mb-2 text-gray-700 dark:text-slate-200 dark:text-gray-200"
                       >
                         {t("aadhaar_otp") || "Aadhaar OTP"}
                       </Label>
@@ -332,7 +332,7 @@ const GetVerified = () => {
                           </Button>
                         ) : null}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-2 dark:text-xs dark:text-gray-300">
+                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-2 dark:text-gray-300">
                         {t("otp_sent_hint") || "OTP is sent to your Aadhaar-linked mobile."}
                       </p>
                     </div>
@@ -354,7 +354,7 @@ const GetVerified = () => {
                     <CheckCircle className="w-8 h-8 text-green-600 dark:text-emerald-300 dark:text-green-300" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-green-600 dark:text-emerald-300 dark:text-lg dark:text-green-300">
+                    <h3 className="font-semibold text-lg text-green-600 dark:text-emerald-300 dark:text-green-300">
                       {t("verification_complete")}
                     </h3>
                     <p className="text-gray-600 dark:text-slate-300 dark:text-gray-200">{t("aadhaar_success_msg")}</p>
@@ -386,7 +386,7 @@ const GetVerified = () => {
                         </div>
                         <div>
                           <h3 className="font-medium">{benefit.title}</h3>
-                          <p className="text-sm text-gray-600 dark:text-slate-300 dark:text-sm dark:text-gray-200">
+                          <p className="text-sm text-gray-600 dark:text-slate-300 dark:text-gray-200">
                             {benefit.description}
                           </p>
                         </div>
@@ -405,7 +405,7 @@ const GetVerified = () => {
                     <h3 className="font-medium text-amber-800 dark:text-amber-200">
                       {t("privacy_security")}
                     </h3>
-                    <p className="text-sm text-amber-700 dark:text-amber-200 mt-1 dark:text-sm dark:text-amber-300">
+                    <p className="text-sm text-amber-700 dark:text-amber-200 mt-1 dark:text-amber-300">
                       {t("privacy_desc")}
                     </p>
                   </div>

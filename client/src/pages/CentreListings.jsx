@@ -325,7 +325,7 @@ export default function CentreListings() {
           {coverImage ? (
             <img
               src={coverImage}
-              alt=""
+              alt={centreName}
               className="h-full w-full object-cover"
               loading="eager"
             />

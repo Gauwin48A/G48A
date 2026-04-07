@@ -178,13 +178,13 @@ const safeNum = (val) => {
                     "h1",
                     {
                       className:
-                        "text-4xl font-bold text-gray-900 dark:text-white dark:text-4xl dark:text-gray-100",
+                        "text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
                     },
                     translate("public_wall", "Public Wall"),
                   ),
                   React.createElement(
                     "p",
-                    { className: "text-gray-600 dark:text-gray-300 text-lg dark:text-gray-200 dark:text-lg" },
+                    { className: "text-gray-600 dark:text-gray-300 text-lg dark:text-gray-200" },
                     translate(
                       "public_wall_subtitle",
                       "Celebrating top performance from the community",
@@ -200,7 +200,7 @@ const safeNum = (val) => {
                 },
                 React.createElement(
                   "h2",
-                  { className: "text-2xl font-bold mb-2 dark:text-2xl" },
+                  { className: "text-2xl font-bold mb-2" },
                   "Monthly Champions",
                 ),
                 React.createElement(
@@ -253,7 +253,7 @@ const safeNum = (val) => {
                       "h3",
                       {
                         className:
-                          "text-xl font-semibold text-gray-900 dark:text-white mb-2 dark:text-xl dark:text-gray-100",
+                          "text-xl font-semibold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                       },
                       "Public wall unavailable",
                     ),
@@ -297,7 +297,7 @@ const safeNum = (val) => {
                       "h3",
                       {
                         className:
-                          "text-xl font-semibold text-gray-900 dark:text-white dark:text-xl dark:text-gray-100",
+                          "text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                       },
                       "No public wall data yet",
                     ),
@@ -352,12 +352,12 @@ const safeNum = (val) => {
                       ),
                       React.createElement(
                         CardTitle,
-                        { className: "text-2xl font-bold dark:text-2xl" },
+                        { className: "text-2xl font-bold" },
                         "Top Sellers",
                       ),
                       React.createElement(
                         CardDescription,
-                        { className: "text-green-100 text-lg dark:text-green-200 dark:text-lg" },
+                        { className: "text-green-100 text-lg dark:text-green-200" },
                         "Outstanding sales performance",
                       ),
                     ),
@@ -367,7 +367,7 @@ const safeNum = (val) => {
                       topSellers.length === 0
                         ? React.createElement(
                             "p",
-                            { className: "text-sm text-gray-500 text-center dark:text-sm dark:text-gray-300 dark:text-center" },
+                            { className: "text-sm text-gray-500 text-center dark:text-gray-300 dark:text-center" },
                             "No seller leaderboard data available yet.",
                           )
                         : React.createElement(
@@ -385,7 +385,7 @@ const safeNum = (val) => {
                                   "div",
                                   {
                                     className:
-                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-lg dark:bg-gradient-to-r dark:text-white dark:text-lg",
+                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-lg dark:bg-gradient-to-r dark:text-white",
                                   },
                                   index + 1,
                                 ),
@@ -446,14 +446,14 @@ const safeNum = (val) => {
                                       }),
                                       React.createElement(
                                         "span",
-                                        { className: "text-sm font-medium dark:text-sm" },
+                                        { className: "text-sm font-medium" },
                                         safeNum(seller.rating).toFixed(1),
                                       ),
                                     ),
                                   ),
                                   React.createElement(
                                     "div",
-                                    { className: "text-sm text-gray-600 mt-1 dark:text-sm dark:text-gray-200" },
+                                    { className: "text-sm text-gray-600 mt-1 dark:text-gray-200" },
                                     safeNum(seller.sales),
                                     " sales | ",
                                     safeNum(seller.coins),
@@ -487,12 +487,12 @@ const safeNum = (val) => {
                       ),
                       React.createElement(
                         CardTitle,
-                        { className: "text-2xl font-bold dark:text-2xl" },
+                        { className: "text-2xl font-bold" },
                         "Top Buyers",
                       ),
                       React.createElement(
                         CardDescription,
-                        { className: "text-blue-100 text-lg dark:text-blue-200 dark:text-lg" },
+                        { className: "text-blue-100 text-lg dark:text-blue-200" },
                         "Most active purchasers",
                       ),
                     ),
@@ -502,7 +502,7 @@ const safeNum = (val) => {
                       topBuyers.length === 0
                         ? React.createElement(
                             "p",
-                            { className: "text-sm text-gray-500 text-center dark:text-sm dark:text-gray-300 dark:text-center" },
+                            { className: "text-sm text-gray-500 text-center dark:text-gray-300 dark:text-center" },
                             "No buyer leaderboard data available yet.",
                           )
                         : React.createElement(
@@ -520,7 +520,7 @@ const safeNum = (val) => {
                                   "div",
                                   {
                                     className:
-                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white font-bold text-lg dark:bg-gradient-to-r dark:text-white dark:text-lg",
+                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl text-white font-bold text-lg dark:bg-gradient-to-r dark:text-white",
                                   },
                                   index + 1,
                                 ),
@@ -558,7 +558,7 @@ const safeNum = (val) => {
                                     }),
                                     React.createElement(
                                       "span",
-                                      { className: "text-sm font-medium dark:text-sm" },
+                                      { className: "text-sm font-medium" },
                                       safeNum(buyer.rating).toFixed(1),
                                     ),
                                   ),
@@ -566,7 +566,7 @@ const safeNum = (val) => {
                                     "div",
                                     {
                                       className:
-                                        "text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-sm dark:text-gray-200",
+                                        "text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-gray-200",
                                     },
                                     safeNum(buyer.purchases),
                                     " purchases | ",
@@ -601,12 +601,12 @@ const safeNum = (val) => {
                       ),
                       React.createElement(
                         CardTitle,
-                        { className: "text-2xl font-bold dark:text-2xl" },
+                        { className: "text-2xl font-bold" },
                         "Top Users",
                       ),
                       React.createElement(
                         CardDescription,
-                        { className: "text-cyan-100 text-lg dark:text-cyan-200 dark:text-lg" },
+                        { className: "text-cyan-100 text-lg dark:text-cyan-200" },
                         "Highest coin earners",
                       ),
                     ),
@@ -616,7 +616,7 @@ const safeNum = (val) => {
                       topUsers.length === 0
                         ? React.createElement(
                             "p",
-                            { className: "text-sm text-gray-500 text-center dark:text-sm dark:text-gray-300 dark:text-center" },
+                            { className: "text-sm text-gray-500 text-center dark:text-gray-300 dark:text-center" },
                             "No user leaderboard data available yet.",
                           )
                         : React.createElement(
@@ -634,7 +634,7 @@ const safeNum = (val) => {
                                   "div",
                                   {
                                     className:
-                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg dark:bg-gradient-to-r dark:text-white dark:text-lg",
+                                      "flex items-center justify-center w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg dark:bg-gradient-to-r dark:text-white",
                                   },
                                   index + 1,
                                 ),
@@ -662,7 +662,7 @@ const safeNum = (val) => {
                                     "div",
                                     {
                                       className:
-                                        "text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-sm dark:text-gray-200",
+                                        "text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-gray-200",
                                     },
                                     safeNum(user.totalCoins),
                                     " coins | ",
@@ -691,12 +691,12 @@ const safeNum = (val) => {
                     },
                     React.createElement(
                       CardTitle,
-                      { className: "text-2xl font-bold dark:text-2xl" },
+                      { className: "text-2xl font-bold" },
                       "This Month's Snapshot",
                     ),
                     React.createElement(
                       CardDescription,
-                      { className: "text-sky-100 text-lg dark:text-sky-200 dark:text-lg" },
+                      { className: "text-sky-100 text-lg dark:text-sky-200" },
                       "Live summary from current leaderboard data",
                     ),
                   ),
@@ -716,7 +716,7 @@ const safeNum = (val) => {
                           "div",
                           {
                             className:
-                              "text-3xl font-bold text-green-600 dark:text-green-400 dark:text-3xl dark:text-green-300",
+                              "text-3xl font-bold text-green-600 dark:text-green-400 dark:text-green-300",
                           },
                           stats.totalSales,
                         ),
@@ -739,7 +739,7 @@ const safeNum = (val) => {
                           "div",
                           {
                             className:
-                              "text-3xl font-bold text-blue-600 dark:text-blue-400 dark:text-3xl dark:text-blue-300",
+                              "text-3xl font-bold text-blue-600 dark:text-blue-400 dark:text-blue-300",
                           },
                           stats.activeBuyers,
                         ),
@@ -762,7 +762,7 @@ const safeNum = (val) => {
                           "div",
                           {
                             className:
-                              "text-3xl font-bold text-cyan-600 dark:text-cyan-400 dark:text-3xl dark:text-cyan-300",
+                              "text-3xl font-bold text-cyan-600 dark:text-cyan-400 dark:text-cyan-300",
                           },
                           stats.totalVolume,
                         ),
@@ -785,7 +785,7 @@ const safeNum = (val) => {
                           "div",
                           {
                             className:
-                              "text-3xl font-bold text-yellow-600 dark:text-yellow-400 dark:text-3xl dark:text-yellow-300",
+                              "text-3xl font-bold text-yellow-600 dark:text-yellow-400 dark:text-yellow-300",
                           },
                           stats.verificationRate,
                           "%",

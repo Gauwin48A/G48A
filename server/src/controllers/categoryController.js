@@ -156,7 +156,6 @@ exports.getAllCategories = async (req, res) => {
       error: "Internal Server Error",
       code: 500,
       message: "Failed to fetch categories",
-      details: err.message,
       ...buildCategoryResponse([], {
         includeSubcategories: parseBooleanParam(
           req.query.include_subcategories || req.query.includeSubcategories
@@ -384,7 +383,6 @@ exports.resolveCategory = async (req, res) => {
       error: "Internal Server Error",
       code: 500,
       message: "Failed to resolve category",
-      details: err.message,
       data: null,
     });
   }

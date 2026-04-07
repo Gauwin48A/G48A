@@ -228,7 +228,7 @@ const Verification = () => {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] dark:bg-gradient-to-br" +
+              "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:bg-gradient-to-br" +
               densityClass,
           },
         React.createElement(
@@ -236,7 +236,7 @@ const Verification = () => {
           { className: "text-center dark:text-center" },
           React.createElement("div", {
             className:
-              "w-16 h-16 border-4 border-[#96C2DB] border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-4 dark:border-slate-700 dark:border-t-transparent",
+              "w-16 h-16 border-4 border-sky-300 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-4 dark:border-slate-700 dark:border-t-transparent",
           }),
           React.createElement(
             "p",
@@ -250,7 +250,7 @@ const Verification = () => {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] dark:bg-gradient-to-br" +
+              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:bg-gradient-to-br" +
               densityClass,
             style: { paddingBottom: "120px" },
           },
@@ -264,13 +264,13 @@ const Verification = () => {
                 "div",
                 {
                   className:
-                    "w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#96C2DB] to-blue-600 flex items-center justify-center shadow-lg dark:bg-gradient-to-br",
+                    "w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-sky-300 to-blue-600 flex items-center justify-center shadow-lg dark:bg-gradient-to-br",
                 },
                 React.createElement(Shield, { className: "w-8 h-8 text-white dark:text-white" }),
               ),
               React.createElement(
                 "h1",
-                { className: "text-3xl font-bold text-white mb-1 dark:text-3xl dark:text-white" },
+                { className: "text-3xl font-bold text-white mb-1 dark:text-white" },
                 translate("identity_verification") || "Identity Verification",
               ),
               React.createElement(
@@ -302,12 +302,12 @@ const Verification = () => {
                     null,
                     React.createElement(
                       "p",
-                      { className: "text-sm font-semibold text-emerald-700 dark:text-sm dark:text-emerald-300" },
+                      { className: "text-sm font-semibold text-emerald-700 dark:text-emerald-300" },
                       translate("verified") || "Verified",
                     ),
                     React.createElement(
                       "p",
-                      { className: "text-xs text-emerald-600 dark:text-xs dark:text-emerald-300" },
+                      { className: "text-xs text-emerald-600 dark:text-emerald-300" },
                       translate("verification_complete_hint") ||
                         "Your verification is complete.",
                     ),
@@ -346,7 +346,7 @@ const Verification = () => {
                       "p",
                       {
                         className:
-                          "text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs",
+                          "text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300",
                       },
                       translate("verification_status") || "Verification status",
                     ),
@@ -354,13 +354,13 @@ const Verification = () => {
                       "p",
                       {
                         className:
-                          "text-lg font-semibold text-slate-900 dark:text-white dark:text-lg dark:text-slate-100",
+                          "text-lg font-semibold text-slate-900 dark:text-white dark:text-slate-100",
                       },
                       statusLabel,
                     ),
                     React.createElement(
                       "p",
-                      { className: "text-xs text-slate-500 dark:text-slate-300 dark:text-xs" },
+                      { className: "text-xs text-slate-500 dark:text-slate-300" },
                       statusHint,
                     ),
                   ),
@@ -391,7 +391,7 @@ const Verification = () => {
                 ),
                 React.createElement(
                   "ol",
-                  { className: "grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs dark:text-xs" },
+                  { className: "grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs" },
                   verificationSteps.map((step, index) =>
                     React.createElement(
                       "li",
@@ -435,11 +435,11 @@ const Verification = () => {
                 CardHeader,
                 {
                   className:
-                    "bg-gradient-to-r from-[#96C2DB] to-blue-600 text-white dark:bg-gradient-to-r dark:text-white",
+                    "bg-gradient-to-r from-sky-300 to-blue-600 text-white dark:bg-gradient-to-r dark:text-white",
                 },
                 React.createElement(
                   CardTitle,
-                  { className: "text-xl dark:text-xl" },
+                  { className: "text-xl" },
                   translate("identity_verification") || "Identity Verification",
                 ),
                 React.createElement(
@@ -460,7 +460,7 @@ const Verification = () => {
                     },
                     React.createElement(
                       "p",
-                      { className: "text-sm text-red-700 dark:text-red-300 dark:text-sm" },
+                      { className: "text-sm text-red-700 dark:text-red-300" },
                       fetchError,
                     ),
                     React.createElement(
@@ -487,7 +487,7 @@ const Verification = () => {
                         {
                           htmlFor: "aadhaarNumber",
                           className:
-                            "text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300 dark:text-sm dark:text-slate-100",
+                            "text-sm font-semibold flex items-center space-x-2 text-slate-700 dark:text-gray-300 dark:text-slate-100",
                         },
                         React.createElement(CreditCard, { className: "w-4 h-4" }),
                         React.createElement("span", null, translate("aadhaar_number")),
@@ -515,7 +515,7 @@ const Verification = () => {
                             "div",
                             {
                               className:
-                                "text-green-600 dark:text-green-400 text-sm mt-2 dark:text-green-300 dark:text-sm",
+                                "text-green-600 dark:text-green-400 text-sm mt-2 dark:text-green-300",
                             },
                             translate("aadhaar_verified_success") ||
                               "Aadhaar verified successfully",
@@ -530,7 +530,7 @@ const Verification = () => {
                         {
                           htmlFor: "panNumber",
                           className:
-                            "text-sm font-semibold flex items-center space-x-2 text-[#333A45] dark:text-gray-300 dark:text-sm dark:text-slate-100",
+                            "text-sm font-semibold flex items-center space-x-2 text-slate-700 dark:text-gray-300 dark:text-slate-100",
                         },
                         React.createElement(CreditCard, { className: "w-4 h-4" }),
                         React.createElement("span", null, translate("pan_number")),
@@ -564,13 +564,13 @@ const Verification = () => {
                       "div",
                       {
                         className:
-                          "border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-[var(--surface-2)] border-[#96C2DB] dark:border-blue-600 dark:border-2 dark:border-dashed dark:bg-slate-900 dark:border-slate-700",
+                          "border-2 border-dashed rounded-xl p-6 bg-sky-50 dark:bg-[var(--surface-2)] border-sky-300 dark:border-blue-600 dark:border-2 dark:border-dashed dark:bg-slate-900 dark:border-slate-700",
                       },
                       React.createElement(
                         Label,
                         {
                           className:
-                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300 dark:text-sm dark:text-slate-100",
+                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-slate-700 dark:text-gray-300 dark:text-slate-100",
                         },
                         React.createElement(FileText, { className: "w-4 h-4" }),
                         React.createElement("span", null, translate("aadhaar_xml")),
@@ -580,7 +580,7 @@ const Verification = () => {
                         { className: "text-center dark:text-center" },
                         React.createElement(Upload, {
                           className:
-                            "mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500 dark:text-slate-100",
+                            "mx-auto h-12 w-12 mb-4 text-sky-300 dark:text-blue-500 dark:text-slate-100",
                         }),
                         React.createElement(Input, {
                           id: "aadhaarXml",
@@ -604,7 +604,7 @@ const Verification = () => {
                             "p",
                             {
                               className:
-                                "text-sm text-green-600 mt-2 font-medium dark:text-sm dark:text-green-300",
+                                "text-sm text-green-600 mt-2 font-medium dark:text-green-300",
                             },
                             files.aadhaarXml.name,
                           ),
@@ -614,13 +614,13 @@ const Verification = () => {
                       "div",
                       {
                         className:
-                          "border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-[var(--surface-2)] border-[#96C2DB] dark:border-blue-600 dark:border-2 dark:border-dashed dark:bg-slate-900 dark:border-slate-700",
+                          "border-2 border-dashed rounded-xl p-6 bg-sky-50 dark:bg-[var(--surface-2)] border-sky-300 dark:border-blue-600 dark:border-2 dark:border-dashed dark:bg-slate-900 dark:border-slate-700",
                       },
                       React.createElement(
                         Label,
                         {
                           className:
-                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300 dark:text-sm dark:text-slate-100",
+                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-slate-700 dark:text-gray-300 dark:text-slate-100",
                         },
                         React.createElement(FileText, { className: "w-4 h-4" }),
                         React.createElement("span", null, translate("aadhaar_image")),
@@ -630,7 +630,7 @@ const Verification = () => {
                         { className: "text-center dark:text-center" },
                         React.createElement(Upload, {
                           className:
-                            "mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500 dark:text-slate-100",
+                            "mx-auto h-12 w-12 mb-4 text-sky-300 dark:text-blue-500 dark:text-slate-100",
                         }),
                         React.createElement(Input, {
                           id: "aadhaarImage",
@@ -654,7 +654,7 @@ const Verification = () => {
                             "p",
                             {
                               className:
-                                "text-sm text-green-600 mt-2 font-medium dark:text-sm dark:text-green-300",
+                                "text-sm text-green-600 mt-2 font-medium dark:text-green-300",
                             },
                             files.aadhaarImage.name,
                           ),
@@ -664,13 +664,13 @@ const Verification = () => {
                       "div",
                       {
                         className:
-                          "border-2 border-dashed rounded-xl p-6 bg-[#F8FBFF] dark:bg-[var(--surface-2)] border-[#96C2DB] dark:border-blue-600 dark:border-2 dark:border-dashed dark:bg-slate-900 dark:border-slate-700",
+                          "border-2 border-dashed rounded-xl p-6 bg-sky-50 dark:bg-[var(--surface-2)] border-sky-300 dark:border-blue-600 dark:border-2 dark:border-dashed dark:bg-slate-900 dark:border-slate-700",
                       },
                       React.createElement(
                         Label,
                         {
                           className:
-                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-[#333A45] dark:text-gray-300 dark:text-sm dark:text-slate-100",
+                            "text-sm font-semibold flex items-center space-x-2 mb-3 text-slate-700 dark:text-gray-300 dark:text-slate-100",
                         },
                         React.createElement(FileText, { className: "w-4 h-4" }),
                         React.createElement("span", null, translate("pan_image")),
@@ -680,7 +680,7 @@ const Verification = () => {
                         { className: "text-center dark:text-center" },
                         React.createElement(Upload, {
                           className:
-                            "mx-auto h-12 w-12 mb-4 text-[#96C2DB] dark:text-blue-500 dark:text-slate-100",
+                            "mx-auto h-12 w-12 mb-4 text-sky-300 dark:text-blue-500 dark:text-slate-100",
                         }),
                         React.createElement(Input, {
                           id: "panImage",
@@ -704,7 +704,7 @@ const Verification = () => {
                             "p",
                             {
                               className:
-                                "text-sm text-green-600 mt-2 font-medium dark:text-sm dark:text-green-300",
+                                "text-sm text-green-600 mt-2 font-medium dark:text-green-300",
                             },
                             files.panImage.name,
                           ),
@@ -717,7 +717,7 @@ const Verification = () => {
                       type: "button",
                       onClick: handleSubmit,
                       className:
-                        "w-full py-6 text-white bg-[#96C2DB] dark:bg-blue-600 hover:bg-blue-500 transition-colors duration-300 text-lg font-semibold rounded-xl dark:text-white dark:bg-slate-900 dark:hover:bg-blue-800/30 dark:text-lg",
+                        "w-full py-6 text-white bg-sky-300 dark:bg-blue-600 hover:bg-blue-500 transition-colors duration-300 text-lg font-semibold rounded-xl dark:text-white dark:bg-slate-900 dark:hover:bg-blue-800/30",
                       disabled: submitting,
                     },
                     submitting
@@ -729,7 +729,7 @@ const Verification = () => {
             ),
             React.createElement(
               "div",
-              { className: "text-center text-sm mt-6 dark:text-center dark:text-sm" },
+              { className: "text-center text-sm mt-6 dark:text-center" },
               React.createElement(
                 "span",
                 { className: "text-gray-400 dark:text-gray-300" },
@@ -752,7 +752,7 @@ const Verification = () => {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4 dark:bg-gradient-to-br" +
+              "min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 dark:bg-gradient-to-br" +
               densityClass,
           },
           React.createElement(
@@ -777,7 +777,7 @@ const Verification = () => {
               ),
               React.createElement(
                 CardTitle,
-                { className: "text-2xl text-white dark:text-2xl dark:text-white" },
+                { className: "text-2xl text-white dark:text-white" },
                 translate("identity_verification") || "Identity Verification",
               ),
               React.createElement(
@@ -804,7 +804,7 @@ const Verification = () => {
                     Button,
                     {
                       className:
-                        "w-full bg-[#96C2DB] hover:bg-blue-500 text-white dark:bg-slate-900 dark:hover:bg-blue-800/30 dark:text-white",
+                        "w-full bg-sky-300 hover:bg-blue-500 text-white dark:bg-slate-900 dark:hover:bg-blue-800/30 dark:text-white",
                     },
                     "Login",
                   ),

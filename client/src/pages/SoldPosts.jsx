@@ -221,7 +221,7 @@ const U = () => {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100",
+                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
                       },
                       "Category mode: ",
                       categoryModeCategory.name,
@@ -230,7 +230,7 @@ const U = () => {
                       "p",
                       {
                         className:
-                          "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                          "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                       },
                       "Sold posts are filtered to this category.",
                     ),
@@ -284,7 +284,7 @@ const U = () => {
                         "p",
                         {
                           className:
-                            "text-sm text-red-700 dark:text-red-300 mb-3 dark:text-sm",
+                            "text-sm text-red-700 dark:text-red-300 mb-3",
                         },
                         c,
                       ),
@@ -337,7 +337,7 @@ const U = () => {
                             "p",
                             {
                               className:
-                                "text-sm text-blue-700 dark:text-blue-300 mb-4 dark:text-sm",
+                                "text-sm text-blue-700 dark:text-blue-300 mb-4",
                             },
                             hasCategoryMode && categoryModeCategory?.name
                               ? `Sold posts are filtered to ${categoryModeCategory.name}. Switch category to see more.`
@@ -387,7 +387,7 @@ const U = () => {
                               "h3",
                               {
                                 className:
-                                  "font-bold text-lg text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                                  "font-bold text-lg text-gray-900 dark:text-white dark:text-gray-100",
                               },
                               t.title || s("untitled_post") || "Untitled post",
                             ),
@@ -395,7 +395,7 @@ const U = () => {
                               "p",
                               {
                                 className:
-                                  "text-gray-500 dark:text-gray-400 text-sm line-clamp-2 dark:text-gray-300 dark:text-sm",
+                                  "text-gray-500 dark:text-gray-400 text-sm line-clamp-2 dark:text-gray-300",
                               },
                               t.description ||
                                 s("no_description") ||
@@ -450,7 +450,7 @@ const U = () => {
                 "h2",
                 {
                   className:
-                    "text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-2xl dark:text-gray-100",
+                    "text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-gray-100",
                 },
                 s("sold_posts") || "Sold Posts",
               ),

@@ -185,17 +185,9 @@ function setupDevToolsDetection() {
     } catch {}
   };
 
-  setInterval(runCheck, 500);
+  setInterval(runCheck, 3000);
   // Also check on resize (DevTools dock/undock triggers resize)
   window.addEventListener("resize", runCheck, { passive: true });
-
-  // Debugger trap — runs every 2s
-  setInterval(() => {
-    try {
-      const fn = new Function("debugger");
-      fn();
-    } catch {}
-  }, 2000);
 }
 
 // ── Keyboard shortcut blocking ──────────────────────────────

@@ -843,7 +843,7 @@ const u = "recentSearches",
                 placeholder: searchPlaceholder,
                 "aria-label": searchAriaLabel,
                 className:
-                  "w-full h-10 pl-4 pr-24 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-[var(--surface-2)] text-gray-900 dark:text-white dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-400/30 focus:shadow-lg focus:shadow-blue-500/10 dark:focus:ring-blue-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 transition-all duration-200 outline-none text-base dark:border-2 dark:bg-[var(--surface-2)] dark:text-gray-100 dark:focus:border-blue-500/40 dark:text-base",
+                  "w-full h-10 pl-4 pr-24 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-[var(--surface-2)] text-gray-900 dark:text-white dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-4 focus:ring-blue-400/30 focus:shadow-lg focus:shadow-blue-500/10 dark:focus:ring-blue-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 transition-all duration-200 outline-none text-base dark:border-2 dark:bg-[var(--surface-2)] dark:text-gray-100 dark:focus:border-blue-500/40",
               }),
               b &&
                 e.createElement(
@@ -891,7 +891,7 @@ const u = "recentSearches",
             },
             e.createElement(
               "p",
-              { className: "text-sm text-amber-800 dark:text-amber-300 mb-3 dark:text-sm dark:text-amber-200" },
+              { className: "text-sm text-amber-800 dark:text-amber-300 mb-3 dark:text-amber-200" },
               "Filters from browse are active and can limit your results.",
             ),
             e.createElement(
@@ -920,14 +920,14 @@ const u = "recentSearches",
                 "p",
                 {
                   className:
-                    "text-sm font-semibold text-slate-800 dark:text-white dark:text-sm dark:text-slate-100",
+                    "text-sm font-semibold text-slate-800 dark:text-white dark:text-slate-100",
                 },
                 "Category mode: ",
                 categoryModeCategory.name,
               ),
               e.createElement(
                 "p",
-                { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300" },
+                { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
                 "Search results stay inside this marketplace.",
               ),
             ),
@@ -953,19 +953,19 @@ const u = "recentSearches",
               null,
               e.createElement(
                 "h2",
-                { className: "text-base font-bold mhub-gradient-text dark:text-base" },
+                { className: "text-base font-bold mhub-gradient-text" },
                 n("search_results", { defaultValue: "Search Results" }),
               ),
               e.createElement(
                 "p",
-                { className: "text-xs text-slate-500 dark:text-slate-300 dark:text-xs" },
+                { className: "text-xs text-slate-500 dark:text-slate-300" },
                 n("results_preview_desc", { defaultValue: "Preview matches for your current search and filters." }),
               ),
             ),
             resultsCount !== null &&
               e.createElement(
                 "span",
-                { className: "text-sm font-semibold text-blue-700 dark:text-sm dark:text-blue-300", "aria-live": "polite" },
+                { className: "text-sm font-semibold text-blue-700 dark:text-blue-300", "aria-live": "polite" },
                 `${resultsCount} ${n("results", { defaultValue: "results" })}`,
               ),
           ),
@@ -975,7 +975,7 @@ const u = "recentSearches",
             isSubcategoryMode
               ? e.createElement(
                   "label",
-                  { className: "text-xs font-semibold text-slate-500 dark:text-slate-300 dark:text-xs" },
+                  { className: "text-xs font-semibold text-slate-500 dark:text-slate-300" },
                   n("subcategory", { defaultValue: "Subcategory" }),
                   e.createElement(
                     "select",
@@ -1008,7 +1008,7 @@ const u = "recentSearches",
                         s(v(b, categoryLock, value));
                       },
                       className:
-                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-sm",
+                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-950",
                     },
                     e.createElement("option", { value: "All" }, "All subcategories"),
                     subcategoryOptions.map((r) =>
@@ -1022,7 +1022,7 @@ const u = "recentSearches",
                 )
               : e.createElement(
                   "label",
-                  { className: "text-xs font-semibold text-slate-500 dark:text-slate-300 dark:text-xs" },
+                  { className: "text-xs font-semibold text-slate-500 dark:text-slate-300" },
                   n("category", { defaultValue: "Category" }),
                   e.createElement(
                     "select",
@@ -1036,7 +1036,7 @@ const u = "recentSearches",
                         s(v(b, value, ""));
                       },
                       className:
-                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-sm",
+                        "mt-1 h-9 w-full rounded-lg border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800 dark:text-white px-3 text-sm transition-colors dark:border dark:border-slate-700 dark:bg-slate-950",
                     },
                     e.createElement("option", { value: "All" }, "All categories"),
                     (Array.isArray(appScopedCategoryOptions) ? appScopedCategoryOptions : []).map(
@@ -1051,7 +1051,7 @@ const u = "recentSearches",
                 ),
             e.createElement(
               "label",
-              { className: "text-xs font-semibold text-slate-500 dark:text-slate-300 dark:text-xs" },
+              { className: "text-xs font-semibold text-slate-500 dark:text-slate-300" },
               n("min_price", { defaultValue: "Min price" }),
               e.createElement("input", {
                 type: "number",
@@ -1059,13 +1059,13 @@ const u = "recentSearches",
                 onChange: (r) =>
                   l((t) => ({ ...t, minPrice: r.target.value })),
                 className:
-                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-sm",
+                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border dark:border-slate-700 dark:bg-slate-950",
                 placeholder: "0",
               }),
             ),
             e.createElement(
               "label",
-              { className: "text-xs font-semibold text-slate-500 dark:text-slate-300 dark:text-xs" },
+              { className: "text-xs font-semibold text-slate-500 dark:text-slate-300" },
               n("max_price", { defaultValue: "Max price" }),
               e.createElement("input", {
                 type: "number",
@@ -1073,7 +1073,7 @@ const u = "recentSearches",
                 onChange: (r) =>
                   l((t) => ({ ...t, maxPrice: r.target.value })),
                 className:
-                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-sm",
+                  "mt-1 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm dark:border dark:border-slate-700 dark:bg-slate-950",
                 placeholder: "100000",
               }),
             ),
@@ -1091,7 +1091,7 @@ const u = "recentSearches",
                     onClick: () => clearFilterKey(filter.key),
                     "aria-label": n("remove_filter", { defaultValue: `Remove filter: ${filter.label}` }),
                     className:
-                      "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 hover:shadow-sm active:scale-95 transition-all duration-150 dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-xs dark:text-slate-200",
+                      "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 hover:shadow-sm active:scale-95 transition-all duration-150 dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200",
                   },
                   filter.label,
                   filter.key === "category" && categoryLock
@@ -1161,7 +1161,7 @@ const u = "recentSearches",
                             "p",
                             {
                               className:
-                                "text-sm font-semibold text-slate-900 dark:text-white truncate dark:text-sm dark:text-slate-100",
+                                "text-sm font-semibold text-slate-900 dark:text-white truncate dark:text-slate-100",
                             },
                             post.title || "Untitled post",
                           ),
@@ -1183,7 +1183,7 @@ const u = "recentSearches",
                                   "div",
                                   {
                                     className:
-                                      "mt-1 flex flex-wrap items-center gap-2 text-xs dark:text-xs",
+                                      "mt-1 flex flex-wrap items-center gap-2 text-xs",
                                   },
                                   e.createElement(
                                     "span",
@@ -1208,7 +1208,7 @@ const u = "recentSearches",
                           })(),
                           e.createElement(
                             "div",
-                            { className: "mt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300 dark:text-xs" },
+                            { className: "mt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300" },
                             e.createElement(
                               "span",
                               null,
@@ -1254,7 +1254,7 @@ const u = "recentSearches",
                 "h2",
                 {
                   className:
-                    "text-base font-bold mhub-gradient-text truncate dark:text-base",
+                    "text-base font-bold mhub-gradient-text truncate",
                 },
                 n("recent_searches", { defaultValue: "Recent Searches" }),
               ),
@@ -1265,7 +1265,7 @@ const u = "recentSearches",
                 {
                   onClick: z,
                   className:
-                    "text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 dark:text-sm dark:text-blue-300 dark:hover:text-blue-300",
+                    "text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 dark:text-blue-300 dark:hover:text-blue-300",
                 },
                 e.createElement(ee, { className: "w-4 h-4" }),
                 n("clear_all", { defaultValue: "Clear All" }),
@@ -1349,7 +1349,7 @@ const u = "recentSearches",
             e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 dark:bg-gradient-to-br" }, e.createElement(I, { className: "w-4 h-4 text-orange-600 dark:text-orange-400 dark:text-orange-300" })),
             e.createElement(
               "h2",
-              { className: "text-base font-bold mhub-gradient-text dark:text-base" },
+              { className: "text-base font-bold mhub-gradient-text" },
               n("trending_searches", { defaultValue: "Trending Searches" }),
             ),
           ),
@@ -1393,7 +1393,7 @@ const u = "recentSearches",
             e.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 dark:bg-gradient-to-br" }, e.createElement(Z, { className: "w-4 h-4 text-purple-600 dark:text-purple-400 dark:text-purple-300" })),
             e.createElement(
               "h2",
-              { className: "text-base font-bold mhub-gradient-text dark:text-base" },
+              { className: "text-base font-bold mhub-gradient-text" },
               isSubcategoryMode
                 ? n("popular_subcategories", { defaultValue: "Popular Subcategories" })
                 : n("popular_categories", { defaultValue: "Popular Categories" }),
@@ -1471,7 +1471,7 @@ const u = "recentSearches",
                           "span",
                           {
                             className:
-                              "text-sm font-semibold text-gray-700 dark:text-gray-200 text-center dark:text-sm dark:text-center",
+                              "text-sm font-semibold text-gray-700 dark:text-gray-200 text-center dark:text-center",
                           },
                           r.name || r.subcategory_name || r.title,
                         ),
@@ -1493,7 +1493,7 @@ const u = "recentSearches",
           ),
           e.createElement(
             "ul",
-            { className: "space-y-2 text-sm text-blue-700 dark:text-blue-400 dark:text-sm dark:text-blue-300" },
+            { className: "space-y-2 text-sm text-blue-700 dark:text-blue-400 dark:text-blue-300" },
             e.createElement(
               "li",
               null,

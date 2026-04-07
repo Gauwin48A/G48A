@@ -265,7 +265,7 @@ const normalizePrice = (value) => {
         { className: "mb-8" },
         React.createElement(
           "h1",
-          { className: "text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-3xl dark:text-gray-100" },
+          { className: "text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-gray-100" },
           tr("browse_phones", "Browse Mobile Phones"),
         ),
         React.createElement(
@@ -446,7 +446,7 @@ const normalizePrice = (value) => {
           null,
           React.createElement(
             "div",
-            { className: "mb-4 text-sm text-gray-500 dark:text-sm dark:text-gray-300" },
+            { className: "mb-4 text-sm text-gray-500 dark:text-gray-300" },
             translate("showing_listings", {
               count: filteredListings.length,
               defaultValue: `Showing ${filteredListings.length} listing${filteredListings.length > 1 ? "s" : ""}.`,
@@ -498,12 +498,12 @@ const normalizePrice = (value) => {
                     null,
                     React.createElement(
                       "h3",
-                      { className: "text-lg font-semibold text-gray-900 dark:text-lg dark:text-gray-100" },
+                      { className: "text-lg font-semibold text-gray-900 dark:text-gray-100" },
                       listing.title,
                     ),
                     React.createElement(
                       "p",
-                      { className: "text-sm text-gray-500 dark:text-sm dark:text-gray-300" },
+                      { className: "text-sm text-gray-500 dark:text-gray-300" },
                       listing.condition,
                     ),
                   ),
@@ -512,12 +512,12 @@ const normalizePrice = (value) => {
                     { className: "flex justify-between items-center" },
                     React.createElement(
                       "span",
-                      { className: "text-2xl font-bold text-green-600 dark:text-2xl dark:text-green-300" },
+                      { className: "text-2xl font-bold text-green-600 dark:text-green-300" },
                       listing.price,
                     ),
                     React.createElement(
                       "span",
-                      { className: "text-sm text-gray-500 dark:text-sm dark:text-gray-300" },
+                      { className: "text-sm text-gray-500 dark:text-gray-300" },
                       listing.postedDate,
                     ),
                   ),
@@ -525,7 +525,7 @@ const normalizePrice = (value) => {
                     "div",
                     {
                       className:
-                        "flex items-center space-x-2 text-sm text-gray-600 dark:text-sm dark:text-gray-200",
+                        "flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-200",
                     },
                     React.createElement(MapPinIcon, { className: "w-4 h-4" }),
                     React.createElement("span", null, listing.location),
@@ -538,7 +538,7 @@ const normalizePrice = (value) => {
                       { className: "flex items-center space-x-2" },
                       React.createElement(
                         "span",
-                        { className: "text-sm text-gray-600 dark:text-sm dark:text-gray-200" },
+                        { className: "text-sm text-gray-600 dark:text-gray-200" },
                         `${tr("seller", "Seller")}: ${listing.seller}`,
                       ),
                       listing.verified &&
@@ -546,7 +546,7 @@ const normalizePrice = (value) => {
                           "span",
                           {
                             className:
-                              "bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full dark:bg-green-950/20 dark:text-green-200 dark:text-xs",
+                              "bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full dark:bg-green-950/20 dark:text-green-200",
                           },
                           tr("verified", "Verified"),
                         ),
@@ -562,7 +562,7 @@ const normalizePrice = (value) => {
                       "button",
                       {
                         className:
-                          "btn btn-secondary flex-1 min-w-[110px] h-8 px-2 text-[10px] sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs dark:text-[10px] dark:sm:text-xs",
+                          "btn btn-secondary flex-1 min-w-[110px] h-8 px-2 text-[10px] sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs",
                         onClick: () => navigate("/chat"),
                       },
                       React.createElement(PhoneIcon, { className: "w-4 h-4 mr-1" }),
@@ -572,7 +572,7 @@ const normalizePrice = (value) => {
                       "button",
                       {
                         className:
-                          "btn btn-primary flex-1 min-w-[110px] h-8 px-2 text-[10px] sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs dark:text-[10px] dark:sm:text-xs",
+                          "btn btn-primary flex-1 min-w-[110px] h-8 px-2 text-[10px] sm:min-w-[120px] sm:h-9 sm:px-3 sm:text-xs",
                         onClick: () => navigate("/all-posts"),
                       },
                       tr("view_details", "View Details"),

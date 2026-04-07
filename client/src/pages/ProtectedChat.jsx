@@ -20,12 +20,12 @@ export default function ProtectedChat() {
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:bg-blue-950/20">
                 <MessageCircle className="h-7 w-7" />
               </div>
-              <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100 dark:text-2xl">
+              <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 Please Login
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-center dark:text-center">
-              <p className="text-sm text-slate-600 dark:text-slate-300 dark:text-sm dark:text-slate-200">
+              <p className="text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200">
                 <Lock className="mr-1 inline h-4 w-4" />
                 Chat history is protected. Login to continue.
               </p>

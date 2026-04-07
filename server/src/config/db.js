@@ -110,4 +110,12 @@ pool.on("error", (err) => {
   console.warn("[DB] Pool will attempt to recover automatically");
 });
 
+// Pool health monitoring — log stats every 60s in production
+if (process.env.NODE_ENV === "production") {
+  setInterval(() => {
+    const { totalCount, idleCount, waitingCount } = pool;
+    console.log(`[DB Pool] total=${totalCount} idle=${idleCount} waiting=${waitingCount}`);
+  }, 60_000).unref();
+}
+
 module.exports = pool;

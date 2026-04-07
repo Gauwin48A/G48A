@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const { verifyDeviceAttestation } = require("../middleware/deviceIdentity");
 const {
   ingestTelemetryBatch,
@@ -29,7 +30,7 @@ function authorizeReplayRequest(req, res, next) {
   }
 
   const providedReplayToken = String(req.headers["x-telemetry-replay-token"] || "").trim();
-  if (providedReplayToken !== configuredReplayToken) {
+  if (!providedReplayToken || !crypto.timingSafeEqual(Buffer.from(configuredReplayToken), Buffer.from(providedReplayToken.padEnd(configuredReplayToken.length).slice(0, configuredReplayToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized telemetry replay request.",
     });
@@ -40,11 +41,11 @@ function authorizeReplayRequest(req, res, next) {
 function authorizeSchemaAdminRequest(req, res, next) {
   const configuredAdminToken = String(process.env.TELEMETRY_SCHEMA_ADMIN_TOKEN || "").trim();
   if (!configuredAdminToken) {
-    return next();
+    return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
 
   const providedAdminToken = String(req.headers["x-telemetry-schema-token"] || "").trim();
-  if (providedAdminToken !== configuredAdminToken) {
+  if (!providedAdminToken || !crypto.timingSafeEqual(Buffer.from(configuredAdminToken), Buffer.from(providedAdminToken.padEnd(configuredAdminToken.length).slice(0, configuredAdminToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized telemetry schema admin request.",
     });

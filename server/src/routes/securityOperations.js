@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const {
   evaluateAccess,
   recordAbuseSignal,
@@ -19,7 +20,7 @@ function authorizeSecurityAdmin(req, res, next) {
     return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-security-admin-token"] || "").trim();
-  if (providedToken !== configuredToken) {
+  if (!providedToken || !crypto.timingSafeEqual(Buffer.from(configuredToken), Buffer.from(providedToken.padEnd(configuredToken.length).slice(0, configuredToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized security admin request.",
     });
@@ -38,7 +39,7 @@ function resolveActorId(req) {
   return normalized || null;
 }
 
-router.post("/access/evaluate", (req, res) => {
+router.post("/access/evaluate", authorizeSecurityAdmin, (req, res) => {
   const result = evaluateAccess(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -46,7 +47,7 @@ router.post("/access/evaluate", (req, res) => {
   return res.status(200).json(result);
 });
 
-router.post("/abuse/signals", (req, res) => {
+router.post("/abuse/signals", authorizeSecurityAdmin, (req, res) => {
   const result = recordAbuseSignal(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -78,7 +79,7 @@ router.post("/privacy/deletion/sweep", authorizeSecurityAdmin, (req, res) => {
   return res.status(200).json(result);
 });
 
-router.post("/incidents/open", (req, res) => {
+router.post("/incidents/open", authorizeSecurityAdmin, (req, res) => {
   const result = openSecurityIncident(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);

@@ -375,7 +375,7 @@ const D = [
                     B,
                     {
                       variant: o > 0 ? "default" : "secondary",
-                      className: "text-xs dark:text-xs",
+                      className: "text-xs",
                     },
                     o > 0 ? "+" : "",
                     o,
@@ -387,13 +387,13 @@ const D = [
               "p",
               {
                 className:
-                  "text-3xl font-bold mt-4 text-gray-900 dark:text-white dark:text-3xl dark:text-gray-100",
+                  "text-3xl font-bold mt-4 text-gray-900 dark:text-white dark:text-gray-100",
               },
               d,
             ),
             e.createElement(
               "p",
-              { className: "text-sm text-gray-500 mt-1 dark:text-sm dark:text-gray-300" },
+              { className: "text-sm text-gray-500 mt-1 dark:text-gray-300" },
               s,
             ),
           ),
@@ -459,7 +459,7 @@ const D = [
                 "h1",
                 {
                   className:
-                    "text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-3xl dark:text-white",
+                    "text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-white",
                 },
                 e.createElement(ae, { className: "w-8 h-8" }),
                 "Seller Analytics",
@@ -498,13 +498,13 @@ const D = [
                   null,
                   e.createElement(
                     "p",
-                    { className: "text-sm font-semibold dark:text-sm" },
+                    { className: "text-sm font-semibold" },
                     "Category mode: ",
                     categoryModeCategory.name,
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-white/80 dark:text-xs dark:text-white/80" },
+                    { className: "text-xs text-white/80 dark:text-white/80" },
                     "Analytics panels are filtered to this category.",
                   ),
                 ),
@@ -766,7 +766,7 @@ const D = [
                             "div",
                             {
                               className:
-                                "flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500 dark:text-sm dark:text-gray-300",
+                                "flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500 dark:text-gray-300",
                             },
                             e.createElement("span", null, G(t.price)),
                             e.createElement(
@@ -790,12 +790,12 @@ const D = [
                             null,
                             e.createElement(
                               "p",
-                              { className: "text-lg font-bold text-blue-600 dark:text-lg dark:text-blue-300" },
+                              { className: "text-lg font-bold text-blue-600 dark:text-blue-300" },
                               i(t.views_count),
                             ),
                             e.createElement(
                               "p",
-                              { className: "text-xs text-gray-500 dark:text-xs dark:text-gray-300" },
+                              { className: "text-xs text-gray-500 dark:text-gray-300" },
                               "Views",
                             ),
                           ),
@@ -804,12 +804,12 @@ const D = [
                             null,
                             e.createElement(
                               "p",
-                              { className: "text-lg font-bold text-green-600 dark:text-lg dark:text-green-300" },
+                              { className: "text-lg font-bold text-green-600 dark:text-green-300" },
                               i(t.inquiry_count),
                             ),
                             e.createElement(
                               "p",
-                              { className: "text-xs text-gray-500 dark:text-xs dark:text-gray-300" },
+                              { className: "text-xs text-gray-500 dark:text-gray-300" },
                               "Inquiries",
                             ),
                           ),
@@ -819,13 +819,13 @@ const D = [
                             e.createElement(
                               "p",
                               {
-                                className: "text-lg font-bold text-purple-600 dark:text-lg dark:text-purple-300",
+                                className: "text-lg font-bold text-purple-600 dark:text-purple-300",
                               },
                               i(t.offer_count),
                             ),
                             e.createElement(
                               "p",
-                              { className: "text-xs text-gray-500 dark:text-xs dark:text-gray-300" },
+                              { className: "text-xs text-gray-500 dark:text-gray-300" },
                               "Offers",
                             ),
                           ),
@@ -905,7 +905,7 @@ const D = [
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-sm text-gray-500 dark:text-sm dark:text-gray-300" },
+                          { className: "text-sm text-gray-500 dark:text-gray-300" },
                           i(t.post_count),
                           " posts | ",
                           i(t.sold_count),
@@ -917,12 +917,12 @@ const D = [
                         { className: "text-right dark:text-right" },
                         e.createElement(
                           "p",
-                          { className: "text-lg font-bold text-blue-600 dark:text-lg dark:text-blue-300" },
+                          { className: "text-lg font-bold text-blue-600 dark:text-blue-300" },
                           i(t.total_views),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-xs text-gray-500 dark:text-xs dark:text-gray-300" },
+                          { className: "text-xs text-gray-500 dark:text-gray-300" },
                           "views",
                         ),
                       ),

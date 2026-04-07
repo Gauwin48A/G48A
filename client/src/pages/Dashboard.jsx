@@ -437,7 +437,7 @@ const W = {
                               se,
                               {
                                 className:
-                                  "text-lg lg:text-xl bg-white/20 text-white font-bold dark:text-lg dark:lg:text-xl dark:bg-slate-900/20 dark:text-white",
+                                  "text-lg lg:text-xl bg-white/20 text-white font-bold dark:bg-slate-900/20 dark:text-white",
                               },
                               fe(s?.name),
                             ),
@@ -449,7 +449,7 @@ const W = {
                               "h1",
                               {
                                 className:
-                                  "text-2xl lg:text-3xl font-bold text-white mb-2 truncate dark:text-2xl dark:lg:text-3xl dark:text-white",
+                                  "text-2xl lg:text-3xl font-bold text-white mb-2 truncate dark:text-white",
                                 title: s?.name
                                   ? `${r("welcome_back", "Welcome back")}, ${s?.name}!`
                                   : r("welcome_back", "Welcome back"),
@@ -463,7 +463,7 @@ const W = {
                               "div",
                               {
                                 className:
-                                  "flex flex-wrap items-center gap-3 text-white/90 text-sm dark:text-white/90 dark:text-sm",
+                                  "flex flex-wrap items-center gap-3 text-white/90 text-sm dark:text-white/90",
                               },
                               e.createElement(
                                 j,
@@ -506,7 +506,7 @@ const W = {
                             null,
                             e.createElement(
                               "div",
-                              { className: "text-2xl lg:text-3xl font-bold dark:text-2xl dark:lg:text-3xl" },
+                              { className: "text-2xl lg:text-3xl font-bold" },
                               s?.coins || 0,
                             ),
                             e.createElement(
@@ -517,7 +517,7 @@ const W = {
                           ),
                           e.createElement(
                             "div",
-                            { className: "text-sm text-white/75 dark:text-sm dark:text-white/75" },
+                            { className: "text-sm text-white/75 dark:text-white/75" },
                             r("code", "Code"),
                             ": ",
                             s?.dailyCode || r("na", "N/A"),
@@ -619,7 +619,7 @@ const W = {
                                   j,
                                   {
                                     className:
-                                      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs dark:bg-green-950/20 dark:text-green-200 dark:text-xs",
+                                      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs dark:bg-green-950/20 dark:text-green-200",
                                   },
                                   r(t.trendKey, t.trend || "+"),
                                 )
@@ -632,7 +632,7 @@ const W = {
                               "div",
                               {
                                 className:
-                                  "text-xl lg:text-2xl font-bold text-gray-800 dark:text-white mb-1 dark:text-xl dark:lg:text-2xl dark:text-gray-100",
+                                  "text-xl lg:text-2xl font-bold text-gray-800 dark:text-white mb-1 dark:text-gray-100",
                               },
                               t.value ?? 0,
                             ),
@@ -640,7 +640,7 @@ const W = {
                               "div",
                               {
                                 className:
-                                  "text-sm text-gray-600 dark:text-gray-400 dark:text-sm dark:text-gray-200",
+                                  "text-sm text-gray-600 dark:text-gray-400 dark:text-gray-200",
                               },
                               r(t.labelKey, t.label || "Metric"),
                             ),
@@ -734,7 +734,7 @@ const W = {
                                           "p",
                                           {
                                             className:
-                                              "font-semibold text-gray-800 dark:text-white text-sm lg:text-base break-words dark:text-gray-100 dark:text-sm dark:lg:text-base",
+                                              "font-semibold text-gray-800 dark:text-white text-sm lg:text-base break-words dark:text-gray-100",
                                           },
                                           t.title,
                                         ),
@@ -742,7 +742,7 @@ const W = {
                                           "p",
                                           {
                                             className:
-                                              "text-xs lg:text-sm text-gray-600 dark:text-gray-300 flex items-center dark:text-xs dark:lg:text-sm dark:text-gray-200",
+                                              "text-xs lg:text-sm text-gray-600 dark:text-gray-300 flex items-center dark:text-gray-200",
                                           },
                                           e.createElement(le, {
                                             className: "w-3 h-3 mr-1",
@@ -760,7 +760,7 @@ const W = {
                                     "p",
                                     {
                                       className:
-                                        "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                        "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                     },
                                     r(
                                       "buyer_activity_empty",
@@ -899,7 +899,7 @@ const W = {
                                         "p",
                                         {
                                           className:
-                                            "font-semibold text-gray-800 dark:text-white text-sm lg:text-base break-words dark:text-gray-100 dark:text-sm dark:lg:text-base",
+                                            "font-semibold text-gray-800 dark:text-white text-sm lg:text-base break-words dark:text-gray-100",
                                         },
                                         t.title,
                                       ),
@@ -907,7 +907,7 @@ const W = {
                                         "p",
                                         {
                                           className:
-                                            "text-xs lg:text-sm text-gray-600 dark:text-gray-300 flex items-center dark:text-xs dark:lg:text-sm dark:text-gray-200",
+                                            "text-xs lg:text-sm text-gray-600 dark:text-gray-300 flex items-center dark:text-gray-200",
                                         },
                                         e.createElement(le, {
                                           className: "w-3 h-3 mr-1",
@@ -925,7 +925,7 @@ const W = {
                                   "p",
                                   {
                                     className:
-                                      "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                      "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                   },
                                   r(
                                     "no_activity_yet",
@@ -1015,7 +1015,7 @@ const W = {
                                       "div",
                                       {
                                         className:
-                                          "text-lg lg:text-2xl font-bold dark:text-white dark:text-lg dark:lg:text-2xl",
+                                          "text-lg lg:text-2xl font-bold dark:text-white",
                                       },
                                       t.badge,
                                     ),
@@ -1025,7 +1025,7 @@ const W = {
                                       e.createElement(
                                         "p",
                                       {
-                                        className: `font-semibold text-sm lg:text-base truncate dark:text-sm dark:lg:text-base${t.isCurrentUser ? "text-blue-600 dark:text-blue-300" : "text-gray-800 dark:text-white"}`,
+                                        className: `font-semibold text-sm lg:text-base truncate dark:lg:text-base${t.isCurrentUser ? "text-blue-600 dark:text-blue-300" : "text-gray-800 dark:text-white"}`,
                                         title: t.name,
                                       },
                                         t.name,
@@ -1037,7 +1037,7 @@ const W = {
                                         "p",
                                         {
                                           className:
-                                            "text-xs lg:text-sm text-gray-600 dark:text-gray-300 dark:text-xs dark:lg:text-sm dark:text-gray-200",
+                                            "text-xs lg:text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
                                         },
                                         t.sales,
                                         " ",
@@ -1065,7 +1065,7 @@ const W = {
                                   "p",
                                   {
                                     className:
-                                      "text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300 dark:text-sm",
+                                      "text-gray-500 dark:text-gray-400 text-sm dark:text-gray-300",
                                   },
                                   r(
                                     "no_top_sellers",
@@ -1171,13 +1171,13 @@ const W = {
               "h2",
               {
                 className:
-                  "text-3xl font-extrabold text-blue-700 dark:text-blue-400 mb-4 dark:text-3xl dark:text-blue-300",
+                  "text-3xl font-extrabold text-blue-700 dark:text-blue-400 mb-4 dark:text-blue-300",
               },
               r("your_dashboard", "Your Dashboard"),
             ),
             e.createElement(
               "p",
-              { className: "text-base text-gray-600 dark:text-gray-300 mb-6 dark:text-base dark:text-gray-200" },
+              { className: "text-base text-gray-600 dark:text-gray-300 mb-6 dark:text-gray-200" },
               r(
                 "dashboard_login_msg",
                 "Sign in to see your personalized marketplace insights.",
@@ -1191,7 +1191,7 @@ const W = {
                 {
                   to: "/login?returnTo=%2Fdashboard",
                   className:
-                    "bg-blue-600 hover:bg-blue-700 text-white text-base px-8 py-3 rounded-xl font-bold text-center dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:text-base dark:text-center",
+                    "bg-blue-600 hover:bg-blue-700 text-white text-base px-8 py-3 rounded-xl font-bold text-center dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:text-center",
                 },
                 r("login_to_continue", "Login to Continue"),
               ),
@@ -1200,7 +1200,7 @@ const W = {
                 {
                   to: "/signup",
                   className:
-                    "border border-blue-300 dark:border-blue-500 text-blue-600 dark:text-blue-400 text-base px-8 py-3 rounded-xl font-semibold text-center hover:bg-blue-50 dark:hover:bg-gray-700 dark:border dark:border-blue-600/40 dark:text-blue-300 dark:text-base dark:text-center dark:hover:bg-blue-950/20",
+                    "border border-blue-300 dark:border-blue-500 text-blue-600 dark:text-blue-400 text-base px-8 py-3 rounded-xl font-semibold text-center hover:bg-blue-50 dark:hover:bg-gray-700 dark:border dark:border-blue-600/40 dark:text-blue-300 dark:text-center dark:hover:bg-blue-950/20",
                 },
                 r("create_account", "Create Account"),
               ),

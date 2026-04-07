@@ -134,7 +134,7 @@ const ge = {
         const r = t === "activity";
         r ? (Z(!0), $("")) : X(!0);
         try {
-          const a = await k.get("/api/admin/dashboard"),
+          const a = await k.get("/admin/dashboard"),
             i = a?.data ?? a;
           N({ ...ge, ...(i?.stats || {}) }),
             q(J(i?.flaggedUsers)),
@@ -336,7 +336,7 @@ const ge = {
       ae = v(
         async (t) => {
           const r = await k.post(
-              "/api/admin/dashboard/flagged-posts/bulk-action",
+              "/admin/dashboard/flagged-posts/bulk-action",
               {
                 postIds: [String(t.id)],
                 action: t.action,
@@ -377,7 +377,7 @@ const ge = {
       ),
       ie = v(
         async (t) => {
-          const r = await k.post("/api/admin/users/bulk-action", {
+          const r = await k.post("/admin/users/bulk-action", {
               userIds: [String(t.id)],
               action: t.action,
               reason: `Admin panel ${t.action} action`,
@@ -439,7 +439,7 @@ const ge = {
           A(!0), y("");
           try {
             n.kind === "post" &&
-              (await k.post("/api/admin/dashboard/flagged-posts/bulk-action", {
+              (await k.post("/admin/dashboard/flagged-posts/bulk-action", {
                 postIds: [String(n.id)],
                 action: n.reverseAction,
                 reason: "Undo from admin panel",
@@ -454,7 +454,7 @@ const ge = {
                 flaggedPosts: Number(t.flaggedPosts || 0) + 1,
               }))),
               n.kind === "user" &&
-                (await k.post("/api/admin/users/bulk-action", {
+                (await k.post("/admin/users/bulk-action", {
                   userIds: [String(n.id)],
                   action: n.reverseAction,
                   reason: "Undo from admin panel",
@@ -527,7 +527,7 @@ const ge = {
                 "h1",
                 {
                   className:
-                    "text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-2xl dark:md:text-3xl dark:text-gray-100",
+                    "text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                 },
                 s("admin_panel"),
               ),
@@ -626,17 +626,17 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold dark:text-2xl" },
+                        { className: "text-2xl font-bold" },
                         Number(x.totalUsers || 0),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-blue-100 text-sm dark:text-blue-200 dark:text-sm" },
+                        { className: "text-blue-100 text-sm dark:text-blue-200" },
                         s("total_users"),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-blue-200 text-xs dark:text-blue-200 dark:text-xs" },
+                        { className: "text-blue-200 text-xs dark:text-blue-200" },
                         "+",
                         Number(x.todaySignups || 0),
                         " ",
@@ -664,17 +664,17 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold dark:text-2xl" },
+                        { className: "text-2xl font-bold" },
                         Number(x.totalPosts || 0),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-green-100 text-sm dark:text-green-200 dark:text-sm" },
+                        { className: "text-green-100 text-sm dark:text-green-200" },
                         s("total_posts"),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-green-200 text-xs dark:text-green-200 dark:text-xs" },
+                        { className: "text-green-200 text-xs dark:text-green-200" },
                         "+",
                         Number(x.todayPosts || 0),
                         " ",
@@ -704,17 +704,17 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold dark:text-2xl" },
+                        { className: "text-2xl font-bold" },
                         Number(x.flaggedPosts || 0),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-orange-100 text-sm dark:text-orange-200 dark:text-sm" },
+                        { className: "text-orange-100 text-sm dark:text-orange-200" },
                         s("flagged_posts"),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-orange-200 text-xs dark:text-orange-200 dark:text-xs" },
+                        { className: "text-orange-200 text-xs dark:text-orange-200" },
                         s("need_review"),
                       ),
                     ),
@@ -741,17 +741,17 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold dark:text-2xl" },
+                        { className: "text-2xl font-bold" },
                         Number(x.restrictedUsers || 0),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-red-100 text-sm dark:text-red-200 dark:text-sm" },
+                        { className: "text-red-100 text-sm dark:text-red-200" },
                         s("restricted"),
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-red-200 text-xs dark:text-red-200 dark:text-xs" },
+                        { className: "text-red-200 text-xs dark:text-red-200" },
                         s("users_blocked"),
                       ),
                     ),
@@ -774,7 +774,7 @@ const ge = {
                   {
                     value: "users",
                     className:
-                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white dark:text-sm",
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
                   },
                   s("users"),
                 ),
@@ -783,7 +783,7 @@ const ge = {
                   {
                     value: "posts",
                     className:
-                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white dark:text-sm",
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
                   },
                   s("posts"),
                 ),
@@ -792,7 +792,7 @@ const ge = {
                   {
                     value: "flags",
                     className:
-                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white dark:text-sm",
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
                   },
                   s("flags"),
                 ),
@@ -801,7 +801,7 @@ const ge = {
                   {
                     value: "activity",
                     className:
-                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white dark:text-sm",
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
                   },
                   s("activity"),
                 ),
@@ -859,7 +859,7 @@ const ge = {
                             "p",
                             {
                               className:
-                                "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                             },
                             "No flagged users match this filter.",
                           ),
@@ -909,7 +909,7 @@ const ge = {
                                         "h3",
                                         {
                                           className:
-                                            "font-semibold text-lg text-gray-900 dark:text-white dark:text-lg dark:text-gray-100",
+                                            "font-semibold text-lg text-gray-900 dark:text-white dark:text-gray-100",
                                         },
                                         t.name,
                                       ),
@@ -939,7 +939,7 @@ const ge = {
                                       "div",
                                       {
                                         className:
-                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
                                       },
                                       e.createElement(
                                         "p",
@@ -1116,7 +1116,7 @@ const ge = {
                             "p",
                             {
                               className:
-                                "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                             },
                             "No flagged posts match this filter.",
                           ),
@@ -1181,7 +1181,7 @@ const ge = {
                                       "div",
                                       {
                                         className:
-                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
                                       },
                                       e.createElement(
                                         "p",
@@ -1348,7 +1348,7 @@ const ge = {
                             "ul",
                             {
                               className:
-                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-gray-200",
                             },
                             e.createElement(
                               "li",
@@ -1394,7 +1394,7 @@ const ge = {
                             "ul",
                             {
                               className:
-                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-gray-200",
                             },
                             e.createElement(
                               "li",
@@ -1454,7 +1454,7 @@ const ge = {
                             "p",
                             {
                               className:
-                                "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                             },
                             "No recent admin activity available.",
                           ),
@@ -1500,7 +1500,7 @@ const ge = {
                                   "p",
                                   {
                                     className:
-                                      "text-sm text-gray-600 dark:text-gray-300 dark:text-sm dark:text-gray-200",
+                                      "text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
                                   },
                                   s("by"),
                                   " ",
@@ -1510,7 +1510,7 @@ const ge = {
                                   "p",
                                   {
                                     className:
-                                      "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300",
+                                      "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                   },
                                   t.details ||
                                     "No additional details available.",
@@ -1523,7 +1523,7 @@ const ge = {
                                   "span",
                                   {
                                     className:
-                                      "text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300",
+                                      "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
                                   },
                                   t.time || "now",
                                 ),

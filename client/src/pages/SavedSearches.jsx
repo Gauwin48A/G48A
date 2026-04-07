@@ -198,7 +198,7 @@ const Z = () => {
                     "h1",
                     {
                       className:
-                        "text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-xl dark:text-gray-100",
+                        "text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-gray-100",
                     },
                     e.createElement(u, {
                       className: "h-5 w-5 text-purple-400 dark:text-purple-200",
@@ -207,7 +207,7 @@ const Z = () => {
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
+                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     b.length,
                     " saved",
                   ),
@@ -255,7 +255,7 @@ const Z = () => {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100",
+                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
                       },
                       "Category mode: ",
                       categoryModeCategory.name,
@@ -264,7 +264,7 @@ const Z = () => {
                       "p",
                       {
                         className:
-                          "text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300",
+                          "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                       },
                       "Saved searches will run inside this category.",
                     ),
@@ -386,7 +386,7 @@ const Z = () => {
                       "h3",
                       {
                         className:
-                          "text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2 dark:text-xl dark:text-gray-200",
+                          "text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2 dark:text-gray-200",
                       },
                       "Unable to load saved searches",
                     ),
@@ -429,7 +429,7 @@ const Z = () => {
                         "h3",
                         {
                           className:
-                            "text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2 dark:text-xl dark:text-gray-200",
+                            "text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2 dark:text-gray-200",
                         },
                         "No Saved Searches",
                       ),
@@ -503,7 +503,7 @@ const Z = () => {
                                   "p",
                                   {
                                     className:
-                                      "text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-sm dark:text-gray-200",
+                                      "text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-gray-200",
                                   },
                                   "Keywords: ",
                                   r.search_query,
@@ -517,7 +517,7 @@ const Z = () => {
                                       {
                                         variant: "outline",
                                         className:
-                                          "text-xs border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300 dark:text-xs dark:text-gray-200",
+                                          "text-xs border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300 dark:text-gray-200",
                                       },
                                       e.createElement(V, {
                                         className: "h-3 w-3 mr-1",
@@ -530,7 +530,7 @@ const Z = () => {
                                       {
                                         variant: "outline",
                                         className:
-                                          "text-xs border-gray-600 text-gray-300 dark:text-xs dark:border-gray-500 dark:text-gray-300",
+                                          "text-xs border-gray-600 text-gray-300 dark:border-gray-500 dark:text-gray-300",
                                       },
                                       "\u20B9",
                                       r.min_price || 0,
@@ -602,7 +602,7 @@ const Z = () => {
             e.createElement(
               "div",
               {
-                className: `fixed bottom-24 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-50 ${w.type === "error" ? "bg-red-600" : "bg-green-600"} text-white text-sm dark:text-white dark:text-sm`,
+                className: `fixed bottom-24 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-50 ${w.type === "error" ? "bg-red-600" : "bg-green-600"} text-white text-sm dark:text-white`,
               },
               w.message,
             ),
@@ -624,7 +624,7 @@ const Z = () => {
             }),
             e.createElement(
               "h1",
-              { className: "text-2xl font-bold text-white mb-3 dark:text-2xl dark:text-white" },
+              { className: "text-2xl font-bold text-white mb-3 dark:text-white" },
               "Sign in to manage saved searches",
             ),
             e.createElement(
@@ -641,7 +641,7 @@ const Z = () => {
                   onClick: () =>
                     i("/login", { state: { returnTo: "/saved-searches" } }),
                   className:
-                    "w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-6 text-lg rounded-xl dark:bg-gradient-to-r dark:text-white dark:text-lg",
+                    "w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-6 text-lg rounded-xl dark:bg-gradient-to-r dark:text-white",
                 },
                 e.createElement(J, { className: "h-4 w-4 mr-2" }),
                 "Sign In",

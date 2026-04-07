@@ -1,4 +1,4 @@
-const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const { runQuery, getAuthUserId, pool } = require("../utils/dbHelpers");
 const logger = require('../utils/logger');
 
 // Alias shared helper to match existing call sites
@@ -23,17 +23,27 @@ exports.createChannel = async (req, res) => {
     }
     // Use profile info
     const { name, username, bio, profile_pic } = userRes.rows[0];
-    const result = await runQuery(
-      `
-        INSERT INTO channels (user_id, name, username, bio, profile_pic)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, user_id, name, username, bio, profile_pic, created_at, updated_at
-      `,
-      [userId, name, username, bio, profile_pic]
-    );
-    // Assign role
-    await runQuery('UPDATE users SET role = $1 WHERE id = $2', ['content_creator', userId]);
-    res.json({ channel: result.rows[0], message: 'Channel created successfully.' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `
+          INSERT INTO channels (user_id, name, username, bio, profile_pic)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING id, user_id, name, username, bio, profile_pic, created_at, updated_at
+        `,
+        [userId, name, username, bio, profile_pic]
+      );
+      // Assign role
+      await client.query('UPDATE users SET role = $1 WHERE id = $2', ['content_creator', userId]);
+      await client.query('COMMIT');
+      res.status(201).json({ channel: result.rows[0], message: 'Channel created successfully.' });
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     logger.error('Create channel error:', err);
     res.status(500).json({ error: "Internal server error" });
@@ -59,7 +69,7 @@ exports.getChannelByUser = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Get channel by user error:', err);
-    res.status(500).json({ error: err.message, fallback: null });
+    res.status(500).json({ error: "Internal server error", fallback: null });
   }
 };
 

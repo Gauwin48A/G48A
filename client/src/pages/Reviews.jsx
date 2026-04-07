@@ -320,14 +320,14 @@ const R = () => {
                   e.createElement(
                     "h1",
                     {
-                      className: "text-3xl font-bold text-white mb-2 truncate dark:text-3xl dark:text-white",
+                      className: "text-3xl font-bold text-white mb-2 truncate dark:text-white",
                       title: "User Reviews",
                     },
                     "User Reviews",
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-blue-100 text-lg break-words dark:text-blue-200 dark:text-lg" },
+                    { className: "text-blue-100 text-lg break-words dark:text-blue-200" },
                     "See what buyers and sellers say about this user.",
                   ),
                 ),
@@ -355,7 +355,7 @@ const R = () => {
                     "div",
                     {
                       className:
-                        "text-5xl font-bold text-gray-800 dark:text-white mb-2 dark:text-5xl dark:text-gray-100",
+                        "text-5xl font-bold text-gray-800 dark:text-white mb-2 dark:text-gray-100",
                     },
                     s?.averageRating || "0.0",
                   ),
@@ -383,7 +383,7 @@ const R = () => {
                         "div",
                         {
                           key: r,
-                          className: "flex items-center gap-2 text-sm dark:text-sm",
+                          className: "flex items-center gap-2 text-sm",
                         },
                         e.createElement("span", { className: "w-3" }, r),
                         e.createElement(o, {
@@ -424,7 +424,7 @@ const R = () => {
                       { className: "p-6" },
                       e.createElement(
                         "h3",
-                        { className: "text-lg font-semibold mb-4 dark:text-lg" },
+                        { className: "text-lg font-semibold mb-4" },
                         "Write a Review",
                       ),
                       !B &&
@@ -432,7 +432,7 @@ const R = () => {
                           "div",
                           {
                             className:
-                              "mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200 dark:text-sm",
+                              "mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200",
                           },
                           "Log in to submit your review.",
                         ),
@@ -487,7 +487,7 @@ const R = () => {
                         "span",
                         {
                           className:
-                            "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-xs dark:text-gray-300",
+                            "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300",
                         },
                         "Filters",
                       ),
@@ -512,7 +512,7 @@ const R = () => {
                       { className: "flex flex-wrap items-center gap-3" },
                       e.createElement(
                         "label",
-                        { className: "text-xs font-semibold text-gray-500 dark:text-xs dark:text-gray-300" },
+                        { className: "text-xs font-semibold text-gray-500 dark:text-gray-300" },
                         "Sort by",
                         e.createElement(
                           "select",
@@ -520,7 +520,7 @@ const R = () => {
                             value: filterSort,
                             onChange: (r) => setFilterSort(r.target.value),
                             className:
-                              "ml-2 h-9 rounded-lg border border-gray-200 px-2 text-sm dark:border dark:border-gray-700 dark:text-sm",
+                              "ml-2 h-9 rounded-lg border border-gray-200 px-2 text-sm dark:border dark:border-gray-700",
                           },
                           e.createElement(
                             "option",
@@ -623,7 +623,7 @@ const R = () => {
                                 ),
                                 e.createElement(
                                   "p",
-                                  { className: "text-xs text-gray-500 dark:text-xs dark:text-gray-300" },
+                                  { className: "text-xs text-gray-500 dark:text-gray-300" },
                                   new Date(r.created_at).toLocaleDateString(),
                                 ),
                               ),

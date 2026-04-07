@@ -88,16 +88,22 @@ const ActivityHub = () => {
     <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6 page-shell page-pad">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white dark:text-3xl dark:text-gray-100">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white dark:text-gray-100">
             {title}
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-300 dark:text-sm dark:text-gray-200">
+          <p className="text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200">
             {description}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {items.map((item) => {
+          {items.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+              <MessageCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
+              <p className="text-lg font-medium text-gray-500 dark:text-gray-400">{tr("no_activities", "No activities available")}</p>
+            </div>
+          ) : (
+          items.map((item) => {
             const Icon = iconMap[item.icon] || MessageCircle;
             const resolvedPath = resolveItemPath(item);
             const requiresUserId = Boolean(item.requiresUserId);
@@ -112,17 +118,17 @@ const ActivityHub = () => {
                     <Icon className="w-5 h-5 text-blue-600 dark:text-blue-300" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-gray-900 dark:text-white dark:text-base dark:text-gray-100">
+                    <p className="text-base font-semibold text-gray-900 dark:text-white dark:text-gray-100">
                       {tr(item.labelKey || item.key, item.fallbackLabel || item.label)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
                       {tr(item.descKey || "", item.fallbackDesc || item.description || "")}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-[11px] dark:text-slate-300">
+                  <span className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300">
                     {item.requiresAuth
                       ? tr("members_only", "Members only")
                       : tr("available", "Available")}
@@ -138,7 +144,8 @@ const ActivityHub = () => {
                 </div>
               </Card>
             );
-          })}
+          })
+          )}
         </div>
       </div>
     </div>

@@ -64,7 +64,7 @@ exports.getFeedback = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     logger.error("Error fetching feedback:", err.message);
-    res.json([]);
+    res.status(500).json({ error: "Failed to fetch feedback" });
   }
 };
 
@@ -91,7 +91,7 @@ exports.getMyFeedback = async (req, res) => {
     return res.json({ feedback: result.rows });
   } catch (err) {
     logger.error("Error fetching my feedback:", err.message);
-    return res.status(500).json({ error: "Failed to fetch feedback", details: err.message });
+    return res.status(500).json({ error: "Failed to fetch feedback" });
   }
 };
 
@@ -138,6 +138,6 @@ exports.createFeedback = async (req, res) => {
     });
   } catch (err) {
     logger.error("Error creating feedback:", err.message);
-    return res.status(500).json({ error: "Failed to submit feedback", details: err.message });
+    return res.status(500).json({ error: "Failed to submit feedback" });
   }
 };

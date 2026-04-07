@@ -79,7 +79,7 @@ export default function ForgotPassword() {
         {/* Back link */}
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium dark:text-blue-300 dark:text-sm"
+          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium dark:text-blue-300"
         >
           <ArrowLeft className="w-4 h-4" />
           {t("back_to_login") || "Back to Login"}
@@ -94,12 +94,12 @@ export default function ForgotPassword() {
                 <Mail className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
               )}
             </div>
-            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-xl dark:sm:text-2xl dark:text-white">
+            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-white">
               {sent
                 ? t("check_your_email") || "Check Your Email"
                 : t("forgot_password") || "Forgot Password"}
             </CardTitle>
-            <CardDescription className="text-blue-100 text-sm dark:text-blue-200 dark:text-sm">
+            <CardDescription className="text-blue-100 text-sm dark:text-blue-200">
               {sent
                 ? t("sent_reset_link_msg") || "We sent you password reset instructions"
                 : t("enter_email_reset_msg") || "Enter your email, phone, or username to reset your password"}
@@ -123,7 +123,7 @@ export default function ForgotPassword() {
 
             {sent ? (
               <div className="text-center space-y-4 dark:text-center">
-                <p className="text-gray-600 dark:text-gray-300 text-sm dark:text-gray-200 dark:text-sm">
+                <p className="text-gray-600 dark:text-gray-300 text-sm dark:text-gray-200">
                   {t("sent_link_to") || "We've sent reset instructions for"}{" "}
                   <strong className="text-gray-900 dark:text-white dark:text-gray-100">{identifier}</strong>.{" "}
                   {t("check_inbox_instructions") || "Please check your inbox and follow the instructions."}
@@ -131,12 +131,12 @@ export default function ForgotPassword() {
 
                 {isPhoneIdentifier(identifier) && (
                   <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 p-3 text-left dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20 dark:text-left">
-                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 dark:text-xs">
+                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                       {t("reset_with_otp") || "Prefer OTP reset?"}
                     </p>
                     <Link
                       to={`/reset-password?phone=${encodeURIComponent(normalizePhone(identifier))}`}
-                      className="mt-1 inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 hover:underline dark:text-sm dark:text-indigo-300"
+                      className="mt-1 inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 hover:underline dark:text-indigo-300"
                     >
                       {t("use_otp_reset") || "Use OTP to reset password"}
                     </Link>
@@ -145,16 +145,16 @@ export default function ForgotPassword() {
 
                 {resetLink && (
                   <div className="rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 p-3 text-left dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-left">
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 dark:text-xs">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
                       {t("dev_reset_preview") || "Local reset preview link"}
                     </p>
                     <a
                       href={resetLink}
-                      className="mt-1 block break-all text-sm text-blue-600 dark:text-blue-400 hover:underline dark:text-sm dark:text-blue-300"
+                      className="mt-1 block break-all text-sm text-blue-600 dark:text-blue-400 hover:underline dark:text-blue-300"
                     >
                       {resetLink}
                     </a>
-                    <p className="mt-1 text-xs text-blue-500 dark:text-blue-400 dark:text-xs dark:text-blue-300">
+                    <p className="mt-1 text-xs text-blue-500 dark:text-blue-400 dark:text-blue-300">
                       {debugInfo?.mock
                         ? t("email_provider_not_configured") || "Email provider not configured; this link is shown for local testing."
                         : `${t("email_delivery_channel") || "Delivery channel"}: ${debugInfo?.channel || "email"}`}
@@ -162,7 +162,7 @@ export default function ForgotPassword() {
                   </div>
                 )}
 
-                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300">
+                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
                   {t("didnt_receive_email") || "Didn't receive the email?"}{" "}
                   {t("check_spam") || "Check your spam folder or"}
                   <button
@@ -183,7 +183,7 @@ export default function ForgotPassword() {
                 <div>
                   <Label
                     htmlFor="email"
-                    className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-sm dark:text-gray-200"
+                    className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200"
                   >
                     {t("email_phone_username") || "Email / Phone / Username"}
                   </Label>
@@ -201,7 +201,7 @@ export default function ForgotPassword() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 sm:h-12 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-base sm:text-lg font-semibold dark:bg-gradient-to-r dark:text-white dark:text-base dark:sm:text-lg"
+                  className="w-full h-11 sm:h-12 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-base sm:text-lg font-semibold dark:bg-gradient-to-r dark:text-white"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export default function ForgotPassword() {
               </form>
             )}
 
-            <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400 dark:text-center dark:text-sm dark:text-gray-200">
+            <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400 dark:text-center dark:text-gray-200">
               {t("remember_password") || "Remember your password?"}{" "}
               <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium dark:text-blue-300">
                 {t("sign_in") || "Sign In"}

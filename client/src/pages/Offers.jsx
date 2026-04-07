@@ -521,10 +521,10 @@ const OffersPage = () => {
       <div className="min-h-screen mhub-premium-page bg-gray-50 flex items-center justify-center p-4 dark:bg-gray-950">
         <div className="max-w-md w-full mhub-premium-surface rounded-2xl p-6 text-center page-shell page-pad dark:text-center">
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3 dark:text-amber-300" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2 dark:text-xl dark:text-gray-100">
+          <h2 className="text-xl font-bold text-gray-900 mb-2 dark:text-gray-100">
             {tr("login_required", "Login required")}
           </h2>
-          <p className="text-sm text-gray-600 mb-4 dark:text-sm dark:text-gray-200">
+          <p className="text-sm text-gray-600 mb-4 dark:text-gray-200">
             {tr(
               "offers_login_desc",
               "Sign in to view and manage your offer negotiations.",
@@ -556,7 +556,7 @@ const OffersPage = () => {
               <ArrowLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-3xl dark:text-white">
+              <h1 className="text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-white">
                 <DollarSign className="w-8 h-8" />{" "}
                 {tr("offers_title", "Price Negotiations")}
               </h1>
@@ -593,10 +593,10 @@ const OffersPage = () => {
         <div className="max-w-4xl mx-auto px-4 -translate-y-2 page-shell page-pad">
           <div className="mb-3 rounded-2xl border border-emerald-100 bg-white/90 dark:border-emerald-900/40 dark:bg-gray-900/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm dark:border dark:border-emerald-600/40 dark:bg-slate-900/90">
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-sm dark:text-slate-100">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
                 Category mode: {categoryModeCategory.name}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-xs dark:text-slate-300">
+              <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300">
                 Offers are filtered to this category.
               </p>
             </div>
@@ -625,11 +625,11 @@ const OffersPage = () => {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase dark:text-xs">
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase">
                   {tr("status", "Status")}
                 </label>
                 <select
-                  className="mhub-input h-9 rounded-lg px-3 text-sm dark:text-sm"
+                  className="mhub-input h-9 rounded-lg px-3 text-sm"
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
                 >
@@ -641,7 +641,7 @@ const OffersPage = () => {
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase dark:text-xs">
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase">
                   {tr("search", "Search")}
                 </label>
                 <Input
@@ -668,7 +668,7 @@ const OffersPage = () => {
               </Button>
             </div>
           </div>
-          <div className="mt-3 text-xs text-slate-500 dark:text-slate-300 dark:text-xs">
+          <div className="mt-3 text-xs text-slate-500 dark:text-slate-300">
             {filteredOffers.length} {tr("offers_count", "offers")}
           </div>
         </div>
@@ -682,7 +682,7 @@ const OffersPage = () => {
         ) : error ? (
           <Card className="border-0 shadow-lg dark:border-0">
             <CardContent className="py-10 text-center dark:text-center">
-              <h3 className="text-xl font-semibold text-red-600 mb-2 dark:text-xl dark:text-red-300">
+              <h3 className="text-xl font-semibold text-red-600 mb-2 dark:text-red-300">
                 {tr("offers_unable_to_load", "Unable to load offers")}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4 dark:text-gray-300">{error}</p>
@@ -708,7 +708,7 @@ const OffersPage = () => {
               {isFilteredEmpty ? (
                 <>
                   <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4 dark:text-gray-300" />
-                  <h3 className="text-xl font-semibold text-gray-600 dark:text-xl dark:text-gray-200">
+                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-200">
                     {tr("offers_empty_filtered", "No offers in this category")}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400 mt-2 dark:text-gray-300">
@@ -734,7 +734,7 @@ const OffersPage = () => {
               ) : isFilterSearchEmpty ? (
                 <>
                   <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4 dark:text-gray-300" />
-                  <h3 className="text-xl font-semibold text-gray-600 dark:text-xl dark:text-gray-200">
+                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-200">
                     {tr("offers_empty_filtered", "No matching offers")}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400 mt-2 dark:text-gray-300">
@@ -747,7 +747,7 @@ const OffersPage = () => {
               ) : (
                 <>
                   <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4 dark:text-gray-300" />
-                  <h3 className="text-xl font-semibold text-gray-600 dark:text-xl dark:text-gray-200">
+                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-200">
                     {tr("offers_empty", "No offers yet")}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400 mt-2 dark:text-gray-300">
@@ -816,7 +816,7 @@ const OffersPage = () => {
                               {tr("saved", "Saved")}
                             </Badge>
                           )}
-                          <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300">
+                          <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
                             <Clock className="w-4 h-4 inline mr-1" />
                             {offer.created_at
                               ? new Date(offer.created_at).toLocaleDateString()
@@ -834,11 +834,11 @@ const OffersPage = () => {
                           </Button>
                         </div>
 
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 dark:text-lg dark:text-gray-100">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 dark:text-gray-100">
                           {offer.post_title ||
                             tr("offers_untitled_post", "Untitled Post")}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 dark:text-sm dark:text-gray-300">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 dark:text-gray-300">
                           {role === "seller"
                             ? `${tr("offers_from", "From")}: ${offer.buyer_name || offer.buyer_username || tr("offers_buyer", "Buyer")}`
                             : `${tr("offers_to", "To")}: ${offer.seller_name || offer.seller_username || tr("offers_seller", "Seller")}`}
@@ -846,10 +846,10 @@ const OffersPage = () => {
 
                         <div className="flex items-center gap-3 mb-3">
                           <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
                               {tr("offers_original_price", "Original Price")}
                             </p>
-                            <p className="text-lg font-bold text-gray-400 line-through dark:text-lg dark:text-gray-300">
+                            <p className="text-lg font-bold text-gray-400 line-through dark:text-gray-300">
                               ₹
                               {Number(
                                 offer.original_price || 0,
@@ -857,10 +857,10 @@ const OffersPage = () => {
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-sm dark:text-gray-300">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
                               {tr("offers_offered_price", "Offered Price")}
                             </p>
-                            <p className="text-xl font-bold text-green-600 dark:text-xl dark:text-green-300">
+                            <p className="text-xl font-bold text-green-600 dark:text-green-300">
                               ₹
                               {Number(
                                 offer.offered_price || 0,
@@ -882,21 +882,21 @@ const OffersPage = () => {
                         </div>
 
                         {offer.message && (
-                          <p className="text-sm text-gray-600 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg dark:text-sm dark:text-gray-200 dark:bg-gray-950">
+                          <p className="text-sm text-gray-600 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg dark:text-gray-200 dark:bg-gray-950">
                             <MessageCircle className="w-4 h-4 inline mr-2" />"
                             {offer.message}"
                           </p>
                         )}
 
                         {offer.counter_price && (
-                          <p className="text-sm mt-2 text-blue-600 font-semibold dark:text-sm dark:text-blue-300">
+                          <p className="text-sm mt-2 text-blue-600 font-semibold dark:text-blue-300">
                             {tr("offers_counter_offer", "Counter offer")}: ₹
                             {Number(offer.counter_price || 0).toLocaleString()}
                           </p>
                         )}
                       
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-sm dark:text-slate-200">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 dark:text-xs">
+                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                             {tr("offers_next_step", "Next step")}
                           </p>
                           <p className="mt-1">{nextAction}</p>
@@ -940,7 +940,7 @@ const OffersPage = () => {
                                 "offers_counter_placeholder",
                                 "Counter",
                               )}
-                              className="w-24 text-sm dark:text-sm"
+                              className="w-24 text-sm"
                               value={counterByOfferId[offerId] || ""}
                               onChange={(event) =>
                                 setCounterByOfferId((prev) => ({
