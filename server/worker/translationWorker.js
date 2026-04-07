@@ -1,6 +1,6 @@
-import { translateText } from '../services/translateService.js';
-import db from '../db.js';
-import Queue from 'bullmq';
+const { translateText } = require('../services/translateService');
+const db = require('../config/db');
+const { Queue } = require('bullmq');
 
 // --- SQL Injection Prevention: strict whitelists ---
 const ALLOWED_ENTITY_TYPES = new Set(['post', 'user', 'category', 'subcategory', 'profile']);
@@ -34,4 +34,4 @@ translationQueue.process(async job => {
     );
   }
 });
-export default translationQueue;
+module.exports = translationQueue;

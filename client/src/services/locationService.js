@@ -101,9 +101,7 @@ const POI_CACHE_TTL_MS = 30 * 60 * 1e3;
 const POI_LOOKUP_TIMEOUT_MS = 3500;
 const PLACES_ENDPOINT_COOLDOWN_MS = 5 * 60 * 1000;
 const PLACES_RATE_LIMIT_FALLBACK_MS = 30 * 1000;
-const LOCATION_HMAC_SECRET = String(
-  import.meta.env.VITE_LOCATION_HMAC_SECRET || "",
-).trim();
+const LOCATION_HMAC_SECRET = ""; // REMOVED — HMAC is now computed server-side via /api/location/sign
 const GOOGLE_PLACES_RADIUS_METERS = 60;
 const LOCATION_POI_PROVIDER = String(
   import.meta.env.VITE_LOCATION_POI_PROVIDER || "auto",
@@ -401,37 +399,30 @@ const toHex = (buffer) =>
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
 const createLocationSignature = async (payload) => {
-  if (!LOCATION_HMAC_SECRET) return null;
-  if (
-    typeof globalThis === "undefined" ||
-    !globalThis.crypto?.subtle ||
-    typeof TextEncoder === "undefined"
-  ) {
-    return null;
-  }
+  // Server-side HMAC signing — secret never leaves the server
   try {
-    // Add nonce and timestamp to prevent replay attacks
-    const nonce = toHex(globalThis.crypto.getRandomValues(new Uint8Array(16)));
-    const signedAt = Date.now();
-    payload._nonce = nonce;
-    payload._signed_at = signedAt;
-    const encoder = new TextEncoder();
-    const key = await globalThis.crypto.subtle.importKey(
-      "raw",
-      encoder.encode(LOCATION_HMAC_SECRET),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"],
-    );
-    const canonical = stableStringify(payload);
-    const signature = await globalThis.crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(canonical),
-    );
-    return toHex(signature);
+    const { getApiOriginBase } = await import("@/lib/networkConfig");
+    const base = getApiOriginBase();
+    const token =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem("authToken") || localStorage.getItem("token")
+        : null;
+    const res = await fetch(`${base}/api/location/sign`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data._nonce) payload._nonce = data._nonce;
+    if (data._signed_at) payload._signed_at = data._signed_at;
+    return data.signature || null;
   } catch (error) {
-    debugLog("HMAC signature generation failed:", error?.message || error);
+    debugLog("Server-side HMAC signature failed:", error?.message || error);
     return null;
   }
 };

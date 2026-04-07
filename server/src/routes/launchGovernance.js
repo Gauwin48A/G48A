@@ -17,7 +17,7 @@ const router = express.Router();
 function authorizeLaunchAdmin(req, res, next) {
   const configuredToken = String(process.env.LAUNCH_GOVERNANCE_ADMIN_TOKEN || "").trim();
   if (!configuredToken) {
-    return next();
+    return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-launch-admin-token"] || "").trim();
   if (providedToken !== configuredToken) {

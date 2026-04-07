@@ -64,7 +64,7 @@ const R = () => {
         const r = await x.get(`/reviews/user/${a}`);
         c(Array.isArray(r?.reviews) ? r.reviews : []), k(r?.stats || {});
       } catch (r) {
-        console.error("Failed to fetch reviews:", r),
+        import.meta.env.DEV && console.error("Failed to fetch reviews:", r),
           p("Unable to load reviews right now. Please retry."),
           c([]),
           k(null);
@@ -102,7 +102,7 @@ const R = () => {
           f({ rating: 5, comment: "" }),
           m();
       } catch (r) {
-        console.error("Review submission failed:", r),
+        import.meta.env.DEV && console.error("Review submission failed:", r),
           d({
             title: "Submission failed",
             description: "We could not post your review. Please retry.",
@@ -136,7 +136,7 @@ const R = () => {
           ),
         );
       } catch (t) {
-        console.error("Helpful click error:", t),
+        import.meta.env.DEV && console.error("Helpful click error:", t),
           d({
             title: "Action failed",
             description: "Could not register your helpful vote. Please retry.",

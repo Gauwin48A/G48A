@@ -69,14 +69,14 @@ export const loginUser = async (loginData) => {
     throw { errors: ["Password must be at least 6 characters."] };
   }
 
-  console.log("[loginUser] Attempting login for:", loginData.email);
+  if (import.meta.env.DEV) console.log("[loginUser] Attempting login");
 
   try {
     const res = await api.post("/auth/login", loginData);
-    console.log("[loginUser] Success:", res);
+    if (import.meta.env.DEV) console.log("[loginUser] Success");
     return res;
   } catch (err) {
-    console.error("[loginUser] Error:", err);
+    if (import.meta.env.DEV) console.error("[loginUser] Error:", err);
     if (err.error) {
       throw { error: err.error };
     }

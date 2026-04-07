@@ -173,7 +173,7 @@ export default function NotificationPermission({ userId, onDismiss }) {
     }
 
     return (
-        <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 z-[60] animate-slide-up">
+        <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 z-[200] animate-slide-up">
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-4 shadow-2xl">
                 <button
                     onClick={handleDismiss}

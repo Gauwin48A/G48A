@@ -96,7 +96,7 @@ router.get("/:id", protect, async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error("Error fetching user profile:", err);
-    res.status(500).json({ error: "Failed to fetch user profile", details: err.message });
+    res.status(500).json({ error: "Failed to fetch user profile" });
   }
 });
 

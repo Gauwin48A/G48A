@@ -12,7 +12,7 @@
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="google" content="notranslate" />
     <meta name="theme-color" content="#2563eb" />
-    <!-- M17 Fix: Removed hardcoded https://example.com canonical URL -->
+    <link rel="canonical" href="/" />
 
     <!-- Resource hints — zero-cost 100-300ms savings on first API/image load -->
     <link rel="dns-prefetch" href="https://res.cloudinary.com" />
@@ -28,7 +28,7 @@
       property="og:description"
       content="Explore trusted listings, discover nearby deals, and buy or sell confidently on MHub."
     />
-    <meta property="og:url" content="https://example.com/" />
+    <meta property="og:url" content="/" />
     <meta property="og:image" content="/pwa-512x512.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
@@ -55,18 +55,18 @@
         {
           "@type": "Organization",
           "name": "MHub",
-          "url": "https://example.com",
-          "logo": "https://example.com/pwa-512x512.png",
+          "url": "https://mhub.market",
+          "logo": "https://mhub.market/pwa-512x512.png",
           "description": "Premium verified marketplace for buying and selling products",
           "sameAs": []
         },
         {
           "@type": "WebSite",
           "name": "MHub",
-          "url": "https://example.com",
+          "url": "https://mhub.market",
           "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://example.com/all-posts?search={search_term_string}",
+            "target": "https://mhub.market/all-posts?search={search_term_string}",
             "query-input": "required name=search_term_string"
           }
         }

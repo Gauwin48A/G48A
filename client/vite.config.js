@@ -31,18 +31,11 @@ const NATIVE_VENDOR_PACKAGES = new Set([
   '@capacitor/geolocation',
   '@capacitor-community/contacts'
 ]);
-const FORM_VENDOR_PACKAGES = new Set([
-  'react-hook-form',
-  '@hookform/resolvers',
-  'zod'
-]);
+const FORM_VENDOR_PACKAGES = new Set([]);
 const HTTP_VENDOR_PACKAGES = new Set([
   'axios'
 ]);
-const DATE_VENDOR_PACKAGES = new Set([
-  'date-fns',
-  'dayjs'
-]);
+const DATE_VENDOR_PACKAGES = new Set([]);
 
 function getNodeModulePackageName(id) {
   const normalized = String(id || '').replace(/\\/g, '/');

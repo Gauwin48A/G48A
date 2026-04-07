@@ -36,9 +36,7 @@ const API_RATE_LIMIT_NORMAL_SCENARIO_MAX = parsePositiveIntEnv(
   12e3,
 );
 const RATE_LIMIT_ALLOW_SIMULATED_IDS =
-  process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === undefined
-    ? process.env.NODE_ENV !== "production"
-    : process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === "true";
+  process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS === "true";
 const READY_PATHS = new Set(["/health", "/api/health", "/api/ready"]);
 const IS_DEVELOPMENT = process.env.NODE_ENV !== "production";
 const DEV_RATE_LIMIT_SKIP_PATHS = new Set([

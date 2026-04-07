@@ -736,7 +736,7 @@ const PaymentPage = () => {
               : tr("payment_select_a_plan", "Select a plan to continue")}
           </h1>
           {selectedOption ? (
-            <p className="mt-1 text-3xl font-black tabular-nums dark:text-3xl" style={{ background: 'linear-gradient(135deg, #ffffff, #a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <p className="mt-1 text-3xl font-black tabular-nums bg-gradient-to-br from-white to-indigo-300 dark:from-indigo-200 dark:to-indigo-400 bg-clip-text text-transparent">
               ₹{selectedOption.amount}
             </p>
           ) : null}

@@ -3489,7 +3489,7 @@ const ProfilePage = () => {
                                         "label",
                                         {
                                           key: r.subcategory_id || r.name,
-                                          className: `group flex items-start gap-3 rounded-2xl border p-3.5 transition-all profile-subpanel dark:border${c.subcategories?.includes(r.name) ? "border-indigo-400 bg-indigo-50/70 ring-2 ring-indigo-200/60 dark:border-indigo-400 dark:bg-indigo-900/30" : "hover:border-indigo-200 hover:bg-[var(--surface-2)] dark:hover:border-indigo-400/70"}`,
+                                          className: `group flex items-start gap-3 rounded-2xl border p-3.5 transition-all profile-subpanel dark:border ${c.subcategories?.includes(r.name) ? "border-indigo-400 bg-indigo-50/70 ring-2 ring-indigo-200/60 dark:border-indigo-400 dark:bg-indigo-900/30" : "hover:border-indigo-200 hover:bg-[var(--surface-2)] dark:hover:border-indigo-400/70"}`,
                                         },
                                         e.createElement("input", {
                                           type: "checkbox",

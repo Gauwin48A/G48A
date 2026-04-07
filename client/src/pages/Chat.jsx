@@ -76,6 +76,7 @@ const ChatPage = () => {
       } catch (err) {
         import.meta.env.DEV &&
           console.error("Failed to fetch conversations:", err);
+        setConversations([]);
       } finally {
         setLoading(!1);
       }
@@ -534,7 +535,7 @@ const ChatPage = () => {
                           {
                             key: conv.conversation_id,
                             onClick: () => selectConversation(conv),
-                            className: `p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 border-b dark:border-gray-700 transition dark:hover:bg-gray-950 dark:border-b${selectedConversation?.conversation_id === conv.conversation_id ? "bg-blue-50 dark:bg-gray-700" : ""}`,
+                            className: `p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 border-b dark:border-gray-700 transition dark:hover:bg-gray-950 dark:border-b ${selectedConversation?.conversation_id === conv.conversation_id ? "bg-blue-50 dark:bg-gray-700" : ""}`,
                           },
                           React.createElement(
                             "div",

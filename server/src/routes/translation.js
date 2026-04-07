@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const translationController = require("../controllers/translationController");
+const { protect } = require("../middleware/auth");
+
+// All translation routes require authentication
+router.use(protect);
 
 /** @route POST /process-translations - Trigger translation processing for posts */
 router.post("/process-translations", translationController.processTranslations);
