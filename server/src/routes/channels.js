@@ -9,7 +9,6 @@ const { getImageUrl } = upload;
 
 const DEFAULT_CHANNEL_POSTS_LIMIT = 20;
 const MAX_CHANNEL_POSTS_LIMIT = 100;
-const FORCE_PREMIUM_CENTREPAGE = true; // TODO: remove once payments/tiers are fully enforced
 
 let usersLegacyIdColumnAvailablePromise = null;
 let channelFollowersReadyPromise = null;
@@ -265,7 +264,7 @@ const createChannelHandler = async (req, res) => {
     if (!userId)
       return res.status(401).json({ error: "Authentication required" });
 
-    const userTier = FORCE_PREMIUM_CENTREPAGE ? "premium" : await getUserTier(userId);
+    const userTier = await getUserTier(userId);
     if (userTier !== "premium") {
       return res.status(403).json({
         error: "Premium plan required to create a CentrePage.",
@@ -320,9 +319,7 @@ router.get("/followed", protect, async (req, res) => {
  */
 router.get("/premium", protect, async (req, res) => {
   const userId = getUserId(req);
-  const channels = FORCE_PREMIUM_CENTREPAGE
-    ? await ChannelService.listChannels(userId)
-    : await ChannelService.listChannelsByTier(userId, "premium");
+  const channels = await ChannelService.listChannelsByTier(userId, "premium");
   res.json(channels);
 });
 

@@ -58,6 +58,8 @@ import {
   BookmarkCheck as Xe,
   MoreVertical as Je,
   Link as Qe,
+  ChevronDown as ChevronDownIcon,
+  ChevronUp as ChevronUpIcon,
 } from "lucide-react";
 function PostDetail() {
   const { t: h } = oe(),
@@ -94,6 +96,9 @@ function PostDetail() {
     }),
     [ownerInsightsLoading, setOwnerInsightsLoading] = i(!1),
     [ownerInsightsError, setOwnerInsightsError] = i(null),
+    [activeSection, setActiveSection] = i("overview"),
+    [collapsedSections, setCollapsedSections] = i({}),
+    sectionNavRef = Oe(null),
     U = Z(),
     resolveMessage = (t, a) => {
       if (!t) return "";
@@ -351,6 +356,22 @@ function PostDetail() {
         setSavedPost(Boolean(a?.[t]));
       });
     }, [d, r?.id, r?.post_id]),
+    L(() => {
+      const sectionIds = ["overview", "listing-details", "key-details", "specs", "location", "trust-safety", "description", "negotiation", "seller", "sponsored", "premium"];
+      const handleScroll = () => {
+        const scrollY = window.scrollY + 140;
+        let current = "overview";
+        for (const id of sectionIds) {
+          const el = document.getElementById(id);
+          if (el && el.offsetTop <= scrollY) {
+            current = id;
+          }
+        }
+        setActiveSection(current);
+      };
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }, []),
       L(() => {
         const postId = normalizeId(r?.post_id || r?.id || d);
         if (!postId || !isOwnerView) return;
@@ -410,6 +431,26 @@ function PostDetail() {
         r?.seller?.id,
         r?.user?.id,
       ]),
+    L(() => {
+      if (!r) return;
+      const sectionIds = sectionNavItems.map((item) => item.id);
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setActiveSection(entry.target.id);
+              break;
+            }
+          }
+        },
+        { rootMargin: "-20% 0px -60% 0px", threshold: 0 },
+      );
+      sectionIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      });
+      return () => observer.disconnect();
+    }, [r, sectionNavItems]),
     j)
   )
     return e.createElement(
@@ -1339,6 +1380,22 @@ function PostDetail() {
         tone: S ? "text-emerald-500" : "text-gray-400",
       },
       {
+        key: "reliability",
+        label: tr("reliability_score", "Reliability score"),
+        value: sellerTrustScore >= 80
+          ? tr("high_reliability", "High Reliability")
+          : sellerTrustScore >= 60
+            ? tr("good_reliability", "Good Reliability")
+            : sellerTrustScore >= 40
+              ? tr("fair_reliability", "Fair")
+              : tr("building_trust", "Building trust"),
+        icon: Ne,
+        tone: sellerTrustScore >= 80 ? "text-emerald-500"
+          : sellerTrustScore >= 60 ? "text-teal-500"
+          : sellerTrustScore >= 40 ? "text-amber-500"
+          : "text-gray-400",
+      },
+      {
         key: "response",
         label: tr("response_profile", "Response profile"),
         value: responseValue,
@@ -1401,6 +1458,33 @@ function PostDetail() {
         return;
       }
       w(!0);
+    },
+    toggleSection = (sectionKey) => {
+      setCollapsedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+    },
+    renderSectionHeader = (sectionKey, icon, title, extraClass) => {
+      const isCollapsed = collapsedSections[sectionKey];
+      return e.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: () => toggleSection(sectionKey),
+          className: `flex items-center justify-between w-full gap-2 group cursor-pointer ${extraClass || ""}`,
+        },
+        e.createElement(
+          "div",
+          { className: "flex items-center gap-2" },
+          icon && e.createElement(icon, { className: "w-5 h-5" }),
+          e.createElement(
+            "h3",
+            { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
+            title,
+          ),
+        ),
+        e.createElement(isCollapsed ? ChevronDownIcon : ChevronUpIcon, {
+          className: "w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform group-hover:text-gray-600 dark:group-hover:text-gray-300",
+        }),
+      );
     },
     K = [
       {
@@ -1647,7 +1731,7 @@ function PostDetail() {
         e.createElement(
           te,
           {
-            className: `px-3 py-1 text-xs font-bold rounded-full dark:text-xs${r.tier?.toLowerCase() === "premium" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" : r.tier?.toLowerCase() === "silver" ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white" : "bg-gradient-to-r from-green-400 to-emerald-500 text-white"}`,
+            className: `px-3 py-1 text-xs font-bold rounded-full dark:text-xs ${r.tier?.toLowerCase() === "premium" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" : r.tier?.toLowerCase() === "silver" ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white" : "bg-gradient-to-r from-green-400 to-emerald-500 text-white"}`,
           },
           e.createElement(ve, { className: "w-3 h-3 mr-1 inline" }),
           tierLabel,
@@ -1757,7 +1841,7 @@ function PostDetail() {
                 type: "button",
                 onClick: () => m(a),
                 "aria-current": a === activeIndex ? "true" : "false",
-                className: `flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all dark:border-2${a === activeIndex ? "border-blue-500 scale-105" : "border-transparent opacity-60"}`,
+                className: `flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all dark:border-2 ${a === activeIndex ? "border-blue-500 scale-105" : "border-transparent opacity-60"}`,
               },
               e.createElement("img", {
                 src: cee(t),
@@ -1779,64 +1863,39 @@ function PostDetail() {
   const sectionNavNode =
     sectionNavItems.length > 1
       ? e.createElement(
-          g,
+          "div",
           {
+            ref: sectionNavRef,
             className:
               "mhub-post-section-nav mhub-post-section-banner mhub-premium-surface border-0 shadow-lg rounded-2xl dark:border-0",
             id: "page-sections",
           },
           e.createElement(
-            p,
-            { className: "px-4 py-3 sm:px-5 sm:py-4" },
+            "div",
+            { className: "px-3 py-2.5 sm:px-4 sm:py-3" },
             e.createElement(
               "div",
               {
                 className:
-                  "mhub-section-nav-title flex items-center justify-between gap-2",
-              },
-              e.createElement(
-                "div",
-                { className: "flex items-center gap-2" },
-                e.createElement(Qe, {
-                  className: "w-4 h-4 text-blue-500 dark:text-blue-300",
-                }),
-                e.createElement(
-                  "p",
-                  {
-                    className:
-                      "text-sm font-semibold text-gray-900 dark:text-white dark:text-sm dark:text-gray-100",
-                  },
-                  tr("jump_to_section", "Jump to section"),
-                ),
-              ),
-              e.createElement(
-                "span",
-                { className: "mhub-section-nav-badge" },
-                tr("quick_jump", "Quick jump"),
-              ),
-            ),
-            e.createElement(
-              "p",
-              {
-                className:
-                  "mhub-section-nav-hint text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 mt-1",
-              },
-              tr("jump_hint", "Tap a section to jump instantly."),
-            ),
-            e.createElement(
-              "div",
-              {
-                className:
-                  "mhub-section-nav-items flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide mt-2 -mx-1 px-1 pb-1",
+                  "flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-0.5",
               },
               sectionNavItems.map((item) =>
                 e.createElement(
-                  "a",
+                  "button",
                   {
                     key: item.key,
-                    href: `#${item.id}`,
-                    className:
-                      "inline-flex items-center px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/40 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 dark:hover:bg-blue-900/30 dark:hover:border-blue-700 transition-colors whitespace-nowrap dark:border dark:bg-slate-950 dark:text-xs dark:hover:bg-blue-950/20 dark:hover:text-blue-300 dark:hover:border-blue-600/40",
+                    type: "button",
+                    onClick: (ev) => {
+                      ev.preventDefault();
+                      const el = document.getElementById(item.id);
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        setActiveSection(item.id);
+                      }
+                    },
+                    className: activeSection === item.id
+                      ? "inline-flex items-center px-3 py-1.5 rounded-full border-2 border-blue-500 bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 whitespace-nowrap transition-all duration-200"
+                      : "inline-flex items-center px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/40 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 dark:hover:bg-blue-900/30 dark:hover:border-blue-700 transition-all duration-200 whitespace-nowrap",
                   },
                   item.label,
                 ),
@@ -1872,7 +1931,7 @@ function PostDetail() {
           e.createElement(
             "span",
             {
-              className: `inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold ring-1 ring-inset dark:text-sm${statusBadgeClass}`,
+              className: `inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold ring-1 ring-inset dark:text-sm ${statusBadgeClass}`,
             },
             e.createElement("span", {
               className: `w-2 h-2 rounded-full ${statusDotClass}`,
@@ -2257,10 +2316,10 @@ function PostDetail() {
               variant: "ghost",
               onClick: () => navigateBack(U, backTarget),
               className:
-                "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-4 flex-shrink-0 dark:hover:bg-gray-950",
+                "inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-200/60 dark:border-gray-600/60 px-3 py-1.5 flex-shrink-0 backdrop-blur-sm transition-all",
             },
-            e.createElement($, { className: "w-5 h-5 mr-2" }),
-            tr("back", "Back"),
+            e.createElement($, { className: "w-4 h-4" }),
+            e.createElement("span", { className: "text-sm font-medium" }, tr("back", "Back")),
           ),
           e.createElement(
             "span",
@@ -2568,7 +2627,7 @@ function PostDetail() {
                   onClick: handleContactSeller,
                   disabled: contactCtaDisabled,
                   title: contactCtaDisabled ? contactCtaReason : undefined,
-                  className: `w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 text-base rounded-xl shadow-lg hover:shadow-xl transition-all dark:bg-gradient-to-r dark:text-white dark:text-base${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                  className: `w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 text-base rounded-xl shadow-lg hover:shadow-xl transition-all dark:bg-gradient-to-r dark:text-white dark:text-base ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
                 e.createElement(fe, { className: "w-6 h-6 mr-3" }),
                 tr(
@@ -2583,7 +2642,7 @@ function PostDetail() {
                   variant: "outline",
                   disabled: offerCtaDisabled,
                   title: offerCtaDisabled ? offerCtaReason : undefined,
-                  className: `w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-4 text-base rounded-xl shadow-lg transition-all dark:bg-gradient-to-r dark:text-gray-100 dark:text-base${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                  className: `w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-4 text-base rounded-xl shadow-lg transition-all dark:bg-gradient-to-r dark:text-gray-100 dark:text-base ${offerCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
                 e.createElement(ke, { className: "w-5 h-5 mr-2" }),
                 tr("make_an_offer", "Make an Offer"),
@@ -2905,16 +2964,8 @@ function PostDetail() {
             e.createElement(
               p,
               { className: "p-5" },
-              e.createElement(
-                "div",
-                { className: "flex items-center gap-2 mb-3" },
-                e.createElement(xe, { className: "w-5 h-5 text-blue-500 dark:text-blue-300" }),
-                e.createElement(
-                  "h3",
-                  { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
-                  tr("listing_details", "Listing details"),
-                ),
-              ),
+              renderSectionHeader("listing-details", xe, tr("listing_details", "Listing details"), "mb-3"),
+              !collapsedSections["listing-details"] &&
               e.createElement(
                 "div",
                 { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" },
@@ -2960,16 +3011,8 @@ function PostDetail() {
             e.createElement(
               p,
               { className: "p-5" },
-              e.createElement(
-                "div",
-                { className: "flex items-center gap-2 mb-3" },
-                e.createElement(ve, { className: "w-5 h-5 text-purple-500 dark:text-purple-300" }),
-                e.createElement(
-                  "h3",
-                  { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
-                  tr("key_details", "Key details"),
-                ),
-              ),
+              renderSectionHeader("key-details", ve, tr("key_details", "Key details"), "mb-3"),
+              !collapsedSections["key-details"] &&
               e.createElement(
                 "div",
                 { className: "divide-y divide-gray-100 dark:divide-gray-800" },
@@ -3015,16 +3058,8 @@ function PostDetail() {
             e.createElement(
               p,
               { className: "p-5" },
-              e.createElement(
-                "div",
-                { className: "flex items-center gap-2 mb-3" },
-                e.createElement(xe, { className: "w-5 h-5 text-blue-500 dark:text-blue-300" }),
-                e.createElement(
-                  "h3",
-                  { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
-                  tr("specifications", "Specifications"),
-                ),
-              ),
+              renderSectionHeader("specs", xe, tr("specifications", "Specifications"), "mb-3"),
+              !collapsedSections["specs"] &&
               e.createElement(
                 "div",
                 { className: "divide-y divide-gray-100 dark:divide-gray-800" },
@@ -3067,21 +3102,16 @@ function PostDetail() {
           e.createElement(
             p,
             { className: "p-5 space-y-3" },
+            renderSectionHeader("location", pe, tr("location_meetup", "Location & meetup")),
+            !collapsedSections["location"] &&
             e.createElement(
-              "div",
-              { className: "flex items-center gap-2" },
-              e.createElement(pe, { className: "w-5 h-5 text-orange-500 dark:text-orange-300" }),
-              e.createElement(
-                "h3",
-                { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
-                tr("location_meetup", "Location & meetup"),
-              ),
-            ),
+              e.Fragment,
+              null,
             e.createElement(
               "div",
               {
                 className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-3",
               },
               e.createElement(
                 "div",
@@ -3125,6 +3155,7 @@ function PostDetail() {
               { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-xs dark:text-gray-300" },
               locationHint,
             ),
+            ),
           ),
         ),
         e.createElement(
@@ -3137,16 +3168,11 @@ function PostDetail() {
           e.createElement(
             p,
             { className: "p-5" },
+            renderSectionHeader("trust-safety", Ne, tr("trust_safety", "Trust & Safety"), "mb-4"),
+            !collapsedSections["trust-safety"] &&
             e.createElement(
-              "div",
-              { className: "flex items-center gap-2 mb-4" },
-              e.createElement(Ne, { className: "w-5 h-5 text-green-500 dark:text-green-300" }),
-              e.createElement(
-                "h3",
-                { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
-                tr("trust_safety", "Trust & Safety"),
-              ),
-            ),
+              e.Fragment,
+              null,
             e.createElement(
               "div",
               {
@@ -3244,6 +3270,7 @@ function PostDetail() {
                 ),
               ),
             ),
+            ),
           ),
         ),
         e.createElement(
@@ -3256,15 +3283,11 @@ function PostDetail() {
           e.createElement(
             p,
             { className: "p-5" },
+            renderSectionHeader("description", x, tr("description", "Description"), "mb-3"),
+            !collapsedSections["description"] &&
             e.createElement(
-              "h3",
-              {
-                className:
-                  "font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2 dark:text-gray-100",
-              },
-              e.createElement(x, { className: "w-5 h-5 text-blue-500 dark:text-blue-300" }),
-              tr("description", "Description"),
-            ),
+              e.Fragment,
+              null,
             e.createElement(
               "div",
               {
@@ -3320,6 +3343,7 @@ function PostDetail() {
                   ? tr("show_less", "Show less")
                   : tr("read_more", "Read more"),
               ),
+            ),
           ),
         ),
         e.createElement(
@@ -3584,7 +3608,7 @@ function PostDetail() {
                   onClick: handleContactSeller,
                   disabled: contactCtaDisabled,
                   title: contactCtaDisabled ? contactCtaReason : undefined,
-                  className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-white dark:text-xs dark:sm:text-sm${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+                  className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-white dark:text-xs dark:sm:text-sm ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
                 tr("contact_seller", "Contact Seller"),
               ),

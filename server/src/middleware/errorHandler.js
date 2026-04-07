@@ -71,9 +71,9 @@ const errorHandler = (err, req, res, next) => {
     success: false
   };
 
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV === "development") {
     response.stack = err.stack;
-    response.rawError = err;
+    response.details = err.message;
   }
 
   res.status(statusCode).json(response);

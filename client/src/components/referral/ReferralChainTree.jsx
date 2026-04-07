@@ -363,6 +363,7 @@ export default function ReferralChainTree() {
   const [stats, setStats] = useState(null);
   const [statusSummary, setStatusSummary] = useState(null);
   const [statusMap, setStatusMap] = useState({});
+  const [levelBreakdown, setLevelBreakdown] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -403,6 +404,10 @@ export default function ReferralChainTree() {
         directEarnings: Number(ref?.direct_earnings || 0),
         indirectEarnings: Number(ref?.indirect_earnings || 0),
       });
+
+      // Compute level-by-level breakdown from tree
+      const breakdown = computeLevelBreakdown(tree?.tree || tree, newStatusMap);
+      setLevelBreakdown(breakdown);
     } catch (err) {
       setError(err?.message || "Failed to load referral network");
     } finally {
@@ -493,6 +498,9 @@ export default function ReferralChainTree() {
       {/* Stats */}
       {stats && <ChainStats stats={stats} statusSummary={statusSummary} />}
 
+      {/* Level Breakdown Chart */}
+      {levelBreakdown.length > 0 && <LevelBreakdownChart levels={levelBreakdown} />}
+
       {/* Reward Rules */}
       <RewardRulesCard />
 
@@ -532,4 +540,101 @@ function countNodes(node) {
     }
   }
   return count;
+}
+
+const REWARD_PER_LEVEL = [0, 100, 40, 20, 10, 5];
+
+function computeLevelBreakdown(tree, statusMap) {
+  const levels = [];
+  for (let i = 1; i <= 5; i++) {
+    levels.push({ level: i, count: 0, rewarded: 0, pending: 0, qualified: 0, potentialCoins: 0, earnedCoins: 0 });
+  }
+  function walk(node, depth) {
+    if (!node || depth > 5) return;
+    if (depth >= 1 && depth <= 5) {
+      const idx = depth - 1;
+      levels[idx].count += 1;
+      const status = statusMap[node.id];
+      if (status?.status === "rewarded") {
+        levels[idx].rewarded += 1;
+        levels[idx].earnedCoins += REWARD_PER_LEVEL[depth];
+      } else if (status?.status === "qualified") {
+        levels[idx].qualified += 1;
+        levels[idx].potentialCoins += REWARD_PER_LEVEL[depth];
+      } else {
+        levels[idx].pending += 1;
+      }
+    }
+    if (node.children) {
+      for (const child of node.children) {
+        walk(child, depth + 1);
+      }
+    }
+  }
+  walk(tree, 0);
+  return levels;
+}
+
+function LevelBreakdownChart({ levels }) {
+  const maxCount = Math.max(1, ...levels.map((l) => l.count));
+  const hasData = levels.some((l) => l.count > 0);
+  if (!hasData) return null;
+
+  return (
+    <div className="bg-white dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-6">
+      <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        Network Depth Breakdown
+      </h3>
+      <div className="space-y-3">
+        {levels.map((lvl) => {
+          const colorIdx = Math.min(lvl.level - 1, LEVEL_COLORS.length - 1);
+          const pct = Math.round((lvl.count / maxCount) * 100);
+          const totalCoins = lvl.earnedCoins + lvl.potentialCoins;
+          return (
+            <div key={lvl.level} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r ${LEVEL_COLORS[colorIdx]} text-white`}
+                  >
+                    L{lvl.level}
+                  </span>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">
+                    {lvl.count} referral{lvl.count !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {lvl.rewarded > 0 && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      {lvl.rewarded} rewarded
+                    </span>
+                  )}
+                  {lvl.qualified > 0 && (
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                      {lvl.qualified} qualified
+                    </span>
+                  )}
+                  {totalCoins > 0 && (
+                    <span className="text-[10px] font-bold text-yellow-600 dark:text-yellow-400">
+                      {lvl.earnedCoins > 0 ? `${lvl.earnedCoins}` : ""}
+                      {lvl.earnedCoins > 0 && lvl.potentialCoins > 0 ? " + " : ""}
+                      {lvl.potentialCoins > 0 ? `${lvl.potentialCoins} pending` : ""}
+                      {" "}🪙
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r ${LEVEL_COLORS[colorIdx]} transition-all duration-500`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }

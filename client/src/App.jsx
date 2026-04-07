@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect } from "react";
-import { Routes, Route, Navigate, useNavigate, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, Outlet, useLocation as useRouterLocation } from "react-router-dom";
 import GreenNavbar from "./components/GreenNavbar.jsx";
 import PullToRefreshWrapper from "./components/PullToRefreshWrapper.jsx";
 import LocationGate from "./components/LocationGate.jsx";
@@ -194,6 +194,14 @@ function RouteBoundary() {
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useRouterLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function LocationBanner() {
   const { t } = useTranslation();
   const { error, retry, loading, skipForNow, permissionGranted, userSkipped } = useLocation();
@@ -343,6 +351,7 @@ function AppShell() {
         <>
           <GreenNavbar />
           <RouteTelemetry />
+          <ScrollToTop />
           <PullToRefreshWrapper>
           <main
             className="flex-1 app-main"
@@ -375,7 +384,6 @@ function AppShell() {
                   <Route path="/add-post" element={<RequireAuth><AddPostPage /></RequireAuth>} />
                   <Route path="/post-welcome" element={<RequireAuth><PostWelcomePage /></RequireAuth>} />
                   <Route path="/sell" element={<RequireAuth><AddPostPage /></RequireAuth>} />
-                  <Route path="/category-mode" element={<Navigate to="/category-hub" replace />} />
                   <Route path="/category-hub" element={<CategoryHubPage />} />
                   <Route path="/edit-post/:postId" element={<RequireAuth><EditPostPage /></RequireAuth>} />
                   <Route path="/tier-selection" element={<RequireAuth><TierSelectionPage /></RequireAuth>} />

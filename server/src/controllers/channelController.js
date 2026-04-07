@@ -36,7 +36,7 @@ exports.createChannel = async (req, res) => {
     res.json({ channel: result.rows[0], message: 'Channel created successfully.' });
   } catch (err) {
     logger.error('Create channel error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -85,7 +85,7 @@ exports.updateChannel = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Update channel error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -121,7 +121,7 @@ exports.createChannelPost = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Create channel post error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -143,7 +143,7 @@ exports.getAllChannels = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     logger.error('Get all channels error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -167,6 +167,6 @@ exports.followChannel = async (req, res) => {
     return res.json({ message: 'Followed channel' });
   } catch (err) {
     logger.error('Follow channel error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

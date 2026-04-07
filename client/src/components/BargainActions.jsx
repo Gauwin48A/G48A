@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getApiOriginBase } from "@/lib/networkConfig";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE = getApiOriginBase();
 
 const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
+  const { toast } = useToast();
   const [offerSent, setOfferSent] = useState(false);
   const [sentAmount, setSentAmount] = useState(null);
   const [sending, setSending] = useState(false);
@@ -72,11 +74,11 @@ const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
           navigator.vibrate && navigator.vibrate(50);
         } else {
           const data = await response.json();
-          alert(data.message || "Failed to send offer");
+          toast({ description: data.message || "Failed to send offer", variant: "destructive" });
         }
       } catch (err) {
         console.error("Offer error:", err);
-        alert("Failed to send offer. Please try again.");
+        toast({ description: "Failed to send offer. Please try again.", variant: "destructive" });
       } finally {
         setSending(false);
       }

@@ -1,8 +1,11 @@
 -- =====================================================
 -- MHUB ULTIMATE DATABASE SCRIPT
--- Version: 6.0 (Production Ready - Consolidated)
+-- Version: 6.0 (Consolidated)
 -- =====================================================
--- This is the ONLY script you need to run!
+-- !! DANGER: DEVELOPMENT ONLY — DO NOT RUN IN PRODUCTION !!
+-- This script DROPS ALL TABLES and inserts fake seed data.
+-- For production schema, use individual migrations in /migrations/.
+-- =====================================================
 -- Combines: MASTER_COMPLETE + seed_500_posts + seed_50_profiles + indexes
 -- =====================================================
 -- Run: \i 'C:/Users/laksh/GITHUB/AG/Mhub/server/database/MHUB_ULTIMATE.sql'
@@ -10,6 +13,14 @@
 -- =====================================================
 -- WARNING: This will DROP all existing tables and recreate them!
 -- =====================================================
+
+-- Safety gate: abort if connected to a production-tagged database
+DO $$
+BEGIN
+  IF current_setting('app.environment', true) = 'production' THEN
+    RAISE EXCEPTION 'MHUB_ULTIMATE.sql must NOT be run against a production database!';
+  END IF;
+END $$;
 
 -- ===========================================
 -- STEP 0: DROP ALL INDEXES FIRST (to avoid orphaned index errors)

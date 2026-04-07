@@ -1270,7 +1270,7 @@ const te = 12,
                       key: t,
                       type: "button",
                       onClick: () => toggleGuestInterest(t),
-                      className: `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition dark:border dark:text-xs${
+                      className: `inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition dark:border dark:text-xs ${
                         guestInterests.includes(t)
                           ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                           : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"

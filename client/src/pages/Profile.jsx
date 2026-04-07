@@ -4089,7 +4089,7 @@ const ProfilePage = () => {
                     key: a,
                     onClick: () => r.link && p(r.link),
                     className:
-                      `flex items-center justify-between p-4 rounded-2xl border dark:border${r.border} bg-gradient-to-br dark:bg-gradient-to-br${r.accent} shadow-sm hover:shadow-md transition cursor-pointer`,
+                      `flex items-center justify-between p-4 rounded-2xl border dark:border ${r.border} bg-gradient-to-br dark:bg-gradient-to-br ${r.accent} shadow-sm hover:shadow-md transition cursor-pointer`,
                   },
                   e.createElement(
                     "div",

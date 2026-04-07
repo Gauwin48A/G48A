@@ -30,6 +30,7 @@ import {
   FaChevronUp as Uo,
   FaBolt as zo,
   FaTimes as Jo,
+  FaExchangeAlt as CompareIcon,
 } from "react-icons/fa";
 import { useNavigate as Je, useLocation as Ke } from "react-router-dom";
 import { useFilter as We } from "@/context/FilterContext";
@@ -908,7 +909,9 @@ const ve = 5,
       [updatedPulse, setUpdatedPulse] = g(!1),
       [autoRefreshEnabled, setAutoRefreshEnabled] = g(!1),
       [showBackToTop, setShowBackToTop] = g(!1),
-      [showAllQuickFilters, setShowAllQuickFilters] = g(!1);
+      [showAllQuickFilters, setShowAllQuickFilters] = g(!1),
+      [compareItems, setCompareItems] = g([]),
+      [showComparePanel, setShowComparePanel] = g(!1);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { density, setDensity } = usePageDensity("mhub_allposts_density");
     const languageRef = k(l);
@@ -2530,6 +2533,30 @@ const ve = 5,
         },
         [C, addCartItem, isInCartItem, removeCartItem, s, activeApp],
       ),
+      toggleCompare = x(
+        (post) => {
+          const postId = I(post?.post_id || post?.id);
+          if (!postId) return;
+          setCompareItems((prev) => {
+            const exists = prev.find((p) => I(p?.post_id || p?.id) === postId);
+            if (exists) return prev.filter((p) => I(p?.post_id || p?.id) !== postId);
+            if (prev.length >= 4) {
+              M(s("compare_max", { defaultValue: "Maximum 4 items to compare" }));
+              setTimeout(() => M(""), 2e3);
+              return prev;
+            }
+            return [...prev, post];
+          });
+        },
+        [I, s],
+      ),
+      isInCompare = x(
+        (postId) => {
+          const id = I(postId);
+          return compareItems.some((p) => I(p?.post_id || p?.id) === id);
+        },
+        [compareItems, I],
+      ),
       je = async (e) => {
         const a = I(e);
         if (!a) return;
@@ -3343,6 +3370,17 @@ const ve = 5,
                           e.aadhaar_verified ||
                           e.pan_verified
                         ),
+                        trustScore = Number(e.trust?.score ?? e.user?.trust?.score ?? e.user?.trust_score ?? e.trust_score ?? 0),
+                        reliabilityLabel = trustScore >= 80 ? s("high_reliability", { defaultValue: "High Reliability" })
+                          : trustScore >= 60 ? s("good_reliability", { defaultValue: "Good Reliability" })
+                          : trustScore >= 40 ? s("fair_reliability", { defaultValue: "Fair" })
+                          : "",
+                        reliabilityCls = trustScore >= 80 ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700"
+                          : trustScore >= 60 ? "bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700"
+                          : "bg-gray-50 dark:bg-gray-800/40 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700",
+                        responseTimeLabel = trustScore >= 70 ? s("fast_response", { defaultValue: "Fast Response" })
+                          : trustScore >= 40 ? s("avg_response", { defaultValue: "Avg Response" })
+                          : "",
                         _ = String(e.description || ""),
                         d = Be === a,
                         Oe = _.length >= 120,
@@ -3518,23 +3556,62 @@ const ve = 5,
                                   "span",
                                   {
                                     className:
-                                      "mhub-chip inline-flex items-center gap-1 px-2 py-0.5 text-emerald-700 dark:text-emerald-300 text-xs font-semibold rounded-full dark:text-xs",
-                                    title: `KYC Verified${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
+                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full border border-blue-200 dark:border-blue-700 dark:text-xs shadow-sm",
+                                    title: `Verified Seller${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
                                   },
                                   r.createElement(
                                     "svg",
                                     {
-                                      className: "w-3 h-3",
+                                      className: "w-3.5 h-3.5 text-blue-500 dark:text-blue-400",
                                       fill: "currentColor",
                                       viewBox: "0 0 20 20",
                                     },
                                     r.createElement("path", {
                                       fillRule: "evenodd",
-                                      d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                      d: "M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
                                       clipRule: "evenodd",
                                     }),
                                   ),
                                   s("verified", { defaultValue: "Verified" }),
+                                ),
+                              !F &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-semibold rounded-full border border-amber-200 dark:border-amber-700 dark:text-[10px]",
+                                  },
+                                  s("new_seller", { defaultValue: "New Seller" }),
+                                ),
+                              reliabilityLabel &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      `inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border ${reliabilityCls}`,
+                                    title: `${s("reliability_score", { defaultValue: "Reliability Score" })}: ${trustScore}%`,
+                                  },
+                                  r.createElement(
+                                    "svg",
+                                    { className: "w-3 h-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+                                    r.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" }),
+                                  ),
+                                  reliabilityLabel,
+                                ),
+                              responseTimeLabel &&
+                                r.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-[10px] font-semibold rounded-full border border-purple-200 dark:border-purple-700",
+                                    title: s("avg_response_time", { defaultValue: "Average response time" }),
+                                  },
+                                  r.createElement(
+                                    "svg",
+                                    { className: "w-3 h-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+                                    r.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" }),
+                                  ),
+                                  responseTimeLabel,
                                 ),
                               ratingLabel &&
                                 r.createElement(
@@ -3908,7 +3985,7 @@ const ve = 5,
                             r.createElement(
                               "button",
                               {
-                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border${
+                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
                                   savedPosts[a]
                                     ? "border-blue-600 bg-blue-600 text-white"
                                     : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200"
@@ -3928,7 +4005,7 @@ const ve = 5,
                             r.createElement(
                               "button",
                               {
-                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border${
+                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
                                   inCart
                                     ? "border-emerald-500 bg-emerald-500 text-white"
                                     : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200"
@@ -3942,6 +4019,24 @@ const ve = 5,
                                   : s("add_to_cart", { defaultValue: "Add to Cart" }),
                               },
                               r.createElement(Yo, { className: "w-3.5 h-3.5" }),
+                            ),
+                            r.createElement(
+                              "button",
+                              {
+                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
+                                  isInCompare(a)
+                                    ? "border-purple-500 bg-purple-500 text-white"
+                                    : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200"
+                                }`,
+                                onClick: () => toggleCompare(e),
+                                title: isInCompare(a)
+                                  ? s("in_compare", { defaultValue: "In Compare" })
+                                  : s("compare", { defaultValue: "Compare" }),
+                                "aria-label": isInCompare(a)
+                                  ? s("in_compare", { defaultValue: "In Compare" })
+                                  : s("compare", { defaultValue: "Compare" }),
+                              },
+                              r.createElement(CompareIcon, { className: "w-3.5 h-3.5" }),
                             ),
                             r.createElement(
                               "span",
@@ -4091,6 +4186,144 @@ const ve = 5,
           url: shareDialogUrl,
           title: s("share", { defaultValue: "Share post" }),
         }),
+        compareItems.length > 0 &&
+          r.createElement(
+            "div",
+            {
+              className:
+                "fixed bottom-20 left-1/2 -translate-x-1/2 z-[9998] bg-purple-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 dark:bg-purple-700",
+            },
+            r.createElement(CompareIcon, { className: "w-4 h-4" }),
+            r.createElement(
+              "span",
+              { className: "text-sm font-semibold" },
+              `${compareItems.length} ${s("items_to_compare", { defaultValue: "items selected" })}`,
+            ),
+            r.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: () => setShowComparePanel(!0),
+                className:
+                  "px-3 py-1.5 bg-white text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-50 transition",
+              },
+              s("compare_now", { defaultValue: "Compare" }),
+            ),
+            r.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: () => setCompareItems([]),
+                className: "ml-1 p-1 hover:bg-purple-500 rounded-full transition",
+                "aria-label": "Clear compare",
+              },
+              r.createElement(Jo, { className: "w-3 h-3" }),
+            ),
+          ),
+        showComparePanel &&
+          compareItems.length > 0 &&
+          r.createElement(
+            "div",
+            {
+              className: "fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center",
+              onClick: (ev) => { if (ev.target === ev.currentTarget) setShowComparePanel(!1); },
+            },
+            r.createElement(
+              "div",
+              {
+                className:
+                  "mhub-premium-surface w-full max-w-4xl max-h-[85vh] overflow-auto rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 animate-in slide-in-from-bottom-8 sm:m-4",
+              },
+              r.createElement(
+                "div",
+                { className: "flex items-center justify-between mb-4" },
+                r.createElement(
+                  "h2",
+                  { className: "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2" },
+                  r.createElement(CompareIcon, { className: "w-5 h-5 text-purple-500" }),
+                  s("compare_products", { defaultValue: "Compare Products" }),
+                ),
+                r.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: () => setShowComparePanel(!1),
+                    className: "p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition",
+                  },
+                  r.createElement(Jo, { className: "w-4 h-4" }),
+                ),
+              ),
+              r.createElement(
+                "div",
+                { className: "overflow-x-auto" },
+                r.createElement(
+                  "table",
+                  { className: "w-full text-sm border-collapse" },
+                  r.createElement(
+                    "thead",
+                    null,
+                    r.createElement(
+                      "tr",
+                      null,
+                      r.createElement("th", { className: "text-left p-3 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 w-28" }, s("spec", { defaultValue: "Spec" })),
+                      compareItems.map((item) =>
+                        r.createElement(
+                          "th",
+                          { key: I(item?.post_id || item?.id), className: "p-3 border-b border-gray-200 dark:border-gray-700 min-w-[160px]" },
+                          r.createElement(
+                            "div",
+                            { className: "flex flex-col items-center gap-2" },
+                            r.createElement("img", {
+                              src: Ne(item),
+                              alt: item?.title || "",
+                              className: "w-16 h-16 rounded-xl object-cover",
+                              onError: (ev) => { ev.target.src = "/placeholder.svg"; },
+                            }),
+                            r.createElement("span", { className: "text-xs font-semibold text-gray-900 dark:text-white text-center line-clamp-2" }, item?.title || ""),
+                            r.createElement(
+                              "button",
+                              {
+                                type: "button",
+                                onClick: () => toggleCompare(item),
+                                className: "text-[10px] text-red-500 hover:text-red-700 font-medium",
+                              },
+                              s("remove", { defaultValue: "Remove" }),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  r.createElement(
+                    "tbody",
+                    null,
+                    [
+                      { key: "price", label: s("price", { defaultValue: "Price" }), get: (item) => resolvePostPriceValue(item) > 0 ? formatCurrency(resolvePostPriceValue(item)) : "-" },
+                      { key: "condition", label: s("condition", { defaultValue: "Condition" }), get: (item) => item?.condition || item?.item_condition || "-" },
+                      { key: "brand", label: s("brand", { defaultValue: "Brand" }), get: (item) => item?.brand || item?.brand_name || "-" },
+                      { key: "model", label: s("model", { defaultValue: "Model" }), get: (item) => item?.model || item?.model_name || "-" },
+                      { key: "location", label: s("location", { defaultValue: "Location" }), get: (item) => item?.location || item?.city || item?.area || "-" },
+                      { key: "category", label: s("category", { defaultValue: "Category" }), get: (item) => item?.category_name || item?.category || "-" },
+                      { key: "seller", label: s("seller", { defaultValue: "Seller" }), get: (item) => item?.user?.name || item?.user_name || item?.username || "-" },
+                    ].map((row) =>
+                      r.createElement(
+                        "tr",
+                        { key: row.key, className: "border-b border-gray-100 dark:border-gray-800" },
+                        r.createElement("td", { className: "p-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide" }, row.label),
+                        compareItems.map((item) =>
+                          r.createElement(
+                            "td",
+                            { key: `${row.key}-${I(item?.post_id || item?.id)}`, className: "p-3 text-sm text-gray-900 dark:text-gray-100 text-center" },
+                            row.get(item),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
       ),
     );
   };

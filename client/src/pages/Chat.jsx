@@ -458,7 +458,7 @@ const ChatPage = () => {
               React.createElement(
                 "div",
                 {
-                  className: `w-full md:w-1/3 border-r dark:border-gray-700 flex flex-col dark:border-r${selectedConversation ? "hidden md:flex" : "flex"}`,
+                  className: `w-full md:w-1/3 border-r dark:border-gray-700 flex flex-col ${selectedConversation ? "hidden md:flex" : "flex"}`,
                 },
                 React.createElement(
                   "div",

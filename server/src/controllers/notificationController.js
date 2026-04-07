@@ -434,7 +434,7 @@ exports.markAsRead = async (req, res) => {
     return res.json({ success: true, notificationId });
   } catch (err) {
     logger.error("Error marking notification as read:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -467,7 +467,7 @@ exports.markAllAsRead = async (req, res) => {
     return res.json({ success: true, markedCount: result.rows[0]?.marked_count || 0 });
   } catch (err) {
     logger.error("Error marking all notifications as read:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -505,7 +505,7 @@ exports.deleteNotification = async (req, res) => {
     return res.json({ success: true, deleted: notificationId });
   } catch (err) {
     logger.error("Error deleting notification:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -562,7 +562,7 @@ exports.snoozeNotification = async (req, res) => {
     return res.json({ success: true, item: result.rows[0] });
   } catch (err) {
     logger.error("Error snoozing notification:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -611,7 +611,7 @@ exports.getNotificationPreferences = async (req, res) => {
     return res.json(result.rows[0]);
   } catch (err) {
     logger.error("Error fetching notification preferences:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -683,7 +683,7 @@ exports.updateNotificationPreferences = async (req, res) => {
     return res.json(result.rows[0]);
   } catch (err) {
     logger.error("Error updating notification preferences:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

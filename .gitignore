@@ -27,6 +27,11 @@ yarn-error.log*
 /server/backups/
 /server/uploads/
 /server/logs/
+
+# Security: dev-only credential generation scripts (never deploy)
+/server/generate-sql.js
+/server/generateHash.js
+
 /server/docs/project/CONTINUOUS_IMPROVEMENT_REPORT.json
 /server/docs/project/RELEASE_CLEANUP_CHECKLIST.json
 /server/docs/project/SAFE_E2E_IMPLEMENTATION_REPORT.json
