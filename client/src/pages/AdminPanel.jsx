@@ -209,7 +209,7 @@ const ge = {
         "div",
         {
           className:
-            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br",
+            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br dark:from-slate-900 dark:to-blue-900/50",
         },
         e.createElement(
           "div",
@@ -495,7 +495,7 @@ const ge = {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br",
+              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br dark:from-slate-900 dark:to-blue-900/50",
           },
           e.createElement(
             "div",
@@ -515,7 +515,7 @@ const ge = {
           "div",
           {
             className:
-              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br",
+              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br dark:from-slate-900 dark:to-blue-900/50",
           },
           e.createElement(
             "div",

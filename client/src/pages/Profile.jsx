@@ -752,7 +752,7 @@ const ProfilePage = () => {
                 "Profile updated successfully!",
             });
         } catch (o) {
-          ce({ form: o.message || tr("update_failed", "Update failed") });
+          ce({ form: tr("update_failed", "Update failed") });
         }
     },
     applyPreferenceLocation = (r) => {
@@ -783,7 +783,7 @@ const ProfilePage = () => {
         u({
           title: tr("location_unavailable", "Location unavailable"),
           description:
-            r?.message ||
+            r?.response?.data?.error ||
             tr(
               "location_unavailable_desc",
               "We could not detect your location right now.",
@@ -822,7 +822,7 @@ const ProfilePage = () => {
       } catch (a) {
         u({
           title: t("error_saving_preferences") || "Error saving preferences",
-          description: a.message,
+          description: t("error_saving_preferences_desc") || "Failed to save preferences. Please try again.",
           variant: "destructive",
         });
       }
@@ -1471,7 +1471,6 @@ const ProfilePage = () => {
                       const backendMessage =
                         err?.response?.data?.error ||
                         err?.response?.data?.message ||
-                        err?.message ||
                         "";
                       u({
                         title: t("upload_error") || "Upload error",

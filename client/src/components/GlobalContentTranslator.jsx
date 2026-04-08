@@ -400,7 +400,7 @@ function GlobalContentTranslator() {
     }
 
     pendingRootsRef.current.add(translationRoot);
-    scheduleScan(0, { immediate: true });
+    scheduleScan(2000);
 
     const observer = new MutationObserver((records) => {
       records.forEach((record) => {

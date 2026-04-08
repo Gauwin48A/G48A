@@ -55,7 +55,6 @@ import {
   setSavedPostStatus,
   subscribeSavedPosts,
 } from "@/utils/savedPosts";
-import PostPromoBadges from "@/components/PostPromoBadges";
 import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
@@ -96,6 +95,8 @@ const Ve = 5,
     return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
   },
   de = (o) => {
+    if (o == null) return null;
+    if (typeof o !== "object") return o;
     const candidate = o?.post_id ?? o?.id ?? null;
     if (candidate == null) return null;
     if (typeof candidate === "object") return null;
@@ -110,13 +111,14 @@ const Ve = 5,
   getFeedSellerName = (o) => {
     const candidate =
       o?.user?.name ||
+      o?.author_name ||
       o?.seller?.name ||
       o?.seller_name ||
       o?.author ||
       o?.username ||
       "";
     const cleaned = String(candidate || "").trim();
-    return cleaned || "Anonymous";
+    return (cleaned && cleaned !== "Seller") ? cleaned : "";
   },
   getFeedPriceValue = (o) => {
     const candidate =
@@ -203,6 +205,7 @@ const Ve = 5,
       [E, M] = i(!0),
       [z, C] = i(""),
       [searchQuery, setSearchQuery] = i(""),
+      [debouncedSearch, setDebouncedSearch] = i(""),
       [sortBy, setSortBy] = i("shuffle"),
       [sortOrder, setSortOrder] = i("desc"),
       [categoryGroup, setCategoryGroup] = i("all"),
@@ -246,7 +249,8 @@ const Ve = 5,
       [shareDialogOpen, setShareDialogOpen] = i(!1),
       [shareDialogUrl, setShareDialogUrl] = i(""),
       [promotePostId, setPromotePostId] = i(null),
-      [promotePostTitle, setPromotePostTitle] = i("");
+      [promotePostTitle, setPromotePostTitle] = i(""),
+      [showBackToTop, setShowBackToTop] = i(!1);
     const languageRef = w(m);
     const resolveMessage = D(
       (t) => {
@@ -303,13 +307,6 @@ const Ve = 5,
         }),
       [categoryModeCategory, categoryModeCategoryId, activeAppMatcher],
     );
-    const categoryChips = [
-      { value: "all", label: o("all_categories") || "All" },
-      { value: "electronics", label: o("electronics") || "Electronics" },
-      { value: "fashion", label: o("fashion") || "Fashion" },
-      { value: "vehicles", label: o("vehicles") || "Vehicles" },
-      { value: "others", label: o("others") || "Others" },
-    ];
     T(() => {
       if (activeAppMatcher?.activeApp && categoryGroup === "all") {
         setCategoryGroup(activeAppMatcher.activeApp);
@@ -325,6 +322,10 @@ const Ve = 5,
       languageRef.current = m;
     }, [m]);
     T(() => subscribeSavedPosts(setSavedPosts), []);
+    T(() => {
+      const timer = setTimeout(() => setDebouncedSearch(searchQuery), 350);
+      return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const syncSavedPosts = D(async () => {
       if (!h) {
@@ -370,8 +371,8 @@ const Ve = 5,
           if (effectiveCategory) {
             params.set("category_group", String(effectiveCategory));
           }
-          if (searchQuery.trim()) {
-            params.set("search", searchQuery.trim());
+          if (debouncedSearch.trim()) {
+            params.set("search", debouncedSearch.trim());
           }
           if (sortBy === "shuffle") {
             t && (G.current = l);
@@ -455,16 +456,12 @@ const Ve = 5,
           s > 1
             ? (C({
                 key: "feed_load_more_failed",
-                fallback:
-                  l?.message ||
-                  "Unable to load more posts right now. Please retry.",
+                fallback: "Unable to load more posts right now. Please retry.",
               }),
               M(!1))
             : H({
                 key: "feed_load_failed",
-                fallback:
-                  l?.message ||
-                  "Unable to load the feed right now. Please retry.",
+                fallback: "Unable to load the feed right now. Please retry.",
               });
         } finally {
           p.current === a && (p.current = null),
@@ -478,7 +475,7 @@ const Ve = 5,
         categoryModeCategory?.name,
         categoryModeCategoryId,
         filterFeedPost,
-        searchQuery,
+        debouncedSearch,
         sortBy,
         sortOrder,
         categoryGroup,
@@ -563,6 +560,7 @@ const Ve = 5,
             S.current = !1;
             const r = window.innerHeight + window.scrollY,
               s = document.documentElement.scrollHeight;
+            setShowBackToTop(window.scrollY > 400);
             if (!h) return;
             r >= s - 1e3 && Z();
           }));
@@ -699,7 +697,11 @@ const Ve = 5,
             ? o("time_hours_ago", { count: P, defaultValue: `${P}h ago` })
             : k < 7
               ? o("time_days_ago", { count: k, defaultValue: `${k}d ago` })
-              : s.toLocaleDateString();
+              : k < 30
+                ? o("time_weeks_ago", { count: Math.floor(k / 7), defaultValue: `${Math.floor(k / 7)}w ago` })
+                : k < 365
+                  ? o("time_months_ago", { count: Math.floor(k / 30), defaultValue: `${Math.floor(k / 30)}mo ago` })
+                  : o("time_years_ago", { count: Math.floor(k / 365), defaultValue: `${Math.floor(k / 365)}y ago` });
       },
       displayPosts = n,
       visiblePosts = h ? displayPosts : displayPosts.slice(0, Ve),
@@ -969,7 +971,7 @@ const Ve = 5,
                 e.createElement(
                   "option",
                   { value: "shuffle" },
-                  o("sort_shuffle") || "Shuffle",
+                  o("sort_discover") || "Discover",
                 ),
                 e.createElement(
                   "option",
@@ -1015,25 +1017,6 @@ const Ve = 5,
                   { value: "asc" },
                   o("sort_asc") || "Asc",
                 ),
-              ),
-            ),
-          ),
-          e.createElement(
-            "div",
-            { className: "flex flex-wrap gap-2" },
-            categoryChips.map((t) =>
-              e.createElement(
-                "button",
-                {
-                  key: t.value,
-                  onClick: () => setCategoryGroup(t.value),
-                  className: `px-3 py-1.5 rounded-full text-xs font-semibold transition ${
-                    categoryGroup === t.value
-                      ? "bg-indigo-600 text-white shadow"
-                      : "bg-white/80 text-slate-600 border border-slate-200 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"
-                  }`,
-                },
-                t.label,
               ),
             ),
           ),
@@ -1158,7 +1141,7 @@ const Ve = 5,
                       a = t.description || "",
                       l = a.length > 250,
                       sellerName = getFeedSellerName(t),
-                      sellerInitial = sellerName?.[0]?.toUpperCase() || "U",
+                      sellerInitial = (sellerName || "U")[0].toUpperCase(),
                       postPriceValue = getFeedPriceValue(t),
                       postPriceLabel = formatFeedPrice(postPriceValue),
                       primaryImage = getFeedPrimaryImage(t),
@@ -1194,59 +1177,42 @@ const Ve = 5,
                           "div",
                           { className: "flex-1 min-w-0 pr-2" },
                           e.createElement(
-                            "span",
-                            {
-                              className:
-                                "font-semibold text-gray-900 dark:text-white truncate dark:text-gray-100",
-                            },
-                            sellerName,
-                          ),
-                          e.createElement(
-                            "p",
-                            {
-                              className:
-                                "text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 dark:text-indigo-300",
-                            },
-                            o("activity_update") || "Shared an update",
-                          ),
-                          e.createElement(
                             "div",
                             {
                               className:
-                                "text-gray-400 dark:text-gray-400 text-xs flex flex-wrap items-center gap-2 dark:text-gray-300",
+                                "flex flex-wrap items-center gap-1.5 text-sm",
                             },
                             e.createElement(
                               "span",
                               {
-                              className:
-                                "inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 dark:text-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-300",
-                            },
-                              e.createElement(Ge, { className: "w-3 h-3" }),
-                              getPostLocationLabel(t) || o("global") || "Global",
+                                className:
+                                  "font-semibold text-gray-900 dark:text-white truncate max-w-[140px]",
+                              },
+                              sellerName || o("community_member") || "Community Member",
                             ),
-                            e.createElement("span", null, "\xE2\u20AC\xA2"),
-                            e.createElement(
-                              "span",
-                              { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
-                              Ne(t.created_at),
-                            ),
-                            postPriceLabel
+                            (getPostLocationLabel(t))
                               ? e.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200 dark:bg-emerald-950/20",
-                                  },
-                                  postPriceLabel,
+                                  e.Fragment,
+                                  null,
+                                  e.createElement("span", { className: "text-gray-300 dark:text-gray-600" }, "\u00B7"),
+                                  e.createElement(
+                                    "span",
+                                    {
+                                      className:
+                                        "inline-flex items-center gap-0.5 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]",
+                                    },
+                                    e.createElement(Ge, { className: "w-3 h-3 shrink-0" }),
+                                    getPostLocationLabel(t),
+                                  ),
                                 )
                               : null,
+                            e.createElement("span", { className: "text-gray-300 dark:text-gray-600" }, "\u00B7"),
+                            e.createElement(
+                              "span",
+                              { className: "text-xs text-gray-400 dark:text-gray-500" },
+                              Ne(t.created_at),
+                            ),
                           ),
-                          e.createElement(PostPromoBadges, {
-                            post: t,
-                            t: o,
-                            size: "xs",
-                            className: "mt-2",
-                          }),
                         ),
                         e.createElement(
                           "button",
@@ -1267,7 +1233,7 @@ const Ve = 5,
                             "div",
                             {
                               className:
-                                "absolute right-5 top-12 z-20 w-44 rounded-xl border border-gray-200 dark:border-gray-700 mhub-premium-surface shadow-lg p-1 dark:border",
+                                "absolute right-4 top-14 z-30 w-48 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl p-1.5 ring-1 ring-black/5 dark:ring-white/10",
                             },
                             e.createElement(
                               "button",
@@ -1277,7 +1243,7 @@ const Ve = 5,
                                   ye(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                  "w-full text-left px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
                               },
                               o("share") || "Share",
                             ),
@@ -1289,7 +1255,7 @@ const Ve = 5,
                                   toggleSaveFeed(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                  "w-full text-left px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
                               },
                               savedPosts[String(r)]
                                 ? o("saved") || "Saved"
@@ -1305,7 +1271,7 @@ const Ve = 5,
                                     setMenuPostId(null);
                                   },
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                    "w-full text-left px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
                                 },
                                 o("promote") || "Promote",
                               ),
@@ -1317,7 +1283,7 @@ const Ve = 5,
                                   handleReportPost(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
+                                  "w-full text-left px-3 py-2.5 text-sm rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:text-red-400 transition-colors",
                               },
                               o("report") || "Report",
                             ),
@@ -1326,12 +1292,39 @@ const Ve = 5,
                       e.createElement(
                         "div",
                         { className: "px-5 pb-4" },
+                        (t.title || postPriceLabel)
+                          ? e.createElement(
+                              "div",
+                              { className: "flex items-baseline justify-between gap-2 mb-2" },
+                              t.title &&
+                                e.createElement(
+                                  "h3",
+                                  {
+                                    className:
+                                      "text-lg font-bold text-gray-900 dark:text-white dark:text-gray-100 truncate flex-1 min-w-0 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors",
+                                    onClick: () => ke(r),
+                                  },
+                                  t.title,
+                                ),
+                              postPriceLabel
+                                ? e.createElement(
+                                    "span",
+                                    {
+                                      className:
+                                        "shrink-0 inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-1 text-sm font-bold text-emerald-700 dark:text-emerald-200",
+                                    },
+                                    postPriceLabel,
+                                  )
+                                : null,
+                            )
+                          : null,
                         primaryImage
                           ? e.createElement(
                               "div",
                               {
                                 className:
-                                  "mb-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700",
+                                  "mb-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer",
+                                onClick: () => ke(r),
                               },
                               e.createElement("img", {
                                 src: primaryImage,
@@ -1345,15 +1338,6 @@ const Ve = 5,
                               }),
                             )
                           : null,
-                        t.title &&
-                          e.createElement(
-                            "h3",
-                            {
-                              className:
-                                "text-lg font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
-                            },
-                            t.title,
-                          ),
                         e.createElement(
                           "div",
                           {
@@ -1478,13 +1462,13 @@ const Ve = 5,
                             {
                               variant: "ghost",
                               className:
-                                "shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 font-medium dark:bg-gray-950 dark:hover:bg-indigo-950/20",
+                                "shrink-0 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 px-3 text-xs text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-800/40 font-semibold sm:ml-auto",
                               onClick: () => ke(r),
                             },
-                            e.createElement(Pe, { className: "w-4 h-4" }),
+                            e.createElement(Pe, { className: "w-3.5 h-3.5" }),
                             e.createElement(
                               "span",
-                              { className: "hidden sm:inline" },
+                              null,
                               o("view_details") || "View Details",
                             ),
                           ),
@@ -1597,6 +1581,34 @@ const Ve = 5,
             ),
         ),
       ),
+      h &&
+        e.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => g("/feed/feedpostadd"),
+            className:
+              "fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center dark:bg-indigo-700 dark:hover:bg-indigo-800",
+            "aria-label": o("create_post") || "Create Post",
+          },
+          e.createElement(Te, { className: "w-6 h-6" }),
+        ),
+      showBackToTop &&
+        e.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+            className:
+              "fixed bottom-40 right-4 z-50 w-10 h-10 rounded-full mhub-premium-surface shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all",
+            "aria-label": o("back_to_top") || "Back to top",
+          },
+          e.createElement(
+            "svg",
+            { xmlns: "http://www.w3.org/2000/svg", className: "w-5 h-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+            e.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M5 15l7-7 7 7" }),
+          ),
+        ),
       K &&
         e.createElement(
           "div",

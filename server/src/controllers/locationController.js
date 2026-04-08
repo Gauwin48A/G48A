@@ -768,7 +768,7 @@ exports.saveLocation = async (req, res) => {
     logger.error("saveLocation error:", error);
     return res.status(500).json({
       error: "Internal Server Error",
-      details: error.message,
+      details: "Internal server error",
     });
   }
 };

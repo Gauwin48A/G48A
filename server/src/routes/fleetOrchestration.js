@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const {
   sendCommand,
   approveCriticalCommand,
@@ -21,7 +22,7 @@ function authorizeFleetAdmin(req, res, next) {
     return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-fleet-admin-token"] || "").trim();
-  if (providedToken !== configuredToken) {
+  if (!providedToken || !crypto.timingSafeEqual(Buffer.from(configuredToken), Buffer.from(providedToken.padEnd(configuredToken.length).slice(0, configuredToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized fleet admin request.",
     });
@@ -40,7 +41,7 @@ function resolveActorId(req) {
   return normalized || null;
 }
 
-router.post("/commands/send", (req, res) => {
+router.post("/commands/send", authorizeFleetAdmin, (req, res) => {
   const result = sendCommand({
     deviceId: req.body?.deviceId || req.body?.device_id,
     tenantId: req.body?.tenantId || req.body?.tenant_id,
@@ -71,7 +72,7 @@ router.post("/commands/:commandId/approve", authorizeFleetAdmin, (req, res) => {
   return res.status(200).json(result);
 });
 
-router.post("/commands/:commandId/ack", (req, res) => {
+router.post("/commands/:commandId/ack", authorizeFleetAdmin, (req, res) => {
   const result = acknowledgeCommand({
     commandId: req.params.commandId,
     ackCode: req.body?.ackCode || req.body?.ack_code,
@@ -98,7 +99,7 @@ router.post("/commands/sweep-timeouts", authorizeFleetAdmin, (_req, res) => {
   });
 });
 
-router.get("/commands/:commandId", (req, res) => {
+router.get("/commands/:commandId", authorizeFleetAdmin, (req, res) => {
   const command = getCommand(req.params.commandId);
   if (!command) {
     return res.status(404).json({
@@ -160,7 +161,7 @@ router.post("/ota/rollouts/:rolloutId/advance", authorizeFleetAdmin, (req, res) 
   return res.status(200).json(result);
 });
 
-router.get("/ota/rollouts/:rolloutId", (req, res) => {
+router.get("/ota/rollouts/:rolloutId", authorizeFleetAdmin, (req, res) => {
   const rollout = getOtaRollout(req.params.rolloutId);
   if (!rollout) {
     return res.status(404).json({
@@ -173,7 +174,7 @@ router.get("/ota/rollouts/:rolloutId", (req, res) => {
   });
 });
 
-router.post("/diagnostics/run", (req, res) => {
+router.post("/diagnostics/run", authorizeFleetAdmin, (req, res) => {
   const result = runDiagnostics({
     deviceId: req.body?.deviceId || req.body?.device_id,
     metrics: req.body?.metrics,
@@ -184,7 +185,7 @@ router.post("/diagnostics/run", (req, res) => {
   return res.status(200).json(result);
 });
 
-router.get("/summary", (_req, res) => {
+router.get("/summary", authorizeFleetAdmin, (_req, res) => {
   return res.status(200).json({
     status: "ok",
     summary: getSummary(),

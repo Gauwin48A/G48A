@@ -467,7 +467,7 @@ app.use(sanitizeInput);
 // ── CSRF Protection (Double Submit Cookie) ────────────────
 const { csrfProtection } = require("./middleware/csrf");
 app.use(csrfProtection({
-  skipPaths: ["/api/webhooks", "/api/auth/refresh", "/api/payments/webhook", "/api/push-notifications/webhook"],
+  skipPaths: ["/api/webhooks", "/api/auth/refresh", "/api/payments/webhook", "/api/push-notifications/webhook", "/api/translation/translate", "/api/translation/batch", "/api/location"],
 }));
 
 // ── Global VPN/Proxy Blocker ──────────────────────────────

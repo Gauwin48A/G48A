@@ -339,8 +339,7 @@ function PostDetail() {
               console.error("Error fetching post data:", a),
                 N({
                   key: "load_product_failed",
-                  fallback:
-                    a?.message || "Failed to load product",
+                  fallback: "Failed to load product details. Please retry.",
                 }),
                 c(!1),
                 u(null);
@@ -356,22 +355,6 @@ function PostDetail() {
         setSavedPost(Boolean(a?.[t]));
       });
     }, [d, r?.id, r?.post_id]),
-    L(() => {
-      const sectionIds = ["overview", "listing-details", "key-details", "specs", "location", "trust-safety", "description", "negotiation", "seller", "sponsored", "premium"];
-      const handleScroll = () => {
-        const scrollY = window.scrollY + 140;
-        let current = "overview";
-        for (const id of sectionIds) {
-          const el = document.getElementById(id);
-          if (el && el.offsetTop <= scrollY) {
-            current = id;
-          }
-        }
-        setActiveSection(current);
-      };
-      window.addEventListener("scroll", handleScroll, { passive: true });
-      return () => window.removeEventListener("scroll", handleScroll);
-    }, []),
       L(() => {
         const postId = normalizeId(r?.post_id || r?.id || d);
         if (!postId || !isOwnerView) return;
@@ -431,26 +414,6 @@ function PostDetail() {
         r?.seller?.id,
         r?.user?.id,
       ]),
-    L(() => {
-      if (!r) return;
-      const sectionIds = sectionNavItems.map((item) => item.id);
-      const observer = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) {
-              setActiveSection(entry.target.id);
-              break;
-            }
-          }
-        },
-        { rootMargin: "-20% 0px -60% 0px", threshold: 0 },
-      );
-      sectionIds.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) observer.observe(el);
-      });
-      return () => observer.disconnect();
-    }, [r, sectionNavItems]),
     j)
   )
     return e.createElement(
@@ -1303,8 +1266,28 @@ function PostDetail() {
         label: tr("premium_recommendations", "Premium"),
         show: !isOwnerView,
       },
-    ].filter((item) => item.show),
-    S = !!(
+    ].filter((item) => item.show);
+    L(() => {
+      if (!r) return;
+      const sectionIds = sectionNavItems.map((item) => item.id);
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setActiveSection(entry.target.id);
+              break;
+            }
+          }
+        },
+        { rootMargin: "-20% 0px -60% 0px", threshold: 0 },
+      );
+      sectionIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      });
+      return () => observer.disconnect();
+    }, [r]);
+    const S = !!(
       o?.verified ||
       o?.isVerified ||
       r?.seller_verified ||

@@ -2090,101 +2090,34 @@ const te = 12,
                                 { className: "flex-1 min-w-0 pr-10" },
                                 e.createElement(
                                   "div",
-                                  { className: "flex items-center gap-2" },
+                                  { className: "flex items-center gap-1.5 text-[11px] sm:text-[12px] text-gray-700 dark:text-gray-300 truncate" },
                                   e.createElement(
                                     "span",
                                     {
                                       className:
-                                        "font-semibold text-blue-900 dark:text-blue-200 text-[12px] sm:text-[13px] truncate",
+                                        "font-semibold text-blue-900 dark:text-blue-200 truncate",
                                     },
                                     u,
                                   ),
                                   v &&
                                     e.createElement(
-                                      "span",
+                                      "svg",
                                       {
-                                        className:
-                                          "inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-[10px] font-semibold rounded-full dark:bg-green-950/20",
-                                        title: `KYC Verified${
-                                          t.user?.aadhaarVerified ? " (Aadhaar)" : ""
-                                        }${t.user?.panVerified ? " (PAN)" : ""}`,
+                                        className: "w-3.5 h-3.5 text-blue-500 dark:text-blue-400 flex-shrink-0",
+                                        fill: "currentColor",
+                                        viewBox: "0 0 20 20",
+                                        title: "Verified",
                                       },
-                                      e.createElement(
-                                        "svg",
-                                        {
-                                          className: "w-3 h-3",
-                                          fill: "currentColor",
-                                          viewBox: "0 0 20 20",
-                                        },
-                                        e.createElement("path", {
-                                          fillRule: "evenodd",
-                                          d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                          clipRule: "evenodd",
-                                        }),
-                                      ),
-                                      r("verified") || "Verified",
+                                      e.createElement("path", {
+                                        fillRule: "evenodd",
+                                        d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                        clipRule: "evenodd",
+                                      }),
                                     ),
-                                  k > 0 &&
-                                    e.createElement(
-                                      "span",
-                                      {
-                                        className:
-                                          "text-yellow-500 text-[10px] font-medium dark:text-yellow-300",
-                                      },
-                                      "\u2605 ",
-                                      k.toFixed(1),
-                                    ),
-                                ),
-                                e.createElement(
-                                  "div",
-                                  {
-                                    className:
-                                      "mt-1 flex flex-wrap items-center gap-1 text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-300",
-                                  },
-                                  shownMetaChips.map((P) =>
-                                    e.createElement(
-                                      "span",
-                                      { key: P.key, className: P.className },
-                                      P.label,
-                                    ),
-                                  ),
-                                  hiddenMetaChips.length > 0 &&
-                                    !isMetaExpanded &&
-                                    e.createElement(
-                                      "button",
-                                      {
-                                        className:
-                                          "inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 dark:bg-gray-950",
-                                        title: hiddenMetaTitle,
-                                        onClick: () =>
-                                          setExpandedMetaPostId((P) =>
-                                            P === a ? null : a,
-                                          ),
-                                        "aria-expanded": !1,
-                                        "aria-label": `${tr(
-                                          "show_more_meta",
-                                          "Show more details",
-                                        )}: ${hiddenMetaTitle}`,
-                                      },
-                                      `+${hiddenMetaChips.length} more`,
-                                    ),
-                                  hiddenMetaChips.length > 0 &&
-                                    isMetaExpanded &&
-                                    e.createElement(
-                                      "button",
-                                      {
-                                        className:
-                                          "inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 dark:bg-gray-950",
-                                        onClick: () =>
-                                          setExpandedMetaPostId(null),
-                                        "aria-expanded": !0,
-                                        "aria-label": tr(
-                                          "hide_details",
-                                          "Hide details",
-                                        ),
-                                      },
-                                      tr("less", "Less"),
-                                    ),
+                                  we && e.createElement("span", { className: "text-gray-400 dark:text-gray-500 flex-shrink-0" }, "\u00B7"),
+                                  we && e.createElement("span", { className: "truncate text-gray-500 dark:text-gray-400" }, we),
+                                  he && e.createElement("span", { className: "text-gray-400 dark:text-gray-500 flex-shrink-0" }, "\u00B7"),
+                                  he && e.createElement("span", { className: "text-gray-400 dark:text-gray-500 flex-shrink-0 whitespace-nowrap" }, he),
                                 ),
                               ),
                               e.createElement(
@@ -2304,12 +2237,7 @@ const te = 12,
                                 className:
                                   "for-you-post-media group relative w-full bg-slate-100 dark:bg-slate-900/70 border-y border-slate-200/70 dark:border-slate-700 mhub-media-frame dark:bg-slate-950 dark:border-y dark:border-slate-700/70",
                               },
-                              e.createElement(PostPromoBadges, {
-                                post: t,
-                                t: tr,
-                                size: "xs",
-                                className: "absolute left-3 top-3 z-10",
-                              }),
+                              /* PostPromoBadges removed from cards */
                               e.createElement(
                                 "div",
                                 {

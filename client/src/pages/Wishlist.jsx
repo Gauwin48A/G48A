@@ -584,7 +584,7 @@ const Wishlist = () => {
       <div className="absolute top-96 -right-40 w-[28rem] h-[28rem] bg-purple-200/20 dark:bg-purple-500/5 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/20" />
       <div className="absolute bottom-40 left-1/3 w-80 h-80 bg-rose-100/20 dark:bg-rose-500/5 rounded-full blur-3xl pointer-events-none dark:bg-rose-950/20" />
 
-      <div className="relative overflow-hidden" style={{ minHeight: "180px" }}>
+      <div className="relative overflow-hidden">
         <div className="absolute inset-0 profile-hero-bg bg-gradient-to-r from-sky-500/95 via-blue-500/95 to-violet-500/95 dark:from-sky-700/90 dark:via-blue-700/90 dark:to-violet-700/90" />
         <div
           className="absolute inset-0 opacity-10"
@@ -1048,14 +1048,7 @@ const Wishlist = () => {
                         )}
                       </div>
                     )}
-                    <SellerTrustBadges
-                      className="mb-1"
-                      size="xs"
-                      sellerId={item.seller_id || item.user_id || item.user?.id || null}
-                      trust={item.trust || item.user?.trust || null}
-                      riskState={item.risk_state || item.user?.risk_state || null}
-                      underReview={item.under_review ?? item.user?.under_review ?? null}
-                    />
+                    {/* Trust badges removed from cards — only shown on PostDetail */}
 
                     {/* rating */}
                     {rating > 0 && (

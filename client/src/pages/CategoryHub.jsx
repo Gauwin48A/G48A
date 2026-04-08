@@ -71,6 +71,15 @@ const APPS = [
   },
 ];
 
+function getLocalizedApps(t) {
+  return APPS.map((app) => ({
+    ...app,
+    label: t(`cat_${app.key}`, { defaultValue: app.label }),
+    tagline: t(`cat_${app.key}_tagline`, { defaultValue: app.tagline }),
+    description: t(`cat_${app.key}_desc`, { defaultValue: app.description }),
+  }));
+}
+
 function createEmptyStatsMap() {
   return APPS.reduce((acc, app) => {
     acc[app.key] = {
@@ -212,9 +221,9 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
         {/* Title + tagline */}
         <div className="flex-1">
           <h2 className="text-base md:text-2xl font-extrabold text-white leading-tight tracking-tight dark:text-white">
-            {t(`app_${app.key}`, { defaultValue: app.label })}
+            {app.label}
           </h2>
-          <p className="text-xs sm:text-sm text-white/75 mt-0.5 line-clamp-1 dark:text-white/75">{t(`app_${app.key}_tagline`, { defaultValue: app.tagline })}</p>
+          <p className="text-xs sm:text-sm text-white/75 mt-0.5 line-clamp-1 dark:text-white/75">{app.tagline}</p>
         </div>
 
         {/* Stats chips */}
@@ -237,7 +246,7 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
         {/* CTA row */}
         <div className="hidden sm:flex items-center justify-between mt-1">
           <p className="text-[11px] text-white/60 leading-tight max-w-[70%] line-clamp-2 hidden md:block dark:text-white/60">
-            {t(`app_${app.key}_desc`, { defaultValue: app.description })}
+            {app.description}
           </p>
           <span className={[
             "ml-auto flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-bold",
@@ -286,9 +295,10 @@ export default function CategoryHub() {
   }, []);
 
   const apps = useMemo(() => {
+    const base = getLocalizedApps(t);
     const overrides = Array.isArray(cmsContent?.apps) ? cmsContent.apps : [];
-    if (!overrides.length) return APPS;
-    return APPS.map((app) => {
+    if (!overrides.length) return base;
+    return base.map((app) => {
       const match = overrides.find(
         (entry) => String(entry?.key || "").trim().toLowerCase() === app.key,
       );
@@ -299,7 +309,7 @@ export default function CategoryHub() {
         key: app.key,
       };
     });
-  }, [cmsContent]);
+  }, [cmsContent, t]);
 
   const currentApp = apps.find((app) => app.key === activeApp) || null;
   const heroGradient = isDark

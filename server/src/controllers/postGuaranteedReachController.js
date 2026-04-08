@@ -466,6 +466,6 @@ exports.getGuaranteedReachPosts = async (req, res) => {
     });
   } catch (err) {
     logError("[GuaranteedReach] Error:", err.message);
-    res.status(500).json({ error: err.message, posts: [] });
+    res.status(500).json({ error: "Internal server error", posts: [] });
   }
 };

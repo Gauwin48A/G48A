@@ -194,6 +194,7 @@ if (!i18n.isInitialized && !globalScope[I18N_INIT_STARTED_FLAG]) {
       saveMissing: true,
       saveMissingTo: "all",
       missingKeyHandler: (lngs, ns, key, fallbackValue) => {
+        if (typeof window !== 'undefined' && window.__MHUB_LANG_SWITCHING) return;
         const langs = Array.isArray(lngs) ? lngs : [lngs];
         const defaultText = normalizeMissingFallback(key, fallbackValue);
         const hasEnResource = hasResourceCompat("en", ns, key);

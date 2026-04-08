@@ -38,6 +38,7 @@ function maskIp(ipAddress) {
 }
 
 function SessionCard({ session, isRevoking, onRevoke }) {
+  const { t } = useTranslation();
   return (
     <div className="mhub-premium-surface rounded-xl p-4">
       <div className="flex items-start justify-between gap-3">
@@ -57,7 +58,7 @@ function SessionCard({ session, isRevoking, onRevoke }) {
           className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          {isRevoking ? "Revoking..." : "Revoke"}
+          {isRevoking ? t('revoking', { defaultValue: 'Revoking...' }) : t('revoke', { defaultValue: 'Revoke' })}
         </button>
       </div>
 
@@ -693,7 +694,7 @@ export default function SecuritySettings() {
               className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
             >
               <Trash2 className="h-4 w-4" />
-              {revokeAllLoading ? "Revoking..." : "Revoke All"}
+              {revokeAllLoading ? t('revoking', { defaultValue: 'Revoking...' }) : t('revoke_all', { defaultValue: 'Revoke All' })}
             </button>
           </div>
 

@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
+  Zap,
 } from "lucide-react";
 import UpsellBanner from "@/components/UpsellBanner";
 import { getInitials } from "@/lib/userDisplay";
@@ -413,6 +414,327 @@ export function RewardsHero({
   );
 }
 
+export function RewardsImpactDashboard({
+  displayCoins,
+  coinDelta,
+  nextRewardLabel,
+  nextRewardProgress,
+  nextRewardRemaining,
+  engagementReady,
+  hasCheckedInToday,
+  currentCheckInDay,
+  dailyCheckInLoading,
+  onDailyCheckIn,
+  spinStatus,
+  spinLoading,
+  onSpin,
+  scratchStatus,
+  scratchLoading,
+  onScratch,
+  referralCode,
+  shareDisabled,
+  onCopyReferralCode,
+  onCopyReferralLink,
+  onShareWhatsApp,
+  onShareTelegram,
+  onShareSms,
+  referralGoal,
+  referralReward,
+  referralDisplay,
+  referralProgressPercent,
+  milestoneEligible,
+  milestoneClaimed,
+  onClaimMilestone,
+  onOpenRedeem,
+  tr,
+}) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Coin Balance */}
+      <div className="relative overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-5 shadow-lg dark:border-amber-900/40 dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-900">
+        <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-amber-300/20 blur-2xl dark:bg-amber-500/10" />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-sm">
+              <Zap className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-600 dark:text-amber-300">
+              {tr("coin_balance", "Coin Balance")}
+            </p>
+          </div>
+          <div className="flex items-end gap-2">
+            <span className="coin-display coin-big-number text-4xl sm:text-5xl font-black leading-none text-amber-600 dark:text-amber-300">
+              {displayCoins}
+            </span>
+            <span className="pb-1 text-sm font-semibold text-slate-400 dark:text-slate-300">
+              {tr("coins", "coins")}
+            </span>
+          </div>
+          {coinDelta?.amount ? (
+            <p
+              className={`mt-1.5 text-xs font-bold ${
+                coinDelta.amount > 0
+                  ? "text-emerald-600 dark:text-emerald-300"
+                  : "text-rose-600 dark:text-rose-300"
+              }`}
+            >
+              {coinDelta.amount > 0 ? "+" : ""}
+              {coinDelta.amount} {tr("coins", "coins")}
+            </p>
+          ) : null}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-300 mb-1.5">
+              <span>
+                {tr("next_reward", "Next reward")}: {nextRewardLabel}
+              </span>
+              <span>{nextRewardProgress}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-amber-100 dark:bg-amber-900/30 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-[width] duration-700 ease-out"
+                style={{ width: `${nextRewardProgress}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-[10px] text-slate-400 dark:text-slate-400">
+              {nextRewardRemaining > 0
+                ? tr("coins_to_unlock", "{{count}} coins to unlock", {
+                    count: nextRewardRemaining,
+                  })
+                : tr("ready_to_redeem", "Ready to redeem")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenRedeem}
+            className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600/10 hover:bg-amber-600/20 text-amber-700 dark:text-amber-300 text-xs font-semibold px-3 py-2 transition-colors"
+          >
+            <Star className="w-3.5 h-3.5" />
+            {tr("redeem_coins", "Redeem coins")}
+          </button>
+        </div>
+      </div>
+
+      {/* Daily Actions */}
+      <div className="relative overflow-hidden rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-sky-50 p-5 shadow-lg dark:border-indigo-900/40 dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-900">
+        <div className="absolute right-0 bottom-0 h-24 w-24 rounded-full bg-indigo-300/20 blur-2xl dark:bg-indigo-500/10" />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-sm">
+              <Calendar className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">
+              {tr("daily_actions", "Daily Actions")}
+            </p>
+          </div>
+          {engagementReady ? (
+            <>
+              <div className="flex items-center gap-1.5 mb-3">
+                {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                  const isCompleted = currentCheckInDay > day;
+                  const isToday = currentCheckInDay === day;
+                  return (
+                    <div
+                      key={day}
+                      className={`flex-1 h-2 rounded-full transition-colors ${
+                        isCompleted
+                          ? "bg-emerald-500"
+                          : isToday
+                            ? "bg-indigo-500 animate-pulse"
+                            : "bg-slate-200 dark:bg-slate-700"
+                      }`}
+                      title={`${tr("day", "Day")} ${day}`}
+                    />
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-300 mb-3">
+                {tr("day", "Day")} {currentCheckInDay}/7 &middot;{" "}
+                {hasCheckedInToday
+                  ? tr("checked_in_today", "Checked in today")
+                  : tr("claim_today", "Claim today's reward")}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                disabled={hasCheckedInToday || dailyCheckInLoading}
+                className={`w-full mb-3 ${
+                  hasCheckedInToday || dailyCheckInLoading
+                    ? "bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-300"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                }`}
+                onClick={onDailyCheckIn}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                {hasCheckedInToday
+                  ? tr("checked_in", "Checked in")
+                  : dailyCheckInLoading
+                    ? tr("claiming", "Claiming...")
+                    : tr("daily_checkin", "Daily check-in")}
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={spinStatus?.hasSpunToday || spinLoading}
+                  className={`text-xs ${
+                    spinStatus?.hasSpunToday || spinLoading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-200"
+                  }`}
+                  onClick={onSpin}
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  {spinStatus?.hasSpunToday
+                    ? tr("spin_done", "Spun")
+                    : tr("spin_now", "Spin")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    scratchLoading ||
+                    (scratchStatus &&
+                      Number(scratchStatus.available || 0) === 0)
+                  }
+                  className={`text-xs ${
+                    scratchLoading ||
+                    (scratchStatus &&
+                      Number(scratchStatus.available || 0) === 0)
+                      ? "opacity-50 cursor-not-allowed"
+                      : "border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-200"
+                  }`}
+                  onClick={onScratch}
+                >
+                  <Star className="w-3 h-3 mr-1" />
+                  {tr("scratch_now", "Scratch")}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <SkeletonBlock className="h-3 w-full" />
+              <SkeletonBlock className="h-8 w-full" />
+              <div className="grid grid-cols-2 gap-2">
+                <SkeletonBlock className="h-8 w-full" />
+                <SkeletonBlock className="h-8 w-full" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Referral Hub */}
+      <div className="relative overflow-hidden rounded-2xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-5 shadow-lg dark:border-emerald-900/40 dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-900">
+        <div className="absolute left-0 bottom-0 h-24 w-24 rounded-full bg-emerald-300/20 blur-2xl dark:bg-emerald-500/10" />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center shadow-sm">
+              <Users className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-300">
+              {tr("referral_hub", "Referral Hub")}
+            </p>
+          </div>
+          <div className="rounded-xl bg-white/80 dark:bg-slate-800/60 border border-emerald-100 dark:border-emerald-900/30 px-3 py-2 mb-3">
+            <p className="text-[10px] text-slate-500 dark:text-slate-300">
+              {tr("your_code", "Your code")}
+            </p>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-lg font-black text-emerald-700 dark:text-emerald-200 tracking-wider">
+                {referralCode || "---"}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={!referralCode}
+                className="h-7 px-2 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                onClick={onCopyReferralCode}
+              >
+                <CopyIcon className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5 mb-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={shareDisabled}
+              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              onClick={onShareWhatsApp}
+            >
+              WA
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={shareDisabled}
+              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              onClick={onShareTelegram}
+            >
+              TG
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={shareDisabled}
+              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              onClick={onCopyReferralLink}
+            >
+              <CopyIcon className="w-3 h-3" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={shareDisabled}
+              className="h-8 text-[10px] font-semibold px-1 border-slate-200 dark:border-slate-600"
+              onClick={onShareSms}
+            >
+              SMS
+            </Button>
+          </div>
+          <div>
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-300 mb-1">
+              <span>
+                {referralDisplay}/{referralGoal} {tr("invited", "invited")}
+              </span>
+              <span className="text-emerald-600 dark:text-emerald-300 font-semibold">
+                +{referralReward} {tr("coins", "coins")}
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-[width] duration-700 ease-out"
+                style={{ width: `${referralProgressPercent}%` }}
+              />
+            </div>
+          </div>
+          {milestoneEligible ? (
+            <Button
+              type="button"
+              size="sm"
+              className="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={onClaimMilestone}
+            >
+              {tr("claim_reward", "Claim reward")}
+            </Button>
+          ) : milestoneClaimed ? (
+            <Badge className="mt-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+              {tr("reward_claimed", "Reward claimed")}
+            </Badge>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function RewardsOverview({
   rewardsUser,
   membershipPlanLabel,
@@ -442,7 +764,7 @@ export function RewardsOverview({
   onOpenEarnPlan,
   tr,
 }) {
-  const completedOnboardingSteps = onboardingSteps.filter((step) => step.done).length;
+  const completedOnboardingSteps = onboardingSteps?.filter((step) => step.done).length ?? 0;
   const onboardingProgressPercent = onboardingSteps.length
     ? Math.min(
         100,

@@ -191,7 +191,7 @@ const W = {
               }
             else f(k);
           } catch (l) {
-            l?.name !== "AbortError" && l?.name !== "CanceledError" && a && L(ye(l?.response?.data?.error || l?.response?.data?.message || l?.message));
+            l?.name !== "AbortError" && l?.name !== "CanceledError" && a && L(ye(l?.response?.data?.error || l?.response?.data?.message || ""));
           } finally {
             a && D(!1);
           }
@@ -1159,7 +1159,7 @@ const W = {
           "div",
           {
             className:
-              "min-h-screen flex items-center justify-center mhub-premium-page bg-gradient-to-br from-blue-50 to-blue-200 transition-colors duration-300 p-4 dark:bg-gradient-to-br",
+              "min-h-screen flex items-center justify-center mhub-premium-page bg-gradient-to-br from-blue-50 to-blue-200 transition-colors duration-300 p-4 dark:bg-gradient-to-br dark:from-blue-950 dark:to-blue-900",
           },
           e.createElement(
             "div",

@@ -5,13 +5,14 @@ const {
   protect: protect,
   optionalAuth: optionalAuth,
 } = require("../middleware/auth");
+const { searchSlowDown } = require("../middleware/rateLimiter");
 router.get("/", feedController.getFeed);
 router.get("/mine", protect, feedController.getMyFeed);
 router.get("/dynamic", optionalAuth, feedController.getDynamicFeed);
 router.get("/trending", feedController.getTrendingPosts);
 router.get("/random", feedController.getRandomFeed);
-router.get("/nearby", feedController.getNearbyFeed);
-router.get("/search", feedController.searchPosts);
+router.get("/nearby", searchSlowDown, feedController.getNearbyFeed);
+router.get("/search", searchSlowDown, feedController.searchPosts);
 router.post("/impression", optionalAuth, feedController.trackImpression);
 router.post("/add", protect, async (req, res) => {
   try {

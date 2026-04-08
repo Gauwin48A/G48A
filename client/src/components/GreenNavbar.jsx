@@ -86,6 +86,7 @@ const GreenNavbar = () => {
     { key: 'feed', path: '/feed', icon: <FiFileText />, matchPaths: ['/feed'] },
     { key: 'rewards', path: '/rewards', icon: <FiUserCheck />, matchPaths: ['/rewards'] },
     { key: 'profile', path: '/profile', icon: <FiUser />, matchPaths: ['/profile'] },
+    { key: 'more', path: '#', icon: <FiMenu />, matchPaths: [] },
   ];
   const { toast } = useToast();
   const { user, logout } = useAuth();
@@ -518,7 +519,26 @@ const GreenNavbar = () => {
     normalizedPath === '/profile' ||
     normalizedPath.startsWith('/profile/') ||
     normalizedPath === '/rewards' ||
-    normalizedPath.startsWith('/rewards');
+    normalizedPath.startsWith('/rewards') ||
+    normalizedPath === '/wishlist' ||
+    normalizedPath === '/cart' ||
+    normalizedPath === '/notifications' ||
+    normalizedPath === '/dashboard' ||
+    normalizedPath === '/my-home' ||
+    normalizedPath === '/complaints' ||
+    normalizedPath === '/feedback' ||
+    normalizedPath === '/verification' ||
+    normalizedPath === '/security-settings' ||
+    normalizedPath === '/recently-viewed' ||
+    normalizedPath === '/saved-searches' ||
+    normalizedPath === '/offers' ||
+    normalizedPath === '/analytics' ||
+    normalizedPath === '/bought-posts' ||
+    normalizedPath === '/sold-posts' ||
+    normalizedPath === '/channels' ||
+    normalizedPath.startsWith('/channel/') ||
+    normalizedPath.startsWith('/centre/') ||
+    normalizedPath.startsWith('/post/');
   const topNavRef = useRef(null);
   const topRibbonRef = useRef(null);
 
@@ -631,14 +651,10 @@ const GreenNavbar = () => {
       ? filters.subcategory
       : '';
 
-  if (hideChromeOnHub) {
-    return null;
-  }
-
   return (
     <>
       {/* Top Navbar and overlays remain as is */}
-      {showFullNavbar ? (
+      {!hideChromeOnHub && showFullNavbar ? (
         // Full Navbar
         <nav ref={topNavRef} className="mhub-top-nav mhub-top-nav--primary sticky top-0 z-[120] transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
           <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-3 py-2 md:px-4 md:py-3 lg:gap-4">
@@ -1257,9 +1273,59 @@ const GreenNavbar = () => {
             </div>
           </div>
         </nav >
-      ) : (
+      ) : !hideChromeOnHub ? (
         // Blank blue ribbon for other pages
         hideTopRibbon ? null : <div ref={topRibbonRef} className="h-14 w-full mhub-top-ribbon" />
+      ) : null}
+
+      {/* --- More Menu Slide-out Panel --- */}
+      {moreOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[200]" role="dialog" aria-modal="true" aria-label={t('menu', { defaultValue: 'Menu' })}>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setMoreOpen(false)}
+          />
+          {/* Panel */}
+          <nav
+            className="absolute top-0 right-0 h-full w-72 max-w-[85vw] bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-700 overflow-y-auto animate-slideInRight"
+            role="navigation"
+            aria-label={t('menu', { defaultValue: 'Menu' })}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+              <span className="text-lg font-bold text-slate-800 dark:text-slate-100">{t('menu', { defaultValue: 'Menu' })}</span>
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label={t('close', { defaultValue: 'Close' })}
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="py-2">
+              {moreMenuLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = normalizedPath === link.path || normalizedPath.startsWith(`${link.path}/`);
+                return (
+                  <button
+                    key={link.key}
+                    onClick={() => { setMoreOpen(false); navigate(link.path); }}
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors ${
+                      isActive
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 shrink-0" />
+                    <span>{link.label || t(link.key, { defaultValue: link.key })}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </div>,
+        document.body,
       )}
 
       {/* --- Bottom Navbar: hidden on auth-only pages --- */}

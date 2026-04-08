@@ -159,6 +159,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
     setIsSwitching(true);
     setOpen(false);
     setActiveCode(nextCode);
+    if (typeof window !== 'undefined') window.__MHUB_LANG_SWITCHING = true;
     try {
       if (!i18n?.hasResourceBundle?.(nextCode, "translation")) {
         void prefetchLanguage(nextCode);
@@ -173,11 +174,13 @@ export default function LanguageSelector({ className = "", compact = false }) {
       if (typeof i18n?.changeLanguage === "function") {
         await i18n.changeLanguage(nextCode);
       }
-      // Notify the rest of the app (pages with inline translation, LanguageContext, etc.)
-      window.dispatchEvent(new Event("languageChanged"));
+      // i18n.changeLanguage already dispatches languageChanged via applyLanguageSideEffects
     } catch {
       setActiveCode(selectedCode);
     } finally {
+      if (typeof window !== 'undefined') {
+        setTimeout(() => { window.__MHUB_LANG_SWITCHING = false; }, 2000);
+      }
       setIsSwitching(false);
     }
   };

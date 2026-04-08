@@ -1411,7 +1411,7 @@ exports.createPost = async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     logError("Error creating post (Transaction Rolled Back):", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: "Internal server error" });
   } finally {
     client.release();
   }
