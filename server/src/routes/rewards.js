@@ -24,9 +24,9 @@ router.get("/my", rewardController.getMyRewards);
 router.post("/redeem", rewardRedeemLimiter, rewardController.redeemRewards);
 
 /** @route GET /by-user - Get rewards filtered by user (query param) */
-router.get("/by-user", rewardsController.getRewardsByUser);
+router.get("/by-user", (req, res, next) => { const targetId = req.query.userId; if (targetId && req.user?.userId !== targetId && req.user?.role !== 'admin') return res.status(403).json({ error: 'Access denied' }); next(); }, rewardsController.getRewardsByUser);
 
 /** @route GET /user/:userId - Get rewards for a specific user */
-router.get("/user/:userId", rewardsController.getRewardsByUser);
+router.get("/user/:userId", (req, res, next) => { const targetId = req.params.userId; if (targetId && req.user?.userId !== targetId && req.user?.role !== 'admin') return res.status(403).json({ error: 'Access denied' }); next(); }, rewardsController.getRewardsByUser);
 
 module.exports = router;

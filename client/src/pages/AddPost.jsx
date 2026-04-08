@@ -710,7 +710,7 @@ const Xe = 2 * 1024 * 1024,
           "div",
           {
             className:
-              "mhub-page-addpost min-h-screen mhub-premium-page bg-gradient-to-br from-sky-50 to-blue-100 dark:bg-gradient-to-br",
+              "mhub-page-addpost min-h-screen mhub-premium-page bg-gradient-to-br from-sky-50 to-blue-100 dark:bg-gradient-to-br dark:from-sky-950 dark:to-blue-950",
           },
           e.createElement(
             "div",
@@ -927,7 +927,7 @@ const Xe = 2 * 1024 * 1024,
           "div",
           {
             className:
-              "mhub-page-addpost min-h-screen mhub-premium-page bg-gradient-to-br from-sky-50 to-blue-100 dark:bg-gradient-to-br",
+              "mhub-page-addpost min-h-screen mhub-premium-page bg-gradient-to-br from-sky-50 to-blue-100 dark:bg-gradient-to-br dark:from-sky-950 dark:to-blue-950",
           },
           e.createElement(
             "div",

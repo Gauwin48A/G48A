@@ -42,13 +42,13 @@ router.get("/all", postController.getAllPosts);
  * GET /mine
  * Retrieve the current user's posts.
  */
-router.get("/mine", postController.getUserPosts);
+router.get("/mine", protect, postController.getUserPosts);
 
 /**
  * GET /mine/totals
  * Retrieve aggregate counts for the current user's posts.
  */
-router.get("/mine/totals", postController.getUserPostTotals);
+router.get("/mine/totals", protect, postController.getUserPostTotals);
 
 /**
  * GET /nearby

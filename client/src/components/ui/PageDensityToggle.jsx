@@ -12,7 +12,7 @@ export default function PageDensityToggle({
         {label}
       </span>
       <select
-        className="mhub-input h-9 px-3 text-xs font-semibold"
+        className="mhub-input h-9 px-3 text-xs font-semibold [&>option]:text-gray-900 [&>option]:bg-white dark:[&>option]:text-gray-100 dark:[&>option]:bg-gray-800"
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
         aria-label={`${label} mode`}

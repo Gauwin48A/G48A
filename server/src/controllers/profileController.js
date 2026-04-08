@@ -376,7 +376,7 @@ exports.getProfile = async (req, res) => {
     return res.status(500).json({
       code: 500,
       message: "Failed to fetch profile",
-      details: err.message,
+      details: "Internal server error",
       fallback: null,
     });
   }

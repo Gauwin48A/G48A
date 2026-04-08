@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const {
   upsertTaskFlow,
   upsertFleetWidget,
@@ -18,7 +19,7 @@ function authorizeOperatorAdmin(req, res, next) {
     return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-operator-admin-token"] || "").trim();
-  if (providedToken !== configuredToken) {
+  if (!providedToken || !crypto.timingSafeEqual(Buffer.from(configuredToken), Buffer.from(providedToken.padEnd(configuredToken.length).slice(0, configuredToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized operator admin request.",
     });
@@ -61,7 +62,7 @@ router.post("/playbooks/upsert", authorizeOperatorAdmin, (req, res) => {
   return res.status(201).json(result);
 });
 
-router.post("/playbooks/:playbookId/run", (req, res) => {
+router.post("/playbooks/:playbookId/run", authorizeOperatorAdmin, (req, res) => {
   const result = runPlaybook({
     ...req.body,
     playbookId: req.params.playbookId,
@@ -76,7 +77,7 @@ router.post("/playbooks/:playbookId/run", (req, res) => {
   return res.status(200).json(result);
 });
 
-router.get("/playbooks", (_req, res) => {
+router.get("/playbooks", authorizeOperatorAdmin, (_req, res) => {
   return res.status(200).json({
     status: "ok",
     playbooks: listPlaybooks(),
@@ -99,7 +100,7 @@ router.post("/ux/accessibility/audits", authorizeOperatorAdmin, (req, res) => {
   return res.status(201).json(result);
 });
 
-router.get("/summary", (_req, res) => {
+router.get("/summary", authorizeOperatorAdmin, (_req, res) => {
   return res.status(200).json({
     status: "ok",
     summary: getSummary(),

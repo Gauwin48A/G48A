@@ -63,6 +63,7 @@ import {
   RewardsActivity,
   RewardsEarn,
   RewardsHero,
+  RewardsImpactDashboard,
   RewardsLeaderboard,
   RewardsMilestones,
   RewardsOverview,
@@ -74,22 +75,19 @@ const REWARD_ACTIVITY_LIMIT = 50;
 const DEFAULT_SECTION_KEY_BY_TAB = {
   overview: "dashboard",
   earn: "earn",
-  milestones: "benefits",
-  redeem: "redeem",
-  activity: "activity",
   referrals: "referrals",
-  leaderboard: "leaderboard",
+  activity: "activity",
 };
 const SECTION_TAB_BY_KEY = {
   dashboard: "overview",
   achievements: "overview",
+  benefits: "overview",
   earn: "earn",
   challenges: "earn",
-  benefits: "milestones",
-  redeem: "redeem",
-  activity: "activity",
   referrals: "referrals",
-  leaderboard: "leaderboard",
+  redeem: "activity",
+  activity: "activity",
+  leaderboard: "activity",
 };
 const SECTION_ID_BY_KEY = {
   dashboard: "rewards-summary",
@@ -258,7 +256,7 @@ const RewardsPage = () => {
           if (signal?.aborted) return;
           setSubscriptionState({
             loading: false,
-            error: err?.message || "Unable to load subscription",
+            error: "Unable to load subscription",
             currentPlan: authUser?.current_plan || "",
             subscription: null,
           });
@@ -379,7 +377,7 @@ const RewardsPage = () => {
           t ||
             setErrorObj({
               key: "rewards_fetch_failed",
-              fallback: u.message || "Failed to fetch rewards",
+              fallback: "Failed to fetch rewards",
             });
         } finally {
           t || setIsLoading(!1);
@@ -399,7 +397,7 @@ const RewardsPage = () => {
             setEngagementError({
               key: "engagement_fetch_failed",
               fallback:
-                s?.message || "Failed to load rewards progress",
+                "Failed to load rewards progress",
             });
           }
           setEngagement(null);
@@ -500,9 +498,17 @@ const RewardsPage = () => {
     fetchRewards({ silent: !1 });
   }, [isAuthed, refreshCounter, fetchRewards]),
     useEffect(() => {
-      setTabDataLoaded((current) =>
-        current[activeTab] ? current : { ...current, [activeTab]: !0 },
-      );
+      setTabDataLoaded((current) => {
+        const next = { ...current, [activeTab]: true };
+        if (activeTab === "activity") {
+          next.leaderboard = true;
+          next.redeem = true;
+        }
+        if (activeTab === "overview") {
+          next.milestones = true;
+        }
+        return next;
+      });
       setActiveSectionKey((current) =>
         SECTION_TAB_BY_KEY[current] === activeTab
           ? current
@@ -533,9 +539,9 @@ const RewardsPage = () => {
     };
   }, [activeTab, activeSectionKey, scrollToSection]),
     useEffect(() => {
-      if (!isAuthed || !tabDataLoaded.earn) return;
+      if (!isAuthed) return;
       fetchEngagement({ silent: !1 });
-    }, [isAuthed, tabDataLoaded.earn, refreshCounter, fetchEngagement]),
+    }, [isAuthed, refreshCounter, fetchEngagement]),
     useEffect(() => {
       refreshAttemptedRef.current = false;
     }, [authUser]),
@@ -916,7 +922,6 @@ const RewardsPage = () => {
           title: tr("daily_checkin_failed", "Check-in failed"),
           description:
             t?.response?.data?.error ||
-            t?.message ||
             tr("try_again", "Try again"),
           variant: "destructive",
         });
@@ -945,7 +950,6 @@ const RewardsPage = () => {
           title: tr("spin_failed", "Spin failed"),
           description:
             t?.response?.data?.error ||
-            t?.message ||
             tr("try_again", "Try again"),
           variant: "destructive",
         });
@@ -974,7 +978,6 @@ const RewardsPage = () => {
           title: tr("scratch_failed", "Scratch failed"),
           description:
             t?.response?.data?.error ||
-            t?.message ||
             tr("try_again", "Try again"),
           variant: "destructive",
         });
@@ -1014,7 +1017,6 @@ const RewardsPage = () => {
           title: tr("milestone_failed", "Claim failed"),
           description:
             t?.response?.data?.error ||
-            t?.message ||
             tr("try_again", "Try again"),
           variant: "destructive",
         });
@@ -1064,7 +1066,7 @@ const RewardsPage = () => {
         setRedeemDialogError({
           key: "redeem_posts_failed",
           fallback:
-            f?.message || "Failed to load posts for redemption.",
+            f?.response?.data?.error || "Failed to load posts for redemption.",
         });
       } finally {
         setRedeemDialogLoading(!1);
@@ -1105,7 +1107,6 @@ const RewardsPage = () => {
           key: "redeem_failed",
           fallback:
             s?.response?.data?.error ||
-            s?.message ||
             "Failed to redeem reward.",
         });
       } finally {
@@ -2017,44 +2018,14 @@ const RewardsPage = () => {
     {
       key: "dashboard",
       tab: "overview",
-      label: tr("rewards_dashboard", "Rewards Dashboard"),
+      label: tr("progress", "Progress"),
       icon: Sparkles,
-    },
-    {
-      key: "achievements",
-      tab: "overview",
-      label: tr("achievements", "Achievements"),
-      icon: Award,
     },
     {
       key: "earn",
       tab: "earn",
-      label: tr("earn_coins", "Earn Coins"),
+      label: tr("earn_challenges", "Earn & Challenges"),
       icon: Gift,
-    },
-    {
-      key: "challenges",
-      tab: "earn",
-      label: tr("daily_challenges", "Today's Challenges"),
-      icon: Target,
-    },
-    {
-      key: "benefits",
-      tab: "milestones",
-      label: tr("level_benefits", "Level benefits"),
-      icon: Crown,
-    },
-    {
-      key: "redeem",
-      tab: "redeem",
-      label: tr("redeem_coins", "Redeem coins"),
-      icon: Star,
-    },
-    {
-      key: "activity",
-      tab: "activity",
-      label: tr("activity", "Activity"),
-      icon: TrendingUp,
     },
     {
       key: "referrals",
@@ -2063,10 +2034,10 @@ const RewardsPage = () => {
       icon: Users,
     },
     {
-      key: "leaderboard",
-      tab: "leaderboard",
-      label: tr("leaderboard", "Leaderboard"),
-      icon: Trophy,
+      key: "activity",
+      tab: "activity",
+      label: tr("activity_hub", "Activity & Rewards"),
+      icon: TrendingUp,
     },
   ];
   const handleSectionSelect = (item) => {
@@ -2118,6 +2089,46 @@ const RewardsPage = () => {
         id="rewards-dashboard"
         className="max-w-6xl mx-auto px-4 mt-3 sm:mt-4 pb-6 relative z-10 space-y-5 scroll-mt-24"
       >
+        <RewardsImpactDashboard
+          displayCoins={displayCoins}
+          coinDelta={coinDelta}
+          nextRewardLabel={nextRewardLabel}
+          nextRewardProgress={nextRewardProgress}
+          nextRewardRemaining={nextRewardRemaining}
+          engagementReady={engagementReady}
+          hasCheckedInToday={hasCheckedInToday}
+          currentCheckInDay={currentCheckInDay}
+          dailyCheckInLoading={dailyCheckInLoading}
+          onDailyCheckIn={handleDailyCheckIn}
+          spinStatus={spinStatus}
+          spinLoading={spinLoading}
+          onSpin={handleSpinWheel}
+          scratchStatus={scratchStatus}
+          scratchLoading={scratchLoading}
+          onScratch={handleScratchCard}
+          referralCode={referralCode}
+          shareDisabled={shareDisabled}
+          onCopyReferralCode={() =>
+            copyToClipboard(
+              referralCode,
+              tr("referral_code", "Referral code"),
+            )
+          }
+          onCopyReferralLink={copyReferralLink}
+          onShareWhatsApp={shareWhatsApp}
+          onShareTelegram={shareTelegram}
+          onShareSms={shareSms}
+          referralGoal={referralGoal}
+          referralReward={referralReward}
+          referralDisplay={referralDisplay}
+          referralProgressPercent={referralProgressPercent}
+          milestoneEligible={milestoneEligible}
+          milestoneClaimed={milestoneClaimed}
+          onClaimMilestone={handleClaimMilestone}
+          onOpenRedeem={() => openSection("redeem")}
+          tr={tr}
+        />
+
         <div className="w-full">
           <div
             className="rewards-tabs-sticky sticky z-30 mb-4"
@@ -2157,35 +2168,44 @@ const RewardsPage = () => {
           </div>
 
           {activeTab === "overview" ? (
-            <RewardsOverview
-              rewardsUser={rewardsUser}
-              membershipPlanLabel={membershipPlanLabel}
-              membershipPlanBadgeClass={membershipPlanLightBadgeClass}
-              displayCoins={displayCoins}
-              nextRewardTarget={nextRewardTarget}
-              nextRewardLabel={nextRewardLabel}
-              nextRewardProgress={nextRewardProgress}
-              nextRewardRemaining={nextRewardRemaining}
-              onShareReferral={shareReferral}
-              onOpenRedeem={() => openSection("redeem")}
-              primaryStats={primaryStats}
-              secondaryStats={secondaryStats}
-              showMoreStats={showMoreStats}
-              onToggleMoreStats={() => setShowMoreStats((value) => !value)}
-              xpProgressPercent={xpProgressPercent}
-              xpRemaining={xpRemaining}
-              maxStreak={maxStreak}
-              nextStreakTarget={nextStreakTarget}
-              streakProgress={streakProgress}
-              milestoneUnlockedCount={milestoneUnlockedCount}
-              milestones={milestones}
-              nextMilestone={nextMilestone}
-              onboardingSteps={onboardingSteps}
-              primaryActionLabel={overviewPrimaryActionLabel}
-              onPrimaryAction={handleOverviewPrimaryAction}
-              onOpenEarnPlan={() => openSection("earn")}
-              tr={tr}
-            />
+            <div className="space-y-4">
+              <RewardsOverview
+                rewardsUser={rewardsUser}
+                membershipPlanLabel={membershipPlanLabel}
+                membershipPlanBadgeClass={membershipPlanLightBadgeClass}
+                displayCoins={displayCoins}
+                nextRewardTarget={nextRewardTarget}
+                nextRewardLabel={nextRewardLabel}
+                nextRewardProgress={nextRewardProgress}
+                nextRewardRemaining={nextRewardRemaining}
+                onShareReferral={shareReferral}
+                onOpenRedeem={() => openSection("redeem")}
+                primaryStats={primaryStats}
+                secondaryStats={secondaryStats}
+                showMoreStats={showMoreStats}
+                onToggleMoreStats={() => setShowMoreStats((value) => !value)}
+                xpProgressPercent={xpProgressPercent}
+                xpRemaining={xpRemaining}
+                maxStreak={maxStreak}
+                nextStreakTarget={nextStreakTarget}
+                streakProgress={streakProgress}
+                milestoneUnlockedCount={milestoneUnlockedCount}
+                milestones={milestones}
+                nextMilestone={nextMilestone}
+                onboardingSteps={onboardingSteps}
+                primaryActionLabel={overviewPrimaryActionLabel}
+                onPrimaryAction={handleOverviewPrimaryAction}
+                onOpenEarnPlan={() => openSection("earn")}
+                tr={tr}
+              />
+              <RewardsMilestones
+                levelBenefits={levelBenefits}
+                currentLevel={currentLevel}
+                milestones={milestones}
+                onOpenAllLevels={() => navigate("/tier-selection")}
+                tr={tr}
+              />
+            </div>
           ) : null}
 
           {activeTab === "earn" ? (
@@ -2211,47 +2231,6 @@ const RewardsPage = () => {
               showAllChallenges={showAllChallenges}
               onToggleChallenges={() => setShowAllChallenges((value) => !value)}
               tr={tr}
-            />
-          ) : null}
-
-          {activeTab === "milestones" ? (
-            <RewardsMilestones
-              levelBenefits={levelBenefits}
-              currentLevel={currentLevel}
-              milestones={milestones}
-              onOpenAllLevels={() => navigate("/tier-selection")}
-              tr={tr}
-            />
-          ) : null}
-
-          {activeTab === "redeem" ? (
-            <RewardsRedeem
-              redeemOptions={redeemOptions}
-              availableCoins={availableCoins}
-              redeemProcessing={redeemProcessing}
-              onOpenRedeemDialog={openRedeemDialog}
-              onOpenEarn={() => openSection("earn")}
-              tr={tr}
-            />
-          ) : null}
-
-          {activeTab === "activity" ? (
-            <RewardsActivity
-              visitStreak={visitStreak}
-              postStreak={postStreak}
-              streakProgress={streakProgress}
-              nextStreakTarget={nextStreakTarget}
-              chainEarnedPoints={chainEarnedPoints}
-              chainPotentialPoints={chainPotentialPoints}
-              activityReady={activityReady}
-              rewardLogItems={rewardLogItems}
-              filteredRewardLogItems={filteredRewardLogItems}
-              historyFilter={historyFilter}
-              onChangeHistoryFilter={setHistoryFilter}
-              onOpenEarn={() => openSection("earn")}
-              onShareReferral={shareReferral}
-              tr={tr}
-              tFunc={tFunc}
             />
           ) : null}
 
@@ -2288,19 +2267,46 @@ const RewardsPage = () => {
             />
           ) : null}
 
-          {activeTab === "leaderboard" ? (
-            <RewardsLeaderboard
-              leaderboardCountdown={leaderboardCountdown}
-              nextLeaderboardPayout={nextLeaderboardPayout}
-              lastLeaderboardPayout={lastLeaderboardPayout}
-              currentReferralRank={currentReferralRank}
-              referralLeaderboard={referralLeaderboard}
-              leaderboardReady={leaderboardReady}
-              publicWall={publicWall}
-              leaderboardHistory={leaderboardHistory}
-              tr={tr}
-              tFunc={tFunc}
-            />
+          {activeTab === "activity" ? (
+            <div className="space-y-4">
+              <RewardsRedeem
+                redeemOptions={redeemOptions}
+                availableCoins={availableCoins}
+                redeemProcessing={redeemProcessing}
+                onOpenRedeemDialog={openRedeemDialog}
+                onOpenEarn={() => openSection("earn")}
+                tr={tr}
+              />
+              <RewardsActivity
+                visitStreak={visitStreak}
+                postStreak={postStreak}
+                streakProgress={streakProgress}
+                nextStreakTarget={nextStreakTarget}
+                chainEarnedPoints={chainEarnedPoints}
+                chainPotentialPoints={chainPotentialPoints}
+                activityReady={activityReady}
+                rewardLogItems={rewardLogItems}
+                filteredRewardLogItems={filteredRewardLogItems}
+                historyFilter={historyFilter}
+                onChangeHistoryFilter={setHistoryFilter}
+                onOpenEarn={() => openSection("earn")}
+                onShareReferral={shareReferral}
+                tr={tr}
+                tFunc={tFunc}
+              />
+              <RewardsLeaderboard
+                leaderboardCountdown={leaderboardCountdown}
+                nextLeaderboardPayout={nextLeaderboardPayout}
+                lastLeaderboardPayout={lastLeaderboardPayout}
+                currentReferralRank={currentReferralRank}
+                referralLeaderboard={referralLeaderboard}
+                leaderboardReady={leaderboardReady}
+                publicWall={publicWall}
+                leaderboardHistory={leaderboardHistory}
+                tr={tr}
+                tFunc={tFunc}
+              />
+            </div>
           ) : null}
         </div>
       </div>

@@ -1900,7 +1900,7 @@ const ve = 5,
             const backendMessage =
               n?.response?.data?.error || n?.response?.data?.message || "";
             const message =
-              backendMessage || n?.message || "Failed to fetch posts";
+              backendMessage || "Failed to fetch posts";
             const normalized = String(message).toLowerCase();
             if (
               status === 429 ||
@@ -3574,55 +3574,7 @@ const ve = 5,
                                   ),
                                   s("verified", { defaultValue: "Verified" }),
                                 ),
-                              !F &&
-                                r.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-semibold rounded-full border border-amber-200 dark:border-amber-700",
-                                  },
-                                  s("new_seller", { defaultValue: "New Seller" }),
-                                ),
-                              reliabilityLabel &&
-                                r.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      `inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border ${reliabilityCls}`,
-                                    title: `${s("reliability_score", { defaultValue: "Reliability Score" })}: ${trustScore}%`,
-                                  },
-                                  r.createElement(
-                                    "svg",
-                                    { className: "w-3 h-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-                                    r.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" }),
-                                  ),
-                                  reliabilityLabel,
-                                ),
-                              responseTimeLabel &&
-                                r.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-[10px] font-semibold rounded-full border border-purple-200 dark:border-purple-700",
-                                    title: s("avg_response_time", { defaultValue: "Average response time" }),
-                                  },
-                                  r.createElement(
-                                    "svg",
-                                    { className: "w-3 h-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
-                                    r.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" }),
-                                  ),
-                                  responseTimeLabel,
-                                ),
-                              ratingLabel &&
-                                r.createElement(
-                                  "span",
-                                  {
-                                    className:
-                                      "mhub-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-yellow-700 dark:text-yellow-300 text-[10px] font-semibold",
-                                  },
-                                  "\u2605",
-                                  ratingLabel,
-                                ),
+                              /* Trust/reliability/response badges removed from cards — only shown on PostDetail */
                               r.createElement(
                                 "span",
                                 {
@@ -4232,95 +4184,96 @@ const ve = 5,
               "div",
               {
                 className:
-                  "mhub-premium-surface w-full max-w-4xl max-h-[85vh] overflow-auto rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 animate-in slide-in-from-bottom-8 sm:m-4",
+                  "mhub-premium-surface w-full max-w-5xl max-h-[90vh] overflow-auto rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-8 sm:m-4",
               },
               r.createElement(
                 "div",
-                { className: "flex items-center justify-between mb-4" },
+                { className: "flex items-center justify-between mb-6" },
                 r.createElement(
                   "h2",
-                  { className: "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2" },
+                  { className: "text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2" },
                   r.createElement(CompareIcon, { className: "w-5 h-5 text-purple-500" }),
                   s("compare_products", { defaultValue: "Compare Products" }),
+                  r.createElement("span", { className: "text-sm font-normal text-gray-500 dark:text-gray-400 ml-2" }, `(${compareItems.length})`),
                 ),
                 r.createElement(
                   "button",
                   {
                     type: "button",
                     onClick: () => setShowComparePanel(!1),
-                    className: "p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition",
+                    className: "p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition",
                   },
-                  r.createElement(Jo, { className: "w-4 h-4" }),
+                  r.createElement(Jo, { className: "w-5 h-5" }),
                 ),
               ),
               r.createElement(
                 "div",
-                { className: "overflow-x-auto" },
-                r.createElement(
-                  "table",
-                  { className: "w-full text-sm border-collapse" },
-                  r.createElement(
-                    "thead",
-                    null,
+                { className: "grid gap-4", style: { gridTemplateColumns: `repeat(${compareItems.length}, minmax(200px, 1fr))` } },
+                compareItems.map((item) => {
+                  const itemId = I(item?.post_id || item?.id);
+                  const imgSrc = Ne(item);
+                  const priceVal = resolvePostPriceValue(item);
+                  const priceLabel = priceVal > 0 ? formatCurrency(priceVal) : null;
+                  return r.createElement(
+                    "div",
+                    { key: itemId, className: "rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 overflow-hidden" },
                     r.createElement(
-                      "tr",
-                      null,
-                      r.createElement("th", { className: "text-left p-3 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 w-28" }, s("spec", { defaultValue: "Spec" })),
-                      compareItems.map((item) =>
-                        r.createElement(
-                          "th",
-                          { key: I(item?.post_id || item?.id), className: "p-3 border-b border-gray-200 dark:border-gray-700 min-w-[160px]" },
+                      "div",
+                      { className: "relative" },
+                      r.createElement("img", {
+                        src: imgSrc,
+                        alt: item?.title || "",
+                        className: "w-full h-44 object-cover",
+                        onError: (ev) => { ev.target.style.display = "none"; },
+                      }),
+                      r.createElement(
+                        "button",
+                        {
+                          type: "button",
+                          onClick: () => toggleCompare(item),
+                          className: "absolute top-2 right-2 p-1.5 rounded-full bg-red-500/90 text-white hover:bg-red-600 transition text-xs",
+                          title: s("remove", { defaultValue: "Remove" }),
+                        },
+                        r.createElement(Jo, { className: "w-3.5 h-3.5" }),
+                      ),
+                    ),
+                    r.createElement(
+                      "div",
+                      { className: "p-4 space-y-3" },
+                      r.createElement("h3", { className: "font-bold text-base text-gray-900 dark:text-white line-clamp-2" }, item?.title || "—"),
+                      priceLabel && r.createElement("p", { className: "text-lg font-bold text-emerald-600 dark:text-emerald-400" }, priceLabel),
+                      r.createElement(
+                        "div",
+                        { className: "space-y-2 text-sm" },
+                        [
+                          { label: s("condition", { defaultValue: "Condition" }), value: item?.condition || item?.item_condition },
+                          { label: s("brand", { defaultValue: "Brand" }), value: item?.brand || item?.brand_name },
+                          { label: s("model", { defaultValue: "Model" }), value: item?.model || item?.model_name },
+                          { label: s("location", { defaultValue: "Location" }), value: item?.location || item?.city || item?.area },
+                          { label: s("category", { defaultValue: "Category" }), value: item?.category_name || item?.category },
+                          { label: s("seller", { defaultValue: "Seller" }), value: item?.user?.name || item?.user_name || item?.username },
+                          { label: s("subcategory", { defaultValue: "Subcategory" }), value: item?.subcategory_name || item?.subcategory },
+                          { label: s("posted", { defaultValue: "Posted" }), value: item?.created_at ? new Date(item.created_at).toLocaleDateString() : null },
+                        ].filter((spec) => spec.value).map((spec) =>
                           r.createElement(
                             "div",
-                            { className: "flex flex-col items-center gap-2" },
-                            r.createElement("img", {
-                              src: Ne(item),
-                              alt: item?.title || "",
-                              className: "w-16 h-16 rounded-xl object-cover",
-                              onError: (ev) => { ev.target.src = "/placeholder.svg"; },
-                            }),
-                            r.createElement("span", { className: "text-xs font-semibold text-gray-900 dark:text-white text-center line-clamp-2" }, item?.title || ""),
-                            r.createElement(
-                              "button",
-                              {
-                                type: "button",
-                                onClick: () => toggleCompare(item),
-                                className: "text-[10px] text-red-500 hover:text-red-700 font-medium",
-                              },
-                              s("remove", { defaultValue: "Remove" }),
-                            ),
+                            { key: spec.label, className: "flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-700/50" },
+                            r.createElement("span", { className: "text-gray-500 dark:text-gray-400 text-xs font-medium" }, spec.label),
+                            r.createElement("span", { className: "text-gray-900 dark:text-gray-100 font-medium text-right max-w-[60%] truncate" }, spec.value),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  r.createElement(
-                    "tbody",
-                    null,
-                    [
-                      { key: "price", label: s("price", { defaultValue: "Price" }), get: (item) => resolvePostPriceValue(item) > 0 ? formatCurrency(resolvePostPriceValue(item)) : "-" },
-                      { key: "condition", label: s("condition", { defaultValue: "Condition" }), get: (item) => item?.condition || item?.item_condition || "-" },
-                      { key: "brand", label: s("brand", { defaultValue: "Brand" }), get: (item) => item?.brand || item?.brand_name || "-" },
-                      { key: "model", label: s("model", { defaultValue: "Model" }), get: (item) => item?.model || item?.model_name || "-" },
-                      { key: "location", label: s("location", { defaultValue: "Location" }), get: (item) => item?.location || item?.city || item?.area || "-" },
-                      { key: "category", label: s("category", { defaultValue: "Category" }), get: (item) => item?.category_name || item?.category || "-" },
-                      { key: "seller", label: s("seller", { defaultValue: "Seller" }), get: (item) => item?.user?.name || item?.user_name || item?.username || "-" },
-                    ].map((row) =>
                       r.createElement(
-                        "tr",
-                        { key: row.key, className: "border-b border-gray-100 dark:border-gray-800" },
-                        r.createElement("td", { className: "p-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide" }, row.label),
-                        compareItems.map((item) =>
-                          r.createElement(
-                            "td",
-                            { key: `${row.key}-${I(item?.post_id || item?.id)}`, className: "p-3 text-sm text-gray-900 dark:text-gray-100 text-center" },
-                            row.get(item),
-                          ),
-                        ),
+                        W,
+                        {
+                          onClick: () => { setShowComparePanel(!1); y(`/post/${itemId}`); },
+                          className: "w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold dark:bg-indigo-700 dark:hover:bg-indigo-800",
+                        },
+                        s("view_details", { defaultValue: "View Details" }),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ),
             ),
           ),

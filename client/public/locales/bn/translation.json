@@ -1,4 +1,4 @@
-{
+﻿{
   "24_48_hours": "24-48 ঘন্টা",
   "24_48h_response": "24-48 ঘন্টার মধ্যে প্রতিক্রিয়া",
   "24h_validity": "24 ঘন্টা বৈধতা",
@@ -2232,5 +2232,26 @@
   "challenge_share_post_desc": "Share one of your posts to bring more views back to your listing.",
   "challenge_complete_profile_desc": "Finish your profile details so buyers and sellers trust you faster.",
   "next_steps": "Next steps",
-  "next_steps_hint": "Finish these actions to unlock stronger rewards faster."
+  "next_steps_hint": "Finish these actions to unlock stronger rewards faster.",
+  "daily_actions": "Daily Actions",
+  "claim_today": "Claim today's reward",
+  "daily_checkin": "Daily check-in",
+  "referral_hub": "Referral Hub",
+  "your_code": "Your code",
+  "invited": "invited",
+  "rewards_rank": "Rewards rank",
+  "membership_plan": "Membership plan",
+  "rewards_rank_plan_note": "Rewards rank is based on activity and is separate from your membership plan.",
+  "basic_plan": "Basic",
+  "earn_challenges": "Earn & Challenges",
+  "activity_hub": "Activity & Rewards",
+  "others": "others",
+  "search_feed": "Search feed",
+  "sort_shuffle": "Shuffle",
+  "feed_empty_desc_social": "Share an update or check back soon for new community posts.",
+  "activity_update": "Activity update",
+  "latest_50": "Latest 50",
+  "sponsored": "Sponsored",
+  "more_recommendations": "More recommendations",
+  "load_more_recommendations_hint": "Load another set of picks for you."
 }

@@ -22,10 +22,9 @@ class RedisRateLimitStore {
     async increment(key) {
         const k = this._key(key);
         const total = await redisSession.incr(k);
-        // Set TTL on first increment (15 min default window)
+        // Set TTL on first increment (15 min window)
         if (total === 1) {
-            // Use raw Redis if available for EXPIRE, otherwise incr handles it
-            // redisSession.incr already handles the key; TTL is managed by the windowMs in express-rate-limit
+            await redisSession.expire(k, 900);
         }
         return { totalHits: total, resetTime: undefined };
     }

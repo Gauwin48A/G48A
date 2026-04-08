@@ -3,6 +3,7 @@ const router = express.Router();
 const paymentController = require("../controllers/paymentController");
 const { protect, optionalAuth } = require("../middleware/auth");
 const { transactionLimiter, webhookLimiter } = require("../middleware/rateLimiter");
+const { requireAdmin } = require("../middleware/rbac");
 
 /**
  * @route Payment routes
@@ -38,7 +39,7 @@ router.get("/status", protect, paymentController.getPaymentStatus);
 router.get("/reconciliation/report", protect, paymentController.getReconciliationReport);
 
 /** @route POST /reconciliation/run - Trigger a reconciliation run */
-router.post("/reconciliation/run", protect, paymentController.runReconciliation);
+router.post("/reconciliation/run", protect, requireAdmin, paymentController.runReconciliation);
 
 /** @route POST /:id/retry - Retry a failed payment */
 router.post("/:id/retry", protect, transactionLimiter, paymentController.retryPayment);
@@ -47,10 +48,10 @@ router.post("/:id/retry", protect, transactionLimiter, paymentController.retryPa
 router.get("/pending", protect, paymentController.getPendingPayments);
 
 /** @route POST /:id/verify - Verify a payment */
-router.post("/:id/verify", protect, paymentController.verifyPayment);
+router.post("/:id/verify", protect, requireAdmin, paymentController.verifyPayment);
 
 /** @route POST /:id/reject - Reject a payment */
-router.post("/:id/reject", protect, paymentController.rejectPayment);
+router.post("/:id/reject", protect, requireAdmin, paymentController.rejectPayment);
 
 /** @route GET /stats - Get payment statistics */
 router.get("/stats", protect, paymentController.getPaymentStats);

@@ -55,7 +55,7 @@ exports.verifyLocation = async (req, res) => {
   } catch (error) {
     if (error instanceof LocationVerificationError) {
       return res.status(error.status || 400).json({
-        error: error.message,
+        error: "Location verification failed",
         code: error.code || "LOCATION_VERIFICATION_FAILED",
         request_id: requestId,
       });

@@ -226,7 +226,7 @@ function buildTextFeedQuery({
   if (search) {
     const placeholder = addParam(`%${search}%`);
     conditions.push(
-      `(p.title ILIKE ${placeholder} OR p.description ILIKE ${placeholder} OR p.location ILIKE ${placeholder} OR c.name ILIKE ${placeholder} OR sc.name ILIKE ${placeholder})`
+      `(p.title ILIKE ${placeholder} OR p.description ILIKE ${placeholder} OR p.location ILIKE ${placeholder} OR c.name ILIKE ${placeholder} OR sc.name ILIKE ${placeholder} OR pr.full_name ILIKE ${placeholder})`
     );
   }
 
@@ -298,7 +298,7 @@ function buildTextFeedCountQuery({
   if (search) {
     const placeholder = addParam(`%${search}%`);
     conditions.push(
-      `(p.title ILIKE ${placeholder} OR p.description ILIKE ${placeholder} OR p.location ILIKE ${placeholder} OR c.name ILIKE ${placeholder} OR sc.name ILIKE ${placeholder})`
+      `(p.title ILIKE ${placeholder} OR p.description ILIKE ${placeholder} OR p.location ILIKE ${placeholder} OR c.name ILIKE ${placeholder} OR sc.name ILIKE ${placeholder} OR pr.full_name ILIKE ${placeholder})`
     );
   }
 
@@ -310,6 +310,7 @@ function buildTextFeedCountQuery({
     FROM posts p
     LEFT JOIN categories c ON p.category_id = c.category_id
     LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+    LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
     WHERE ${conditions.join(" AND ")}
   `;
 
@@ -366,7 +367,7 @@ exports.getFeed = async (req, res) => {
     res.json(enrichedPosts);
   } catch (err) {
     logger.error("Feed API error:", err);
-    res.status(500).json({ error: err.message, fallback: [] });
+    res.status(500).json({ error: "Internal server error", fallback: [] });
   }
 };
 
@@ -428,7 +429,7 @@ exports.getMyFeed = async (req, res) => {
     res.json(enrichedPosts);
   } catch (err) {
     logger.error("MyFeed API error:", err);
-    res.status(500).json({ error: err.message, fallback: [] });
+    res.status(500).json({ error: "Internal server error", fallback: [] });
   }
 };
 

@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const {
   registerSlo,
   recordAvailabilitySample,
@@ -20,7 +21,7 @@ function authorizeReliabilityAdmin(req, res, next) {
     return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-reliability-admin-token"] || "").trim();
-  if (providedToken !== configuredToken) {
+  if (!providedToken || !crypto.timingSafeEqual(Buffer.from(configuredToken), Buffer.from(providedToken.padEnd(configuredToken.length).slice(0, configuredToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized reliability admin request.",
     });
@@ -36,7 +37,7 @@ router.post("/slos/register", authorizeReliabilityAdmin, (req, res) => {
   return res.status(201).json(result);
 });
 
-router.post("/slos/availability-sample", (req, res) => {
+router.post("/slos/availability-sample", authorizeReliabilityAdmin, (req, res) => {
   const result = recordAvailabilitySample(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -47,7 +48,7 @@ router.post("/slos/availability-sample", (req, res) => {
   return res.status(200).json(result);
 });
 
-router.get("/slos/:serviceName", (req, res) => {
+router.get("/slos/:serviceName", authorizeReliabilityAdmin, (req, res) => {
   const slo = getSlo(req.params.serviceName);
   if (!slo) {
     return res.status(404).json({
@@ -60,7 +61,7 @@ router.get("/slos/:serviceName", (req, res) => {
   });
 });
 
-router.post("/observability/traces", (req, res) => {
+router.post("/observability/traces", authorizeReliabilityAdmin, (req, res) => {
   const result = ingestTrace(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -68,7 +69,7 @@ router.post("/observability/traces", (req, res) => {
   return res.status(201).json(result);
 });
 
-router.get("/observability/recent", (req, res) => {
+router.get("/observability/recent", authorizeReliabilityAdmin, (req, res) => {
   return res.status(200).json({
     status: "ok",
     traces: listRecentTraces(req.query?.limit || 50),
@@ -91,7 +92,7 @@ router.post("/drills/backup-restore", authorizeReliabilityAdmin, (req, res) => {
   return res.status(200).json(result);
 });
 
-router.post("/incidents/open", (req, res) => {
+router.post("/incidents/open", authorizeReliabilityAdmin, (req, res) => {
   const result = openIncidentCommand(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -113,7 +114,7 @@ router.post("/incidents/:incidentId/postmortem", authorizeReliabilityAdmin, (req
   return res.status(200).json(result);
 });
 
-router.get("/summary", (_req, res) => {
+router.get("/summary", authorizeReliabilityAdmin, (_req, res) => {
   return res.status(200).json({
     status: "ok",
     summary: getSummary(),

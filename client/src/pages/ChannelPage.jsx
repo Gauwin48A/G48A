@@ -1,189 +1,591 @@
-import e, {
-  useCallback as P,
-  useEffect as J,
-  useMemo as K,
-  useRef as ue,
-  useState as n,
+﻿import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-  getChannelById as Q,
-  getChannelByUser as Qe,
-  createChannelPost as X,
-  followChannel as Y,
+  getChannelById,
+  getChannelByUser,
+  createChannelPost,
+  followChannel,
 } from "../lib/api";
-import { Link as V, useParams as Z } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft as T,
-  Loader2 as U,
-  RefreshCw as R,
-  Users as ee,
-  Video as te,
-  Mail as MailIcon,
-  Phone as PhoneIcon,
-  Globe as GlobeIcon,
+  ArrowLeft,
+  Loader2,
+  RefreshCw,
+  Users,
+  Video,
   MapPin as MapPinIcon,
   Star as StarIcon,
   Package as PackageIcon,
+  Edit3,
+  Share2,
 } from "lucide-react";
-import { useTranslation as ae } from "react-i18next";
-import { useToast as oe } from "@/hooks/use-toast";
-import re from "@/components/EmptyState";
-import { Button as x } from "@/components/ui/button";
-import { Card as m, CardContent as c } from "@/components/ui/card";
-import { Input as se } from "@/components/ui/input";
-import { Textarea as ne } from "@/components/ui/textarea";
+import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
+import EmptyState from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import ImageUpload from "@/components/ImageUpload";
 import api from "@/services/api";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
-const le = ({ variant = "channel" } = {}) => {
-  const { t } = ae(),
-    tr = P((key, fallback) => t(key, { defaultValue: fallback }), [t]),
-    tRef = ue(t),
-    trRef = ue(tr),
-    { toast: p } = oe(),
-    { channelId: A, id: M } = Z(),
-    i = A || M,
-    isCentre = variant === "centre",
-    [o, f] = n(null),
-    [F, y] = n([]),
-    [O, v] = n(!0),
-    [_, I] = n(!1),
-    [w, B] = n(""),
-    [b, D] = n(""),
-    [u, j] = n("text"),
-    [imageFiles, setImageFiles] = n([]),
-    [imageUploadKey, setImageUploadKey] = n(0),
-    [h, q] = n(!1),
-    [N, E] = n(!1),
-    [C, d] = n(null),
-    [listings, setListings] = n([]),
-    [listingsLoading, setListingsLoading] = n(!1),
-    [listingsError, setListingsError] = n(null),
-    [reviews, setReviews] = n([]),
-    [reviewsStats, setReviewsStats] = n(null),
-    [reviewsLoading, setReviewsLoading] = n(!1),
-    [reviewsError, setReviewsError] = n(null),
-    L = P((a) => {
-      const r = a?.data ?? a,
-        s = r?.channel || r || null,
-        l = String(localStorage.getItem("userId") || "");
-      f(s),
-        q(!!r?.isOwner || (s?.owner_id && String(s.owner_id) === l)),
-        y(
-          Array.isArray(r?.posts)
-            ? r.posts
-            : Array.isArray(s?.posts)
-              ? s.posts
-              : [],
-        );
-    }, []),
-    g = P(async () => {
-      if (!i) {
-        d(tRef.current("something_went_wrong") || "Failed to load channel"),
-          f(null),
-          y([]),
-          v(!1);
+import CentrePageTabs, {
+  CentreVerificationBadge,
+} from "@/components/centre/CentrePageTabs";
+import CentrePageAnalytics from "@/components/centre/CentrePageAnalytics";
+
+/* ------------------------------------------------------------------ */
+/*  Skeleton loader                                                   */
+/* ------------------------------------------------------------------ */
+function PageSkeleton() {
+  return (
+    <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950">
+      <div className="h-48 sm:h-56 animate-pulse bg-slate-200 dark:bg-slate-800" />
+      <div className="max-w-4xl mx-auto px-4 -mt-12">
+        <div className="flex items-end gap-4">
+          <div className="h-24 w-24 rounded-2xl animate-pulse bg-slate-300 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-900" />
+          <div className="flex-1 pb-2 space-y-2">
+            <div className="h-5 w-48 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
+            <div className="h-3 w-32 rounded bg-slate-200 dark:bg-slate-700 animate-pulse" />
+          </div>
+        </div>
+        <div className="mt-6 space-y-4">
+          {[1, 2, 3].map((k) => (
+            <div
+              key={k}
+              className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5 animate-pulse"
+            >
+              <div className="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700 mb-3" />
+              <div className="h-3 w-full rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700 mt-2" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Image helpers                                                     */
+/* ------------------------------------------------------------------ */
+function resolveListingImage(post) {
+  const direct =
+    post?.image_url || post?.imageUrl || post?.thumbnail || post?.image;
+  if (direct) return resolveMediaUrl(direct, "/placeholder.svg");
+  const images = post?.images;
+  if (Array.isArray(images) && images.length) {
+    return resolveMediaUrl(images[0], "/placeholder.svg");
+  }
+  if (typeof images === "string" && images.trim()) {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed) && parsed.length) {
+        return resolveMediaUrl(parsed[0], "/placeholder.svg");
+      }
+    } catch {
+      return resolveMediaUrl(images, "/placeholder.svg");
+    }
+  }
+  return "/placeholder.svg";
+}
+
+function resolvePostImages(post) {
+  const collected = [];
+  const rawList = post?.image_urls ?? post?.imageUrls ?? null;
+  if (Array.isArray(rawList)) {
+    collected.push(...rawList);
+  } else if (typeof rawList === "string" && rawList.trim()) {
+    try {
+      const parsed = JSON.parse(rawList);
+      if (Array.isArray(parsed)) collected.push(...parsed);
+      else collected.push(rawList);
+    } catch {
+      collected.push(rawList);
+    }
+  }
+  const single = post?.image_url || post?.imageUrl;
+  if (single) collected.unshift(single);
+  return [...new Set(collected)]
+    .map((url) => resolveMediaUrl(url, ""))
+    .filter(Boolean);
+}
+
+function formatPrice(value, tr) {
+  const numeric = Number(String(value ?? "").replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return tr("price_on_request", "Price on request");
+  }
+  return `â‚¹${numeric.toLocaleString()}`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Post images                                                       */
+/* ------------------------------------------------------------------ */
+function PostImages({ post }) {
+  const images = resolvePostImages(post);
+  if (!images.length) return null;
+  if (images.length === 1) {
+    return (
+      <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <img
+          src={images[0]}
+          alt="Post media"
+          className="h-64 w-full object-cover"
+          loading="lazy"
+          onError={(ev) => {
+            ev.currentTarget.onerror = null;
+            ev.currentTarget.src = "/placeholder.svg";
+          }}
+        />
+      </div>
+    );
+  }
+  const displayImages = images.slice(0, 4);
+  const extraCount = images.length - displayImages.length;
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {displayImages.map((url, idx) => (
+        <div
+          key={`${post?.post_id || post?.id || "img"}-${idx}`}
+          className="relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
+        >
+          <img
+            src={url}
+            alt="Post media"
+            className="h-full w-full object-cover"
+            loading="lazy"
+            onError={(ev) => {
+              ev.currentTarget.onerror = null;
+              ev.currentTarget.src = "/placeholder.svg";
+            }}
+          />
+          {extraCount > 0 && idx === displayImages.length - 1 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white text-sm font-semibold">
+              +{extraCount}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Listings Grid                                                     */
+/* ------------------------------------------------------------------ */
+function ListingsGrid({ listings, listingsLoading, listingsError, channelId, tr }) {
+  if (listingsLoading) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[1, 2, 3, 4, 5, 6].map((k) => (
+          <div
+            key={k}
+            className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-pulse"
+          >
+            <div className="aspect-square bg-slate-200 dark:bg-slate-800" />
+            <div className="p-3 space-y-2">
+              <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (listingsError) {
+    return <p className="text-sm text-red-600 dark:text-red-300">{listingsError}</p>;
+  }
+  if (!listings.length) {
+    return (
+      <div className="text-center py-8">
+        <PackageIcon className="h-10 w-10 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          {tr("no_listings_yet", "No listings yet.")}
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {listings.map((item) => (
+          <Link
+            key={item.post_id || item.id || item.title}
+            to={`/post/${item.post_id || item.id}`}
+            className="group rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900/50 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="aspect-square overflow-hidden bg-slate-100 dark:bg-slate-800">
+              <img
+                src={resolveListingImage(item)}
+                alt={item.title || "Listing"}
+                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(ev) => {
+                  ev.currentTarget.onerror = null;
+                  ev.currentTarget.src = "/placeholder.svg";
+                }}
+              />
+            </div>
+            <div className="p-3">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                {item.title || tr("untitled_listing", "Untitled listing")}
+              </p>
+              <p className="text-sm font-bold text-emerald-600 dark:text-emerald-300 mt-1">
+                {formatPrice(item.price, tr)}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                <MapPinIcon className="h-3 w-3" />
+                {item.location || tr("location_unknown", "Location unknown")}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+      <Link
+        to={`/centre/${channelId}/listings`}
+        className="inline-flex items-center text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200"
+      >
+        {tr("view_all_listings", "View all listings")} â†’
+      </Link>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reviews Section                                                   */
+/* ------------------------------------------------------------------ */
+function ReviewsSection({ reviews, reviewsStats, reviewsLoading, reviewsError, ownerId, tr }) {
+  const ratingValue = Number(
+    reviewsStats?.averageRating ?? reviewsStats?.average_rating ?? reviewsStats?.avgRating ?? 0,
+  );
+  const reviewCountValue = Number(
+    reviewsStats?.totalReviews ?? reviewsStats?.total_reviews ?? reviews?.length ?? 0,
+  );
+  const displayedReviews = Array.isArray(reviews) ? reviews.slice(0, 3) : [];
+
+  if (reviewsLoading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300 py-4">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        {tr("loading_reviews", "Loading reviews...")}
+      </div>
+    );
+  }
+  if (reviewsError) {
+    return <p className="text-sm text-red-600 dark:text-red-300">{reviewsError}</p>;
+  }
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-3xl font-black text-slate-900 dark:text-white">
+            {ratingValue > 0 ? ratingValue.toFixed(1) : "â€”"}
+          </span>
+          <div>
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <StarIcon
+                  key={star}
+                  className={`h-4 w-4 ${
+                    star <= Math.round(ratingValue)
+                      ? "text-amber-500 fill-amber-500"
+                      : "text-slate-300 dark:text-slate-600"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {reviewCountValue > 0
+                ? `${reviewCountValue} ${tr("reviews_count", "reviews")}`
+                : tr("no_reviews", "No reviews yet")}
+            </p>
+          </div>
+        </div>
+      </div>
+      {displayedReviews.length === 0 ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          {tr("be_first_review", "Be the first to review this seller.")}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {displayedReviews.map((review) => (
+            <div
+              key={review.review_id || review.id || review.created_at}
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-4"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  {review.reviewer_name || tr("anonymous", "Anonymous")}
+                </span>
+                <div className="flex items-center gap-0.5">
+                  {review.rating &&
+                    [1, 2, 3, 4, 5].map((star) => (
+                      <StarIcon
+                        key={star}
+                        className={`h-3 w-3 ${
+                          star <= Number(review.rating)
+                            ? "text-amber-500 fill-amber-500"
+                            : "text-slate-300 dark:text-slate-600"
+                        }`}
+                      />
+                    ))}
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                {review.comment || tr("no_comment", "No comment provided.")}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+      {ownerId && (
+        <Link to={`/reviews/${ownerId}`} className="inline-flex">
+          <Button variant="outline" size="sm">
+            {tr("view_all_reviews", "View all reviews")}
+          </Button>
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Updates Feed                                                      */
+/* ------------------------------------------------------------------ */
+function UpdatesFeed({
+  sortedPosts, isOwner, isCentre, channelId, posting,
+  description, setDescription, mediaUrl, setMediaUrl,
+  postType, setPostType, imageFiles, setImageFiles,
+  imageUploadKey, setImageUploadKey, onSubmit, tr, t,
+}) {
+  return (
+    <div className="space-y-4">
+      {isOwner && (
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-5">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+            <Edit3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            {isCentre ? tr("post_update_title", "Post an update") : tr("create_post", "Create Post")}
+          </h3>
+          <form onSubmit={onSubmit} className="space-y-3">
+            <Textarea
+              className="min-h-[90px]"
+              placeholder={t("description_placeholder") || "Write a description"}
+              value={description}
+              onChange={(ev) => setDescription(ev.target.value)}
+            />
+            {postType === "image" && (
+              <ImageUpload
+                key={`image-upload-${imageUploadKey}`}
+                onImagesChange={setImageFiles}
+                maxFiles={5}
+              />
+            )}
+            {(postType === "image" || postType === "video") && (
+              <Input
+                placeholder={t("media_url_optional") || "Media URL (optional)"}
+                value={mediaUrl}
+                onChange={(ev) => setMediaUrl(ev.target.value)}
+              />
+            )}
+            <div className="flex items-center gap-3">
+              <select
+                className="mhub-input rounded-xl px-3 py-2 text-sm"
+                value={postType}
+                onChange={(ev) => {
+                  const nextType = ev.target.value;
+                  setPostType(nextType);
+                  if (nextType !== "image") {
+                    setImageFiles([]);
+                    setImageUploadKey((k) => k + 1);
+                  }
+                  if (nextType === "text") setMediaUrl("");
+                }}
+              >
+                <option value="text">{t("text_type") || "Text"}</option>
+                <option value="image">{t("image_type") || "Image"}</option>
+                <option value="video">{t("video_type") || "Video"}</option>
+              </select>
+              <Button type="submit" disabled={posting}>
+                {posting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("publishing") || "Publishing..."}
+                  </span>
+                ) : isCentre ? (
+                  tr("post_update", "Post Update")
+                ) : (
+                  t("post_button") || "Post"
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+      {sortedPosts.length === 0 ? (
+        <EmptyState
+          type="posts"
+          title={t("no_posts") || "No posts yet"}
+          message={
+            isOwner
+              ? tr("start_posting_updates", isCentre ? "Create the first update for this CentrePage." : "Create the first post for this channel.")
+              : t("check_back_later") || "Check back later for updates."
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          {sortedPosts.map((post) => (
+            <Card key={post.post_id} className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50">
+              <CardContent className="p-4">
+                {post.description && (
+                  <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-100">
+                    {post.description}
+                  </p>
+                )}
+                <PostImages post={post} />
+                {post.video_url && (
+                  <a
+                    href={resolveMediaUrl(post.video_url, post.video_url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-300"
+                  >
+                    <Video className="h-4 w-4" />
+                    {t("view_video") || "View video"}
+                  </a>
+                )}
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
+                  {new Date(post.created_at).toLocaleString()}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main ChannelPage                                                  */
+/* ------------------------------------------------------------------ */
+const ChannelPage = ({ variant = "channel" } = {}) => {
+  const { t } = useTranslation();
+  const tr = useCallback((key, fallback) => t(key, { defaultValue: fallback }), [t]);
+  const tRef = useRef(t);
+  const trRef = useRef(tr);
+  const { toast } = useToast();
+  const { channelId: paramChannelId, id: paramId } = useParams();
+  const channelId = paramChannelId || paramId;
+  const isCentre = variant === "centre";
+
+  const [channel, setChannel] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
+  const [description, setDescription] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [postType, setPostType] = useState("text");
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imageUploadKey, setImageUploadKey] = useState(0);
+  const [isOwner, setIsOwner] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [listingsError, setListingsError] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsStats, setReviewsStats] = useState(null);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState(null);
+  const [activeTab, setActiveTab] = useState("about");
+
+  const processChannelData = useCallback((data) => {
+    const raw = data?.data ?? data;
+    const ch = raw?.channel || raw || null;
+    const userId = String(localStorage.getItem("userId") || "");
+    setChannel(ch);
+    setIsOwner(!!raw?.isOwner || (ch?.owner_id && String(ch.owner_id) === userId));
+    setPosts(Array.isArray(raw?.posts) ? raw.posts : Array.isArray(ch?.posts) ? ch.posts : []);
+  }, []);
+
+  const fetchChannel = useCallback(async () => {
+    if (!channelId) {
+      setError(tRef.current("something_went_wrong") || "Failed to load channel");
+      setChannel(null);
+      setPosts([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      let data = null;
+      try {
+        data = await getChannelById(channelId);
+      } catch (err) {
+        if (isCentre) data = await getChannelByUser(channelId);
+        else throw err;
+      }
+      if (!data && isCentre) {
+        setError(trRef.current("centre_not_found", "CentrePage not found"));
+        setChannel(null);
+        setPosts([]);
         return;
       }
-      v(!0), d(null);
-      try {
-        let a = null;
-        try {
-          a = await Q(i);
-        } catch (err) {
-          if (isCentre) {
-            a = await Qe(i);
-          } else {
-            throw err;
-          }
-        }
-        if (!a && isCentre) {
-          d(trRef.current("centre_not_found", "CentrePage not found")),
-            f(null),
-            y([]);
-          return;
-        }
-        L(a);
-      } catch (a) {
-        import.meta.env.DEV && console.error("Failed to fetch channel:", a),
-          d(
-            a?.message || tRef.current("something_went_wrong") || "Failed to load channel",
-          ),
-          f(null),
-          y([]);
-      } finally {
-        v(!1);
-      }
-    }, [L, i, isCentre]);
+      processChannelData(data);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error("Failed to fetch channel:", err);
+      setError(tRef.current("something_went_wrong") || "Failed to load channel");
+      setChannel(null);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [processChannelData, channelId, isCentre]);
 
-  J(() => {
-    tRef.current = t;
-    trRef.current = tr;
-  }, [t, tr]);
-  J(() => {
-    g();
-  }, [g]);
+  useEffect(() => { tRef.current = t; trRef.current = tr; }, [t, tr]);
+  useEffect(() => { fetchChannel(); }, [fetchChannel]);
+
   const backPath = isCentre ? "/centre" : "/channels";
-  const backLabel = isCentre
-    ? tr("back_to_centre_pages", "Back to CentrePages")
-    : tr("back_to_channels", "Back to Channels");
-  const updatesLabel = isCentre
-    ? tr("centre_updates", "Updates")
-    : tr("channel_posts", "Posts");
-  const createUpdateTitle = isCentre
-    ? tr("post_update_title", "Post an update")
-    : tr("create_post", "Create Post");
-  const createUpdateLabel = isCentre
-    ? tr("post_update", "Post Update")
-    : tr("post_button", "Post");
-  const ownerId = o?.owner_id || o?.ownerId || o?.user_id || o?.userId || o?.id || "";
+  const backLabel = isCentre ? tr("back_to_centre_pages", "Back to CentrePages") : tr("back_to_channels", "Back to Channels");
+  const ownerId = channel?.owner_id || channel?.ownerId || channel?.user_id || channel?.userId || channel?.id || "";
 
-  J(() => {
-    let active = !0;
+  // Load listings & reviews for CentrePage
+  useEffect(() => {
+    let active = true;
     const resolvedOwnerId = String(ownerId || "").trim();
-    if (!isCentre) {
-      return () => {
-        active = !1;
-      };
+    if (!isCentre || !resolvedOwnerId) {
+      if (active) { setListings([]); setReviews([]); setReviewsStats(null); }
+      return () => { active = false; };
     }
-    if (!resolvedOwnerId) {
-      if (active) {
-        setListings([]), setReviews([]), setReviewsStats(null);
-      }
-      return () => {
-        active = !1;
-      };
-    }
-
     const loadListings = async () => {
-      setListingsLoading(!0), setListingsError(null);
+      setListingsLoading(true);
+      setListingsError(null);
       try {
         const response = await api.get("/posts", {
-          params: {
-            author: resolvedOwnerId,
-            limit: 6,
-            page: 1,
-            sortBy: "created_at",
-            sortOrder: "desc",
-          },
+          params: { author: resolvedOwnerId, limit: 6, page: 1, sortBy: "created_at", sortOrder: "desc" },
         });
         if (!active) return;
         const payload = response?.data ?? response;
-        const nextListings = Array.isArray(payload?.posts) ? payload.posts : [];
-        setListings(nextListings);
+        setListings(Array.isArray(payload?.posts) ? payload.posts : []);
       } catch (err) {
         if (!active) return;
-        setListingsError(
-          err?.message || trRef.current("listings_unavailable", "Listings unavailable"),
-        );
+        setListingsError(trRef.current("listings_unavailable", "Listings unavailable"));
         setListings([]);
       } finally {
-        active && setListingsLoading(!1);
+        if (active) setListingsLoading(false);
       }
     };
-
     const loadReviews = async () => {
-      setReviewsLoading(!0), setReviewsError(null);
+      setReviewsLoading(true);
+      setReviewsError(null);
       try {
         const response = await api.get(`/reviews/user/${resolvedOwnerId}`);
         if (!active) return;
@@ -192,984 +594,270 @@ const le = ({ variant = "channel" } = {}) => {
         setReviewsStats(payload?.stats || null);
       } catch (err) {
         if (!active) return;
-        setReviewsError(
-          err?.message || trRef.current("reviews_unavailable", "Reviews unavailable"),
-        );
+        setReviewsError(trRef.current("reviews_unavailable", "Reviews unavailable"));
         setReviews([]);
         setReviewsStats(null);
       } finally {
-        active && setReviewsLoading(!1);
+        if (active) setReviewsLoading(false);
       }
     };
-
     loadListings();
     loadReviews();
-
-    return () => {
-      active = !1;
-    };
+    return () => { active = false; };
   }, [ownerId, isCentre]);
-  const S = K(
-      () =>
-        [...F].sort((a, r) => {
-          const s = new Date(r.created_at || 0).getTime(),
-            l = new Date(a.created_at || 0).getTime();
-          return s - l;
-        }),
-      [F],
-    ),
-    z = async (a) => {
-      if ((a.preventDefault(), !(!i || _))) {
-        if (u === "text" && !w.trim()) {
-          p({
-            title: t("validation_error") || "Validation Error",
-            description:
-              t("enter_description") || "Enter a description before posting.",
-            variant: "destructive",
-          });
-          return;
-        }
-        const hasMediaFile = Array.isArray(imageFiles) && imageFiles.length > 0;
-        const hasMediaUrl = !!b.trim();
-        if ((u === "image" || u === "video") && !hasMediaUrl && !w.trim() && !hasMediaFile) {
-          p({
-            title: t("validation_error") || "Validation Error",
-            description:
-              t("media_or_description_required") ||
-              "Add media URL or description.",
-            variant: "destructive",
-          });
-          return;
-        }
-        I(!0), d(null);
-        try {
-          const payload =
-            u === "image" && hasMediaFile
-              ? (() => {
-                  const formData = new FormData();
-                  formData.append("description", w || "");
-                  formData.append("type", "image");
-                  imageFiles.forEach((file) => {
-                    formData.append("images", file);
-                  });
-                  if (b.trim()) formData.append("media_url", b.trim());
-                  return formData;
-                })()
-              : { description: w, type: u, media_url: b };
-          await X(i, payload),
-            B(""),
-            D(""),
-            setImageFiles([]),
-            setImageUploadKey((k) => k + 1),
-            await g(),
-            p({
-              title: t("success") || "Success",
-              description: isCentre
-                ? tr("update_posted", "Update posted successfully.")
-                : t("post_created") || "Channel post created successfully.",
-            });
-        } catch (r) {
-          import.meta.env.DEV &&
-            console.error("Failed to create channel post:", r);
-          const s = r?.message || t("something_went_wrong") || "Failed to post";
-          d(s),
-            p({
-              title: t("error") || "Error",
-              description: s,
-              variant: "destructive",
-            });
-        } finally {
-          I(!1);
-        }
+
+  const sortedPosts = useMemo(
+    () => [...posts].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()),
+    [posts],
+  );
+
+  const handleCreatePost = async (ev) => {
+    ev.preventDefault();
+    if (!channelId || posting) return;
+    if (postType === "text" && !description.trim()) {
+      toast({ title: t("validation_error") || "Validation Error", description: t("enter_description") || "Enter a description before posting.", variant: "destructive" });
+      return;
+    }
+    const hasMediaFile = Array.isArray(imageFiles) && imageFiles.length > 0;
+    const hasMediaUrl = !!mediaUrl.trim();
+    if ((postType === "image" || postType === "video") && !hasMediaUrl && !description.trim() && !hasMediaFile) {
+      toast({ title: t("validation_error") || "Validation Error", description: t("media_or_description_required") || "Add media URL or description.", variant: "destructive" });
+      return;
+    }
+    setPosting(true);
+    setError(null);
+    try {
+      const payload =
+        postType === "image" && hasMediaFile
+          ? (() => { const fd = new FormData(); fd.append("description", description || ""); fd.append("type", "image"); imageFiles.forEach((f) => fd.append("images", f)); if (mediaUrl.trim()) fd.append("media_url", mediaUrl.trim()); return fd; })()
+          : { description, type: postType, media_url: mediaUrl };
+      await createChannelPost(channelId, payload);
+      setDescription("");
+      setMediaUrl("");
+      setImageFiles([]);
+      setImageUploadKey((k) => k + 1);
+      await fetchChannel();
+      toast({ title: t("success") || "Success", description: isCentre ? tr("update_posted", "Update posted successfully.") : t("post_created") || "Channel post created successfully." });
+    } catch (err) {
+      if (import.meta.env.DEV) console.error("Failed to create channel post:", err);
+      const msg = t("something_went_wrong") || "Failed to post";
+      setError(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!channelId || followLoading || isOwner) return;
+    setFollowLoading(true);
+    setError(null);
+    try {
+      const res = await followChannel(channelId);
+      const data = res?.data ?? res;
+      const action = String(data?.action || "").toLowerCase();
+      if (action === "followed" || action === "unfollowed") {
+        setChannel((prev) => {
+          if (!prev) return prev;
+          const wasFollowing = !!prev.is_following;
+          const nowFollowing = action === "followed";
+          const count = Number.parseInt(prev.follower_count, 10) || 0;
+          return { ...prev, is_following: nowFollowing, follower_count: Math.max(0, count + (nowFollowing === wasFollowing ? 0 : nowFollowing ? 1 : -1)) };
+        });
+      } else {
+        await fetchChannel();
       }
-    },
-    W = async () => {
-      if (!(!i || N || h)) {
-        E(!0), d(null);
-        try {
-          const a = await Y(i),
-            r = a?.data ?? a,
-            s = String(r?.action || "").toLowerCase();
-          s === "followed" || s === "unfollowed"
-            ? f((l) => {
-                if (!l) return l;
-                const G = !!l.is_following,
-                  k = s === "followed",
-                  H = Number.parseInt(l.follower_count, 10) || 0;
-                return {
-                  ...l,
-                  is_following: k,
-                  follower_count: Math.max(0, H + (k === G ? 0 : k ? 1 : -1)),
-                };
-              })
-            : await g();
-        } catch (a) {
-          import.meta.env.DEV && console.error("Failed to toggle follow:", a);
-          const r =
-            a?.message ||
-            t("something_went_wrong") ||
-            "Failed to update follow state";
-          d(r),
-            p({
-              title: t("error") || "Error",
-              description: r,
-              variant: "destructive",
-            });
-        } finally {
-          E(!1);
-        }
-      }
-    };
-  const ratingValue = Number(
-      reviewsStats?.averageRating ??
-        reviewsStats?.average_rating ??
-        reviewsStats?.avgRating ??
-        0,
-    ),
-    reviewCountValue = Number(
-      reviewsStats?.totalReviews ?? reviewsStats?.total_reviews ?? reviews?.length ?? 0,
-    ),
-    displayedReviews = Array.isArray(reviews) ? reviews.slice(0, 3) : [],
-    hasContactInfo = Boolean(
-      o?.contact_email || o?.contact_phone || o?.contact_website || o?.location,
-    ),
-    formatPrice = (value) => {
-      const numeric = Number(String(value ?? "").replace(/[^\d.]/g, ""));
-      if (!Number.isFinite(numeric) || numeric <= 0) {
-        return tr("price_on_request", "Price on request");
-      }
-      return `₹${numeric.toLocaleString()}`;
-    },
-    resolveListingImage = (post) => {
-      const direct =
-        post?.image_url || post?.imageUrl || post?.thumbnail || post?.image;
-      if (direct) return resolveMediaUrl(direct, "/placeholder.svg");
-      const images = post?.images;
-      if (Array.isArray(images) && images.length) {
-        return resolveMediaUrl(images[0], "/placeholder.svg");
-      }
-      if (typeof images === "string" && images.trim()) {
-        try {
-          const parsed = JSON.parse(images);
-          if (Array.isArray(parsed) && parsed.length) {
-            return resolveMediaUrl(parsed[0], "/placeholder.svg");
-          }
-        } catch {
-          return resolveMediaUrl(images, "/placeholder.svg");
-        }
-      }
-      return "/placeholder.svg";
-    },
-    resolvePostImages = (post) => {
-      const collected = [];
-      const rawList = post?.image_urls ?? post?.imageUrls ?? null;
-      if (Array.isArray(rawList)) {
-        collected.push(...rawList);
-      } else if (typeof rawList === "string" && rawList.trim()) {
-        try {
-          const parsed = JSON.parse(rawList);
-          if (Array.isArray(parsed)) {
-            collected.push(...parsed);
-          } else {
-            collected.push(rawList);
-          }
-        } catch {
-          collected.push(rawList);
-        }
-      }
-      const single = post?.image_url || post?.imageUrl;
-      if (single) collected.unshift(single);
-      return [...new Set(collected)]
-        .map((url) => resolveMediaUrl(url, ""))
-        .filter(Boolean);
-    },
-    renderPostImages = (post) => {
-      const images = resolvePostImages(post);
-      if (!images.length) return null;
-      if (images.length === 1) {
-        return e.createElement(
-          "div",
-          {
-            className:
-              "mt-2 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700",
-          },
-          e.createElement("img", {
-            src: images[0],
-            alt: "Post media",
-            className: "h-64 w-full object-cover",
-            loading: "lazy",
-            onError: (event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = "/placeholder.svg";
-            },
-          }),
-        );
-      }
-      const displayImages = images.slice(0, 4);
-      const extraCount = images.length - displayImages.length;
-      return e.createElement(
-        "div",
-        { className: "mt-2 grid grid-cols-2 gap-2" },
-        displayImages.map((url, idx) =>
-          e.createElement(
-            "div",
-            {
-              key: `${post?.post_id || post?.id || "img"}-${idx}`,
-              className:
-                "relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700",
-            },
-            e.createElement("img", {
-              src: url,
-              alt: "Post media",
-              className: "h-full w-full object-cover",
-              loading: "lazy",
-              onError: (event) => {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = "/placeholder.svg";
-              },
-            }),
-            extraCount > 0 &&
-              idx === displayImages.length - 1 &&
-              e.createElement(
-                "div",
-                {
-                  className:
-                    "absolute inset-0 flex items-center justify-center bg-black/60 text-white text-sm font-semibold",
-                },
-                "+",
-                extraCount,
-              ),
-          ),
-        ),
-      );
-    };
-  const channelLogoUrl = resolveMediaUrl(
-      o?.logo_url || o?.profile_pic || "",
-      "",
-    ),
-    channelCoverUrl = resolveMediaUrl(o?.cover_url || "", ""),
-    channelCategory = String(o?.category || "").trim(),
-    channelLocation = String(o?.location || "").trim(),
-    channelInitial = String(o?.name || "C").trim().charAt(0).toUpperCase();
-  return O
-    ? e.createElement(
-        "div",
-        { className: "min-h-screen mhub-premium-page bg-gray-50 container mx-auto max-w-4xl p-4 sm:p-6 page-shell page-pad dark:bg-gray-950" },
-        e.createElement(
-          "div",
-          { className: "space-y-3" },
-          [1, 2, 3].map((a) =>
-            e.createElement(
-              m,
-              { key: a, className: "animate-pulse" },
-              e.createElement(
-                c,
-                { className: "p-4" },
-                e.createElement("div", {
-                  className:
-                    "mb-2 h-5 w-52 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900",
-                }),
-                e.createElement("div", {
-                  className: "h-4 w-full rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900",
-                }),
-              ),
-            ),
-          ),
-        ),
-      )
-    : o
-      ? e.createElement(
-          "div",
-          { className: "min-h-screen mhub-premium-page bg-gray-50 container mx-auto max-w-4xl p-4 sm:p-6 page-shell page-pad dark:bg-gray-950" },
-          e.createElement(
-            "div",
-            { className: "mb-4 flex items-center gap-3" },
-            e.createElement(
-              V,
-              {
-                to: backPath,
-                className:
-                  "inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:border dark:text-gray-200 dark:hover:bg-gray-950",
-              },
-              e.createElement(T, { className: "h-4 w-4" }),
-              backLabel,
-            ),
-          ),
-          isCentre &&
-          e.createElement(
-            m,
-            { className: "mb-5 overflow-hidden" },
-            e.createElement(
-              c,
-              { className: "p-0" },
-              e.createElement(
-                "div",
-                {
-                  className:
-                    "relative h-40 sm:h-52 bg-slate-100 dark:bg-slate-800",
-                },
-                channelCoverUrl
-                  ? e.createElement("img", {
-                      src: channelCoverUrl,
-                      alt: "cover",
-                      className: "absolute inset-0 h-full w-full object-cover",
-                    })
-                  : e.createElement("div", {
-                      className:
-                        "absolute inset-0 bg-gradient-to-br from-blue-100 via-white to-amber-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800",
-                    }),
-                e.createElement("div", {
-                  className:
-                    "absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent",
-                }),
-              ),
-              e.createElement(
-                "div",
-                { className: "flex flex-col gap-4 p-4 sm:flex-row sm:items-end" },
-                e.createElement(
-                  "div",
-                  { className: "flex items-center gap-3 -mt-10" },
-                  channelLogoUrl
-                    ? e.createElement("img", {
-                        src: channelLogoUrl,
-                        alt: "logo",
-                        className:
-                          "h-20 w-20 rounded-2xl object-cover ring-4 ring-white dark:ring-slate-900",
-                      })
-                    : e.createElement(
-                        "div",
-                        {
-                          className:
-                            "flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-2xl font-bold ring-4 ring-white dark:ring-slate-900",
-                        },
-                        channelInitial,
-                      ),
-                  e.createElement(
-                    "div",
-                    null,
-                    e.createElement(
-                      "h1",
-                      {
-                        className:
-                          "text-xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
-                      },
-                      o.name,
-                    ),
-                    e.createElement(
-                      "div",
-                      {
-                        className:
-                          "mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-300",
-                      },
-                      channelCategory &&
-                        e.createElement(
-                          "span",
-                          {
-                            className:
-                              "rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200",
-                          },
-                          channelCategory,
-                        ),
-                      e.createElement(
-                        "span",
-                        { className: "inline-flex items-center gap-1" },
-                        e.createElement(ee, { className: "h-3 w-3" }),
-                        o.follower_count || 0,
-                        " ",
-                        t("followers") || "Followers",
-                      ),
-                      channelLocation &&
-                        e.createElement(
-                          "span",
-                          { className: "inline-flex items-center gap-1" },
-                          e.createElement(MapPinIcon, { className: "h-3 w-3" }),
-                          channelLocation,
-                        ),
-                    ),
-                    reviewCountValue > 0 &&
-                      e.createElement(
-                        "div",
-                        {
-                          className:
-                            "mt-1 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-300",
-                        },
-                        e.createElement(StarIcon, { className: "h-3 w-3" }),
-                        ratingValue > 0 ? ratingValue.toFixed(1) : "0.0",
-                        " (",
-                        reviewCountValue,
-                        ")",
-                      ),
-                  ),
-                ),
-                !h &&
-                  e.createElement(
-                    x,
-                    {
-                      type: "button",
-                      onClick: W,
-                      disabled: N,
-                      className: "sm:ml-auto",
-                      variant: o.is_following ? "outline" : "default",
-                    },
-                    N
-                      ? e.createElement(
-                          "span",
-                          { className: "inline-flex items-center gap-2" },
-                          e.createElement(U, {
-                            className: "h-4 w-4 animate-spin",
-                          }),
-                          t("loading") || "Loading...",
-                        )
-                      : o.is_following
-                        ? t("unfollow") || "Unfollow"
-                        : t("follow") || "Follow",
-                  ),
-                h &&
-                  e.createElement(
-                    V,
-                    {
-                      to: `/centre/create?channelId=${o.channel_id || ""}`,
-                      className: "sm:ml-auto",
-                    },
-                    e.createElement(
-                      x,
-                      { type: "button", variant: "outline" },
-                      tr("edit_centre_page", "Edit CentrePage"),
-                    ),
-                  ),
-              ),
-            ),
-          ),
-          (o.bio || o.description) &&
-            e.createElement(
-              m,
-              { className: "mb-5" },
-              e.createElement(
-                c,
-                { className: "p-4 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200" },
-                o.bio || o.description,
-              ),
-            ),
-          isCentre &&
-          e.createElement(
-            m,
-            { className: "mb-5" },
-            e.createElement(
-              c,
-              { className: "p-4" },
-              e.createElement(
-                "div",
-                { className: "mb-3 flex items-center gap-2" },
-                e.createElement(PackageIcon, {
-                  className: "h-5 w-5 text-blue-600 dark:text-blue-300",
-                }),
-                e.createElement(
-                  "h2",
-                  {
-                    className:
-                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
-                  },
-                  tr("listings", "Listings"),
-                ),
-              ),
-              listingsLoading
-                ? e.createElement(
-                    "div",
-                    { className: "flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300" },
-                    e.createElement(U, { className: "h-4 w-4 animate-spin" }),
-                    tr("loading_listings", "Loading listings..."),
-                  )
-                : listingsError
-                  ? e.createElement(
-                      "p",
-                      { className: "text-sm text-red-600 dark:text-red-300" },
-                      listingsError,
-                    )
-                  : listings.length === 0
-                    ? e.createElement(
-                        "p",
-                        { className: "text-sm text-gray-500 dark:text-gray-300" },
-                        tr("no_listings_yet", "No listings yet."),
-                      )
-                    : e.createElement(
-                        "div",
-                        { className: "space-y-3" },
-                        e.createElement(
-                          "ul",
-                          { className: "grid grid-cols-1 sm:grid-cols-2 gap-3" },
-                          listings.map((a) =>
-                            e.createElement(
-                              "li",
-                              { key: a.post_id || a.id || a.title },
-                              e.createElement(
-                                "div",
-                                {
-                                  className:
-                                    "flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900/40",
-                                },
-                                e.createElement("img", {
-                                  src: resolveListingImage(a),
-                                  alt: a.title || "Listing",
-                                  className:
-                                    "h-16 w-16 rounded-lg object-cover bg-slate-100",
-                                }),
-                                e.createElement(
-                                  "div",
-                                  { className: "min-w-0" },
-                                  e.createElement(
-                                    "p",
-                                    {
-                                      className:
-                                        "text-sm font-semibold text-gray-900 dark:text-gray-100 truncate",
-                                    },
-                                    a.title || tr("untitled_listing", "Untitled listing"),
-                                  ),
-                                  e.createElement(
-                                    "p",
-                                    {
-                                      className:
-                                        "text-sm font-semibold text-emerald-600 dark:text-emerald-300",
-                                    },
-                                    formatPrice(a.price),
-                                  ),
-                                  e.createElement(
-                                    "p",
-                                    {
-                                      className:
-                                        "text-xs text-gray-500 dark:text-gray-300 flex items-center gap-1",
-                                    },
-                                    e.createElement(MapPinIcon, { className: "h-3 w-3" }),
-                                    a.location ||
-                                      tr("location_unknown", "Location unknown"),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        e.createElement(
-                          V,
-                          {
-                            to: `/centre/${i}/listings`,
-                            className:
-                              "inline-flex items-center text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200",
-                          },
-                          tr("view_all_listings", "View all listings"),
-                        ),
-                      ),
-            ),
-          ),
-          isCentre &&
-          e.createElement(
-            m,
-            { className: "mb-5" },
-            e.createElement(
-              c,
-              { className: "p-4" },
-              e.createElement(
-                "div",
-                { className: "mb-3 flex items-center gap-2" },
-                e.createElement(StarIcon, {
-                  className: "h-5 w-5 text-amber-500 dark:text-amber-300",
-                }),
-                e.createElement(
-                  "h2",
-                  {
-                    className:
-                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
-                  },
-                  tr("reviews", "Reviews"),
-                ),
-              ),
-              reviewsLoading
-                ? e.createElement(
-                    "div",
-                    { className: "flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300" },
-                    e.createElement(U, { className: "h-4 w-4 animate-spin" }),
-                    tr("loading_reviews", "Loading reviews..."),
-                  )
-                : reviewsError
-                  ? e.createElement(
-                      "p",
-                      { className: "text-sm text-red-600 dark:text-red-300" },
-                      reviewsError,
-                    )
-                  : e.createElement(
-                      "div",
-                      { className: "space-y-3" },
-                      e.createElement(
-                        "div",
-                        { className: "flex items-center gap-3" },
-                        e.createElement(
-                          "p",
-                          {
-                            className:
-                              "text-2xl font-bold text-gray-900 dark:text-white dark:text-gray-100",
-                          },
-                          ratingValue > 0
-                            ? ratingValue.toFixed(1)
-                            : tr("no_rating_yet", "No rating yet"),
-                        ),
-                        e.createElement(
-                          "p",
-                          { className: "text-xs text-gray-500 dark:text-gray-300" },
-                          reviewCountValue > 0
-                            ? `${reviewCountValue} ${tr("reviews_count", "reviews")}`
-                            : tr("no_reviews", "No reviews yet"),
-                        ),
-                      ),
-                      displayedReviews.length === 0
-                        ? e.createElement(
-                            "p",
-                            { className: "text-sm text-gray-500 dark:text-gray-300" },
-                            tr("be_first_review", "Be the first to review this seller."),
-                          )
-                        : e.createElement(
-                            "ul",
-                            { className: "space-y-2" },
-                            displayedReviews.map((a) =>
-                              e.createElement(
-                                "li",
-                                {
-                                  key: a.review_id || a.id || a.created_at,
-                                  className:
-                                    "rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200",
-                                },
-                                e.createElement(
-                                  "div",
-                                  { className: "flex items-center justify-between mb-1" },
-                                  e.createElement(
-                                    "span",
-                                    { className: "text-xs font-semibold" },
-                                    a.reviewer_name || tr("anonymous", "Anonymous"),
-                                  ),
-                                  e.createElement(
-                                    "span",
-                                    { className: "text-xs text-slate-500" },
-                                    a.rating ? `${Number(a.rating).toFixed(1)} ★` : "",
-                                  ),
-                                ),
-                                e.createElement(
-                                  "p",
-                                  { className: "text-sm text-slate-600 dark:text-slate-200" },
-                                  a.comment || tr("no_comment", "No comment provided."),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ownerId &&
-                        e.createElement(
-                          V,
-                          { to: `/reviews/${ownerId}`, className: "inline-flex" },
-                          e.createElement(
-                            x,
-                            { variant: "outline", size: "sm" },
-                            tr("view_all_reviews", "View all reviews"),
-                          ),
-                        ),
-                    ),
-            ),
-          ),
-          e.createElement(
-            m,
-            { className: "mb-5" },
-            e.createElement(
-              c,
-              { className: "p-4" },
-              e.createElement(
-                "div",
-                { className: "mb-3 flex items-center gap-2" },
-                e.createElement(MapPinIcon, {
-                  className: "h-5 w-5 text-emerald-500 dark:text-emerald-300",
-                }),
-                e.createElement(
-                  "h2",
-                  {
-                    className:
-                      "text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
-                  },
-                  tr("contact", "Contact"),
-                ),
-              ),
-              hasContactInfo
-                ? e.createElement(
-                    "div",
-                    { className: "space-y-2 text-sm text-gray-600 dark:text-gray-200" },
-                    o.contact_phone &&
-                      e.createElement(
-                        "div",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(PhoneIcon, { className: "h-4 w-4" }),
-                        e.createElement("span", null, o.contact_phone),
-                      ),
-                    o.contact_email &&
-                      e.createElement(
-                        "div",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(MailIcon, { className: "h-4 w-4" }),
-                        e.createElement(
-                          "a",
-                          {
-                            href: `mailto:${o.contact_email}`,
-                            className: "text-blue-600 hover:underline dark:text-blue-300",
-                          },
-                          o.contact_email,
-                        ),
-                      ),
-                    o.contact_website &&
-                      e.createElement(
-                        "div",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(GlobeIcon, { className: "h-4 w-4" }),
-                        e.createElement(
-                          "a",
-                          {
-                            href: o.contact_website,
-                            target: "_blank",
-                            rel: "noopener noreferrer",
-                            className: "text-blue-600 hover:underline dark:text-blue-300",
-                          },
-                          o.contact_website,
-                        ),
-                      ),
-                    o.location &&
-                      e.createElement(
-                        "div",
-                        { className: "flex items-center gap-2" },
-                        e.createElement(MapPinIcon, { className: "h-4 w-4" }),
-                        e.createElement("span", null, o.location),
-                      ),
-                  )
-                : e.createElement(
-                    "p",
-                    { className: "text-sm text-gray-500 dark:text-gray-300" },
-                    tr(
-                      "contact_not_provided",
-                      "Contact details not provided yet. Use chat to reach the seller.",
-                    ),
-                  ),
-              e.createElement(
-                V,
-                { to: "/chat", className: "mt-3 inline-flex" },
-                e.createElement(
-                  x,
-                  { size: "sm", variant: "default" },
-                  tr("chat_seller", "Chat seller"),
-                ),
-              ),
-            ),
-          ),
-          C &&
-            e.createElement(
-              "div",
-              {
-                className:
-                  "mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
-              },
-              C,
-            ),
-          h &&
-            e.createElement(
-              m,
-              { className: "mb-6" },
-              e.createElement(
-                c,
-                { className: "p-4" },
-                e.createElement(
-                  "h2",
-                  {
-                    className:
-                      "mb-3 text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
-                  },
-                  createUpdateTitle,
-                ),
-                e.createElement(
-                  "form",
-                  { onSubmit: z, className: "space-y-3" },
-                  e.createElement(ne, {
-                    className: "min-h-[90px]",
-                    placeholder:
-                      t("description_placeholder") || "Write a description",
-                    value: w,
-                    onChange: (a) => B(a.target.value),
-                  }),
-                  u === "image" &&
-                    e.createElement(
-                      "div",
-                      { className: "space-y-2" },
-                      e.createElement(ImageUpload, {
-                        key: `image-upload-${imageUploadKey}`,
-                        onImagesChange: setImageFiles,
-                        maxFiles: 5,
-                      }),
-                    ),
-                  (u === "image" || u === "video") &&
-                    e.createElement(se, {
-                      placeholder:
-                        t("media_url_optional") || "Media URL (optional)",
-                      value: b,
-                      onChange: (a) => D(a.target.value),
-                    }),
-                  e.createElement(
-                    "select",
-                    {
-                      className:
-                        "mhub-input w-full rounded-xl px-3 py-2 text-sm",
-                      value: u,
-                      onChange: (a) => {
-                        const nextType = a.target.value;
-                        j(nextType);
-                        if (nextType !== "image") {
-                          setImageFiles([]);
-                          setImageUploadKey((k) => k + 1);
-                        }
-                        if (nextType === "text") {
-                          D("");
-                        }
-                      },
-                    },
-                    e.createElement(
-                      "option",
-                      { value: "text" },
-                      t("text_type") || "Text",
-                    ),
-                    e.createElement(
-                      "option",
-                      { value: "image" },
-                      t("image_type") || "Image",
-                    ),
-                    e.createElement(
-                      "option",
-                      { value: "video" },
-                      t("video_type") || "Video",
-                    ),
-                  ),
-                  e.createElement(
-                    x,
-                    { type: "submit", disabled: _ },
-                    _
-                      ? e.createElement(
-                          "span",
-                          { className: "inline-flex items-center gap-2" },
-                          e.createElement(U, {
-                            className: "h-4 w-4 animate-spin",
-                          }),
-                          t("publishing") || "Publishing...",
-                        )
-                      : createUpdateLabel,
-                  ),
-                ),
-              ),
-            ),
-          e.createElement(
-            "div",
-            null,
-            e.createElement(
-              "h3",
-              {
-                className:
-                  "mb-3 text-lg font-semibold text-gray-900 dark:text-white dark:text-gray-100",
-              },
-              updatesLabel,
-            ),
-            S.length === 0
-              ? e.createElement(re, {
-                  type: "posts",
-                  title: t("no_posts") || "No posts yet",
-                  message: h
-                    ? tr(
-                        "start_posting_updates",
-                        isCentre
-                          ? "Create the first update for this CentrePage."
-                          : "Create the first post for this channel.",
-                      )
-                    : t("check_back_later") || "Check back later for updates.",
-                })
-              : e.createElement(
-                  "ul",
-                  { className: "space-y-3" },
-                  S.map((a) =>
-                    e.createElement(
-                      "li",
-                      { key: a.post_id },
-                      e.createElement(
-                        m,
-                        null,
-                        e.createElement(
-                          c,
-                          { className: "p-4" },
-                          a.description &&
-                            e.createElement(
-                              "p",
-                              {
-                                className:
-                                  "mb-2 whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-100",
-                              },
-                              a.description,
-                            ),
-                          renderPostImages(a),
-                          a.video_url &&
-                            e.createElement(
-                              "a",
-                              {
-                                href: resolveMediaUrl(a.video_url, a.video_url),
-                                target: "_blank",
-                                rel: "noopener noreferrer",
-                                className:
-                                  "mb-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-300",
-                              },
-                              e.createElement(te, { className: "h-4 w-4" }),
-                              t("view_video") || "View video",
-                            ),
-                          e.createElement(
-                            "p",
-                            { className: "text-xs text-gray-400 dark:text-gray-300" },
-                            new Date(a.created_at).toLocaleString(),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-          ),
-        )
-      : e.createElement(
-          "div",
-          { className: "min-h-screen mhub-premium-page bg-gray-50 container mx-auto max-w-3xl p-4 sm:p-6 page-shell page-pad dark:bg-gray-950" },
-          e.createElement(
-            m,
-            null,
-            e.createElement(
-              c,
-              { className: "flex flex-col items-center gap-3 p-8 text-center dark:text-center" },
-              e.createElement(
-                "p",
-                { className: "text-sm text-red-600 dark:text-red-300" },
-                C || t("something_went_wrong") || "Failed to load channel",
-              ),
-              e.createElement(
-                "div",
-                { className: "flex flex-wrap justify-center gap-2" },
-                e.createElement(
-                  x,
-                  { variant: "outline", className: "gap-2", onClick: g },
-                  e.createElement(R, { className: "h-4 w-4" }),
-                  t("retry") || "Retry",
-                ),
-                e.createElement(
-                V,
-                { to: backPath },
-                e.createElement(
-                  x,
-                  { className: "gap-2" },
-                  e.createElement(T, { className: "h-4 w-4" }),
-                    backLabel,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
+    } catch (err) {
+      if (import.meta.env.DEV) console.error("Failed to toggle follow:", err);
+      const msg = t("something_went_wrong") || "Failed to update follow state";
+      setError(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const ratingValue = Number(reviewsStats?.averageRating ?? reviewsStats?.average_rating ?? reviewsStats?.avgRating ?? 0);
+  const reviewCountValue = Number(reviewsStats?.totalReviews ?? reviewsStats?.total_reviews ?? reviews?.length ?? 0);
+
+  // --- Loading ---
+  if (loading) return <PageSkeleton />;
+
+  // --- Error / no channel ---
+  if (!channel) {
+    return (
+      <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+            <p className="text-sm text-red-600 dark:text-red-300">{error || t("something_went_wrong") || "Failed to load channel"}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="outline" className="gap-2" onClick={fetchChannel}>
+                <RefreshCw className="h-4 w-4" />
+                {t("retry") || "Retry"}
+              </Button>
+              <Link to={backPath}>
+                <Button className="gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  {backLabel}
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const channelLogoUrl = resolveMediaUrl(channel.logo_url || channel.profile_pic || "", "");
+  const channelCoverUrl = resolveMediaUrl(channel.cover_url || "", "");
+  const channelCategory = String(channel.category || "").trim();
+  const channelLocation = String(channel.location || "").trim();
+  const channelInitial = String(channel.name || "C").trim().charAt(0).toUpperCase();
+
+  return (
+    <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950 pb-12">
+      {/* Hero Cover */}
+      {isCentre && (
+        <div className="relative h-48 sm:h-56 bg-slate-100 dark:bg-slate-800">
+          {channelCoverUrl ? (
+            <img src={channelCoverUrl} alt="cover" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-white to-amber-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+        </div>
+      )}
+
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Back button */}
+        <div className={`${isCentre ? "-mt-2" : "mt-4"} mb-4 flex items-center gap-3`}>
+          <Link to={backPath} className="inline-flex items-center gap-1 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm">
+            <ArrowLeft className="h-4 w-4" />
+            {backLabel}
+          </Link>
+        </div>
+
+        {/* CentrePage profile header */}
+        {isCentre && (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end -mt-14 mb-6">
+            <div className="flex items-end gap-4">
+              {channelLogoUrl ? (
+                <img src={channelLogoUrl} alt="logo" className="h-24 w-24 rounded-2xl object-cover ring-4 ring-white dark:ring-slate-900 shadow-lg" />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-3xl font-bold ring-4 ring-white dark:ring-slate-900 shadow-lg">
+                  {channelInitial}
+                </div>
+              )}
+              <div className="pb-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">{channel.name}</h1>
+                  <CentreVerificationBadge channel={channel} />
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+                  {channelCategory && <Badge variant="secondary" className="text-[10px] font-semibold">{channelCategory}</Badge>}
+                  <span className="inline-flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {channel.follower_count || 0} {t("followers") || "Followers"}
+                  </span>
+                  {channelLocation && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPinIcon className="h-3 w-3" />
+                      {channelLocation}
+                    </span>
+                  )}
+                  {reviewCountValue > 0 && (
+                    <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-300">
+                      <StarIcon className="h-3 w-3" />
+                      {ratingValue > 0 ? ratingValue.toFixed(1) : "0.0"} ({reviewCountValue})
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 sm:ml-auto">
+              {!isOwner && (
+                <Button type="button" onClick={handleFollow} disabled={followLoading} variant={channel.is_following ? "outline" : "default"}>
+                  {followLoading ? (
+                    <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{t("loading") || "Loading..."}</span>
+                  ) : channel.is_following ? (t("unfollow") || "Unfollow") : (t("follow") || "Follow")}
+                </Button>
+              )}
+              {isOwner && (
+                <Link to={`/centre/create?channelId=${channel.channel_id || ""}`}>
+                  <Button type="button" variant="outline" className="gap-2">
+                    <Edit3 className="h-4 w-4" />
+                    {tr("edit_centre_page", "Edit CentrePage")}
+                  </Button>
+                </Link>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: channel.name, url: window.location.href });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast({ title: tr("copied", "Copied!"), description: tr("link_copied", "Link copied to clipboard") });
+                  }
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Error banner */}
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-200 dark:border-red-600/40 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+            {error}
+          </div>
+        )}
+
+        {/* Non-Centre channel: simple header */}
+        {!isCentre && (
+          <div className="mb-6">
+            <div className="flex items-center gap-4">
+              {channelLogoUrl ? (
+                <img src={channelLogoUrl} alt="logo" className="h-16 w-16 rounded-xl object-cover" />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-xl font-bold">{channelInitial}</div>
+              )}
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">{channel.name}</h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{channel.follower_count || 0} {t("followers") || "Followers"}</p>
+              </div>
+              {!isOwner && (
+                <Button type="button" onClick={handleFollow} disabled={followLoading} variant={channel.is_following ? "outline" : "default"} className="ml-auto">
+                  {followLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : channel.is_following ? (t("unfollow") || "Unfollow") : (t("follow") || "Follow")}
+                </Button>
+              )}
+            </div>
+            {(channel.bio || channel.description) && (
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{channel.bio || channel.description}</p>
+            )}
+          </div>
+        )}
+
+        {/* CentrePage: Tabbed content */}
+        {isCentre ? (
+          <CentrePageTabs channel={channel} isOwner={isOwner} activeTab={activeTab} onTabChange={setActiveTab}>
+            {(tab) => {
+              if (tab === "listings") return <ListingsGrid listings={listings} listingsLoading={listingsLoading} listingsError={listingsError} channelId={channelId} tr={tr} />;
+              if (tab === "updates") return <UpdatesFeed sortedPosts={sortedPosts} isOwner={isOwner} isCentre={isCentre} channelId={channelId} posting={posting} description={description} setDescription={setDescription} mediaUrl={mediaUrl} setMediaUrl={setMediaUrl} postType={postType} setPostType={setPostType} imageFiles={imageFiles} setImageFiles={setImageFiles} imageUploadKey={imageUploadKey} setImageUploadKey={setImageUploadKey} onSubmit={handleCreatePost} tr={tr} t={t} />;
+              if (tab === "reviews") return <ReviewsSection reviews={reviews} reviewsStats={reviewsStats} reviewsLoading={reviewsLoading} reviewsError={reviewsError} ownerId={ownerId} tr={tr} />;
+              if (tab === "analytics") return <CentrePageAnalytics channelId={channel.channel_id || channelId} />;
+              return null;
+            }}
+          </CentrePageTabs>
+        ) : (
+          <UpdatesFeed sortedPosts={sortedPosts} isOwner={isOwner} isCentre={isCentre} channelId={channelId} posting={posting} description={description} setDescription={setDescription} mediaUrl={mediaUrl} setMediaUrl={setMediaUrl} postType={postType} setPostType={setPostType} imageFiles={imageFiles} setImageFiles={setImageFiles} imageUploadKey={imageUploadKey} setImageUploadKey={setImageUploadKey} onSubmit={handleCreatePost} tr={tr} t={t} />
+        )}
+      </div>
+    </div>
+  );
 };
-var ve = le;
-export { ve as default };
+
+export default ChannelPage;

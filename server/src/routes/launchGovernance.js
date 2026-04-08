@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const {
   startTenantOnboarding,
   updateOnboardingStep,
@@ -20,7 +21,7 @@ function authorizeLaunchAdmin(req, res, next) {
     return res.status(403).json({ error: "This endpoint is not configured. Set the required admin token environment variable." });
   }
   const providedToken = String(req.headers["x-launch-admin-token"] || "").trim();
-  if (providedToken !== configuredToken) {
+  if (!providedToken || !crypto.timingSafeEqual(Buffer.from(configuredToken), Buffer.from(providedToken.padEnd(configuredToken.length).slice(0, configuredToken.length)))) {
     return res.status(401).json({
       error: "Unauthorized launch governance admin request.",
     });
@@ -28,7 +29,7 @@ function authorizeLaunchAdmin(req, res, next) {
   return next();
 }
 
-router.post("/onboarding/start", (req, res) => {
+router.post("/onboarding/start", authorizeLaunchAdmin, (req, res) => {
   const result = startTenantOnboarding(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -39,7 +40,7 @@ router.post("/onboarding/start", (req, res) => {
   return res.status(201).json(result);
 });
 
-router.post("/onboarding/:tenantId/steps", (req, res) => {
+router.post("/onboarding/:tenantId/steps", authorizeLaunchAdmin, (req, res) => {
   const result = updateOnboardingStep({
     ...req.body,
     tenantId: req.params.tenantId,
@@ -53,7 +54,7 @@ router.post("/onboarding/:tenantId/steps", (req, res) => {
   return res.status(200).json(result);
 });
 
-router.get("/onboarding/:tenantId", (req, res) => {
+router.get("/onboarding/:tenantId", authorizeLaunchAdmin, (req, res) => {
   const onboarding = getOnboarding(req.params.tenantId);
   if (!onboarding) {
     return res.status(404).json({
@@ -66,7 +67,7 @@ router.get("/onboarding/:tenantId", (req, res) => {
   });
 });
 
-router.post("/billing/usage/record", (req, res) => {
+router.post("/billing/usage/record", authorizeLaunchAdmin, (req, res) => {
   const result = recordUsage(req.body || {});
   if (result.status === "invalid") {
     return res.status(400).json(result);
@@ -74,7 +75,7 @@ router.post("/billing/usage/record", (req, res) => {
   return res.status(201).json(result);
 });
 
-router.get("/billing/tenants/:tenantId", (req, res) => {
+router.get("/billing/tenants/:tenantId", authorizeLaunchAdmin, (req, res) => {
   const usage = getTenantUsage(req.params.tenantId);
   if (!usage) {
     return res.status(404).json({
@@ -95,7 +96,7 @@ router.post("/compliance/evidence/register", authorizeLaunchAdmin, (req, res) =>
   return res.status(201).json(result);
 });
 
-router.get("/compliance/evidence", (req, res) => {
+router.get("/compliance/evidence", authorizeLaunchAdmin, (req, res) => {
   return res.status(200).json({
     status: "ok",
     evidence: listComplianceEvidence({
@@ -121,7 +122,7 @@ router.post("/ecosystem/integrations/register", authorizeLaunchAdmin, (req, res)
   return res.status(201).json(result);
 });
 
-router.get("/summary", (_req, res) => {
+router.get("/summary", authorizeLaunchAdmin, (_req, res) => {
   return res.status(200).json({
     status: "ok",
     summary: getSummary(),
