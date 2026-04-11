@@ -19,6 +19,7 @@ import PwaEnhancements from "./components/PwaEnhancements.jsx";
 import VPNBlocker from "./components/VPNBlocker.jsx";
 import { App as CapacitorApp } from "@capacitor/app";
 import { getUserId } from "@/utils/authStorage";
+import { MapPin } from "lucide-react";
 
 const LAZY_CACHE_KEY_PREFIX = "mhub:lazy-retry:";
 const LAZY_RETRY_WINDOW_MS = 60 * 1000;
@@ -120,6 +121,10 @@ const SubcategoriesPage = lazyWithRetry(
   () => import("./pages/Subcategories.jsx"),
   "Subcategories",
 );
+const ComparePostsPage = lazyWithRetry(
+  () => import("./pages/ComparePosts.jsx"),
+  "ComparePosts",
+);
 const FeedPage = lazyWithRetry(() => import("./pages/FeedPage.jsx"), "FeedPage");
 const FeedPostDetailPage = lazyWithRetry(
   () => import("./pages/FeedPostDetail.jsx"),
@@ -216,7 +221,7 @@ function LocationBanner() {
     <div className="fixed top-0 left-0 right-0 z-[100] bg-yellow-100 dark:bg-yellow-900/30 border-b-2 border-yellow-400 dark:border-yellow-600 shadow-lg">
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">📍</span>
+          <MapPin className="w-6 h-6 text-yellow-700 dark:text-yellow-300" />
           <div>
             <p className="font-semibold text-yellow-900 dark:text-yellow-200">{t("location_required")}</p>
             <p className="text-sm text-yellow-800 dark:text-yellow-300">
@@ -418,6 +423,7 @@ function AppShell() {
                   <Route path="/rewards" element={<RequireAuth><RewardsPage /></RequireAuth>} />
                   <Route path="/categories" element={<SubcategoriesPage />} />
                   <Route path="/subcategories" element={<SubcategoriesPage />} />
+                  <Route path="/compare" element={<ComparePostsPage />} />
                   <Route path="/categories/:slug" element={<Navigate to="/all-posts" replace />} />
                   <Route path="/feed" element={<FeedPage />} />
                   <Route path="/feed/:id" element={<FeedPostDetailPage />} />

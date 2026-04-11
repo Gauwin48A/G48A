@@ -54,13 +54,8 @@ function LocationGate({ children }) {
     colony,
     village,
     suburb,
-    displayName,
     accuracy,
     provider,
-    locationString,
-    accuracyTier,
-    isLiveLocation,
-    isIpFallback,
     lastRefreshedAt,
     isStaleLocation,
   } = useLocation();

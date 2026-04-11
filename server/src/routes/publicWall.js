@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const publicWallController = require("../controllers/publicWallController");
+const { publicReadSlowDown } = require("../middleware/rateLimiter");
 
 /**
  * @route Public Wall routes
@@ -8,6 +9,6 @@ const publicWallController = require("../controllers/publicWallController");
  */
 
 /** @route GET / - Get the public wall listing */
-router.get("/", publicWallController.getPublicWall);
+router.get("/", publicReadSlowDown, publicWallController.getPublicWall);
 
 module.exports = router;

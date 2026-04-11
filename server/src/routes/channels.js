@@ -5,6 +5,7 @@ const ChannelService = require("../services/ChannelService");
 const { runQuery, getAuthUserId, parseOptionalString, parsePositiveInt } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 const upload = require("../middleware/upload");
+const { publicReadSlowDown } = require("../middleware/rateLimiter");
 const { getImageUrl } = upload;
 
 const DEFAULT_CHANNEL_POSTS_LIMIT = 20;
@@ -326,7 +327,7 @@ router.get("/premium", protect, async (req, res) => {
 /**
  * @route GET /featured - Public featured CentrePages (premium-owned).
  */
-router.get("/featured", async (req, res) => {
+router.get("/featured", publicReadSlowDown, async (req, res) => {
   try {
     const viewerId = getUserId(req);
     const limit = parsePositiveInt(req.query.limit, 6, 24);

@@ -25,24 +25,38 @@ const normalizePrice = (value) => {
     const parsed = Number(String(value || "").replace(/[^\d.]/g, ""));
     return Number.isFinite(parsed) ? parsed : 0;
   },
-  formatPrice = (value) => {
+  formatPrice = (value, tr) => {
     const numeric = normalizePrice(value);
-    if (!numeric) return "Price on request";
+    if (!numeric) {
+      return tr ? tr("price_on_request", "Price on request") : "Price on request";
+    }
     return `Rs ${numeric.toLocaleString()}`;
   },
-  formatRelativeTime = (value) => {
-    if (!value) return "Recently";
+  formatRelativeTime = (value, tr) => {
+    if (!value) return tr ? tr("recently", "Recently") : "Recently";
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Recently";
+    if (Number.isNaN(date.getTime())) {
+      return tr ? tr("recently", "Recently") : "Recently";
+    }
     const diffMs = Date.now() - date.getTime();
     const minutes = Math.floor(diffMs / 60000);
-    if (minutes < 60) return `${Math.max(minutes, 1)} min ago`;
+    if (minutes < 60) {
+      return tr
+        ? tr("minutes_ago", "{{count}} min ago", { count: Math.max(minutes, 1) })
+        : `${Math.max(minutes, 1)} min ago`;
+    }
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) {
+      return tr
+        ? tr("hours_ago", "{{count}}h ago", { count: hours })
+        : `${hours}h ago`;
+    }
     const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return tr
+      ? tr("days_ago", "{{count}}d ago", { count: days })
+      : `${days}d ago`;
   },
-  extractBrand = (post) =>
+  extractBrand = (post, tr) =>
     String(
       post?.brand ||
         post?.brand_name ||
@@ -50,9 +64,9 @@ const normalizePrice = (value) => {
         post?.model ||
         post?.model_name ||
         post?.modelName ||
-        "Other",
-    ).trim() || "Other",
-  extractLocation = (post) => {
+        (tr ? tr("other", "Other") : "Other"),
+    ).trim() || (tr ? tr("other", "Other") : "Other"),
+  extractLocation = (post, tr) => {
     const raw =
       post?.location ||
       post?.city ||
@@ -60,7 +74,7 @@ const normalizePrice = (value) => {
       post?.state ||
       post?.address ||
       "";
-    return String(raw || "").trim() || "Location unknown";
+    return String(raw || "").trim() || (tr ? tr("location_unknown", "Location unknown") : "Location unknown");
   },
   extractImage = (post) => {
     const candidates = [];
@@ -82,7 +96,7 @@ const normalizePrice = (value) => {
     const unique = Array.from(new Set(candidates));
     return unique[0] || "/placeholder.svg";
   },
-  mapPostToListing = (post) => {
+  mapPostToListing = (post, tr) => {
     if (!post) return null;
     const id = post.post_id ?? post.id ?? post.postId ?? null;
     if (id === null || id === undefined) return null;
@@ -97,21 +111,21 @@ const normalizePrice = (value) => {
       );
     return {
       id,
-      title: post.title || "Untitled listing",
-      brand: extractBrand(post),
-      price: formatPrice(priceValue),
+      title: post.title || (tr ? tr("untitled_listing", "Untitled listing") : "Untitled listing"),
+      brand: extractBrand(post, tr),
+      price: formatPrice(priceValue, tr),
       priceValue,
-      condition: post.condition || post.post_type || "Used",
-      location: extractLocation(post),
+      condition: post.condition || post.post_type || (tr ? tr("used", "Used") : "Used"),
+      location: extractLocation(post, tr),
       seller:
         post.user_name ||
         post.username ||
         post.user?.name ||
         post.user?.username ||
-        "Seller",
+        (tr ? tr("seller", "Seller") : "Seller"),
       verified,
       image: extractImage(post),
-      postedDate: formatRelativeTime(post.created_at || post.updated_at),
+      postedDate: formatRelativeTime(post.created_at || post.updated_at, tr),
     };
   },
   matchesPriceRange = (priceValue, range) =>
@@ -130,7 +144,8 @@ const normalizePrice = (value) => {
       : !0,
   BuyerView = () => {
     const { t: translate } = useTranslation(),
-      tr = (key, fallback) => translate(key, { defaultValue: fallback }),
+      tr = (key, fallback, options = {}) =>
+        translate(key, { defaultValue: fallback, ...options }),
       navigate = useNavigate(),
       [searchQuery, setSearchQuery] = useState(""),
       [brandFilter, setBrandFilter] = useState(""),
@@ -170,7 +185,7 @@ const normalizePrice = (value) => {
           }
           if (requestId !== requestRef.current) return;
           const mapped = posts
-            .map(mapPostToListing)
+            .map((post) => mapPostToListing(post, tr))
             .filter(Boolean);
           setListings(mapped);
         } catch (err) {

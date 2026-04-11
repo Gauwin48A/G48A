@@ -8,10 +8,12 @@ import FeaturedCentrePages from "@/components/FeaturedCentrePages";
 import CentreUpdatesFeed from "@/components/CentreUpdatesFeed";
 import { useAuth } from "@/context/AuthContext";
 import { isAuthenticated } from "@/utils/authStorage";
+import { useTranslation } from "react-i18next";
 
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,7 +52,13 @@ export default function Home() {
     }
   }, []);
 
-  useEffect(() => { document.title = "MHub — Home"; return () => { document.title = "MHub"; }; }, []);
+  useEffect(() => {
+    const homeTitle = t("home_title", { defaultValue: "MHub — Home" });
+    document.title = homeTitle;
+    return () => {
+      document.title = "MHub";
+    };
+  }, [t]);
 
   useEffect(() => {
     loadPosts();
@@ -82,15 +90,17 @@ export default function Home() {
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-lg w-full mhub-premium-surface rounded-3xl p-6 text-center dark:text-center">
           <h2 className="text-2xl font-bold text-rose-700 dark:text-rose-200 mb-2 dark:text-rose-300">
-            Something went wrong
+            {t("something_went_wrong", { defaultValue: "Something went wrong" })}
           </h2>
           <p className="text-sm text-rose-600 dark:text-rose-300 mb-6">
             {error}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button onClick={loadPosts}>Reload Page</Button>
+            <Button onClick={loadPosts}>
+              {t("reload_page", { defaultValue: "Reload Page" })}
+            </Button>
             <Button variant="outline" onClick={() => navigate("/all-posts")}>
-              Open All Posts
+              {t("open_all_posts", { defaultValue: "Open All Posts" })}
             </Button>
           </div>
         </div>
@@ -120,7 +130,7 @@ export default function Home() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
             <p className="uppercase tracking-[0.3em] text-xs text-emerald-500 dark:text-emerald-300">
-              Trust-First Marketplace
+              {t("trust_first_marketplace", { defaultValue: "Trust-First Marketplace" })}
             </p>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100">
               {t("discover_near_you") || "Discover what is moving near you"}
@@ -155,7 +165,7 @@ export default function Home() {
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
                     src={image}
-                    alt={post.title || "Listing"}
+                    alt={post.title || t("listing", { defaultValue: "Listing" })}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(event) => {
                       event.currentTarget.onerror = null;

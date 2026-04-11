@@ -28,8 +28,11 @@ import { useAuth as X } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { isAuthenticated as Y } from "@/utils/authStorage";
 import { navigateBack } from "@/utils/navigation";
+import { useTranslation as te } from "react-i18next";
 const Z = () => {
   const i = W(),
+    { t: trn } = te(),
+    tr = (key, fallback, options = {}) => trn(key, { defaultValue: fallback, ...options }),
     { user: S, loading: x } = X(),
     v = $(() => Y(S), [S]),
     { activeCategory: categoryModeCategory, hasSelection: hasCategoryMode } =
@@ -56,7 +59,7 @@ const Z = () => {
     g = q(async () => {
       const r = ++p.current;
       if (!v) {
-        m([]), N("Please sign in to view saved searches."), f(!1);
+        m([]), N(tr("saved_searches_sign_in", "Please sign in to view saved searches.")), f(!1);
         return;
       }
       try {
@@ -68,7 +71,7 @@ const Z = () => {
       } catch (a) {
         import.meta.env.DEV && console.error("Failed to fetch searches:", a),
           r === p.current &&
-            (m([]), N("Failed to load saved searches. Please retry."));
+            (m([]), N(tr("saved_searches_load_failed", "Failed to load saved searches. Please retry.")));
       } finally {
         r === p.current && f(!1);
       }
@@ -84,12 +87,12 @@ const Z = () => {
   );
   const A = async () => {
       if (!s.name || !s.searchQuery) {
-        l("Name and search query required", "error");
+        l(tr("saved_searches_name_required", "Name and search query required"), "error");
         return;
       }
       try {
         await h.post("/saved-searches", s),
-          l("Search saved!"),
+          l(tr("saved_searches_saved", "Search saved!")),
           y(!1),
           n({
             name: "",
@@ -100,16 +103,16 @@ const Z = () => {
           }),
           await g();
       } catch {
-        l("Failed to save", "error");
+        l(tr("saved_searches_save_failed", "Failed to save"), "error");
       }
     },
     Q = async (r) => {
       try {
         await h.delete(`/saved-searches/${r}`),
           m((a) => a.filter((o) => o.search_id !== r)),
-          l("Search deleted");
+          l(tr("saved_searches_deleted", "Search deleted"));
       } catch {
-        l("Failed to delete", "error");
+        l(tr("saved_searches_delete_failed", "Failed to delete"), "error");
       }
     },
     I = async (r) => {
@@ -130,9 +133,9 @@ const Z = () => {
                 : o,
             ),
           ),
-          l("Notifications updated");
+          l(tr("saved_searches_notifications_updated", "Notifications updated"));
       } catch {
-        l("Failed to update", "error");
+        l(tr("saved_searches_update_failed", "Failed to update"), "error");
       }
     },
     L = (r) => {
@@ -203,13 +206,13 @@ const Z = () => {
                     e.createElement(u, {
                       className: "h-5 w-5 text-purple-400 dark:text-purple-200",
                     }),
-                    "Saved Searches",
+                    tr("saved_searches_title", "Saved Searches"),
                   ),
                   e.createElement(
                     "p",
                     { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     b.length,
-                    " saved",
+                    ` ${tr("saved_searches_saved_suffix", "saved")}`,
                   ),
                 ),
               ),
@@ -266,7 +269,10 @@ const Z = () => {
                         className:
                           "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
                       },
-                      "Saved searches will run inside this category.",
+                      tr(
+                        "saved_searches_category_notice",
+                        "Saved searches will run inside this category.",
+                      ),
                     ),
                   ),
                   e.createElement(
@@ -293,14 +299,20 @@ const Z = () => {
                   "div",
                   { className: "space-y-3" },
                   e.createElement(c, {
-                    placeholder: "Search name (e.g., 'Cheap iPhones')",
+                    placeholder: tr(
+                      "saved_search_name_placeholder",
+                      "Search name (e.g., 'Cheap iPhones')",
+                    ),
                     value: s.name,
                     onChange: (r) => n({ ...s, name: r.target.value }),
                     className:
                       "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white dark:bg-gray-950 dark:border-gray-700 dark:text-gray-100",
                   }),
                   e.createElement(c, {
-                    placeholder: "Search keywords (e.g., 'iPhone 14')",
+                    placeholder: tr(
+                      "saved_search_keywords_placeholder",
+                      "Search keywords (e.g., 'iPhone 14')",
+                    ),
                     value: s.searchQuery,
                     onChange: (r) => n({ ...s, searchQuery: r.target.value }),
                     className:
@@ -347,7 +359,7 @@ const Z = () => {
                         className: "flex-1 bg-purple-600 hover:bg-purple-700 dark:bg-purple-700/40 dark:hover:bg-purple-700/40",
                       },
                       e.createElement(G, { className: "h-4 w-4 mr-1" }),
-                      "Save Search",
+                      tr("save_search", "Save Search"),
                     ),
                     e.createElement(
                       t,
@@ -388,7 +400,7 @@ const Z = () => {
                         className:
                           "text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2 dark:text-gray-200",
                       },
-                      "Unable to load saved searches",
+                      tr("saved_searches_load_failed_title", "Unable to load saved searches"),
                     ),
                     e.createElement(
                       "p",
@@ -405,7 +417,7 @@ const Z = () => {
                           className: "bg-purple-600 hover:bg-purple-700 dark:bg-purple-700/40 dark:hover:bg-purple-700/40",
                         },
                         e.createElement(F, { className: "h-4 w-4 mr-1" }),
-                        "Retry",
+                        tr("retry", "Retry"),
                       ),
                       e.createElement(
                         t,
@@ -431,12 +443,15 @@ const Z = () => {
                           className:
                             "text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2 dark:text-gray-200",
                         },
-                        "No Saved Searches",
+                        tr("no_saved_searches", "No Saved Searches"),
                       ),
                       e.createElement(
                         "p",
                         { className: "text-gray-500 dark:text-gray-500 mb-6 dark:text-gray-300" },
-                        "Save your searches to get alerts when new posts match",
+                        tr(
+                          "saved_searches_empty_message",
+                          "Save your searches to get alerts when new posts match",
+                        ),
                       ),
                       e.createElement(
                         "div",
@@ -448,7 +463,7 @@ const Z = () => {
                             className: "bg-purple-600 hover:bg-purple-700 dark:bg-purple-700/40 dark:hover:bg-purple-700/40",
                           },
                           e.createElement(z, { className: "h-4 w-4 mr-1" }),
-                          "Create First Search",
+                          tr("create_first_search", "Create First Search"),
                         ),
                         e.createElement(
                           t,
@@ -591,7 +606,7 @@ const Z = () => {
                                   "mt-3 w-full border-purple-500 text-purple-400 hover:bg-purple-500/20 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-800/20",
                               },
                               e.createElement(u, { className: "h-4 w-4 mr-1" }),
-                              "Run This Search",
+                              tr("run_this_search", "Run This Search"),
                             ),
                           ),
                         ),
@@ -625,7 +640,7 @@ const Z = () => {
             e.createElement(
               "h1",
               { className: "text-2xl font-bold text-white mb-3 dark:text-white" },
-              "Sign in to manage saved searches",
+              tr("saved_searches_sign_in_title", "Sign in to manage saved searches"),
             ),
             e.createElement(
               "p",
@@ -644,7 +659,7 @@ const Z = () => {
                     "w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-6 text-lg rounded-xl dark:bg-gradient-to-r dark:text-white",
                 },
                 e.createElement(J, { className: "h-4 w-4 mr-2" }),
-                "Sign In",
+                tr("sign_in", "Sign In"),
               ),
               e.createElement(
                 t,

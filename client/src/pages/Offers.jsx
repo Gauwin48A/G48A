@@ -883,8 +883,8 @@ const OffersPage = () => {
 
                         {offer.message && (
                           <p className="text-sm text-gray-600 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg dark:text-gray-200 dark:bg-gray-950">
-                            <MessageCircle className="w-4 h-4 inline mr-2" />"
-                            {offer.message}"
+                            <MessageCircle className="w-4 h-4 inline mr-2" />&quot;
+                            {offer.message}&quot;
                           </p>
                         )}
 

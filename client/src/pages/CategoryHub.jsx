@@ -1,14 +1,23 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import PageDensityToggle from "@/components/ui/PageDensityToggle";
-import { usePageDensity } from "@/hooks/usePageDensity";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { DEFAULT_FILTERS, useFilter } from "@/context/FilterContext";
 import { fetchCategoriesCached } from "@/services/categoriesService";
 import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { useCmsPage } from "@/hooks/useCmsPage";
+import DarkModeToggle from "@/components/DarkModeToggle";
+import { Smartphone, Tablet, Monitor } from "lucide-react";
+
+const LAYOUT_STORAGE_KEY = 'mhub_layout_preview_mode';
+const LAYOUT_USER_KEY = 'mhub_layout_preview_user';
+const LAYOUT_SESSION_KEY = 'mhub_layout_preview_session';
+const LAYOUT_MODES = [
+  { key: 'mobile', label: 'Mobile', icon: Smartphone },
+  { key: 'tablet', label: 'Tablet', icon: Tablet },
+  { key: 'desktop', label: 'Desktop', icon: Monitor },
+];
 
 // ─── App definitions ────────────────────────────────────────────────────────
 
@@ -271,7 +280,6 @@ export default function CategoryHub() {
   const { setFilters } = useFilter();
   const { isDark } = useTheme();
   const { t } = useTranslation();
-  const { density, setDensity } = usePageDensity("mhub_categoryhub_density");
   const {
     activeApp,
     setActiveApp,
@@ -285,6 +293,19 @@ export default function CategoryHub() {
   const [stats, setStats] = useState({});
   const [statsLoading, setStatsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [layoutMode, setLayoutMode] = useState(() => {
+    const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || '').trim().toLowerCase();
+    return LAYOUT_MODES.some((m) => m.key === stored) ? stored : 'mobile';
+  });
+
+  const handleLayoutChange = useCallback((mode) => {
+    setLayoutMode(mode);
+    localStorage.setItem(LAYOUT_STORAGE_KEY, mode);
+    localStorage.setItem(LAYOUT_USER_KEY, '1');
+    try { sessionStorage.setItem(LAYOUT_SESSION_KEY, '1'); } catch {}
+    document.documentElement.setAttribute('data-layout-preview', mode);
+    document.body?.setAttribute('data-layout-preview', mode);
+  }, []);
 
   useEffect(() => { document.title = t('browse_categories', { defaultValue: 'MHub — Browse Categories' }); return () => { document.title = "MHub"; }; }, [t]);
 
@@ -388,7 +409,7 @@ export default function CategoryHub() {
   }, [clearCategory, clearSubcategory, setActiveApp, setFilters, navigate]);
 
   return (
-    <div className={`h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100 ${density === "compact" ? "mhub-compact" : ""}`}>
+    <div className="h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100">
       {/* Full-screen gradient aurora background */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
@@ -414,13 +435,6 @@ export default function CategoryHub() {
               <span className={isDark ? "text-white/45" : "text-slate-500"}>{t('switch_anytime', { defaultValue: 'Switch anytime from here' })}</span>
             </div>
           )}
-          <div className="mb-3 flex justify-center">
-            <PageDensityToggle
-              value={density}
-              onChange={setDensity}
-              label={t('view', { defaultValue: 'View' })}
-            />
-          </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
             {t('choose_your', { defaultValue: 'Choose Your' })}{" "}
             <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
@@ -453,6 +467,40 @@ export default function CategoryHub() {
               ))}
             </div>
           )}
+
+          {/* ── Quick settings below categories ── */}
+          <div className="mt-6 mb-2 flex flex-col items-center gap-4">
+            {/* Layout switcher */}
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-white shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
+              {LAYOUT_MODES.map((mode) => {
+                const Icon = mode.icon;
+                const isActive = layoutMode === mode.key;
+                return (
+                  <button
+                    key={mode.key}
+                    type="button"
+                    onClick={() => handleLayoutChange(mode.key)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                    aria-label={mode.label}
+                    aria-pressed={isActive}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{t(mode.key, { defaultValue: mode.label })}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Dark mode toggle */}
+            <div className="flex items-center gap-2">
+              <DarkModeToggle className="!p-2 !rounded-xl !bg-white !shadow-md !border !border-gray-200 dark:!bg-gray-800 dark:!border-gray-600 hover:!shadow-lg transition-all" />
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{isDark ? t('light_mode', { defaultValue: 'Light' }) : t('dark_mode', { defaultValue: 'Dark' })}</span>
+            </div>
+          </div>
         </div>
 
       </div>

@@ -40,28 +40,44 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
+import { useTranslation as pe } from "react-i18next";
 const D = [
     { value: "7d", label: "7D", days: 7 },
     { value: "30d", label: "30D", days: 30 },
     { value: "90d", label: "90D", days: 90 },
     { value: "all", label: "All time", days: null },
   ],
-  ue = (r) => {
+  ue = (r, tr) => {
     const l = Number(r?.status || r?.response?.status || 0),
       a = String(r?.message || "").toLowerCase();
     return l === 401 ||
       l === 403 ||
       a.includes("authentication") ||
       a.includes("session")
-      ? "Your session does not have analytics access. Please sign in again."
-      : "Analytics is temporarily unavailable. Please retry.";
+      ? tr
+        ? tr(
+            "analytics_auth_error",
+            "Your session does not have analytics access. Please sign in again.",
+          )
+        : "Your session does not have analytics access. Please sign in again."
+      : tr
+        ? tr(
+            "analytics_unavailable",
+            "Analytics is temporarily unavailable. Please retry.",
+          )
+        : "Analytics is temporarily unavailable. Please retry.";
   },
   i = (r) => Number(r || 0).toLocaleString(),
-  G = (r) => `INR ${Number(r || 0).toLocaleString()}`,
-  ge = (r) => {
-    if (!r) return "Unknown date";
+  G = (r, tr) =>
+    `${tr ? tr("currency_inr", "INR") : "INR"} ${Number(r || 0).toLocaleString()}`,
+  ge = (r, tr) => {
+    if (!r) return tr ? tr("unknown_date", "Unknown date") : "Unknown date";
     const l = new Date(r);
-    return Number.isNaN(l.getTime()) ? "Unknown date" : l.toLocaleDateString();
+    return Number.isNaN(l.getTime())
+      ? tr
+        ? tr("unknown_date", "Unknown date")
+        : "Unknown date"
+      : l.toLocaleDateString();
   },
   ce = (r) => {
     const l = D.find((N) => N.value === r);
@@ -71,6 +87,16 @@ const D = [
   },
   AnalyticsPage = () => {
     const r = me(),
+      { t: o } = pe(),
+      tr = R((key, fallback, options = {}) => o(key, { defaultValue: fallback, ...options }), [o]),
+      timeRanges = c(
+        () =>
+          D.map((range) => ({
+            ...range,
+            label: tr(`analytics_range_${range.value}`, range.label),
+          })),
+        [tr],
+      ),
       l = ee(0),
       [a, N] = p(null),
       [u, Y] = p([]),
@@ -175,7 +201,7 @@ const D = [
           q("");
         } catch (s) {
           if (t !== l.current) return;
-          q(ue(s));
+          q(ue(s, tr));
           import.meta.env.DEV &&
             console.error("[Analytics] Fetch failed:", s);
         } finally {
@@ -319,7 +345,8 @@ const D = [
         return (
           filteredPosts.forEach((s) => {
             const d =
-                String(s.category || "Uncategorized").trim() || "Uncategorized",
+                String(s.category || tr("uncategorized", "Uncategorized")).trim() ||
+                  tr("uncategorized", "Uncategorized"),
               o = t.get(d) || {
                 category: d,
                 post_count: 0,
@@ -350,8 +377,8 @@ const D = [
         [filteredPosts],
       ),
       C = c(() => {
-        const t = D.find((s) => s.value === v);
-        return t ? t.label : "All time";
+        const t = timeRanges.find((s) => s.value === v);
+        return t ? t.label : tr("all_time", "All time");
       }, [v]),
       m = ({ icon: t, label: s, value: d, change: o, color: k }) =>
         e.createElement(
@@ -462,12 +489,15 @@ const D = [
                     "text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-white",
                 },
                 e.createElement(ae, { className: "w-8 h-8" }),
-                "Seller Analytics",
+                tr("seller_analytics", "Seller Analytics"),
               ),
               e.createElement(
                 "p",
                 { className: "text-blue-100 mt-1 break-words dark:text-blue-200" },
-                "Track performance, identify drop-offs, and recover quickly.",
+                tr(
+                  "analytics_subtitle",
+                  "Track performance, identify drop-offs, and recover quickly.",
+                ),
               ),
             ),
             e.createElement(
@@ -477,12 +507,16 @@ const D = [
                 n,
                 { variant: "secondary", size: "sm", onClick: b, disabled: S },
                 e.createElement(oe, { className: "w-4 h-4 mr-2" }),
-                "Refresh",
+                tr("refresh", "Refresh"),
               ),
               e.createElement(
                 n,
                 { asChild: !0, variant: "secondary", size: "sm" },
-                e.createElement(y, { to: "/post-welcome" }, "Add Post"),
+                e.createElement(
+                  y,
+                  { to: "/post-welcome" },
+                  tr("add_post", "Add Post"),
+                ),
               ),
             ),
           ),
@@ -499,13 +533,17 @@ const D = [
                   e.createElement(
                     "p",
                     { className: "text-sm font-semibold" },
-                    "Category mode: ",
+                    tr("category_mode", "Category mode:"),
+                    " ",
                     categoryModeCategory.name,
                   ),
                   e.createElement(
                     "p",
                     { className: "text-xs text-white/80 dark:text-white/80" },
-                    "Analytics panels are filtered to this category.",
+                    tr(
+                      "analytics_filtered_category",
+                      "Analytics panels are filtered to this category.",
+                    ),
                   ),
                 ),
                 e.createElement(
@@ -514,17 +552,17 @@ const D = [
                     type: "button",
                     variant: "secondary",
                     size: "sm",
-                    className: "bg-white/20 text-white hover:bg-white/30 dark:bg-slate-900/20 dark:text-white dark:hover:bg-slate-900/30",
-                    onClick: () => r("/category-mode"),
-                  },
-                  "Switch category",
-                ),
-              )
+                  className: "bg-white/20 text-white hover:bg-white/30 dark:bg-slate-900/20 dark:text-white dark:hover:bg-slate-900/30",
+                  onClick: () => r("/category-mode"),
+                },
+                tr("switch_category", "Switch category"),
+              ),
+            )
             : null,
           e.createElement(
             "div",
             { className: "flex flex-wrap gap-2" },
-            D.map((t) =>
+            timeRanges.map((t) =>
               e.createElement(
                 n,
                 {
@@ -556,20 +594,20 @@ const D = [
                 className: "mhub-premium-surface",
               },
               e.createElement(te, { className: "h-4 w-4" }),
-              e.createElement($, null, "Analytics refresh failed"),
+              e.createElement($, null, tr("analytics_refresh_failed", "Analytics refresh failed")),
               e.createElement(
                 V,
                 null,
                 L,
                 " ",
                 I
-                  ? "Showing last available data."
-                  : "Retry now or return to posts.",
+                  ? tr("showing_last_data", "Showing last available data.")
+                  : tr("retry_or_return_posts", "Retry now or return to posts."),
               ),
               e.createElement(
                 "div",
                 { className: "flex flex-wrap gap-2 mt-3" },
-                e.createElement(n, { size: "sm", onClick: b }, "Retry"),
+                e.createElement(n, { size: "sm", onClick: b }, tr("retry", "Retry")),
                 e.createElement(
                   n,
                   {
@@ -577,7 +615,7 @@ const D = [
                     variant: "outline",
                     onClick: () => r("/my-posts"),
                   },
-                  "My Posts",
+                  tr("my_posts", "My Posts"),
                 ),
               ),
             )
@@ -585,13 +623,15 @@ const D = [
         e.createElement(
           O,
           { className: "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-blue-200" },
-          e.createElement($, null, "KPI scope: lifetime totals"),
+          e.createElement($, null, tr("kpi_scope_title", "KPI scope: lifetime totals")),
           e.createElement(
             V,
             null,
-            "Summary cards use full account history. Date range (",
-            C,
-            ") applies to post and category panels below.",
+            tr(
+              "kpi_scope_description",
+              "Summary cards use full account history. Date range ({{range}}) applies to post and category panels below.",
+              { range: C },
+            ),
           ),
         ),
         e.createElement(
@@ -599,26 +639,26 @@ const D = [
           { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
           e.createElement(m, {
             icon: ie,
-            label: "Total Views",
+            label: tr("total_views", "Total Views"),
             value: i(a?.totalViews),
             color: "bg-blue-500",
           }),
           e.createElement(m, {
             icon: H,
-            label: "Inquiries",
+            label: tr("inquiries", "Inquiries"),
             value: i(a?.totalInquiries),
             color: "bg-green-500",
           }),
           e.createElement(m, {
             icon: ne,
-            label: "Items Sold",
+            label: tr("items_sold", "Items Sold"),
             value: i(a?.soldPosts),
             color: "bg-purple-500",
           }),
           e.createElement(m, {
             icon: le,
-            label: "Revenue",
-            value: G(a?.totalRevenue),
+            label: tr("revenue", "Revenue"),
+            value: G(a?.totalRevenue, tr),
             color: "bg-yellow-500",
           }),
         ),
@@ -627,25 +667,25 @@ const D = [
           { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
           e.createElement(m, {
             icon: F,
-            label: "Active Posts",
+            label: tr("active_posts", "Active Posts"),
             value: i(a?.activePosts),
             color: "bg-indigo-500",
           }),
           e.createElement(m, {
             icon: K,
-            label: "Conversion Rate",
+            label: tr("conversion_rate", "Conversion Rate"),
             value: `${Number(a?.conversionRate || 0)}%`,
             color: "bg-pink-500",
           }),
           e.createElement(m, {
             icon: de,
-            label: "Avg Rating",
-            value: a?.avgRating || "N/A",
+            label: tr("avg_rating", "Avg Rating"),
+            value: a?.avgRating || tr("not_available", "N/A"),
             color: "bg-orange-500",
           }),
           e.createElement(m, {
             icon: H,
-            label: "Total Reviews",
+            label: tr("total_reviews", "Total Reviews"),
             value: i(a?.totalReviews),
             color: "bg-teal-500",
           }),
@@ -665,18 +705,21 @@ const D = [
                 "span",
                 { className: "flex items-center gap-2" },
                 e.createElement(K, { className: "w-5 h-5 text-blue-600 dark:text-blue-300" }),
-                "Top Performing Posts (",
-                C,
-                ")",
+                tr("top_posts_title", "Top Performing Posts ({{range}})", { range: C }),
               ),
               e.createElement(
                 B,
                 { variant: "outline" },
-                "Views ",
+                tr("views", "Views"),
+                " ",
                 i(h.views),
-                " | Inquiries ",
+                " | ",
+                tr("inquiries", "Inquiries"),
+                " ",
                 i(h.inquiries),
-                " | Offers ",
+                " | ",
+                tr("offers", "Offers"),
+                " ",
                 i(h.offers),
               ),
             ),
@@ -691,7 +734,10 @@ const D = [
                   e.createElement(
                     "p",
                     { className: "text-gray-500 dark:text-gray-300" },
-                    "No post analytics yet. Publish your first listing to start tracking performance.",
+                    tr(
+                      "no_post_analytics",
+                      "No post analytics yet. Publish your first listing to start tracking performance.",
+                    ),
                   ),
                   e.createElement(
                     "div",
@@ -702,7 +748,7 @@ const D = [
                       e.createElement(
                         y,
                         { to: "/post-welcome" },
-                        "Create First Post",
+                        tr("create_first_post", "Create First Post"),
                       ),
                     ),
                     e.createElement(
@@ -711,7 +757,7 @@ const D = [
                       e.createElement(
                         y,
                         { to: "/all-posts" },
-                        "Browse Marketplace",
+                        tr("browse_marketplace", "Browse Marketplace"),
                       ),
                     ),
                   ),
@@ -723,7 +769,10 @@ const D = [
                     e.createElement(
                       "p",
                       { className: "text-gray-500 dark:text-gray-300" },
-                      "No post activity found in the selected date range.",
+                      tr(
+                        "no_post_activity_range",
+                        "No post activity found in the selected date range.",
+                      ),
                     ),
                     e.createElement(
                       "div",
@@ -731,12 +780,16 @@ const D = [
                       e.createElement(
                         n,
                         { variant: "outline", onClick: () => w("all") },
-                        "Reset Date Range",
+                        tr("reset_date_range", "Reset Date Range"),
                       ),
                       e.createElement(
                         n,
                         { asChild: !0 },
-                        e.createElement(y, { to: "/post-welcome" }, "Add New Post"),
+                        e.createElement(
+                          y,
+                          { to: "/post-welcome" },
+                          tr("add_new_post", "Add New Post"),
+                        ),
                       ),
                     ),
                   )
@@ -768,7 +821,7 @@ const D = [
                               className:
                                 "flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500 dark:text-gray-300",
                             },
-                            e.createElement("span", null, G(t.price)),
+                            e.createElement("span", null, G(t.price, tr)),
                             e.createElement(
                               B,
                               {
@@ -779,7 +832,7 @@ const D = [
                               },
                               t.status,
                             ),
-                            e.createElement("span", null, ge(t.created_at)),
+                            e.createElement("span", null, ge(t.created_at, tr)),
                           ),
                         ),
                         e.createElement(
@@ -796,7 +849,7 @@ const D = [
                             e.createElement(
                               "p",
                               { className: "text-xs text-gray-500 dark:text-gray-300" },
-                              "Views",
+                              tr("views", "Views"),
                             ),
                           ),
                           e.createElement(
@@ -810,7 +863,7 @@ const D = [
                             e.createElement(
                               "p",
                               { className: "text-xs text-gray-500 dark:text-gray-300" },
-                              "Inquiries",
+                              tr("inquiries", "Inquiries"),
                             ),
                           ),
                           e.createElement(
@@ -826,7 +879,7 @@ const D = [
                             e.createElement(
                               "p",
                               { className: "text-xs text-gray-500 dark:text-gray-300" },
-                              "Offers",
+                              tr("offers", "Offers"),
                             ),
                           ),
                         ),
@@ -845,9 +898,7 @@ const D = [
               M,
               { className: "flex items-center gap-2" },
               e.createElement(F, { className: "w-5 h-5 text-purple-600 dark:text-purple-300" }),
-              "Category Breakdown (",
-              C,
-              ")",
+              tr("category_breakdown", "Category Breakdown ({{range}})", { range: C }),
             ),
           ),
           e.createElement(
@@ -860,7 +911,7 @@ const D = [
                   e.createElement(
                     "p",
                     { className: "text-gray-500 dark:text-gray-300" },
-                    "No category data available for this range.",
+                    tr("no_category_data", "No category data available for this range."),
                   ),
                   e.createElement(
                     "div",
@@ -868,7 +919,7 @@ const D = [
                     e.createElement(
                       n,
                       { variant: "outline", onClick: () => w("all") },
-                      "Use all-time view",
+                      tr("use_all_time", "Use all-time view"),
                     ),
                     e.createElement(
                       n,
@@ -876,7 +927,7 @@ const D = [
                       e.createElement(
                         y,
                         { to: "/categories" },
-                        "Explore categories",
+                        tr("explore_categories", "Explore categories"),
                       ),
                     ),
                   ),
@@ -901,15 +952,15 @@ const D = [
                             className:
                               "font-semibold text-gray-900 dark:text-white dark:text-gray-100",
                           },
-                          t.category || "Uncategorized",
+                          t.category || tr("uncategorized", "Uncategorized"),
                         ),
                         e.createElement(
                           "p",
                           { className: "text-sm text-gray-500 dark:text-gray-300" },
                           i(t.post_count),
-                          " posts | ",
+                          ` ${tr("posts", "posts")} | `,
                           i(t.sold_count),
-                          " sold",
+                          ` ${tr("sold", "sold")}`,
                         ),
                       ),
                       e.createElement(
@@ -923,7 +974,7 @@ const D = [
                         e.createElement(
                           "p",
                           { className: "text-xs text-gray-500 dark:text-gray-300" },
-                          "views",
+                          tr("views", "views"),
                         ),
                       ),
                     ),

@@ -524,7 +524,7 @@ const Wishlist = () => {
   if (authLoading) {
     return (
       <div
-        className={`min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-gray-950 dark:bg-slate-950 ${densityClass}`}
+        className={`min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-slate-950 ${densityClass}`}
       >
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin dark:border-2 dark:border-pink-600/40 dark:border-t-transparent" />
@@ -544,8 +544,8 @@ const Wishlist = () => {
         className={`min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-pink-50 to-purple-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4 relative overflow-hidden dark:bg-gradient-to-br ${densityClass}`}
       >
         {/* Decorative blobs */}
-        <div className="absolute top-20 -left-32 w-80 h-80 bg-pink-200/30 dark:bg-pink-500/10 rounded-full blur-3xl pointer-events-none dark:bg-pink-900/30" />
-        <div className="absolute bottom-20 -right-32 w-96 h-96 bg-purple-200/30 dark:bg-purple-500/10 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/30" />
+        <div className="absolute top-20 -left-32 w-80 h-80 bg-pink-200/30 rounded-full blur-3xl pointer-events-none dark:bg-pink-900/30" />
+        <div className="absolute bottom-20 -right-32 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/30" />
 
         <div className="mhub-premium-surface rounded-3xl p-8 sm:p-10 max-w-md w-full text-center relative z-10 border border-white/60 dark:border-gray-700/40 shadow-xl shadow-pink-500/5 dark:text-center dark:border dark:border-white/60">
           {/* Icon */}
@@ -579,11 +579,6 @@ const Wishlist = () => {
     <div
       className={`min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 mhub-page-pad-bottom relative overflow-hidden dark:bg-gradient-to-b ${densityClass}`}
     >
-      {/* Decorative background blobs */}
-      <div className="absolute top-32 -left-40 w-96 h-96 bg-pink-200/20 dark:bg-pink-500/5 rounded-full blur-3xl pointer-events-none dark:bg-pink-900/20" />
-      <div className="absolute top-96 -right-40 w-[28rem] h-[28rem] bg-purple-200/20 dark:bg-purple-500/5 rounded-full blur-3xl pointer-events-none dark:bg-purple-900/20" />
-      <div className="absolute bottom-40 left-1/3 w-80 h-80 bg-rose-100/20 dark:bg-rose-500/5 rounded-full blur-3xl pointer-events-none dark:bg-rose-950/20" />
-
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 profile-hero-bg bg-gradient-to-r from-sky-500/95 via-blue-500/95 to-violet-500/95 dark:from-sky-700/90 dark:via-blue-700/90 dark:to-violet-700/90" />
         <div

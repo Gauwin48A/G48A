@@ -30,7 +30,13 @@ import { socket, connectSocketWithToken } from "../lib/socket";
 import { navigateBack } from "@/utils/navigation";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { useTranslation } from "react-i18next";
 const ChatPage = () => {
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, fallback, options = {}) => t(key, { defaultValue: fallback, ...options }),
+    [t],
+  );
   const navigate = useNavigate(),
     { density, setDensity } = usePageDensity("mhub_chat_density"),
     densityClass = density === "compact" ? " mhub-compact" : "",
@@ -92,7 +98,7 @@ const ChatPage = () => {
       } catch (err) {
         import.meta.env.DEV && console.error("Failed to fetch messages:", err),
           counter === fetchCounterRef.current &&
-            (setMessages([]), setMessagesError("Unable to load this conversation right now."));
+            (setMessages([]), setMessagesError(tr("chat_load_failed", "Unable to load this conversation right now.")));
       } finally {
         counter === fetchCounterRef.current && setLoadingMessages(!1);
       }
@@ -145,7 +151,7 @@ const ChatPage = () => {
             ? otherId === typerId
             : String(currentConv?.other_user_id) === String(payload?.user_id)) &&
             (setIsTyping(!0),
-            setTypingUser(payload?.username || "Someone"),
+            setTypingUser(payload?.username || tr("someone", "Someone")),
             clearTimeout(typingTimeoutRef.current),
             (typingTimeoutRef.current = setTimeout(() => {
               setIsTyping(!1), setTypingUser(null);
@@ -217,7 +223,7 @@ const ChatPage = () => {
             clearTimeout(typingTimeoutRef.current);
         }
       );
-    }, [currentUserId]);
+    }, [currentUserId, tr]);
   const handleInputChange = useCallback(
       (evt) => {
         const value = evt.target.value;
@@ -260,7 +266,7 @@ const ChatPage = () => {
                     sender_id: currentUserId,
                     content: trimmed,
                     created_at: new Date().toISOString(),
-                    sender_username: "You",
+                    sender_username: tr("you", "You"),
                     delivery_status: "sent",
                   },
                 ];
@@ -279,7 +285,7 @@ const ChatPage = () => {
             setMessageInput("");
         } catch (err) {
           import.meta.env.DEV && console.error("Failed to send message:", err),
-            setSendError("Message failed to send. Check your connection and retry.");
+            setSendError(tr("chat_send_failed", "Message failed to send. Check your connection and retry."));
         } finally {
           setSending(!1);
         }
@@ -378,12 +384,12 @@ const ChatPage = () => {
                     "text-2xl font-bold text-white flex items-center gap-2 dark:text-white",
                 },
                 React.createElement(MessageCircle, { className: "w-6 h-6" }),
-                " Messages",
+                tr("messages", "Messages"),
               ),
               React.createElement(
                 "p",
                 { className: "text-blue-100 dark:text-blue-200" },
-                "Chat with buyers and sellers",
+                tr("chat_subtitle", "Chat with buyers and sellers"),
               ),
             ),
             React.createElement(
@@ -421,10 +427,13 @@ const ChatPage = () => {
                   "span",
                   null,
                   connectionStatus === "reconnecting"
-                    ? "Reconnecting to chat service..."
+                    ? tr("chat_reconnecting", "Reconnecting to chat service...")
                     : connectionStatus === "offline"
-                      ? "Realtime chat disconnected. You can still retry sending manually."
-                      : "Connecting to chat service...",
+                      ? tr(
+                          "chat_disconnected",
+                          "Realtime chat disconnected. You can still retry sending manually.",
+                        )
+                      : tr("chat_connecting", "Connecting to chat service..."),
                 ),
               ),
               React.createElement(
@@ -439,7 +448,7 @@ const ChatPage = () => {
                     setConnectionStatus("connecting"), connectSocketWithToken();
                   },
                 },
-                "Reconnect",
+                tr("reconnect", "Reconnect"),
               ),
             ),
           ),
@@ -472,7 +481,7 @@ const ChatPage = () => {
                         "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-300",
                     }),
                     React.createElement(Input, {
-                      placeholder: "Search conversations...",
+                      placeholder: tr("search_conversations", "Search conversations..."),
                       value: searchQuery,
                       onChange: (evt) => setSearchQuery(evt.target.value),
                       className: "pl-10",
@@ -489,18 +498,21 @@ const ChatPage = () => {
                         React.createElement(MessageCircle, {
                           className: "w-12 h-12 mx-auto mb-4 opacity-50",
                         }),
-                        React.createElement(
+                          React.createElement(
                           "p",
                           null,
                           searchFilter
-                            ? "No matching conversations"
-                            : "No conversations yet",
+                            ? tr("no_matching_conversations", "No matching conversations")
+                            : tr("no_conversations_yet", "No conversations yet"),
                         ),
                         !searchFilter &&
                           React.createElement(
                             "p",
                             { className: "text-sm" },
-                            "Start chatting by inquiring on a post",
+                            tr(
+                              "start_chatting_hint",
+                              "Start chatting by inquiring on a post",
+                            ),
                           ),
                         React.createElement(
                           "div",
@@ -508,25 +520,25 @@ const ChatPage = () => {
                             className:
                               "mt-4 flex flex-wrap justify-center gap-2",
                           },
-                          React.createElement(
-                            Button,
-                            {
-                              type: "button",
-                              size: "sm",
-                              onClick: () => navigate("/all-posts"),
-                            },
-                            "Browse Listings",
-                          ),
-                          React.createElement(
-                            Button,
-                            {
-                              type: "button",
-                              size: "sm",
-                              variant: "outline",
-                              onClick: () => navigate("/for-you"),
-                            },
-                            "For You",
-                          ),
+                            React.createElement(
+                              Button,
+                              {
+                                type: "button",
+                                size: "sm",
+                                onClick: () => navigate("/all-posts"),
+                              },
+                              tr("browse_listings", "Browse Listings"),
+                            ),
+                            React.createElement(
+                              Button,
+                              {
+                                type: "button",
+                                size: "sm",
+                                variant: "outline",
+                                onClick: () => navigate("/for-you"),
+                              },
+                              tr("for_you", "For You"),
+                            ),
                         ),
                       )
                     : filteredConversations.map((conv) =>
@@ -640,11 +652,19 @@ const ChatPage = () => {
                             { className: "font-semibold" },
                             selectedConversation.other_name || selectedConversation.other_username,
                           ),
-                          React.createElement(
+                            React.createElement(
                             "p",
                             { className: "text-sm text-gray-500 dark:text-gray-300" },
-                            selectedConversation.post_title ? `Re: ${selectedConversation.post_title} | ` : "",
-                            isOtherUserOnline ? "Online" : "Offline",
+                            selectedConversation.post_title
+                              ? tr(
+                                  "chat_re_prefix",
+                                  "Re: {{title}} | ",
+                                  { title: selectedConversation.post_title },
+                                )
+                              : "",
+                            isOtherUserOnline
+                              ? tr("status_online", "Online")
+                              : tr("status_offline", "Offline"),
                           ),
                         ),
                       ),
@@ -687,7 +707,7 @@ const ChatPage = () => {
                                         "bg-red-600 hover:bg-red-700 text-white dark:bg-red-700/40 dark:hover:bg-red-700/40 dark:text-white",
                                       onClick: () => fetchMessages(selectedConversation.conversation_id),
                                     },
-                                    "Retry",
+                                    tr("retry", "Retry"),
                                   ),
                                 ),
                               )
@@ -714,12 +734,15 @@ const ChatPage = () => {
                                         className:
                                           "font-medium text-gray-700 dark:text-gray-300 dark:text-gray-200",
                                       },
-                                      "No messages yet",
+                                      tr("no_messages_yet", "No messages yet"),
                                     ),
                                     React.createElement(
                                       "p",
                                       { className: "text-sm mt-1" },
-                                      "Start the conversation to close this deal faster.",
+                                      tr(
+                                        "start_conversation_hint",
+                                        "Start the conversation to close this deal faster.",
+                                      ),
                                     ),
                                     React.createElement(
                                       "div",
@@ -734,20 +757,20 @@ const ChatPage = () => {
                                               type: "button",
                                               size: "sm",
                                               variant: "outline",
-                                              onClick: () =>
-                                                navigate(`/post/${selectedConversation.post_id}`),
-                                            },
-                                            "View Listing",
-                                          )
-                                        : null,
-                                      React.createElement(
-                                        Button,
+                                            onClick: () =>
+                                              navigate(`/post/${selectedConversation.post_id}`),
+                                          },
+                                          tr("view_listing", "View Listing"),
+                                        )
+                                      : null,
+                              React.createElement(
+                                Button,
                                         {
                                           type: "button",
                                           size: "sm",
                                           onClick: () => navigate("/all-posts"),
                                         },
-                                        "Explore Listings",
+                                        tr("explore_listings", "Explore Listings"),
                                       ),
                                     ),
                                   ),
@@ -759,16 +782,16 @@ const ChatPage = () => {
                                     msg.delivery_status || msg.status || "",
                                   ).toLowerCase();
                                   const statusLabel = msg.pending
-                                    ? "Sending"
+                                    ? tr("sending", "Sending")
                                     : msg.failed || statusRaw === "failed"
-                                      ? "Failed"
+                                      ? tr("failed", "Failed")
                                       : msg.is_read
-                                        ? "Read"
+                                        ? tr("read", "Read")
                                         : msg.delivered_at ||
                                             msg.is_delivered ||
                                             statusRaw === "delivered"
-                                          ? "Delivered"
-                                          : "Sent";
+                                          ? tr("delivered", "Delivered")
+                                          : tr("sent", "Sent");
                                   return React.createElement(
                                     "div",
                                     {
@@ -819,8 +842,9 @@ const ChatPage = () => {
                           React.createElement(
                             "p",
                             { className: "text-xs text-gray-500 dark:text-gray-300" },
-                            typingUser || "Someone",
-                            " is typing...",
+                            tr("is_typing", "{{name}} is typing...", {
+                              name: typingUser || tr("someone", "Someone"),
+                            }),
                           ),
                         React.createElement("div", { ref: messagesEndRef }),
                       ),
@@ -848,19 +872,19 @@ const ChatPage = () => {
                                 variant: "outline",
                                 className:
                                   "h-7 px-2 border-red-300 text-red-700 dark:border-red-600/40 dark:text-red-300",
-                                onClick: handleSend,
-                              },
+                                  onClick: handleSend,
+                                },
                               React.createElement(RotateCcw, {
                                 className: "w-3 h-3 mr-1",
                               }),
-                              "Retry",
+                              tr("retry", "Retry"),
                             ),
                           ),
                         React.createElement(
                           "div",
                           { className: "flex gap-2" },
                           React.createElement(Input, {
-                            placeholder: "Type a message...",
+                            placeholder: tr("type_message", "Type a message..."),
                             value: messageInput,
                             onChange: handleInputChange,
                             onKeyDown: (evt) => {
@@ -894,7 +918,10 @@ const ChatPage = () => {
                         React.createElement(
                           "p",
                           { className: "text-lg" },
-                          "Select a conversation to start chatting",
+                          tr(
+                            "select_conversation",
+                            "Select a conversation to start chatting",
+                          ),
                         ),
                         React.createElement(
                           "div",
@@ -909,7 +936,7 @@ const ChatPage = () => {
                               size: "sm",
                               onClick: () => navigate("/all-posts"),
                             },
-                            "Browse Listings",
+                            tr("browse_listings", "Browse Listings"),
                           ),
                           React.createElement(
                             Button,
@@ -920,7 +947,7 @@ const ChatPage = () => {
                               onClick: () => navigate("/for-you"),
                             },
                             React.createElement(Compass, { className: "w-4 h-4 mr-1" }),
-                            "For You",
+                            tr("for_you", "For You"),
                           ),
                         ),
                       ),

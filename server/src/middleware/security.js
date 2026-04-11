@@ -8,6 +8,7 @@ const {
   getAccessTokenFromRequest: getAccessTokenFromRequest,
   getBearerTokenFromHeader: getBearerTokenFromHeader,
 } = require("../utils/requestAuth");
+const { resolveVerifiedAuth } = require("../utils/authResolver");
 const {
   isAccessTokenInvalidByPasswordChange,
   isAccessTokenRevoked,
@@ -68,50 +69,7 @@ const DEV_RATE_LIMIT_SKIP_PATHS = new Set([
   "/api/public-wall",
   "/api/referral/leaderboard",
 ]);
-function verifyCandidateToken(token) {
-  if (!token) {
-    return null;
-  }
-
-  try {
-    return verifyToken(token, JWT_CONFIG.SECRET, {
-      issuer: JWT_CONFIG.ISSUER,
-      audience: allowedAudiences,
-    });
-  } catch {
-    return null;
-  }
-}
-
-function resolveVerifiedAuth(req) {
-  const cookieToken = req?.cookies?.accessToken || null;
-  const headerToken = getBearerTokenFromHeader(req?.headers?.authorization);
-
-  const preferredToken = getAccessTokenFromRequest(req, { preferCookie: true });
-  const preferredDecoded = verifyCandidateToken(preferredToken);
-  if (preferredDecoded) {
-    return {
-      token: preferredToken,
-      payload: preferredDecoded,
-    };
-  }
-
-  const alternateToken =
-    preferredToken === cookieToken ? headerToken : cookieToken;
-  if (!alternateToken || alternateToken === preferredToken) {
-    return null;
-  }
-
-  const alternateDecoded = verifyCandidateToken(alternateToken);
-  if (!alternateDecoded) {
-    return null;
-  }
-
-  return {
-    token: alternateToken,
-    payload: alternateDecoded,
-  };
-}
+// resolveVerifiedAuth moved to utils/authResolver to keep auth logic consistent.
 
 async function resolveAuthState(req) {
   const hasCookieToken = Boolean(req?.cookies?.accessToken);

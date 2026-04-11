@@ -170,11 +170,6 @@ export default function Login() {
     return fallback || t("login_failed") || "Login failed";
   };
 
-  const getUserId = (user) => {
-    const id = user?.id ?? user?.user_id;
-    return id != null && id !== "" ? String(id) : null;
-  };
-
   const getReturnPath = () => {
     const params = new URLSearchParams(routeLocation.search).get("returnTo");
     const path = routeLocation.state?.returnTo || params || "/all-posts";

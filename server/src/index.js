@@ -459,6 +459,8 @@ app.use(
   })
 );
 app.use(express.urlencoded({ extended: true, limit: "50kb" }));
+const { apiResponseNormalizer } = require("./middleware/apiResponseNormalizer");
+app.use(apiResponseNormalizer);
 app.use(hpp());
 app.use(wafEvidenceHeaders);
 app.use(wafRequestFilter);

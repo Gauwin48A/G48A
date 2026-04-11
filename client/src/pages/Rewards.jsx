@@ -5,15 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -23,22 +15,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Copy as CopyIcon,
   Gift,
   Star,
-  Trophy,
   Users,
   Zap,
   TrendingUp,
-  Calendar,
   Share2,
   Award,
   Crown,
   Sparkles,
-  Target,
-  CheckCircle2,
-  Circle,
-  ArrowRight,
   AlertCircle,
 } from "lucide-react";
 import api from "../lib/api";
@@ -50,7 +35,6 @@ import {
 } from "@/utils/authStorage";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
-import { getInitials } from "@/lib/userDisplay";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTrustScore, normalizeTrustPayload } from "@/hooks/useTrustScore";
@@ -136,21 +120,21 @@ const RewardsPage = () => {
       topBuyers: [],
       topUsers: [],
     }),
-    [publicWallLoading, setPublicWallLoading] = useState(!1),
+    [, setPublicWallLoading] = useState(!1),
     [publicWallLoaded, setPublicWallLoaded] = useState(!1),
     [referralLeaderboard, setReferralLeaderboard] = useState([]),
     [currentReferralRank, setCurrentReferralRank] = useState(null),
-    [referralLeaderboardLoading, setReferralLeaderboardLoading] = useState(!1),
+    [, setReferralLeaderboardLoading] = useState(!1),
     [referralLeaderboardLoaded, setReferralLeaderboardLoaded] = useState(!1),
     [secretCountdown, setSecretCountdown] = useState(""),
     [leaderboardCountdown, setLeaderboardCountdown] = useState(""),
     [rewardLog, setRewardLog] = useState([]),
-    [rewardLogLoading, setRewardLogLoading] = useState(!1),
+    [, setRewardLogLoading] = useState(!1),
     [rewardLogLoaded, setRewardLogLoaded] = useState(!1),
     [coinBalance, setCoinBalance] = useState(null),
     [coinDelta, setCoinDelta] = useState(null),
     [coinHistory, setCoinHistory] = useState([]),
-    [coinHistoryLoading, setCoinHistoryLoading] = useState(!1),
+    [, setCoinHistoryLoading] = useState(!1),
     [coinHistoryLoaded, setCoinHistoryLoaded] = useState(!1),
     [engagement, setEngagement] = useState(null),
     [engagementLoading, setEngagementLoading] = useState(!1),
@@ -182,8 +166,11 @@ const RewardsPage = () => {
     stableCheckedInRef = useRef(null),
     { t: tFunc } = useTranslation(),
     navigate = useNavigate(),
-    tr = (key, fallback, options = {}) =>
-      tFunc(key, { defaultValue: fallback, ...options }),
+    tr = useCallback(
+      (key, fallback, options = {}) =>
+        tFunc(key, { defaultValue: fallback, ...options }),
+      [tFunc],
+    ),
     { toast: toast } = useToast(),
     { user: authUser, refreshAuth: refreshAuthFromContext } = useAuth(),
     isAuthed = useMemo(() => isAuthenticated(authUser), [authUser]),
@@ -274,24 +261,6 @@ const RewardsPage = () => {
       },
       [tFunc],
     ),
-    resolveIconComponent = useCallback((icon, fallback) => {
-      if (!icon) return fallback;
-      if (typeof icon === "function") return icon;
-      if (typeof icon === "object") {
-        if (icon.default) return icon.default;
-      }
-      return fallback;
-    }, []),
-    renderIcon = useCallback(
-      (icon, props, fallback = Sparkles) => {
-        if (React.isValidElement(icon)) {
-          return React.cloneElement(icon, props);
-        }
-        const Component = resolveIconComponent(icon, fallback);
-        return React.createElement(Component, props);
-      },
-      [resolveIconComponent],
-    ),
     showDiagnostics =
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).has("rewardsDebug"),
@@ -331,7 +300,7 @@ const RewardsPage = () => {
         }
         return `${shareReferral}h ${fetchRewards}m`;
       },
-      [tFunc],
+      [tr],
     ),
     applyCoinBalanceUpdate = useCallback((nextBalance, { silentDelta = !1, source = "rewards" } = {}) => {
       const normalized = Number(nextBalance);
@@ -383,7 +352,7 @@ const RewardsPage = () => {
           t || setIsLoading(!1);
         }
       },
-      [isAuthed, authUser, attemptAuthRefresh],
+      [isAuthed, attemptAuthRefresh],
     ),
     fetchEngagement = useCallback(
       async ({ silent: t = !1 } = {}) => {
@@ -406,7 +375,7 @@ const RewardsPage = () => {
           t || setEngagementLoading(!1);
         }
       },
-      [isAuthed, tr],
+      [isAuthed],
     );
   const errorMessage = resolveMessage(errorObj);
   const engagementErrorMessage = resolveMessage(engagementError);
@@ -891,14 +860,6 @@ const RewardsPage = () => {
       const t = getReferralShareLink();
       if (!t) return;
       copyToClipboard(t, tr("referral_link", "Referral link"));
-    },
-    showComingSoon = (t) => {
-      toast({
-        title: tr("coming_soon", "Coming soon"),
-        description: tr("coming_soon_desc", `${t} is on the way.`, {
-          feature: t,
-        }),
-      });
     },
     triggerRefresh = () => setRefreshCounter((t) => t + 1),
     handleDailyCheckIn = async () => {
@@ -1395,7 +1356,6 @@ const RewardsPage = () => {
       }
       return true;
     }),
-    logLoading = rewardLogLoading || coinHistoryLoading,
     diagnosticsItems = [
       {
         key: "referrals",

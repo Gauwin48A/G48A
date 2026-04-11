@@ -1,62 +1,11 @@
-const JWT_CONFIG = require("../config/jwtConfig");
-const { verifyToken } = require("../services/tokenVerificationCache");
-const {
-  getAccessTokenFromRequest,
-  getBearerTokenFromHeader,
-} = require("../utils/requestAuth");
+const { getBearerTokenFromHeader } = require("../utils/requestAuth");
+const { resolveVerifiedAuth } = require("../utils/authResolver");
 const {
   isAccessTokenInvalidByPasswordChange,
   isAccessTokenRevoked,
 } = require("../services/accessTokenPolicyService");
 
 const authDebugEnabled = process.env.AUTH_DEBUG === "true";
-const allowedAudiences = JWT_CONFIG.ALLOWED_AUDIENCES || JWT_CONFIG.AUDIENCE;
-
-function verifyCandidateToken(token) {
-  if (!token) {
-    return null;
-  }
-  try {
-    return verifyToken(token, JWT_CONFIG.SECRET, {
-      issuer: JWT_CONFIG.ISSUER,
-      audience: allowedAudiences,
-    });
-  } catch {
-    return null;
-  }
-}
-
-function resolveVerifiedAuth(req) {
-  const cookieToken = req?.cookies?.accessToken || null;
-  const headerToken = getBearerTokenFromHeader(req?.headers?.authorization);
-
-  // Preserve existing precedence behavior first.
-  const preferredToken = getAccessTokenFromRequest(req, { preferCookie: true });
-  const preferredDecoded = verifyCandidateToken(preferredToken);
-  if (preferredDecoded) {
-    return {
-      token: preferredToken,
-      payload: preferredDecoded,
-    };
-  }
-
-  // Fallback to the alternate token when one source is stale.
-  const alternateToken =
-    preferredToken === cookieToken ? headerToken : cookieToken;
-  if (!alternateToken || alternateToken === preferredToken) {
-    return null;
-  }
-
-  const alternateDecoded = verifyCandidateToken(alternateToken);
-  if (!alternateDecoded) {
-    return null;
-  }
-
-  return {
-    token: alternateToken,
-    payload: alternateDecoded,
-  };
-}
 
 const protect = async (req, res, next) => {
   const hasCookieToken = Boolean(req?.cookies?.accessToken);
@@ -71,7 +20,7 @@ const protect = async (req, res, next) => {
     return res.status(401).json({ error: "No token provided, authorization denied" });
   }
 
-  const verifiedAuth = resolveVerifiedAuth(req);
+  const verifiedAuth = resolveVerifiedAuth(req, { preferCookie: true });
   if (!verifiedAuth) {
     if (authDebugEnabled) {
       console.warn("[AUTH] Token verification failed | Path:", req.path);

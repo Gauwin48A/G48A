@@ -6,6 +6,76 @@ const logger = require('../utils/logger');
 // Alias shared helper to match existing call sites
 const getAuthenticatedUserId = getAuthUserId;
 
+const GDPR_DELETE_TABLES = [
+  { table: "auth_activity_log", columns: ["user_id"] },
+  { table: "device_bindings", columns: ["user_id"] },
+  { table: "device_analytics", columns: ["user_id"] },
+  { table: "login_history", columns: ["user_id"] },
+  { table: "login_audit", columns: ["user_id"] },
+  { table: "audit", columns: ["user_id"] },
+  { table: "audit_logs", columns: ["user_id"] },
+  { table: "security_logs", columns: ["user_id"] },
+  { table: "user_sessions", columns: ["user_id"] },
+  { table: "webauthn_credentials", columns: ["user_id"] },
+  { table: "otp_delivery_logs", columns: ["user_id"] },
+  { table: "notification_preferences", columns: ["user_id"] },
+  { table: "notifications", columns: ["user_id"] },
+  { table: "preferences", columns: ["user_id"] },
+  { table: "user_locations", columns: ["user_id"] },
+  { table: "seller_locations", columns: ["user_id"] },
+  { table: "user_location_events", columns: ["user_id"] },
+  { table: "fraud_events", columns: ["user_id"] },
+  { table: "risk_decision_events", columns: ["user_id"] },
+  { table: "referrals", columns: ["referrer_id", "referee_id"] },
+  { table: "referral_relationships", columns: ["referrer_user_id", "referee_user_id", "parent_user_id"] },
+  { table: "referral_closure", columns: ["ancestor_user_id", "descendant_user_id"] },
+  { table: "referral_rewards", columns: ["user_id", "referrer_user_id", "referee_user_id"] },
+  { table: "rewards", columns: ["user_id"] },
+  { table: "reward_log", columns: ["user_id"] },
+  { table: "reward_activity", columns: ["user_id", "related_user_id"] },
+  { table: "reward_daily_checkins", columns: ["user_id"] },
+  { table: "reward_spin_history", columns: ["user_id"] },
+  { table: "reward_scratch_claims", columns: ["user_id"] },
+  { table: "reward_redemptions", columns: ["user_id"] },
+  { table: "reward_idempotency", columns: ["user_id"] },
+  { table: "coin_transactions", columns: ["user_id"] },
+  { table: "user_streaks", columns: ["user_id"] },
+  { table: "user_subscriptions", columns: ["user_id"] },
+  { table: "payments", columns: ["user_id", "verified_by"] },
+  { table: "posts", columns: ["user_id"] },
+  { table: "post_boosts", columns: ["user_id"] },
+  { table: "post_impressions", columns: ["viewer_user_id"] },
+  { table: "post_likes", columns: ["user_id"] },
+  { table: "promoted_posts", columns: ["user_id"] },
+  { table: "price_history", columns: ["changed_by"] },
+  { table: "price_drop_alerts", columns: ["user_id"] },
+  { table: "wishlists", columns: ["user_id"] },
+  { table: "recently_viewed", columns: ["user_id"] },
+  { table: "saved_searches", columns: ["user_id"] },
+  { table: "cart_items", columns: ["user_id"] },
+  { table: "cart_promotions", columns: ["user_id"] },
+  { table: "offers", columns: ["buyer_id", "seller_id"] },
+  { table: "buyer_inquiries", columns: ["buyer_id", "seller_id"] },
+  { table: "reviews", columns: ["reviewer_id", "reviewee_id"] },
+  { table: "reports", columns: ["reporter_id", "reported_user_id", "resolved_by"] },
+  { table: "complaints", columns: ["buyer_id", "seller_id", "resolved_by"] },
+  { table: "channels", columns: ["owner_id"] },
+  { table: "channel_admins", columns: ["user_id"] },
+  { table: "channel_followers", columns: ["user_id"] },
+  { table: "channel_posts", columns: ["owner_id"] },
+  { table: "messages", columns: ["sender_id", "receiver_id"] },
+  { table: "chats", columns: ["buyer_id", "seller_id", "user_id"] },
+  { table: "chat_messages", columns: ["sender_id"] },
+  { table: "aadhaar_verification_logs", columns: ["user_id"] },
+  { table: "kyc_review_queue", columns: ["user_id", "reviewed_by"] },
+  { table: "user_verifications", columns: ["user_id", "verified_by"] },
+  { table: "admin_bulk_action_logs", columns: ["actor_user_id"] },
+  { table: "admin_export_logs", columns: ["actor_user_id"] },
+  { table: "admin_moderation_actions", columns: ["actor_user_id"] },
+  { table: "transactions", columns: ["buyer_id", "seller_id", "user_id"] },
+  { table: "profiles", columns: ["user_id"] },
+];
+
 function loadBcrypt() {
   try {
     // Preferred in tests where bcryptjs is mocked.
@@ -116,12 +186,48 @@ exports.deleteUserData = async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('DELETE FROM notifications WHERE user_id = $1', [normalizedUserId]);
-      await client.query('DELETE FROM wishlists WHERE user_id = $1', [normalizedUserId]);
-      await client.query('DELETE FROM transactions WHERE buyer_id = $1 OR seller_id = $1', [normalizedUserId]);
-      await client.query('DELETE FROM posts WHERE user_id = $1', [normalizedUserId]);
-      await client.query('DELETE FROM profiles WHERE user_id = $1', [normalizedUserId]);
-      await client.query('DELETE FROM users WHERE user_id = $1', [normalizedUserId]);
+      const tableCache = new Map();
+      const columnsCache = new Map();
+
+      const tableExists = async (tableName) => {
+        if (tableCache.has(tableName)) return tableCache.get(tableName);
+        const result = await client.query("SELECT to_regclass($1) AS regclass", [tableName]);
+        const exists = Boolean(result.rows?.[0]?.regclass);
+        tableCache.set(tableName, exists);
+        return exists;
+      };
+
+      const getColumnsForTable = async (tableName) => {
+        if (columnsCache.has(tableName)) return columnsCache.get(tableName);
+        const result = await client.query(
+          `SELECT column_name
+           FROM information_schema.columns
+           WHERE table_schema = 'public' AND table_name = $1`,
+          [tableName],
+        );
+        const columns = new Set(result.rows.map((row) => row.column_name));
+        columnsCache.set(tableName, columns);
+        return columns;
+      };
+
+      const deleteByColumns = async (tableName, candidateColumns) => {
+        const qualifiedName = `public.${tableName}`;
+        if (!(await tableExists(qualifiedName))) return;
+        const existingColumns = await getColumnsForTable(tableName);
+        const matchedColumns = candidateColumns.filter((column) => existingColumns.has(column));
+        if (matchedColumns.length === 0) return;
+        const conditions = matchedColumns.map((column) => `${column}::text = $1`);
+        await client.query(
+          `DELETE FROM ${tableName} WHERE ${conditions.join(" OR ")}`,
+          [normalizedUserId],
+        );
+      };
+
+      for (const entry of GDPR_DELETE_TABLES) {
+        await deleteByColumns(entry.table, entry.columns);
+      }
+
+      await client.query('DELETE FROM users WHERE user_id::text = $1', [normalizedUserId]);
       await client.query('COMMIT');
     } catch (txErr) {
       await client.query('ROLLBACK').catch(() => {});

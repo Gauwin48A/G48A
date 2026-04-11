@@ -61,7 +61,7 @@ export default function PwaEnhancements() {
       {/* Offline banner */}
       {offline && (
         <div className="fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white text-center py-2 px-4 text-[13px] font-semibold">
-          You're offline — browsing cached content
+          You&apos;re offline - browsing cached content
         </div>
       )}
 

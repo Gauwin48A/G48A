@@ -1186,7 +1186,8 @@ const Ve = 5,
                               "span",
                               {
                                 className:
-                                  "font-semibold text-gray-900 dark:text-white truncate max-w-[140px]",
+                                  "font-semibold text-gray-900 dark:text-white truncate max-w-[140px] cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400",
+                                onClick: () => t.user_id ? g(`/profile/${t.user_id}`) : null,
                               },
                               sellerName || o("community_member") || "Community Member",
                             ),
@@ -1212,7 +1213,34 @@ const Ve = 5,
                               { className: "text-xs text-gray-400 dark:text-gray-500" },
                               Ne(t.created_at),
                             ),
+                            r && e.createElement(
+                              e.Fragment,
+                              null,
+                              e.createElement("span", { className: "text-gray-300 dark:text-gray-600" }, "\u00B7"),
+                              e.createElement(
+                                "span",
+                                { className: "text-[10px] text-gray-400 dark:text-gray-500 font-mono" },
+                                "#", String(r),
+                              ),
+                            ),
                           ),
+                          (t.category_name || t.subcategory_name || t.category) &&
+                            e.createElement(
+                              "div",
+                              { className: "flex flex-wrap items-center gap-1 mt-0.5" },
+                              (t.category_name || t.category) &&
+                                e.createElement(
+                                  "span",
+                                  { className: "inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-medium text-indigo-600 dark:text-indigo-300" },
+                                  t.category_name || t.category,
+                                ),
+                              t.subcategory_name &&
+                                e.createElement(
+                                  "span",
+                                  { className: "inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-[10px] font-medium text-purple-600 dark:text-purple-300" },
+                                  t.subcategory_name,
+                                ),
+                            ),
                         ),
                         e.createElement(
                           "button",
@@ -1233,8 +1261,21 @@ const Ve = 5,
                             "div",
                             {
                               className:
-                                "absolute right-4 top-14 z-30 w-48 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl p-1.5 ring-1 ring-black/5 dark:ring-white/10",
+                                "absolute right-4 top-14 z-30 w-52 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl p-1.5 ring-1 ring-black/5 dark:ring-white/10",
                             },
+                            e.createElement(
+                              "button",
+                              {
+                                type: "button",
+                                onClick: () => {
+                                  ke(r), setMenuPostId(null);
+                                },
+                                className:
+                                  "w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
+                              },
+                              e.createElement(Pe, { className: "w-4 h-4 text-indigo-500 shrink-0" }),
+                              o("view_details") || "View Details",
+                            ),
                             e.createElement(
                               "button",
                               {
@@ -1243,8 +1284,9 @@ const Ve = 5,
                                   ye(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
+                                  "w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
                               },
+                              e.createElement(Le, { className: "w-4 h-4 text-blue-500 shrink-0" }),
                               o("share") || "Share",
                             ),
                             e.createElement(
@@ -1255,8 +1297,11 @@ const Ve = 5,
                                   toggleSaveFeed(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
+                                  "w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
                               },
+                              savedPosts[String(r)]
+                                ? e.createElement(Ke, { className: "w-4 h-4 text-indigo-600 shrink-0" })
+                                : e.createElement(Qe, { className: "w-4 h-4 text-gray-400 shrink-0" }),
                               savedPosts[String(r)]
                                 ? o("saved") || "Saved"
                                 : o("save") || "Save",
@@ -1271,10 +1316,12 @@ const Ve = 5,
                                     setMenuPostId(null);
                                   },
                                   className:
-                                    "w-full text-left px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
+                                    "w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-200 transition-colors",
                                 },
+                                e.createElement(Te, { className: "w-4 h-4 text-emerald-500 shrink-0" }),
                                 o("promote") || "Promote",
                               ),
+                            e.createElement("div", { className: "my-1 border-t border-gray-100 dark:border-gray-700" }),
                             e.createElement(
                               "button",
                               {
@@ -1283,8 +1330,9 @@ const Ve = 5,
                                   handleReportPost(r), setMenuPostId(null);
                                 },
                                 className:
-                                  "w-full text-left px-3 py-2.5 text-sm rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:text-red-400 transition-colors",
+                                  "w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:text-red-400 transition-colors",
                               },
+                              e.createElement("span", { className: "w-4 h-4 shrink-0 inline-flex items-center justify-center text-xs" }, "\u26A0"),
                               o("report") || "Report",
                             ),
                           ),

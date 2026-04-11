@@ -149,6 +149,14 @@ const searchSlowDown = slowDown({
     maxDelayMs: 2000 // Max 2 second delay
 });
 
+// Lightweight throttle for public read endpoints (list/search)
+const publicReadSlowDown = slowDown({
+    windowMs: 15 * 60 * 1000,
+    delayAfter: 80,
+    delayMs: (hits) => Math.max(0, hits - 80) * 50,
+    maxDelayMs: 2000
+});
+
 // S-05: Progressive delay for login failures — 1s→2s→4s→8s per IP
 // Kicks in after 3 failed attempts in a 15-minute window.
 // Complements loginLimiter (hard block) by adding friction before the hard cap.
@@ -300,6 +308,7 @@ module.exports = {
     signupLimiter,
     postLimiter,
     searchSlowDown,
+    publicReadSlowDown,
     loginSlowDown,
     uploadLimiter,
     suspiciousActivityTracker,

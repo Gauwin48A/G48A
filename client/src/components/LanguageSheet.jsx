@@ -158,7 +158,7 @@ const LanguageSheet = ({ isOpen, onClose }) => {
 
                         {filteredTiers[0]?.languages.length === 0 && (
                             <div className="text-center py-8 text-gray-500">
-                                No languages found for "{searchQuery}"
+                                No languages found for &quot;{searchQuery}&quot;
                             </div>
                         )}
                     </div>

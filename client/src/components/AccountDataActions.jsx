@@ -284,7 +284,7 @@ export default function AccountDataActions({ className = "" }) {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="deactivate-confirmation">
-                    Type "{DEACTIVATE_CONFIRMATION_TEXT}"
+                    Type &quot;{DEACTIVATE_CONFIRMATION_TEXT}&quot;
                   </Label>
                   <Input
                     id="deactivate-confirmation"
@@ -385,7 +385,7 @@ export default function AccountDataActions({ className = "" }) {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="delete-confirmation">
-                    Type "{DELETE_CONFIRMATION_TEXT}"
+                    Type &quot;{DELETE_CONFIRMATION_TEXT}&quot;
                   </Label>
                   <Input
                     id="delete-confirmation"

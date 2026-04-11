@@ -1,406 +1,386 @@
-import e, { useCallback as A, useEffect as F, useState as n } from "react";
-import { useNavigate as I } from "react-router-dom";
-import P from "../../services/api";
-import { Button as s } from "@/components/ui/button";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
+import { Button } from "@/components/ui/button";
 import {
-  Card as u,
-  CardContent as c,
-  CardHeader as K,
-  CardTitle as j,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { Input as f } from "@/components/ui/input";
-import { Label as p } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  PageAuthGateState as Y,
-  PageErrorState as q,
-  PageLoadingState as T,
+  PageAuthGateState,
+  PageErrorState,
+  PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
-const V = () => {
-  const o = I(),
-    b = localStorage.getItem("authToken") || localStorage.getItem("token"),
-    [a, y] = n({
-      aadhaar_number: "",
-      pan_number: "",
-      kyc_front: null,
-      kyc_back: null,
-    }),
-    [h, v] = n(""),
-    [x, C] = n(""),
-    [k, N] = n(!1),
-    [B, g] = n(!0),
-    [m, _] = n(""),
-    [l, w] = n(null),
-    i = A(async () => {
-      if (!b) {
-        g(!1);
-        return;
+import { useTranslation } from "react-i18next";
+
+const KycVerification = () => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, fallback, options = {}) => {
+      const value = t(key, { defaultValue: fallback, ...options });
+      if (typeof value !== "string" || !value.trim() || value === key) {
+        return fallback;
       }
-      g(!0), _("");
-      try {
-        const r = await P.get("/users/kyc/status");
-        w(r || null);
-      } catch (r) {
-        console.error("KYC status fetch failed", r),
-          _("Unable to load your KYC status right now. Please retry.");
-      } finally {
-        g(!1);
-      }
-    }, [b]);
-  F(() => {
-    i();
-  }, [i]);
-  const S = (r) => {
-      y((t) => ({ ...t, [r.target.name]: r.target.value }));
+      return value;
     },
-    D = (r) => {
-      y((t) => ({ ...t, [r.target.name]: r.target.files?.[0] || null }));
-    },
-    L = async (r) => {
-      r.preventDefault(), v(""), C(""), N(!0);
-      const t = new FormData();
-      t.append("aadhaar_number", a.aadhaar_number.trim()),
-        t.append("pan_number", a.pan_number.trim().toUpperCase()),
-        a.kyc_front && t.append("kyc_front", a.kyc_front),
-        a.kyc_back && t.append("kyc_back", a.kyc_back);
-      try {
-        const d = await P.post("/users/kyc/submit", t, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        v(d?.message || "Documents submitted successfully."),
-          w((E) => ({ ...E, ...(d || {}), status: d?.status || "PENDING" })),
-          i();
-      } catch (d) {
-        console.error("KYC submission failed", d),
-          C("KYC submission failed. Please verify details and retry.");
-      } finally {
-        N(!1);
-      }
-    };
-  return b
-    ? B
-      ? e.createElement(
-          "div",
-          {
-            className:
-              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
-          },
-          e.createElement(
-            "div",
-            { className: "max-w-md w-full page-shell page-pad" },
-            e.createElement(T, {
-              marker: "loading",
-              title: "Loading KYC status...",
-              description: "Checking your latest verification status.",
-            }),
-          ),
-        )
-      : m && !l
-        ? e.createElement(
-            "div",
-            {
-              className:
-                "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
-            },
-            e.createElement(
-              "div",
-              { className: "max-w-md w-full page-shell page-pad" },
-              e.createElement(q, {
-                marker: "error",
-                className:
-                  "border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:border-red-600/40 dark:bg-red-950/20",
-                title: "KYC status unavailable",
-                description: m,
-                onRetry: i,
-                secondaryAction: e.createElement(
-                  s,
-                  { variant: "outline", onClick: () => o("/profile") },
-                  "Back to profile",
-                ),
-              }),
-            ),
-          )
-        : l?.status === "VERIFIED"
-          ? e.createElement(
-              "div",
-              {
-                className:
-                  "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
-              },
-              e.createElement(
-                u,
-                {
-                  className:
-                    "max-w-lg w-full border-green-200 bg-green-50 dark:border-emerald-400/30 dark:bg-emerald-500/10 page-shell page-pad dark:border-green-600/40 dark:bg-green-950/20",
-                },
-                e.createElement(
-                  c,
-                  { className: "pt-8 text-center space-y-4 dark:text-center" },
-                  e.createElement(
-                    "h2",
-                    { className: "text-3xl font-bold text-green-800 dark:text-green-200" },
-                    "KYC Verified",
-                  ),
-                  e.createElement(
-                    "p",
-                    { className: "text-green-700 dark:text-green-300" },
-                    "Your identity has been verified and your trust badge is active.",
-                  ),
-                  e.createElement(
-                    "div",
-                    {
-                      className:
-                        "flex flex-col sm:flex-row gap-3 justify-center",
-                    },
-                    e.createElement(
-                      s,
-                      {
-                        className: "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700/40 dark:hover:bg-green-700/40 dark:text-white",
-                        onClick: () => o("/profile"),
-                      },
-                      "View Profile",
-                    ),
-                    e.createElement(
-                      s,
-                      { variant: "outline", onClick: () => o("/dashboard") },
-                      "Open Dashboard",
-                    ),
-                  ),
-                ),
-              ),
-            )
-          : l?.status === "PENDING"
-            ? e.createElement(
-                "div",
-                {
-                  className:
-                    "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
-                },
-                e.createElement(
-                  u,
-                  {
-                    className:
-                      "max-w-lg w-full border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 page-shell page-pad dark:border-amber-600/40 dark:bg-amber-950/20",
-                  },
-                  e.createElement(
-                    c,
-                    { className: "pt-8 text-center space-y-4 dark:text-center" },
-                    e.createElement(
-                      "h2",
-                      { className: "text-3xl font-bold text-amber-800 dark:text-amber-200" },
-                      "Verification in progress",
-                    ),
-                    e.createElement(
-                      "p",
-                      { className: "text-amber-700 dark:text-amber-300" },
-                      "We are reviewing your documents. Most requests are reviewed within 24 hours.",
-                    ),
-                    e.createElement(
-                      "div",
-                      {
-                        className:
-                          "flex flex-col sm:flex-row gap-3 justify-center",
-                      },
-                      e.createElement(
-                        s,
-                        {
-                          className:
-                            "bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-700/40 dark:hover:bg-amber-700/40 dark:text-white",
-                          onClick: i,
-                        },
-                        "Refresh status",
-                      ),
-                      e.createElement(
-                        s,
-                        { variant: "outline", onClick: () => o("/profile") },
-                        "Back to profile",
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            : e.createElement(
-                "div",
-                { className: "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 py-8 px-4 dark:bg-gradient-to-br" },
-                e.createElement(
-                  "div",
-                  { className: "max-w-2xl mx-auto" },
-                  e.createElement(
-                    u,
-                    { className: "mb-6" },
-                    e.createElement(
-                      K,
-                      null,
-                      e.createElement(j, null, "Identity Verification (KYC)"),
-                    ),
-                    e.createElement(
-                      c,
-                      { className: "space-y-4" },
-                      e.createElement(
-                        "p",
-                        { className: "text-gray-600 dark:text-gray-200" },
-                        "Submit your Aadhaar and PAN details with clear front/back ID images to activate verified trust markers.",
-                      ),
-                      m &&
-                        e.createElement(
-                          "div",
-                          {
-                            className:
-                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
-                          },
-                          m,
-                        ),
-                      l?.rejection_reason &&
-                        e.createElement(
-                          "div",
-                          {
-                            className:
-                              "rounded-md border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 px-4 py-3 text-sm text-red-700 dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300",
-                          },
-                          "Previous request rejected: ",
-                          l.rejection_reason,
-                        ),
-                    ),
-                  ),
-                  e.createElement(
-                    u,
-                    null,
-                    e.createElement(
-                      c,
-                      { className: "pt-6" },
-                      e.createElement(
-                        "form",
-                        { onSubmit: L, className: "space-y-5" },
-                        e.createElement(
-                          "div",
-                          null,
-                          e.createElement(
-                            p,
-                            { htmlFor: "aadhaar_number" },
-                            "Aadhaar Number",
-                          ),
-                          e.createElement(f, {
-                            id: "aadhaar_number",
-                            type: "text",
-                            name: "aadhaar_number",
-                            value: a.aadhaar_number,
-                            onChange: S,
-                            placeholder: "12-digit Aadhaar number",
-                            pattern: "\\d{12}",
-                            required: !0,
-                          }),
-                        ),
-                        e.createElement(
-                          "div",
-                          null,
-                          e.createElement(
-                            p,
-                            { htmlFor: "pan_number" },
-                            "PAN Number",
-                          ),
-                          e.createElement(f, {
-                            id: "pan_number",
-                            type: "text",
-                            name: "pan_number",
-                            value: a.pan_number,
-                            onChange: S,
-                            placeholder: "ABCDE1234F",
-                            pattern: "[A-Z]{5}[0-9]{4}[A-Z]{1}",
-                            required: !0,
-                          }),
-                        ),
-                        e.createElement(
-                          "div",
-                          null,
-                          e.createElement(
-                            p,
-                            { htmlFor: "kyc_front" },
-                            "ID Proof (Front)",
-                          ),
-                          e.createElement(f, {
-                            id: "kyc_front",
-                            type: "file",
-                            name: "kyc_front",
-                            onChange: D,
-                            accept: "image/*,.pdf",
-                            required: !0,
-                          }),
-                        ),
-                        e.createElement(
-                          "div",
-                          null,
-                          e.createElement(
-                            p,
-                            { htmlFor: "kyc_back" },
-                            "ID Proof (Back)",
-                          ),
-                          e.createElement(f, {
-                            id: "kyc_back",
-                            type: "file",
-                            name: "kyc_back",
-                            onChange: D,
-                            accept: "image/*,.pdf",
-                            required: !0,
-                          }),
-                        ),
-                        x &&
-                          e.createElement(
-                            "p",
-                            { className: "text-sm text-red-600 dark:text-red-300" },
-                            x,
-                          ),
-                        h &&
-                          e.createElement(
-                            "p",
-                            { className: "text-sm text-green-600 dark:text-green-300" },
-                            h,
-                          ),
-                        e.createElement(
-                          "div",
-                          { className: "flex flex-col sm:flex-row gap-3" },
-                          e.createElement(
-                            s,
-                            {
-                              type: "submit",
-                              disabled: k,
-                              className:
-                                "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white",
-                            },
-                            k ? "Submitting..." : "Submit Documents",
-                          ),
-                          e.createElement(
-                            s,
-                            { type: "button", variant: "outline", onClick: i },
-                            "Refresh status",
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-    : e.createElement(
-        "div",
-        {
-          className:
-            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br",
-        },
-        e.createElement(
-          "div",
-          { className: "max-w-md w-full page-shell page-pad" },
-          e.createElement(Y, {
-            marker: "auth-gate",
-            title: "Login required",
-            description: "Please log in to start KYC verification.",
-            primaryAction: e.createElement(
-              s,
-              { onClick: () => o("/login", { state: { returnTo: "/kyc" } }) },
-              "Go to Login",
-            ),
-          }),
+    [t],
+  );
+
+  const token =
+    localStorage.getItem("authToken") || localStorage.getItem("token");
+
+  const [formData, setFormData] = useState({
+    aadhaar_number: "",
+    pan_number: "",
+    kyc_front: null,
+    kyc_back: null,
+  });
+  const [successMessage, setSuccessMessage] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [kycStatus, setKycStatus] = useState(null);
+
+  const fetchStatus = useCallback(async () => {
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadError("");
+
+    try {
+      const response = await api.get("/users/kyc/status");
+      setKycStatus(response || null);
+    } catch (error) {
+      console.error("KYC status fetch failed", error);
+      setLoadError(
+        tr(
+          "kyc_status_load_failed",
+          "Unable to load your KYC status right now. Please retry.",
         ),
       );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, tr]);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (event) => {
+    const { name, files } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: files?.[0] || null }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSuccessMessage("");
+    setSubmitError("");
+    setIsSubmitting(true);
+
+    const payload = new FormData();
+    payload.append("aadhaar_number", formData.aadhaar_number.trim());
+    payload.append("pan_number", formData.pan_number.trim().toUpperCase());
+    if (formData.kyc_front) payload.append("kyc_front", formData.kyc_front);
+    if (formData.kyc_back) payload.append("kyc_back", formData.kyc_back);
+
+    try {
+      const response = await api.post("/users/kyc/submit", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setSuccessMessage(
+        response?.message ||
+          tr("kyc_documents_submitted", "Documents submitted successfully."),
+      );
+      setKycStatus((prev) => ({
+        ...prev,
+        ...(response || {}),
+        status: response?.status || "PENDING",
+      }));
+      fetchStatus();
+    } catch (error) {
+      console.error("KYC submission failed", error);
+      setSubmitError(
+        tr(
+          "kyc_submission_failed",
+          "KYC submission failed. Please verify details and retry.",
+        ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const pageClassName =
+    "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br";
+
+  if (!token) {
+    return (
+      <div className={`${pageClassName} flex items-center justify-center p-4`}>
+        <div className="max-w-md w-full page-shell page-pad">
+          <PageAuthGateState
+            marker="auth-gate"
+            title={tr("login_required", "Login required")}
+            description={tr(
+              "kyc_login_required",
+              "Please log in to start KYC verification.",
+            )}
+            primaryAction={
+              <Button
+                onClick={() =>
+                  navigate("/login", { state: { returnTo: "/kyc" } })
+                }
+              >
+                {tr("go_to_login", "Go to Login")}
+              </Button>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className={`${pageClassName} flex items-center justify-center p-4`}>
+        <div className="max-w-md w-full page-shell page-pad">
+          <PageLoadingState
+            marker="loading"
+            title={tr("kyc_loading_title", "Loading KYC status...")}
+            description={tr(
+              "kyc_loading_desc",
+              "Checking your latest verification status.",
+            )}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && !kycStatus) {
+    return (
+      <div className={`${pageClassName} flex items-center justify-center p-4`}>
+        <div className="max-w-md w-full page-shell page-pad">
+          <PageErrorState
+            marker="error"
+            className="border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:border-red-600/40 dark:bg-red-950/20"
+            title={tr("kyc_status_unavailable", "KYC status unavailable")}
+            description={loadError}
+            onRetry={fetchStatus}
+            secondaryAction={
+              <Button variant="outline" onClick={() => navigate("/profile")}>
+                {tr("back_to_profile", "Back to profile")}
+              </Button>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (kycStatus?.status === "VERIFIED") {
+    return (
+      <div className={`${pageClassName} flex items-center justify-center p-4`}>
+        <Card className="max-w-lg w-full border-green-200 bg-green-50 dark:border-emerald-400/30 dark:bg-emerald-500/10 page-shell page-pad dark:border-green-600/40 dark:bg-green-950/20">
+          <CardContent className="pt-8 text-center space-y-4 dark:text-center">
+            <h2 className="text-3xl font-bold text-green-800 dark:text-green-200">
+              {tr("kyc_verified_title", "KYC Verified")}
+            </h2>
+            <p className="text-green-700 dark:text-green-300">
+              {tr(
+                "kyc_verified_desc",
+                "Your identity has been verified and your trust badge is active.",
+              )}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white dark:bg-green-700/40 dark:hover:bg-green-700/40 dark:text-white"
+                onClick={() => navigate("/profile")}
+              >
+                {tr("view_profile", "View Profile")}
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/dashboard")}
+              >
+                {tr("open_dashboard", "Open Dashboard")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (kycStatus?.status === "PENDING") {
+    return (
+      <div className={`${pageClassName} flex items-center justify-center p-4`}>
+        <Card className="max-w-lg w-full border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 page-shell page-pad dark:border-amber-600/40 dark:bg-amber-950/20">
+          <CardContent className="pt-8 text-center space-y-4 dark:text-center">
+            <h2 className="text-3xl font-bold text-amber-800 dark:text-amber-200">
+              {tr("kyc_pending_title", "Verification in progress")}
+            </h2>
+            <p className="text-amber-700 dark:text-amber-300">
+              {tr(
+                "kyc_pending_desc",
+                "We are reviewing your documents. Most requests are reviewed within 24 hours.",
+              )}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-700/40 dark:hover:bg-amber-700/40 dark:text-white"
+                onClick={fetchStatus}
+              >
+                {tr("refresh_status", "Refresh status")}
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/profile")}>
+                {tr("back_to_profile", "Back to profile")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${pageClassName} py-8 px-4`}>
+      <div className="max-w-2xl mx-auto">
+        <Card className="mb-6 border-slate-200/80 bg-white/80 backdrop-blur dark:border-slate-700 dark:bg-slate-900/60">
+          <CardHeader>
+            <CardTitle>
+              {tr("kyc_identity_title", "Identity Verification (KYC)")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-600 dark:text-gray-200">
+              {tr(
+                "kyc_identity_desc",
+                "Submit your Aadhaar and PAN details with clear front/back ID images to activate verified trust markers.",
+              )}
+            </p>
+            {loadError && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300">
+                {loadError}
+              </div>
+            )}
+            {kycStatus?.rejection_reason && (
+              <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300">
+                {tr("kyc_rejected_prefix", "Previous request rejected:")}{" "}
+                {kycStatus.rejection_reason}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200/80 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <Label htmlFor="aadhaar_number">
+                  {tr("aadhaar_number", "Aadhaar Number")}
+                </Label>
+                <Input
+                  id="aadhaar_number"
+                  type="text"
+                  name="aadhaar_number"
+                  value={formData.aadhaar_number}
+                  onChange={handleInputChange}
+                  placeholder={tr(
+                    "aadhaar_number_placeholder",
+                    "12-digit Aadhaar number",
+                  )}
+                  pattern="\\d{12}"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="pan_number">
+                  {tr("pan_number", "PAN Number")}
+                </Label>
+                <Input
+                  id="pan_number"
+                  type="text"
+                  name="pan_number"
+                  value={formData.pan_number}
+                  onChange={handleInputChange}
+                  placeholder={tr("pan_placeholder", "ABCDE1234F")}
+                  pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="kyc_front">
+                  {tr("kyc_id_front", "ID Proof (Front)")}
+                </Label>
+                <Input
+                  id="kyc_front"
+                  type="file"
+                  name="kyc_front"
+                  onChange={handleFileChange}
+                  accept="image/*,.pdf"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="kyc_back">
+                  {tr("kyc_id_back", "ID Proof (Back)")}
+                </Label>
+                <Input
+                  id="kyc_back"
+                  type="file"
+                  name="kyc_back"
+                  onChange={handleFileChange}
+                  accept="image/*,.pdf"
+                  required
+                />
+              </div>
+              {submitError && (
+                <p className="text-sm text-red-600 dark:text-red-300">
+                  {submitError}
+                </p>
+              )}
+              {successMessage && (
+                <p className="text-sm text-green-600 dark:text-green-300">
+                  {successMessage}
+                </p>
+              )}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white"
+                >
+                  {isSubmitting
+                    ? tr("submitting", "Submitting...")
+                    : tr("submit_documents", "Submit Documents")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fetchStatus}
+                >
+                  {tr("refresh_status", "Refresh status")}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 };
-var J = V;
-export { J as default };
 
-
+export default KycVerification;

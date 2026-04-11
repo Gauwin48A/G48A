@@ -148,8 +148,8 @@ export default function VPNBlocker({ children }) {
             <ol className="text-sm text-amber-700 dark:text-amber-400 space-y-1.5 list-decimal list-inside">
               <li>Turn off your VPN or proxy application</li>
               <li>Disconnect from any VPN browser extensions</li>
-              <li>Make sure you're on a regular WiFi or mobile network</li>
-              <li>Click "Check Again" below</li>
+              <li>Make sure you&apos;re on a regular WiFi or mobile network</li>
+              <li>Click &quot;Check Again&quot; below</li>
             </ol>
           </div>
 

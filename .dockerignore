@@ -1,0 +1,14 @@
+.git
+.github
+analysis
+**/node_modules
+client/dist
+client/test-results
+server/logs
+server/uploads
+server/private_uploads
+server/public
+server/.runtime
+client/.runtime
+client/android
+client/ios

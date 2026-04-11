@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Shield,
-  Phone,
   Lock,
   CheckCircle,
   AlertCircle,
@@ -756,4 +755,3 @@ export default function SignUp() {
     </div>
   );
 }
-

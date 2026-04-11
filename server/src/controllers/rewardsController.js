@@ -16,6 +16,12 @@ const REWARDS_PROFILE_CACHE_TTL_SECONDS = 60;
 const REWARDS_LOG_CACHE_TTL_SECONDS = 30;
 const COMPLETED_TRANSACTION_STATUSES = ["completed", "success"];
 const IST_OFFSET_MINUTES = 330;
+const REWARDS_SSE_MAX_CONNECTIONS = Number.parseInt(
+  process.env.REWARDS_SSE_MAX_CONNECTIONS || "2",
+  10,
+);
+
+const rewardSseConnections = new Map();
 
 let usersLegacyIdColumnAvailablePromise = null;
 
@@ -784,6 +790,13 @@ exports.streamRewardUpdates = async (req, res) => {
   }
 
   const userId = await resolveCanonicalUserId(userIdFromSession);
+  const currentConnections = rewardSseConnections.get(userId) || 0;
+  if (currentConnections >= REWARDS_SSE_MAX_CONNECTIONS) {
+    return res.status(429).json({
+      error: "Too many live reward streams. Please close other sessions and retry.",
+    });
+  }
+  rewardSseConnections.set(userId, currentConnections + 1);
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache, no-transform");
@@ -827,6 +840,12 @@ exports.streamRewardUpdates = async (req, res) => {
     cleanedUp = true;
     clearInterval(keepAliveTimer);
     unsubscribe();
+    const remaining = (rewardSseConnections.get(userId) || 1) - 1;
+    if (remaining <= 0) {
+      rewardSseConnections.delete(userId);
+    } else {
+      rewardSseConnections.set(userId, remaining);
+    }
   };
 
   req.on("close", cleanup);
