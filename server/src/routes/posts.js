@@ -9,6 +9,7 @@ const {
 const { validate, postValidation } = require("../middleware/validators");
 const { protect, optionalAuth } = require("../middleware/auth");
 const upload = require("../middleware/upload");
+const { publicReadSlowDown, searchSlowDown } = require("../middleware/rateLimiter");
 const { searchPosts, getNearbyPosts } = require("../services/searchService");
 const postViewBufferService = require("../services/postViewBufferService");
 const logger = require("../utils/logger");
@@ -36,7 +37,7 @@ function requireAdminRead(req, res, next) {
  * GET /all
  * Retrieve all posts (public).
  */
-router.get("/all", postController.getAllPosts);
+router.get("/all", publicReadSlowDown, postController.getAllPosts);
 
 /**
  * GET /mine
@@ -56,6 +57,7 @@ router.get("/mine/totals", protect, postController.getUserPostTotals);
  */
 router.get(
   "/nearby",
+  searchSlowDown,
   postValidation.nearby,
   validate,
   postController.getNearbyPosts
@@ -65,7 +67,7 @@ router.get(
  * GET /:postId/similar
  * Retrieve posts similar to the given post.
  */
-router.get("/:postId/similar", postController.getSimilarPosts);
+router.get("/:postId/similar", publicReadSlowDown, postController.getSimilarPosts);
 
 /**
  * GET /search-v2
@@ -81,7 +83,7 @@ router.get("/:postId/similar", postController.getSimilarPosts);
  * @query {number}  limit       - Results per page (default 20, max 100)
  * @query {number}  offset      - Pagination offset (default 0, max 5000)
  */
-router.get("/search-v2", async (req, res) => {
+router.get("/search-v2", searchSlowDown, async (req, res) => {
   try {
     const {
       q: query,
@@ -155,7 +157,7 @@ router.get("/search-v2", async (req, res) => {
  * GET /search
  * Alias for /search-v2 — prevents route collision with /:postId.
  */
-router.get("/search", async (req, res) => {
+router.get("/search", searchSlowDown, async (req, res) => {
   try {
     const {
       q: query,
@@ -210,7 +212,7 @@ router.get("/search", async (req, res) => {
  * @query {string}  category_id - Filter by category
  * @query {number}  limit       - Results per page (default 20, max 100)
  */
-router.get("/nearby-v2", async (req, res) => {
+router.get("/nearby-v2", searchSlowDown, async (req, res) => {
   try {
     const {
       lat,
@@ -265,19 +267,19 @@ router.get("/nearby-v2", async (req, res) => {
  * GET /trust/:userId
  * Retrieve the trust score for a given user.
  */
-router.get("/trust/:userId", postController.getUserTrustScore);
+router.get("/trust/:userId", publicReadSlowDown, postController.getUserTrustScore);
 
 /**
  * GET /for-you
  * Retrieve guaranteed-reach posts for the authenticated (or anonymous) user.
  */
-router.get("/for-you", optionalAuth, postController.getGuaranteedReachPosts);
+router.get("/for-you", publicReadSlowDown, optionalAuth, postController.getGuaranteedReachPosts);
 
 /**
  * GET /sponsored
  * Retrieve sponsored/boosted posts visible to the current user.
  */
-router.get("/sponsored", optionalAuth, postBoostController.getSponsoredPosts);
+router.get("/sponsored", publicReadSlowDown, optionalAuth, postBoostController.getSponsoredPosts);
 
 /**
  * GET /cache-stats
@@ -294,7 +296,7 @@ router.get(
  * GET /
  * Retrieve all posts (public, alias of /all).
  */
-router.get("/", postController.getAllPosts);
+router.get("/", publicReadSlowDown, postController.getAllPosts);
 
 const optimizeLocalImages = require("../middleware/imageOptimizer");
 
@@ -432,7 +434,7 @@ router.post("/batch-view", async (req, res) => {
     });
   } catch (err) {
     logger.error("Batch view error:", err);
-    res.json({ success: false, error: "Batch update failed" });
+    res.status(500).json({ success: false, error: "Batch update failed" });
   }
 });
 
@@ -618,7 +620,7 @@ router.get(
  * GET /:postId
  * Retrieve a single post by its ID.
  */
-router.get("/:postId", postController.getPostById);
+router.get("/:postId", publicReadSlowDown, postController.getPostById);
 
 /**
  * DELETE /:postId

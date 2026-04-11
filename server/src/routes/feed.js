@@ -5,12 +5,12 @@ const {
   protect: protect,
   optionalAuth: optionalAuth,
 } = require("../middleware/auth");
-const { searchSlowDown } = require("../middleware/rateLimiter");
-router.get("/", feedController.getFeed);
+const { publicReadSlowDown, searchSlowDown } = require("../middleware/rateLimiter");
+router.get("/", publicReadSlowDown, feedController.getFeed);
 router.get("/mine", protect, feedController.getMyFeed);
-router.get("/dynamic", optionalAuth, feedController.getDynamicFeed);
-router.get("/trending", feedController.getTrendingPosts);
-router.get("/random", feedController.getRandomFeed);
+router.get("/dynamic", publicReadSlowDown, optionalAuth, feedController.getDynamicFeed);
+router.get("/trending", publicReadSlowDown, feedController.getTrendingPosts);
+router.get("/random", publicReadSlowDown, feedController.getRandomFeed);
 router.get("/nearby", searchSlowDown, feedController.getNearbyFeed);
 router.get("/search", searchSlowDown, feedController.searchPosts);
 router.post("/impression", optionalAuth, feedController.trackImpression);

@@ -1,21 +1,21 @@
-import e, { useEffect as L, useState as i, useRef as Oe } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
-  useParams as Y,
-  useNavigate as Z,
-  Link as R,
-  useLocation as ee,
+  useParams,
+  useNavigate,
+  useLocation,
+  Link,
 } from "react-router-dom";
 import re from "../lib/api";
-import { Button as l } from "@/components/ui/button";
-import { Badge as te } from "@/components/ui/badge";
-import { Avatar as ae, AvatarFallback as se } from "@/components/ui/avatar";
-import { Card as g, CardContent as p } from "@/components/ui/card";
-import { useTranslation as oe } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { useAuth as useAuthContext } from "@/context/AuthContext";
-import le from "@/components/BuyerInterestModal";
-import ie from "@/components/MakeOfferModal";
-import ne from "@/components/BargainActions";
-import Se from "@/components/ShareLinkDialog";
+import BuyerInterestModal from "@/components/BuyerInterestModal";
+import MakeOfferModal from "@/components/MakeOfferModal";
+import BargainActions from "@/components/BargainActions";
+import ShareLinkDialog from "@/components/ShareLinkDialog";
 import ImageZoomModal from "@/components/ImageZoomModal";
 import PostBoostPanel from "@/components/PostBoostPanel";
 import SponsoredListings from "@/components/SponsoredListings";
@@ -29,7 +29,7 @@ import {
   setSavedPostStatus,
   subscribeSavedPosts,
 } from "@/utils/savedPosts";
-import { resolveMediaUrl as cee } from "@/lib/mediaUrl";
+import { resolveMediaUrl } from "@/lib/mediaUrl";
 import { navigateBack } from "@/utils/navigation";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -56,50 +56,65 @@ import {
   DollarSign as ke,
   Bookmark as We,
   BookmarkCheck as Xe,
-  MoreVertical as Je,
   Link as Qe,
   ChevronDown as ChevronDownIcon,
   ChevronUp as ChevronUpIcon,
 } from "lucide-react";
+
+const SECTION_OBSERVER_IDS = [
+  "overview",
+  "listing-details",
+  "key-details",
+  "specs",
+  "location",
+  "trust-safety",
+  "description",
+  "negotiation",
+  "seller",
+  "sponsored",
+  "premium",
+];
 function PostDetail() {
-  const { t: h } = oe(),
-    tr = (key, fallback, options = {}) => {
-      const value = h(key, { defaultValue: fallback, ...options });
-      if (typeof value !== "string" || !value.trim() || value === key) {
-        return fallback;
-      }
-      return value;
-    },
-    { id: d } = Y(),
-    y = ee(),
+  const { t: h } = useTranslation(),
+    tr = useCallback(
+      (key, fallback, options = {}) => {
+        const value = h(key, { defaultValue: fallback, ...options });
+        if (typeof value !== "string" || !value.trim() || value === key) {
+          return fallback;
+        }
+        return value;
+      },
+      [h],
+    ),
+    { id: d } = useParams(),
+    y = useLocation(),
     { user: currentUser } = useAuthContext(),
     { toast } = useToast(),
-    [r, u] = i(y.state?.post || null),
-    [j, c] = i(!y.state?.post),
-    [v, N] = i(null),
-    [F, M] = i(0),
-    [b, m] = i(0),
-    [E, f] = i(!1),
-    [V, w] = i(!1),
-    [shareDialogOpen, setShareDialogOpen] = i(!1),
-    [shareUrl, setShareUrl] = i(""),
-    [showMenu, setShowMenu] = i(!1),
-    [savedPost, setSavedPost] = i(!1),
-    [descriptionExpanded, setDescriptionExpanded] = i(!1),
-    [zoomOpen, setZoomOpen] = i(!1),
-    [sponsoredStatus, setSponsoredStatus] = i({ loading: !0, count: null }),
-    [premiumStatus, setPremiumStatus] = i({ loading: !0, count: null }),
-    [ownerInsights, setOwnerInsights] = i({
+    [r, u] = useState(y.state?.post || null),
+    [j, c] = useState(!y.state?.post),
+    [v, N] = useState(null),
+    [F, M] = useState(0),
+    [b, m] = useState(0),
+    [E, f] = useState(!1),
+    [V, w] = useState(!1),
+    [shareDialogOpen, setShareDialogOpen] = useState(!1),
+    [shareUrl, setShareUrl] = useState(""),
+    [savedPost, setSavedPost] = useState(!1),
+    [descriptionExpanded, setDescriptionExpanded] = useState(!1),
+    [zoomOpen, setZoomOpen] = useState(!1),
+    [sponsoredStatus, setSponsoredStatus] = useState({ loading: !0, count: null }),
+    [premiumStatus, setPremiumStatus] = useState({ loading: !0, count: null }),
+    [ownerInsights, setOwnerInsights] = useState({
       inquiries: [],
       offers: [],
       viewers: [],
     }),
-    [ownerInsightsLoading, setOwnerInsightsLoading] = i(!1),
-    [ownerInsightsError, setOwnerInsightsError] = i(null),
-    [activeSection, setActiveSection] = i("overview"),
-    [collapsedSections, setCollapsedSections] = i({}),
-    sectionNavRef = Oe(null),
-    U = Z(),
+    [ownerInsightsLoading, setOwnerInsightsLoading] = useState(!1),
+    [ownerInsightsError, setOwnerInsightsError] = useState(null),
+    [activeSection, setActiveSection] = useState("overview"),
+    [collapsedSections, setCollapsedSections] = useState({}),
+    sectionNavRef = useRef(null),
+    U = useNavigate(),
     resolveMessage = (t, a) => {
       if (!t) return "";
       if (typeof t === "string") return t;
@@ -167,7 +182,7 @@ function PostDetail() {
     backTarget =
       y?.state?.returnTo ||
       (y?.state?.fromMyPosts ? "/my-home" : "/all-posts"),
-    swipeState = Oe({ startX: 0, startY: 0, active: false });
+    swipeState = useRef({ startX: 0, startY: 0, active: false });
   const sellerTrustUserId = normalizeId(
     r?.seller_id ??
       r?.sellerId ??
@@ -232,7 +247,7 @@ function PostDetail() {
     }
     return String(candidate || "").trim();
   })();
-  const resolveRecentlyViewedSource = () => {
+  const resolveRecentlyViewedSource = useCallback(() => {
     const normalizeSourceValue = (value) => {
       const normalized = String(value || "")
         .trim()
@@ -282,154 +297,180 @@ function PostDetail() {
       typeof document !== "undefined" ? document.referrer || "" : "";
     const fromReferrer = resolveFromPath(referrer);
     return fromReferrer || "allposts";
-  };
-  if (
-    (L(() => {
-      const t = normalizeId(r?.post_id || r?.id || d);
-      if (!t) return;
-      const a = currentUserId;
-      if (!a) return;
-      const source = resolveRecentlyViewedSource();
-      re.post("/recently-viewed/track", { postId: t, userId: a, source })
-        .catch(() => {});
-    }, [d, currentUserId, y?.state?.source, y?.state?.returnTo, y?.state?.fromMyPosts]),
-    L(() => {
-      window.scrollTo(0, 0),
-        r ||
-          (async () => {
-            try {
-              N(null);
-              const safeId = normalizeId(d);
-              if (!safeId) {
-                N({
-                  key: "invalid_listing_id",
-                  fallback: tr("invalid_listing_id", "Invalid listing id."),
-                }),
-                  c(!1),
-                  u(null);
-                return;
-              }
-              const a = await re.get(`/posts/${safeId}`),
-                s = a?.post || a;
-              if (!s || Object.keys(s).length === 0)
-                throw new Error("API returned no post data.");
-              const mediaList = Array.isArray(s.images)
-                  ? s.images
-                  : typeof s.images == "string" && s.images.trim()
-                    ? (() => {
-                        try {
-                          const Ce = JSON.parse(s.images);
-                          return Array.isArray(Ce) ? Ce : [s.images];
-                        } catch {
-                          return [s.images];
-                        }
-                      })()
-                    : [],
-                T = { ...s, images: mediaList, seller: s.seller || {} };
-              u(T),
-                setSavedPost(
-                  Boolean(
-                    T?.is_saved ||
-                      T?.saved ||
-                      isSavedPostId(T?.post_id || T?.id || safeId),
-                  ),
-                ),
-                c(!1);
-            } catch (a) {
-              console.error("Error fetching post data:", a),
-                N({
-                  key: "load_product_failed",
-                  fallback: "Failed to load product details. Please retry.",
-                }),
+  }, [y?.state?.source, y?.state?.returnTo, y?.state?.fromMyPosts]);
+  useEffect(() => {
+    const t = normalizeId(r?.post_id || r?.id || d);
+    if (!t) return;
+    const a = currentUserId;
+    if (!a) return;
+    const source = resolveRecentlyViewedSource();
+    re.post("/recently-viewed/track", { postId: t, userId: a, source })
+      .catch(() => {});
+  }, [
+    d,
+    currentUserId,
+    y?.state?.source,
+    y?.state?.returnTo,
+    y?.state?.fromMyPosts,
+    r?.post_id,
+    r?.id,
+    resolveRecentlyViewedSource,
+  ]);
+  useEffect(() => {
+    window.scrollTo(0, 0),
+      r ||
+        (async () => {
+          try {
+            N(null);
+            const safeId = normalizeId(d);
+            if (!safeId) {
+              N({
+                key: "invalid_listing_id",
+                fallback: tr("invalid_listing_id", "Invalid listing id."),
+              }),
                 c(!1),
                 u(null);
+              return;
             }
-          })(),
-        m(0);
-    }, [d, F]),
-    L(() => {
-      const t = normalizeId(r?.post_id || r?.id || d);
-      if (!t) return;
-      setSavedPost(isSavedPostId(t));
-      return subscribeSavedPosts((a) => {
-        setSavedPost(Boolean(a?.[t]));
+            const a = await re.get(`/posts/${safeId}`),
+              s = a?.post || a;
+            if (!s || Object.keys(s).length === 0)
+              throw new Error("API returned no post data.");
+            const mediaList = Array.isArray(s.images)
+                ? s.images
+                : typeof s.images == "string" && s.images.trim()
+                  ? (() => {
+                      try {
+                        const Ce = JSON.parse(s.images);
+                        return Array.isArray(Ce) ? Ce : [s.images];
+                      } catch {
+                        return [s.images];
+                      }
+                    })()
+                  : [],
+              T = { ...s, images: mediaList, seller: s.seller || {} };
+            u(T),
+              setSavedPost(
+                Boolean(
+                  T?.is_saved ||
+                    T?.saved ||
+                    isSavedPostId(T?.post_id || T?.id || safeId),
+                ),
+              ),
+              c(!1);
+          } catch (a) {
+            console.error("Error fetching post data:", a),
+              N({
+                key: "load_product_failed",
+                fallback: "Failed to load product details. Please retry.",
+              }),
+              c(!1),
+              u(null);
+          }
+        })(),
+      m(0);
+  }, [d, F, r, tr]);
+  useEffect(() => {
+    const t = normalizeId(r?.post_id || r?.id || d);
+    if (!t) return;
+    setSavedPost(isSavedPostId(t));
+    return subscribeSavedPosts((a) => {
+      setSavedPost(Boolean(a?.[t]));
+    });
+  }, [d, r?.id, r?.post_id]);
+  useEffect(() => {
+    const postId = normalizeId(r?.post_id || r?.id || d);
+    if (!postId || !isOwnerView) return;
+    let cancelled = false;
+    setOwnerInsightsLoading(true);
+    setOwnerInsightsError(null);
+    Promise.allSettled([
+      re.get(`/inquiries/post/${postId}`),
+      re.get(`/offers/history/${postId}`),
+      re.get(`/recently-viewed/post/${postId}`),
+    ])
+      .then((results) => {
+        if (cancelled) return;
+        const [inquiriesRes, offersRes, viewersRes] = results;
+        const inquiries =
+          inquiriesRes.status === "fulfilled" &&
+          Array.isArray(inquiriesRes.value?.inquiries)
+            ? inquiriesRes.value.inquiries
+            : [];
+        const offers =
+          offersRes.status === "fulfilled" &&
+          Array.isArray(offersRes.value?.history)
+            ? offersRes.value.history
+            : [];
+        const viewers =
+          viewersRes.status === "fulfilled" &&
+          Array.isArray(viewersRes.value?.viewers)
+            ? viewersRes.value.viewers
+            : [];
+        setOwnerInsights({ inquiries, offers, viewers });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOwnerInsightsError({
+            key: "lead_fetch_failed",
+            fallback: "Failed to load lead activity.",
+          });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setOwnerInsightsLoading(false);
+        }
       });
-    }, [d, r?.id, r?.post_id]),
-      L(() => {
-        const postId = normalizeId(r?.post_id || r?.id || d);
-        if (!postId || !isOwnerView) return;
-        let cancelled = false;
-      setOwnerInsightsLoading(true);
-      setOwnerInsightsError(null);
-      Promise.allSettled([
-        re.get(`/inquiries/post/${postId}`),
-        re.get(`/offers/history/${postId}`),
-        re.get(`/recently-viewed/post/${postId}`),
-      ])
-        .then((results) => {
-          if (cancelled) return;
-          const [inquiriesRes, offersRes, viewersRes] = results;
-          const inquiries =
-            inquiriesRes.status === "fulfilled" &&
-            Array.isArray(inquiriesRes.value?.inquiries)
-              ? inquiriesRes.value.inquiries
-              : [];
-          const offers =
-            offersRes.status === "fulfilled" &&
-            Array.isArray(offersRes.value?.history)
-              ? offersRes.value.history
-              : [];
-          const viewers =
-            viewersRes.status === "fulfilled" &&
-            Array.isArray(viewersRes.value?.viewers)
-              ? viewersRes.value.viewers
-              : [];
-          setOwnerInsights({ inquiries, offers, viewers });
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setOwnerInsightsError({
-              key: "lead_fetch_failed",
-              fallback: "Failed to load lead activity.",
-            });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    d,
+    isOwnerView,
+    r?.id,
+    r?.post_id,
+    r?.user_id,
+    r?.userId,
+    r?.owner_id,
+    r?.seller_id,
+    r?.seller?.id,
+    r?.user?.id,
+  ]);
+  useEffect(() => {
+    if (!r) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+            break;
           }
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setOwnerInsightsLoading(false);
-          }
-        });
-      return () => {
-        cancelled = true;
-      };
-      }, [
-        d,
-        isOwnerView,
-        r?.id,
-        r?.post_id,
-        r?.user_id,
-        r?.userId,
-        r?.owner_id,
-        r?.seller_id,
-        r?.seller?.id,
-        r?.user?.id,
-      ]),
-    j)
-  )
-    return e.createElement(
+        }
+      },
+      { rootMargin: "-20% 0px -60% 0px", threshold: 0 },
+    );
+    SECTION_OBSERVER_IDS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [r]);
+  if (j)
+    return React.createElement(
       "div",
       {
         className:
           "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center dark:bg-gradient-to-br",
       },
-      e.createElement(
+      React.createElement(
         "div",
         { className: "text-center dark:text-center" },
-        e.createElement("div", {
+        React.createElement("div", {
           className:
             "w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-4 dark:border-blue-500/40 dark:border-t-transparent",
         }),
-        e.createElement(
+        React.createElement(
           "p",
           { className: "text-lg font-medium text-gray-600 dark:text-gray-300 dark:text-gray-200" },
           tr("loading_product", "Loading product..."),
@@ -437,34 +478,34 @@ function PostDetail() {
       ),
     );
   if (!r)
-    return e.createElement(
+    return React.createElement(
       "div",
       {
         className:
           "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4 dark:bg-gradient-to-br",
       },
-      e.createElement(
+      React.createElement(
         "div",
         {
         className:
           "text-center p-8 mhub-premium-surface rounded-3xl max-w-lg w-full page-shell page-pad dark:text-center",
         },
-        e.createElement(
+        React.createElement(
           "div",
           {
             className:
               "w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6 dark:bg-red-950/20",
           },
-          e.createElement(x, { className: "w-10 h-10 text-red-500 dark:text-red-300" }),
+          React.createElement(x, { className: "w-10 h-10 text-red-500 dark:text-red-300" }),
         ),
-        e.createElement(
+        React.createElement(
           "h2",
           {
             className: "text-2xl font-bold text-gray-800 dark:text-white mb-3 dark:text-gray-100",
           },
           tr("product_not_found", "Product Not Found"),
         ),
-        e.createElement(
+        React.createElement(
           "p",
           { className: "text-gray-600 dark:text-gray-300 mb-2 dark:text-gray-200" },
           tr(
@@ -473,16 +514,15 @@ function PostDetail() {
           ),
         ),
         errorMessage &&
-          e.createElement(
+          React.createElement(
             "p",
             { className: "text-sm text-red-500 mb-4 dark:text-red-300" },
             errorMessage,
           ),
-        e.createElement(
+        React.createElement(
           "div",
           { className: "flex flex-wrap justify-center gap-2" },
-          e.createElement(
-            l,
+          React.createElement(Button,
             {
               type: "button",
               variant: "outline",
@@ -492,16 +532,14 @@ function PostDetail() {
             },
             tr("retry", "Retry"),
           ),
-          e.createElement(
-            R,
+          React.createElement(Link,
             { to: "/all-posts" },
-            e.createElement(
-              l,
+            React.createElement(Button,
               {
                 className:
                   "bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white",
               },
-              e.createElement($, { className: "w-4 h-4 mr-2" }),
+              React.createElement($, { className: "w-4 h-4 mr-2" }),
               tr("browse_products", "Browse Products"),
             ),
           ),
@@ -598,11 +636,6 @@ function PostDetail() {
       : null,
     locationDisplay =
       locationLabel || tr("location_unknown", "Location not specified"),
-    backContextLabel = categoryLabel
-      ? tr("back_to_category", "Back to {{category}}", {
-          category: categoryDisplay,
-        })
-      : tr("back_to_listings", "Back to listings"),
     statusTone = String(r.status || "active").toLowerCase(),
     statusLabel = r.status
       ? tr(
@@ -1267,26 +1300,6 @@ function PostDetail() {
         show: !isOwnerView,
       },
     ].filter((item) => item.show);
-    L(() => {
-      if (!r) return;
-      const sectionIds = sectionNavItems.map((item) => item.id);
-      const observer = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) {
-              setActiveSection(entry.target.id);
-              break;
-            }
-          }
-        },
-        { rootMargin: "-20% 0px -60% 0px", threshold: 0 },
-      );
-      sectionIds.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) observer.observe(el);
-      });
-      return () => observer.disconnect();
-    }, [r]);
     const S = !!(
       o?.verified ||
       o?.isVerified ||
@@ -1447,24 +1460,24 @@ function PostDetail() {
     },
     renderSectionHeader = (sectionKey, icon, title, extraClass) => {
       const isCollapsed = collapsedSections[sectionKey];
-      return e.createElement(
+      return React.createElement(
         "button",
         {
           type: "button",
           onClick: () => toggleSection(sectionKey),
           className: `flex items-center justify-between w-full gap-2 group cursor-pointer ${extraClass || ""}`,
         },
-        e.createElement(
+        React.createElement(
           "div",
           { className: "flex items-center gap-2" },
-          icon && e.createElement(icon, { className: "w-5 h-5" }),
-          e.createElement(
+          icon && React.createElement(icon, { className: "w-5 h-5" }),
+          React.createElement(
             "h3",
             { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
             title,
           ),
         ),
-        e.createElement(isCollapsed ? ChevronDownIcon : ChevronUpIcon, {
+        React.createElement(isCollapsed ? ChevronDownIcon : ChevronUpIcon, {
           className: "w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform group-hover:text-gray-600 dark:group-hover:text-gray-300",
         }),
       );
@@ -1605,13 +1618,13 @@ function PostDetail() {
   const handleMediaTouchCancel = () => {
     swipeState.current.active = false;
   };
-  const mediaCard = e.createElement(
+  const mediaCard = React.createElement(
     "div",
     {
       className:
         "mhub-post-media-card mhub-premium-surface rounded-2xl shadow-lg overflow-hidden w-full",
     },
-    e.createElement(
+    React.createElement(
       "div",
       {
         className:
@@ -1623,8 +1636,8 @@ function PostDetail() {
         "aria-label": tr("media_gallery", "Media gallery"),
       },
           activeImage
-        ? e.createElement("img", {
-            src: cee(activeImage),
+        ? React.createElement("img", {
+            src: resolveMediaUrl(activeImage),
             alt: r.title
               ? `${r.title} - ${tr("image", "Image")} ${activeIndex + 1}`
               : tr("listing_image", "Listing image"),
@@ -1639,22 +1652,22 @@ function PostDetail() {
               t.target.src = "/placeholder.svg";
             },
           })
-        : e.createElement(
+        : React.createElement(
             "div",
             {
               className:
                 "w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 dark:from-gray-700 dark:via-gray-800 dark:to-gray-900 dark:bg-gradient-to-br",
             },
-            e.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   "text-center space-y-3 text-gray-500 dark:text-gray-300 max-w-sm px-4",
               },
-              e.createElement(x, {
+              React.createElement(x, {
                 className: "w-12 h-12 mx-auto text-gray-300 dark:text-gray-500 dark:text-gray-300",
               }),
-              e.createElement(
+              React.createElement(
                 "p",
                 { className: "text-sm font-semibold" },
                 isOwnerView
@@ -1664,7 +1677,7 @@ function PostDetail() {
                     )
                   : tr("no_photo", "No photo available"),
               ),
-              e.createElement(
+              React.createElement(
                 "p",
                 { className: "text-xs text-gray-400 dark:text-gray-300" },
                 isOwnerView
@@ -1685,8 +1698,7 @@ function PostDetail() {
               ),
               !isOwnerView &&
                 !contactCtaDisabled &&
-                e.createElement(
-                  l,
+                React.createElement(Button,
                   {
                     type: "button",
                     onClick: handleContactSeller,
@@ -1695,11 +1707,11 @@ function PostDetail() {
                   },
                   tr("request_photos", "Request photos"),
                 ),
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "mt-3 grid grid-cols-3 gap-3 justify-center" },
                 Array.from({ length: 3 }).map((_, idx) =>
-                  e.createElement("div", {
+                  React.createElement("div", {
                     key: idx,
                     className:
                       "h-16 w-16 rounded-lg border border-dashed border-gray-300 bg-white/70 dark:border-gray-600 dark:bg-gray-800/60",
@@ -1708,23 +1720,22 @@ function PostDetail() {
               ),
             ),
           ),
-      e.createElement(
+      React.createElement(
         "div",
         { className: "absolute top-3 left-3 flex flex-col gap-2" },
-        e.createElement(
-          te,
+        React.createElement(Badge,
           {
             className: `px-3 py-1 text-xs font-bold rounded-full ${r.tier?.toLowerCase() === "premium" ? "bg-gradient-to-r from-yellow-400 to-orange-500 text-white" : r.tier?.toLowerCase() === "silver" ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white" : "bg-gradient-to-r from-green-400 to-emerald-500 text-white"}`,
           },
-          e.createElement(ve, { className: "w-3 h-3 mr-1 inline" }),
+          React.createElement(ve, { className: "w-3 h-3 mr-1 inline" }),
           tierLabel,
         ),
         highlightBadges.length > 0 &&
-          e.createElement(
+          React.createElement(
             "div",
             { className: "flex flex-wrap gap-2" },
             highlightBadges.map((t) =>
-              e.createElement(
+              React.createElement(
                 "span",
                 {
                   key: t.key,
@@ -1736,18 +1747,18 @@ function PostDetail() {
             ),
           ),
       ),
-      e.createElement(
+      React.createElement(
         "div",
         {
           className:
             "absolute top-3 right-3 bg-black/60 text-white px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 dark:bg-black/60 dark:text-white",
           title: tr("views", "Views"),
         },
-        e.createElement(ce, { className: "w-3.5 h-3.5" }),
+        React.createElement(ce, { className: "w-3.5 h-3.5" }),
         Number.isFinite(viewCount) ? viewCount.toLocaleString("en-IN") : "0",
       ),
       imageCount > 1 &&
-        e.createElement(
+        React.createElement(
           "div",
           {
             className:
@@ -1758,10 +1769,10 @@ function PostDetail() {
           imageCount,
         ),
       imageCount > 1 &&
-        e.createElement(
-          e.Fragment,
+        React.createElement(
+          React.Fragment,
           null,
-          e.createElement(
+          React.createElement(
             "button",
             {
               onClick: H,
@@ -1771,9 +1782,9 @@ function PostDetail() {
               className:
                 "absolute left-2 top-1/2 -translate-y-1/2 bg-[var(--surface-1)] p-3 sm:p-2 rounded-full shadow-lg opacity-90 hover:opacity-100 transition-opacity dark:bg-[var(--surface-1)]",
             },
-            e.createElement(me, { className: "w-6 h-6 sm:w-5 sm:h-5" }),
+            React.createElement(me, { className: "w-6 h-6 sm:w-5 sm:h-5" }),
           ),
-          e.createElement(
+          React.createElement(
             "button",
             {
               onClick: z,
@@ -1783,16 +1794,16 @@ function PostDetail() {
               className:
                 "absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--surface-1)] p-3 sm:p-2 rounded-full shadow-lg opacity-90 hover:opacity-100 transition-opacity dark:bg-[var(--surface-1)]",
             },
-            e.createElement(ge, { className: "w-6 h-6 sm:w-5 sm:h-5" }),
+            React.createElement(ge, { className: "w-6 h-6 sm:w-5 sm:h-5" }),
           ),
-          e.createElement(
+          React.createElement(
             "div",
             {
               className:
                 "absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5",
             },
             imageList.map((t, a) =>
-              e.createElement("button", {
+              React.createElement("button", {
                 key: a,
                 type: "button",
                 "aria-label": tr("view_image", "View image {{count}}", {
@@ -1807,17 +1818,17 @@ function PostDetail() {
         ),
     ),
     imageCount > 1 &&
-      e.createElement(
+      React.createElement(
         "div",
         {
           className:
             "p-3 border-t lg:border-t-0 lg:border-r dark:border-gray-700 overflow-x-auto lg:overflow-y-auto lg:overflow-x-hidden scrollbar-hide lg:w-[88px] lg:max-h-[420px] lg:flex-shrink-0 lg:order-first dark:border-t dark:lg:border-t-0 dark:lg:border-r",
         },
-        e.createElement(
+        React.createElement(
           "div",
           { className: "flex lg:flex-col gap-2" },
           imageList.map((t, a) =>
-            e.createElement(
+            React.createElement(
               "button",
               {
                 key: a,
@@ -1826,8 +1837,8 @@ function PostDetail() {
                 "aria-current": a === activeIndex ? "true" : "false",
                 className: `flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all dark:border-2 ${a === activeIndex ? "border-blue-500 scale-105" : "border-transparent opacity-60"}`,
               },
-              e.createElement("img", {
-                src: cee(t),
+              React.createElement("img", {
+                src: resolveMediaUrl(t),
                 onError: (s) => {
                   s.target.onerror = null;
                   s.target.src = "/placeholder.svg";
@@ -1843,67 +1854,21 @@ function PostDetail() {
         ),
       ),
   );
-  const sectionNavNode =
-    sectionNavItems.length > 1
-      ? e.createElement(
-          "div",
-          {
-            ref: sectionNavRef,
-            className:
-              "mhub-post-section-nav mhub-post-section-banner mhub-premium-surface border-0 shadow-lg rounded-2xl dark:border-0",
-            id: "page-sections",
-          },
-          e.createElement(
-            "div",
-            { className: "px-3 py-2.5 sm:px-4 sm:py-3" },
-            e.createElement(
-              "div",
-              {
-                className:
-                  "flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-0.5",
-              },
-              sectionNavItems.map((item) =>
-                e.createElement(
-                  "button",
-                  {
-                    key: item.key,
-                    type: "button",
-                    onClick: (ev) => {
-                      ev.preventDefault();
-                      const el = document.getElementById(item.id);
-                      if (el) {
-                        el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        setActiveSection(item.id);
-                      }
-                    },
-                    className: activeSection === item.id
-                      ? "inline-flex items-center px-3 py-1.5 rounded-full border-2 border-blue-500 bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 whitespace-nowrap transition-all duration-200"
-                      : "inline-flex items-center px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/40 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 dark:hover:bg-blue-900/30 dark:hover:border-blue-700 transition-all duration-200 whitespace-nowrap",
-                  },
-                  item.label,
-                ),
-              ),
-            ),
-          ),
-        )
-      : null;
-  const summaryCard = e.createElement(
+  const summaryCard = React.createElement(
     "div",
     { className: "mhub-post-summary-wrap w-full" },
-    e.createElement(
-      g,
+    React.createElement(Card,
       {
         className:
           "mhub-post-summary-card mhub-premium-surface border-0 shadow-lg rounded-2xl overflow-hidden scroll-mt-24 dark:border-0",
         id: "overview",
       },
-      e.createElement(
-        p,
+      React.createElement(CardContent,
         { className: "p-5" },
-        e.createElement(
+        React.createElement(
           "div",
           { className: "flex items-start justify-between gap-3" },
-          e.createElement(
+          React.createElement(
             "h1",
             {
               className:
@@ -1911,24 +1876,24 @@ function PostDetail() {
             },
             r.title || tr("product_title_fallback", "Product Title"),
           ),
-          e.createElement(
+          React.createElement(
             "span",
             {
               className: `inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold ring-1 ring-inset ${statusBadgeClass}`,
             },
-            e.createElement("span", {
+            React.createElement("span", {
               className: `w-2 h-2 rounded-full ${statusDotClass}`,
             }),
             statusLabel,
           ),
         ),
-        e.createElement(
+        React.createElement(
           "div",
           {
             className:
               "flex flex-wrap items-baseline gap-3 mt-3 mb-4 pb-4 border-b border-gray-100 dark:border-gray-800 dark:border-b dark:border-gray-700",
           },
-          e.createElement(
+          React.createElement(
             "span",
             {
               className:
@@ -1938,7 +1903,7 @@ function PostDetail() {
           ),
           Number.isFinite(originalPriceValue) &&
             originalPriceValue > 0 &&
-            e.createElement(
+            React.createElement(
               "span",
               {
                 className:
@@ -1947,7 +1912,7 @@ function PostDetail() {
               C(originalPriceValue),
             ),
           discountValue > 0 &&
-            e.createElement(
+            React.createElement(
               "span",
               {
                 className:
@@ -1958,7 +1923,7 @@ function PostDetail() {
               }),
             ),
           savingsValue > 0 &&
-            e.createElement(
+            React.createElement(
               "span",
               {
                 className:
@@ -1969,23 +1934,23 @@ function PostDetail() {
               }),
             ),
         ),
-        e.createElement(
+        React.createElement(
           "div",
           {
             className:
               "rounded-xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 px-3 py-2.5 mb-4 space-y-2 dark:border dark:bg-slate-900/70",
           },
-          e.createElement(
+          React.createElement(
             "div",
             { className: "flex items-start gap-2.5" },
-            e.createElement(pe, {
+            React.createElement(pe, {
               className:
                 "w-4 h-4 mt-0.5 text-gray-400 dark:text-gray-500 flex-shrink-0 dark:text-gray-300",
             }),
-            e.createElement(
+            React.createElement(
               "div",
               { className: "space-y-0.5" },
-              e.createElement(
+              React.createElement(
                 "p",
                 {
                   className:
@@ -1993,24 +1958,24 @@ function PostDetail() {
                 },
                 tr("delivery_meetup", "Delivery / Meetup"),
               ),
-              e.createElement(
+              React.createElement(
                 "p",
                 { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-gray-100" },
                 deliveryDetail,
               ),
             ),
           ),
-          e.createElement(
+          React.createElement(
             "div",
             { className: "flex items-start gap-2.5" },
-            e.createElement(Ne, {
+            React.createElement(BargainActions, {
               className:
                 "w-4 h-4 mt-0.5 text-emerald-500 dark:text-emerald-400 flex-shrink-0 dark:text-emerald-300",
             }),
-            e.createElement(
+            React.createElement(
               "div",
               { className: "space-y-0.5" },
-              e.createElement(
+              React.createElement(
                 "p",
                 {
                   className:
@@ -2018,7 +1983,7 @@ function PostDetail() {
                 },
                 tr("return_inspection", "Return / Inspection"),
               ),
-              e.createElement(
+              React.createElement(
                 "p",
                 { className: "text-sm font-medium text-gray-900 dark:text-white dark:text-gray-100" },
                 inspectionDetail,
@@ -2026,10 +1991,10 @@ function PostDetail() {
             ),
           ),
         ),
-        e.createElement(
+        React.createElement(
           "div",
           { className: "mb-4" },
-          e.createElement(
+          React.createElement(
             "p",
             {
               className:
@@ -2037,11 +2002,11 @@ function PostDetail() {
             },
             tr("highlights", "Highlights"),
           ),
-          e.createElement(
+          React.createElement(
             "ul",
             { className: "space-y-2" },
             atAGlanceFacts.map((fact) =>
-              e.createElement(
+              React.createElement(
                 "li",
                 {
                   key: fact.key,
@@ -2049,24 +2014,24 @@ function PostDetail() {
                     "flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-200",
                 },
                 fact.icon
-                  ? e.createElement(fact.icon, {
+                  ? React.createElement(fact.icon, {
                       className:
                         "w-4 h-4 mt-0.5 text-gray-400 dark:text-gray-500 flex-shrink-0 dark:text-gray-300",
                     })
-                  : e.createElement("span", {
+                  : React.createElement("span", {
                       className:
                         "w-1.5 h-1.5 mt-2 rounded-full bg-gray-400 dark:bg-gray-500 flex-shrink-0 dark:bg-gray-800",
                     }),
-                e.createElement(
+                React.createElement(
                   "span",
                   null,
-                  e.createElement(
+                  React.createElement(
                     "span",
                     { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     fact.label,
                     ": ",
                   ),
-                  e.createElement(
+                  React.createElement(
                     "span",
                     { className: "font-medium text-gray-900 dark:text-white dark:text-gray-100" },
                     fact.value,
@@ -2076,18 +2041,18 @@ function PostDetail() {
             ),
           ),
         ),
-        e.createElement(
+        React.createElement(
           "div",
           { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" },
           summaryStats.map((stat) =>
-            e.createElement(
+            React.createElement(
               "div",
               {
                 key: stat.key,
                 className:
                   "rounded-xl bg-white/60 dark:bg-gray-900/30 px-3 py-2 border border-gray-100 dark:border-gray-800 dark:bg-slate-900/60 dark:border dark:border-gray-700",
               },
-              e.createElement(
+              React.createElement(
                 "p",
                 {
                   className:
@@ -2095,7 +2060,7 @@ function PostDetail() {
                 },
                 stat.label,
               ),
-              e.createElement(
+              React.createElement(
                 "p",
                 {
                   className:
@@ -2107,11 +2072,11 @@ function PostDetail() {
           ),
         ),
         !isOwnerView &&
-          e.createElement(
+          React.createElement(
             "div",
             { className: "mhub-summary-meta mt-4 space-y-3" },
             freshnessLine &&
-              e.createElement(
+              React.createElement(
                 "div",
                 {
                   className:
@@ -2119,13 +2084,13 @@ function PostDetail() {
                 },
                 freshnessLine,
               ),
-            e.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   "rounded-xl border border-gray-200 dark:border-gray-700 p-3 bg-slate-50/70 dark:bg-gray-900/40 dark:border dark:bg-slate-950/70",
               },
-              e.createElement(
+              React.createElement(
                 "p",
                 {
                   className:
@@ -2133,30 +2098,30 @@ function PostDetail() {
                 },
                 tr("trustworthy_listing", "Why this listing is trustworthy"),
               ),
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "grid grid-cols-1 sm:grid-cols-3 gap-2" },
                 trustFacts.map((fact) =>
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       key: fact.key,
                       className:
                         "rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 px-2.5 py-2 dark:border dark:bg-slate-900/70",
                     },
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         className:
                           "flex items-center gap-2 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-300",
                       },
                       fact.icon &&
-                        e.createElement(fact.icon, {
+                        React.createElement(fact.icon, {
                           className: `w-3.5 h-3.5 ${fact.tone || "text-gray-400"}`,
                         }),
                       fact.label,
                     ),
-                    e.createElement(
+                    React.createElement(
                       "p",
                       {
                         className:
@@ -2170,17 +2135,16 @@ function PostDetail() {
             ),
           ),
         !isOwnerView &&
-          e.createElement(
+          React.createElement(
             "div",
             { className: "mhub-summary-cta mt-4 space-y-3" },
-            e.createElement(
+            React.createElement(
               "div",
               { className: "grid gap-2" },
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "grid grid-cols-2 gap-2" },
-                e.createElement(
-                  l,
+                React.createElement(Button,
                   {
                     type: "button",
                     onClick: handleContactSeller,
@@ -2188,11 +2152,10 @@ function PostDetail() {
                     title: contactCtaDisabled ? contactCtaReason : undefined,
                     className: `bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 px-3 rounded-xl shadow-sm text-[13px] sm:text-sm whitespace-nowrap dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white dark:sm:text-sm${contactCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                   },
-                  e.createElement(fe, { className: "w-4 h-4 mr-2" }),
+                  React.createElement(fe, { className: "w-4 h-4 mr-2" }),
                   tr("chat_seller", "Chat seller"),
                 ),
-                e.createElement(
-                  l,
+                React.createElement(Button,
                   {
                     type: "button",
                     onClick: handleMakeOffer,
@@ -2201,15 +2164,14 @@ function PostDetail() {
                     title: offerCtaDisabled ? offerCtaReason : undefined,
                     className: `border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900/40 font-semibold h-11 px-3 rounded-xl text-[13px] sm:text-sm whitespace-nowrap dark:border-gray-700 dark:hover:bg-gray-950 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
                   },
-                  e.createElement(ke, { className: "w-4 h-4 mr-2" }),
+                  React.createElement(ke, { className: "w-4 h-4 mr-2" }),
                   tr("make_an_offer", "Make an Offer"),
                 ),
               ),
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "grid grid-cols-2 gap-2" },
-                e.createElement(
-                  l,
+                React.createElement(Button,
                   {
                     variant: "outline",
                     type: "button",
@@ -2217,12 +2179,11 @@ function PostDetail() {
                     className: `h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap dark:sm:text-sm${savedPost ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400" : "border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300"}`,
                   },
                   savedPost
-                    ? e.createElement(Xe, { className: "w-4 h-4 mr-2" })
-                    : e.createElement(We, { className: "w-4 h-4 mr-2" }),
+                    ? React.createElement(Xe, { className: "w-4 h-4 mr-2" })
+                    : React.createElement(We, { className: "w-4 h-4 mr-2" }),
                   savedPost ? tr("saved", "Saved") : tr("save", "Save"),
                 ),
-                e.createElement(
-                  l,
+                React.createElement(Button,
                   {
                     variant: "outline",
                     type: "button",
@@ -2236,12 +2197,12 @@ function PostDetail() {
                     className:
                       "h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap border-gray-200 text-gray-700 dark:border-gray-600 dark:text-gray-300 dark:border-gray-700 dark:text-gray-200",
                   },
-                  e.createElement(Qe, { className: "w-4 h-4 mr-2" }),
+                  React.createElement(Qe, { className: "w-4 h-4 mr-2" }),
                   tr("share", "Share"),
                 ),
               ),
               (contactCtaDisabled || offerCtaDisabled) &&
-                e.createElement(
+                React.createElement(
                   "div",
                   {
                     className:
@@ -2252,8 +2213,7 @@ function PostDetail() {
                     tr("cta_unavailable_hint", "Seller actions are unavailable."),
                 ),
             ),
-            e.createElement(
-              l,
+            React.createElement(Button,
               {
                 variant: "ghost",
                 type: "button",
@@ -2264,61 +2224,85 @@ function PostDetail() {
                 className:
                   "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg text-sm dark:text-gray-300 dark:hover:text-red-300 dark:hover:bg-red-950/20",
               },
-              e.createElement(be, { className: "w-4 h-4 mr-2" }),
+              React.createElement(be, { className: "w-4 h-4 mr-2" }),
               tr("report_listing", "Report this listing"),
             ),
           ),
       ),
     ),
   );
-  return e.createElement(
+  return React.createElement(
     "div",
     {
       id: "top",
       className:
         "mhub-post-detail min-h-screen mhub-premium-page bg-gradient-to-b from-slate-100 via-white to-slate-50 dark:bg-gradient-to-b",
     },
-    e.createElement(
+    /* ── Sticky header: Back + Section tabs + Share/Save ── */
+    React.createElement(
       "div",
       {
         className:
-          "sticky top-0 z-50 mhub-premium-bar shadow-sm",
+          "sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border-b border-gray-200/50 dark:border-gray-700/50",
       },
-      e.createElement(
+      React.createElement(
         "div",
         {
           className:
-            "w-full mx-auto px-4 py-3 flex items-center justify-between page-shell page-pad mhub-post-header",
+            "w-full mx-auto px-3 py-2 flex items-center gap-2 page-shell page-pad mhub-post-header",
         },
-        e.createElement(
-          "div",
-          { className: "flex items-center gap-3 min-w-0 flex-1" },
-          e.createElement(
-            l,
-            {
-              variant: "ghost",
-              onClick: () => navigateBack(U, backTarget),
-              className:
-                "inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-200/60 dark:border-gray-600/60 px-3 py-1.5 flex-shrink-0 backdrop-blur-sm transition-all",
-            },
-            e.createElement($, { className: "w-4 h-4" }),
-            e.createElement("span", { className: "text-sm font-medium" }, tr("back", "Back")),
-          ),
-          e.createElement(
-            "span",
-            {
-              className:
-                "hidden sm:inline text-xs text-gray-500 dark:text-gray-400 max-w-[240px] truncate dark:text-gray-300",
-            },
-            backContextLabel,
-          ),
+        /* Back button */
+        React.createElement(Button,
+          {
+            variant: "ghost",
+            onClick: () => navigateBack(U, backTarget),
+            className:
+              "inline-flex items-center gap-1.5 rounded-full bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 shadow-sm border border-gray-200/60 dark:border-gray-600/60 px-2.5 py-1.5 flex-shrink-0 backdrop-blur-sm transition-all",
+            "aria-label": tr("back", "Back"),
+          },
+          React.createElement($, { className: "w-4 h-4" }),
         ),
-        !isOwnerView &&
-          e.createElement(
+        /* Section navigation tabs */
+        sectionNavItems.length > 1 &&
+          React.createElement(
             "div",
-            { className: "flex items-center gap-1 relative flex-shrink-0" },
-            e.createElement(
-              l,
+            {
+              ref: sectionNavRef,
+              className: "flex-1 overflow-x-auto scrollbar-hide min-w-0",
+            },
+            React.createElement(
+              "div",
+              { className: "flex flex-nowrap gap-1 px-0.5" },
+              sectionNavItems.map((item) =>
+                React.createElement(
+                  "button",
+                  {
+                    key: item.key,
+                    type: "button",
+                    onClick: (ev) => {
+                      ev.preventDefault();
+                      const el = document.getElementById(item.id);
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        setActiveSection(item.id);
+                      }
+                    },
+                    className:
+                      activeSection === item.id
+                        ? "inline-flex items-center px-3 py-1.5 rounded-full bg-blue-600 text-white text-[11px] font-bold shadow-md shadow-blue-500/25 whitespace-nowrap transition-all duration-200"
+                        : "inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-200 transition-all duration-200 whitespace-nowrap",
+                  },
+                  item.label,
+                ),
+              ),
+            ),
+          ),
+        /* Compact action buttons */
+        React.createElement(
+          "div",
+          { className: "flex items-center gap-1 flex-shrink-0" },
+          !isOwnerView &&
+            React.createElement(Button,
               {
                 variant: "ghost",
                 size: "icon",
@@ -2327,121 +2311,67 @@ function PostDetail() {
                 "aria-label": savedPost
                   ? tr("remove_from_saved", "Remove from saved")
                   : tr("save_post", "Save post"),
-                title: savedPost
-                  ? tr("remove_from_saved", "Remove from saved")
-                  : tr("save_post", "Save post"),
-                className: `rounded-full w-10 h-10 ${savedPost ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30" : "text-gray-500 dark:text-gray-400"}`,
+                className: `rounded-full w-8 h-8 ${savedPost ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30" : "text-gray-500 dark:text-gray-400"}`,
               },
               savedPost
-                ? e.createElement(Xe, { className: "w-5 h-5" })
-                : e.createElement(We, { className: "w-5 h-5" }),
+                ? React.createElement(Xe, { className: "w-4 h-4" })
+                : React.createElement(We, { className: "w-4 h-4" }),
             ),
-            e.createElement(
-              l,
-              {
-                variant: "ghost",
-                size: "icon",
-                onClick: () => setShowMenu((t) => !t),
-                type: "button",
-                "aria-label": tr("more_options", "More options"),
-                title: tr("more_options", "More options"),
-                className: "rounded-full w-10 h-10 text-gray-500 dark:text-gray-400 dark:text-gray-300",
+          React.createElement(Button,
+            {
+              variant: "ghost",
+              size: "icon",
+              onClick: () => {
+                if (!J) return;
+                const t = buildShareUrl(J);
+                setShareUrl(t);
+                setShareDialogOpen(!0);
+                re.post(`/posts/${J}/share`).catch(() => {});
               },
-              e.createElement(Je, { className: "w-5 h-5" }),
-            ),
-            showMenu &&
-              e.createElement(
-                "div",
-                {
-                  className:
-                    "absolute right-0 top-11 z-30 w-44 rounded-xl border border-gray-200 dark:border-gray-700 mhub-premium-surface shadow-lg p-1 dark:border",
-                },
-                e.createElement(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => {
-                      if (!J) return;
-                      const t = buildShareUrl(J);
-                      setShareUrl(t),
-                        setShareDialogOpen(!0),
-                        setShowMenu(!1),
-                        re.post(`/posts/${J}/share`).catch(() => {});
-                    },
-                    className:
-                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
-                  },
-                  tr("share_link", "Share link"),
-                ),
-                e.createElement(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => {
-                      toggleSavedPost(), setShowMenu(!1);
-                    },
-                    className:
-                      "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
-                  },
-                  savedPost
-                    ? tr("remove_from_saved", "Remove from saved")
-                    : tr("save_post", "Save post"),
-                ),
-                e.createElement(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => {
-                      setShowMenu(!1),
-                        U("/complaints", { state: { postId: J } });
-                    },
-                    className:
-                      "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
-                  },
-                  tr("report", "Report"),
-                ),
-              ),
+              type: "button",
+              "aria-label": tr("share", "Share"),
+              className: "rounded-full w-8 h-8 text-gray-500 dark:text-gray-400",
+            },
+            React.createElement(Qe, { className: "w-4 h-4" }),
           ),
+        ),
       ),
-      e.createElement(
+    ),
+    /* ── Main content ── */
+    React.createElement(
+      "div",
+      { className: "w-full mx-auto px-4 py-4 space-y-5 page-shell page-pad mhub-post-shell" },
+      React.createElement(
         "div",
-        { className: "w-full mx-auto px-4 py-4 space-y-5 page-shell page-pad mhub-post-shell" },
-        sectionNavNode,
-        e.createElement(
-          "div",
-          { className: "mhub-post-body" },
-          e.createElement(
+        { className: "mhub-post-body" },
+          React.createElement(
             "div",
             { className: "mhub-post-media" },
             mediaCard,
           ),
-          e.createElement(
+          React.createElement(
             "aside",
             { className: "mhub-post-rail" },
             summaryCard,
             isOwnerView &&
-              e.createElement(PostBoostPanel, { key: "boost-panel", postId: J || d }),
-            e.createElement(
-          g,
+              React.createElement(PostBoostPanel, { key: "boost-panel", postId: J || d }),
+            React.createElement(Card,
           {
             className:
               "mhub-post-section-card mhub-premium-surface rounded-2xl scroll-mt-24",
             id: "seller",
           },
-          e.createElement(
-            p,
+          React.createElement(CardContent,
             { className: "p-5" },
-            e.createElement(
+            React.createElement(
               "div",
               { className: "flex items-center gap-4" },
-              e.createElement(
-                ae,
+              React.createElement(Avatar,
                 {
                   className:
                     "h-14 w-14 ring-4 ring-white dark:ring-gray-600 shadow-lg",
                 },
-                e.createElement(
-                  se,
+                React.createElement(AvatarFallback,
                   {
                     className:
                       "bg-gradient-to-br from-blue-500 to-purple-600 text-white text-lg font-bold dark:bg-gradient-to-br dark:text-white",
@@ -2449,20 +2379,19 @@ function PostDetail() {
                   (o.name || "S").charAt(0).toUpperCase(),
                 ),
               ),
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "flex-1" },
-                e.createElement(
+                React.createElement(
                   "div",
                   { className: "flex items-center gap-2 mb-0.5" },
-                  e.createElement(
+                  React.createElement(
                     "h3",
                     { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
                     o.name,
                   ),
                   sellerTrustLabel
-                    ? e.createElement(
-                        te,
+                    ? React.createElement(Badge,
                         {
                           className: `text-[10px] px-2 py-1 leading-none ${sellerTrustBadgeClass}`,
                           title:
@@ -2475,8 +2404,7 @@ function PostDetail() {
                       )
                     : null,
                   sellerFrozen
-                    ? e.createElement(
-                        te,
+                    ? React.createElement(Badge,
                         {
                           className:
                             "text-[10px] px-2 py-1 leading-none bg-rose-600 text-white border-0",
@@ -2484,8 +2412,7 @@ function PostDetail() {
                         tr("seller_frozen", "Seller Frozen"),
                       )
                     : sellerUnderReview
-                      ? e.createElement(
-                          te,
+                      ? React.createElement(Badge,
                           {
                             className:
                               "text-[10px] px-2 py-1 leading-none bg-amber-500 text-white border-0",
@@ -2494,39 +2421,39 @@ function PostDetail() {
                         )
                       : null,
                   S
-                    ? e.createElement(ye, {
+                    ? React.createElement(ye, {
                         className: "w-4 h-4 text-green-500 dark:text-green-300",
                       })
-                    : e.createElement(Ne, {
+                    : React.createElement(BargainActions, {
                         className: "w-4 h-4 text-gray-400 dark:text-gray-300",
                       }),
                 ),
-                e.createElement(
+                React.createElement(
                   "p",
                   { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                   S
                     ? tr("verified_profile", "Verified profile")
                     : tr("verification_pending", "Verification pending"),
                 ),
-                e.createElement(
+                React.createElement(
                   "div",
                   {
                     className:
                       "flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1 dark:text-gray-200",
                   },
                   _ > 0 &&
-                    e.createElement(ue, {
+                    React.createElement(ue, {
                       className: "w-4 h-4 text-amber-400 fill-current dark:text-amber-200",
                     }),
-                  e.createElement(
+                  React.createElement(
                     "span",
                     { className: "font-semibold" },
                     _ > 0
                       ? _.toFixed(1)
                       : tr("no_rating_yet", "No rating yet"),
                   ),
-                  e.createElement("span", null, "\u2022"),
-                  e.createElement(
+                  React.createElement("span", null, "\u2022"),
+                  React.createElement(
                     "span",
                     null,
                     tr("id_label", "ID:"),
@@ -2534,21 +2461,21 @@ function PostDetail() {
                     o.id,
                   ),
                 ),
-                e.createElement(
+                React.createElement(
                   "div",
                   {
                     className:
                       "mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-gray-600 dark:text-gray-300 dark:text-gray-200",
                   },
                   sellerStats.map((t) =>
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         key: t.key,
                         className:
                           "rounded-lg bg-white/80 dark:bg-gray-900/40 px-2.5 py-2 dark:bg-slate-900/80",
                       },
-                      e.createElement(
+                      React.createElement(
                         "p",
                         {
                           className:
@@ -2556,7 +2483,7 @@ function PostDetail() {
                         },
                         t.label,
                       ),
-                      e.createElement(
+                      React.createElement(
                         "p",
                         {
                           className:
@@ -2568,16 +2495,46 @@ function PostDetail() {
                   ),
                 ),
                 sellerTrustUserId &&
-                  e.createElement(
+                  React.createElement(
                     "div",
-                    { className: "mt-4 flex flex-wrap gap-2" },
-                    e.createElement(
-                      R,
+                    { className: "mt-4" },
+                    React.createElement(Link,
                       { to: `/centre/${sellerTrustUserId}` },
-                      e.createElement(
-                        l,
-                        { variant: "outline", className: "gap-2" },
-                        tr("view_centre_page", "View CentrePage"),
+                      React.createElement(
+                        "div",
+                        {
+                          className:
+                            "group flex items-center gap-3 rounded-xl border border-purple-200 dark:border-purple-800/50 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 p-3 hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 transition-all cursor-pointer",
+                        },
+                        React.createElement(
+                          "div",
+                          {
+                            className:
+                              "w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-purple-500/20 flex-shrink-0",
+                          },
+                          React.createElement(ve, { className: "w-4.5 h-4.5 text-white" }),
+                        ),
+                        React.createElement(
+                          "div",
+                          { className: "flex-1 min-w-0" },
+                          React.createElement(
+                            "p",
+                            { className: "text-sm font-semibold text-gray-900 dark:text-white" },
+                            tr("visit_seller_farm", "Visit Seller's Farm Page"),
+                          ),
+                          React.createElement(
+                            "p",
+                            { className: "text-[11px] text-gray-500 dark:text-gray-400" },
+                            tr("browse_all_listings", "Browse all listings & reviews from this seller"),
+                          ),
+                        ),
+                        React.createElement(
+                          "div",
+                          { className: "text-purple-500 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" },
+                          React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", className: "w-4 h-4", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 2 },
+                            React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M9 5l7 7-7 7" }),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -2586,40 +2543,36 @@ function PostDetail() {
           ),
         ),
         !isOwnerView &&
-          e.createElement(
-            g,
+          React.createElement(Card,
             {
               className:
                 "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl mhub-ready-cta-card dark:border-0",
             },
-            e.createElement(
-              p,
+            React.createElement(CardContent,
               { className: "p-5 space-y-4" },
-              e.createElement(
+              React.createElement(
                 "div",
                 {
                   className:
                     "flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200",
                 },
-                e.createElement(fe, { className: "w-4 h-4 text-emerald-500 dark:text-emerald-300" }),
+                React.createElement(fe, { className: "w-4 h-4 text-emerald-500 dark:text-emerald-300" }),
                 tr("ready_to_buy", "Ready to buy?"),
               ),
-              e.createElement(
-                l,
+              React.createElement(Button,
                 {
                   onClick: handleContactSeller,
                   disabled: contactCtaDisabled,
                   title: contactCtaDisabled ? contactCtaReason : undefined,
                   className: `w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 text-base rounded-xl shadow-lg hover:shadow-xl transition-all dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
-                e.createElement(fe, { className: "w-6 h-6 mr-3" }),
+                React.createElement(fe, { className: "w-6 h-6 mr-3" }),
                 tr(
                   "interested_contact_seller",
                   "I'm Interested - Contact Seller",
                 ),
               ),
-              e.createElement(
-                l,
+              React.createElement(Button,
                 {
                   onClick: handleMakeOffer,
                   variant: "outline",
@@ -2627,10 +2580,10 @@ function PostDetail() {
                   title: offerCtaDisabled ? offerCtaReason : undefined,
                   className: `w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 font-bold py-4 text-base rounded-xl shadow-lg transition-all dark:bg-gradient-to-r dark:text-gray-100 ${offerCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
                 },
-                e.createElement(ke, { className: "w-5 h-5 mr-2" }),
+                React.createElement(ke, { className: "w-5 h-5 mr-2" }),
                 tr("make_an_offer", "Make an Offer"),
               ),
-              e.createElement(
+              React.createElement(
                 "p",
                 {
                   className:
@@ -2641,14 +2594,13 @@ function PostDetail() {
                   "Share your contact details securely with only this seller",
                 ),
               ),
-              e.createElement(
+              React.createElement(
                 "div",
                 {
                   className:
                     "pt-2 border-t border-slate-200/70 dark:border-slate-700/70 dark:border-t",
                 },
-                e.createElement(
-                  l,
+                React.createElement(Button,
                   {
                     variant: "ghost",
                     type: "button",
@@ -2659,15 +2611,14 @@ function PostDetail() {
                     className:
                       "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg text-sm dark:text-gray-300 dark:hover:text-red-300 dark:hover:bg-red-950/20",
                   },
-                  e.createElement(be, { className: "w-4 h-4 mr-2" }),
+                  React.createElement(be, { className: "w-4 h-4 mr-2" }),
                   tr("report_listing", "Report this listing"),
                 ),
               ),
             ),
           ),
         isOwnerView &&
-          e.createElement(
-            l,
+          React.createElement(Button,
             {
               variant: "ghost",
               type: "button",
@@ -2678,23 +2629,23 @@ function PostDetail() {
               className:
                 "w-full text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-3 rounded-xl dark:text-gray-300 dark:hover:text-red-300 dark:hover:bg-red-950/20",
             },
-            e.createElement(be, { className: "w-4 h-4 mr-2" }),
+            React.createElement(be, { className: "w-4 h-4 mr-2" }),
             tr("report_listing", "Report this listing"),
           ),
           isOwnerView &&
-            e.createElement(
+            React.createElement(
             "div",
             {
               className:
                 "rounded-2xl border border-slate-200 mhub-premium-surface p-4 shadow-lg space-y-4 dark:border dark:border-slate-700",
             },
-            e.createElement(
+            React.createElement(
               "div",
               { className: "flex items-center justify-between" },
-              e.createElement(
+              React.createElement(
                 "div",
                 null,
-                e.createElement(
+                React.createElement(
                   "h3",
                   {
                     className:
@@ -2702,7 +2653,7 @@ function PostDetail() {
                   },
                   tr("lead_activity", "Lead activity"),
                 ),
-                e.createElement(
+                React.createElement(
                   "p",
                   { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                   tr(
@@ -2711,7 +2662,7 @@ function PostDetail() {
                   ),
                 ),
               ),
-              e.createElement(
+              React.createElement(
                 "span",
                 {
                   className:
@@ -2723,35 +2674,35 @@ function PostDetail() {
               ),
             ),
             ownerInsightsLoading
-              ? e.createElement(
+              ? React.createElement(
                   "p",
                   { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                   tr("loading_leads", "Loading lead activity..."),
                 )
               : ownerInsightsErrorMessage
-                ? e.createElement(
+                ? React.createElement(
                     "p",
                     { className: "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     ownerInsightsErrorMessage,
                   )
-                : e.createElement(
+                : React.createElement(
                     "div",
                     { className: "grid gap-3 md:grid-cols-3" },
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         className:
                           "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-950",
                       },
-                      e.createElement(
+                      React.createElement(
                         "div",
                         { className: "flex items-center justify-between" },
-                        e.createElement(
+                        React.createElement(
                           "p",
                           { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
                           tr("interested_users", "Interested"),
                         ),
-                        e.createElement(
+                        React.createElement(
                           "span",
                           {
                             className:
@@ -2761,21 +2712,21 @@ function PostDetail() {
                         ),
                       ),
                       ownerInquiries.length > 0
-                        ? e.createElement(
+                        ? React.createElement(
                             "div",
                             {
                               className:
                                 "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
                             },
                             ownerInquiries.map((t, s) =>
-                              e.createElement(
+                              React.createElement(
                                 "div",
                                 {
                                   key: t.inquiry_id || t.buyer_id || s,
                                   className:
                                     "flex items-center justify-between text-slate-600 dark:text-slate-300 dark:text-slate-200",
                                 },
-                                e.createElement(
+                                React.createElement(
                                   "span",
                                   null,
                                   t.buyer_name ||
@@ -2784,7 +2735,7 @@ function PostDetail() {
                                     tr("unknown", "Unknown"),
                                 ),
                                 t.phone
-                                  ? e.createElement(
+                                  ? React.createElement(
                                       "span",
                                       { className: "text-[11px]" },
                                       t.phone,
@@ -2793,7 +2744,7 @@ function PostDetail() {
                               ),
                             ),
                           )
-                        : e.createElement(
+                        : React.createElement(
                             "p",
                             {
                               className:
@@ -2802,21 +2753,21 @@ function PostDetail() {
                             tr("no_leads_yet", "No interactions yet."),
                           ),
                     ),
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         className:
                           "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-950",
                       },
-                      e.createElement(
+                      React.createElement(
                         "div",
                         { className: "flex items-center justify-between" },
-                        e.createElement(
+                        React.createElement(
                           "p",
                           { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
                           tr("detail_views", "View details"),
                         ),
-                        e.createElement(
+                        React.createElement(
                           "span",
                           {
                             className:
@@ -2826,21 +2777,21 @@ function PostDetail() {
                         ),
                       ),
                       ownerViewers.length > 0
-                        ? e.createElement(
+                        ? React.createElement(
                             "div",
                             {
                               className:
                                 "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
                             },
                             ownerViewers.map((t, s) =>
-                              e.createElement(
+                              React.createElement(
                                 "div",
                                 {
                                   key: t.viewer_id || t.user_id || s,
                                   className:
                                     "flex items-center justify-between text-slate-600 dark:text-slate-300 dark:text-slate-200",
                                 },
-                                e.createElement(
+                                React.createElement(
                                   "span",
                                   null,
                                   t.viewer_name ||
@@ -2850,7 +2801,7 @@ function PostDetail() {
                                     tr("unknown", "Unknown"),
                                 ),
                                 t.viewed_at
-                                  ? e.createElement(
+                                  ? React.createElement(
                                       "span",
                                       { className: "text-[11px]" },
                                       I(t.viewed_at),
@@ -2859,7 +2810,7 @@ function PostDetail() {
                               ),
                             ),
                           )
-                        : e.createElement(
+                        : React.createElement(
                             "p",
                             {
                               className:
@@ -2868,21 +2819,21 @@ function PostDetail() {
                             tr("no_leads_yet", "No interactions yet."),
                           ),
                     ),
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         className:
                           "rounded-xl border border-slate-200 p-3 bg-slate-50 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-950",
                       },
-                      e.createElement(
+                      React.createElement(
                         "div",
                         { className: "flex items-center justify-between" },
-                        e.createElement(
+                        React.createElement(
                           "p",
                           { className: "text-xs text-slate-500 dark:text-slate-400 uppercase dark:text-slate-300" },
                           tr("lead_users", "Leads"),
                         ),
-                        e.createElement(
+                        React.createElement(
                           "span",
                           {
                             className:
@@ -2892,27 +2843,27 @@ function PostDetail() {
                         ),
                       ),
                       ownerLeadList.length > 0
-                        ? e.createElement(
+                        ? React.createElement(
                             "div",
                             {
                               className:
                                 "mt-2 space-y-1 text-xs max-h-32 overflow-y-auto pr-1",
                             },
                             ownerLeadList.map((t, s) =>
-                              e.createElement(
+                              React.createElement(
                                 "div",
                                 {
                                   key: t.id || s,
                                   className:
                                     "flex items-center justify-between text-slate-600 dark:text-slate-300 dark:text-slate-200",
                                 },
-                                e.createElement(
+                                React.createElement(
                                   "span",
                                   null,
                                   t.name || tr("unknown", "Unknown"),
                                 ),
                                 t.types?.length
-                                  ? e.createElement(
+                                  ? React.createElement(
                                       "span",
                                       { className: "text-[11px]" },
                                       t.types.join(", "),
@@ -2921,7 +2872,7 @@ function PostDetail() {
                               ),
                             ),
                           )
-                        : e.createElement(
+                        : React.createElement(
                             "p",
                             {
                               className:
@@ -2933,44 +2884,42 @@ function PostDetail() {
                   ),
           ),
           ),
-          e.createElement(
+          React.createElement(
             "div",
             { className: "mhub-post-main" },
         listingDetails.length > 0 &&
-          e.createElement(
-            g,
+          React.createElement(Card,
             {
               className:
                 "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
               id: "listing-details",
             },
-            e.createElement(
-              p,
+            React.createElement(CardContent,
               { className: "p-5" },
               renderSectionHeader("listing-details", xe, tr("listing_details", "Listing details"), "mb-3"),
               !collapsedSections["listing-details"] &&
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" },
                 listingDetails.map((t) =>
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       key: t.key,
                       className:
                         "rounded-xl border border-gray-200 dark:border-gray-700 p-3 dark:border",
                     },
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         className:
                           "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
                       },
                       t.icon &&
-                        e.createElement(t.icon, { className: "w-3.5 h-3.5" }),
+                        React.createElement(t.icon, { className: "w-3.5 h-3.5" }),
                       t.label,
                     ),
-                    e.createElement(
+                    React.createElement(
                       "p",
                       {
                         className:
@@ -2984,40 +2933,38 @@ function PostDetail() {
             ),
           ),
         keyDetails.length > 0 &&
-          e.createElement(
-            g,
+          React.createElement(Card,
             {
               className:
                 "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
               id: "key-details",
             },
-            e.createElement(
-              p,
+            React.createElement(CardContent,
               { className: "p-5" },
               renderSectionHeader("key-details", ve, tr("key_details", "Key details"), "mb-3"),
               !collapsedSections["key-details"] &&
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "divide-y divide-gray-100 dark:divide-gray-800" },
                 keyDetails.map((item) =>
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       key: item.key,
                       className:
                         "flex items-center justify-between py-3 px-1",
                     },
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         className:
                           "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
                       },
                       item.icon &&
-                        e.createElement(item.icon, { className: "w-3.5 h-3.5" }),
+                        React.createElement(item.icon, { className: "w-3.5 h-3.5" }),
                       item.label,
                     ),
-                    e.createElement(
+                    React.createElement(
                       "p",
                       {
                         className:
@@ -3031,30 +2978,28 @@ function PostDetail() {
             ),
           ),
         specs.length > 0 &&
-          e.createElement(
-            g,
+          React.createElement(Card,
             {
               className:
                 "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
               id: "specs",
             },
-            e.createElement(
-              p,
+            React.createElement(CardContent,
               { className: "p-5" },
               renderSectionHeader("specs", xe, tr("specifications", "Specifications"), "mb-3"),
               !collapsedSections["specs"] &&
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "divide-y divide-gray-100 dark:divide-gray-800" },
                 specs.map((spec) =>
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       key: spec.key,
                       className:
                         "flex items-center justify-between py-3 px-1",
                     },
-                    e.createElement(
+                    React.createElement(
                       "p",
                       {
                         className:
@@ -3062,7 +3007,7 @@ function PostDetail() {
                       },
                       spec.label,
                     ),
-                    e.createElement(
+                    React.createElement(
                       "p",
                       {
                         className:
@@ -3075,31 +3020,29 @@ function PostDetail() {
               ),
             ),
           ),
-        e.createElement(
-          g,
+        React.createElement(Card,
           {
             className:
               "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
             id: "location",
           },
-          e.createElement(
-            p,
+          React.createElement(CardContent,
             { className: "p-5 space-y-3" },
             renderSectionHeader("location", pe, tr("location_meetup", "Location & meetup")),
             !collapsedSections["location"] &&
-            e.createElement(
-              e.Fragment,
+            React.createElement(
+              React.Fragment,
               null,
-            e.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-3",
               },
-              e.createElement(
+              React.createElement(
                 "div",
                 null,
-                e.createElement(
+                React.createElement(
                   "p",
                   {
                     className:
@@ -3108,7 +3051,7 @@ function PostDetail() {
                   locationDisplay,
                 ),
                 hasCoords &&
-                  e.createElement(
+                  React.createElement(
                     "p",
                     { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     tr("coordinates", "Coordinates"),
@@ -3119,10 +3062,9 @@ function PostDetail() {
                   ),
               ),
               mapsUrl &&
-                e.createElement(
-                  l,
+                React.createElement(Button,
                   { variant: "outline", asChild: true },
-                  e.createElement(
+                  React.createElement(
                     "a",
                     {
                       href: mapsUrl,
@@ -3133,7 +3075,7 @@ function PostDetail() {
                   ),
                 ),
             ),
-            e.createElement(
+            React.createElement(
               "p",
               { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
               locationHint,
@@ -3141,28 +3083,26 @@ function PostDetail() {
             ),
           ),
         ),
-        e.createElement(
-          g,
+        React.createElement(Card,
           {
             className:
               "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
             id: "trust-safety",
           },
-          e.createElement(
-            p,
+          React.createElement(CardContent,
             { className: "p-5" },
             renderSectionHeader("trust-safety", Ne, tr("trust_safety", "Trust & Safety"), "mb-4"),
             !collapsedSections["trust-safety"] &&
-            e.createElement(
-              e.Fragment,
+            React.createElement(
+              React.Fragment,
               null,
-            e.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   "rounded-xl border border-emerald-100 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-900/20 p-3 mb-4 dark:border dark:border-emerald-600/40 dark:bg-emerald-950/70",
               },
-              e.createElement(
+              React.createElement(
                 "p",
                 {
                   className:
@@ -3170,28 +3110,28 @@ function PostDetail() {
                 },
                 tr("safety_at_a_glance", "Safety at a glance"),
               ),
-              e.createElement(
+              React.createElement(
                 "div",
                 { className: "grid grid-cols-1 sm:grid-cols-3 gap-3" },
                 safetyHighlights.map((tip) =>
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       key: tip.key,
                       className:
                         "mhub-safety-tile rounded-lg border border-emerald-200/60 dark:border-emerald-800/60 bg-white/80 dark:bg-gray-900/40 p-2.5 dark:border dark:border-emerald-600/60 dark:bg-slate-900/80",
                     },
-                    e.createElement(
+                    React.createElement(
                       "div",
                       {
                         className:
                           "mhub-safety-title flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-200 dark:text-emerald-300",
                       },
                       tip.icon &&
-                        e.createElement(tip.icon, { className: "w-3.5 h-3.5" }),
+                        React.createElement(tip.icon, { className: "w-3.5 h-3.5" }),
                       tip.label,
                     ),
-                    e.createElement(
+                    React.createElement(
                       "p",
                       {
                         className:
@@ -3203,23 +3143,23 @@ function PostDetail() {
                 ),
               ),
             ),
-            e.createElement(
+            React.createElement(
               "div",
               { className: "grid grid-cols-1 md:grid-cols-2 gap-3" },
               K.map((t) =>
-                e.createElement(
+                React.createElement(
                   "div",
                   {
                     key: t.key,
                     className:
                       "rounded-xl border border-gray-200 dark:border-gray-700 p-3 dark:border",
                   },
-                  e.createElement(
+                  React.createElement(
                     "p",
                     { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     t.label,
                   ),
-                  e.createElement(
+                  React.createElement(
                     "p",
                     {
                       className:
@@ -3227,7 +3167,7 @@ function PostDetail() {
                     },
                     t.value,
                   ),
-                  e.createElement(
+                  React.createElement(
                     "p",
                     {
                       className:
@@ -3238,13 +3178,13 @@ function PostDetail() {
                 ),
               ),
             ),
-            e.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   "mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-3 dark:bg-amber-950/20 dark:border dark:border-amber-600/40",
               },
-              e.createElement(
+              React.createElement(
                 "p",
                 { className: "text-xs text-amber-800 dark:text-amber-300 dark:text-amber-200" },
                 tr(
@@ -3256,40 +3196,38 @@ function PostDetail() {
             ),
           ),
         ),
-        e.createElement(
-          g,
+        React.createElement(Card,
           {
             className:
               "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
             id: "description",
           },
-          e.createElement(
-            p,
+          React.createElement(CardContent,
             { className: "p-5" },
             renderSectionHeader("description", x, tr("description", "Description"), "mb-3"),
             !collapsedSections["description"] &&
-            e.createElement(
-              e.Fragment,
+            React.createElement(
+              React.Fragment,
               null,
-            e.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   descriptionContainerClass,
               },
               hasDescription
-                ? e.createElement(
-                    e.Fragment,
+                ? React.createElement(
+                    React.Fragment,
                     null,
                     descriptionParagraphs.map((t, s) =>
-                      e.createElement("p", { key: `desc-${s}` }, t),
+                      React.createElement("p", { key: `desc-${s}` }, t),
                     ),
                     descriptionBullets.length > 0 &&
-                      e.createElement(
+                      React.createElement(
                         "ul",
                         { className: "list-disc pl-5 space-y-1" },
                         descriptionBullets.map((t, s) =>
-                          e.createElement(
+                          React.createElement(
                             "li",
                             { key: `desc-bullet-${s}` },
                             t,
@@ -3297,7 +3235,7 @@ function PostDetail() {
                         ),
                       ),
                   )
-                : e.createElement(
+                : React.createElement(
                     "p",
                     { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                     tr(
@@ -3307,14 +3245,14 @@ function PostDetail() {
                   ),
               descriptionIsLong &&
                 !descriptionExpanded &&
-                e.createElement("div", {
+                React.createElement("div", {
                   className:
                     "pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white dark:from-gray-800 to-transparent dark:bg-gradient-to-t",
                   "aria-hidden": "true",
                 }),
             ),
             descriptionIsLong &&
-              e.createElement(
+              React.createElement(
                 "button",
                 {
                   type: "button",
@@ -3329,27 +3267,25 @@ function PostDetail() {
             ),
           ),
         ),
-        e.createElement(
-          g,
+        React.createElement(Card,
           {
             className:
               "mhub-post-section-card mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
             id: "negotiation",
           },
-          e.createElement(
-            p,
+          React.createElement(CardContent,
             { className: "p-5" },
-            e.createElement(
+            React.createElement(
               "div",
               { className: "flex items-center gap-2 mb-3" },
-              e.createElement(ke, { className: "w-5 h-5 text-emerald-500 dark:text-emerald-300" }),
-              e.createElement(
+              React.createElement(ke, { className: "w-5 h-5 text-emerald-500 dark:text-emerald-300" }),
+              React.createElement(
                 "h3",
                 { className: "font-bold text-gray-900 dark:text-white dark:text-gray-100" },
                 tr("negotiate_price", "Negotiate & bargain"),
               ),
             ),
-            e.createElement(ne, {
+            React.createElement(BargainActions, {
               post: r,
               currentUser: {
                 userId: currentUserId,
@@ -3360,41 +3296,39 @@ function PostDetail() {
           ),
         ),
         !isOwnerView &&
-          e.createElement(
+          React.createElement(
             "div",
             { className: "space-y-5" },
             sponsoredSectionVisible &&
-              e.createElement(
-                g,
+              React.createElement(Card,
                 {
                   className:
                     "mhub-premium-surface border-0 shadow-lg rounded-2xl scroll-mt-24 dark:border-0",
                   id: "sponsored",
                 },
-                e.createElement(
-                  p,
+                React.createElement(CardContent,
                   { className: "p-5" },
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       className:
                         "flex flex-wrap items-center justify-between gap-3 mb-4",
                     },
-                    e.createElement(
+                    React.createElement(
                       "div",
                       null,
-                      e.createElement(
+                      React.createElement(
                         "h3",
                         {
                           className:
                             "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-gray-100",
                         },
-                        e.createElement(xe, {
+                        React.createElement(xe, {
                           className: "w-5 h-5 text-blue-600 dark:text-blue-300",
                         }),
                         tr("sponsored_listings", "Sponsored listings"),
                       ),
-                      e.createElement(
+                      React.createElement(
                         "p",
                         { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                         tr(
@@ -3403,18 +3337,17 @@ function PostDetail() {
                         ),
                       ),
                     ),
-                    e.createElement(
+                    React.createElement(
                       "div",
                       { className: "flex items-center gap-2" },
-                      e.createElement(
-                        te,
+                      React.createElement(Badge,
                         {
                           className:
                             "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 dark:bg-blue-950/20",
                         },
                         tr("ad", "Ad"),
                       ),
-                      e.createElement(
+                      React.createElement(
                         "span",
                         {
                           className:
@@ -3428,19 +3361,19 @@ function PostDetail() {
                       ),
                     ),
                   ),
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       className:
                         "mb-4 inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs text-blue-700 dark:text-blue-300 dark:bg-blue-950/20",
                     },
-                    e.createElement(xe, { className: "w-3.5 h-3.5" }),
+                    React.createElement(xe, { className: "w-3.5 h-3.5" }),
                     sponsoredReason,
                   ),
-                  e.createElement(
+                  React.createElement(
                     "div",
                     { className: "mt-2" },
-                    e.createElement(SponsoredListings, {
+                    React.createElement(SponsoredListings, {
                       key: "sponsored",
                       excludePostId: J,
                       category: postCategoryName,
@@ -3453,37 +3386,35 @@ function PostDetail() {
                 ),
               ),
             premiumSectionVisible &&
-              e.createElement(
-                g,
+              React.createElement(Card,
                 {
                   className:
                     "mhub-premium-surface rounded-2xl scroll-mt-24",
                   id: "premium",
                 },
-                e.createElement(
-                  p,
+                React.createElement(CardContent,
                   { className: "p-5" },
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       className:
                         "flex flex-wrap items-center justify-between gap-3 mb-4",
                     },
-                    e.createElement(
+                    React.createElement(
                       "div",
                       null,
-                      e.createElement(
+                      React.createElement(
                         "h3",
                         {
                           className:
                             "text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 dark:text-gray-100",
                         },
-                        e.createElement(ve, {
+                        React.createElement(ve, {
                           className: "w-5 h-5 text-purple-600 dark:text-purple-300",
                         }),
                         tr("premium_recommendations", "Premium listings"),
                       ),
-                      e.createElement(
+                      React.createElement(
                         "p",
                         { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
                         tr(
@@ -3492,18 +3423,17 @@ function PostDetail() {
                         ),
                       ),
                     ),
-                    e.createElement(
+                    React.createElement(
                       "div",
                       { className: "flex items-center gap-2" },
-                      e.createElement(
-                        te,
+                      React.createElement(Badge,
                         {
                           className:
                             "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 dark:bg-purple-950/20",
                         },
                         tr("premium", "Premium"),
                       ),
-                      e.createElement(
+                      React.createElement(
                         "span",
                         {
                           className:
@@ -3517,19 +3447,19 @@ function PostDetail() {
                       ),
                     ),
                   ),
-                  e.createElement(
+                  React.createElement(
                     "div",
                     {
                       className:
                         "mb-4 inline-flex items-center gap-2 rounded-full bg-purple-50 dark:bg-purple-900/30 px-3 py-1 text-xs text-purple-700 dark:text-purple-300 dark:bg-purple-950/20",
                     },
-                    e.createElement(ve, { className: "w-3.5 h-3.5" }),
+                    React.createElement(ve, { className: "w-3.5 h-3.5" }),
                     premiumReason,
                   ),
-                  e.createElement(
+                  React.createElement(
                     "div",
                     { className: "mt-2" },
-                    e.createElement(PremiumRecommendations, {
+                    React.createElement(PremiumRecommendations, {
                       key: "premium-recs",
                       postId: J,
                       category: postCategoryName,
@@ -3543,10 +3473,10 @@ function PostDetail() {
               ),
           ),
         ),
-        e.createElement(
+        React.createElement(
           "div",
           { className: "flex justify-center" },
-          e.createElement(
+          React.createElement(
             "a",
             {
               href: "#top",
@@ -3556,85 +3486,88 @@ function PostDetail() {
             tr("back_to_top", "Back to top"),
           ),
         ),
-        e.createElement("div", { className: "h-8" }),
+        React.createElement("div", { className: "h-8" }),
       ),
-      !isOwnerView &&
-        e.createElement(
+    ),
+    /* ── Bottom CTA bar ── */
+    !isOwnerView &&
+      React.createElement(
+        "div",
+        {
+          className: "mhub-post-cta-bar",
+        },
+        React.createElement(
           "div",
-          {
-            className: "mhub-post-cta-bar",
-          },
-          e.createElement(
+          { className: "mhub-post-cta-bar-inner" },
+          React.createElement(
             "div",
-            { className: "mhub-post-cta-bar-inner" },
-            e.createElement(
-              "div",
-              { className: "mhub-cta-bar-price min-w-0" },
-              e.createElement(
-                "p",
-                { className: "text-lg font-bold text-gray-900 dark:text-white truncate dark:text-gray-100" },
-                C(r.price),
-              ),
-              freshnessLine &&
-                e.createElement(
-                  "p",
-                  { className: "text-[11px] text-gray-500 dark:text-gray-400 truncate dark:text-gray-300" },
-                  freshnessLine,
-                ),
+            { className: "mhub-cta-bar-price min-w-0" },
+            React.createElement(
+              "p",
+              { className: "text-lg font-bold text-gray-900 dark:text-white truncate dark:text-gray-100" },
+              C(r.price),
             ),
-            e.createElement(
-              "div",
-              { className: "mhub-cta-bar-actions" },
-              e.createElement(
-                l,
-                {
-                  onClick: handleContactSeller,
-                  disabled: contactCtaDisabled,
-                  title: contactCtaDisabled ? contactCtaReason : undefined,
-                  className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
-                },
-                tr("contact_seller", "Contact Seller"),
+            freshnessLine &&
+              React.createElement(
+                "p",
+                { className: "text-[11px] text-gray-500 dark:text-gray-400 truncate dark:text-gray-300" },
+                freshnessLine,
               ),
-              e.createElement(
-                l,
-                {
-                  onClick: handleMakeOffer,
-                  disabled: offerCtaDisabled,
-                  title: offerCtaDisabled ? offerCtaReason : undefined,
-                  className: `bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-gray-100 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
-                },
-                tr("make_offer_short", "Make Offer"),
-              ),
+          ),
+          React.createElement(
+            "div",
+            { className: "mhub-cta-bar-actions" },
+            React.createElement(Button,
+              {
+                onClick: handleContactSeller,
+                disabled: contactCtaDisabled,
+                title: contactCtaDisabled ? contactCtaReason : undefined,
+                className: `bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-white ${contactCtaDisabled ? "opacity-60 cursor-not-allowed" : ""}`,
+              },
+              tr("contact_seller", "Contact Seller"),
+            ),
+            React.createElement(Button,
+              {
+                onClick: handleMakeOffer,
+                disabled: offerCtaDisabled,
+                title: offerCtaDisabled ? offerCtaReason : undefined,
+                className: `bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-bold px-5 py-3 rounded-xl text-xs sm:text-sm whitespace-nowrap dark:bg-gradient-to-r dark:text-gray-100 dark:sm:text-sm${offerCtaDisabled ? " opacity-60 cursor-not-allowed" : ""}`,
+              },
+              tr("make_offer_short", "Make Offer"),
             ),
           ),
         ),
-      e.createElement(le, {
-        isOpen: E,
-        onClose: () => f(!1),
-        postId: J,
-        postTitle: r?.title,
-      }),
-      e.createElement(ie, { isOpen: V, onClose: () => w(!1), post: r }),
-      e.createElement(ImageZoomModal, {
-        isOpen: zoomOpen && Boolean(activeImage),
-        onClose: () => setZoomOpen(!1),
-        imageUrl: cee(activeImage || "/placeholder.svg"),
-        alt: r.title
-          ? `${r.title} - ${tr("image", "Image")} ${activeIndex + 1}`
-          : tr("listing_image", "Listing image"),
-        onNext: imageCount > 1 ? z : null,
-        onPrev: imageCount > 1 ? H : null,
-        currentIndex: activeIndex,
-        totalCount: imageCount,
-      }),
-      e.createElement(Se, {
-        open: shareDialogOpen,
-        onOpenChange: setShareDialogOpen,
-        url: shareUrl,
-        title: tr("share_post", "Share post"),
-      }),
-    ),
-  ));
+      ),
+    /* ── Modals ── */
+    React.createElement(BuyerInterestModal, {
+      isOpen: E,
+      onClose: () => f(!1),
+      postId: J,
+      postTitle: r?.title,
+    }),
+    React.createElement(MakeOfferModal, { isOpen: V, onClose: () => w(!1), post: r }),
+    React.createElement(ImageZoomModal, {
+      isOpen: zoomOpen && Boolean(activeImage),
+      onClose: () => setZoomOpen(!1),
+      imageUrl: resolveMediaUrl(activeImage || "/placeholder.svg"),
+      alt: r.title
+        ? `${r.title} - ${tr("image", "Image")} ${activeIndex + 1}`
+        : tr("listing_image", "Listing image"),
+      onNext: imageCount > 1 ? z : null,
+      onPrev: imageCount > 1 ? H : null,
+      currentIndex: activeIndex,
+      totalCount: imageCount,
+    }),
+    React.createElement(ShareLinkDialog, {
+      open: shareDialogOpen,
+      onOpenChange: setShareDialogOpen,
+      url: shareUrl,
+      title: tr("share_post", "Share post"),
+    }),
+  );
 }
 export { PostDetail as default };
+
+
+
 

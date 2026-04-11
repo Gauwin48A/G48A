@@ -13,11 +13,21 @@ router.post('/', async (req, res) => {
   if (!authUserId) return res.status(401).json({ error: 'Authentication required' });
 
   const { latitude, longitude, event_type } = req.body;
-  if (!latitude || !longitude || !event_type) return res.status(400).json({ error: 'Missing fields' });
+  if (!latitude || !longitude || !event_type) {
+    return res.status(400).json({ error: 'Missing fields' });
+  }
+
+  const normalizedEventType = String(event_type || "").trim();
+  if (!normalizedEventType || normalizedEventType.length > 64 || !/^[a-z0-9_:-]+$/i.test(normalizedEventType)) {
+    return res.status(400).json({ error: 'Invalid event_type' });
+  }
 
   // Enforce: user can only log audit events for themselves
   try {
-    await runQuery('INSERT INTO audit (user_id, latitude, longitude, event_type) VALUES ($1, $2, $3, $4)', [String(authUserId), latitude, longitude, event_type]);
+    await runQuery(
+      'INSERT INTO audit (user_id, latitude, longitude, event_type) VALUES ($1, $2, $3, $4)',
+      [String(authUserId), latitude, longitude, normalizedEventType]
+    );
     res.json({ success: true });
   } catch (err) {
     logger.error('[Audit] Insert failed:', err);

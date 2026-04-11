@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiSun, FiMoon } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiSun, FiMoon } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useCategoryMode } from '@/context/CategoryModeContext';
 import { useLocation } from '@/context/LocationContext';
@@ -55,16 +55,6 @@ const GreenNavbar = () => {
   const currentPath = normalizedPath;
   const isAuthPage = AUTH_ONLY_PATHS.has(currentPath) || currentPath.startsWith('/reset-password');
 
-  const navLinks = [
-    { name: t('all_categories'), path: '/category-hub' },
-    { name: t('mobiles'), path: '/categories/mobiles' },
-    { name: t('fashion'), path: '/categories/fashion' },
-    { name: t('electronics'), path: '/categories/electronics' },
-    { name: t('home'), path: '/categories/home' },
-    { name: t('books'), path: '/categories/books' },
-    { name: t('more'), path: '/categories/more' },
-  ];
-
   const moreMenuLinks = [
     { key: 'sell', path: '/post-welcome', icon: FiShoppingCart, group: 'trade' },
     { key: 'plans', path: '/tier-selection', icon: FiStar, group: 'trade' },
@@ -89,7 +79,7 @@ const GreenNavbar = () => {
     { key: 'more', path: '#', icon: <FiMenu />, matchPaths: [] },
   ];
   const { toast } = useToast();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { items: cartItems, totalCount } = useCart();
   const { filters, setFilters } = useFilter();
   const {
@@ -141,7 +131,7 @@ const GreenNavbar = () => {
   const [layoutMenuStyle, setLayoutMenuStyle] = useState(null);
 
   // Large font mode for accessibility
-  const [largeFont, setLargeFont] = useState(() => {
+  const [largeFont] = useState(() => {
     const stored = localStorage.getItem('largeFont');
     return parseStoredBoolean(stored, false);
   });
@@ -283,32 +273,8 @@ const GreenNavbar = () => {
   };
 
   // User preferences for For You page filter pre-population
-  const [userPreferences, setUserPreferences] = useState(null);
-
   // Fetch user preferences when on For You page (need routerLocation to be defined first)
   // This effect is defined after routerLocation is declared below
-
-  const handleLogout = async () => {
-    setMoreOpen(false);
-    try {
-      await logout();
-      navigate('/login', { replace: true });
-    } catch {
-      // Fallback if logout API fails unexpectedly.
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('user_id');
-      localStorage.removeItem('userProfile');
-      localStorage.removeItem('token');
-      navigate('/login', { replace: true });
-    }
-  };
-
-  const closeMoreMenu = () => {
-    setMoreOpen(false);
-  };
 
   const handleLayoutModeChange = (modeKey) => {
     const next = LAYOUT_PRESETS.find((preset) => preset.key === modeKey);
@@ -361,7 +327,7 @@ const GreenNavbar = () => {
   }, [moreOpen]);
 
   // Get location from context (for city display)
-  const { city, area, village, colony, locality, displayName, locationString, hasLocation, loading: locationLoading, permissionGranted, forceRefreshLocation, accuracyTier, isLiveLocation, isIpFallback, provider, isStaleLocation } = useLocation();
+  const { city, area, village, colony, locality, displayName, locationString, loading: locationLoading, permissionGranted, forceRefreshLocation, accuracyTier, isIpFallback, isStaleLocation } = useLocation();
 
 
   // Router location for path detection
@@ -467,7 +433,6 @@ const GreenNavbar = () => {
       const fetchPreferences = async () => {
         try {
           const data = await fetchUserPreferencesCached({ userId });
-          setUserPreferences(data || null);
           if (import.meta.env.DEV) {
             console.log('[Navbar] Loaded user preferences for For You page:', data);
           }
@@ -496,9 +461,6 @@ const GreenNavbar = () => {
         }
       };
       fetchPreferences();
-    } else if (!isForYouPage) {
-      // Clear preferences when leaving For You page
-      setUserPreferences(null);
     }
   }, [isForYouPage, setFilters, user]);
 
@@ -622,28 +584,10 @@ const GreenNavbar = () => {
   const visibleBottomNavLinks = bottomNavLinks.filter((link) => link.key !== '+Sell');
   const bottomNavLeftLinks = visibleBottomNavLinks.slice(0, 3);
   const bottomNavRightLinks = visibleBottomNavLinks.slice(3);
-  const savedPreferenceSubcategories = Array.isArray(userPreferences?.subcategories)
-    ? userPreferences.subcategories
-    : Array.isArray(userPreferences?.categories)
-      ? userPreferences.categories
-      : [];
   const scopedSubcategoryNames = useMemo(
     () => new Set(scopedSubcategories.map((item) => normalizeCategoryText(item?.name || item?.title || ""))),
     [scopedSubcategories],
   );
-  const visibleSavedPreferenceSubcategories = useMemo(() => {
-    if (activeCategoryId || activeAppMatcher?.activeApp) {
-      return savedPreferenceSubcategories.filter((item) =>
-        scopedSubcategoryNames.has(normalizeCategoryText(item)),
-      );
-    }
-    return savedPreferenceSubcategories;
-  }, [
-    activeAppMatcher?.activeApp,
-    activeCategoryId,
-    savedPreferenceSubcategories,
-    scopedSubcategoryNames,
-  ]);
   const selectedScopedSubcategory =
     filters.subcategory &&
     filters.subcategory !== 'All' &&
@@ -1002,13 +946,6 @@ const GreenNavbar = () => {
                                     })
                                   .then(() => {
                                       clearUserPreferencesCache(userId);
-                                      setUserPreferences((prev) => ({
-                                        ...(prev || {}),
-                                        location: filters.location || "",
-                                        minPrice: filters.minPrice ?? "",
-                                        maxPrice: filters.maxPrice ?? "",
-                                        subcategories: subcategoriesPayload,
-                                      }));
                                       toast({ title: t('preferences_updated', { defaultValue: 'Preferences Updated' }), description: t('for_you_synced', { defaultValue: 'Your For You feed preferences have been saved.' }) });
                                   })
                                   .catch(err => {
@@ -1328,8 +1265,8 @@ const GreenNavbar = () => {
         document.body,
       )}
 
-      {/* --- Bottom Navbar: hidden on auth-only pages --- */}
-      {!isAuthPage && <nav className="mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-between items-center px-2 py-1 animate-fadeIn" role="navigation" aria-label={t('bottom_navigation')}>
+      {/* --- Bottom Navbar: hidden on auth-only pages and category-hub --- */}
+      {!isAuthPage && !hideChromeOnHub && <nav className="mhub-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-[120] flex justify-between items-center px-2 py-1 animate-fadeIn" role="navigation" aria-label={t('bottom_navigation')}>
         {/* Left nav links */}
         <div className="flex flex-1 justify-evenly">
           {bottomNavLeftLinks.map((link) => {
@@ -1402,4 +1339,3 @@ const GreenNavbar = () => {
 };
 
 export default GreenNavbar;
-

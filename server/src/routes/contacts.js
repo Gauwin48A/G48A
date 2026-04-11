@@ -4,6 +4,11 @@ const { protect } = require("../middleware/auth");
 const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 
+const MAX_CONTACTS_SYNC = Number.parseInt(
+  process.env.CONTACTS_SYNC_MAX || "500",
+  10,
+);
+
 /** All contact routes require authentication */
 router.use(protect);
 
@@ -19,6 +24,12 @@ router.post("/sync", async (req, res) => {
   }
   if (!Array.isArray(contacts) || contacts.length === 0) {
     return res.status(400).json({ error: "Contacts array required" });
+  }
+  if (contacts.length > MAX_CONTACTS_SYNC) {
+    return res.status(413).json({
+      error: "Contacts batch too large",
+      max: MAX_CONTACTS_SYNC,
+    });
   }
 
   try {

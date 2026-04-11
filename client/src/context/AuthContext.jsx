@@ -746,6 +746,7 @@ export function AuthProvider({ children }) {
     markAuthRateLimited,
     refreshAccessToken,
     refreshAuthSafe,
+    shouldKeepSessionOnRefreshFailure,
     setUser,
   ]);
 
@@ -904,7 +905,7 @@ export function AuthProvider({ children }) {
     return () => clearInterval(interval);
   }, [refreshAuthSafe]);
 
-  const login = async (identifier, password, extraPayload = {}) => {
+  const login = useCallback(async (identifier, password, extraPayload = {}) => {
     try {
       const now = Date.now();
       const storedLimit = readLoginRateLimitUntil();
@@ -1020,9 +1021,9 @@ export function AuthProvider({ children }) {
         requireOtp: mapped.requiresOtp,
       };
     }
-  };
+  }, [refreshAuthSafe, setUser]);
 
-  const signup = async (payload) => {
+  const signup = useCallback(async (payload) => {
     try {
       const normalizedPayload = {
         ...payload,
@@ -1075,9 +1076,9 @@ export function AuthProvider({ children }) {
         auth: mapped,
       };
     }
-  };
+  }, [refreshAuthSafe, setUser]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await ensureCsrfToken();
       // Include device fingerprint for activity tracking
@@ -1094,7 +1095,7 @@ export function AuthProvider({ children }) {
       clearSession();
       logAuthDiagnostic("logout_local_cleared");
     }
-  };
+  }, [clearSession, ensureCsrfToken]);
 
   const value = useMemo(
     () => ({
@@ -1107,7 +1108,7 @@ export function AuthProvider({ children }) {
       loading,
       refreshAuth,
     }),
-    [loading, refreshAuth, setUser, user],
+    [loading, login, logout, refreshAuth, setUser, signup, user],
   );
 
   return (

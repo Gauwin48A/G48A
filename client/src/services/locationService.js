@@ -29,7 +29,6 @@ const WEB_WATCH_GEO_OPTIONS = {
   timeout: 20e3,
   maximumAge: 0,
 };
-const WEB_ACCURACY_RETRY_THRESHOLD_METERS = 50;
 const WEB_TARGET_ACCURACY_METERS = 20;
 const WEB_WATCH_MAX_DURATION_MS = 55e3;
 const WEB_WATCH_MIN_IMPROVEMENT_METERS = 1;
@@ -37,7 +36,6 @@ const WEB_WATCH_STALL_LIMIT = 6;
 const WEB_EXTRA_SAMPLE_ATTEMPTS = 6;
 const WEB_EXTRA_SAMPLE_DELAY_MS = 1200;
 const WEB_STALE_FIX_MAX_AGE_MS = 60 * 1e3;
-const NATIVE_ACCURACY_RETRY_THRESHOLD_METERS = 50;
 const NATIVE_SECOND_FIX_DELAY_MS = 2000;
 const NATIVE_MAX_SAMPLES = 4;
 const NATIVE_WATCH_MAX_DURATION_MS = 35e3;
@@ -63,8 +61,6 @@ const LIVE_CAPTURE_ATTEMPTS = 2;
 const IP_FALLBACK_TIMEOUT_MS = 5e3;
 const LOCATION_CACHE_KEYS = ["mhub_location", "user_location", "last_location"];
 const MIN_MOVEMENT_THRESHOLD = 8;
-/** Maximum accuracy we'll accept at all — beyond this is meaningless */
-const ABSOLUTE_MAX_ACCURACY_METERS = 50000;
 /** Accuracy beyond which watch-refinement / extra samples are pointless */
 const HOPELESS_ACCURACY_METERS = 10000;
 /** Accuracy tiers for quality classification */
@@ -101,7 +97,6 @@ const POI_CACHE_TTL_MS = 30 * 60 * 1e3;
 const POI_LOOKUP_TIMEOUT_MS = 3500;
 const PLACES_ENDPOINT_COOLDOWN_MS = 5 * 60 * 1000;
 const PLACES_RATE_LIMIT_FALLBACK_MS = 30 * 1000;
-const LOCATION_HMAC_SECRET = ""; // REMOVED — HMAC is now computed server-side via /api/location/sign
 const GOOGLE_PLACES_RADIUS_METERS = 60;
 const LOCATION_POI_PROVIDER = String(
   import.meta.env.VITE_LOCATION_POI_PROVIDER || "auto",
@@ -378,26 +373,6 @@ const kalmanFilteredPosition = (samples, bestFix) => {
     timestamp: bestFix.timestamp,
   };
 };
-const stableStringify = (value) => {
-  if (value === null || value === undefined) {
-    return "null";
-  }
-  if (typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-  const keys = Object.keys(value).sort();
-  const entries = keys
-    .filter((key) => value[key] !== undefined)
-    .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`);
-  return `{${entries.join(",")}}`;
-};
-const toHex = (buffer) =>
-  [...new Uint8Array(buffer)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
 const createLocationSignature = async (payload) => {
   // Server-side HMAC signing — secret never leaves the server
   try {
@@ -1884,9 +1859,6 @@ const getNativePositionWithSampling = async (options = {}) => {
   const targetAccuracy = Number.isFinite(options.targetAccuracy)
     ? Number(options.targetAccuracy)
     : WEB_TARGET_ACCURACY_METERS;
-  const retryThreshold = Number.isFinite(targetAccuracy)
-    ? Math.min(NATIVE_ACCURACY_RETRY_THRESHOLD_METERS, targetAccuracy * 2)
-    : NATIVE_ACCURACY_RETRY_THRESHOLD_METERS;
   const samples = [];
   const firstFix = await Geolocation.getCurrentPosition(GEO_OPTIONS);
   samples.push(firstFix);

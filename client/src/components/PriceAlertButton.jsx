@@ -76,7 +76,7 @@ const PriceAlertButton = ({ postId, initialSubscribed = false }) => {
             {showSuccess && (
                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-green-600 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap shadow-lg flex items-center gap-1 animate-fade-in">
                     <Check className="h-4 w-4" />
-                    You'll be notified when price drops!
+                    You&apos;ll be notified when price drops!
                 </div>
             )}
         </div>

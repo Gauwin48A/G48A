@@ -331,7 +331,7 @@ function RewardRulesCard() {
               <p className="text-[10px] text-gray-500 dark:text-gray-400">{rule.desc}</p>
             </div>
             <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">
-              +{rule.reward} 🪙
+              +{rule.reward} coins
             </span>
           </div>
         ))}
@@ -339,14 +339,14 @@ function RewardRulesCard() {
       <div className="mt-3 flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
         <AlertCircle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
         <p className="text-[10px] text-amber-700 dark:text-amber-300">
-          <strong>Pending</strong> referrals haven't met activity requirements yet.
-          <strong> Qualified</strong> referrals are eligible — coins are distributed automatically.
+          <strong>Pending</strong> referrals haven&apos;t met activity requirements yet.
+          <strong> Qualified</strong> referrals are eligible - coins are distributed automatically.
         </p>
       </div>
       <div className="mt-2 flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <ShieldCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
         <p className="text-[10px] text-blue-700 dark:text-blue-300">
-          <strong>Safety Caps:</strong> Max 500 coins/day · 5,000/month · 50,000 lifetime from referrals.
+          <strong>Safety Caps:</strong> Max 500 coins/day - 5,000/month - 50,000 lifetime from referrals.
           This prevents abuse while still generously rewarding active referrers.
         </p>
       </div>

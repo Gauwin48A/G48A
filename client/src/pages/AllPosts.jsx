@@ -1,19 +1,19 @@
-import r, {
-  useState as g,
-  useEffect as w,
-  useCallback as x,
-  useRef as k,
-  useMemo as N,
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
 } from "react";
-import { Button as u } from "@/components/ui/button";
-import { Card as S } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Avatar as Ve, AvatarFallback as ze } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   FaHeart as He,
   FaRegHeart as qe,
@@ -32,13 +32,12 @@ import {
   FaTimes as Jo,
   FaExchangeAlt as CompareIcon,
 } from "react-icons/fa";
-import { useNavigate as Je, useLocation as Ke } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useFilter as We } from "@/context/FilterContext";
 import { useCategoryMode as Zt } from "@/context/CategoryModeContext";
-import { useTranslation as Xe } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
-import Ze from "@/components/BuyerInterestModal";
 import LoginPromptModal from "@/components/LoginPromptModal";
 import {
   translatePosts as Re,
@@ -421,24 +420,27 @@ const ve = 5,
       Array.from(l.values())
     );
   },
-  it = () => {
-    const { t: s, i18n: c } = Xe(),
+  AllPosts = () => {
+    const { t: s, i18n: c } = useTranslation(),
       l = c.language,
       { filters: t, setFilters: m } = We(),
       { user: $ } = et(),
-      Z = Ke(),
+      Z = useLocation(),
       debugCategoryEnabled =
         typeof window !== "undefined" &&
         window.localStorage &&
         window.localStorage.getItem("mhub_debug_category") === "1",
-      logCategoryFlow = (label, payload) => {
-        if (!debugCategoryEnabled || typeof console === "undefined") return;
-        try {
-          console.debug("[AllPosts][CategoryDebug]", label, payload);
-        } catch {
-          // ignore logging errors
-        }
-      },
+      logCategoryFlow = useCallback(
+        (label, payload) => {
+          if (!debugCategoryEnabled || typeof console === "undefined") return;
+          try {
+            console.debug("[AllPosts][CategoryDebug]", label, payload);
+          } catch {
+            // ignore logging errors
+          }
+        },
+        [debugCategoryEnabled],
+      ),
       {
         activeCategory: categoryModeCategory,
         activeSubcategory: categoryModeSubcategory,
@@ -452,13 +454,13 @@ const ve = 5,
         clearCategory: clearCategoryMode,
         clearSubcategory: clearSubcategoryMode,
       } = Zt(),
-      isForYouMode = N(() => {
+      isForYouMode = useMemo(() => {
         const params = new URLSearchParams(Z.search);
         return Z.pathname === "/for-you" || params.get("mode") === "for-you";
       }, [Z.pathname, Z.search]),
       basePath = Z.pathname === "/for-you" ? "/for-you" : "/all-posts",
-      returnTo = N(() => `${Z.pathname}${Z.search}`, [Z.pathname, Z.search]),
-      subcategoryCandidatesByName = N(() => {
+      returnTo = useMemo(() => `${Z.pathname}${Z.search}`, [Z.pathname, Z.search]),
+      subcategoryCandidatesByName = useMemo(() => {
         const map = {};
         const addEntry = (entry, category) => {
           const rawName = entry?.name || entry?.subcategory_name || "";
@@ -503,7 +505,7 @@ const ve = 5,
         }
         return map;
       }, [categoryModeSubcategories, categoryModeCategories]),
-      preferredCategoryId = N(() => {
+      preferredCategoryId = useMemo(() => {
         const directId = categoryModeCategory?.id || categoryModeCategory?.category_id || null;
         if (directId != null && directId !== "") return String(directId);
         const categorySource = Array.isArray(categoryModeCategories) ? categoryModeCategories : [];
@@ -528,11 +530,11 @@ const ve = 5,
         const fallbackId = fallbackMatch?.category_id || fallbackMatch?.id || null;
         return fallbackId != null && fallbackId !== "" ? String(fallbackId) : "";
       }, [categoryModeCategory, categoryModeCategories, t.category]),
-      activeAppCategoryIds = N(() => {
+      activeAppCategoryIds = useMemo(() => {
         const matcher = buildActiveAppMatcher(t.categoryGroup, categoryModeCategories);
         return matcher?.categoryIds || new Set();
       }, [t.categoryGroup, categoryModeCategories]),
-      subcategoryIdByName = N(() => {
+      subcategoryIdByName = useMemo(() => {
         const map = {};
         const preferredId = preferredCategoryId ? String(preferredCategoryId) : "";
         const hasPreferred = !!preferredId;
@@ -559,7 +561,7 @@ const ve = 5,
         });
         return map;
       }, [subcategoryCandidatesByName, preferredCategoryId, activeAppCategoryIds]),
-      subcategoryNameById = N(() => {
+      subcategoryNameById = useMemo(() => {
         const map = {};
         Object.values(subcategoryCandidatesByName || {}).forEach((list) => {
           if (!Array.isArray(list)) return;
@@ -572,7 +574,7 @@ const ve = 5,
         });
         return map;
       }, [subcategoryCandidatesByName]),
-      sortedSubcategories = N(() => {
+      sortedSubcategories = useMemo(() => {
         const list = Array.isArray(categoryModeSubcategories)
           ? [...categoryModeSubcategories]
           : [];
@@ -615,13 +617,13 @@ const ve = 5,
         Array.isArray(categoryModeCategories) && categoryModeCategories.length > 0
           ? categoryModeCategories
           : fallbackCategoryList,
-      [f, O] = g([]),
-      [V, z] = g(null),
-      [E, R] = g(!1),
-      [L, T] = g(1),
-      [H, ee] = g(!0),
-      [Pe, Ce] = g(0),
-      [shuffleSeed, setShuffleSeed] = g(() => {
+      [f, O] = useState([]),
+      [V, z] = useState(null),
+      [E, R] = useState(!1),
+      [L, T] = useState(1),
+      [H, ee] = useState(!0),
+      [Pe, Ce] = useState(0),
+      [shuffleSeed, setShuffleSeed] = useState(() => {
         if (
           typeof window === "undefined" ||
           typeof performance === "undefined"
@@ -644,18 +646,18 @@ const ve = 5,
         return legacy === 1 ? Date.now() : null;
       }),
       q = 6,
-      y = Je(),
-      P = k(0),
-      v = k(null),
-      loadMoreScrollRef = k(null),
-      loadMorePendingRef = k(!1),
-      loadMoreCooldownRef = k(0),
-      initialFilterSyncRef = k(!1),
-      filterSyncScrollRef = k(null),
-      loadMoreSentinelRef = k(null),
-      scrollGuardRef = k(null),
-      userFilterChangeRef = k(!1);
-    w(() => {
+      y = useNavigate(),
+      P = useRef(0),
+      v = useRef(null),
+      loadMoreScrollRef = useRef(null),
+      loadMorePendingRef = useRef(!1),
+      loadMoreCooldownRef = useRef(0),
+      initialFilterSyncRef = useRef(!1),
+      filterSyncScrollRef = useRef(null),
+      loadMoreSentinelRef = useRef(null),
+      scrollGuardRef = useRef(null),
+      userFilterChangeRef = useRef(!1);
+    useEffect(() => {
       const e = new URLSearchParams(Z.search),
         categoryIdParam = e.get("category_id") || e.get("categoryId") || "",
         legacyCategory = e.get("category") || "";
@@ -710,7 +712,7 @@ const ve = 5,
       }));
       initialFilterSyncRef.current = !0;
     }, [Z.search, categoryList, m, subcategoryNameById, hasCategoryMode, activeApp]);
-    w(() => {
+    useEffect(() => {
       if (categoryModeLoading) return;
       if (hasCategoryMode) return;
       const params = new URLSearchParams(Z.search);
@@ -754,7 +756,7 @@ const ve = 5,
       y,
       m,
     ]);
-    w(() => {
+    useEffect(() => {
       if (categoryModeLoading) return;
       if (!hasCategoryMode) return;
       const nextCategory = categoryModeCategory?.name || "";
@@ -876,69 +878,68 @@ const ve = 5,
       m,
       subcategoryIdByName,
     ]);
-    const [Be, _e] = g(null),
-      [ae, Se] = g({}),
-      [Ae, se] = g({}),
-      [De, oe] = g({}),
-      [ne, M] = g(""),
-      [Ie, le] = g(!1),
-      [G, ie] = g(null),
-      [menuPostId, setMenuPostId] = g(null),
-      [expandedMetaPostId, setExpandedMetaPostId] = g(null),
-      [savedPosts, setSavedPosts] = g(() => getSavedPostsMap()),
-      [shareDialogOpen, setShareDialogOpen] = g(!1),
-      [shareDialogUrl, setShareDialogUrl] = g(""),
-      [promotePostId, setPromotePostId] = g(null),
-      [promotePostTitle, setPromotePostTitle] = g(""),
-      [loginPromptOpen, setLoginPromptOpen] = g(!1),
-      [carouselIndexByPost, setCarouselIndexByPost] = g({}),
-      de = k({}),
-      carouselTrackRefs = k({}),
-      C = N(() => rt($), [$]);
+    const [ae, Se] = useState({}),
+      [Ae, se] = useState({}),
+      [De, oe] = useState({}),
+      [ne, M] = useState(""),
+      [Ie, le] = useState(!1),
+      [G, ie] = useState(null),
+      [menuPostId, setMenuPostId] = useState(null),
+      [expandedMetaPostId, setExpandedMetaPostId] = useState(null),
+      [savedPosts, setSavedPosts] = useState(() => getSavedPostsMap()),
+      [shareDialogOpen, setShareDialogOpen] = useState(!1),
+      [shareDialogUrl, setShareDialogUrl] = useState(""),
+      [promotePostId, setPromotePostId] = useState(null),
+      [promotePostTitle, setPromotePostTitle] = useState(""),
+      [loginPromptOpen, setLoginPromptOpen] = useState(!1),
+      [carouselIndexByPost, setCarouselIndexByPost] = useState({}),
+      de = useRef({}),
+      carouselTrackRefs = useRef({}),
+      C = useMemo(() => rt($), [$]);
     const currentUserId = tt($);
     const {
       addItem: addCartItem,
       removeItem: removeCartItem,
       isInCart: isInCartItem,
     } = mt();
-    const [isLiveSyncing, setIsLiveSyncing] = g(!1),
-      [lastLiveSyncAt, setLastLiveSyncAt] = g(Date.now()),
-      [navStickyTop, setNavStickyTop] = g(68),
-      [secondaryStickyHeight, setSecondaryStickyHeight] = g(0),
-      [filterPulse, setFilterPulse] = g(!1),
-      [updatedPulse, setUpdatedPulse] = g(!1),
-      [autoRefreshEnabled, setAutoRefreshEnabled] = g(!1),
-      [showBackToTop, setShowBackToTop] = g(!1),
-      [showAllQuickFilters, setShowAllQuickFilters] = g(!1),
-      [compareItems, setCompareItems] = g([]),
-      [showComparePanel, setShowComparePanel] = g(!1);
+    const [, setIsLiveSyncing] = useState(!1),
+      [lastLiveSyncAt, setLastLiveSyncAt] = useState(Date.now()),
+      [navStickyTop, setNavStickyTop] = useState(68),
+      [, setSecondaryStickyHeight] = useState(0),
+      [filterPulse, setFilterPulse] = useState(!1),
+      [updatedPulse, setUpdatedPulse] = useState(!1),
+      [autoRefreshEnabled, setAutoRefreshEnabled] = useState(!1),
+      [showBackToTop, setShowBackToTop] = useState(!1),
+      [showAllQuickFilters, setShowAllQuickFilters] = useState(!1),
+      [compareItems, setCompareItems] = useState([]),
+      [showComparePanel, setShowComparePanel] = useState(!1);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { density, setDensity } = usePageDensity("mhub_allposts_density");
-    const languageRef = k(l);
-    const secondaryStickyRef = k(null);
+    const languageRef = useRef(l);
+    const secondaryStickyRef = useRef(null);
     const pageMaxWidthClass = "max-w-[92rem]";
     const feedMaxWidthClass = "max-w-[92rem]";
-    const formatCurrency = x(
+    const formatCurrency = useCallback(
       (e) => `\u20B9${ot(e).toLocaleString("en-IN")}`,
       [],
     );
-    const tr = x(
+    const tr = useCallback(
       (key, fallback) => {
         const value = s(key, { defaultValue: fallback || key });
         return value;
       },
       [s],
     );
-    const openPromote = x((postId, title) => {
+    const openPromote = useCallback((postId, title) => {
       if (!postId) return;
       setPromotePostId(String(postId));
       setPromotePostTitle(String(title || ""));
     }, []);
-    const closePromote = x(() => {
+    const closePromote = useCallback(() => {
       setPromotePostId(null);
       setPromotePostTitle("");
     }, []);
-    w(() => {
+    useEffect(() => {
       if (typeof document === "undefined") return;
       const baseTitle = isForYouMode
         ? tr("for_you", "For You")
@@ -976,10 +977,10 @@ const ve = 5,
       t.subcategory,
       tr,
     ]);
-    w(() => {
+    useEffect(() => {
       languageRef.current = l;
-    }, [l]);
-    w(() => {
+    }, [l, f]);
+    useEffect(() => {
       if (!Array.isArray(f) || f.length === 0) return;
       let e = !1;
       if (!l || l === "en") {
@@ -999,8 +1000,8 @@ const ve = 5,
       return () => {
         e = !0;
       };
-    }, [l]);
-    w(() => {
+    }, [l, f]);
+    useEffect(() => {
       const e = sessionStorage.getItem("allPostsScrollPosition");
       e &&
         f.length > 0 &&
@@ -1009,8 +1010,8 @@ const ve = 5,
             sessionStorage.removeItem("allPostsScrollPosition");
         });
     }, [f.length]),
-      w(() => subscribeSavedPosts(setSavedPosts), []),
-      w(() => {
+      useEffect(() => subscribeSavedPosts(setSavedPosts), []),
+      useEffect(() => {
         if (!C) return;
         let e = !1;
         (async () => {
@@ -1029,7 +1030,7 @@ const ve = 5,
           e = !0;
         };
       }, [C, $]),
-    w(() => {
+    useEffect(() => {
       if (typeof window > "u" || typeof document > "u") return;
       let e = null;
       const a = () => {
@@ -1049,14 +1050,14 @@ const ve = 5,
         e?.disconnect();
       };
     }, []);
-    w(() => {
+    useEffect(() => {
       if (C) {
         setLoginPromptOpen(!1);
         return;
       }
       setShuffleSeed(null);
     }, [C]);
-    w(() => {
+    useEffect(() => {
       if (typeof window > "u" || typeof document > "u") return;
       const e = () => {
         if (C) return;
@@ -1072,7 +1073,7 @@ const ve = 5,
         }
       );
     }, [C]);
-    w(() => {
+    useEffect(() => {
       if (typeof window > "u") return;
       const e = () => {
         const a = window.scrollY || 0;
@@ -1084,7 +1085,7 @@ const ve = 5,
         window.removeEventListener("scroll", e);
       };
     }, []);
-    const ce = N(
+    const ce = useMemo(
         () =>
           categoryList.reduce(
             (e, a) => {
@@ -1098,7 +1099,7 @@ const ve = 5,
           ),
         [categoryList],
       ),
-      categoryNameById = N(() => {
+      categoryNameById = useMemo(() => {
         const e = {};
         categoryList.forEach((a) => {
           const o = a?.category_id ?? a?.id ?? null;
@@ -1107,26 +1108,26 @@ const ve = 5,
         });
         return e;
       }, [categoryList]),
-      Q = N(
+      Q = useMemo(
         () =>
           typeof window > "u"
             ? ""
             : localStorage.getItem("mhub_user_city") || "",
         [],
       ),
-      latestWindow = N(
+      latestWindow = useMemo(
         () => normalizeLatestWindow(t.latestWindow),
         [t.latestWindow],
       ),
-      secondaryStickyTop = N(
+      secondaryStickyTop = useMemo(
         () => navStickyTop + 8,
         [navStickyTop],
       ),
-      canShuffle = N(
+      canShuffle = useMemo(
         () => !t.sortBy && !latestWindow,
         [t.sortBy, latestWindow],
       ),
-      me = x(
+      me = useCallback(
         (e) => {
           const a = new URLSearchParams();
           return (
@@ -1173,7 +1174,7 @@ const ve = 5,
         },
         [isForYouMode, subcategoryIdByName, ce],
       ),
-      b = x(
+      b = useCallback(
         (e) => {
           const a = { ...t, ...e };
           userFilterChangeRef.current = !0;
@@ -1186,47 +1187,13 @@ const ve = 5,
         },
         [me, t, y, m, basePath, Z.pathname, Z.search],
       ),
-      $e = x(
-        (e, a) => {
-          const resolvedName =
-            typeof e === "string"
-              ? e
-              : a?.name || a?.category_name || "";
-          const currentCategory =
-            hasCategoryMode && categoryModeCategory?.name
-              ? categoryModeCategory.name
-              : t.category;
-          const nextCategory =
-            normalizeName(currentCategory) === normalizeName(resolvedName)
-              ? "All"
-              : resolvedName;
-          if (hasCategoryMode) {
-            if (nextCategory === "All") {
-              clearCategoryMode();
-              clearSubcategoryMode();
-            } else {
-              selectCategoryMode(a || resolvedName);
-            }
-          }
-          b({ category: nextCategory, categoryGroup: "" });
-        },
-        [
-          b,
-          t.category,
-          hasCategoryMode,
-          categoryModeCategory?.name,
-          selectCategoryMode,
-          clearCategoryMode,
-          clearSubcategoryMode,
-        ],
-      ),
-      Ee = x(() => {
+      Ee = useCallback(() => {
         if (hasCategoryMode) {
           clearSubcategoryMode();
         }
         b({ subcategory: "All" });
       }, [b, hasCategoryMode, clearSubcategoryMode]),
-      handleSubcategoryBarSelect = x(
+      handleSubcategoryBarSelect = useCallback(
         (e, a) => {
           const subcategoryName =
             typeof e === "string" ? e : a?.name || a?.subcategory_name || "";
@@ -1341,9 +1308,10 @@ const ve = 5,
           categoryModeCategory?.name,
           categoryModeSubcategory?.id,
           categoryModeSubcategory?.name,
+          logCategoryFlow,
         ],
       ),
-      jee = x(
+      jee = useCallback(
         (e) => {
           const a = String(e);
           if (String(t.latestWindow || "") === a) {
@@ -1359,10 +1327,10 @@ const ve = 5,
         },
         [b, t.latestWindow],
       ),
-      Y = x(() => {
+      Y = useCallback(() => {
         m(st), T(1), y(isForYouMode ? `${basePath}?mode=for-you` : basePath);
       }, [y, m, basePath, isForYouMode]),
-      Te = x(
+      Te = useCallback(
         (e) => {
           if (e === "subcategory") {
             clearSubcategoryMode();
@@ -1416,11 +1384,11 @@ const ve = 5,
           ce[normalizeName(effectiveCategoryLabel)] ||
           ""
         : "",
-      activeAppMatcher = N(
+      activeAppMatcher = useMemo(
         () => buildActiveAppMatcher(t.categoryGroup, categoryModeCategories),
         [t.categoryGroup, categoryModeCategories],
       ),
-      appScopedCategoryList = N(() => {
+      appScopedCategoryList = useMemo(() => {
         if (!activeAppMatcher?.activeApp) {
           return categoryList;
         }
@@ -1433,7 +1401,7 @@ const ve = 5,
           return !!name && activeAppMatcher.categoryNames.has(name);
         });
       }, [categoryList, activeAppMatcher]),
-      allPostsSubcategoryBarList = N(() => {
+      allPostsSubcategoryBarList = useMemo(() => {
         const scopedCategories = (Array.isArray(appScopedCategoryList) ? appScopedCategoryList : []).filter(
           (entry) => {
             if (!activeCategoryId) return !0;
@@ -1529,7 +1497,7 @@ const ve = 5,
           others: "Others",
         })[String(t.categoryGroup || "").trim().toLowerCase()] || "",
       showModeBanner = !1,
-      dealsContextLabel = N(
+      dealsContextLabel = useMemo(
         () => {
           if (
             hasActiveCategory &&
@@ -1542,7 +1510,7 @@ const ve = 5,
         },
         [hasActiveCategory, effectiveCategoryLabel, tr],
       ),
-      ue = N(
+      ue = useMemo(
         () =>
           !!t.search ||
           !!t.location ||
@@ -1573,7 +1541,7 @@ const ve = 5,
           t.verifiedOnly,
         ],
       ),
-      ge = N(() => {
+      ge = useMemo(() => {
         const e = [];
         return (
           t.search &&
@@ -1628,38 +1596,19 @@ const ve = 5,
         s,
         t.condition,
         t.endDate,
-        latestWindow,
         t.location,
         t.maxPrice,
         t.minPrice,
         t.search,
-        t.sortBy,
         t.startDate,
         t.verifiedOnly,
       ]),
-      activeFiltersCount = N(() => {
+      activeFiltersCount = useMemo(() => {
         let e = ge.length;
         return latestWindow && (e += 1), t.sortBy && (e += 1), e;
       }, [ge, latestWindow, t.sortBy]),
-      // Trigger a lightweight fade when filters change
-      filterPulseDeps = [
-        t.search,
-        t.category,
-        t.subcategory,
-        t.categoryGroup,
-        t.location,
-        t.minPrice,
-        t.maxPrice,
-        t.startDate,
-        t.endDate,
-        t.condition,
-        t.verifiedOnly,
-        t.latestWindow,
-        t.sortBy,
-        effectiveCategoryLabel,
-      ],
       requestLimit = latestWindow || q,
-      be = x(() => {
+      be = useCallback(() => {
         const e = new URLSearchParams();
         const a = t.category;
         const o = t.search;
@@ -1744,7 +1693,7 @@ const ve = 5,
         shuffleSeed,
         C,
       ]);
-    w(() => {
+    useEffect(() => {
       const e = P.current + 1;
       (P.current = e), v.current && v.current.abort();
       const a = new AbortController();
@@ -1924,8 +1873,23 @@ const ve = 5,
           a.abort(), v.current === a && (v.current = null);
         }
       );
-    }, [be, L, Pe, isForYouMode]),
-      w(() => {
+    }, [
+      be,
+      L,
+      Pe,
+      isForYouMode,
+      debugCategoryEnabled,
+      latestWindow,
+      requestLimit,
+      logCategoryFlow,
+      hasCategoryMode,
+      activeApp,
+      t.category,
+      t.subcategory,
+      t.categoryGroup,
+    ]),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      useEffect(() => {
         if (!Array.isArray(f) || f.length === 0) return;
         let e = !1;
         if (!l || l === "en") {
@@ -1979,8 +1943,8 @@ const ve = 5,
         return () => {
           e = !0;
         };
-      }, [l]),
-      w(() => {
+      }, [l, f]),
+      useEffect(() => {
         T(1);
       }, [
         t.search,
@@ -1998,12 +1962,12 @@ const ve = 5,
         t.latestWindow,
         t.sortBy,
       ]);
-    w(() => {
+    useEffect(() => {
       if (shuffleSeed && (t.sortBy || latestWindow)) {
         setShuffleSeed(null);
       }
     }, [shuffleSeed, t.sortBy, latestWindow]);
-    const J = x(() => {
+    const J = useCallback(() => {
       if (E || !H || latestWindow) return;
       if (loadMorePendingRef.current) return;
       const now = Date.now();
@@ -2015,7 +1979,7 @@ const ve = 5,
       }
       T((e) => e + 1);
     }, [E, H, latestWindow]);
-    w(() => {
+    useEffect(() => {
       if (latestWindow) return;
       if (!C) return;
       if (typeof IntersectionObserver === "undefined") {
@@ -2049,7 +2013,7 @@ const ve = 5,
       observer.observe(target);
       return () => observer.disconnect();
     }, [J, C, latestWindow]);
-    w(() => {
+    useEffect(() => {
       if (latestWindow || !autoRefreshEnabled) return;
       const e = setInterval(() => {
         if (typeof document > "u" || document.hidden || E) return;
@@ -2057,7 +2021,7 @@ const ve = 5,
       }, 3e4);
       return () => clearInterval(e);
     }, [E, latestWindow, autoRefreshEnabled]);
-    const filteredPosts = N(() => {
+    const filteredPosts = useMemo(() => {
       if (!Array.isArray(f) || f.length === 0) return [];
       const e = normalizeSearchText(t.search);
       const rawActiveSubcategory = String(t.subcategory || "").trim();
@@ -2262,7 +2226,7 @@ const ve = 5,
         activeAppMatcher,
         latestWindow,
       ]),
-      K = N(
+      K = useMemo(
         () =>
           !filteredPosts || filteredPosts.length === 0
             ? []
@@ -2321,16 +2285,10 @@ const ve = 5,
         : activeAppLabel
           ? `${tr("app_world", "App world")}: ${activeAppLabel}`
           : tr("marketplace", "Marketplace"),
-      heroFiltersLabel =
-        activeFiltersCount > 0
-          ? `${activeFiltersCount} ${tr("filters", "filters")}`
-          : tr("no_filters", "No filters"),
-      heroUpdatedLabel =
-        lastUpdatedText || tr("updated_just_now", "Updated just now"),
-      U = k(new Set()),
-      fe = k(new Set()),
-      B = k(null),
-      W = x((e) => {
+      U = useRef(new Set()),
+      fe = useRef(new Set()),
+      B = useRef(null),
+      W = useCallback((e) => {
         const a = I(e);
         !a ||
           fe.current.has(a) ||
@@ -2338,7 +2296,7 @@ const ve = 5,
           U.current.add(a),
           oe((o) => ({ ...o, [a]: (o[a] || 0) + 1 })));
       }, []),
-      setCarouselTrackRef = x((e, a) => {
+      setCarouselTrackRef = useCallback((e, a) => {
         const o = I(e);
         if (!o) return;
         if (!a) {
@@ -2347,12 +2305,12 @@ const ve = 5,
         }
         carouselTrackRefs.current[o] = a;
       }, []),
-      updateCarouselIndex = x((e, a) => {
+      updateCarouselIndex = useCallback((e, a) => {
         const o = I(e);
         if (!o) return;
         setCarouselIndexByPost((n) => (n[o] === a ? n : { ...n, [o]: a }));
       }, []),
-      getCarouselIndex = x(
+      getCarouselIndex = useCallback(
         (e, a) => {
           const o = I(e);
           if (!o || !a || a <= 0) return 0;
@@ -2363,7 +2321,7 @@ const ve = 5,
         },
         [carouselIndexByPost],
       ),
-      scrollCarouselToIndex = x(
+      scrollCarouselToIndex = useCallback(
         (e, a, o) => {
           const n = I(e);
           if (!n || !o || o <= 0) return;
@@ -2375,7 +2333,7 @@ const ve = 5,
         },
         [updateCarouselIndex],
       ),
-      moveCarousel = x(
+      moveCarousel = useCallback(
         (e, a, o, n) => {
           if (o <= 1) return;
           n.preventDefault();
@@ -2385,7 +2343,7 @@ const ve = 5,
         },
         [getCarouselIndex, scrollCarouselToIndex],
       ),
-      handleCarouselScroll = x(
+      handleCarouselScroll = useCallback(
         (e, a, o) => {
           if (o <= 1) return;
           const n = a.currentTarget;
@@ -2395,7 +2353,7 @@ const ve = 5,
         },
         [updateCarouselIndex],
       );
-    w(() => {
+    useEffect(() => {
       const e = async () => {
           if (U.current.size === 0) return;
           const o = Array.from(U.current);
@@ -2413,7 +2371,7 @@ const ve = 5,
         clearInterval(a), e();
       };
     }, []),
-      w(
+      useEffect(
         () => (
           B.current && B.current.disconnect(),
           (B.current = new IntersectionObserver(
@@ -2485,7 +2443,7 @@ const ve = 5,
             setTimeout(() => M(""), 2e3);
         }
       },
-      handleCartToggle = x(
+      handleCartToggle = useCallback(
         (e) => {
           const a = I(e?.post_id || e?.id);
           if (!a) return;
@@ -2533,7 +2491,7 @@ const ve = 5,
         },
         [C, addCartItem, isInCartItem, removeCartItem, s, activeApp],
       ),
-      toggleCompare = x(
+      toggleCompare = useCallback(
         (post) => {
           const postId = I(post?.post_id || post?.id);
           if (!postId) return;
@@ -2545,17 +2503,28 @@ const ve = 5,
               setTimeout(() => M(""), 2e3);
               return prev;
             }
+            // Enforce same-subcategory comparison
+            const getSubcat = (p) => String(p?.subcategory_name || p?.subcategory || p?.subcategoryName || "").trim().toLowerCase();
+            const newSubcat = getSubcat(post);
+            if (prev.length > 0 && newSubcat) {
+              const existingSubcat = getSubcat(prev[0]);
+              if (existingSubcat && newSubcat !== existingSubcat) {
+                M(s("compare_same_subcategory", { defaultValue: `You can only compare similar products. Clear current items to compare ${post?.subcategory_name || post?.subcategory || "different"} products.` }));
+                setTimeout(() => M(""), 3e3);
+                return prev;
+              }
+            }
             return [...prev, post];
           });
         },
-        [I, s],
+        [s],
       ),
-      isInCompare = x(
+      isInCompare = useCallback(
         (postId) => {
           const id = I(postId);
           return compareItems.some((p) => I(p?.post_id || p?.id) === id);
         },
-        [compareItems, I],
+        [compareItems],
       ),
       je = async (e) => {
         const a = I(e);
@@ -2594,10 +2563,10 @@ const ve = 5,
             .slice(0, 3),
           showTopDealsBanner = pe.length > 0,
           dealsBannerNode = showTopDealsBanner
-            ? r.createElement(
+            ? React.createElement(
                 "div",
                 { id: "all-posts-deals", className: "mhub-allposts-deals-wrap", "data-density": "extra" },
-                r.createElement(AllPostsGreatDealsBanner, {
+                React.createElement(AllPostsGreatDealsBanner, {
                   title: tr("great_deals", "Great Deals"),
                   subtitle: tr("up_to_off", "Up to 50% off"),
                   contextLabel: dealsContextLabel,
@@ -2616,15 +2585,7 @@ const ve = 5,
                 }),
               )
             : null,
-      xe = t.search
-        ? categoryList.find(
-            (e) => e.name.toLowerCase() === t.search.trim().toLowerCase(),
-          )
-            ?.name
-        : null,
-      j =
-        (!t.category || t.category === "All") && xe ? xe : t.category || "All",
-      ye = N(() => {
+      ye = useMemo(() => {
         const e = new Date();
         const a = e.getFullYear();
         const o = String(e.getMonth() + 1).padStart(2, "0");
@@ -2719,11 +2680,10 @@ const ve = 5,
             "border-dashed border-slate-300 text-slate-600 bg-[var(--surface-1)] hover:bg-[var(--surface-2)] dark:border-slate-600 dark:text-slate-200 dark:border-dashed dark:bg-[var(--surface-1)] dark:hover:bg-[var(--surface-2)]",
         },
           ],
-      appSwitcherOffset = 0,
       contentTopOffset = 0,
       feedHeaderCompact = !showModeBanner,
       showFeedTitle = showModeBanner,
-    Fe = x(() => {
+    Fe = useCallback(() => {
       if (!C) {
         setLoginPromptOpen(!0);
           return;
@@ -2734,7 +2694,7 @@ const ve = 5,
         }
         Ce((e) => e + 1);
       }, [C, canShuffle]);
-    w(() => {
+    useEffect(() => {
       const e = secondaryStickyRef.current;
       if (!e) {
         setSecondaryStickyHeight(0);
@@ -2762,45 +2722,61 @@ const ve = 5,
         t && t.disconnect();
       };
     }, [activeFiltersCount, autoRefreshEnabled, ge.length, latestWindow, pageMaxWidthClass, Q, ue, showTopDealsBanner]);
-    w(() => {
+    // Trigger a lightweight fade when filters change
+    useEffect(() => {
       setFilterPulse(!0);
-    }, filterPulseDeps);
-    w(() => {
+    }, [
+      t.search,
+      t.category,
+      t.subcategory,
+      t.categoryGroup,
+      t.location,
+      t.minPrice,
+      t.maxPrice,
+      t.startDate,
+      t.endDate,
+      t.condition,
+      t.verifiedOnly,
+      t.latestWindow,
+      t.sortBy,
+      effectiveCategoryLabel,
+    ]);
+    useEffect(() => {
       if (!filterPulse) return;
       const e = setTimeout(() => setFilterPulse(!1), 180);
       return () => clearTimeout(e);
     }, [filterPulse]);
-    w(() => {
+    useEffect(() => {
       if (!lastLiveSyncAt) return;
       setUpdatedPulse(!0);
     }, [lastLiveSyncAt]);
-    w(() => {
+    useEffect(() => {
       if (!updatedPulse) return;
       const e = setTimeout(() => setUpdatedPulse(!1), 900);
       return () => clearTimeout(e);
     }, [updatedPulse]);
-    return r.createElement(
+    return React.createElement(
       "div",
       {
           className:
             `mhub-page-allposts mhub-premium-page min-h-screen transition-colors duration-300 pb-24 ${density === "compact" ? "mhub-compact" : ""}`,
       },
       showModeBanner &&
-        r.createElement(
+        React.createElement(
           "div",
           {
             className: "w-full flex justify-center px-3 sm:px-4 pt-3 pb-3",
             style: { paddingTop: `${contentTopOffset}px` },
           },
-          r.createElement(
+          React.createElement(
             "div",
             {
               className: `w-full ${pageMaxWidthClass} mhub-premium-surface rounded-2xl p-3 sm:p-3.5`,
             },
-            r.createElement(
+            React.createElement(
               "div",
               { className: "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" },
-              r.createElement(
+              React.createElement(
                 "div",
                 {
                   className:
@@ -2810,7 +2786,7 @@ const ve = 5,
                   ? `${tr("category_mode", "Category mode")}: ${categoryModeLabel}`
                   : `${tr("app_world", "App world")}: ${activeAppLabel}`,
               ),
-              r.createElement(
+              React.createElement(
                 "button",
                 {
                   type: "button",
@@ -2824,7 +2800,7 @@ const ve = 5,
               ),
             ),
             categoryModeLoading
-              ? r.createElement(
+              ? React.createElement(
                   "div",
                   {
                     className:
@@ -2833,7 +2809,7 @@ const ve = 5,
                   tr("loading", "Loading"),
                 )
               : hasCategoryMode && allPostsSubcategoryBarList.length > 0 &&
-                r.createElement(
+                React.createElement(
                   "div",
                   {
                     className:
@@ -2845,47 +2821,47 @@ const ve = 5,
           ),
         ),
       !showModeBanner &&
-        r.createElement(
+        React.createElement(
           "section",
           {
             className: "w-full mhub-allposts-hero",
             "data-density": "extra",
             style: { paddingTop: `${contentTopOffset}px` },
           },
-          r.createElement(
+          React.createElement(
             "div",
             { className: `w-full ${pageMaxWidthClass} mx-auto px-3 sm:px-4` },
-            r.createElement(
+            React.createElement(
               "div",
               { className: "mhub-allposts-hero-card" },
-              r.createElement(
+              React.createElement(
                 "div",
                 { className: "mhub-allposts-hero-grid" },
-                r.createElement(
+                React.createElement(
                   "div",
                   { className: "mhub-allposts-hero-main" },
-                  r.createElement(
+                  React.createElement(
                     "div",
                     { className: "mhub-allposts-hero-kicker" },
                     heroContextLabel,
                   ),
-                  r.createElement(
+                  React.createElement(
                     "h1",
                     { className: "mhub-allposts-hero-title" },
                     heroTitle,
                   ),
-                  r.createElement(
+                  React.createElement(
                     "p",
                     { className: "mhub-allposts-hero-subtitle" },
                     heroSubtitle,
                   ),
-                  r.createElement(
+                  React.createElement(
                     "div",
                     {
                       className:
                         "mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300",
                     },
-                    r.createElement(
+                    React.createElement(
                       "span",
                       {
                         className:
@@ -2893,7 +2869,7 @@ const ve = 5,
                       },
                       tr("marketplace_listings", "Marketplace listings"),
                     ),
-                    r.createElement(
+                    React.createElement(
                       "button",
                       {
                         type: "button",
@@ -2902,9 +2878,9 @@ const ve = 5,
                           "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 px-2 py-0.5 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10",
                       },
                       tr("community_feed", "Community Feed"),
-                      r.createElement(Bo, { className: "w-3 h-3" }),
+                      React.createElement(Bo, { className: "w-3 h-3" }),
                     ),
-                    r.createElement(
+                    React.createElement(
                       "span",
                       { className: "text-[10px] text-slate-500 dark:text-slate-400" },
                       tr("feed_updates_hint", "news & updates"),
@@ -2915,14 +2891,14 @@ const ve = 5,
             ),
           ),
         ),
-      r.createElement(
+      React.createElement(
         "div",
         {
           className: "w-full sticky z-30 mhub-premium-bar mhub-allposts-toolbar",
           ref: secondaryStickyRef,
           style: { top: `${secondaryStickyTop}px` },
         },
-        r.createElement(AllPostsCategoryBar, {
+        React.createElement(AllPostsCategoryBar, {
           categories: allPostsSubcategoryBarList,
           activeCategory: activeSubcategoryLabel || "All",
           onSelectAll: Ee,
@@ -2934,10 +2910,10 @@ const ve = 5,
           compact: !0,
           showCategoryCounts: !1,
         }),
-        r.createElement(
+        React.createElement(
           "div",
           { className: "w-full mhub-allposts-filters" },
-          r.createElement(
+          React.createElement(
             AllPostsQuickFilters,
             {
               title: tr("quick_filters", "Quick filters"),
@@ -2948,16 +2924,16 @@ const ve = 5,
               showDivider: !1,
               chips: quickFiltersChips,
               maxWidthClass: pageMaxWidthClass,
-              headerRight: r.createElement(
+              headerRight: React.createElement(
                 "div",
                 { className: "quick-filters-actions flex flex-wrap items-center gap-2" },
-                r.createElement(
+                React.createElement(
                   "div",
                   {
                     className:
                       "mhub-allposts-action-group inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                   },
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       type: "button",
@@ -2970,10 +2946,10 @@ const ve = 5,
                         });
                       },
                     },
-                    r.createElement(Bo, { className: "w-3 h-3" }),
+                    React.createElement(Bo, { className: "w-3 h-3" }),
                     tr("browse", "Browse"),
                   ),
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       type: "button",
@@ -2989,10 +2965,10 @@ const ve = 5,
                         }
                       },
                     },
-                    r.createElement(zo, { className: "w-3 h-3" }),
+                    React.createElement(zo, { className: "w-3 h-3" }),
                     tr("shuffle_feed", "Shuffle"),
                   ),
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       type: "button",
@@ -3001,24 +2977,24 @@ const ve = 5,
                       }`,
                       onClick: () => setAutoRefreshEnabled((e) => !e),
                     },
-                    r.createElement(zo, { className: "w-3 h-3" }),
+                    React.createElement(zo, { className: "w-3 h-3" }),
                     autoRefreshEnabled
                       ? tr("live_updates_on", "Live")
                       : tr("live_updates_off", "Live"),
                   ),
                 ),
-                r.createElement(
+                React.createElement(
                   "div",
                   {
                     className:
                       "quick-filters-sort inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                   },
-                  r.createElement(
+                  React.createElement(
                     "span",
                     { className: "px-1.5 text-[10px] uppercase tracking-wide" },
                     tr("sort", "Sort"),
                   ),
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       type: "button",
@@ -3027,7 +3003,7 @@ const ve = 5,
                     },
                     tr("newest", "Newest"),
                   ),
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       type: "button",
@@ -3036,7 +3012,7 @@ const ve = 5,
                     },
                     tr("price_low", "Price \u2191"),
                   ),
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       type: "button",
@@ -3046,14 +3022,14 @@ const ve = 5,
                     tr("price_high", "Price \u2193"),
                   ),
                 ),
-                r.createElement(PageDensityToggle, {
+                React.createElement(PageDensityToggle, {
                   value: density,
                   onChange: setDensity,
                   label: tr("view", "View"),
                   className: "ml-1",
                 }),
                 activeFiltersCount > 0 &&
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       type: "button",
@@ -3066,10 +3042,10 @@ const ve = 5,
               ),
             },
             activeSubcategoryLabel !== "All" &&
-              r.createElement(
+              React.createElement(
                 "div",
                 { className: "flex flex-wrap items-center gap-2.5" },
-                r.createElement(
+                React.createElement(
                   "span",
                   {
                     className:
@@ -3077,7 +3053,7 @@ const ve = 5,
                   },
                   `${tr("subcategory", "Subcategory")}: ${activeSubcategoryLabel}`,
                 ),
-                r.createElement(
+                React.createElement(
                   "button",
                   {
                     type: "button",
@@ -3090,7 +3066,7 @@ const ve = 5,
                   },
                   tr("show_all_in_category", "Show all in category"),
                 ),
-                r.createElement(
+                React.createElement(
                   "button",
                   {
                     type: "button",
@@ -3102,11 +3078,11 @@ const ve = 5,
                 ),
               ),
             ge.length > 0 &&
-              r.createElement(
+              React.createElement(
                 "div",
                 { className: "flex flex-wrap items-center gap-2.5" },
                 ge.map((e) =>
-                  r.createElement(
+                  React.createElement(
                     "button",
                     {
                       key: e.key,
@@ -3116,8 +3092,8 @@ const ve = 5,
                         "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[11px] font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                       title: tr("remove_filter", "Remove filter"),
                     },
-                    r.createElement("span", null, e.label),
-                    r.createElement(Jo, { className: "w-3 h-3 font-semibold" }),
+                    React.createElement("span", null, e.label),
+                    React.createElement(Jo, { className: "w-3 h-3 font-semibold" }),
                   ),
                 ),
               ),
@@ -3125,24 +3101,24 @@ const ve = 5,
         ),
       ),
       dealsBannerNode,
-      r.createElement(
+      React.createElement(
         "div",
         {
           id: "all-posts-feed",
           className: `w-full flex flex-col items-center mb-4 transition-opacity duration-200 ${filterPulse ? "opacity-90" : "opacity-100"}`,
         },
-        r.createElement(
+        React.createElement(
           "div",
           {
             className: `w-full ${feedMaxWidthClass} mx-auto px-3 ${feedHeaderCompact ? "pb-2 pt-2" : "pb-3 pt-4"} md:px-0`,
           },
-          r.createElement(
+          React.createElement(
             "div",
             {
               className: `mhub-feed-header mhub-allposts-header flex flex-col gap-1 ${feedHeaderCompact ? "is-compact" : ""}`,
             },
             showFeedTitle
-              ? r.createElement(
+              ? React.createElement(
                   showModeBanner ? "h1" : "h2",
                   {
                     id: "all-posts-feed-title",
@@ -3153,10 +3129,10 @@ const ve = 5,
                   },
                   feedTitle,
                 )
-              : r.createElement("span", { className: "sr-only" }, feedTitle),
+              : React.createElement("span", { className: "sr-only" }, feedTitle),
             !E &&
               !V &&
-              r.createElement(
+              React.createElement(
                 "div",
                 {
                   className:
@@ -3166,51 +3142,49 @@ const ve = 5,
               ),
           ),
         ),
-        r.createElement(
+        React.createElement(
           "div",
           {
             className: `w-full ${feedMaxWidthClass} mx-auto px-3 pt-4 md:px-0`,
           },
-          r.createElement(
+          React.createElement(
             "div",
             {
               className: "order-1 flex flex-col gap-3 w-full min-w-0",
             },
             E
               ? Array.from({ length: 3 }).map((e, a) =>
-                  r.createElement(
-                    S,
+                  React.createElement(Card,
                     {
                       key: `all-posts-skeleton-${a}`,
                       className:
                         "rounded-2xl border border-slate-200/80 dark:border-gray-700/70 mhub-premium-surface p-4 shadow-sm animate-pulse dark:border dark:border-slate-700/80",
                     },
-                    r.createElement("div", {
+                    React.createElement("div", {
                       className:
                         "h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-3 dark:bg-gray-900",
                     }),
-                    r.createElement("div", {
+                    React.createElement("div", {
                       className:
                         "h-52 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-3 dark:bg-gray-900",
                     }),
-                    r.createElement("div", {
+                    React.createElement("div", {
                       className:
                         "h-4 w-5/6 bg-gray-200 dark:bg-gray-700 rounded mb-2 dark:bg-gray-900",
                     }),
-                    r.createElement("div", {
+                    React.createElement("div", {
                       className:
                         "h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded dark:bg-gray-900",
                     }),
                   ),
                 )
               : V
-                ? r.createElement(
-                    S,
+                ? React.createElement(Card,
                     {
                       className:
                         "border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5 dark:border dark:border-red-600/40 dark:bg-red-950/20",
                     },
-                    r.createElement(
+                    React.createElement(
                       "p",
                       {
                         className:
@@ -3218,11 +3192,10 @@ const ve = 5,
                       },
                       V,
                     ),
-                    r.createElement(
+                    React.createElement(
                       "div",
                       { className: "flex flex-wrap gap-2" },
-                      r.createElement(
-                        u,
+                      React.createElement(Button,
                         {
                           type: "button",
                           className: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-700/40 dark:text-white dark:hover:bg-red-700/40",
@@ -3231,8 +3204,7 @@ const ve = 5,
                         tr("retry", "Retry"),
                       ),
                       ue &&
-                        r.createElement(
-                          u,
+                        React.createElement(Button,
                           {
                             type: "button",
                             variant: "outline",
@@ -3244,13 +3216,12 @@ const ve = 5,
                     ),
                   )
                 : K.length === 0
-                  ? r.createElement(
-                      S,
+                  ? React.createElement(Card,
                       {
                         className:
                           "border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
                       },
-                      r.createElement(
+                      React.createElement(
                         "h3",
                         {
                           className:
@@ -3268,7 +3239,7 @@ const ve = 5,
                               )
                             : tr("no_results", "No results for the current filters"),
                       ),
-                      r.createElement(
+                      React.createElement(
                         "p",
                         {
                           className:
@@ -3284,12 +3255,11 @@ const ve = 5,
                               "Try broadening search terms, changing category, or clearing filters.",
                             ),
                       ),
-                      r.createElement(
+                      React.createElement(
                         "div",
                         { className: "flex flex-wrap justify-center gap-2" },
                         activeSubcategoryLabel !== "All" &&
-                          r.createElement(
-                            u,
+                          React.createElement(Button,
                             {
                               type: "button",
                               variant: "outline",
@@ -3301,8 +3271,7 @@ const ve = 5,
                             },
                             tr("show_all_in_category", "Show all in category"),
                           ),
-                        r.createElement(
-                          u,
+                        React.createElement(Button,
                           {
                             type: "button",
                             className:
@@ -3311,8 +3280,7 @@ const ve = 5,
                           },
                           tr("reset_filters", "Reset filters"),
                         ),
-                        r.createElement(
-                          u,
+                        React.createElement(Button,
                           {
                             type: "button",
                             variant: "outline",
@@ -3335,7 +3303,6 @@ const ve = 5,
                         n = String(o || "U")
                           .charAt(0)
                           .toUpperCase(),
-                        i = Number(e.user?.rating || e.seller_rating || 0),
                         subcategoryNameRaw =
                           e.subcategory_name ||
                           e.subcategory ||
@@ -3370,86 +3337,16 @@ const ve = 5,
                           e.aadhaar_verified ||
                           e.pan_verified
                         ),
-                        trustScore = Number(e.trust?.score ?? e.user?.trust?.score ?? e.user?.trust_score ?? e.trust_score ?? 0),
-                        reliabilityLabel = trustScore >= 80 ? s("high_reliability", { defaultValue: "High Reliability" })
-                          : trustScore >= 60 ? s("good_reliability", { defaultValue: "Good Reliability" })
-                          : trustScore >= 40 ? s("fair_reliability", { defaultValue: "Fair" })
-                          : "",
-                        reliabilityCls = trustScore >= 80 ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700"
-                          : trustScore >= 60 ? "bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700"
-                          : "bg-gray-50 dark:bg-gray-800/40 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700",
-                        responseTimeLabel = trustScore >= 70 ? s("fast_response", { defaultValue: "Fast Response" })
-                          : trustScore >= 40 ? s("avg_response", { defaultValue: "Avg Response" })
-                          : "",
-                        _ = String(e.description || ""),
-                        d = Be === a,
-                        Oe = _.length >= 120,
                         he = nt(e.created_at || e.createdAt, l),
                         we = e.location || e.city || e.area || "",
                         title =
                           e.title || e.name || s("untitled", { defaultValue: "Untitled post" }),
                         isOwnerPost = isPostOwnedByUser(e, currentUserId),
-                        summary =
-                          [
-                            e.summary,
-                            e.subtitle,
-                            e.tagline,
-                            e.brand,
-                            e.model,
-                            _ ? _.slice(0, 90) : "",
-                          ].find((val) => typeof val === "string" && val.trim()) ||
-                          "",
-                        condition =
-                          e.condition ||
-                          e.item_condition ||
-                          e.itemCondition ||
-                          "",
-                        brand =
-                          e.brand ||
-                          e.brand_name ||
-                          e.brandName ||
-                          "",
-                        model =
-                          e.model ||
-                          e.model_name ||
-                          e.modelName ||
-                          "",
-                        availability =
-                          e.availability ||
-                          e.status ||
-                          e.item_status ||
-                          "",
-                        ratingCount = Number(
-                          e.user?.rating_count ||
-                            e.user?.review_count ||
-                            e.rating_count ||
-                            e.reviews_count ||
-                            e.review_count ||
-                            0,
-                        ),
-                        ratingLabel =
-                          i > 0
-                            ? `${i.toFixed(1)}${ratingCount ? ` (${ratingCount})` : ""}`
-                            : "",
                         resolvedPriceValue = resolvePostPriceValue(e),
                         priceValue =
                           resolvedPriceValue > 0
                             ? formatCurrency(resolvedPriceValue)
                             : tr("price_on_request", "Price on request"),
-                        attributeChips = [
-                          condition && {
-                            label: tr("condition", "Condition"),
-                            value: condition,
-                          },
-                          (brand || model) && {
-                            label: tr("model", "Model"),
-                            value: [brand, model].filter(Boolean).join(" "),
-                          },
-                          availability && {
-                            label: tr("availability", "Availability"),
-                            value: availability,
-                          },
-                        ].filter(Boolean),
                         imageList = collectPostImageUrls(e),
                         activeImageIndex = getCarouselIndex(
                           a,
@@ -3506,8 +3403,7 @@ const ve = 5,
                       const shownMetaChips = isMetaExpanded
                         ? metaChips
                         : visibleMetaChips;
-                      const card = r.createElement(
-                        S,
+                      const card = React.createElement(Card,
                           {
                             key: a || `post-card-${index}`,
                             ref: (X) => {
@@ -3517,19 +3413,17 @@ const ve = 5,
                             className:
                               "mhub-allposts-card mhub-surface rounded-2xl flex flex-col p-0 overflow-hidden hover:-translate-y-0.5 transition-all duration-300",
                           },
-                        r.createElement(
+                        React.createElement(
                           "div",
                           {
                             className:
                               "flex items-start gap-3 px-3 pt-2 pb-2 relative sm:px-4",
                           },
-                          r.createElement(
-                            Ve,
+                          React.createElement(Avatar,
                             {
                               className: "w-9 h-9 shrink-0 sm:w-10 sm:h-10",
                             },
-                            r.createElement(
-                              ze,
+                            React.createElement(AvatarFallback,
                               {
                                 className:
                                   "bg-[var(--surface-2)] text-slate-600 dark:text-slate-100 text-[10px] dark:bg-[var(--surface-2)] dark:text-slate-200",
@@ -3537,13 +3431,13 @@ const ve = 5,
                               n || "U",
                             ),
                           ),
-                          r.createElement(
+                          React.createElement(
                             "div",
                             { className: "flex-1 min-w-0 pr-12" },
-                            r.createElement(
+                            React.createElement(
                               "div",
                               { className: "flex flex-wrap items-center gap-2" },
-                              r.createElement(
+                              React.createElement(
                                 "span",
                                 {
                                   className:
@@ -3552,21 +3446,21 @@ const ve = 5,
                                 o,
                               ),
                               F &&
-                                r.createElement(
+                                React.createElement(
                                   "span",
                                   {
                                     className:
                                       "inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full border border-blue-200 dark:border-blue-700 shadow-sm",
                                     title: `Verified Seller${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
                                   },
-                                  r.createElement(
+                                  React.createElement(
                                     "svg",
                                     {
                                       className: "w-3.5 h-3.5 text-blue-500 dark:text-blue-400",
                                       fill: "currentColor",
                                       viewBox: "0 0 20 20",
                                     },
-                                    r.createElement("path", {
+                                    React.createElement("path", {
                                       fillRule: "evenodd",
                                       d: "M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
                                       clipRule: "evenodd",
@@ -3575,13 +3469,13 @@ const ve = 5,
                                   s("verified", { defaultValue: "Verified" }),
                                 ),
                               /* Trust/reliability/response badges removed from cards — only shown on PostDetail */
-                              r.createElement(
+                              React.createElement(
                                 "span",
                                 {
                                   className:
                                     "mhub-price-pill inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] sm:text-sm font-semibold sm:ml-auto",
                                 },
-                                r.createElement(
+                                React.createElement(
                                   "span",
                                   {
                                     className:
@@ -3589,7 +3483,7 @@ const ve = 5,
                                   },
                                   tr("price", "Price"),
                                 ),
-                                r.createElement(
+                                React.createElement(
                                   "span",
                                   {
                                     className:
@@ -3599,7 +3493,7 @@ const ve = 5,
                                 ),
                               ),
                             ),
-                          r.createElement(
+                          React.createElement(
                             "h3",
                             {
                               className:
@@ -3607,14 +3501,14 @@ const ve = 5,
                             },
                             title,
                           ),
-                          r.createElement(
+                          React.createElement(
                             "div",
                             {
                               className:
                                 "mhub-card-meta mt-1 flex flex-wrap items-center gap-1 text-[10px] sm:text-[11px]",
                             },
                             shownMetaChips.map((X) =>
-                              r.createElement(
+                              React.createElement(
                                 "span",
                                 { key: X.key, className: X.className },
                                 X.label,
@@ -3622,7 +3516,7 @@ const ve = 5,
                             ),
                             hiddenMetaChips.length > 0 &&
                               !isMetaExpanded &&
-                              r.createElement(
+                              React.createElement(
                                 "button",
                                 {
                                   className:
@@ -3642,7 +3536,7 @@ const ve = 5,
                               ),
                             hiddenMetaChips.length > 0 &&
                               isMetaExpanded &&
-                              r.createElement(
+                              React.createElement(
                                 "button",
                                 {
                                   className:
@@ -3658,16 +3552,16 @@ const ve = 5,
                               ),
                           ),
                           ),
-                          r.createElement(
+                          React.createElement(
                             DropdownMenu,
                             {
                               open: menuPostId === a,
                               onOpenChange: (X) => setMenuPostId(X ? a : null),
                             },
-                            r.createElement(
+                            React.createElement(
                               DropdownMenuTrigger,
                               { asChild: !0 },
-                              r.createElement(
+                              React.createElement(
                                 "button",
                                 {
                                   type: "button",
@@ -3677,17 +3571,17 @@ const ve = 5,
                                   title: tr("more_options", "More options"),
                                   "aria-label": tr("more_options", "More options"),
                                 },
-                                r.createElement(To, { className: "w-4 h-4" }),
+                                React.createElement(To, { className: "w-4 h-4" }),
                               ),
                             ),
-                            r.createElement(
+                            React.createElement(
                               DropdownMenuContent,
                               {
                                 align: "end",
                                 className:
                                   "w-44 rounded-xl border border-gray-200 dark:border-gray-700 mhub-premium-surface shadow-lg p-1 dark:border",
                               },
-                              r.createElement(
+                              React.createElement(
                                 DropdownMenuItem,
                                 {
                                   onSelect: () => handleSharePost(a),
@@ -3696,7 +3590,7 @@ const ve = 5,
                                 },
                                 s("share", { defaultValue: "Share" }),
                               ),
-                              r.createElement(
+                              React.createElement(
                                 DropdownMenuItem,
                                 {
                                   onSelect: () => toggleSave(a),
@@ -3708,7 +3602,7 @@ const ve = 5,
                                   : s("save", { defaultValue: "Save" }),
                               ),
                               isOwnerPost &&
-                                r.createElement(
+                                React.createElement(
                                   DropdownMenuItem,
                                   {
                                     onSelect: () => {
@@ -3720,7 +3614,7 @@ const ve = 5,
                                   },
                                   tr("promote", "Promote"),
                                 ),
-                              r.createElement(
+                              React.createElement(
                                 DropdownMenuItem,
                                 {
                                   onSelect: () => handleCartToggle(e),
@@ -3731,7 +3625,7 @@ const ve = 5,
                                   ? s("in_cart", { defaultValue: "In Cart" })
                                   : s("add_to_cart", { defaultValue: "Add to Cart" }),
                               ),
-                              r.createElement(
+                              React.createElement(
                                 DropdownMenuItem,
                                 {
                                   onSelect: () => handleReportPost(a),
@@ -3743,19 +3637,19 @@ const ve = 5,
                             ),
                           ),
                         ),
-                        r.createElement(
+                        React.createElement(
                           "div",
                           {
                             className:
                               "relative w-full bg-[var(--surface-2)] border-y border-[var(--chip-border)] mhub-media-frame dark:bg-[var(--surface-2)] dark:border-y dark:border-[var(--chip-border)]",
                           },
-                          r.createElement(PostPromoBadges, {
+                          React.createElement(PostPromoBadges, {
                             post: e,
                             t: s,
                             size: "xs",
                             className: "absolute left-3 top-3 z-10",
                           }),
-                          r.createElement(
+                          React.createElement(
                             "div",
                             {
                               ref: (X) => setCarouselTrackRef(a, X),
@@ -3765,14 +3659,14 @@ const ve = 5,
                                 "flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide",
                             },
                             imageList.map((X, _t) =>
-                              r.createElement(
+                              React.createElement(
                                 "div",
                                 {
                                   key: `${a}-media-${_t}`,
                                   className:
                                     "w-full shrink-0 snap-center bg-[var(--surface-2)] dark:bg-[var(--surface-2)]",
                                 },
-                                r.createElement("img", {
+                                React.createElement("img", {
                                   src: X,
                                   alt: `${e.title || s("post", { defaultValue: "Post" })} ${s("image", { defaultValue: "image" })} ${_t + 1}`,
                                   loading: "lazy",
@@ -3805,10 +3699,10 @@ const ve = 5,
                             ),
                           ),
                           imageList.length > 1 &&
-                            r.createElement(
-                              r.Fragment,
+                            React.createElement(
+                              React.Fragment,
                               null,
-                              r.createElement(
+                              React.createElement(
                                 "button",
                                 {
                                   type: "button",
@@ -3819,9 +3713,9 @@ const ve = 5,
                                   "aria-label":
                                     tr("previous_image", "Previous image"),
                                 },
-                                r.createElement(Lo, { className: "w-3 h-3" }),
+                                React.createElement(Lo, { className: "w-3 h-3" }),
                               ),
-                              r.createElement(
+                              React.createElement(
                                 "button",
                                 {
                                   type: "button",
@@ -3831,9 +3725,9 @@ const ve = 5,
                                     "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8 dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
                                   "aria-label": tr("next_image", "Next image"),
                                 },
-                                r.createElement(Co, { className: "w-3 h-3" }),
+                                React.createElement(Co, { className: "w-3 h-3" }),
                               ),
-                              r.createElement(
+                              React.createElement(
                                 "div",
                                 {
                                   className:
@@ -3843,14 +3737,14 @@ const ve = 5,
                                 "/",
                                 imageList.length,
                               ),
-                              r.createElement(
+                              React.createElement(
                                 "div",
                                 {
                                   className:
                                     "absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-full dark:bg-black/40",
                                 },
                                 imageList.map((X, _t) =>
-                                  r.createElement("button", {
+                                  React.createElement("button", {
                                     key: `${a}-dot-${_t}`,
                                     type: "button",
                                     onClick: (Nt) => {
@@ -3869,19 +3763,19 @@ const ve = 5,
                               ),
                             ),
                         ),
-                        r.createElement(
+                        React.createElement(
                           "div",
                           {
                             className:
                               "px-3 pb-2.5 pt-2 border-t border-[var(--chip-border)] sm:pb-3 dark:border-t dark:border-[var(--chip-border)]",
                           },
-                        r.createElement(
+                        React.createElement(
                           "div",
                           {
                             className:
                               "post-action-row flex flex-wrap items-center gap-1 pr-1 scrollbar-hide sm:flex-nowrap sm:overflow-x-auto sm:whitespace-nowrap sm:gap-2",
                           },
-                          r.createElement(
+                          React.createElement(
                             "button",
                               {
                                 className:
@@ -3889,25 +3783,25 @@ const ve = 5,
                                 onClick: () => Me(a),
                               },
                               ae[a]
-                                ? r.createElement(He, {
+                                ? React.createElement(He, {
                                     className: "w-4 h-4 text-red-500 dark:text-red-300",
                                   })
-                                : r.createElement(qe, {
+                                : React.createElement(qe, {
                                     className:
                                       "w-4 h-4 text-black dark:text-gray-300 dark:text-slate-100",
                                   }),
-                              r.createElement(
+                              React.createElement(
                                 "span",
                                 { className: "hidden sm:inline" },
                                 s("like", { defaultValue: "Like" }),
                               ),
-                              r.createElement(
+                              React.createElement(
                                 "span",
                                 { className: "text-[10px] sm:text-xs" },
                                 Ae[a] || 0,
                               ),
                             ),
-                            r.createElement(
+                            React.createElement(
                               "button",
                               {
                                 className:
@@ -3916,14 +3810,14 @@ const ve = 5,
                                   ie(e), le(!0);
                                 },
                               },
-                              r.createElement(Ye, { className: "w-4 h-4" }),
-                              r.createElement(
+                              React.createElement(Ye, { className: "w-4 h-4" }),
+                              React.createElement(
                                 "span",
                                 { className: "hidden sm:inline" },
                                 s("interested", { defaultValue: "Interested" }),
                               ),
                             ),
-                            r.createElement(
+                            React.createElement(
                             "button",
                               {
                                 className:
@@ -3932,9 +3826,9 @@ const ve = 5,
                                 title: s("share", { defaultValue: "Share" }),
                                 "aria-label": s("share", { defaultValue: "Share" }),
                               },
-                              r.createElement(ko, { className: "w-3.5 h-3.5" }),
+                              React.createElement(ko, { className: "w-3.5 h-3.5" }),
                             ),
-                            r.createElement(
+                            React.createElement(
                               "button",
                               {
                                 className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
@@ -3951,10 +3845,10 @@ const ve = 5,
                                   : s("save", { defaultValue: "Save" }),
                               },
                               savedPosts[a]
-                                ? r.createElement(Qo, { className: "w-3.5 h-3.5" })
-                                : r.createElement(Wo, { className: "w-3.5 h-3.5" }),
+                                ? React.createElement(Qo, { className: "w-3.5 h-3.5" })
+                                : React.createElement(Wo, { className: "w-3.5 h-3.5" }),
                             ),
-                            r.createElement(
+                            React.createElement(
                               "button",
                               {
                                 className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
@@ -3970,9 +3864,9 @@ const ve = 5,
                                   ? s("in_cart", { defaultValue: "In Cart" })
                                   : s("add_to_cart", { defaultValue: "Add to Cart" }),
                               },
-                              r.createElement(Yo, { className: "w-3.5 h-3.5" }),
+                              React.createElement(Yo, { className: "w-3.5 h-3.5" }),
                             ),
-                            r.createElement(
+                            React.createElement(
                               "button",
                               {
                                 className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
@@ -3988,27 +3882,26 @@ const ve = 5,
                                   ? s("in_compare", { defaultValue: "In Compare" })
                                   : s("compare", { defaultValue: "Compare" }),
                               },
-                              r.createElement(CompareIcon, { className: "w-3.5 h-3.5" }),
+                              React.createElement(CompareIcon, { className: "w-3.5 h-3.5" }),
                             ),
-                            r.createElement(
+                            React.createElement(
                               "span",
                               {
                                 className:
                                   "mhub-chip shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full text-gray-600 dark:text-gray-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold dark:text-gray-200",
                               },
-                              r.createElement(Qe, { className: "w-4 h-4" }),
+                              React.createElement(Qe, { className: "w-4 h-4" }),
                               De[a] || 0,
                             ),
-                            r.createElement(
-                              u,
+                            React.createElement(Button,
                               {
                                 size: "sm",
                                 className:
                                   "mhub-cta shrink-0 inline-flex items-center gap-1 rounded-full px-3 text-[10px] sm:text-xs font-semibold sm:ml-auto w-auto",
                                 onClick: () => je(a),
                               },
-                              r.createElement(Bo, { className: "w-3.5 h-3.5" }),
-                              r.createElement(
+                              React.createElement(Bo, { className: "w-3.5 h-3.5" }),
+                              React.createElement(
                                 "span",
                                 null,
                                 s("view_details", { defaultValue: "View Details" }),
@@ -4022,7 +3915,7 @@ const ve = 5,
         ),
         !latestWindow &&
           C &&
-          r.createElement("div", {
+          React.createElement("div", {
             ref: loadMoreSentinelRef,
             "aria-hidden": "true",
             className: "w-full h-1",
@@ -4033,8 +3926,7 @@ const ve = 5,
           !E &&
           !V &&
           K.length > 0 &&
-          r.createElement(
-            u,
+          React.createElement(Button,
             {
               type: "button",
               variant: "outline",
@@ -4042,52 +3934,50 @@ const ve = 5,
                 "mt-5 border-blue-300 text-blue-700 inline-flex items-center gap-1.5 dark:border-blue-600/40 dark:text-blue-300",
               onClick: J,
             },
-            r.createElement(zo, { className: "w-3.5 h-3.5" }),
+            React.createElement(zo, { className: "w-3.5 h-3.5" }),
             s("load_more_posts", { defaultValue: "Load more posts" }),
           ),
         guestPreviewLimited &&
-          r.createElement(
-            S,
+          React.createElement(Card,
             {
               className:
                 `w-full ${feedMaxWidthClass} mt-3 p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:border dark:border-blue-600/40 dark:bg-blue-950/20`,
             },
-            r.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   "flex flex-col md:flex-row md:items-center md:justify-between gap-3",
               },
-              r.createElement(
+              React.createElement(
                 "div",
                 null,
-                r.createElement(
+                React.createElement(
                   "p",
                   {
                     className: "font-semibold text-blue-900 dark:text-blue-200",
                   },
                   s("unlock_more_posts", { defaultValue: "Unlock more posts" }),
                 ),
-                r.createElement(
+                React.createElement(
                   "p",
                   { className: "text-sm text-blue-700 dark:text-blue-300" },
                   s("login_for_full_feed", { defaultValue: "Sign in to browse the full feed, save searches, and get personalized recommendations." }),
                 ),
               ),
-              r.createElement(
-                u,
+              React.createElement(Button,
                 {
                   className:
                     "bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center gap-1.5 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
                   onClick: () => y("/login", { state: { returnTo } }),
                 },
-                r.createElement(zo, { className: "w-3.5 h-3.5" }),
+                React.createElement(zo, { className: "w-3.5 h-3.5" }),
                 s("login", { defaultValue: "Login" }),
               ),
             ),
           ),
         showBackToTop &&
-          r.createElement(
+          React.createElement(
             "button",
             {
               type: "button",
@@ -4100,11 +3990,11 @@ const ve = 5,
               },
               "aria-label": tr("back_to_top", "Back to top"),
             },
-            r.createElement(Uo, { className: "w-3.5 h-3.5" }),
+            React.createElement(Uo, { className: "w-3.5 h-3.5" }),
             tr("back_to_top", "Back to top"),
           ),
         ne &&
-          r.createElement(
+          React.createElement(
             "div",
             {
               className:
@@ -4112,7 +4002,7 @@ const ve = 5,
             },
             ne,
           ),
-        r.createElement(Ze, {
+        React.createElement(AvatarFallback, {
           isOpen: Ie,
           onClose: () => {
             le(!1), ie(null);
@@ -4120,7 +4010,7 @@ const ve = 5,
           postId: G?.post_id || G?.id,
           postTitle: G?.title,
         }),
-        r.createElement(PromoteDialog, {
+        React.createElement(PromoteDialog, {
           open: Boolean(promotePostId),
           onOpenChange: (e) => {
             if (!e) closePromote();
@@ -4128,40 +4018,41 @@ const ve = 5,
           postId: promotePostId,
           postTitle: promotePostTitle,
         }),
-        r.createElement(LoginPromptModal, {
+        React.createElement(LoginPromptModal, {
           isOpen: loginPromptOpen,
           onClose: () => setLoginPromptOpen(!1),
         }),
-        r.createElement(pt, {
+        React.createElement(pt, {
           open: shareDialogOpen,
           onOpenChange: setShareDialogOpen,
           url: shareDialogUrl,
           title: s("share", { defaultValue: "Share post" }),
         }),
         compareItems.length > 0 &&
-          r.createElement(
+          React.createElement(
             "div",
             {
               className:
                 "fixed bottom-20 left-1/2 -translate-x-1/2 z-[9998] bg-purple-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 dark:bg-purple-700",
             },
-            r.createElement(CompareIcon, { className: "w-4 h-4" }),
-            r.createElement(
+            React.createElement(CompareIcon, { className: "w-4 h-4" }),
+            React.createElement(
               "span",
               { className: "text-sm font-semibold" },
               `${compareItems.length} ${s("items_to_compare", { defaultValue: "items selected" })}`,
             ),
-            r.createElement(
+            (() => { const sub = String(compareItems[0]?.subcategory_name || compareItems[0]?.subcategory || "").trim(); return sub ? React.createElement("span", { className: "text-[10px] bg-white/20 rounded-full px-2 py-0.5 font-medium" }, sub) : null; })(),
+            React.createElement(
               "button",
               {
                 type: "button",
-                onClick: () => setShowComparePanel(!0),
+                onClick: () => y("/compare", { state: { compareItems: compareItems } }),
                 className:
                   "px-3 py-1.5 bg-white text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-50 transition",
               },
               s("compare_now", { defaultValue: "Compare" }),
             ),
-            r.createElement(
+            React.createElement(
               "button",
               {
                 type: "button",
@@ -4169,44 +4060,44 @@ const ve = 5,
                 className: "ml-1 p-1 hover:bg-purple-500 rounded-full transition",
                 "aria-label": "Clear compare",
               },
-              r.createElement(Jo, { className: "w-3 h-3" }),
+              React.createElement(Jo, { className: "w-3 h-3" }),
             ),
           ),
         showComparePanel &&
           compareItems.length > 0 &&
-          r.createElement(
+          React.createElement(
             "div",
             {
               className: "fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center",
               onClick: (ev) => { if (ev.target === ev.currentTarget) setShowComparePanel(!1); },
             },
-            r.createElement(
+            React.createElement(
               "div",
               {
                 className:
                   "mhub-premium-surface w-full max-w-5xl max-h-[90vh] overflow-auto rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-8 sm:m-4",
               },
-              r.createElement(
+              React.createElement(
                 "div",
                 { className: "flex items-center justify-between mb-6" },
-                r.createElement(
+                React.createElement(
                   "h2",
                   { className: "text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2" },
-                  r.createElement(CompareIcon, { className: "w-5 h-5 text-purple-500" }),
+                  React.createElement(CompareIcon, { className: "w-5 h-5 text-purple-500" }),
                   s("compare_products", { defaultValue: "Compare Products" }),
-                  r.createElement("span", { className: "text-sm font-normal text-gray-500 dark:text-gray-400 ml-2" }, `(${compareItems.length})`),
+                  React.createElement("span", { className: "text-sm font-normal text-gray-500 dark:text-gray-400 ml-2" }, `(${compareItems.length})`),
                 ),
-                r.createElement(
+                React.createElement(
                   "button",
                   {
                     type: "button",
                     onClick: () => setShowComparePanel(!1),
                     className: "p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition",
                   },
-                  r.createElement(Jo, { className: "w-5 h-5" }),
+                  React.createElement(Jo, { className: "w-5 h-5" }),
                 ),
               ),
-              r.createElement(
+              React.createElement(
                 "div",
                 { className: "grid gap-4", style: { gridTemplateColumns: `repeat(${compareItems.length}, minmax(200px, 1fr))` } },
                 compareItems.map((item) => {
@@ -4214,19 +4105,19 @@ const ve = 5,
                   const imgSrc = Ne(item);
                   const priceVal = resolvePostPriceValue(item);
                   const priceLabel = priceVal > 0 ? formatCurrency(priceVal) : null;
-                  return r.createElement(
+                  return React.createElement(
                     "div",
                     { key: itemId, className: "rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 overflow-hidden" },
-                    r.createElement(
+                    React.createElement(
                       "div",
                       { className: "relative" },
-                      r.createElement("img", {
+                      React.createElement("img", {
                         src: imgSrc,
                         alt: item?.title || "",
                         className: "w-full h-44 object-cover",
                         onError: (ev) => { ev.target.style.display = "none"; },
                       }),
-                      r.createElement(
+                      React.createElement(
                         "button",
                         {
                           type: "button",
@@ -4234,15 +4125,15 @@ const ve = 5,
                           className: "absolute top-2 right-2 p-1.5 rounded-full bg-red-500/90 text-white hover:bg-red-600 transition text-xs",
                           title: s("remove", { defaultValue: "Remove" }),
                         },
-                        r.createElement(Jo, { className: "w-3.5 h-3.5" }),
+                        React.createElement(Jo, { className: "w-3.5 h-3.5" }),
                       ),
                     ),
-                    r.createElement(
+                    React.createElement(
                       "div",
                       { className: "p-4 space-y-3" },
-                      r.createElement("h3", { className: "font-bold text-base text-gray-900 dark:text-white line-clamp-2" }, item?.title || "—"),
-                      priceLabel && r.createElement("p", { className: "text-lg font-bold text-emerald-600 dark:text-emerald-400" }, priceLabel),
-                      r.createElement(
+                      React.createElement("h3", { className: "font-bold text-base text-gray-900 dark:text-white line-clamp-2" }, item?.title || "—"),
+                      priceLabel && React.createElement("p", { className: "text-lg font-bold text-emerald-600 dark:text-emerald-400" }, priceLabel),
+                      React.createElement(
                         "div",
                         { className: "space-y-2 text-sm" },
                         [
@@ -4255,15 +4146,15 @@ const ve = 5,
                           { label: s("subcategory", { defaultValue: "Subcategory" }), value: item?.subcategory_name || item?.subcategory },
                           { label: s("posted", { defaultValue: "Posted" }), value: item?.created_at ? new Date(item.created_at).toLocaleDateString() : null },
                         ].filter((spec) => spec.value).map((spec) =>
-                          r.createElement(
+                          React.createElement(
                             "div",
                             { key: spec.label, className: "flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-700/50" },
-                            r.createElement("span", { className: "text-gray-500 dark:text-gray-400 text-xs font-medium" }, spec.label),
-                            r.createElement("span", { className: "text-gray-900 dark:text-gray-100 font-medium text-right max-w-[60%] truncate" }, spec.value),
+                            React.createElement("span", { className: "text-gray-500 dark:text-gray-400 text-xs font-medium" }, spec.label),
+                            React.createElement("span", { className: "text-gray-900 dark:text-gray-100 font-medium text-right max-w-[60%] truncate" }, spec.value),
                           ),
                         ),
                       ),
-                      r.createElement(
+                      React.createElement(
                         W,
                         {
                           onClick: () => { setShowComparePanel(!1); y(`/post/${itemId}`); },
@@ -4280,5 +4171,8 @@ const ve = 5,
       ),
     );
   };
-var Nt = it;
+var Nt = AllPosts;
 export { Nt as default };
+
+
+

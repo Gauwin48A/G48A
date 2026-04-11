@@ -5,10 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, MessageCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { isAuthenticated } from "@/utils/authStorage";
+import { useTranslation } from "react-i18next";
 import Chat from "./Chat";
 
 export default function ProtectedChat() {
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const tr = (key, fallback) => t(key, { defaultValue: fallback });
   const loggedIn = useMemo(() => isAuthenticated(user), [user]);
 
   if (!loggedIn) {
@@ -21,23 +24,23 @@ export default function ProtectedChat() {
                 <MessageCircle className="h-7 w-7" />
               </div>
               <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                Please Login
+                {tr("please_login", "Please Login")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-center dark:text-center">
               <p className="text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200">
                 <Lock className="mr-1 inline h-4 w-4" />
-                Chat history is protected. Login to continue.
+                {tr("chat_history_protected", "Chat history is protected. Login to continue.")}
               </p>
               <div className="flex flex-col gap-2">
                 <Link to="/login" state={{ returnTo: "/chat" }}>
                   <Button className="w-full bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40">
-                    Login to continue
+                    {tr("login_to_continue", "Login to continue")}
                   </Button>
                 </Link>
                 <Link to="/signup" state={{ returnTo: "/chat" }}>
                   <Button variant="outline" className="w-full">
-                    Create account
+                    {tr("create_account", "Create account")}
                   </Button>
                 </Link>
               </div>

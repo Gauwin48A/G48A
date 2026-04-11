@@ -5,22 +5,27 @@
  * Usage: pm2 start ecosystem.config.js
  */
 
+const deployHosts = String(process.env.MHUB_DEPLOY_HOSTS || "")
+    .split(",")
+    .map((host) => host.trim())
+    .filter(Boolean);
+
 module.exports = {
     apps: [
         {
             name: 'mhub-api',
-            script: './src/server.js',
+            script: './src/index.js',
             instances: Math.max(1, require('os').cpus().length - 1),  // Leave 1 core for OS
             exec_mode: 'cluster',
 
             // Environment variables
             env: {
                 NODE_ENV: 'development',
-                PORT: 5000,
+                PORT: 5001,
             },
             env_production: {
                 NODE_ENV: 'production',
-                PORT: 5000,
+                PORT: 5001,
             },
 
             // Auto-restart on memory limit (prevent memory leaks)
@@ -48,7 +53,7 @@ module.exports = {
 
             // Health monitoring
             health_check: {
-                url: 'http://localhost:5000/health',
+                url: 'http://localhost:5001/health',
                 interval: 30000,
                 timeout: 5000,
             },
@@ -59,7 +64,7 @@ module.exports = {
     deploy: {
         production: {
             user: 'ubuntu',
-            host: ['server1.mhub.com', 'server2.mhub.com'],
+            host: deployHosts.length > 0 ? deployHosts : ['localhost'],
             ref: 'origin/main',
             repo: 'git@github.com:mhub/mhub.git',
             path: '/var/www/mhub',

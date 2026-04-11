@@ -3,6 +3,7 @@ const router = express.Router();
 const { runQuery } = require("../utils/dbHelpers");
 const logger = require("../utils/logger");
 const cacheService = require("../services/cacheService");
+const { publicReadSlowDown } = require("../middleware/rateLimiter");
 
 const BRAND_CACHE_TTL_SECONDS =
   Number.parseInt(process.env.BRAND_CACHE_TTL_SECONDS, 10) || 300;
@@ -27,7 +28,7 @@ const defaultBrands = [
 /**
  * @route GET / - Retrieve all brands (cached, with fallback to defaults)
  */
-router.get("/", async (req, res) => {
+router.get("/", publicReadSlowDown, async (req, res) => {
   try {
     const brands = await cacheService.getOrSetWithStampedeProtection(
       "brands:all",

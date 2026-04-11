@@ -58,6 +58,7 @@ export const activateDefenseMode = () => {
   if (ENABLE_DEBUGGER_TRAP && !window[DEFENSE_MODE_INTERVAL_KEY]) {
     window[DEFENSE_MODE_INTERVAL_KEY] = setInterval(() => {
       const start = performance.now();
+      // eslint-disable-next-line no-debugger
       debugger;
       const end = performance.now();
       if (end - start > 100) {

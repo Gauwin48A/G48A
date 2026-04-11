@@ -114,7 +114,7 @@ function BuyerInterestModal({ isOpen, onClose, postId, postTitle }) {
           <DialogDescription className="text-gray-600 dark:text-gray-400">
             {postTitle && (
               <span className="font-medium text-blue-600 dark:text-blue-400">
-                "{postTitle}"
+                &quot;{postTitle}&quot;
               </span>
             )}
             <br />

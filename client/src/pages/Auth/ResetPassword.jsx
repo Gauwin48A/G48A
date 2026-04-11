@@ -92,8 +92,7 @@ export default function ResetPassword() {
       const payload = otpMode
         ? { phone, otp, newPassword: password }
         : { token, newPassword: password };
-      const response = await api.post("/auth/reset-password", payload);
-      const data = response?.data ?? response;
+      await api.post("/auth/reset-password", payload);
 
       setSuccess(true);
       toast({
@@ -325,4 +324,3 @@ export default function ResetPassword() {
     </div>
   );
 }
-

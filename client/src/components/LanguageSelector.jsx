@@ -34,6 +34,7 @@ const LANGUAGES = [
   { code: "th", label: "Thai", native: "ไทย" },
   { code: "sw", label: "Swahili", native: "Kiswahili" },
 ];
+const WARM_PREFETCH_LIMIT = 7;
 
 function normalizeLangCode(code) {
   const normalized = String(code || "").toLowerCase().trim();
@@ -124,10 +125,11 @@ export default function LanguageSelector({ className = "", compact = false }) {
 
     const schedule = () => {
       hasWarmPrefetchedRef.current = true;
-      LANGUAGES.forEach((lang) => {
-        if (lang.code !== selectedCode) {
-          void prefetchLanguage(lang.code);
-        }
+      const warmTargets = LANGUAGES.slice(0, WARM_PREFETCH_LIMIT)
+        .map((lang) => lang.code)
+        .filter((code) => code !== selectedCode);
+      warmTargets.forEach((code) => {
+        void prefetchLanguage(code);
       });
     };
 
@@ -202,7 +204,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
           compact ? "h-8 text-[11px]" : "h-9 text-sm"
         }`}
       >
-        <FiGlobe className="h-4 w-4 text-white/90" />
+        <FiGlobe className="h-4 w-4" />
         <span className="whitespace-nowrap">{buttonLabel}</span>
         <FiChevronDown
           className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`}
@@ -219,7 +221,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
                 right: dropdownStyle.right,
                 minWidth: dropdownStyle.minWidth,
               }}
-              className={`fixed z-[1000] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 ${
+              className={`fixed z-[1000] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 max-h-[60vh] overflow-y-auto ${
                 compact ? "w-44" : "w-60"
               }`}
             >
