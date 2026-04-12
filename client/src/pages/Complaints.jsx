@@ -32,6 +32,7 @@ import { useAuth as he } from "@/context/AuthContext";
 import api from "@/lib/api";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { hasAuthSession } from "@/utils/authStorage";
 const ve = () => {
   const { t: r } = le(),
     tr = (t, s, l = {}) => r(t, { defaultValue: s, ...l }),
@@ -44,11 +45,7 @@ const ve = () => {
     { user: I } = he(),
     m = F(
       () =>
-        !!(
-          I ||
-          localStorage.getItem("authToken") ||
-          localStorage.getItem("token")
-        ),
+        !!(I || hasAuthSession()),
       [I],
     ),
     [W, V] = i(!1),

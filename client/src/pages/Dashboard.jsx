@@ -34,6 +34,7 @@ import { useAuth as pe } from "@/context/AuthContext";
 import api from "@/lib/api";
 import { getInitials as gi } from "@/lib/userDisplay";
 import SellerDashboard from "@/components/SellerDashboard";
+import { hasAuthSession } from "@/utils/authStorage";
 const W = {
     active_listings: {
       icon: de,
@@ -127,11 +128,7 @@ const W = {
       ),
       K = C(
         () =>
-          !!(
-            i ||
-            localStorage.getItem("authToken") ||
-            localStorage.getItem("token")
-          ),
+          !!(i || hasAuthSession()),
         [i],
       ),
       r = (t, a) => {
@@ -157,12 +154,6 @@ const W = {
         (async () => {
           D(!0), L(null);
           try {
-            const l =
-              localStorage.getItem("authToken") ||
-              localStorage.getItem("token");
-            l &&
-              !localStorage.getItem("authToken") &&
-              localStorage.setItem("authToken", l);
             const d = {},
               N = i?.user_id || i?.id || localStorage.getItem("userId") || "";
             N && (d.userId = String(N)), q > 0 && (d.refresh = "true");

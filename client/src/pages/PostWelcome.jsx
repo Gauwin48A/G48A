@@ -18,7 +18,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import { subscribeSubscriptionUpdated } from "@/utils/appStateEvents";
-import { getAccessToken, getUserId } from "@/utils/authStorage";
+import { getUserId, isAuthenticated } from "@/utils/authStorage";
 import { useCmsPage } from "@/hooks/useCmsPage";
 
 const PLAN_META = {
@@ -147,10 +147,10 @@ export default function PostWelcome() {
 
   const loadSubscription = useCallback(
     async (signal) => {
-      const accessToken = getAccessToken();
+      const isAuthed = isAuthenticated(user);
       const userId = getUserId(user);
 
-      if (!accessToken || !userId) {
+      if (!isAuthed || !userId) {
         setSubscriptionState({
           loading: false,
           error: "",

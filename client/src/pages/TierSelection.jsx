@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import api from "@/lib/api";
 import { fetchWithCache } from "@/lib/requestCache";
-import { getAccessToken, getUserId } from "@/utils/authStorage";
+import { hasAuthSession, getUserId } from "@/utils/authStorage";
 import { useToast } from "@/hooks/use-toast";
 import { navigateBack } from "@/utils/navigation";
 import { emitSubscriptionUpdated } from "@/utils/appStateEvents";
@@ -369,9 +369,9 @@ export default function TierSelection() {
 
   const fetchCurrentSubscription = useCallback(async () => {
     const userId = getUserId();
-    const accessToken = getAccessToken();
+    const hasSession = hasAuthSession();
 
-    if (!userId || !accessToken) {
+    if (!userId || !hasSession) {
       setSubscriptionSummary({
         loading: false,
         error: "",
@@ -415,9 +415,9 @@ export default function TierSelection() {
 
   const fetchSubscriptionHistory = useCallback(async () => {
     const userId = getUserId();
-    const accessToken = getAccessToken();
+    const hasSession = hasAuthSession();
 
-    if (!userId || !accessToken) {
+    if (!userId || !hasSession) {
       setSubscriptionHistoryState({
         loading: false,
         error: "",
@@ -812,8 +812,8 @@ export default function TierSelection() {
 
   const upgradeTier = async (tierKey) => {
     const userId = getUserId();
-    const accessToken = getAccessToken();
-    if (!userId || !accessToken) {
+    const hasSession = hasAuthSession();
+    if (!userId || !hasSession) {
       navigate("/login", { state: { returnTo: loginReturnTo } });
       return;
     }
@@ -828,8 +828,8 @@ export default function TierSelection() {
 
   const activateTrial = async (tierKey) => {
     const userId = getUserId();
-    const accessToken = getAccessToken();
-    if (!userId || !accessToken) {
+    const hasSession = hasAuthSession();
+    if (!userId || !hasSession) {
       navigate("/login", { state: { returnTo: loginReturnTo } });
       return;
     }

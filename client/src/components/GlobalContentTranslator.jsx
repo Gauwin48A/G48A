@@ -382,7 +382,7 @@ function GlobalContentTranslator() {
       isWorkingRef.current = false;
       if (hasMoreTasks) {
         pendingRootsRef.current.add(root);
-        scheduleScan(24);
+        scheduleScan(200);
       }
     }
   };
@@ -399,8 +399,9 @@ function GlobalContentTranslator() {
     rootNodeRef.current =
       document.querySelector('[data-translation-root="true"]') ||
       document.querySelector('main.app-main') ||
-      document.getElementById('root') ||
-      document.body;
+      document.getElementById('root');
+    // Intentionally do NOT fall back to document.body — watching the entire body
+    // would trigger MutationObserver on navbar, tooltips, modals and flood the main thread.
     const translationRoot = rootNodeRef.current;
     if (!translationRoot) {
       return undefined;

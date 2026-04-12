@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import AadhaarOtpVerify from "@/components/AadhaarOtpVerify";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/lib/api";
-import { getAccessToken, getUserId } from "@/utils/authStorage";
+import { getUserId, isAuthenticated as isAuthenticatedFn } from "@/utils/authStorage";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 const Verification = () => {
@@ -39,9 +39,8 @@ const Verification = () => {
     [retryCount, setRetryCount] = useState(0),
     [formData, setFormData] = useState({ aadhaarNumber: "", panNumber: "" }),
     [files, setFiles] = useState({ aadhaarXml: null, aadhaarImage: null, panImage: null }),
-    accessToken = getAccessToken(),
     userId = getUserId(user),
-    isAuthenticated = useMemo(() => !!(user || (accessToken && userId)), [user, userId, accessToken]);
+    isAuthenticated = useMemo(() => isAuthenticatedFn(user), [user]);
   const statusNormalized = useMemo(
     () => String(kycStatus || "").toUpperCase(),
     [kycStatus],

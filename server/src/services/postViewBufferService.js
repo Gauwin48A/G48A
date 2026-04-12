@@ -17,7 +17,61 @@ const DEFAULT_MAX_BUFFERED_KEYS = Number.parseInt(
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NUMERIC_RE = /^\d+$/;
-const isValidPostId = (value) => UUID_RE.test(value) || NUMERIC_RE.test(value);
+
+let postIdType = null;
+let postIdTypePromise = null;
+
+const normalizePostIdType = (row) => {
+  const dataType = String(row?.data_type || row?.udt_name || "")
+    .trim()
+    .toLowerCase();
+  if (dataType === "uuid") return "uuid";
+  if (dataType === "integer" || dataType === "int4") return "integer";
+  if (dataType === "bigint" || dataType === "int8") return "bigint";
+  return "text";
+};
+
+const detectPostIdType = async () => {
+  try {
+    const result = await runQuery(
+      `
+      SELECT data_type, udt_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'posts'
+        AND column_name = 'post_id'
+      LIMIT 1
+      `
+    );
+    return normalizePostIdType(result.rows?.[0]);
+  } catch (err) {
+    logger.warn("[PostViewBuffer] Failed to detect post_id type, defaulting to text", {
+      message: err.message,
+    });
+    return "text";
+  }
+};
+
+const getPostIdType = async () => {
+  if (postIdType) return postIdType;
+  if (!postIdTypePromise) {
+    postIdTypePromise = detectPostIdType()
+      .then((type) => {
+        postIdType = type;
+        return type;
+      })
+      .finally(() => {
+        postIdTypePromise = null;
+      });
+  }
+  return postIdTypePromise;
+};
+
+const isValidPostId = (value, idType) => {
+  if (idType === "uuid") return UUID_RE.test(value);
+  if (idType === "integer" || idType === "bigint") return NUMERIC_RE.test(value);
+  return UUID_RE.test(value) || NUMERIC_RE.test(value);
+};
 
 const pendingCounts = new Map();
 let flushTimer = null;
@@ -30,7 +84,7 @@ let droppedDueToBufferLimit = 0;
  * @param {number} [limit] - Maximum number of IDs to return
  * @returns {string[]} Sanitised, deduplicated post IDs
  */
-function sanitizePostIds(postIds, limit = DEFAULT_BATCH_LIMIT) {
+function sanitizePostIds(postIds, limit = DEFAULT_BATCH_LIMIT, idType = "uuid") {
   if (!Array.isArray(postIds) || postIds.length === 0) return [];
 
   const out = [];
@@ -39,7 +93,7 @@ function sanitizePostIds(postIds, limit = DEFAULT_BATCH_LIMIT) {
   for (const rawId of postIds) {
     if (out.length >= limit) break;
     const id = String(rawId || "").trim().toLowerCase();
-    if (!id || seen.has(id) || !isValidPostId(id)) continue;
+    if (!id || seen.has(id) || !isValidPostId(id, idType)) continue;
     seen.add(id);
     out.push(id);
   }
@@ -83,7 +137,7 @@ function mergeBackCounts(countMap) {
  * @param {Map<string, number>} countMap - Post IDs and their view increments
  * @returns {Promise<{updatedRows: number, flushedIds: number}>}
  */
-async function flushCountMap(countMap) {
+async function flushCountMap(countMap, idType) {
   if (!countMap || countMap.size === 0) return { updatedRows: 0, flushedIds: 0 };
 
   const ids = [];
@@ -94,17 +148,39 @@ async function flushCountMap(countMap) {
     increments.push(Number(increment) || 1);
   }
 
-  const result = await runQuery(
-    `
-    UPDATE posts p
-    SET views = COALESCE(p.views, 0) + v.increment
-    FROM (
-      SELECT * FROM UNNEST($1::text[], $2::int[])
-    ) AS v(post_id, increment)
-    WHERE p.post_id::text = v.post_id
-    `,
-    [ids, increments]
-  );
+  const resolvedType = idType || "uuid";
+  let sql = "";
+
+  if (resolvedType === "uuid") {
+    sql = `
+      UPDATE posts p
+      SET views = COALESCE(p.views, 0) + v.increment
+      FROM (
+        SELECT * FROM UNNEST($1::uuid[], $2::int[])
+      ) AS v(post_id, increment)
+      WHERE p.post_id = v.post_id
+    `;
+  } else if (resolvedType === "integer" || resolvedType === "bigint") {
+    sql = `
+      UPDATE posts p
+      SET views = COALESCE(p.views, 0) + v.increment
+      FROM (
+        SELECT * FROM UNNEST($1::bigint[], $2::int[])
+      ) AS v(post_id, increment)
+      WHERE p.post_id = v.post_id
+    `;
+  } else {
+    sql = `
+      UPDATE posts p
+      SET views = COALESCE(p.views, 0) + v.increment
+      FROM (
+        SELECT * FROM UNNEST($1::text[], $2::int[])
+      ) AS v(post_id, increment)
+      WHERE p.post_id::text = v.post_id
+    `;
+  }
+
+  const result = await runQuery(sql, [ids, increments]);
 
   return { updatedRows: result.rowCount || 0, flushedIds: ids.length };
 }
@@ -146,7 +222,8 @@ async function flushNow() {
   pendingCounts.clear();
 
   try {
-    const result = await flushCountMap(snapshot);
+    const idType = await getPostIdType();
+    const result = await flushCountMap(snapshot, idType);
     return { ...result, failed: false };
   } catch (err) {
     mergeBackCounts(snapshot);
@@ -182,9 +259,11 @@ async function enqueueBatchView(postIds, options = {}) {
     options.syncMode === true ||
     process.env.BATCH_VIEW_SYNC_MODE === "true";
 
+  const idType = await getPostIdType();
   const sanitized = sanitizePostIds(
     postIds,
-    options.limit || DEFAULT_BATCH_LIMIT
+    options.limit || DEFAULT_BATCH_LIMIT,
+    idType
   );
 
   if (sanitized.length === 0) {
@@ -202,7 +281,7 @@ async function enqueueBatchView(postIds, options = {}) {
     for (const postId of sanitized) {
       countMap.set(postId, (countMap.get(postId) || 0) + 1);
     }
-    const flushResult = await flushCountMap(countMap);
+    const flushResult = await flushCountMap(countMap, idType);
     return {
       mode: "sync",
       queued: sanitized.length,
@@ -250,6 +329,8 @@ function resetForTests() {
   flushInProgress = false;
   droppedDueToBufferLimit = 0;
   pendingCounts.clear();
+  postIdType = null;
+  postIdTypePromise = null;
 }
 
 module.exports = {

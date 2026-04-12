@@ -56,6 +56,7 @@ exports.boostPost = async (req, res) => {
     }
 
     // Check subscription quota before anything else
+    // Re-check after useQuota to prevent race conditions
     const quotaStatus = await checkQuota(userId, boostType);
     if (!quotaStatus.hasQuota) {
       return res.status(403).json({
@@ -88,7 +89,10 @@ exports.boostPost = async (req, res) => {
     await ensureBoostSchema();
 
     // Consume one quota unit from subscription
-    await useQuota(userId, boostType);
+    const used = await useQuota(userId, boostType);
+    if (!used) {
+      return res.status(403).json({ error: `Boost quota already exhausted (race condition prevented)` });
+    }
 
     // Insert boost record (no payment — quota-based)
     const boostResult = await runQuery(

@@ -1,10 +1,15 @@
-const { runQuery } = require("../utils/dbHelpers");
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require('../utils/logger');
 
 exports.getDailyCode = async (req, res) => {
-  const { userId } = req.query;
-  if (!userId) {
-    return res.status(400).json({ error: 'userId required' });
+  const authUserId = getAuthUserId(req);
+  if (!authUserId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const userId = req.query.userId || authUserId;
+  // Users can only view their own daily code
+  if (String(userId) !== String(authUserId)) {
+    return res.status(403).json({ error: 'Forbidden' });
   }
 
   try {

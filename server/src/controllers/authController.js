@@ -671,11 +671,13 @@ exports.handleOtpDeliveryCallback = async (req, res) => {
   }
   try {
     const callbackSecret = process.env.OTP_CALLBACK_SECRET;
-    if (callbackSecret) {
-      const providedSecret = req.headers['x-otp-callback-secret'] || req.query.secret || req.body?.secret;
-      if (!providedSecret || !safeTextEqual(providedSecret, callbackSecret)) {
-        return res.status(403).json({ error: 'Invalid OTP callback secret' });
-      }
+    if (!callbackSecret) {
+      logger.warn('[Auth] OTP_CALLBACK_SECRET not configured — rejecting OTP callback');
+      return res.status(503).json({ error: 'OTP callback not configured' });
+    }
+    const providedSecret = req.headers['x-otp-callback-secret'] || req.query.secret || req.body?.secret;
+    if (!providedSecret || !safeTextEqual(providedSecret, callbackSecret)) {
+      return res.status(403).json({ error: 'Invalid OTP callback secret' });
     }
     const events = parseOtpCallbackEvents(provider, req);
     const outcomes = await Promise.all(

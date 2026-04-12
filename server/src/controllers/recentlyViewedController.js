@@ -726,15 +726,8 @@ const getViewersForPost = async (req, res) => {
           COALESCE(
             NULLIF(to_jsonb(pr)->>'full_name',''),
             NULLIF(to_jsonb(u)->>'username',''),
-            NULLIF(u.email,''),
             'User'
-          ) AS viewer_name,
-          u.email,
-          COALESCE(
-            NULLIF(to_jsonb(u)->>'phone_number',''),
-            NULLIF(to_jsonb(u)->>'phone',''),
-            NULLIF(to_jsonb(pr)->>'phone','')
-          ) AS phone
+          ) AS viewer_name
         FROM recently_viewed rv
         JOIN users u ON u.user_id::text = rv.user_id::text
         LEFT JOIN profiles pr ON pr.user_id::text = u.user_id::text

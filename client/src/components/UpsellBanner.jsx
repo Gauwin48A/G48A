@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp, X } from "lucide-react";
 import api from "@/lib/api";
-import { getAccessToken } from "@/utils/authStorage";
+import { hasAuthSession } from "@/utils/authStorage";
 
 /**
  * Contextual upsell banner — fetches the next tier upgrade message from
@@ -16,7 +16,7 @@ export default function UpsellBanner({ trigger, className = "" }) {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (!getAccessToken()) return;
+    if (!hasAuthSession()) return;
     const key = `upsell_dismissed_${trigger || "default"}`;
     const lastDismissed = sessionStorage.getItem(key);
     if (lastDismissed) {

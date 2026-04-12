@@ -635,7 +635,7 @@ async function exportUsersHandler(req, res) {
     res.send(csv);
   } catch (err) {
     logger.error("[Admin] Export users error:", err);
-    res.status(500).json({ error: "Export failed", details: err.message });
+    res.status(500).json({ error: "Export failed" });
   }
 }
 
@@ -881,7 +881,7 @@ router.get("/users", async (req, res) => {
     });
   } catch (err) {
     logger.error("[Admin] Get users error:", err);
-    res.status(500).json({ error: "Failed to fetch users", details: err.message });
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
@@ -1004,7 +1004,7 @@ router.post("/users/bulk-action", requireAdminWrite, async (req, res) => {
     logger.error("[Admin] Bulk action error:", err);
     return res
       .status(500)
-      .json({ error: "Bulk action failed", details: err.message });
+      .json({ error: "Bulk action failed" });
   }
 });
 
@@ -1050,7 +1050,7 @@ router.get("/users/bulk-actions", requireAdminWrite, async (req, res) => {
     logger.error("[Admin] Bulk action log query failed:", err);
     res
       .status(500)
-      .json({ error: "Failed to fetch bulk action logs", details: err.message });
+      .json({ error: "Failed to fetch bulk action logs" });
   }
 });
 
@@ -1114,7 +1114,7 @@ router.get("/exports/users/logs", requireAdminWrite, async (req, res) => {
     logger.error("[Admin] Export log query failed:", err);
     res
       .status(500)
-      .json({ error: "Failed to fetch export logs", details: err.message });
+      .json({ error: "Failed to fetch export logs" });
   }
 });
 

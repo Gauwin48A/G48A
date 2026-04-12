@@ -16,6 +16,7 @@ import {
   PageLoadingState,
 } from "@/components/page-state/PageStateBlocks";
 import { useTranslation } from "react-i18next";
+import { hasAuthSession } from "@/utils/authStorage";
 
 const KycVerification = () => {
   const navigate = useNavigate();
@@ -31,8 +32,7 @@ const KycVerification = () => {
     [t],
   );
 
-  const token =
-    localStorage.getItem("authToken") || localStorage.getItem("token");
+  const hasSession = hasAuthSession();
 
   const [formData, setFormData] = useState({
     aadhaar_number: "",
@@ -48,7 +48,7 @@ const KycVerification = () => {
   const [kycStatus, setKycStatus] = useState(null);
 
   const fetchStatus = useCallback(async () => {
-    if (!token) {
+    if (!hasSession) {
       setIsLoading(false);
       return;
     }
@@ -70,7 +70,7 @@ const KycVerification = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, tr]);
+  }, [hasSession, tr]);
 
   useEffect(() => {
     fetchStatus();

@@ -10,16 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Coins, ArrowDown, ArrowUp, History, Loader2 } from "lucide-react";
 import { getApiOriginBase } from "@/lib/networkConfig";
 import { subscribeCoinBalanceUpdated } from "@/utils/appStateEvents";
+import { hasAuthSession } from "@/utils/authStorage";
 
 const API_BASE = (() => {
   const base = String(getApiOriginBase()).replace(/\/+$/, "");
   return base.endsWith("/api") ? base : `${base}/api`;
 })();
-
-function getAuthHeaders() {
-  const token = localStorage.getItem("authToken") || localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 const TYPE_LABELS = {
   welcome_bonus: "Welcome Bonus",
@@ -79,8 +75,12 @@ export default function CoinBalance({ compact = false }) {
 
   const loadBalance = useCallback(async () => {
     try {
+      if (!hasAuthSession()) {
+        setLoading(false);
+        return;
+      }
       const res = await fetch(`${API_BASE}/coins/balance`, {
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
       });
       if (res.ok) {
@@ -96,8 +96,11 @@ export default function CoinBalance({ compact = false }) {
 
   const loadHistory = useCallback(async () => {
     try {
+      if (!hasAuthSession()) {
+        return;
+      }
       const res = await fetch(`${API_BASE}/coins/history?limit=10`, {
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
       });
       if (res.ok) {

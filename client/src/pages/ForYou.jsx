@@ -56,7 +56,7 @@ import { useTranslatedPosts as Le } from "../hooks/useTranslatedContent";
 import { useAuth as _e } from "@/context/AuthContext";
 import { useCart as mt } from "@/context/CartContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
-import { getAccessToken as Ae, getUserId as Se } from "@/utils/authStorage";
+import { hasAuthSession as Ae, getUserId as Se } from "@/utils/authStorage";
 import { fetchCategoriesCached } from "@/services/categoriesService";
 import { fetchUserPreferencesCached } from "@/services/preferencesService";
 import ShareLinkDialog from "@/components/ShareLinkDialog";

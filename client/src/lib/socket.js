@@ -44,22 +44,18 @@ export const socket = io(SOCKET_URL, {
       : 8e3,
 });
 
-const readStoredToken = () => {
-  try {
-    return localStorage.getItem("authToken") || localStorage.getItem("token") || "";
-  } catch {
-    return "";
-  }
-};
-
 let lastAuthToken = "";
 
-export const connectSocketWithToken = (tokenOverride) => {
-  const token = String(tokenOverride || readStoredToken() || "").trim();
-  if (!token) return socket;
-  socket.auth = { token };
+export const connectSocketWithToken = (tokenOverride, options = {}) => {
+  const token = String(tokenOverride || "").trim();
+  const forceReconnect = Boolean(options?.forceReconnect);
+  const nextAuth = token ? { token } : {};
+  const shouldReconnect =
+    forceReconnect || Boolean(token !== lastAuthToken);
+
+  socket.auth = nextAuth;
   if (socket.connected) {
-    if (token !== lastAuthToken) {
+    if (shouldReconnect) {
       socket.disconnect();
       socket.connect();
     }

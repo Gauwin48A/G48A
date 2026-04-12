@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { FaArrowLeft, FaNewspaper } from "react-icons/fa";
-import { getAccessToken } from "@/utils/authStorage";
+import { hasAuthSession } from "@/utils/authStorage";
 import api from "@/services/api";
 
 const DESCRIPTION_MIN_LENGTH = 5;
@@ -51,8 +51,7 @@ const PostAdd = () => {
       return;
     }
 
-    const token = getAccessToken();
-    if (!token) {
+    if (!hasAuthSession()) {
       navigate("/login", { state: { returnTo: "/feed/feedpostadd" } });
       return;
     }

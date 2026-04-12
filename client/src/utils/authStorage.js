@@ -11,62 +11,34 @@ function normalizeId(value) {
   return normalized.length > 0 ? normalized : null;
 }
 
+const LEGACY_TOKEN_KEYS = ["authToken", "refreshToken", "token"];
+let legacyCleared = false;
+
 /**
- * Decode the payload section of a JWT without verification.
- * @param {string} token
- * @returns {object|null} Parsed payload or null on failure.
+ * Clear legacy JWT tokens from localStorage (no longer supported).
  */
-function decodeJwtPayload(token) {
-  if (!token || typeof token !== "string") {
-    return null;
-  }
-  const parts = token.split(".");
-  if (parts.length < 2) {
-    return null;
+export function purgeLegacyTokens() {
+  if (legacyCleared || typeof window === "undefined") {
+    return;
   }
   try {
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padding = "=".repeat((4 - (base64.length % 4 || 4)) % 4);
-    if (typeof globalThis.atob !== "function") {
-      return null;
-    }
-    const json = globalThis.atob(`${base64}${padding}`);
-    return JSON.parse(json);
+    LEGACY_TOKEN_KEYS.forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
   } catch {
-    return null;
+    // ignore storage failures
+  } finally {
+    legacyCleared = true;
   }
 }
 
 /**
- * Extract a user ID from a JWT payload, checking common claim names.
- * @param {string} token
- * @returns {string|null}
- */
-function getUserIdFromToken(token) {
-  const payload = decodeJwtPayload(token);
-  const candidate =
-    payload?.userId ?? payload?.id ?? payload?.user_id ?? payload?.sub ?? null;
-  return normalizeId(candidate);
-}
-
-/**
- * Retrieve the stored access token from localStorage.
- * Normalizes legacy "token" key to "authToken".
- * @returns {string|null}
+ * Access tokens are stored in httpOnly cookies; do not expose via JS.
+ * @returns {null}
  */
 export function getAccessToken() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  const token =
-    window.localStorage.getItem("authToken") ||
-    window.localStorage.getItem("token");
-
-  if (token && !window.localStorage.getItem("authToken")) {
-    window.localStorage.setItem("authToken", token);
-  }
-
-  return token || null;
+  purgeLegacyTokens();
+  return null;
 }
 
 /**
@@ -89,6 +61,10 @@ export function getUserId(fallbackUser = null) {
       window.localStorage.setItem("user_id", fromUser);
     }
     return fromUser;
+  }
+
+  if (!hasAuthSession()) {
+    return null;
   }
 
   const stored = normalizeId(
@@ -117,14 +93,6 @@ export function getUserId(fallbackUser = null) {
     } catch { /* ignore parse errors */ }
   }
 
-  const token = getAccessToken();
-  const tokenUserId = getUserIdFromToken(token);
-  if (tokenUserId) {
-    window.localStorage.setItem("userId", tokenUserId);
-    window.localStorage.setItem("user_id", tokenUserId);
-    return tokenUserId;
-  }
-
   return null;
 }
 
@@ -133,7 +101,7 @@ export function getUserId(fallbackUser = null) {
  * @returns {boolean}
  */
 export function hasAccessToken() {
-  return Boolean(getAccessToken());
+  return false;
 }
 
 /**
@@ -154,12 +122,8 @@ export function hasAuthSession() {
  * @returns {boolean}
  */
 export function isAuthenticated(fallbackUser = null) {
-  const token = getAccessToken();
-  if (!token) {
-    return false;
-  }
-  const derivedId = getUserId(fallbackUser);
-  return Boolean(derivedId || getUserIdFromToken(token));
+  const derivedId = normalizeId(fallbackUser?.id ?? fallbackUser?.user_id);
+  return Boolean(derivedId || hasAuthSession());
 }
 
 export default {
@@ -168,4 +132,5 @@ export default {
   hasAccessToken,
   hasAuthSession,
   isAuthenticated,
+  purgeLegacyTokens,
 };

@@ -43,9 +43,12 @@ const getSellerAnalytics = async (req, res) => {
     return res.status(401).json({ error: "Authentication required" });
   }
 
-  const userIdInt = Number.parseInt(String(userId), 10);
-  if (!Number.isFinite(userIdInt)) {
-    return res.status(400).json({ error: "Invalid user id" });
+  const userIdText = String(userId);
+  // Check if userId is numeric for seller_analytics table
+  const userIdInt = Number.parseInt(userIdText, 10);
+  const isNumericId = Number.isFinite(userIdInt) && String(userIdInt) === userIdText;
+  if (!isNumericId) {
+    return res.status(400).json({ error: "Invalid user id format" });
   }
 
   try {

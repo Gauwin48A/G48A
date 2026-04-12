@@ -119,12 +119,6 @@ const ROUTE_TARGETS = [
     requiredCtas: ['/login?returnTo=%2Fmy-feed', 'Open public feed']
   },
   {
-    route: '/my-recommendations',
-    file: 'src/pages/MyRecommendations.jsx',
-    requiredStates: ['Failed to load recommendations', 'Interact with more posts to get personalized picks!'],
-    requiredCtas: ['Sign in to view personalized recommendations curated just for you', 'Retry', 'Browse all listings']
-  },
-  {
     route: '/buyer-view',
     file: 'src/pages/BuyerView.jsx',
     requiredStates: ['Buyer listings unavailable', 'No matching listings found'],
@@ -144,7 +138,7 @@ const ROUTE_TARGETS = [
   },
   {
     route: '/aadhaar-verify',
-    file: 'src/pages/AadhaarVerify.jsx',
+    file: 'src/pages/GetVerified.jsx',
     requiredStates: ['Verified', 'Verification failed'],
     requiredCtas: ['Send OTP', 'Verify now']
   }

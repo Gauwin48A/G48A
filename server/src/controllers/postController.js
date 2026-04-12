@@ -660,12 +660,8 @@ function mapPostForResponse(post) {
       id: post.user_id || post.user?.id || null,
       name: post.user_name || post.username || "Unknown",
       username: post.username,
-      email: post.email,
       rating: parseFloat(post.seller_rating) || 0,
-      isVerified: post.aadhaar_verified || post.pan_verified,
-      aadhaarVerified: post.aadhaar_verified,
-      panVerified: post.pan_verified,
-      verificationDate: post.verification_date,
+      isVerified: !!(post.aadhaar_verified || post.pan_verified),
     },
     image_url: normalizedImageUrl,
   };

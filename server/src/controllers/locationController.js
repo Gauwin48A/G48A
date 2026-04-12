@@ -16,8 +16,13 @@ const GOOGLE_PLACES_BASE_URL =
   "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
 
 const serverReverseGeocode = async (lat, lon) => {
+  const parsedLat = parseFloat(lat);
+  const parsedLon = parseFloat(lon);
+  if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLon) || Math.abs(parsedLat) > 90 || Math.abs(parsedLon) > 180) {
+    return null;
+  }
   // zoom=18 for building/road-level detail; jsonv2 for richer response
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&namedetails=1&extratags=1`;
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(parsedLat)}&lon=${encodeURIComponent(parsedLon)}&zoom=18&addressdetails=1&namedetails=1&extratags=1`;
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve(null), 5000);
     https

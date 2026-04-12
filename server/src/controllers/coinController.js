@@ -300,17 +300,6 @@ async function addCoins(
   await lazyEnsureSchema();
   const { sourceUserId = null, level = null, metadata = null } = options || {};
 
-  // Idempotency check
-  if (referenceId) {
-    const existing = await runQuery(
-      "SELECT id FROM coin_transactions WHERE reference_id = $1 LIMIT 1",
-      [referenceId],
-    );
-    if (existing.rows.length > 0) {
-      return { applied: false, reason: "duplicate", referenceId };
-    }
-  }
-
   // Compute expiry based on coin type (promo vs earned)
   const isPromo = PROMO_COIN_TYPES.has(type);
   const expiryDays = isPromo ? EXPIRY_PROMO_DAYS : EXPIRY_EARNED_DAYS;
@@ -319,6 +308,18 @@ async function addCoins(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    // Idempotency check inside transaction to prevent race conditions
+    if (referenceId) {
+      const existing = await client.query(
+        "SELECT id FROM coin_transactions WHERE reference_id = $1 LIMIT 1 FOR UPDATE",
+        [referenceId],
+      );
+      if (existing.rows.length > 0) {
+        await client.query("ROLLBACK");
+        return { applied: false, reason: "duplicate", referenceId };
+      }
+    }
 
     await client.query(
       `INSERT INTO coin_transactions (

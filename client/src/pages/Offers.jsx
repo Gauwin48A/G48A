@@ -270,15 +270,13 @@ const OffersPage = () => {
     return null;
   }, [cmsContent]);
 
-  const authToken =
-    localStorage.getItem("authToken") || localStorage.getItem("token");
   const userId =
     getUserId(user) ||
     localStorage.getItem("userId") ||
     localStorage.getItem("user_id");
   const canUseOffers = useMemo(
-    () => Boolean(authToken && userId) && isAuthenticated(user),
-    [authToken, userId, user],
+    () => Boolean(userId) && isAuthenticated(user),
+    [userId, user],
   );
   const {
     activeCategory: categoryModeCategory,
@@ -1141,4 +1139,3 @@ const OffersPage = () => {
 };
 
 export default OffersPage;
-

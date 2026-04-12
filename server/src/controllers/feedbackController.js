@@ -84,7 +84,8 @@ exports.getMyFeedback = async (req, res) => {
       `SELECT ${getFeedbackIdSelectExpression(hasIdColumn)}, user_id, message, rating, category, status, created_at
        FROM feedback
        WHERE user_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY created_at DESC
+       LIMIT 100`,
       [String(userId)],
     );
 

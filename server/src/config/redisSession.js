@@ -167,6 +167,38 @@ const set = async (key, value, ttlSeconds = 900) => {
 };
 
 /**
+ * Set a value only if the key does not already exist (NX), with TTL.
+ * Returns true if the value was set, false if the key already existed.
+ * @param {string} key - Session key.
+ * @param {*} value - Value to store (will be JSON-serialised).
+ * @param {number} [ttlSeconds=900] - Time-to-live in seconds.
+ * @returns {Promise<boolean>}
+ */
+const setIfNotExists = async (key, value, ttlSeconds = 900) => {
+  const serialized = JSON.stringify(value);
+  if (isRedisAvailable && redis) {
+    try {
+      const result = await redis.set(
+        key,
+        serialized,
+        "EX",
+        ttlSeconds,
+        "NX",
+      );
+      return result === "OK";
+    } catch {
+      // fall through to memory fallback
+    }
+  }
+  if (memoryStore.has(key)) {
+    return false;
+  }
+  memoryStore.set(key, value);
+  scheduleMemoryExpiry(key, ttlSeconds);
+  return true;
+};
+
+/**
  * Deletes a session key from both Redis and memory.
  * @param {string} key - Session key.
  * @returns {Promise<void>}
@@ -264,6 +296,7 @@ initRedis();
 module.exports = {
   get: get,
   set: set,
+  setIfNotExists: setIfNotExists,
   del: del,
   incr: incr,
   close: close,

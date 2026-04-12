@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import api, { setRefreshDelegate } from "../services/api";
-import { getAccessToken, hasAuthSession } from "@/utils/authStorage";
+import { getAccessToken, hasAuthSession, purgeLegacyTokens } from "@/utils/authStorage";
 import { clearWishlistCache, replaceSavedPostIds } from "@/utils/savedPosts";
 import { mapAuthError } from "@/utils/authErrorMapper";
 import { logAuthDiagnostic } from "@/services/authDiagnostics";
@@ -49,6 +49,7 @@ const AUTH_STORAGE_KEYS = [
   "mhub_user_city",
   "mhub_wishlist_cooldown_until",
 ];
+const LEGACY_TOKEN_KEYS = new Set(["authToken", "refreshToken", "token"]);
 
 function safeParseJson(rawValue) {
   if (!rawValue) return null;
@@ -255,6 +256,10 @@ export function AuthProvider({ children }) {
   const loginRateLimitUntilRef = useRef(0);
   const autoCheckinInFlightRef = useRef(null);
 
+  useEffect(() => {
+    purgeLegacyTokens();
+  }, []);
+
   const applyCachedUser = useCallback(() => {
     const cached = safeParseJson(localStorage.getItem("user"));
     if (cached) {
@@ -372,18 +377,19 @@ export function AuthProvider({ children }) {
       try {
         await ensureCsrfToken();
         const response = await api.post("/auth/refresh-token", {});
-        if (!response?.token) {
+        const hasAuthSignal = Boolean(
+          response?.token || response?.user || response?.authenticated
+        );
+        if (!hasAuthSignal) {
           return {
             ok: false,
             error: new Error("Token refresh failed"),
             meta: { status: null, code: null, isNetworkError: false, retryAfterMs: null },
           };
         }
-
-        localStorage.setItem("authToken", response.token);
-        localStorage.removeItem("token");
+        purgeLegacyTokens();
         localStorage.setItem("authSession", "true");
-        connectSocketWithToken(response.token);
+        connectSocketWithToken(null, { forceReconnect: true });
 
         if (response.user) {
           setUser(response.user);
@@ -438,7 +444,7 @@ export function AuthProvider({ children }) {
         }
         throw err;
       }
-      return localStorage.getItem("authToken");
+      return true;
     });
     return () => setRefreshDelegate(null);
   }, [refreshAccessToken]);
@@ -488,44 +494,6 @@ export function AuthProvider({ children }) {
     }
     const accessToken = getAccessToken();
     logAuthDiagnostic("refresh_auth_snapshot", buildSessionDiagnostics(accessToken));
-    if (!accessToken) {
-      const refreshed = await refreshAccessToken();
-      if (!refreshed?.ok) {
-        if (shouldKeepSessionOnRefreshFailure(refreshed?.meta)) {
-          return applyCachedUser();
-        }
-        if (!clearSessionIfAllowed("refresh_failed_no_token", {
-          status: refreshed?.meta?.status ?? null,
-        })) {
-          return applyCachedUser();
-        }
-        return false;
-      }
-      try {
-        return await fetchCurrentUser();
-      } catch {
-        if (!clearSessionIfAllowed("refresh_failed_profile_no_token")) {
-          return applyCachedUser();
-        }
-        return false;
-      }
-    }
-
-    if (accessToken && isTokenExpired(accessToken)) {
-      const refreshed = await refreshAccessToken();
-      if (!refreshed?.ok) {
-        if (shouldKeepSessionOnRefreshFailure(refreshed?.meta)) {
-          return applyCachedUser();
-        }
-        if (!clearSessionIfAllowed("refresh_failed_expired_token", {
-          status: refreshed?.meta?.status ?? null,
-        })) {
-          return applyCachedUser();
-        }
-        return false;
-      }
-    }
-
     try {
       return await fetchCurrentUser();
     } catch (error) {
@@ -684,16 +652,34 @@ export function AuthProvider({ children }) {
         localStorage.setItem("authSession", "true");
       }
 
-      if (token && !isTokenExpired(token)) {
+      let attemptedRefresh = false;
+
+      if (authenticated) {
         try {
           return await fetchCurrentUser();
-        } catch {
-          // fall through to refresh fallback
+        } catch (error) {
+          const status = error?.status ?? error?.response?.status ?? null;
+          const isAuthError = status === 401 || status === 403;
+          if (status === 429) {
+            markAuthRateLimited(error);
+            return applyCachedUser();
+          }
+          if (!status) {
+            const cached = safeParseJson(localStorage.getItem("user"));
+            if (cached) {
+              setUserState(cached);
+              return true;
+            }
+          }
+          if (isAuthError) {
+            attemptedRefresh = true;
+          }
         }
       }
 
       if (canRefresh) {
         const refreshed = await refreshAccessToken();
+        attemptedRefresh = true;
         if (refreshed?.ok) {
           try {
             return await fetchCurrentUser();
@@ -713,6 +699,9 @@ export function AuthProvider({ children }) {
         try {
           return await fetchCurrentUser();
         } catch {
+          if (!attemptedRefresh) {
+            return applyCachedUser();
+          }
           if (!clearSessionIfAllowed("bootstrap_authenticated_profile_failed")) {
             return applyCachedUser();
           }
@@ -770,16 +759,15 @@ export function AuthProvider({ children }) {
       if (event.key && !AUTH_STORAGE_KEYS.includes(event.key)) {
         return;
       }
+      if (event.key && LEGACY_TOKEN_KEYS.has(event.key)) {
+        return;
+      }
 
-      const hasAnyToken = Boolean(
-        localStorage.getItem("authToken") ||
-          localStorage.getItem("token"),
-      );
-
-      if (!hasAnyToken) {
+      const hasSessionFlag = localStorage.getItem("authSession") === "true";
+      if (!hasSessionFlag) {
         if (DISABLE_AUTO_LOGOUT) {
           logAuthDiagnostic("auto_logout_suppressed", {
-            reason: "storage_missing_token",
+            reason: "storage_missing_session",
           });
           applyCachedUser();
           setLoading(false);
@@ -811,17 +799,16 @@ export function AuthProvider({ children }) {
   );
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (token) {
-      connectSocketWithToken(token);
+    const shouldConnect = Boolean(user || hasAuthSession());
+    if (shouldConnect) {
+      connectSocketWithToken(null, { forceReconnect: true });
     } else {
       disconnectSocket();
     }
   }, [user]);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
+    if (!hasAuthSession() && !user) return;
     if (autoCheckinInFlightRef.current) return;
     const cooldownUntil = readAutoCheckinUntil();
     if (cooldownUntil && Date.now() < cooldownUntil) return;
@@ -967,19 +954,19 @@ export function AuthProvider({ children }) {
         };
       }
 
-      const { token, user: responseUser } = response || {};
-      if (!token) {
+      const { user: responseUser } = response || {};
+      const hasAuthSignal = Boolean(responseUser || response?.token);
+      if (!hasAuthSignal) {
         logAuthDiagnostic("login_missing_token_response");
         return {
           success: false,
-          error: "Login failed: missing access token",
+          error: "Login failed: missing session token",
         };
       }
 
-      localStorage.setItem("authToken", token);
-      localStorage.removeItem("token");
+      purgeLegacyTokens();
       localStorage.setItem("authSession", "true");
-      connectSocketWithToken(token);
+      connectSocketWithToken(null, { forceReconnect: true });
       if (responseUser) {
         setUser(responseUser);
       } else {
@@ -1044,15 +1031,15 @@ export function AuthProvider({ children }) {
 
       const response = await api.post("/auth/signup", normalizedPayload);
 
-      if (response?.token) {
-        localStorage.setItem("authToken", response.token);
-        localStorage.removeItem("token");
+      const hasAuthSignal = Boolean(response?.token || response?.user);
+      if (hasAuthSignal) {
+        purgeLegacyTokens();
         localStorage.setItem("authSession", "true");
-        connectSocketWithToken(response.token);
+        connectSocketWithToken(null, { forceReconnect: true });
       }
       if (response?.user) {
         setUser(response.user);
-      } else if (response?.token) {
+      } else if (hasAuthSignal) {
         await refreshAuthSafe();
       }
 
@@ -1100,7 +1087,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user || getAccessToken()),
+      isAuthenticated: Boolean(user || hasAuthSession()),
       setUser,
       login,
       signup,

@@ -36,7 +36,7 @@ import { useCategoryMode } from "@/context/CategoryModeContext";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
-import { getAccessToken as De, getUserId as Me } from "@/utils/authStorage";
+import { hasAuthSession as De, getUserId as Me } from "@/utils/authStorage";
 import { fetchCategoriesCached as Oe } from "@/services/categoriesService";
 import { fetchSubcategories as fetchPostSubcategories } from "@/services/subcategoriesService";
 import { buildApiPath as G } from "@/lib/networkConfig";
@@ -628,7 +628,6 @@ const Xe = 2 * 1024 * 1024,
             l.open("POST", G("/posts")),
               (l.withCredentials = !0),
               (l.timeout = 18e4),
-              o && l.setRequestHeader("Authorization", `Bearer ${o}`),
               (l.upload.onprogress = (c) => {
                 if ((T("uploading"), c.lengthComputable && c.total > 0)) {
                   const ge = Math.max(

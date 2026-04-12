@@ -19,11 +19,9 @@ const TAX_RATE = Number.parseFloat(process.env.CART_TAX_RATE || "0");
 const DEFAULT_CURRENCY = String(process.env.CART_CURRENCY || "INR");
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
-function withDevErrorDetails(payload, error) {
-  if (IS_PRODUCTION) return payload;
-  const detail = error?.message || String(error);
-  const code = error?.code;
-  return code ? { ...payload, detail, code } : { ...payload, detail };
+function withDevErrorDetails(payload, _error) {
+  // Never expose error internals — even in non-production
+  return payload;
 }
 
 function normalizeUploadsPath(value) {

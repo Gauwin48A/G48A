@@ -24,7 +24,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
-import { getUserId as getUserIdFromStorage } from "@/utils/authStorage";
+import { getUserId as getUserIdFromStorage, hasAuthSession } from "@/utils/authStorage";
 import api from "@/lib/api";
 import {
   buildSavedPostsMap,
@@ -170,9 +170,7 @@ const MyFeedPage = () => {
     authUser?.user_id ||
     localStorage.getItem("userId") ||
     localStorage.getItem("user_id");
-  const authToken =
-    localStorage.getItem("authToken") || localStorage.getItem("token");
-  const isLoggedIn = Boolean(userId && authToken);
+  const isLoggedIn = Boolean(userId && hasAuthSession());
 
   useEffect(
     () => () => {

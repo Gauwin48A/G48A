@@ -1,8 +1,12 @@
-const { runQuery } = require("../utils/dbHelpers");
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require('../utils/logger');
 
 exports.getSaleUndone = async (req, res) => {
   try {
+    const userId = getAuthUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const result = await runQuery(`
       SELECT
         post_id,

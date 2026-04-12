@@ -585,15 +585,15 @@ async function refreshAccessToken() {
     logAuthDiagnostic("refresh_skipped_backoff", {
       waitMs: Math.max(0, refreshFailureBackoffUntil - Date.now()),
     });
-    return null;
+    return false;
   }
   // If AuthContext has registered a delegate, use it as the single source of truth
   if (externalRefreshFn) {
     if (!refreshPromise) {
       refreshPromise = externalRefreshFn()
-        .then((token) => {
+        .then((result) => {
           refreshFailureBackoffUntil = 0;
-          return token;
+          return Boolean(result);
         })
         .catch((err) => {
           refreshFailureBackoffUntil = Date.now() + REFRESH_FAILURE_BACKOFF_MS;
@@ -626,20 +626,19 @@ async function refreshAccessToken() {
         },
       })
       .then((res) => {
-        if (res.status === 200 && res.data?.token) {
-          localStorage.setItem("authToken", res.data.token);
+        if (res.status >= 200 && res.status < 300) {
           refreshFailureBackoffUntil = 0;
           logAuthDiagnostic("refresh_attempt_success", {
             status: res.status,
           });
-          return res.data.token;
+          return true;
         }
         refreshFailureBackoffUntil = Date.now() + REFRESH_FAILURE_BACKOFF_MS;
         logAuthDiagnostic("refresh_attempt_missing_token", {
           status: res.status,
           backoffMs: REFRESH_FAILURE_BACKOFF_MS,
         });
-        return null;
+        return false;
       })
       .catch((error) => {
         const retryAfterHeader = error?.response?.headers?.["retry-after"];
@@ -679,14 +678,6 @@ api.interceptors.request.use(
       config.url.startsWith("/api/")
     ) {
       config.url = config.url.slice(4);
-    }
-    const token =
-      localStorage.getItem("authToken") || localStorage.getItem("token");
-    if (token && !localStorage.getItem("authToken")) {
-      localStorage.setItem("authToken", token);
-    }
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
     }
     const deviceId = getDeviceId();
     if (deviceId) {
@@ -855,13 +846,11 @@ api.interceptors.response.use(
       });
       originalRequest._retry = true;
       try {
-        const refreshedToken = await refreshAccessToken();
-        if (refreshedToken) {
-          originalRequest.headers = originalRequest.headers || {};
-          originalRequest.headers["Authorization"] = `Bearer ${refreshedToken}`;
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
           return api(originalRequest);
         }
-        throw new Error("Token refresh failed");
+        throw new Error("Session refresh failed");
       } catch (refreshError) {
         const refreshStatus =
           refreshError?.status ?? refreshError?.response?.status ?? null;

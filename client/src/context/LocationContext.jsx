@@ -17,6 +17,7 @@ import {
   isOwnerMatch,
   writeUserCity,
 } from "@/utils/locationCache";
+import { hasAuthSession } from "@/utils/authStorage";
 
 const LOCATION_CACHE_TTL_MS = 30 * 60 * 1000;
 const AUTH_LOCATION_CACHE_TTL_MS = 60 * 1000;
@@ -85,11 +86,7 @@ const writeJson = (key, value) => {
 
 const isAuthenticatedSession = () => {
   try {
-    return Boolean(
-      localStorage.getItem("authToken") ||
-        localStorage.getItem("token") ||
-        localStorage.getItem("authSession") === "true",
-    );
+    return hasAuthSession();
   } catch {
     return false;
   }

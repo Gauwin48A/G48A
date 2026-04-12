@@ -49,7 +49,7 @@ import { useToast as gt } from "@/hooks/use-toast";
 import { useAuth as mt } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { getAccessToken as ct, getUserId as ut } from "@/utils/authStorage";
+import { hasAuthSession as ct, getUserId as ut } from "@/utils/authStorage";
 import {
   buildSavedPostsMap,
   fetchWishlistIds,

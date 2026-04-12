@@ -58,7 +58,7 @@ import h from "@/services/api";
 import { useAuth as pt } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import {
-  getAccessToken as ft,
+  hasAuthSession as ft,
   getUserId as xt,
   isAuthenticated as vt,
 } from "@/utils/authStorage";

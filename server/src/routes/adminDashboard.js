@@ -626,7 +626,7 @@ router.get("/", async (req, res) => {
     logger.error("[AdminDashboard] Summary error:", error);
     res
       .status(500)
-      .json({ error: "Failed to load dashboard", details: error.message });
+      .json({ error: "Failed to load dashboard" });
   }
 });
 
@@ -923,7 +923,7 @@ router.post(
       logger.error("[AdminDashboard] Post bulk action failed:", error);
       return res
         .status(500)
-        .json({ error: "Failed to apply bulk action", details: error.message });
+        .json({ error: "Failed to apply bulk action" });
     }
   }
 );
@@ -992,7 +992,6 @@ router.get(
       logger.error("[AdminDashboard] Flagged posts export failed:", error);
       res.status(500).json({
         error: "Failed to export flagged posts",
-        details: error.message,
       });
     }
   }

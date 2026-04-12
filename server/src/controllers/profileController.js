@@ -654,7 +654,6 @@ exports.getPreferences = async (req, res) => {
     return res.status(500).json({
       code: 500,
       message: "Failed to fetch preferences",
-      details: err.message,
       fallback: null,
     });
   }

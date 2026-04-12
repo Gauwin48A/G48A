@@ -37,6 +37,7 @@ import {
 } from "@/utils/translateContent";
 import { useAuth as Ue } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
+import { hasAuthSession } from "@/utils/authStorage";
 import { getUserId as getUserIdFromStorage } from "@/utils/authStorage";
 import api from "@/services/api";
 import {
@@ -236,11 +237,7 @@ const Ve = 5,
       [K, Q] = i(""),
       h = j(
         () =>
-          !!(
-            Y ||
-            localStorage.getItem("authToken") ||
-            localStorage.getItem("token")
-          ),
+          !!(Y || hasAuthSession()),
         [Y],
       ),
       [xe, W] = i(!1),

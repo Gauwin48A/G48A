@@ -9,7 +9,7 @@ import { LANGUAGES, getLanguageByCode } from "../constants/languages";
 import { translateText } from "../utils/translateContent";
 
 // Bump when locale files change to invalidate i18next localStorage cache.
-const TRANSLATION_VERSION = "v1.0.18";
+const TRANSLATION_VERSION = "v1.0.20";
 const PRIORITY_PRELOAD_LANGUAGES = ["en", "hi", "te", "ta", "kn", "mr", "bn"];
 const I18N_INIT_STARTED_FLAG = "__MHUB_I18N_INIT_STARTED__";
 const I18N_LISTENER_FLAG = "__MHUB_I18N_LISTENER_BOUND__";
@@ -27,6 +27,7 @@ const preloadTasks = new Map();
 const missingKeyTasks = new Map();
 const missingKeyQueue = [];
 let missingKeyWorkerActive = false;
+const MAX_MISSING_KEY_QUEUE = 200;
 const bundledResources = {
   en: { translation: en },
 };
@@ -86,6 +87,9 @@ function normalizeMissingFallback(key, fallback) {
 }
 
 function enqueueMissingTranslation(task) {
+  if (missingKeyQueue.length >= MAX_MISSING_KEY_QUEUE) {
+    return false;
+  }
   missingKeyQueue.push(task);
   if (!missingKeyWorkerActive) {
     missingKeyWorkerActive = true;
@@ -104,19 +108,23 @@ function enqueueMissingTranslation(task) {
       missingKeyWorkerActive = false;
     });
   }
+  return true;
 }
 
 function scheduleMissingKeyAddition(lng, ns, key, value) {
   const taskKey = `add:${lng}:${ns}:${key}`;
   if (missingKeyTasks.has(taskKey)) return;
   missingKeyTasks.set(taskKey, true);
-  enqueueMissingTranslation(async () => {
+  const enqueued = enqueueMissingTranslation(async () => {
     try {
       i18n.addResource(lng, ns, key, value);
     } finally {
       missingKeyTasks.delete(taskKey);
     }
   });
+  if (!enqueued) {
+    missingKeyTasks.delete(taskKey);
+  }
 }
 
 function scheduleMissingKeyTranslation(lng, ns, key, fallback) {
@@ -132,7 +140,7 @@ function scheduleMissingKeyTranslation(lng, ns, key, fallback) {
   if (missingKeyTasks.has(taskKey)) return;
 
   missingKeyTasks.set(taskKey, true);
-  enqueueMissingTranslation(async () => {
+  const enqueued = enqueueMissingTranslation(async () => {
     try {
       const translated = await translateText(defaultText, normalizedLang);
       if (translated && translated !== defaultText) {
@@ -142,6 +150,9 @@ function scheduleMissingKeyTranslation(lng, ns, key, fallback) {
       missingKeyTasks.delete(taskKey);
     }
   });
+  if (!enqueued) {
+    missingKeyTasks.delete(taskKey);
+  }
 }
 
 function applyLanguageSideEffects(language) {

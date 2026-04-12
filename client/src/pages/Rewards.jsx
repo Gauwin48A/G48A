@@ -29,7 +29,6 @@ import {
 import api from "../lib/api";
 import { buildApiPath } from "@/lib/networkConfig";
 import {
-  getAccessToken,
   getUserId,
   isAuthenticated,
 } from "@/utils/authStorage";
@@ -214,9 +213,9 @@ const RewardsPage = () => {
     }, [refreshAuthFromContext]),
     loadSubscription = useCallback(
       async (signal) => {
-        const accessToken = getAccessToken();
+        const isAuthed = isAuthenticated(authUser);
         const userId = getUserId(authUser);
-        if (!accessToken || !userId) {
+        if (!isAuthed || !userId) {
           setSubscriptionState({
             loading: false,
             error: "",
