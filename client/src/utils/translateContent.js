@@ -1,5 +1,6 @@
 import { buildApiPath } from "@/lib/networkConfig";
 import { buildRequestSecurity } from "@/lib/requestSecurity";
+import { buildCsrfHeaders } from "@/lib/csrf";
 
 const CACHE_KEY = "mhub_translations_cache";
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000;
@@ -244,11 +245,13 @@ function isTranslatableText(text) {
 async function requestTranslation(text, targetLang) {
   const endpoint = buildApiPath("/translation/translate");
   const security = buildRequestSecurity();
+  const csrfHeaders = await buildCsrfHeaders();
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...security.headers,
+      ...csrfHeaders,
     },
     credentials: "include",
     body: JSON.stringify({
@@ -308,11 +311,13 @@ async function requestTranslationBatch(texts, targetLang) {
 
   const endpoint = buildApiPath("/translation/batch");
   const security = buildRequestSecurity();
+  const csrfHeaders = await buildCsrfHeaders();
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...security.headers,
+      ...csrfHeaders,
     },
     credentials: "include",
     body: JSON.stringify({

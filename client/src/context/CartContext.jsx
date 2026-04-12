@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { getAccessToken } from "@/utils/authStorage";
+import { hasAuthSession } from "@/utils/authStorage";
 
 const CartContext = createContext(null);
 const STORAGE_KEY = "mhub_cart_v1";
@@ -148,7 +148,7 @@ export function CartProvider({ children }) {
   const syncTimeoutRef = useRef(null);
 
   const isAuthed = useMemo(
-    () => Boolean(user || getAccessToken()),
+    () => Boolean(user || hasAuthSession()),
     [user],
   );
 

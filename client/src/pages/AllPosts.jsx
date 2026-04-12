@@ -619,6 +619,7 @@ const ve = 5,
           ? categoryModeCategories
           : fallbackCategoryList,
       [f, O] = useState([]),
+      postsRef = useRef(f),
       [V, z] = useState(null),
       [E, R] = useState(!1),
       [L, T] = useState(1),
@@ -697,20 +698,65 @@ const ve = 5,
           nextCategoryGroup = normalizedActiveApp;
         }
       }
-      m((n) => ({
-        ...n,
-        category: o,
-        subcategory: resolvedSubcategory || "All",
-        categoryGroup: nextCategoryGroup,
-        search: e.get("search") || "",
-        location: e.get("location") || "",
-        minPrice: e.get("minPrice") || "",
-        maxPrice: e.get("maxPrice") || "",
-        startDate: e.get("startDate") || "",
-        endDate: e.get("endDate") || "",
-        latestWindow: e.get("latestWindow") || "",
-        sortBy: e.get("sortBy") || n.sortBy || "",
-      }));
+      m((n) => {
+        const next = { ...n };
+        let changed = false;
+        const nextCategory = o;
+        if (next.category !== nextCategory) {
+          next.category = nextCategory;
+          changed = true;
+        }
+        const nextSubcategory = resolvedSubcategory || "All";
+        if (next.subcategory !== nextSubcategory) {
+          next.subcategory = nextSubcategory;
+          changed = true;
+        }
+        if (next.categoryGroup !== nextCategoryGroup) {
+          next.categoryGroup = nextCategoryGroup;
+          changed = true;
+        }
+        const nextSearch = e.get("search") || "";
+        if (next.search !== nextSearch) {
+          next.search = nextSearch;
+          changed = true;
+        }
+        const nextLocation = e.get("location") || "";
+        if (next.location !== nextLocation) {
+          next.location = nextLocation;
+          changed = true;
+        }
+        const nextMinPrice = e.get("minPrice") || "";
+        if (next.minPrice !== nextMinPrice) {
+          next.minPrice = nextMinPrice;
+          changed = true;
+        }
+        const nextMaxPrice = e.get("maxPrice") || "";
+        if (next.maxPrice !== nextMaxPrice) {
+          next.maxPrice = nextMaxPrice;
+          changed = true;
+        }
+        const nextStartDate = e.get("startDate") || "";
+        if (next.startDate !== nextStartDate) {
+          next.startDate = nextStartDate;
+          changed = true;
+        }
+        const nextEndDate = e.get("endDate") || "";
+        if (next.endDate !== nextEndDate) {
+          next.endDate = nextEndDate;
+          changed = true;
+        }
+        const nextLatestWindow = e.get("latestWindow") || "";
+        if (next.latestWindow !== nextLatestWindow) {
+          next.latestWindow = nextLatestWindow;
+          changed = true;
+        }
+        const nextSortBy = e.get("sortBy") || n.sortBy || "";
+        if (next.sortBy !== nextSortBy) {
+          next.sortBy = nextSortBy;
+          changed = true;
+        }
+        return changed ? next : n;
+      });
       initialFilterSyncRef.current = !0;
     }, [Z.search, categoryList, m, subcategoryNameById, hasCategoryMode, activeApp]);
     useEffect(() => {
@@ -1000,12 +1046,16 @@ const ve = 5,
       languageRef.current = l;
     }, [l]);
     useEffect(() => {
-      if (!Array.isArray(f) || f.length === 0) return;
+      postsRef.current = f;
+    }, [f]);
+    useEffect(() => {
+      const currentPosts = postsRef.current;
+      if (!Array.isArray(currentPosts) || currentPosts.length === 0) return;
       const normalizedLang = String(l || "en")
         .trim()
         .toLowerCase()
         .split("-")[0];
-      const hasTranslationMarker = f.some(
+      const hasTranslationMarker = currentPosts.some(
         (post) => post && typeof post === "object" && post._translatedLang,
       );
       if (!normalizedLang || normalizedLang === "en") {
@@ -1018,7 +1068,7 @@ const ve = 5,
         }
         return;
       }
-      const alreadyTranslated = f.every(
+      const alreadyTranslated = currentPosts.every(
         (post) =>
           post &&
           typeof post === "object" &&
@@ -1027,11 +1077,11 @@ const ve = 5,
       if (alreadyTranslated) return;
       let e = !1;
       const a = markTranslatedPosts(
-        Ue(f, normalizedLang, { paths: ALL_POSTS_TRANSLATE_PATHS }),
+        Ue(currentPosts, normalizedLang, { paths: ALL_POSTS_TRANSLATE_PATHS }),
         normalizedLang,
       );
       O(a);
-      Re(f, normalizedLang, { paths: ALL_POSTS_TRANSLATE_PATHS })
+      Re(currentPosts, normalizedLang, { paths: ALL_POSTS_TRANSLATE_PATHS })
         .then((o) => {
           if (e) return;
           const next =
@@ -1046,7 +1096,10 @@ const ve = 5,
       return () => {
         e = !0;
       };
-    }, [l, f, markTranslatedPosts, stripTranslatedMarker]);
+      // Only re-run when language changes, NOT when posts change
+      // Posts changes are tracked via postsRef to avoid render loops
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [l]);
     useEffect(() => {
       const e = sessionStorage.getItem("allPostsScrollPosition");
       e &&
@@ -1934,62 +1987,6 @@ const ve = 5,
       t.subcategory,
       t.categoryGroup,
     ]),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      useEffect(() => {
-        if (!Array.isArray(f) || f.length === 0) return;
-        let e = !1;
-        if (!l || l === "en") {
-          O((a) => (Array.isArray(a) ? a.map(restoreTranslatedPost) : a));
-          return;
-        }
-        const translatedSeed = Ue(f, l, {
-          paths: ALL_POSTS_TRANSLATE_PATHS,
-        });
-        const safeTranslatedSeed = Array.isArray(translatedSeed)
-          ? translatedSeed
-          : Array.isArray(f)
-            ? f
-            : [];
-        const n = new Map();
-        Array.isArray(safeTranslatedSeed) &&
-          safeTranslatedSeed.forEach((i) => {
-            const p = ke(i);
-            p !== null && n.set(String(p), i);
-          });
-        O((i) =>
-          Array.isArray(i)
-            ? i.map((p) => {
-                const F = ke(p);
-                if (F === null) return p;
-                return n.get(String(F)) || p;
-              })
-            : i,
-        );
-        Re(f, l, {
-          paths: ALL_POSTS_TRANSLATE_PATHS,
-        })
-          .then((a) => {
-            if (e || !Array.isArray(a) || a.length === 0) return;
-            const o = new Map();
-            a.forEach((n) => {
-              const i = ke(n);
-              i !== null && o.set(String(i), n);
-            });
-            O((n) =>
-              Array.isArray(n)
-                ? n.map((i) => {
-                    const p = ke(i);
-                    if (p === null) return i;
-                    return o.get(String(p)) || i;
-                  })
-                : n,
-            );
-          })
-          .catch(() => {});
-        return () => {
-          e = !0;
-        };
-      }, [l, f]),
       useEffect(() => {
         T(1);
       }, [

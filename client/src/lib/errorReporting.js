@@ -51,14 +51,11 @@ function sendError(payload) {
     }
   } catch { /* ignore beacon errors */ }
 
-  const token = localStorage.getItem("authToken");
-
   fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...security.headers,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
     keepalive: true,

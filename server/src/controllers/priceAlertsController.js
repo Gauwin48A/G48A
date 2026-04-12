@@ -118,7 +118,7 @@ const getAlerts = async (req, res) => {
     if (activeOnly) {
       query += ` AND pda.is_active = true`;
     }
-    query += ` ORDER BY pda.created_at DESC`;
+    query += ` ORDER BY pda.created_at DESC LIMIT 100`;
 
     const result = await runQuery(query, [normalizedUserId]);
     res.json({ alerts: result.rows });

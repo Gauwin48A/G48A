@@ -8,7 +8,7 @@ import { navigateBack } from "@/utils/navigation";
 import { useAuth as A } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import T from "@/lib/api";
-import { getAccessToken as E, getUserId as I } from "@/utils/authStorage";
+import { hasAuthSession as E, getUserId as I } from "@/utils/authStorage";
 import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,

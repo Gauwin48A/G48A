@@ -32,7 +32,7 @@ import {
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
 import { buildApiPath as re } from "@/lib/networkConfig";
-import { getAccessToken as se } from "@/utils/authStorage";
+import { hasAuthSession } from "@/utils/authStorage";
 import oe from "../components/TransactionStepper";
 import LanguageSelector from "@/components/LanguageSelector";
 import {
@@ -188,10 +188,7 @@ const SaleUndonePage = () => {
           ),
         }))
       : E;
-  const Y = () =>
-      se() ||
-      localStorage.getItem("authToken") ||
-      localStorage.getItem("token"),
+  const Y = () => hasAuthSession(),
     ce = (r) => {
       const o = String(r || "").trim();
       if (!o) return "";

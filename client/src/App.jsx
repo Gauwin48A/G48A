@@ -213,6 +213,17 @@ function ScrollToTop() {
   const prevPathname = React.useRef(pathname);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.__MHUB_NAV_SWITCHING = true;
+      if (window.__MHUB_NAV_SWITCHING_TIMER) {
+        window.clearTimeout(window.__MHUB_NAV_SWITCHING_TIMER);
+      }
+      window.__MHUB_NAV_SWITCHING_TIMER = window.setTimeout(() => {
+        window.__MHUB_NAV_SWITCHING = false;
+        window.__MHUB_NAV_SWITCHING_TIMER = null;
+      }, 1200);
+    }
+
     // Save scroll position for the page we're leaving
     scrollPositions.current[prevPathname.current] = window.scrollY;
 

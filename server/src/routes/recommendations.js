@@ -329,7 +329,7 @@ router.get("/", async (req, res) => {
   } catch (err) {
     logger.error("[RECOMMENDATIONS] Error:", err.message);
     logger.error("[RECOMMENDATIONS] Full error:", err);
-    res.status(500).json({ error: "Failed to fetch recommendations", details: err.message });
+    res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });
 

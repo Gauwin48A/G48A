@@ -30,15 +30,9 @@ const API_BASE = (() => {
   return base.endsWith("/api") ? base : `${base}/api`;
 })();
 
-function getAuthHeaders() {
-  const token =
-    localStorage.getItem("authToken") || localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function fetchJSON(endpoint) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    headers: { "Content-Type": "application/json" },
     credentials: "include",
   });
   if (!res.ok) {

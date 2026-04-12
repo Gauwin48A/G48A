@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getAccessToken } from "@/utils/authStorage";
+import { hasAuthSession } from "@/utils/authStorage";
 import { useTranslation } from "react-i18next";
 import { getApiOriginBase } from "@/lib/networkConfig";
 
@@ -47,15 +47,12 @@ const MakeOfferModal = React.memo(({ isOpen, onClose, post, onSubmit }) => {
 
     try {
       const apiBase = getApiOriginBase();
-      const token = getAccessToken();
-
-      if (!token) throw new Error("Please login to submit an offer");
+      if (!hasAuthSession()) throw new Error("Please login to submit an offer");
 
       const response = await fetch(`${apiBase}/api/offers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         credentials: "include",
         body: JSON.stringify({

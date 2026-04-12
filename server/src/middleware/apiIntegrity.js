@@ -185,7 +185,15 @@ const antiReplayProtection = (req, res, next) => {
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return next();
 
   const path = req.path || "";
+  const fullPath = req.originalUrl || path;
   if (!isProduction && path.includes("/telemetry/vitals")) {
+    return next();
+  }
+  if (
+    fullPath.startsWith("/api/analytics") ||
+    path.startsWith("/api/analytics") ||
+    path.startsWith("/analytics")
+  ) {
     return next();
   }
   if (path === "/health" || path.endsWith("/health")) return next();

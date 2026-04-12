@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { buildApiPath } from "@/lib/networkConfig";
+import { hasAuthSession } from "@/utils/authStorage";
 
 const CONTACT_SYNC_CONCURRENCY = 3;
 
@@ -42,7 +43,9 @@ export const syncNativeContacts = async (userId) => {
     }
 
     const chunkSize = 100;
-    const token = localStorage.getItem("authToken");
+    if (!hasAuthSession()) {
+      return { skipped: true, reason: "unauthenticated", synced: 0 };
+    }
     const batches = [];
 
     for (let i = 0; i < cleanContacts.length; i += chunkSize) {
@@ -58,8 +61,8 @@ export const syncNativeContacts = async (userId) => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
             },
+            credentials: "include",
             body: JSON.stringify({ contacts: batch }),
           })
         )

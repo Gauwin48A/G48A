@@ -11,6 +11,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
+import { hasAuthSession } from "@/utils/authStorage";
 
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 const LOG_STALE_TIME = 30 * 1000; // 30 seconds for log
@@ -93,9 +94,7 @@ export const useRewardStream = (options = {}) => {
     const connect = useCallback(() => {
         if (!enabled) return;
 
-        // Get auth token for SSE connection
-        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-        if (!token) return;
+        if (!hasAuthSession()) return;
 
         // Close existing connection
         if (eventSourceRef.current) {

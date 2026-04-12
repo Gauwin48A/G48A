@@ -1,6 +1,7 @@
 const { runQuery } = require("../utils/dbHelpers");
 const pool = require("../config/db");
 const logger = require("../utils/logger");
+const cacheService = require("../services/cacheService");
 
 const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const TOP_LIMIT = 5;
@@ -60,7 +61,11 @@ function buildVerifiedClause(schema, alias = "t") {
 }
 
 exports.getPublicWall = async (req, res) => {
-  const schema = await getTransactionsSchema();
+  try {
+    const cached = cacheService.get("publicwall:data");
+    if (cached) return res.json(cached);
+
+    const schema = await getTransactionsSchema();
   const priceColumn = resolvePriceColumn(schema);
   const verifiedClause = buildVerifiedClause(schema, "t");
   const priceExpr = priceColumn
@@ -166,5 +171,11 @@ exports.getPublicWall = async (req, res) => {
     };
   });
 
-  return res.json({ topSellers, topBuyers, topUsers });
+  const result = { topSellers, topBuyers, topUsers };
+  cacheService.set("publicwall:data", result, 120); // cache 2 minutes
+  return res.json(result);
+  } catch (err) {
+    logger.error("PublicWall error:", err.message);
+    return res.status(500).json({ error: "Failed to load public wall" });
+  }
 };

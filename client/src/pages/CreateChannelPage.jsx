@@ -8,7 +8,7 @@ import {
 import { useNavigate as V, useLocation as Se } from "react-router-dom";
 import { useTranslation as Y } from "react-i18next";
 import { useAuth as $ } from "@/context/AuthContext";
-import { getAccessToken as j, getUserId as z } from "@/utils/authStorage";
+import { hasAuthSession as j, getUserId as z } from "@/utils/authStorage";
 import {
   Card as k,
   CardContent as A,

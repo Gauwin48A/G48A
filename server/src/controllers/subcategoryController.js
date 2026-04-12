@@ -70,7 +70,6 @@ exports.getSubcategories = async (req, res) => {
     res.status(500).json({
       code: 500,
       message: "Failed to fetch subcategories",
-      details: err.message,
     });
   }
 };
@@ -144,7 +143,6 @@ exports.getSubcategoriesGrouped = async (req, res) => {
     res.status(500).json({
       code: 500,
       message: "Failed to fetch grouped subcategories",
-      details: err.message,
     });
   }
 };
@@ -221,7 +219,6 @@ exports.getTrendingSubcategories = async (req, res) => {
     res.status(500).json({
       code: 500,
       message: "Failed to fetch trending subcategories",
-      details: err.message,
       data: [],
       subcategories: [],
       count: 0,
@@ -315,7 +312,6 @@ exports.setSubcategoryActiveState = async (req, res) => {
     res.status(500).json({
       code: 500,
       message: "Failed to update subcategory status",
-      details: err.message,
     });
   }
 };

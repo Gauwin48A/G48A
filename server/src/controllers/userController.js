@@ -553,7 +553,7 @@ exports.submitKYC = async (req, res) => {
     logger.error("[KYC] Submission failed:", err);
     return res
       .status(500)
-      .json({ error: "KYC Submission failed", details: err.message });
+      .json({ error: "KYC Submission failed" });
   }
 };
 

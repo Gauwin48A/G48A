@@ -14,6 +14,29 @@ const FILE_URL_PREFIX_PATTERN = /^file:\/+/i;
 const UPLOAD_SEGMENT_PATTERN = /(?:^|\/)uploads\/(.+)$/i;
 const LOCALHOST_HOSTNAME_PATTERN = /^(localhost|127\.0\.0\.1|::1)$/i;
 
+/**
+ * Allowed external media domains. Absolute URLs from the API are only
+ * passed through if their hostname matches one of these patterns.
+ * This prevents attacker-controlled image URLs from harvesting user IPs.
+ */
+const ALLOWED_MEDIA_HOSTS = [
+  /^(.*\.)?cloudinary\.com$/i,
+  /^(.*\.)?mhub\.app$/i,
+  /^(.*\.)?mhub\.in$/i,
+  /^(.*\.)?imgur\.com$/i,
+  /^(.*\.)?googleusercontent\.com$/i,
+  LOCALHOST_HOSTNAME_PATTERN,
+];
+
+function isAllowedMediaHost(url) {
+  try {
+    const { hostname } = new URL(url);
+    return ALLOWED_MEDIA_HOSTS.some((re) => re.test(hostname));
+  } catch {
+    return false;
+  }
+}
+
 const normalizeSlashes = (value) => String(value || "").replace(/\\/g, "/");
 const trimTrailingSlash = (value) => String(value || "").replace(/\/+$/, "");
 
@@ -68,8 +91,11 @@ export function resolveMediaUrl(rawValue, fallback = DEFAULT_MEDIA_PLACEHOLDER) 
   const value = String(rawValue || "").trim();
   if (!value) return fallback;
 
-  if (DATA_URL_PATTERN.test(value) || ABSOLUTE_URL_PATTERN.test(value)) {
+  if (DATA_URL_PATTERN.test(value)) {
     return value;
+  }
+  if (ABSOLUTE_URL_PATTERN.test(value)) {
+    return isAllowedMediaHost(value) ? value : fallback;
   }
 
   const uploadsPath = toUploadsWebPath(value);

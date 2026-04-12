@@ -13,7 +13,7 @@ import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeContext';
 import api from '@/services/api';
 import { fetchUserPreferencesCached, clearUserPreferencesCache } from '@/services/preferencesService';
-import { getAccessToken, getUserId, isAuthenticated } from '@/utils/authStorage';
+import { getUserId, isAuthenticated } from '@/utils/authStorage';
 import { fetchAllSubcategories } from '@/services/subcategoriesService';
 import { buildActiveAppMatcher, normalizeCategoryText } from '@/utils/categoryModeFilters';
 import MiniCartPopover from '@/components/MiniCartPopover';
@@ -43,6 +43,14 @@ const LAYOUT_PRESETS = [
 ];
 
 const AUTH_ONLY_PATHS = new Set(['/login', '/signup', '/forgot-password', '/reset-password']);
+const ADMIN_ACCESS_ROLES = new Set([
+  'admin',
+  'superadmin',
+  'super_admin',
+  'moderator',
+  'risk',
+  'ops',
+]);
 
 const GreenNavbar = () => {
   const { t } = useTranslation();
@@ -56,18 +64,33 @@ const GreenNavbar = () => {
   const isAuthPage = AUTH_ONLY_PATHS.has(currentPath) || currentPath.startsWith('/reset-password');
 
   const moreMenuLinks = [
-    { key: 'sell', path: '/post-welcome', icon: FiShoppingCart, group: 'trade' },
-    { key: 'plans', path: '/tier-selection', icon: FiStar, group: 'trade' },
-    { key: 'centre', path: '/centre', icon: FiUser, group: 'trade', label: t('centre_page', { defaultValue: 'CentrePage' }) },
-    { key: 'nearby', path: '/nearby', icon: FiMapPin, group: 'trade' },
-    { key: 'category_mode', path: '/category-mode', icon: FiNavigation, group: 'trade', label: t('category_mode', { defaultValue: 'Category mode' }) },
+    { key: 'sell', path: '/post-welcome', icon: FiShoppingCart, group: 'trade', requiresAuth: true },
+    { key: 'plans', path: '/tier-selection', icon: FiStar, group: 'trade', requiresAuth: true, labelKey: 'select_plan' },
+    { key: 'centre', path: '/centre', icon: FiUser, group: 'trade', requiresAuth: true, labelKey: 'centre_page' },
+    { key: 'category_hub', path: '/category-hub', icon: FiGrid, group: 'trade', labelKey: 'all_categories' },
+    { key: 'category_mode', path: '/category-mode', icon: FiNavigation, group: 'trade', labelKey: 'category_mode' },
     { key: 'subcategories', path: '/subcategories', icon: FiGrid, group: 'trade' },
-    { key: 'chat', path: '/chat', icon: FiMessageCircle, group: 'social' },
+    { key: 'nearby', path: '/nearby', icon: FiMapPin, group: 'trade' },
+    { key: 'saved_searches', path: '/saved-searches', icon: FiSearch, group: 'trade', requiresAuth: true },
+    { key: 'wishlist', path: '/wishlist', icon: FiBookmark, group: 'trade', requiresAuth: true },
+    { key: 'recently_viewed', path: '/recently-viewed', icon: FiClock, group: 'trade' },
+    { key: 'cart', path: '/cart', icon: FiShoppingCart, group: 'trade', requiresAuth: true },
+    { key: 'compare', path: '/compare', icon: FiCheck, group: 'trade' },
+    { key: 'feed', path: '/feed', icon: FiFileText, group: 'social' },
+    { key: 'public_wall', path: '/public-wall', icon: FiBell, group: 'social', labelKey: 'public_wall_title' },
+    { key: 'chat', path: '/chat', icon: FiMessageCircle, group: 'social', requiresAuth: true },
+    { key: 'my_reviews', path: '/reviews', icon: FiStar, group: 'social', requiresAuth: true, requiresUserId: true },
+    { key: 'my_offers', path: '/offers', icon: FiShoppingCart, group: 'social', requiresAuth: true },
     { key: 'feedback', path: '/feedback', icon: FiStar, group: 'social' },
     { key: 'complaints', path: '/complaints', icon: FiFileText, group: 'social' },
-    { key: 'verification', path: '/verification', icon: FiUserCheck, group: 'account' },
-    { key: 'dashboard', path: '/dashboard', icon: FiMonitor, group: 'account' },
-    { key: 'admin_panel', path: '/admin-panel', icon: FiLock, group: 'account' },
+    { key: 'profile', path: '/profile', icon: FiUser, group: 'account', requiresAuth: true },
+    { key: 'rewards', path: '/rewards', icon: FiUserCheck, group: 'account', requiresAuth: true },
+    { key: 'notifications', path: '/notifications', icon: FiBell, group: 'account', requiresAuth: true },
+    { key: 'verification', path: '/verification', icon: FiUserCheck, group: 'account', requiresAuth: true },
+    { key: 'dashboard', path: '/dashboard', icon: FiMonitor, group: 'account', requiresAuth: true },
+    { key: 'security', path: '/security', icon: FiLock, group: 'account', requiresAuth: true },
+    { key: 'account_delete', path: '/account/delete', icon: FiX, group: 'account', requiresAuth: true, labelKey: 'delete_account' },
+    { key: 'admin_panel', path: '/admin-panel', icon: FiLock, group: 'account', requiresAuth: true, adminOnly: true },
   ];
 
   const bottomNavLinks = [
@@ -212,10 +235,21 @@ const GreenNavbar = () => {
       document.body.classList.remove('text-lg');
       document.body.style.fontSize = '';
     }
+    return () => {
+      // Cleanup on unmount to prevent stale body styles
+      document.body.classList.remove('text-lg');
+      document.body.style.fontSize = '';
+    };
   }, [largeFont]);
 
   // Check if user is logged in
   const isLoggedIn = useMemo(() => isAuthenticated(user), [user]);
+  const hasAdminPanelAccess = useMemo(() => {
+    const role = String(user?.role || user?.userRole || user?.user_type || '')
+      .trim()
+      .toLowerCase();
+    return role ? ADMIN_ACCESS_ROLES.has(role) : false;
+  }, [user]);
 
   // Notification unread count badge
   const { data: rawUnreadCount = 0 } = useUnreadCount({ enabled: isLoggedIn, refetchInterval: 60000 });
@@ -287,12 +321,68 @@ const GreenNavbar = () => {
       localStorage.removeItem('user_id');
       localStorage.removeItem('userProfile');
       localStorage.removeItem('token');
+      localStorage.removeItem('authSession');
       navigate('/login', { replace: true });
     }
   };
 
   const closeMoreMenu = () => {
     setMoreOpen(false);
+  };
+
+  const handleOpenProtected = (path) => {
+    toast({
+      title: t('login_required_title', { defaultValue: 'Login required' }),
+      description: t('please_login_continue', { defaultValue: 'Please login to continue.' }),
+      variant: 'destructive',
+    });
+    closeMoreMenu();
+    navigate('/login', { state: { returnTo: path } });
+  };
+
+  const handleMoreMenuItemClick = (item) => {
+    if (!item?.path) return;
+
+    if (item.requiresAuth && !isLoggedIn) {
+      handleOpenProtected(item.path);
+      return;
+    }
+
+    if (item.adminOnly && !hasAdminPanelAccess) {
+      toast({
+        title: t('admin_access_required', { defaultValue: 'Admin access required' }),
+        description: t('no_admin_permission', {
+          defaultValue: 'You do not have permission to open Admin Panel.',
+        }),
+        variant: 'destructive',
+      });
+      closeMoreMenu();
+      return;
+    }
+
+    if (item.requiresUserId) {
+      const resolvedUserId =
+        getUserId(user) ||
+        localStorage.getItem('userId') ||
+        localStorage.getItem('user_id');
+      if (!resolvedUserId) {
+        toast({
+          title: t('unable_open_reviews', { defaultValue: 'Unable to open reviews' }),
+          description: t('user_id_missing_refresh', {
+            defaultValue: 'User ID is missing. Refresh your profile and try again.',
+          }),
+          variant: 'destructive',
+        });
+        closeMoreMenu();
+        return;
+      }
+      navigate(`/reviews/${resolvedUserId}`);
+      closeMoreMenu();
+      return;
+    }
+
+    navigate(item.path);
+    closeMoreMenu();
   };
 
   // User preferences for For You page filter pre-population
@@ -450,9 +540,9 @@ const GreenNavbar = () => {
   // Fetch user preferences when on For You page and pre-populate filters
   useEffect(() => {
     const userId = getUserId(user);
-    const token = getAccessToken();
+    const authed = isAuthenticated(user);
 
-    if (isForYouPage && userId && token) {
+    if (isForYouPage && userId && authed) {
       const fetchPreferences = async () => {
         try {
           const data = await fetchUserPreferencesCached({ userId });
@@ -1238,134 +1328,175 @@ const GreenNavbar = () => {
         hideTopRibbon ? null : <div ref={topRibbonRef} className="h-14 w-full mhub-top-ribbon" />
       ) : null}
 
-      {/* --- More Menu Slide-out Panel --- */}
+      {/* --- More Menu Drawer --- */}
       {moreOpen && typeof document !== 'undefined' && createPortal(
         <div
-          className="mhub-more-overlay fixed inset-0 z-[200]"
+          className="fixed inset-0 z-[200]"
           role="dialog"
           aria-modal="true"
           aria-label={t('more_options', { defaultValue: 'More options' })}
           onKeyDown={(e) => { if (e.key === 'Escape') closeMoreMenu(); }}
+          onClick={closeMoreMenu}
         >
-          <div
-            className="mhub-more-overlay-bg absolute inset-0 bg-black/30 backdrop-blur-sm animate-fadeIn"
-            onClick={closeMoreMenu}
-            aria-hidden="true"
-          />
-          <div
-            className="mhub-more-panel absolute top-0 right-0 z-[201] h-full w-80 max-w-full overflow-y-auto mhub-premium-surface p-8 pb-24 shadow-2xl ring-4 ring-blue-400 ring-opacity-80 animate-slideInRight dark:ring-yellow-400"
-            style={{ transition: 'transform 0.3s' }}
-            onClick={(e) => e.stopPropagation()}
-            role="navigation"
-            aria-label={t('more_options', { defaultValue: 'More options' })}
+          <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
+          <aside
+            className="fixed right-0 top-0 z-[201] h-full w-[380px] max-w-[92vw] overflow-y-auto bg-gradient-to-b from-white via-slate-50 to-white p-6 pb-10 shadow-2xl dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
+            onClick={(event) => event.stopPropagation()}
+            data-no-auto-translate="true"
           >
             <button
               type="button"
-              className="mhub-more-close absolute top-3 right-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-gray-700 dark:hover:text-yellow-400"
+              onClick={closeMoreMenu}
+              className="absolute right-5 top-5 rounded p-1 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white"
               aria-label={t('close', { defaultValue: 'Close' })}
-              onMouseDown={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                closeMoreMenu();
-              }}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                closeMoreMenu();
-              }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <FiX className="h-6 w-6" />
             </button>
-            <h2 className="text-2xl font-bold text-blue-600 dark:text-yellow-300 mb-4 drop-shadow-lg">
+
+            <h2 className="mb-4 text-3xl font-bold tracking-tight text-slate-800 dark:text-white">
               {t('more_options', { defaultValue: 'More options' })}
             </h2>
+
             {(() => {
-              const restrictedKeys = [
-                'sell',
-                'centre',
-                'chat',
-                'verification',
-                'feedback',
-                'complaints',
-                'dashboard',
-                'admin_panel',
-              ];
+              const groupOrder = ['trade', 'social', 'account'];
               const groupLabels = {
                 trade: t('trade', { defaultValue: 'Trade' }),
                 social: t('social', { defaultValue: 'Social' }),
                 account: t('account', { defaultValue: 'Account' }),
               };
-              const filtered = moreMenuLinks.filter((link) => {
-                if (isLoggedIn && (link.key === 'login' || link.key === 'signup')) return false;
-                return true;
-              });
-              let lastGroup = null;
-              return filtered.map((link) => {
-                const isRestricted = !isLoggedIn && restrictedKeys.includes(link.key);
-                const LinkIcon = link.icon;
-                const showGroupHeader = link.group !== lastGroup;
-                lastGroup = link.group;
+              const groupStyles = {
+                trade:
+                  'border-blue-200 bg-blue-50/70 text-blue-900 hover:bg-blue-100/80 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-100 dark:hover:bg-blue-500/20',
+                social:
+                  'border-emerald-200 bg-emerald-50/70 text-emerald-900 hover:bg-emerald-100/80 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100 dark:hover:bg-emerald-500/20',
+                account:
+                  'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100/80 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100 dark:hover:bg-amber-500/20',
+              };
+              const grouped = moreMenuLinks.reduce((acc, item) => {
+                if (!item || !item.group) return acc;
+                if (!acc[item.group]) acc[item.group] = [];
+                acc[item.group].push(item);
+                return acc;
+              }, {});
+              return groupOrder.map((groupKey) => {
+                const items = grouped[groupKey];
+                if (!items || items.length === 0) return null;
                 return (
-                  <React.Fragment key={link.key}>
-                    {showGroupHeader && (
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-2 pt-2 pb-1 mt-1">
-                        {groupLabels[link.group] || link.group}
-                      </p>
-                    )}
-                    <Link
-                      to={isRestricted ? '#' : link.path}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-base shadow transition-all duration-150 ${
-                        isRestricted ? 'opacity-50 cursor-not-allowed bg-[var(--chip-bg)]' : ''
-                      }`}
-                      onClick={(e) => {
-                        if (isRestricted) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toast({
-                            description: t('login_required', { defaultValue: 'Please login to access this feature' }),
-                            variant: 'destructive',
-                          });
-                        } else {
-                          closeMoreMenu();
-                        }
-                      }}
-                      tabIndex={0}
-                    >
-                      {isRestricted
-                        ? <FiLock className="w-4 h-4 text-gray-400 shrink-0" />
-                        : LinkIcon && <LinkIcon className="w-4 h-4 shrink-0" />}
-                      {link.label || t(link.key, { defaultValue: link.key })}
-                    </Link>
-                  </React.Fragment>
+                  <div key={groupKey} className="space-y-2">
+                    <p className="px-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                      {groupLabels[groupKey] || groupKey}
+                    </p>
+                    <div className="grid gap-2">
+                      {items.map((item) => {
+                        const blockedForGuest = item.requiresAuth && !isLoggedIn;
+                        const blockedForRole =
+                          item.adminOnly && isLoggedIn && !hasAdminPanelAccess;
+                        const Icon = item.icon || FiMenu;
+                        const labelKey = item.labelKey || item.key;
+                        const fallbackLabel = String(labelKey || item.key || '')
+                          .replace(/_/g, ' ')
+                          .replace(/\b\w/g, (match) => match.toUpperCase());
+                        const labelText = item.label || t(labelKey, {
+                          defaultValue: fallbackLabel,
+                        });
+                        const cardStyle = blockedForRole
+                          ? 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                          : blockedForGuest
+                            ? 'border-amber-200 bg-amber-50/70 text-slate-700 hover:bg-amber-100/80 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-slate-100 dark:hover:bg-amber-500/20'
+                            : groupStyles[groupKey] || 'border-slate-200 bg-white text-slate-700';
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => handleMoreMenuItemClick(item)}
+                            className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-[0.98rem] font-semibold transition-colors duration-150 ${cardStyle}`}
+                          >
+                            <span className="flex min-w-0 items-center gap-3">
+                              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/70 text-slate-700 shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
+                                {blockedForGuest || blockedForRole
+                                  ? <FiLock className="h-5 w-5" />
+                                  : <Icon className="h-5 w-5" />}
+                              </span>
+                              <span className="truncate">{labelText}</span>
+                            </span>
+                            {blockedForRole ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+                                <FiLock className="h-3.5 w-3.5 shrink-0" />
+                                Admin
+                              </span>
+                            ) : null}
+                            {blockedForGuest ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/80 px-2 py-1 text-[11px] font-semibold text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">
+                                <FiLock className="h-3.5 w-3.5 shrink-0" />
+                                Login
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               });
             })()}
-            {isLoggedIn && (
-              <button
-                className="block w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-semibold text-center text-base shadow transition-colors duration-150"
-                onClick={handleLogout}
-              >
-                {t('logout', { defaultValue: 'Logout' })}
-              </button>
-            )}
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">
-                ♿ {t('accessibility', { defaultValue: 'Accessibility' })}
+
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+                {t('theme_mode', { defaultValue: 'Theme mode' })}
+              </p>
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => setThemeMode('light')}
+                  className={`w-full rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
+                    themeMode === 'light'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {t('light_mode', { defaultValue: 'Light mode' })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setThemeMode('system')}
+                  className={`w-full rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
+                    themeMode === 'system'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {t('system', { defaultValue: 'System' })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setThemeMode('dark')}
+                  className={`w-full rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
+                    themeMode === 'dark'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {t('dark_mode', { defaultValue: 'Dark mode' })}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <p className="mb-2 text-center text-xs text-slate-500 dark:text-slate-400">
+                {t('accessibility', { defaultValue: 'Accessibility' })}
               </p>
               <button
-                className={`block w-full px-4 py-3 rounded-lg font-semibold text-center text-base shadow transition-all duration-150 ${
+                className={`block w-full rounded-2xl px-4 py-3 text-base font-semibold transition-colors ${
                   largeFont
                     ? 'bg-green-500 text-white hover:bg-green-600'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
                 }`}
                 onClick={() => setLargeFont(!largeFont)}
                 title={largeFont ? 'Switch to normal font size' : 'Increase font size for easier reading'}
               >
                 {largeFont
-                  ? t('normal_size', { defaultValue: '🔤 Normal Size' })
-                  : t('larger_text', { defaultValue: '🔠 Larger Text' })}
+                  ? t('normal_size', { defaultValue: 'Normal Size' })
+                  : t('larger_text', { defaultValue: 'Larger Text' })}
                 <span className="block text-xs font-normal opacity-75 mt-1">
                   {largeFont
                     ? t('using_large_fonts', { defaultValue: 'Currently using large fonts' })
@@ -1373,13 +1504,67 @@ const GreenNavbar = () => {
                 </span>
               </button>
             </div>
-            <button
-              className="mt-4 px-4 py-2 bg-blue-600 dark:bg-yellow-400 text-white dark:text-gray-900 rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-yellow-500 shadow transition-colors duration-150"
-              onClick={closeMoreMenu}
-            >
-              {t('close', { defaultValue: 'Close' })}
-            </button>
-          </div>
+
+            {import.meta.env.DEV && (
+              <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
+                <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+                  {t('layout', { defaultValue: 'Layout' })}
+                </p>
+                <div className="grid gap-2">
+                  {LAYOUT_PRESETS.map((preset) => {
+                    const Icon = preset.icon;
+                    const active = preset.key === layoutMode;
+                    return (
+                      <button
+                        key={preset.key}
+                        type="button"
+                        onClick={() => handleLayoutModeChange(preset.key)}
+                        className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                          active
+                            ? 'border-blue-300 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-slate-800">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <span className="flex flex-1 flex-col">
+                          <span>{t(preset.labelKey, { defaultValue: preset.key })}</span>
+                          <span className="text-[11px] font-normal text-slate-500">
+                            {preset.width} x {preset.height}
+                          </span>
+                        </span>
+                        {active ? <FiCheck className="h-4 w-4" /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="block w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[1.05rem] font-semibold text-red-600 transition-colors duration-150 hover:bg-red-100 dark:border-red-500/30 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
+                >
+                  {t('logout', { defaultValue: 'Logout' })}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMoreMenu();
+                    navigate('/login');
+                  }}
+                  className="block w-full rounded-2xl bg-blue-600 px-4 py-3 text-[1.05rem] font-semibold text-white transition-colors duration-150 hover:bg-blue-700"
+                >
+                  {t('login', { defaultValue: 'Login' })}
+                </button>
+              )}
+            </div>
+          </aside>
         </div>,
         document.body,
       )}
@@ -1458,3 +1643,4 @@ const GreenNavbar = () => {
 };
 
 export default GreenNavbar;
+

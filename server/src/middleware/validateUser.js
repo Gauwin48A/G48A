@@ -16,6 +16,6 @@ module.exports = (req, res, next) => {
     next();
   }).catch(err => {
     logger.error('[validateUser] Validation failed:', err);
-    return res.status(500).json({ error: 'Validation failed', details: err.message });
+    return res.status(500).json({ error: 'Validation failed' });
   });
 };

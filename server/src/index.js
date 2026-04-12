@@ -347,25 +347,46 @@ const socketDebugEnabled = process.env.NODE_ENV !== "production";
 
 // ── Socket.IO Authentication Middleware ──────────────────
 const { verifyToken: verifySocketToken } = require("./services/tokenVerificationCache");
+const parseCookieHeader = (cookieHeader = "") => {
+  if (!cookieHeader || typeof cookieHeader !== "string") {
+    return {};
+  }
+  return cookieHeader.split(";").reduce((acc, part) => {
+    const [rawKey, ...rest] = part.split("=");
+    if (!rawKey) return acc;
+    const key = rawKey.trim();
+    if (!key) return acc;
+    const value = rest.join("=");
+    acc[key] = decodeURIComponent(String(value || "").trim());
+    return acc;
+  }, {});
+};
 
 io.use((socket, next) => {
-  const token =
-    socket.handshake.auth?.token ||
-    (socket.handshake.headers?.authorization || "").replace(/^Bearer\s+/i, "") ||
-    null;
-  if (!token) {
+  const headerToken =
+    (socket.handshake.headers?.authorization || "").replace(/^Bearer\s+/i, "");
+  const authToken = socket.handshake.auth?.token || null;
+  const cookieHeader = socket.handshake.headers?.cookie || "";
+  const cookies = parseCookieHeader(cookieHeader);
+  const cookieToken = cookies.accessToken || null;
+  const candidates = [cookieToken, authToken, headerToken].filter(Boolean);
+
+  if (!candidates.length) {
     return next(new Error("Authentication required"));
   }
-  try {
-    const payload = verifySocketToken(token, JWT_CONFIG.SECRET, {
-      issuer: JWT_CONFIG.ISSUER,
-      audience: allowedAudiences,
-    });
-    socket.user = payload;
-    return next();
-  } catch {
-    return next(new Error("Invalid or expired token"));
+  for (const candidate of candidates) {
+    try {
+      const payload = verifySocketToken(candidate, JWT_CONFIG.SECRET, {
+        issuer: JWT_CONFIG.ISSUER,
+        audience: allowedAudiences,
+      });
+      socket.user = payload;
+      return next();
+    } catch {
+      // try next candidate
+    }
   }
+  return next(new Error("Invalid or expired token"));
 });
 
 io.on("connection", (socket) => {
@@ -469,20 +490,19 @@ app.use(sanitizeInput);
 
 // ── CSRF Protection (Double Submit Cookie) ────────────────
 const { csrfProtection } = require("./middleware/csrf");
-app.use(csrfProtection({
-  skipPaths: [
-    "/api/webhooks",
-    "/api/auth/refresh",
-    "/api/payments/webhook",
-    "/api/push-notifications/webhook",
-    "/api/translation/translate",
-    "/api/translation/batch",
-    "/api/location",
-    "/api/analytics/client-event",
-    "/api/analytics/client-error",
-    "/api/analytics/device",
-  ],
-}));
+app.use(
+  csrfProtection({
+    skipPaths: [
+      "/api/webhooks",
+      "/api/auth/refresh",
+      "/api/payments/webhook",
+      "/api/push-notifications/webhook",
+      "/api/analytics/client-event",
+      "/api/analytics/client-error",
+      "/api/analytics/device",
+    ],
+  })
+);
 
 // ── Global VPN/Proxy Blocker ──────────────────────────────
 const { globalVpnBlocker } = require("./middleware/vpnBlocker");
@@ -502,13 +522,13 @@ app.use("/api", vpnEnforcementMiddleware);
 
 // ── API-scoped Middleware ────────────────────────────────
 const { trackActivity } = require("./middleware/activityTracker.js");
-  app.use("/api", trackActivity);
-  app.use("/api", runtimeBudgetGuard);
+app.use("/api", trackActivity);
+app.use("/api", runtimeBudgetGuard);
 app.use("/api", apiContractGuard);
 app.use("/api", zeroTrustGate);
-  app.use("/api", tenantContextGuard);
-  app.use("/api", optionalAuth);
-  app.use("/api", riskRestrictionMiddleware);
+app.use("/api", tenantContextGuard);
+app.use("/api", optionalAuth);
+app.use("/api", riskRestrictionMiddleware);
 
 // Analytics fast-path (client telemetry)
 app.post(

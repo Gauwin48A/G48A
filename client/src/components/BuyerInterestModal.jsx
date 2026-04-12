@@ -16,7 +16,6 @@ import {
   User,
   CheckCircle,
 } from "lucide-react";
-import { getAccessToken } from "@/utils/authStorage";
 import { getApiOriginBase } from "@/lib/networkConfig";
 
 function BuyerInterestModal({ isOpen, onClose, postId, postTitle }) {
@@ -55,13 +54,10 @@ function BuyerInterestModal({ isOpen, onClose, postId, postTitle }) {
 
     try {
       const apiBase = getApiOriginBase();
-      const token = getAccessToken();
-
       const response = await fetch(`${apiBase}/api/inquiries`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
         credentials: "include",
         body: JSON.stringify({

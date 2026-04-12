@@ -29,7 +29,7 @@ router.get("/upi-details", publicPaymentInfoLimiter, paymentController.getUpiDet
 router.post("/webhook", webhookLimiter, paymentController.handleWebhook);
 
 /** @route POST /validate-promo - Validate a promotional code */
-router.post("/validate-promo", transactionLimiter, paymentController.validatePromoCode);
+router.post("/validate-promo", protect, transactionLimiter, paymentController.validatePromoCode);
 
 /* ── Protected routes (auth required) ──────────────────── */
 
@@ -54,8 +54,8 @@ router.post("/reconciliation/run", protect, requireAdmin, paymentController.runR
 /** @route POST /:id/retry - Retry a failed payment */
 router.post("/:id/retry", protect, transactionLimiter, paymentController.retryPayment);
 
-/** @route GET /pending - Get all pending payments */
-router.get("/pending", protect, paymentController.getPendingPayments);
+/** @route GET /pending - Get all pending payments (admin only) */
+router.get("/pending", protect, requireAdmin, paymentController.getPendingPayments);
 
 /** @route POST /:id/verify - Verify a payment */
 router.post("/:id/verify", protect, requireAdmin, paymentController.verifyPayment);
@@ -66,7 +66,7 @@ router.post("/:id/reject", protect, requireAdmin, paymentController.rejectPaymen
 /** @route POST /:id/refund - Initiate a refund for a verified payment */
 router.post("/:id/refund", protect, requireAdmin, paymentController.initiateRefund);
 
-/** @route GET /stats - Get payment statistics */
-router.get("/stats", protect, paymentController.getPaymentStats);
+/** @route GET /stats - Get payment statistics (admin only) */
+router.get("/stats", protect, requireAdmin, paymentController.getPaymentStats);
 
 module.exports = router;

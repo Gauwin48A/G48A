@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, BellOff, Check } from 'lucide-react';
 import api from '../lib/api';
-import { getAccessToken } from '@/utils/authStorage';
+import { hasAuthSession } from '@/utils/authStorage';
 import { useToast } from '@/hooks/use-toast';
 
 /**
@@ -21,7 +21,7 @@ const PriceAlertButton = ({ postId, initialSubscribed = false }) => {
     useEffect(() => () => clearTimeout(successTimeoutRef.current), []);
 
     const handleToggle = async () => {
-        if (!getAccessToken()) {
+        if (!hasAuthSession()) {
             toast({ description: 'Please login to set price alerts', variant: 'destructive' });
             return;
         }

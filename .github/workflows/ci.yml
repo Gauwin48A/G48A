@@ -56,7 +56,7 @@ jobs:
         run: node server/workspace-scripts/guard-footprint.js
 
       - name: Validate locale consistency
-        run: node server/workspace-scripts/validate-locales.js
+        run: node scripts/check-locale-sync.mjs
 
       - name: Verify proactive workflow contract
         run: node server/workspace-scripts/check-proactive-workflow-contract.js

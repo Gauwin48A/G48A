@@ -3,6 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { buildApiPath } from "@/lib/networkConfig";
 import { getDeviceId } from "@/utils/device";
 import { analyzeLocationForSpoofing, recordLocationReading, getLocationTrustScore } from "@/utils/locationGuard";
+import { hasAuthSession } from "@/utils/authStorage";
 import {
   attachOwner,
   clearUserCity,
@@ -378,15 +379,12 @@ const createLocationSignature = async (payload) => {
   try {
     const { getApiOriginBase } = await import("@/lib/networkConfig");
     const base = getApiOriginBase();
-    const token =
-      typeof localStorage !== "undefined"
-        ? localStorage.getItem("authToken") || localStorage.getItem("token")
-        : null;
+    const csrfToken = getCsrfToken();
     const res = await fetch(`${base}/api/location/sign`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(csrfToken ? { "X-XSRF-TOKEN": decodeURIComponent(csrfToken) } : {}),
       },
       credentials: "include",
       body: JSON.stringify(payload),
@@ -413,6 +411,10 @@ const fetchWithTimeout = async (
   } finally {
     clearTimeout(timeout);
   }
+};
+const getCsrfToken = () => {
+  if (typeof document === "undefined") return "";
+  return (document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/) || [])[1] || "";
 };
 const normalizeEndpointUrl = (value) =>
   String(value || "")
@@ -875,10 +877,7 @@ const getStoredUserId = () => {
 };
 const hasAuthenticatedSession = () => {
   try {
-    if (typeof localStorage === "undefined") return false;
-    return Boolean(
-      localStorage.getItem("authToken") || localStorage.getItem("token"),
-    );
+    return hasAuthSession();
   } catch {
     return false;
   }
@@ -981,14 +980,9 @@ const getRecentCachedLocation = (maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS) => {
 };
 const getIPBasedFallbackLocation = async () => {
   try {
-    const token =
-      typeof localStorage !== "undefined"
-        ? localStorage.getItem("authToken") || localStorage.getItem("token")
-        : null;
-    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const response = await fetchWithTimeout(
       buildApiPath("/location/ip-info"),
-      { mode: "cors", credentials: "include", headers },
+      { mode: "cors", credentials: "include" },
       IP_FALLBACK_TIMEOUT_MS,
     ).catch(() => null);
     if (!response || !response.ok) return null;
@@ -2353,17 +2347,14 @@ export async function sendLocation(locationData) {
     debugLog("Sending location to backend:", payload);
     const endpointCandidates = getLocationEndpointCandidates();
     let lastError = null;
-    const token =
-      typeof localStorage !== "undefined"
-        ? localStorage.getItem("authToken")
-        : null;
     const headers = {
       "Content-Type": "application/json",
       "X-MHub-Timestamp": String(Date.now()),
       "X-MHub-Nonce": crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
     }
     for (
       let endpointIndex = 0;
@@ -2523,20 +2514,17 @@ export async function verifyLocation(options = {}) {
 
   const endpointCandidates = getLocationVerificationEndpointCandidates();
   let lastError = null;
-  const token =
-    typeof localStorage !== "undefined"
-      ? localStorage.getItem("authToken")
-      : null;
   const headers = {
     "Content-Type": "application/json",
     "X-Device-Id": payload.device_id || getDeviceId(),
     "X-Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
   };
+  const csrfToken = getCsrfToken();
+  if (csrfToken) {
+    headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
+  }
   if (signature) {
     headers["X-Location-Signature"] = signature;
-  }
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
   }
 
   for (let endpointIndex = 0; endpointIndex < endpointCandidates.length; endpointIndex += 1) {

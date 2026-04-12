@@ -23,7 +23,13 @@ function computeRazorpaySignature(orderId, paymentId, secret) {
 function verifyRazorpaySignature(orderId, paymentId, signature, secret) {
   if (!orderId || !paymentId || !signature || !secret) return false;
   const expected = computeRazorpaySignature(orderId, paymentId, secret);
-  return expected === String(signature).trim();
+  const sig = String(signature).trim();
+  if (expected.length !== sig.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected, 'utf8'), Buffer.from(sig, 'utf8'));
+  } catch {
+    return false;
+  }
 }
 
 module.exports = {

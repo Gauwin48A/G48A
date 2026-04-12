@@ -14,6 +14,7 @@ import { Badge as h } from "@/components/ui/badge";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { useToast as Q } from "@/hooks/use-toast";
 import { usePageDensity } from "@/hooks/usePageDensity";
+import { hasAuthSession } from "@/utils/authStorage";
 import {
   MessageSquare as g,
   Star as V,
@@ -42,11 +43,7 @@ const me = () => {
     { user: k } = ie(),
     w = S(
       () =>
-        !!(
-          k ||
-          localStorage.getItem("authToken") ||
-          localStorage.getItem("token")
-        ),
+        !!(k || hasAuthSession()),
       [k],
     ),
     [A, F] = i(!1),

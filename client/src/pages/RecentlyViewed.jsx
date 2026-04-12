@@ -39,7 +39,6 @@ import { useTranslatedPosts } from "@/hooks/useTranslatedContent";
 import { useAuth } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import {
-  getAccessToken,
   getUserId,
   isAuthenticated,
 } from "@/utils/authStorage";
@@ -127,8 +126,8 @@ const RecentlyViewed = () => {
 
   const getAuthInfo = useCallback(() => {
     const userId = getUserId(user);
-    const token = getAccessToken();
-    return { userId: userId ? String(userId) : "", token: token ? String(token) : "" };
+    const authed = isAuthenticated(user);
+    return { userId: userId ? String(userId) : "", authed };
   }, [user]);
 
   const fetchHistory = useCallback(
@@ -148,8 +147,8 @@ const RecentlyViewed = () => {
           setIsLoadingMore(true);
         }
         setError(null);
-        const { userId, token } = getAuthInfo();
-        if (!userId || !token) {
+        const { userId, authed } = getAuthInfo();
+        if (!userId || !authed) {
           setError(t("please_login_history"));
           setLoading(false);
           return;

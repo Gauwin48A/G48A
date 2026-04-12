@@ -25,6 +25,7 @@ import {
 import { useTranslation } from "react-i18next";
 import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+import { purgeLegacyTokens } from "@/utils/authStorage";
 
 const verhoeffTableD = [
   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -160,14 +161,14 @@ export default function SignUp() {
   }, [form.password, t]);
 
   const applyAuthResponse = async (response) => {
-    if (response?.token) {
-      localStorage.setItem("authToken", response.token);
-      localStorage.removeItem("token");
+    const hasAuthSignal = Boolean(response?.token || response?.user);
+    if (hasAuthSignal) {
+      purgeLegacyTokens();
       localStorage.setItem("authSession", "true");
     }
     if (response?.user) {
       setUser(response.user);
-    } else if (response?.token) {
+    } else if (hasAuthSignal) {
       await refreshAuth();
     }
   };

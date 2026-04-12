@@ -1,4 +1,4 @@
-import { getAccessToken } from "@/utils/authStorage";
+import { hasAuthSession } from "@/utils/authStorage";
 
 const SAVED_POSTS_STORAGE_KEY = "mhub_saved_post_ids";
 const SAVED_POSTS_UPDATED_EVENT = "mhub:saved-posts-updated";
@@ -44,7 +44,7 @@ function canUseStorage() {
 }
 
 function hasAuthToken() {
-  return Boolean(getAccessToken());
+  return hasAuthSession();
 }
 
 export function normalizeSavedPostId(postId) {

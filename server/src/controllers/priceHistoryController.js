@@ -17,6 +17,10 @@ const recordPriceChange = async (req, res) => {
   const newPrice = Number(req.body.newPrice);
   const userId = getAuthUserId(req);
 
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
   if (!postId || !Number.isFinite(oldPrice) || !Number.isFinite(newPrice) || oldPrice <= 0) {
     return res.status(400).json({ error: "postId, oldPrice (>0), newPrice required" });
   }

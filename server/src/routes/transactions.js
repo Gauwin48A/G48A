@@ -100,7 +100,7 @@ router.get("/undone", async (req, res) => {
     return res.json(result.rows);
   } catch (err) {
     logger.error("[Transactions] Error fetching undone sales:", err);
-    return res.status(500).json({ error: "Failed to fetch undone sales", details: err.message });
+    return res.status(500).json({ error: "Failed to fetch undone sales" });
   }
 });
 

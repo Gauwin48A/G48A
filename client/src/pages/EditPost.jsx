@@ -280,8 +280,6 @@ const EditPost = () => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", buildApiPath(`/posts/${encodeURIComponent(postId)}`));
         xhr.withCredentials = true;
-        const token = localStorage.getItem("authToken") || localStorage.getItem("token");
-        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
         };

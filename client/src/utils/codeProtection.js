@@ -312,10 +312,8 @@ function setupSelectionProtection() {
 // ── Source view protection — blocks view-source and about:devtools ──
 
 function setupSourceProtection() {
-  // Continuously clear console to prevent output inspection
-  const _clearLoop = setInterval(() => {
-    try { console.clear(); } catch {}
-  }, 3000);
+  // Console clearing disabled — it destroys runtime error evidence needed for
+  // debugging and security monitoring. Use server-side obfuscation instead.
 
   // Detect if page was opened via view-source: protocol
   try {

@@ -8,7 +8,7 @@ import { navigateBack } from "@/utils/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import api from "@/lib/api";
-import { getAccessToken, getUserId as getStoredUserId } from "@/utils/authStorage";
+import { hasAuthSession, getUserId as getStoredUserId } from "@/utils/authStorage";
 import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
@@ -27,7 +27,7 @@ const BoughtPosts = () => {
     [isLoading, setIsLoading] = useState(!0),
     [errorMessage, setErrorMessage] = useState(""),
     [refreshCounter, setRefreshCounter] = useState(0),
-    accessToken = getAccessToken(),
+    accessToken = hasAuthSession(),
     userId = getStoredUserId(currentUser),
     isAuthenticated = useMemo(() => !!(currentUser || (accessToken && userId)), [currentUser, accessToken, userId]),
     categoryModeCategoryId = useMemo(() => {

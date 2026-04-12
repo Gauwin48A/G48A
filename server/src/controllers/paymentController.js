@@ -20,6 +20,7 @@ const {
 const logger = require("../utils/logger");
 const { verifyRazorpaySignature } = require("../services/paymentGateway");
 const crypto = require("crypto");
+const redisSession = require("../config/redisSession");
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -2680,9 +2681,15 @@ exports.handleWebhook = async (req, res) => {
       .update(rawPayload)
       .digest("hex");
 
-    if (expectedSignature !== String(signature)) {
+    const sigStr = String(signature);
+    let sigValid = false;
+    try {
+      sigValid = expectedSignature.length === sigStr.length &&
+        crypto.timingSafeEqual(Buffer.from(expectedSignature, 'utf8'), Buffer.from(sigStr, 'utf8'));
+    } catch { sigValid = false; }
+    if (!sigValid) {
       logger.warn("[Payment] Webhook rejected: Invalid signature", {
-        received: String(signature).substring(0, 16) + "...",
+        received: sigStr.substring(0, 16) + "...",
         ip: req.ip,
       });
       return res
@@ -2707,34 +2714,41 @@ exports.handleWebhook = async (req, res) => {
       rawPayload
     );
 
-    const replayState = cacheService.get(replayKey);
+    const lockAcquired = await redisSession.setIfNotExists(
+      replayKey,
+      { state: "processing", at: new Date().toISOString() },
+      WEBHOOK_PROCESSING_TTL_SECONDS
+    );
 
-    if (replayState?.state === "done") {
+    if (!lockAcquired) {
+      const replayState = await redisSession.get(replayKey);
+      if (replayState?.state === "done") {
+        return res.json({
+          status: "ok",
+          duplicate: true,
+          replayKey,
+        });
+      }
+
+      if (replayState?.state === "processing") {
+        return res.json({
+          status: "ok",
+          in_progress: true,
+          replayKey,
+        });
+      }
+
       return res.json({
         status: "ok",
         duplicate: true,
         replayKey,
       });
     }
-
-    if (replayState?.state === "processing") {
-      return res.json({
-        status: "ok",
-        in_progress: true,
-        replayKey,
-      });
-    }
-
-    cacheService.set(
-      replayKey,
-      { state: "processing", at: new Date().toISOString() },
-      WEBHOOK_PROCESSING_TTL_SECONDS
-    );
     replayLockHeld = true;
 
     // Non-success webhooks are acknowledged but ignored
     if (!isWebhookSuccess(context)) {
-      cacheService.set(
+      await redisSession.set(
         replayKey,
         { state: "done", ignored: true, reason: "non_success_status" },
         WEBHOOK_DEDUP_TTL_SECONDS
@@ -2771,7 +2785,7 @@ exports.handleWebhook = async (req, res) => {
     }
 
     if (paymentResult.rows.length === 0) {
-      cacheService.set(
+      await redisSession.set(
         replayKey,
         { state: "done", ignored: true, reason: "payment_not_found" },
         WEBHOOK_DEDUP_TTL_SECONDS
@@ -2792,7 +2806,7 @@ exports.handleWebhook = async (req, res) => {
     const payment = paymentResult.rows[0];
 
     if (payment.status === "verified") {
-      cacheService.set(
+      await redisSession.set(
         replayKey,
         { state: "done", duplicate: true },
         WEBHOOK_DEDUP_TTL_SECONDS
@@ -2806,7 +2820,7 @@ exports.handleWebhook = async (req, res) => {
     }
 
     if (payment.status !== "pending") {
-      cacheService.set(
+      await redisSession.set(
         replayKey,
         { state: "done", ignored: true, reason: `status_${payment.status}` },
         WEBHOOK_DEDUP_TTL_SECONDS
@@ -2874,7 +2888,7 @@ exports.handleWebhook = async (req, res) => {
         plan: isBoostPurchase ? null : payment.plan_purchased,
         boost_type: isBoostPurchase ? payment.boost_type : null,
       });
-      cacheService.del(replayKey);
+      await redisSession.del(replayKey);
       replayLockHeld = false;
       return res
         .status(400)
@@ -2894,7 +2908,7 @@ exports.handleWebhook = async (req, res) => {
         plan: isBoostPurchase ? null : payment.plan_purchased,
         boost_type: isBoostPurchase ? payment.boost_type : null,
       });
-      cacheService.del(replayKey);
+      await redisSession.del(replayKey);
       replayLockHeld = false;
       return res
         .status(400)
@@ -2924,7 +2938,7 @@ exports.handleWebhook = async (req, res) => {
 
       if (applied.alreadyProcessed) {
         await client.query("ROLLBACK");
-        cacheService.set(
+        await redisSession.set(
           replayKey,
           { state: "done", duplicate: true },
           WEBHOOK_DEDUP_TTL_SECONDS
@@ -2940,7 +2954,7 @@ exports.handleWebhook = async (req, res) => {
       await client.query("COMMIT");
       invalidatePaymentCaches(payment.user_id);
 
-      cacheService.set(
+      await redisSession.set(
         replayKey,
         {
           state: "done",
@@ -2977,7 +2991,7 @@ exports.handleWebhook = async (req, res) => {
     }
   } catch (err) {
     if (replayLockHeld && replayKey) {
-      cacheService.del(replayKey);
+      await redisSession.del(replayKey);
     }
     logger.error("[Payment] Webhook error:", err);
     return res
@@ -2985,6 +2999,3 @@ exports.handleWebhook = async (req, res) => {
       .json({ error: "Webhook processing failed" });
   }
 };
-
-
-

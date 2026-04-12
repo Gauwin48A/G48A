@@ -23,11 +23,6 @@ const API_BASE = (() => {
   return base.endsWith("/api") ? base : `${base}/api`;
 })();
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("authToken") || localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 const TIER_ICONS = {
   basic: Zap,
   bronze: Star,
@@ -155,7 +150,7 @@ export default function SubscriptionPlans() {
     try {
       const res = await fetch(`${API_BASE}/subscriptions/subscribe`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ planName }),
       });
