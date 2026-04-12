@@ -1,18 +1,100 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mhub}
+      POSTGRES_USER: ${POSTGRES_USER:-mhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mhub} -d ${POSTGRES_DB:-mhub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - mhub-net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mhub-net
+
   server:
     build:
       context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
     env_file:
       - ./server/.env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-mhub}:${POSTGRES_PASSWORD:?err}@postgres:5432/${POSTGRES_DB:-mhub}
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
     ports:
-      - "5001:5001"
+      - "${SERVER_PORT:-5001}:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - uploads:/app/uploads
+      - server-logs:/app/logs
+    networks:
+      - mhub-net
 
   client:
     build:
       context: ./client
+      dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
-      - "4173:4173"
+      - "${CLIENT_PORT:-4173}:80"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - mhub-net
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+  uploads:
+    driver: local
+  server-logs:
+    driver: local
+
+networks:
+  mhub-net:
+    driver: bridge

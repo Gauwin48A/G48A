@@ -510,6 +510,33 @@ exports.deleteNotification = async (req, res) => {
 };
 
 /**
+ * DELETE /notifications
+ * Delete all notifications for the authenticated user.
+ */
+exports.deleteAllNotifications = async (req, res) => {
+  try {
+    const userId = enforceUserAccess(req, res);
+    if (!userId) return;
+
+    const result = await runQuery(
+      `DELETE FROM notifications
+       WHERE user_id::text = $1
+       RETURNING notification_id`,
+      [userId]
+    );
+
+    invalidateNotificationsCache(userId);
+    return res.json({
+      success: true,
+      deletedCount: result.rows.length,
+    });
+  } catch (err) {
+    logger.error("Error deleting all notifications:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
  * PATCH /notifications/:notificationId/snooze
  * Snooze a notification until a future timestamp.
  *

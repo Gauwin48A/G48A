@@ -2509,5 +2509,11 @@
   "your_referral_rank_summary": "{{count}} referrals this period",
   "your_referrals": "Your Referrals",
   "your_user_id": "Your User ID",
-  "your_voice_matters": "Your Voice Matters"
+  "your_voice_matters": "Your Voice Matters",
+  "auto_parts": "Auto Parts",
+  "bicycles": "Bicycles",
+  "compare": "Compare",
+  "electric_vehicles": "Electric Vehicles",
+  "scooters": "Scooters",
+  "trucks": "Trucks"
 }

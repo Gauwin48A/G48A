@@ -56,6 +56,7 @@ import {
 } from "@/utils/savedPosts";
 import pt from "@/components/ShareLinkDialog";
 import PromoteDialog from "@/components/PromoteDialog";
+import BuyerInterestModal from "@/components/BuyerInterestModal";
 import AllPostsCategoryBar from "@/components/allposts/CategoryBar";
 import AllPostsQuickFilters from "@/components/allposts/QuickFilters";
 import AllPostsGreatDealsBanner from "@/components/allposts/GreatDealsBanner";
@@ -930,6 +931,24 @@ const ve = 5,
       },
       [s],
     );
+    const markTranslatedPosts = useCallback((posts, lang) => {
+      if (!Array.isArray(posts)) return posts;
+      return posts.map((post) => {
+        if (!post || typeof post !== "object") return post;
+        return { ...post, _translatedLang: lang };
+      });
+    }, []);
+    const stripTranslatedMarker = useCallback((posts) => {
+      if (!Array.isArray(posts)) return posts;
+      return posts.map((post) => {
+        if (!post || typeof post !== "object") return post;
+        if (!Object.prototype.hasOwnProperty.call(post, "_translatedLang")) {
+          return post;
+        }
+        const { _translatedLang, ...rest } = post;
+        return rest;
+      });
+    }, []);
     const openPromote = useCallback((postId, title) => {
       if (!postId) return;
       setPromotePostId(String(postId));
@@ -979,20 +998,47 @@ const ve = 5,
     ]);
     useEffect(() => {
       languageRef.current = l;
-    }, [l, f]);
+    }, [l]);
     useEffect(() => {
       if (!Array.isArray(f) || f.length === 0) return;
-      let e = !1;
-      if (!l || l === "en") {
-        O((a) => (Array.isArray(a) ? a.map(restoreTranslatedPost) : a));
+      const normalizedLang = String(l || "en")
+        .trim()
+        .toLowerCase()
+        .split("-")[0];
+      const hasTranslationMarker = f.some(
+        (post) => post && typeof post === "object" && post._translatedLang,
+      );
+      if (!normalizedLang || normalizedLang === "en") {
+        if (hasTranslationMarker) {
+          O((a) =>
+            stripTranslatedMarker(
+              Array.isArray(a) ? a.map(restoreTranslatedPost) : a,
+            ),
+          );
+        }
         return;
       }
-      const a = Ue(f, l, { paths: ALL_POSTS_TRANSLATE_PATHS });
+      const alreadyTranslated = f.every(
+        (post) =>
+          post &&
+          typeof post === "object" &&
+          post._translatedLang === normalizedLang,
+      );
+      if (alreadyTranslated) return;
+      let e = !1;
+      const a = markTranslatedPosts(
+        Ue(f, normalizedLang, { paths: ALL_POSTS_TRANSLATE_PATHS }),
+        normalizedLang,
+      );
       O(a);
-      Re(f, l, { paths: ALL_POSTS_TRANSLATE_PATHS })
+      Re(f, normalizedLang, { paths: ALL_POSTS_TRANSLATE_PATHS })
         .then((o) => {
           if (e) return;
-          Array.isArray(o) && o.length > 0 ? O(o) : O(a);
+          const next =
+            Array.isArray(o) && o.length > 0
+              ? markTranslatedPosts(o, normalizedLang)
+              : a;
+          O(next);
         })
         .catch(() => {
           if (!e) O(a);
@@ -1000,7 +1046,7 @@ const ve = 5,
       return () => {
         e = !0;
       };
-    }, [l, f]);
+    }, [l, f, markTranslatedPosts, stripTranslatedMarker]);
     useEffect(() => {
       const e = sessionStorage.getItem("allPostsScrollPosition");
       e &&
@@ -2356,8 +2402,11 @@ const ve = 5,
     useEffect(() => {
       const e = async () => {
           if (U.current.size === 0) return;
-          const o = Array.from(U.current);
+          const o = Array.from(U.current)
+            .map((id) => String(id || "").trim())
+            .filter(Boolean);
           U.current.clear();
+          if (o.length === 0) return;
           try {
             await A.post("/posts/batch-view", { postIds: o });
           } catch (n) {
@@ -3628,6 +3677,17 @@ const ve = 5,
                               React.createElement(
                                 DropdownMenuItem,
                                 {
+                                  onSelect: () => toggleCompare(e),
+                                  className:
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
+                                },
+                                isInCompare(a)
+                                  ? s("in_compare", { defaultValue: "In Compare" })
+                                  : s("compare", { defaultValue: "Compare" }),
+                              ),
+                              React.createElement(
+                                DropdownMenuItem,
+                                {
                                   onSelect: () => handleReportPost(a),
                                   className:
                                     "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
@@ -3818,73 +3878,6 @@ const ve = 5,
                               ),
                             ),
                             React.createElement(
-                            "button",
-                              {
-                                className:
-                                  "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 sm:h-8 sm:w-8 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
-                                onClick: () => handleSharePost(a),
-                                title: s("share", { defaultValue: "Share" }),
-                                "aria-label": s("share", { defaultValue: "Share" }),
-                              },
-                              React.createElement(ko, { className: "w-3.5 h-3.5" }),
-                            ),
-                            React.createElement(
-                              "button",
-                              {
-                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
-                                  savedPosts[a]
-                                    ? "border-blue-600 bg-blue-600 text-white"
-                                    : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200"
-                                }`,
-                                onClick: () => toggleSave(a),
-                                title: savedPosts[a]
-                                  ? s("saved", { defaultValue: "Saved" })
-                                  : s("save", { defaultValue: "Save" }),
-                                "aria-label": savedPosts[a]
-                                  ? s("saved", { defaultValue: "Saved" })
-                                  : s("save", { defaultValue: "Save" }),
-                              },
-                              savedPosts[a]
-                                ? React.createElement(Qo, { className: "w-3.5 h-3.5" })
-                                : React.createElement(Wo, { className: "w-3.5 h-3.5" }),
-                            ),
-                            React.createElement(
-                              "button",
-                              {
-                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
-                                  inCart
-                                    ? "border-emerald-500 bg-emerald-500 text-white"
-                                    : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200"
-                                }`,
-                                onClick: () => handleCartToggle(e),
-                                title: inCart
-                                  ? s("in_cart", { defaultValue: "In Cart" })
-                                  : s("add_to_cart", { defaultValue: "Add to Cart" }),
-                                "aria-label": inCart
-                                  ? s("in_cart", { defaultValue: "In Cart" })
-                                  : s("add_to_cart", { defaultValue: "Add to Cart" }),
-                              },
-                              React.createElement(Yo, { className: "w-3.5 h-3.5" }),
-                            ),
-                            React.createElement(
-                              "button",
-                              {
-                                className: `shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full border sm:h-8 sm:w-8 dark:border ${
-                                  isInCompare(a)
-                                    ? "border-purple-500 bg-purple-500 text-white"
-                                    : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200"
-                                }`,
-                                onClick: () => toggleCompare(e),
-                                title: isInCompare(a)
-                                  ? s("in_compare", { defaultValue: "In Compare" })
-                                  : s("compare", { defaultValue: "Compare" }),
-                                "aria-label": isInCompare(a)
-                                  ? s("in_compare", { defaultValue: "In Compare" })
-                                  : s("compare", { defaultValue: "Compare" }),
-                              },
-                              React.createElement(CompareIcon, { className: "w-3.5 h-3.5" }),
-                            ),
-                            React.createElement(
                               "span",
                               {
                                 className:
@@ -4002,7 +3995,7 @@ const ve = 5,
             },
             ne,
           ),
-        React.createElement(AvatarFallback, {
+        React.createElement(BuyerInterestModal, {
           isOpen: Ie,
           onClose: () => {
             le(!1), ie(null);
@@ -4114,6 +4107,7 @@ const ve = 5,
                       React.createElement("img", {
                         src: imgSrc,
                         alt: item?.title || "",
+                        loading: "lazy",
                         className: "w-full h-44 object-cover",
                         onError: (ev) => { ev.target.style.display = "none"; },
                       }),

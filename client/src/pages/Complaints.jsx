@@ -232,6 +232,28 @@ const ve = () => {
         });
         return;
       }
+      if (a.description.trim().length < 20) {
+        d({
+          title: tr("description_too_short_title", "Description Too Short"),
+          description: tr(
+            "complaint_description_min_length",
+            "Please provide at least 20 characters describing the issue so we can investigate effectively.",
+          ),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (a.description.trim().length > 2000) {
+        d({
+          title: tr("description_too_long_title", "Description Too Long"),
+          description: tr(
+            "complaint_description_max_length",
+            "Please keep your description under 2000 characters.",
+          ),
+          variant: "destructive",
+        });
+        return;
+      }
       A(!0);
       try {
         const l = await api.post("/complaints", {

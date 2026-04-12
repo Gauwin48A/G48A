@@ -188,7 +188,7 @@ const NotificationsPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  const [cursor, setCursor] = useState(null);
+  const [, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [serverUnreadCount, setServerUnreadCount] = useState(0);
   const [preferences, setPreferences] = useState(null);
@@ -198,7 +198,7 @@ const NotificationsPage = () => {
   const cursorRef = useRef(null);
   const notificationRefs = useRef(new Map());
   const userId = useMemo(() => getUserId(user), [user]);
-  const isAuth = useMemo(() => isAuthenticated(user), [user, userId]);
+  const isAuth = useMemo(() => isAuthenticated(user), [user]);
   const activeAppMatcher = useMemo(
     () => buildActiveAppMatcher(activeApp, categoryModeCategories),
     [activeApp, categoryModeCategories],
@@ -440,17 +440,6 @@ const NotificationsPage = () => {
     return Array.isArray(images) && images.length > 0 ? images[0] : null;
   };
 
-  const formatCurrency = (value, currency = "INR") => {
-    if (value === null || value === undefined || value === "") return null;
-    const amount = Number(value);
-    if (!Number.isFinite(amount)) return null;
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const markAsRead = useCallback(
     async (notificationId) => {
       const previousNotifications = notifications;
@@ -608,6 +597,36 @@ const NotificationsPage = () => {
       );
     }
   }, [notifications, selectedIds]);
+
+  const deleteAllNotifications = useCallback(async () => {
+    const previousNotifications = notifications;
+    const previousUnread = serverUnreadCount;
+    setNotifications([]);
+    setServerUnreadCount(0);
+    setSelectedIds(new Set());
+    toast({
+      title: t("all_deleted") || "All notifications deleted",
+      description: t("undo_available") || "You can undo this action.",
+      action: (
+        <button
+          className="text-xs font-semibold underline"
+          onClick={() => {
+            setNotifications(previousNotifications);
+            setServerUnreadCount(previousUnread);
+          }}
+        >
+          {t("undo") || "Undo"}
+        </button>
+      ),
+      duration: 6000,
+    });
+    try {
+      await api.delete("/notifications", { data: { userId } });
+    } catch (err) {
+      setNotifications(previousNotifications);
+      setServerUnreadCount(previousUnread);
+    }
+  }, [notifications, serverUnreadCount, userId, toast, t]);
 
   const toggleSelection = useCallback((id) => {
     setSelectedIds((prev) => {
@@ -1270,6 +1289,16 @@ const NotificationsPage = () => {
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 {t("mark_all_as_read") || "Mark all as read"}
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={deleteAllNotifications}
+                className="flex items-center gap-1.5 px-3.5 min-h-[36px] py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-600/30 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-full transition-all duration-200"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {t("delete_all") || "Delete all"}
               </button>
             )}
           </div>

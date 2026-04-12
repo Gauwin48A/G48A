@@ -26,6 +26,9 @@ router.post("/mark-all-read", protect, notificationController.markAllAsRead);
 /** @route DELETE /:notificationId - Delete a notification */
 router.delete("/:notificationId", protect, notificationController.deleteNotification);
 
+/** @route DELETE / - Delete all notifications for the authenticated user */
+router.delete("/", protect, notificationController.deleteAllNotifications);
+
 /** @route PATCH /:notificationId/snooze - Snooze a notification */
 router.patch("/:notificationId/snooze", protect, notificationController.snoozeNotification);
 

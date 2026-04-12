@@ -286,7 +286,8 @@ const isOriginAllowed = (origin) => {
   if (!origin) return isDevelopment;
   const normalizedOrigin = sanitizeOrigin(origin);
   if (configuredCorsOrigins.has(normalizedOrigin)) return true;
-  if (isDevelopment && localhostOriginPattern.test(normalizedOrigin))
+  // Safety check: only allow localhost pattern in genuine development
+  if (isDevelopment && !process.env.RENDER && !process.env.FLY_APP_NAME && !process.env.RAILWAY_ENVIRONMENT && localhostOriginPattern.test(normalizedOrigin))
     return true;
   return false;
 };
@@ -469,7 +470,18 @@ app.use(sanitizeInput);
 // ── CSRF Protection (Double Submit Cookie) ────────────────
 const { csrfProtection } = require("./middleware/csrf");
 app.use(csrfProtection({
-  skipPaths: ["/api/webhooks", "/api/auth/refresh", "/api/payments/webhook", "/api/push-notifications/webhook", "/api/translation/translate", "/api/translation/batch", "/api/location"],
+  skipPaths: [
+    "/api/webhooks",
+    "/api/auth/refresh",
+    "/api/payments/webhook",
+    "/api/push-notifications/webhook",
+    "/api/translation/translate",
+    "/api/translation/batch",
+    "/api/location",
+    "/api/analytics/client-event",
+    "/api/analytics/client-error",
+    "/api/analytics/device",
+  ],
 }));
 
 // ── Global VPN/Proxy Blocker ──────────────────────────────

@@ -160,7 +160,7 @@ export default function LocationSelector({ isOpen, onClose }) {
       } finally {
         setIsSearching(false);
       }
-    }, 250);
+    }, 500); // 500ms debounce to respect OSM rate limit (1 req/sec)
 
     return () => {
       controller.abort();

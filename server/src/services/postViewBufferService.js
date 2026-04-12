@@ -16,6 +16,8 @@ const DEFAULT_MAX_BUFFERED_KEYS = Number.parseInt(
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const NUMERIC_RE = /^\d+$/;
+const isValidPostId = (value) => UUID_RE.test(value) || NUMERIC_RE.test(value);
 
 const pendingCounts = new Map();
 let flushTimer = null;
@@ -37,7 +39,7 @@ function sanitizePostIds(postIds, limit = DEFAULT_BATCH_LIMIT) {
   for (const rawId of postIds) {
     if (out.length >= limit) break;
     const id = String(rawId || "").trim().toLowerCase();
-    if (!id || seen.has(id) || !UUID_RE.test(id)) continue;
+    if (!id || seen.has(id) || !isValidPostId(id)) continue;
     seen.add(id);
     out.push(id);
   }
@@ -97,9 +99,9 @@ async function flushCountMap(countMap) {
     UPDATE posts p
     SET views = COALESCE(p.views, 0) + v.increment
     FROM (
-      SELECT * FROM UNNEST($1::uuid[], $2::int[])
+      SELECT * FROM UNNEST($1::text[], $2::int[])
     ) AS v(post_id, increment)
-    WHERE p.post_id = v.post_id
+    WHERE p.post_id::text = v.post_id
     `,
     [ids, increments]
   );

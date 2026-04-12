@@ -308,6 +308,11 @@
   "communication_problem": "Communication Problem",
   "community_member": "Community Member",
   "compare": "Compare",
+  "auto_parts": "Auto Parts",
+  "bicycles": "Bicycles",
+  "electric_vehicles": "Electric Vehicles",
+  "scooters": "Scooters",
+  "trucks": "Trucks",
   "complaint": "Complaint",
   "complaint_description": "Describe your complaint",
   "complaint_id": "Complaint ID",
@@ -2239,5 +2244,13 @@
   "latest_50": "Latest 50",
   "sponsored": "Sponsored",
   "more_recommendations": "More recommendations",
-  "load_more_recommendations_hint": "Load another set of picks for you."
+  "load_more_recommendations_hint": "Load another set of picks for you.",
+  "men": "Men",
+  "women": "Women",
+  "kids_fashion": "Kids Fashion",
+  "footwear": "Footwear",
+  "bags": "Bags",
+  "jewellery": "Jewellery",
+  "watches": "Watches",
+  "ethnic_wear": "Ethnic Wear"
 }

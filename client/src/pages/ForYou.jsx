@@ -47,7 +47,6 @@ import BuyerInterestModal from "@/components/BuyerInterestModal";
 import LoginPromptModal from "@/components/LoginPromptModal";
 import AllPostsGreatDealsBanner from "@/components/allposts/GreatDealsBanner";
 import AllPostsFeedHeader from "@/components/allposts/FeedHeader";
-import PostPromoBadges from "@/components/PostPromoBadges";
 import {
   Alert as ke,
   AlertDescription as Pe,
@@ -79,7 +78,6 @@ import {
 } from "@/utils/categoryModeFilters";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
 const te = 12,
-  SHOW_POST_ID_CHIP = !0,
   PLACEHOLDER_IMAGE = "/placeholder.svg",
   getPostId = (r) => {
     if (r == null) return "";
@@ -272,7 +270,6 @@ const te = 12,
       [lastUpdatedAt, setLastUpdatedAt] = c(Date.now()),
       [updatedPulse, setUpdatedPulse] = c(!1),
       [expandedPostId, setExpandedPostId] = c(null),
-      [expandedMetaPostId, setExpandedMetaPostId] = c(null),
       [likedById, setLikedById] = c({}),
       [likeCounts, setLikeCounts] = c({}),
       [viewCounts, setViewCounts] = c({}),
@@ -295,7 +292,7 @@ const te = 12,
       [promotePostId, setPromotePostId] = c(null),
       [promotePostTitle, setPromotePostTitle] = c(""),
       [loginPromptOpen, setLoginPromptOpen] = c(!1),
-      [reportNotice, setReportNotice] = c(""),
+      [reportNotice] = c(""),
       [carouselIndexByPost, setCarouselIndexByPost] = c({}),
       { density, setDensity } = usePageDensity("mhub_foryou_density"),
       openPromote = A((postId, title) => {
@@ -1125,7 +1122,6 @@ const te = 12,
         return `\u20B9${a.toLocaleString("en-IN")}`;
       }
     };
-    const G = (t) => utm(t, PLACEHOLDER_IMAGE) || PLACEHOLDER_IMAGE;
     return !re && !y
       ? e.createElement(
           "div",
@@ -1936,7 +1932,6 @@ const te = 12,
                           const l = String(u || "U")
                             .charAt(0)
                             .toUpperCase();
-                          const k = Number(t.user?.rating || t.seller_rating || 0);
                           const subLabel =
                             t.subcategory_name ||
                             t.subcategory ||
@@ -1961,59 +1956,6 @@ const te = 12,
                             t.created_at || t.createdAt,
                           );
                           const we = t.location || t.city || t.area || "";
-                          const fallbackSubcategoryLabel =
-                            resolvedSubcategoryLabel || tr("general", "General");
-                          const subcategoryChip = fallbackSubcategoryLabel
-                            ? {
-                                key: "subcategory",
-                                label: fallbackSubcategoryLabel,
-                                className:
-                                  "inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium dark:bg-blue-950/20",
-                              }
-                            : null;
-                          const locationChip = we
-                            ? {
-                                key: "location",
-                                label: we,
-                                className:
-                                  "inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 dark:bg-gray-950",
-                              }
-                            : null;
-                          const postedChip = he
-                            ? {
-                                key: "posted",
-                                label: `${r("posted") || "Posted"} ${he}`,
-                                className:
-                                  "inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 dark:bg-gray-950",
-                              }
-                            : null;
-                          const postIdChip =
-                            SHOW_POST_ID_CHIP && a
-                              ? {
-                                  key: "post-id",
-                                  label: `${r("post_id") || "Post ID"}: ${a}`,
-                                  className:
-                                    "inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 font-semibold text-gray-600 dark:text-gray-200 dark:bg-gray-950",
-                                }
-                              : null;
-                          const visibleMetaChips = [
-                            subcategoryChip,
-                            locationChip,
-                          ].filter(Boolean);
-                          const hiddenMetaChips = [postedChip, postIdChip].filter(
-                            Boolean,
-                          );
-                          const metaChips = [
-                            ...visibleMetaChips,
-                            ...hiddenMetaChips,
-                          ];
-                          const hiddenMetaTitle = hiddenMetaChips
-                            .map((P) => P.label)
-                            .join(" • ");
-                          const isMetaExpanded = expandedMetaPostId === a;
-                          const shownMetaChips = isMetaExpanded
-                            ? metaChips
-                            : visibleMetaChips;
                           const imageList = collectPostImageUrls(t);
                           const priceValue = resolvePostPriceValue(t);
                           const hasPrice =

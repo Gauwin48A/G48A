@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MessageSquare, ShoppingCart, Heart, Share2, MoreHorizontal } from "lucide-react";
+import { MessageSquare, ShoppingCart, MoreHorizontal } from "lucide-react";
 import SmartImage from "@/components/SmartImage";
 import {
   useTrustScore,
@@ -23,8 +23,6 @@ const CompactProductCard = memo(function CompactProductCard({
   post,
   onMessage,
   onAddToCart,
-  onLike,
-  onShare,
   showReason,
 }) {
   const navigate = useNavigate();

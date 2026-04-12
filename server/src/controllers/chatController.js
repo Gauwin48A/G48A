@@ -10,7 +10,7 @@ const DEFAULT_MESSAGES_PAGE = 1;
 const DEFAULT_MESSAGES_LIMIT = 50;
 const MAX_MESSAGES_LIMIT = 100;
 const CHAT_CONVERSATIONS_CACHE_TTL = 15; // seconds
-const CHAT_UNREAD_CACHE_TTL = 10;        // seconds
+const CHAT_UNREAD_CACHE_TTL = 3;         // seconds (reduced from 10s for responsiveness)
 
 /* ── Helpers ───────────────────────────────────────────────────── */
 
@@ -56,6 +56,9 @@ function isMessagesTableMissingError(error) {
   return String(error.message || "").toLowerCase().includes('relation "messages" does not exist');
 }
 
+const DEFAULT_CONVERSATIONS_LIMIT = 20;
+const MAX_CONVERSATIONS_LIMIT = 50;
+
 /* ── GET /api/chat/conversations ───────────────────────────────── */
 
 const getConversations = async (req, res) => {
@@ -64,13 +67,25 @@ const getConversations = async (req, res) => {
     return res.status(401).json({ error: "Authentication required" });
   }
 
+  const page = parsePositiveInt(req.query.page, 1);
+  const limit = parsePositiveInt(req.query.limit, DEFAULT_CONVERSATIONS_LIMIT, MAX_CONVERSATIONS_LIMIT);
+  const offset = (page - 1) * limit;
+
   try {
     const userIdText = String(userId);
-    const cacheKey = buildConversationsCacheKey(userIdText);
+    const cacheKey = `${buildConversationsCacheKey(userIdText)}:p${page}:l${limit}`;
 
     const payload = await cacheService.getOrSetWithStampedeProtection(
       cacheKey,
       async () => {
+        const countResult = await runQuery(
+          `SELECT COUNT(DISTINCT conversation_id)::int AS total
+           FROM messages
+           WHERE sender_id::text = $1 OR receiver_id::text = $1`,
+          [userIdText],
+        );
+        const total = countResult.rows[0]?.total || 0;
+
         const result = await runQuery(
           `WITH user_messages AS (
              SELECT m.*,
@@ -113,10 +128,14 @@ const getConversations = async (req, res) => {
            LEFT JOIN posts p     ON p.post_id::text  = rm.post_id::text
            LEFT JOIN unread_counts uc ON uc.conversation_id = rm.conversation_id
            WHERE rm.rn = 1
-           ORDER BY rm.created_at DESC`,
-          [userIdText],
+           ORDER BY rm.created_at DESC
+           LIMIT $2 OFFSET $3`,
+          [userIdText, limit, offset],
         );
-        return { conversations: result.rows };
+        return {
+          conversations: result.rows,
+          pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        };
       },
       CHAT_CONVERSATIONS_CACHE_TTL,
     );
@@ -124,7 +143,7 @@ const getConversations = async (req, res) => {
     return res.json(payload);
   } catch (error) {
     if (isMessagesTableMissingError(error)) {
-      return res.json({ conversations: [] });
+      return res.json({ conversations: [], pagination: { page, limit, total: 0, totalPages: 0 } });
     }
     logger.error("Get conversations error:", error);
     return res.status(500).json({ error: "Failed to fetch conversations" });
@@ -220,6 +239,21 @@ const sendMessage = async (req, res) => {
     return res.status(400).json({ error: "Cannot message yourself" });
   }
 
+  // Check if sender is blocked by receiver
+  try {
+    const blockCheck = await runQuery(
+      `SELECT id FROM user_blocks
+       WHERE blocker_id::text = $1 AND blocked_id::text = $2
+       LIMIT 1`,
+      [String(receiverId), String(senderId)]
+    );
+    if (blockCheck.rows.length > 0) {
+      return res.status(403).json({ error: "You cannot send messages to this user" });
+    }
+  } catch (_blockErr) {
+    // user_blocks table may not exist yet — allow message through
+  }
+
   try {
     const senderIdText = String(senderId);
     const receiverIdText = String(receiverId);
@@ -290,10 +324,56 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
+/* ── PUT /api/chat/:conversationId/delivered ─────────────────── */
+
+const markDelivered = async (req, res) => {
+  const userId = getAuthUserId(req);
+  const conversationId = parseOptionalString(req.params.conversationId);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+  if (!conversationId) return res.status(400).json({ error: "Conversation ID required" });
+  try {
+    await runQuery(
+      `UPDATE messages SET delivered_at = NOW()
+       WHERE conversation_id = $1 AND receiver_id::text = $2 AND delivered_at IS NULL`,
+      [conversationId, String(userId)]
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    if (isMessagesTableMissingError(error)) return res.json({ success: true });
+    logger.error("Mark delivered error:", error);
+    return res.status(500).json({ error: "Failed to mark delivered" });
+  }
+};
+
+/* ── PUT /api/chat/:conversationId/seen ──────────────────────── */
+
+const markSeen = async (req, res) => {
+  const userId = getAuthUserId(req);
+  const conversationId = parseOptionalString(req.params.conversationId);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+  if (!conversationId) return res.status(400).json({ error: "Conversation ID required" });
+  try {
+    const userIdText = String(userId);
+    await runQuery(
+      `UPDATE messages SET is_read = true, seen_at = NOW()
+       WHERE conversation_id = $1 AND receiver_id::text = $2 AND is_read = false`,
+      [conversationId, userIdText]
+    );
+    invalidateChatCache(userIdText);
+    return res.json({ success: true });
+  } catch (error) {
+    if (isMessagesTableMissingError(error)) return res.json({ success: true });
+    logger.error("Mark seen error:", error);
+    return res.status(500).json({ error: "Failed to mark seen" });
+  }
+};
+
 module.exports = {
   getConversations,
   getMessages,
   sendMessage,
   getUnreadCount,
+  markDelivered,
+  markSeen,
   getConversationId,
 };

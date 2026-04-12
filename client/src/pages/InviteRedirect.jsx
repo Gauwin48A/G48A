@@ -17,6 +17,12 @@ export default function InviteRedirect() {
 
   useEffect(() => {
     if (code) {
+      // Persist referral code so it survives the redirect
+      try {
+        localStorage.setItem("mhub_referral_code", code);
+      } catch {
+        // localStorage may be unavailable
+      }
       navigate(`/signup?ref=${encodeURIComponent(code)}`, { replace: true });
     } else {
       navigate("/signup", { replace: true });

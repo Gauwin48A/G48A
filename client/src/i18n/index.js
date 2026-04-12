@@ -341,13 +341,6 @@ if (!isTestEnv && canUseWindow() && !globalScope[I18N_WARM_FLAG]) {
   scheduleIdle(() => {
     void warmLanguageCache(priorityCodes);
   });
-
-  scheduleIdle(() => {
-    const remaining = supportedLngs.filter((code) => !priorityCodes.includes(code));
-    if (remaining.length > 0) {
-      void warmLanguageCache(remaining);
-    }
-  });
 }
 
 export default i18n;

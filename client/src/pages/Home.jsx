@@ -9,11 +9,13 @@ import CentreUpdatesFeed from "@/components/CentreUpdatesFeed";
 import { useAuth } from "@/context/AuthContext";
 import { isAuthenticated } from "@/utils/authStorage";
 import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
+  useDocumentTitle(t("home_title", { defaultValue: "MHub — Home" }));
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,18 +48,15 @@ export default function Home() {
           : [];
       setPosts(list);
     } catch (err) {
-      setError(err?.message || "Unable to load posts right now.");
+      setError(
+        err?.message ||
+          t("home_load_error", {
+            defaultValue: "Unable to load posts right now.",
+          }),
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const homeTitle = t("home_title", { defaultValue: "MHub — Home" });
-    document.title = homeTitle;
-    return () => {
-      document.title = "MHub";
-    };
   }, [t]);
 
   useEffect(() => {
@@ -176,19 +175,26 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent dark:bg-gradient-to-t" />
                   <div className="absolute bottom-3 left-3">
                     <p className="text-white text-lg font-semibold dark:text-white">
-                      INR {Number(post.price || 0).toLocaleString("en-IN")}
+                      {t("currency_inr", { defaultValue: "INR" })}{" "}
+                      {Number(post.price || 0).toLocaleString("en-IN")}
                     </p>
                   </div>
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 dark:text-white text-base line-clamp-2 dark:text-gray-100">
-                    {post.title || "Untitled Listing"}
+                    {post.title ||
+                      t("untitled_listing", { defaultValue: "Untitled Listing" })}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300">
-                    {post.category_name || post.category || "General"}
+                    {post.category_name ||
+                      post.category ||
+                      t("general_category", { defaultValue: "General" })}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300">
-                    {post.location || "Location not specified"}
+                    {post.location ||
+                      t("location_not_specified", {
+                        defaultValue: "Location not specified",
+                      })}
                   </p>
                 </div>
               </button>

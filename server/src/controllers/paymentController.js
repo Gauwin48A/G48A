@@ -1920,21 +1920,32 @@ exports.getPaymentStatus = async (req, res) => {
       resolvedUserContext.canonicalUserId || authUserId;
     const cacheKey = `payments:${cacheKeyIdentity}:status`;
 
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = parsePositiveInt(req.query.limit, 10, 50);
+    const offset = (page - 1) * limit;
+
     const payload = await cacheService.getOrSetWithStampedeProtection(
-      cacheKey,
+      `${cacheKey}:${page}:${limit}`,
       async () => {
         const result = await runQuery(
-          `SELECT id, amount, plan_purchased, purchase_type, boost_type, post_id,
+          `SELECT COUNT(*) OVER()::int AS total_count,
+                  id, amount, plan_purchased, purchase_type, boost_type, post_id,
                   status, transaction_id, created_at, verified_at, expires_at, metadata
            FROM payments
            WHERE user_id::text = $1
            ORDER BY created_at DESC
-           LIMIT 10`,
-          [paymentUserId]
+           LIMIT $2 OFFSET $3`,
+          [paymentUserId, limit, offset]
         );
+        const total = result.rows.length ? result.rows[0].total_count : 0;
+        const payments = result.rows.map(({ total_count, ...p }) => p);
         return {
-          payments: result.rows,
-          has_pending: result.rows.some((p) => p.status === "pending"),
+          payments,
+          has_pending: payments.some((p) => p.status === "pending"),
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
         };
       },
       PAYMENT_STATUS_CACHE_TTL_SECONDS
@@ -2141,6 +2152,23 @@ exports.verifyPayment = async (req, res) => {
       await client.query("COMMIT");
       invalidatePaymentCaches(user_id);
 
+      // Audit log for payment verification
+      try {
+        await runQuery(
+          `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            adminId,
+            "PAYMENT_VERIFIED",
+            req.ip,
+            req.headers["user-agent"],
+            JSON.stringify({ payment_id: id, target_user: user_id, amount: payment.amount, plan: plan_purchased }),
+          ]
+        );
+      } catch (_auditErr) {
+        // Non-fatal: audit logging failure shouldn't block the operation
+      }
+
       logger.info(
         isBoostPurchase
           ? `[Payment] Verified: ID ${id}, User ${user_id}, Boost: ${payment.boost_type}, Post: ${payment.post_id}, Amount: INR ${payment.amount}`
@@ -2238,6 +2266,23 @@ exports.rejectPayment = async (req, res) => {
 
     invalidatePaymentCaches(payment.user_id);
 
+    // Audit log for payment rejection
+    try {
+      await runQuery(
+        `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          adminId,
+          "PAYMENT_REJECTED",
+          req.ip,
+          req.headers["user-agent"],
+          JSON.stringify({ payment_id: id, target_user: payment.user_id, reason: reason || admin_notes }),
+        ]
+      );
+    } catch (_auditErr) {
+      // Non-fatal
+    }
+
     logger.info(
       `[Payment] Rejected: ID ${id}, User ${payment.user_id}`
     );
@@ -2246,6 +2291,105 @@ exports.rejectPayment = async (req, res) => {
   } catch (err) {
     logger.error("[Payment] Reject error:", err);
     res.status(500).json({ error: "Failed to reject payment" });
+  }
+};
+
+/**
+ * POST /payments/:id/refund - Admin: initiate a refund for a verified payment.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+exports.initiateRefund = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminIdRaw = getAuthenticatedUserId(req);
+
+    if (!adminIdRaw) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const adminId = await resolveCanonicalUserId(adminIdRaw);
+    if (!adminId) {
+      return res.status(403).json({ error: "Unable to map admin account" });
+    }
+
+    const { reason, amount } = req.body;
+
+    const paymentResult = await runQuery(
+      `SELECT id, user_id, status, amount, refund_status
+       FROM payments
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (paymentResult.rows.length === 0) {
+      return res.status(404).json({ error: "Payment not found" });
+    }
+
+    const payment = paymentResult.rows[0];
+
+    if (payment.status !== "verified" && payment.status !== "completed") {
+      return res.status(400).json({
+        error: `Cannot refund a payment with status '${payment.status}'. Only verified/completed payments can be refunded.`,
+      });
+    }
+
+    if (payment.refund_status === "refunded") {
+      return res.status(409).json({ error: "Payment has already been refunded" });
+    }
+
+    const refundAmount = amount ? Math.min(Number(amount), Number(payment.amount)) : Number(payment.amount);
+
+    await runQuery(
+      `UPDATE payments
+       SET refund_status = 'refunded',
+           refund_amount = $1,
+           refunded_at = NOW(),
+           refund_reason = $2
+       WHERE id = $3`,
+      [refundAmount, reason || "Admin-initiated refund", id]
+    );
+
+    // Notify user
+    await runQuery(
+      `INSERT INTO notifications (user_id, type, title, message, created_at)
+       VALUES ($1, 'payment_refunded', 'Payment Refunded', $2, NOW())`,
+      [
+        payment.user_id,
+        `Your payment of INR ${refundAmount} has been refunded. ${reason ? `Reason: ${reason}` : ""}`.trim(),
+      ]
+    );
+
+    // Audit log
+    try {
+      await runQuery(
+        `INSERT INTO audit_logs (user_id, action, ip_address, user_agent, details)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          adminId,
+          "PAYMENT_REFUNDED",
+          req.ip,
+          req.headers["user-agent"],
+          JSON.stringify({ payment_id: id, target_user: payment.user_id, refund_amount: refundAmount, reason }),
+        ]
+      );
+    } catch (_auditErr) {
+      // Non-fatal
+    }
+
+    invalidatePaymentCaches(payment.user_id);
+
+    logger.info(`[Payment] Refund initiated: ID ${id}, User ${payment.user_id}, Amount: INR ${refundAmount}`);
+
+    return res.json({
+      success: true,
+      message: "Refund initiated successfully",
+      payment_id: id,
+      refund_amount: refundAmount,
+    });
+  } catch (err) {
+    logger.error("[Payment] Refund error:", err);
+    return res.status(500).json({ error: "Failed to process refund" });
   }
 };
 

@@ -2130,21 +2130,107 @@ button[class*="bg-green-500"] {
 
 @media print {
   .no-print,
-  .mhub-no-print {
-    display: none;
+  .mhub-no-print,
+  nav,
+  .mhub-top-nav,
+  .mhub-bottom-nav,
+  .mhub-fab,
+  footer,
+  [role="navigation"],
+  [role="banner"],
+  .fixed,
+  .sticky {
+    display: none !important;
   }
   
   body {
-    background: white;
-    color: black;
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  
+  * {
+    color: #000 !important;
+    background: transparent !important;
   }
   
   [class*="shadow"] {
-    box-shadow: none;
+    box-shadow: none !important;
   }
   
   a {
     text-decoration: underline;
+    color: #000 !important;
+  }
+  
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666 !important;
+  }
+  
+  a[href^="#"]::after,
+  a[href^="javascript"]::after {
+    content: "";
+  }
+  
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+  }
+  
+  table {
+    border-collapse: collapse;
+  }
+  
+  table td, table th {
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+  }
+
+  .mhub-card {
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+    margin-bottom: 8pt;
+  }
+  
+  @page {
+    margin: 2cm;
+  }
+
+  /* Invoice / receipt print layout */
+  .mhub-invoice,
+  .mhub-receipt,
+  .mhub-transaction-detail {
+    border: 1px solid #999 !important;
+    padding: 16pt !important;
+    page-break-inside: avoid;
+  }
+
+  .mhub-invoice-header {
+    border-bottom: 2px solid #333 !important;
+    padding-bottom: 8pt;
+    margin-bottom: 12pt;
+  }
+
+  .mhub-invoice-total {
+    font-size: 14pt;
+    font-weight: bold;
+    border-top: 2px solid #333 !important;
+    padding-top: 8pt;
+    margin-top: 12pt;
+  }
+
+  .mhub-payment-badge,
+  .mhub-status-badge {
+    border: 1px solid #666 !important;
+    padding: 2pt 6pt;
+    font-size: 9pt;
   }
 }
 

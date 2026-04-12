@@ -9,6 +9,8 @@ const deployHosts = String(process.env.MHUB_DEPLOY_HOSTS || "")
     .split(",")
     .map((host) => host.trim())
     .filter(Boolean);
+const appPort = Number.parseInt(process.env.PORT || "5001", 10) || 5001;
+const healthCheckHost = process.env.MHUB_HEALTHCHECK_HOST || "localhost";
 
 module.exports = {
     apps: [
@@ -21,11 +23,11 @@ module.exports = {
             // Environment variables
             env: {
                 NODE_ENV: 'development',
-                PORT: 5001,
+                PORT: appPort,
             },
             env_production: {
                 NODE_ENV: 'production',
-                PORT: 5001,
+                PORT: appPort,
             },
 
             // Auto-restart on memory limit (prevent memory leaks)
@@ -53,7 +55,7 @@ module.exports = {
 
             // Health monitoring
             health_check: {
-                url: 'http://localhost:5001/health',
+                url: `http://${healthCheckHost}:${appPort}/health`,
                 interval: 30000,
                 timeout: 5000,
             },

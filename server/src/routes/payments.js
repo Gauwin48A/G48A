@@ -1,9 +1,19 @@
 const express = require("express");
 const router = express.Router();
+const rateLimit = require("express-rate-limit");
 const paymentController = require("../controllers/paymentController");
 const { protect, optionalAuth } = require("../middleware/auth");
 const { transactionLimiter, webhookLimiter } = require("../middleware/rateLimiter");
 const { requireAdmin } = require("../middleware/rbac");
+
+/** Rate limit for public payment info endpoints */
+const publicPaymentInfoLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Try again later." },
+});
 
 /**
  * @route Payment routes
@@ -13,7 +23,7 @@ const { requireAdmin } = require("../middleware/rbac");
 /* ── Public routes (no auth required) ──────────────────── */
 
 /** @route GET /upi-details - Get UPI payment details */
-router.get("/upi-details", paymentController.getUpiDetails);
+router.get("/upi-details", publicPaymentInfoLimiter, paymentController.getUpiDetails);
 
 /** @route POST /webhook - Handle payment provider webhook callbacks */
 router.post("/webhook", webhookLimiter, paymentController.handleWebhook);
@@ -52,6 +62,9 @@ router.post("/:id/verify", protect, requireAdmin, paymentController.verifyPaymen
 
 /** @route POST /:id/reject - Reject a payment */
 router.post("/:id/reject", protect, requireAdmin, paymentController.rejectPayment);
+
+/** @route POST /:id/refund - Initiate a refund for a verified payment */
+router.post("/:id/refund", protect, requireAdmin, paymentController.initiateRefund);
 
 /** @route GET /stats - Get payment statistics */
 router.get("/stats", protect, paymentController.getPaymentStats);

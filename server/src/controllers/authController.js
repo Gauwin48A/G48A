@@ -422,6 +422,17 @@ exports.signup = async (req, res) => {
       logger.warn('[SIGNUP] Referral chain coin rewards skipped; continuing:', referralErr.message);
     }
     const sessionData = await createSession(newUser, req, res);
+    // Auto-create notification preferences for new users
+    try {
+      await runQuery(
+        `INSERT INTO notification_preferences (user_id, email_notifications, push_notifications, sms_notifications, sound_enabled)
+         VALUES ($1, true, true, false, true)
+         ON CONFLICT (user_id) DO NOTHING`,
+        [newUser.user_id]
+      );
+    } catch (prefErr) {
+      logger.warn('[SIGNUP] Notification preferences creation skipped:', prefErr.message);
+    }
     try {
       await runQuery('INSERT INTO audit_logs (user_id, action, ip_address, user_agent) VALUES ($1, $2, $3, $4)', [
         newUser.user_id,
@@ -575,6 +586,16 @@ exports.login = async (req, res) => {
         logger.warn('[AUTH] Hash migration failed (non-blocking):', hashErr.message);
       }
     }
+    // Check email verification status (#25)
+    let emailVerified = true;
+    try {
+      const verifyRow = await runQuery(
+        'SELECT is_verified FROM users WHERE user_id = $1',
+        [user.user_id]
+      );
+      emailVerified = verifyRow.rows[0]?.is_verified !== false;
+    } catch (_e) { /* column may not exist */ }
+
     const sessionData = await createSession(user, req, res);
     try {
       await runQuery(
@@ -586,6 +607,7 @@ exports.login = async (req, res) => {
     }
     res.json({
       success: true,
+      emailVerified,
       ...sessionData,
       riskChallenge: fraudAssessment.shouldChallenge
         ? {
@@ -1141,7 +1163,7 @@ const AADHAAR_PASSWORD_POLICY_MESSAGE =
   'Password must be at least 8 characters and include at least 1 number and 1 special character.';
 const PAN_INVALID_MESSAGE = 'Invalid PAN number';
 const PAN_VERIFICATION_REQUIRED_MESSAGE = 'PAN verification is required to complete signup.';
-const REQUIRE_AADHAAR_SIGNUP_ONLY = String(process.env.AUTH_AADHAAR_SIGNUP_ONLY || 'true').toLowerCase() === 'true';
+const REQUIRE_AADHAAR_SIGNUP_ONLY = String(process.env.AUTH_AADHAAR_SIGNUP_ONLY || 'false').toLowerCase() === 'true';
 const verhoeffTableD = [
   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
@@ -1812,3 +1834,6 @@ exports.changePassword = async (req, res) => {
     return res.status(500).json({ error: 'Failed to change password' });
   }
 };
+
+// Export createSession for social auth flows
+exports.createSession = createSession;

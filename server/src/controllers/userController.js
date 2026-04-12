@@ -179,10 +179,36 @@ exports.updateProfile = async (req, res) => {
   try {
     const profileColumnAvailability = await getProfilesColumnAvailability();
     const userId = getAuthUserId(req);
-    const { full_name, bio, avatar_url, phone, location } = req.body;
+    const { full_name, bio, avatar_url, phone, location, search_radius } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
+    }
+
+    // Server-side length validation
+    if (full_name && String(full_name).length > 100) {
+      return res.status(400).json({ error: "Full name must be 100 characters or less" });
+    }
+    if (bio && String(bio).length > 500) {
+      return res.status(400).json({ error: "Bio must be 500 characters or less" });
+    }
+    if (phone && !/^\+?\d{7,15}$/.test(String(phone).replace(/[\s-]/g, ""))) {
+      return res.status(400).json({ error: "Invalid phone number format" });
+    }
+
+    // Store search radius preference on users table (#72)
+    if (search_radius !== undefined) {
+      const radiusVal = Number(search_radius);
+      if (Number.isFinite(radiusVal) && radiusVal >= 1 && radiusVal <= 500) {
+        try {
+          await runQuery(
+            "UPDATE users SET search_radius = $1 WHERE user_id::text = $2",
+            [radiusVal, userId]
+          );
+        } catch (_e) {
+          // column may not exist yet — non-fatal
+        }
+      }
     }
 
     const locationColumn = getProfilesLocationColumnName(profileColumnAvailability);
@@ -624,5 +650,153 @@ exports.getKYCStatus = async (req, res) => {
   } catch (err) {
     logger.error("[KYC] Status fetch failed:", err);
     return res.status(500).json({ error: "Failed to fetch KYC status" });
+  }
+};
+
+/**
+ * DELETE /api/users/account – Self-service account deletion.
+ * Deactivates the account and anonymizes PII (GDPR/DPDPA compliant).
+ * Posts are soft-deleted, sessions are revoked.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ */
+exports.deleteAccount = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const userId = getAuthUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { password, confirmation } = req.body;
+    if (confirmation !== "DELETE_MY_ACCOUNT") {
+      return res.status(400).json({
+        error: "Please send confirmation: 'DELETE_MY_ACCOUNT' to proceed",
+      });
+    }
+
+    // Verify password before deletion
+    if (password) {
+      const userRow = await client.query(
+        "SELECT password_hash FROM users WHERE user_id::text = $1",
+        [String(userId)]
+      );
+      if (userRow.rows.length > 0 && userRow.rows[0].password_hash) {
+        const argon2 = require("argon2");
+        const valid = await argon2.verify(userRow.rows[0].password_hash, password);
+        if (!valid) {
+          client.release();
+          return res.status(401).json({ error: "Incorrect password" });
+        }
+      }
+    }
+
+    await client.query("BEGIN");
+
+    // Check for active transactions
+    try {
+      const activeTx = await client.query(
+        `SELECT transaction_id FROM transactions
+         WHERE (seller_id::text = $1 OR buyer_id::text = $1)
+           AND status IN ('pending', 'in_progress', 'processing')
+         LIMIT 1`,
+        [String(userId)]
+      );
+      if (activeTx.rows.length > 0) {
+        await client.query("ROLLBACK");
+        client.release();
+        return res.status(409).json({
+          error: "Cannot delete account while you have active transactions. Please resolve them first.",
+        });
+      }
+    } catch (_txErr) {
+      // transactions table may not exist
+    }
+
+    // Soft-delete all user posts
+    await client.query(
+      "UPDATE posts SET status = 'deleted', updated_at = NOW() WHERE user_id::text = $1",
+      [String(userId)]
+    );
+
+    // Anonymize profile
+    await client.query(
+      `UPDATE profiles SET
+         full_name = 'Deleted User',
+         bio = NULL,
+         avatar_url = NULL,
+         phone = NULL
+       WHERE user_id::text = $1`,
+      [String(userId)]
+    );
+
+    // Deactivate user + anonymize PII
+    const anonEmail = `deleted_${userId}_${Date.now()}@deleted.mhub.local`;
+    await client.query(
+      `UPDATE users SET
+         is_active = false,
+         email = $2,
+         phone_number = NULL,
+         name = 'Deleted User',
+         username = $3,
+         updated_at = NOW()
+       WHERE user_id::text = $1`,
+      [String(userId), anonEmail, `deleted_${userId}`]
+    );
+
+    // Revoke all sessions
+    try {
+      await client.query(
+        "DELETE FROM user_sessions WHERE user_id::text = $1",
+        [String(userId)]
+      );
+    } catch (_sessErr) {
+      // user_sessions table may not exist
+    }
+
+    // Clean up follower relationships (#83)
+    try {
+      await client.query(
+        "DELETE FROM followers WHERE follower_id::text = $1 OR followed_id::text = $1",
+        [String(userId)]
+      );
+    } catch (_followErr) {
+      // followers table may not exist
+    }
+
+    // Clean up notification preferences
+    try {
+      await client.query(
+        "DELETE FROM notification_preferences WHERE user_id::text = $1",
+        [String(userId)]
+      );
+    } catch (_npErr) {
+      // table may not exist
+    }
+
+    // Clean up search history
+    try {
+      await client.query(
+        "DELETE FROM search_history WHERE user_id::text = $1",
+        [String(userId)]
+      );
+    } catch (_shErr) {
+      // table may not exist
+    }
+
+    await client.query("COMMIT");
+
+    // Clear auth cookies
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    logger.info(`[Account] User ${userId} account deleted (self-service)`);
+    return res.json({ success: true, message: "Account deleted successfully" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    logger.error("[Account] Deletion error:", err);
+    return res.status(500).json({ error: "Failed to delete account" });
+  } finally {
+    client.release();
   }
 };

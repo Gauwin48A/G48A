@@ -168,10 +168,16 @@ export default function Subcategories() {
       if (!matchesActiveApp || !matchesCategory) return false;
       if (!normalizedSearch) return true;
 
-      return (
-        normalizeValue(subcategory?.name).includes(normalizedSearch) ||
-        normalizeValue(categoryName).includes(normalizedSearch)
-      );
+      // Search across name, category, description, and keywords
+      const searchFields = [
+        normalizeValue(subcategory?.name),
+        normalizeValue(categoryName),
+        normalizeValue(subcategory?.description),
+        normalizeValue(subcategory?.search_keywords),
+        normalizeValue(subcategory?.seo_slug),
+      ];
+
+      return searchFields.some((field) => field.includes(normalizedSearch));
     });
 
     return [...filtered].sort((left, right) => {

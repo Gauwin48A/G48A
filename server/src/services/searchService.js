@@ -67,6 +67,40 @@ const searchPosts = async ({
 };
 
 /**
+ * Fuzzy search fallback using pg_trgm similarity when full-text returns no results.
+ * @param {object} params
+ * @param {string} params.query - Search query
+ * @param {number} [params.limit=20] - Max results
+ * @param {number} [params.offset=0] - Pagination offset
+ * @param {number} [params.threshold=0.2] - Similarity threshold
+ * @returns {Promise<object[]>} Matching posts
+ */
+const fuzzySearchPosts = async ({ query, limit = 20, offset = 0, threshold = 0.2 }) => {
+  if (!query || typeof query !== 'string') return [];
+  try {
+    const result = await runQuery(
+      `SELECT p.post_id, p.title, p.description, p.price, p.images, p.location,
+              p.category_id, p.subcategory_id,
+              c.name AS category_name, sc.name AS subcategory_name,
+              similarity(p.title, $1) AS sim_score
+       FROM posts p
+       LEFT JOIN categories c ON p.category_id = c.category_id
+       LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+       WHERE p.status = 'active'
+         AND (similarity(p.title, $1) > $4 OR similarity(p.description, $1) > $4)
+       ORDER BY sim_score DESC
+       LIMIT $2 OFFSET $3`,
+      [query, limit, offset, threshold]
+    );
+    return result.rows;
+  } catch (error) {
+    // pg_trgm extension may not exist — return empty
+    logger.warn("[SearchService] fuzzy search fallback failed:", error.message);
+    return [];
+  }
+};
+
+/**
  * Retrieve posts near a geographic point using get_nearby_posts_v2.
  * @param {object} params
  * @param {number} params.lat - Latitude
@@ -176,6 +210,7 @@ const cleanupExpiredData = async () => {
 
 module.exports = {
   searchPosts,
+  fuzzySearchPosts,
   getNearbyPosts,
   calculateDistance,
   getOrCreateChat,

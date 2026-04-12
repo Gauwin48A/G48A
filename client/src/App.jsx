@@ -194,6 +194,10 @@ const NotFoundPage = lazyWithRetry(
   () => import("./pages/NotFound.jsx"),
   "NotFound",
 );
+const AccountDeletionPage = lazyWithRetry(
+  () => import("./pages/AccountDeletion.jsx"),
+  "AccountDeletion",
+);
 
 function RouteBoundary() {
   return (
@@ -205,8 +209,24 @@ function RouteBoundary() {
 
 function ScrollToTop() {
   const { pathname } = useRouterLocation();
+  const scrollPositions = React.useRef({});
+  const prevPathname = React.useRef(pathname);
+
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Save scroll position for the page we're leaving
+    scrollPositions.current[prevPathname.current] = window.scrollY;
+
+    // Restore scroll position if we've been here before (back nav)
+    const savedPos = scrollPositions.current[pathname];
+    if (savedPos !== undefined && window.history.state?.idx !== undefined) {
+      // Use requestAnimationFrame to let the DOM render first
+      requestAnimationFrame(() => window.scrollTo(0, savedPos));
+    } else {
+      // New page — scroll to top
+      window.scrollTo(0, 0);
+    }
+
+    prevPathname.current = pathname;
   }, [pathname]);
   return null;
 }
@@ -391,6 +411,7 @@ function AppShell() {
                   <Route path="/activity" element={<RequireAuth><ActivityHubPage /></RequireAuth>} />
                   <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
                   <Route path="/security" element={<RequireAuth><SecuritySettingsPage /></RequireAuth>} />
+                  <Route path="/account/delete" element={<RequireAuth><AccountDeletionPage /></RequireAuth>} />
                   <Route path="/add-post" element={<RequireAuth><AddPostPage /></RequireAuth>} />
                   <Route path="/post-welcome" element={<RequireAuth><PostWelcomePage /></RequireAuth>} />
                   <Route path="/sell" element={<RequireAuth><AddPostPage /></RequireAuth>} />
