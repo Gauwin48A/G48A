@@ -60,7 +60,7 @@ const KycVerification = () => {
       const response = await api.get("/users/kyc/status");
       setKycStatus(response || null);
     } catch (error) {
-      console.error("KYC status fetch failed", error);
+      if (import.meta.env.DEV) console.error("KYC status fetch failed", error);
       setLoadError(
         tr(
           "kyc_status_load_failed",

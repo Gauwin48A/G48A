@@ -33,7 +33,6 @@ import {
   Package as ue,
   CheckCircle2 as G,
   MapPin as et,
-  XCircle as tt,
   MoreVertical as lt,
   Share2 as st,
   ArrowLeft as ot,
@@ -45,8 +44,6 @@ import {
   Copy as dt,
   AlertTriangle as xe,
   RefreshCw as he,
-  Bookmark as saveMarkIcon,
-  BookmarkCheck as savedMarkIcon,
 } from "lucide-react";
 import { useToast as gt } from "@/hooks/use-toast";
 import { useAuth as mt } from "@/context/AuthContext";
@@ -55,11 +52,8 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { getAccessToken as ct, getUserId as ut } from "@/utils/authStorage";
 import {
   buildSavedPostsMap,
-  beginSavedPostMutation,
-  endSavedPostMutation,
   fetchWishlistIds,
   getSavedPostsMap,
-  setSavedPostStatus,
   subscribeSavedPosts,
 } from "@/utils/savedPosts";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
@@ -157,13 +151,13 @@ const MyHomePage = () => {
     [Ce, $] = n(!1),
     [_, oe] = n(!1),
     [shareDialogOpen, setShareDialogOpen] = n(!1),
-    [shareDialogUrl, setShareDialogUrl] = n(""),
+    [shareDialogUrl] = n(""),
     [promotePostId, setPromotePostId] = n(null),
     [promotePostTitle, setPromotePostTitle] = n(""),
     [markSoldPost, setMarkSoldPost] = n(null),
     [markSoldLoading, setMarkSoldLoading] = n(!1),
     [postTotals, setPostTotals] = n(null),
-    [savedPosts, setSavedPosts] = n(() => getSavedPostsMap()),
+    [, setSavedPosts] = n(() => getSavedPostsMap()),
     b = Ge(),
     routeLoc = wt(),
     { toast: d } = gt(),
@@ -588,7 +582,6 @@ const MyHomePage = () => {
     A((t) => Math.min(Math.max(t, 1), M));
   }, [M]);
   const Me = h(() => f.slice((x - 1) * N, x * N), [f, x, N]),
-    Be = () => b("/saledone"),
     Te = (t) => {
       const minutes = (new Date() - new Date(t)) / (1e3 * 60);
       return minutes <= 5;
@@ -618,14 +611,6 @@ const MyHomePage = () => {
         description: tr("opening_editor_for_post", "Opening editor for post"),
       }),
         b(`/edit-post/${t.postId || t.post_id || t.id}`);
-    },
-    ze = (t) => {
-      const s = t.postId || t.post_id || t.id;
-      if (!s) return;
-      const r = `${window.location.origin}/post/${s}`;
-      setShareDialogUrl(r),
-        setShareDialogOpen(!0),
-        R.post(`/posts/${s}/share`).catch(() => {});
     },
     openMarkSold = (t) => {
       const s = t?.postId || t?.post_id || t?.id;
@@ -683,40 +668,6 @@ const MyHomePage = () => {
           });
       } finally {
         setMarkSoldLoading(!1);
-      }
-    },
-    saveMyPost = async (t) => {
-      const s = t.postId || t.post_id || t.id;
-      if (!s) return;
-      if (!Pe) {
-        b("/login", { state: { returnTo: "/my-home" } });
-        return;
-      }
-      const r = String(s);
-      const m = beginSavedPostMutation(r);
-      if (!m) return;
-      const o = !!savedPosts[m],
-        a = !o;
-      setSavedPosts((l) => ({ ...l, [m]: a })), setSavedPostStatus(m, a);
-      try {
-        if (a) {
-          await R.post("/wishlist", { postId: m });
-        } else {
-          await R.delete(`/wishlist/${m}`);
-        }
-      } catch {
-        setSavedPosts((l) => ({ ...l, [m]: o })),
-          setSavedPostStatus(m, o),
-          d({
-            title: tr("save_failed", "Save Failed"),
-            description: tr(
-              "save_status_update_failed",
-              "Unable to update saved status",
-            ),
-            variant: "destructive",
-          });
-      } finally {
-        endSavedPostMutation(m);
       }
     },
     ae = (t) => {

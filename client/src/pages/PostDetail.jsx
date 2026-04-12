@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
 import { useAuth as useAuthContext } from "@/context/AuthContext";
+import SEOHead from "@/components/SEOHead";
 import BuyerInterestModal from "@/components/BuyerInterestModal";
 import MakeOfferModal from "@/components/MakeOfferModal";
 import BargainActions from "@/components/BargainActions";
@@ -113,6 +114,8 @@ function PostDetail() {
     [ownerInsightsError, setOwnerInsightsError] = useState(null),
     [activeSection, setActiveSection] = useState("overview"),
     [collapsedSections, setCollapsedSections] = useState({}),
+    [reportSubmitting, setReportSubmitting] = useState(!1),
+    [reportSubmitted, setReportSubmitted] = useState(!1),
     sectionNavRef = useRef(null),
     U = useNavigate(),
     resolveMessage = (t, a) => {
@@ -158,6 +161,20 @@ function PostDetail() {
         }
       }
       return `/post/${safeId}`;
+    },
+    handleReportPost = async () => {
+      if (reportSubmitting || reportSubmitted) return;
+      setReportSubmitting(!0);
+      try {
+        const api = (await import("@/services/api")).default;
+        await api.post(`/posts/${d}/report`, { reason: "inappropriate" });
+        setReportSubmitted(!0);
+        toast({ title: tr("report_submitted", "Report Submitted"), description: tr("report_thanks", "Thank you for helping keep MHub safe.") });
+      } catch (e) {
+        toast({ title: tr("error", "Error"), description: e?.response?.data?.error || tr("report_failed", "Failed to submit report"), variant: "destructive" });
+      } finally {
+        setReportSubmitting(!1);
+      }
     },
     currentUserId = getUserIdFromStorage(currentUser),
     normalizedCurrentUserId = normalizeId(currentUserId),
@@ -317,6 +334,7 @@ function PostDetail() {
     resolveRecentlyViewedSource,
   ]);
   useEffect(() => {
+    const abortCtrl = new AbortController();
     window.scrollTo(0, 0),
       r ||
         (async () => {
@@ -332,8 +350,9 @@ function PostDetail() {
                 u(null);
               return;
             }
-            const a = await re.get(`/posts/${safeId}`),
+            const a = await re.get(`/posts/${safeId}`, { signal: abortCtrl.signal }),
               s = a?.post || a;
+            if (abortCtrl.signal.aborted) return;
             if (!s || Object.keys(s).length === 0)
               throw new Error("API returned no post data.");
             const mediaList = Array.isArray(s.images)
@@ -359,6 +378,7 @@ function PostDetail() {
               ),
               c(!1);
           } catch (a) {
+            if (abortCtrl.signal.aborted) return;
             console.error("Error fetching post data:", a),
               N({
                 key: "load_product_failed",
@@ -369,6 +389,7 @@ function PostDetail() {
           }
         })(),
       m(0);
+    return () => abortCtrl.abort();
   }, [d, F, r, tr]);
   useEffect(() => {
     const t = normalizeId(r?.post_id || r?.id || d);
@@ -2200,6 +2221,17 @@ function PostDetail() {
                   React.createElement(Qe, { className: "w-4 h-4 mr-2" }),
                   tr("share", "Share"),
                 ),
+                !isOwner && React.createElement(Button,
+                  {
+                    variant: "outline",
+                    type: "button",
+                    disabled: reportSubmitting || reportSubmitted,
+                    onClick: handleReportPost,
+                    className:
+                      "h-11 px-3 rounded-xl font-semibold text-[13px] sm:text-sm whitespace-nowrap border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/30",
+                  },
+                  reportSubmitted ? tr("reported", "Reported") : tr("report", "Report"),
+                ),
               ),
               (contactCtaDisabled || offerCtaDisabled) &&
                 React.createElement(
@@ -2238,6 +2270,14 @@ function PostDetail() {
       className:
         "mhub-post-detail min-h-screen mhub-premium-page bg-gradient-to-b from-slate-100 via-white to-slate-50 dark:bg-gradient-to-b",
     },
+    /* ── SEO: Dynamic meta tags for this listing ── */
+    React.createElement(SEOHead, {
+      title: r.title || "Listing",
+      description: r.description ? String(r.description).slice(0, 160) : undefined,
+      image: activeImage ? resolveMediaUrl(activeImage) : undefined,
+      url: typeof window !== "undefined" ? window.location.href : undefined,
+      type: "product",
+    }),
     /* ── Sticky header: Back + Section tabs + Share/Save ── */
     React.createElement(
       "div",

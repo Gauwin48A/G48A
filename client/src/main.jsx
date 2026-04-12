@@ -20,6 +20,7 @@ import GlobalContentTranslator from './components/GlobalContentTranslator';
 import AuthEventRouter from './components/AuthEventRouter';
 import { CategoryModeProvider } from '@/context/CategoryModeContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { HelmetProvider } from 'react-helmet-async';
 
 const App = React.lazy(() => import('./App.jsx'));
 const ROOT_INSTANCE_KEY = '__mhub_react_root__';
@@ -162,6 +163,7 @@ function renderApp(root) {
   root.render(
     <RootMode>
       <QueryClientProvider client={queryClient}>
+        <HelmetProvider>
         <ThemeProvider>
         <Suspense fallback={<LoadingScreen />}>
           <BrowserRouter
@@ -182,6 +184,7 @@ function renderApp(root) {
           </BrowserRouter>
         </Suspense>
         </ThemeProvider>
+        </HelmetProvider>
       </QueryClientProvider>
     </RootMode>
   );

@@ -2,11 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Award,
-  Crown,
   ExternalLink,
   Grid3X3,
-  Heart,
   Loader2,
   MapPin,
   Package,
@@ -15,8 +12,6 @@ import {
   Sparkles,
   Star,
   Store,
-  TrendingUp,
-  Users,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import api from "@/services/api";
@@ -137,24 +132,13 @@ function ListingSkeleton() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, accent }) {
-  return (
-    <div className={`flex items-center gap-3 rounded-xl p-3 border ${accent}`}>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-current/10">
-        <Icon className="h-4.5 w-4.5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-lg font-bold leading-tight">{value}</p>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">{label}</p>
-      </div>
-    </div>
-  );
-}
-
 export default function CentreListings() {
   const { id } = useParams();
   const { t } = useTranslation();
-  const tr = (key, fallback) => t(key, { defaultValue: fallback });
+  const tr = useCallback(
+    (key, fallback) => t(key, { defaultValue: fallback }),
+    [t],
+  );
 
   const [channel, setChannel] = useState(null);
   const [channelLoading, setChannelLoading] = useState(true);

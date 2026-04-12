@@ -85,7 +85,7 @@ const RecentlyViewed = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recent");
-  const [cursor, setCursor] = useState(null);
+  const [, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -99,7 +99,7 @@ const RecentlyViewed = () => {
   const currentUserId = useMemo(() => getUserId(user), [user]);
   const isUserAuthenticated = useMemo(
     () => isAuthenticated(user),
-    [user, currentUserId],
+    [user],
   );
   const handleBack = useCallback(
     () => navigateBack(navigate),
@@ -502,7 +502,7 @@ const RecentlyViewed = () => {
       seen.add(pid);
       return true;
     });
-  }, [rawDisplayItems.length, sourceFilter, translatedPosts]);
+  }, [rawDisplayItems]);
 
   const selectedCount = selectedIds.size;
   const allSelected = useMemo(() => {

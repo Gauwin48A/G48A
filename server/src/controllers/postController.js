@@ -1143,6 +1143,19 @@ exports.createPost = async (req, res) => {
 
     if (!user_id) throw new Error("User ID required");
 
+    // Duplicate listing detection: check for similar title from same user within 24hrs
+    const dupCheck = await client.query(
+      `SELECT post_id FROM posts
+       WHERE user_id = $1 AND status = 'active'
+         AND created_at > NOW() - INTERVAL '24 hours'
+         AND similarity(title, $2) > 0.7
+       LIMIT 1`,
+      [user_id, title || '']
+    );
+    if (dupCheck.rows.length > 0) {
+      throw new Error("A similar listing already exists. Please edit the existing listing instead.");
+    }
+
     let category_id = await resolveCategoryIdForPost(
       client,
       rawCategoryId,
@@ -1964,6 +1977,23 @@ exports.deletePost = async (req, res) => {
         .json({ error: "You can only delete your own posts" });
     }
 
+    // Block deletion if post has pending/active transactions
+    try {
+      const txCheck = await runQuery(
+        `SELECT transaction_id FROM transactions
+         WHERE post_id::text = $1 AND status IN ('pending', 'in_progress', 'processing')
+         LIMIT 1`,
+        [String(id)]
+      );
+      if (txCheck.rows.length > 0) {
+        return res.status(409).json({
+          error: "Cannot delete a post with an active transaction. Please resolve the transaction first.",
+        });
+      }
+    } catch (_txErr) {
+      // transactions table may not exist — allow deletion
+    }
+
     await runQuery(
       `UPDATE posts SET status = 'deleted', updated_at = NOW() WHERE post_id = $1`,
       [id]
@@ -1989,5 +2019,63 @@ exports.deletePost = async (req, res) => {
   } catch (err) {
     logError("[DeletePost] Error:", err.message);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
+ * POST /api/posts/:postId/report
+ * Report a listing for violating ToS.
+ */
+exports.reportPost = async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+  const postId = parseOptionalStringScalar(req.params.postId);
+  const reason = parseOptionalStringScalar(req.body.reason) || "other";
+  const details = parseOptionalStringScalar(req.body.details) || "";
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+  if (!postId) return res.status(400).json({ error: "Post ID required" });
+  try {
+    await runQuery(
+      `INSERT INTO post_reports (post_id, reporter_id, reason, details, created_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (post_id, reporter_id) DO UPDATE SET reason = $3, details = $4, created_at = NOW()`,
+      [postId, userId, reason.slice(0, 100), details.slice(0, 500)]
+    );
+    return res.json({ success: true, message: "Report submitted" });
+  } catch (err) {
+    logError("[ReportPost] Error:", err.message);
+    return res.status(500).json({ error: "Failed to submit report" });
+  }
+};
+
+/**
+ * POST /api/posts/:postId/renew
+ * Renew an expired listing back to active status.
+ */
+exports.renewPost = async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+  const postId = parseOptionalStringScalar(req.params.postId);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+  if (!postId) return res.status(400).json({ error: "Post ID required" });
+  try {
+    const ownerCheck = await runQuery(
+      "SELECT status FROM posts WHERE post_id = $1 AND user_id = $2",
+      [postId, userId]
+    );
+    if (ownerCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Post not found or access denied" });
+    }
+    if (ownerCheck.rows[0].status === "active") {
+      return res.status(400).json({ error: "Post is already active" });
+    }
+    await runQuery(
+      `UPDATE posts SET status = 'active', updated_at = NOW(), created_at = NOW()
+       WHERE post_id = $1 AND user_id = $2`,
+      [postId, userId]
+    );
+    logInfo(`[RenewPost] Post ${postId} renewed by user ${userId}`);
+    return res.json({ success: true, message: "Post renewed successfully" });
+  } catch (err) {
+    logError("[RenewPost] Error:", err.message);
+    return res.status(500).json({ error: "Failed to renew post" });
   }
 };

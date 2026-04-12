@@ -10,7 +10,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
-import SellerTrustBadges from "@/components/SellerTrustBadges";
 import {
   Heart,
   Trash2,
@@ -114,14 +113,13 @@ const Wishlist = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [cursor, setCursor] = useState(null);
+  const [, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
 
   const fetchIdRef = useRef(0);
   const cursorRef = useRef(null);
   const savedIdsRef = useRef(new Set());
   const syncingRef = useRef(0);
-  const undoRef = useRef(new Map());
 
   const isAuth = isAuthenticated(user);
   const userId = getUserId(user);
@@ -350,29 +348,32 @@ const Wishlist = () => {
     return raw ? (raw.startsWith("http") ? raw : `${getApiOriginBase()}${raw}`) : "/placeholder.svg";
   };
 
-  const buildCartItem = (item) => ({
-    id: item.post_id,
-    title: item.title,
-    price: item.price,
-    currency: item.currency || item.currency_code || item.currencyCode || undefined,
-    image: item.images?.[0] || item.image_url,
-    seller: item.seller_name || item.user_name,
-    location: item.location,
-    category_name: item.category_name,
-    category_id:
-      item.category_id ||
-      item.categoryId ||
-      item.category?.category_id ||
-      item.category?.id ||
-      "",
-    category_group:
-      item.category_group ||
-      item.categoryGroup ||
-      item.category?.category_group ||
-      item.category?.categoryGroup ||
-      activeApp ||
-      "",
-  });
+  const buildCartItem = useCallback(
+    (item) => ({
+      id: item.post_id,
+      title: item.title,
+      price: item.price,
+      currency: item.currency || item.currency_code || item.currencyCode || undefined,
+      image: item.images?.[0] || item.image_url,
+      seller: item.seller_name || item.user_name,
+      location: item.location,
+      category_name: item.category_name,
+      category_id:
+        item.category_id ||
+        item.categoryId ||
+        item.category?.category_id ||
+        item.category?.id ||
+        "",
+      category_group:
+        item.category_group ||
+        item.categoryGroup ||
+        item.category?.category_group ||
+        item.category?.categoryGroup ||
+        activeApp ||
+        "",
+    }),
+    [activeApp],
+  );
 
   const handleShare = useCallback(
     async (item) => {
@@ -407,7 +408,7 @@ const Wishlist = () => {
       addToCart(buildCartItem(item));
       navigate("/cart");
     },
-    [addToCart, navigate],
+    [addToCart, buildCartItem, navigate],
   );
 
   /* ─── category mode filtering ─── */
@@ -517,7 +518,7 @@ const Wishlist = () => {
       description: `${selectedItems.length} ${t("items_added") || "items added"}.`,
     });
     setSelectedIds(new Set());
-  }, [addToCart, items, selectedIds, t, toast]);
+  }, [addToCart, buildCartItem, items, selectedIds, t, toast]);
 
   /* ─── auth loading state ─── */
 
@@ -692,7 +693,7 @@ const Wishlist = () => {
         {/* ── error banner — premium inline alert ── */}
         {error && (
           <div className="mt-3 mhub-premium-surface rounded-2xl border border-red-100 dark:border-red-900/40 p-4 flex items-center gap-3 shadow-sm dark:border dark:border-red-600/40">
-            <div className="w-9 h-9 bg-red-50 dark:bg-red-500/10 rounded-xl flex items-center justify-center flex-shrink-0 dark:bg-red-950/20">
+            <div className="w-9 h-9 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center flex-shrink-0">
               <Heart className="w-4 h-4 text-red-400 dark:text-red-200" />
             </div>
             <div className="flex-1 min-w-0">
@@ -834,29 +835,29 @@ const Wishlist = () => {
                 className="mhub-premium-surface backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800/50 dark:border dark:border-gray-700"
               >
                 {/* image placeholder with shimmer */}
-                <div className="relative w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 overflow-hidden dark:bg-gray-900">
+                <div className="relative w-full aspect-[4/3] bg-gray-200 dark:bg-gray-700 overflow-hidden">
                   <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent dark:bg-gradient-to-r" />
                 </div>
                 {/* body placeholder */}
                 <div className="p-3.5 space-y-2.5">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-4/5 relative overflow-hidden dark:bg-gray-900">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-4/5 relative overflow-hidden">
                     <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite_0.1s] bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent dark:bg-gradient-to-r" />
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="h-3 w-3 bg-gray-200 dark:bg-gray-700 rounded-full dark:bg-gray-900" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-10 dark:bg-gray-900" />
+                    <div className="h-3 w-3 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-10" />
                   </div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-full relative overflow-hidden dark:bg-gray-900">
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-full relative overflow-hidden">
                     <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite_0.2s] bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent dark:bg-gradient-to-r" />
                   </div>
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-2/3 dark:bg-gray-900" />
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-2/3" />
                   <div className="flex items-center justify-between pt-1">
-                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-20 dark:bg-gray-900" />
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-14 dark:bg-gray-900" />
+                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-20" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full w-14" />
                   </div>
                   <div className="flex gap-2 pt-1">
-                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex-1 dark:bg-gray-900" />
-                    <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl dark:bg-gray-900" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex-1" />
+                    <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
                   </div>
                 </div>
               </div>
@@ -1010,7 +1011,7 @@ const Wishlist = () => {
                     </button>
 
                     {/* category badge - pill, semi-transparent with tint */}
-                    <Badge className="absolute top-2.5 left-2.5 bg-white/20 dark:bg-white/10 backdrop-blur-md text-white border border-white/20 text-[10px] font-medium px-2.5 py-0.5 rounded-full shadow-sm dark:bg-slate-900/20 dark:text-white dark:border dark:border-white/20">
+                    <Badge className="absolute top-2.5 left-2.5 bg-white/20 backdrop-blur-md text-white border border-white/20 text-[10px] font-medium px-2.5 py-0.5 rounded-full shadow-sm dark:bg-slate-900/20 dark:text-white dark:border dark:border-white/20">
                       {item.category_name || t("general") || "General"}
                     </Badge>
                   </div>
@@ -1065,7 +1066,7 @@ const Wishlist = () => {
 
                     {/* notes */}
                     {notesText && (
-                      <p className="text-[10px] sm:text-[11px] italic text-pink-700 dark:text-pink-300 mb-2 border-l-2 border-pink-400 dark:border-pink-500 pl-2 py-0.5 bg-pink-50/50 dark:bg-pink-500/5 rounded-r-md line-clamp-2 dark:border-l-2 dark:border-pink-600/40 dark:bg-pink-950/50">
+                      <p className="text-[10px] sm:text-[11px] italic text-pink-700 dark:text-pink-300 mb-2 border-l-2 border-pink-400 pl-2 py-0.5 bg-pink-50/50 rounded-r-md line-clamp-2 dark:border-pink-600/40 dark:bg-pink-950/50">
                         {notesText}
                       </p>
                     )}

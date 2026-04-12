@@ -6,18 +6,15 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
-  ChevronUp,
   Clock,
   Crown,
   Loader2,
   Shield,
   Sparkles,
-  TrendingUp,
   X,
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,

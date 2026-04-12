@@ -58,10 +58,10 @@ const AllPostsQuickFilters = ({
   const chipSize = isDenseForYouVariant
     ? "h-8 px-3 text-xs"
     : isForYouVariant
-      ? "h-9 px-4 text-sm"
+      ? "min-h-[44px] h-9 px-4 text-sm"
     : compact
-      ? "h-8 px-3 text-[11px]"
-      : "h-9 px-3.5 text-xs";
+      ? "min-h-[44px] h-8 px-3 text-[11px]"
+      : "min-h-[44px] h-9 px-3.5 text-xs";
   const iconSize = compact ? "w-3 h-3" : "w-3.5 h-3.5";
   const chipBase = isDenseForYouVariant
     ? "inline-flex h-8 shrink-0 items-center justify-center rounded-full border px-3 text-xs font-semibold transition-colors whitespace-nowrap"

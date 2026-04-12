@@ -9,8 +9,9 @@ const {
 const { validate, postValidation } = require("../middleware/validators");
 const { protect, optionalAuth } = require("../middleware/auth");
 const upload = require("../middleware/upload");
+const { postUploadSecurity } = require("../middleware/upload");
 const { publicReadSlowDown, searchSlowDown } = require("../middleware/rateLimiter");
-const { searchPosts, getNearbyPosts } = require("../services/searchService");
+const { searchPosts, getNearbyPosts, fuzzySearchPosts } = require("../services/searchService");
 const postViewBufferService = require("../services/postViewBufferService");
 const logger = require("../utils/logger");
 const { runQuery, getAuthUserId, isAdmin } = require("../utils/dbHelpers");
@@ -127,12 +128,25 @@ router.get("/search-v2", searchSlowDown, async (req, res) => {
       limit: limitValue,
       offset: offsetValue,
     });
-    const enrichedResults = await attachTrustToPosts(results || []);
+
+    // Fuzzy fallback: if full-text search returns nothing, try trigram similarity
+    let fuzzyFallback = false;
+    let finalResults = results;
+    if ((!results || results.length === 0) && query && offsetValue === 0) {
+      const fuzzyResults = await fuzzySearchPosts({ query, limit: limitValue, offset: 0 });
+      if (fuzzyResults.length > 0) {
+        finalResults = fuzzyResults;
+        fuzzyFallback = true;
+      }
+    }
+
+    const enrichedResults = await attachTrustToPosts(finalResults || []);
 
     res.json({
       success: true,
       posts: enrichedResults,
-      count: results.length,
+      count: finalResults.length,
+      fuzzyFallback,
       query: {
         search: query,
         location:
@@ -298,6 +312,68 @@ router.get(
  */
 router.get("/", publicReadSlowDown, postController.getAllPosts);
 
+/**
+ * GET /draft - Retrieve the current user's saved draft
+ */
+router.get("/draft", protect, async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    const result = await runQuery(
+      "SELECT draft_data, updated_at FROM post_drafts WHERE user_id::text = $1 LIMIT 1",
+      [String(userId)]
+    );
+    return res.json({ draft: result.rows[0]?.draft_data || null, updated_at: result.rows[0]?.updated_at || null });
+  } catch (err) {
+    // Table may not exist yet
+    return res.json({ draft: null });
+  }
+});
+
+/**
+ * PUT /draft - Save post creation draft (autosave)
+ */
+router.put("/draft", protect, async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    const { draft_data } = req.body;
+    if (!draft_data || typeof draft_data !== "object") {
+      return res.status(400).json({ error: "draft_data object required" });
+    }
+    // Limit draft size to prevent abuse
+    const serialized = JSON.stringify(draft_data);
+    if (serialized.length > 50000) {
+      return res.status(400).json({ error: "Draft data too large" });
+    }
+    await runQuery(
+      `INSERT INTO post_drafts (user_id, draft_data, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (user_id) DO UPDATE
+       SET draft_data = $2, updated_at = NOW()`,
+      [String(userId), draft_data]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    logger.error("[Draft] Save error:", err);
+    return res.status(500).json({ error: "Failed to save draft" });
+  }
+});
+
+/**
+ * DELETE /draft - Clear saved draft
+ */
+router.delete("/draft", protect, async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    await runQuery("DELETE FROM post_drafts WHERE user_id::text = $1", [String(userId)]);
+    return res.json({ success: true });
+  } catch (err) {
+    return res.json({ success: true }); // Non-critical
+  }
+});
+
 const optimizeLocalImages = require("../middleware/imageOptimizer");
 
 /**
@@ -308,6 +384,7 @@ router.post(
   "/",
   protect,
   upload.fields([{ name: "images", maxCount: 10 }]),
+  postUploadSecurity,
   optimizeLocalImages,
   postValidation.create,
   validate,
@@ -323,6 +400,7 @@ router.post(
   "/create",
   protect,
   upload.fields([{ name: "images", maxCount: 10 }]),
+  postUploadSecurity,
   optimizeLocalImages,
   postValidation.create,
   validate,
@@ -421,9 +499,21 @@ router.get("/undone", protect, async (req, res) => {
  */
 router.post("/batch-view", async (req, res) => {
   try {
-    const outcome = await postViewBufferService.enqueueBatchView(
-      req.body?.postIds
-    );
+    const postIds = req.body?.postIds;
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "postIds must be a non-empty array",
+      });
+    }
+    const outcome = await postViewBufferService.enqueueBatchView(postIds);
+    if (outcome.queued === 0 && outcome.updated === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "No valid postIds provided",
+        skipped: outcome.skipped,
+      });
+    }
     res.json({
       success: true,
       mode: outcome.mode,
@@ -617,6 +707,18 @@ router.get(
 );
 
 /**
+ * POST /:postId/report
+ * Report a post for violating terms of service.
+ */
+router.post("/:postId/report", protect, postController.reportPost);
+
+/**
+ * POST /:postId/renew
+ * Renew an expired listing.
+ */
+router.post("/:postId/renew", protect, postController.renewPost);
+
+/**
  * GET /:postId
  * Retrieve a single post by its ID.
  */
@@ -667,10 +769,16 @@ router.delete("/:postId", protect, async (req, res) => {
 
 /**
  * PUT /:postId
- * Update a post's title, description, price, location, or status.
+ * Update a post's title, description, price, location, status, category, subcategory, or images.
  * Only the post owner may edit their post.
  */
-router.put("/:postId", protect, async (req, res) => {
+router.put(
+  "/:postId",
+  protect,
+  upload.fields([{ name: "images", maxCount: 10 }]),
+  postUploadSecurity,
+  optimizeLocalImages,
+  async (req, res) => {
   const { postId } = req.params;
   const userId = req.user?.userId || req.user?.id;
   const {
@@ -689,7 +797,7 @@ router.put("/:postId", protect, async (req, res) => {
 
   try {
     const ownerCheck = await runQuery(
-      "SELECT user_id, created_at FROM posts WHERE post_id = $1",
+      "SELECT user_id, created_at, status, images FROM posts WHERE post_id = $1",
       [postId]
     );
     if (ownerCheck.rows.length === 0) {
@@ -699,6 +807,32 @@ router.put("/:postId", protect, async (req, res) => {
       return res
         .status(403)
         .json({ error: "Not authorized to edit this post" });
+    }
+
+    // Block edits on sold posts
+    if (ownerCheck.rows[0].status === "sold") {
+      return res
+        .status(409)
+        .json({ error: "Cannot edit a post that has already been sold" });
+    }
+
+    // Block price/status edits if post has pending transactions
+    if (price !== undefined || status !== undefined) {
+      try {
+        const txCheck = await runQuery(
+          `SELECT transaction_id FROM transactions
+           WHERE post_id::text = $1 AND status IN ('pending', 'in_progress', 'processing')
+           LIMIT 1`,
+          [String(postId)]
+        );
+        if (txCheck.rows.length > 0) {
+          return res.status(409).json({
+            error: "Cannot change price or status while a transaction is in progress",
+          });
+        }
+      } catch (_txErr) {
+        // transactions table may not exist
+      }
     }
 
     const normalizedCategoryId =
@@ -731,6 +865,26 @@ router.put("/:postId", protect, async (req, res) => {
       resolvedCategoryId = normalizedCategoryId || subCategoryId;
     }
 
+    // Handle image uploads - merge new images with existing, respecting removals
+    let mergedImages = null;
+    const existingImages = ownerCheck.rows[0].images || [];
+    const newFiles = req.files?.images || [];
+    const removedImages = req.body.removed_images
+      ? JSON.parse(req.body.removed_images)
+      : [];
+
+    if (newFiles.length > 0 || removedImages.length > 0) {
+      // Keep existing images that weren't removed
+      const removedSet = new Set(removedImages.map(String));
+      const kept = (Array.isArray(existingImages) ? existingImages : [])
+        .filter((img) => !removedSet.has(String(img)));
+      // Add newly uploaded images
+      const uploaded = newFiles.map(
+        (f) => f.cloudinaryUrl || f.optimizedPath || `/uploads/${f.filename}`
+      );
+      mergedImages = JSON.stringify([...kept, ...uploaded]);
+    }
+
     const result = await runQuery(
       `UPDATE posts SET
         title = COALESCE($1, title),
@@ -740,6 +894,7 @@ router.put("/:postId", protect, async (req, res) => {
         status = COALESCE($5, status),
         category_id = COALESCE($6, category_id),
         subcategory_id = COALESCE($7, subcategory_id),
+        images = COALESCE($9, images),
         updated_at = NOW()
       WHERE post_id = $8
       RETURNING
@@ -766,6 +921,7 @@ router.put("/:postId", protect, async (req, res) => {
         resolvedCategoryId,
         normalizedSubcategoryId,
         postId,
+        mergedImages,
       ]
     );
 
@@ -775,5 +931,15 @@ router.put("/:postId", protect, async (req, res) => {
     res.status(500).json({ error: "Failed to update post" });
   }
 });
+
+/**
+ * POST /:postId/report - Report a listing
+ */
+router.post("/:postId/report", protect, postController.reportPost);
+
+/**
+ * POST /:postId/renew - Renew an expired listing
+ */
+router.post("/:postId/renew", protect, postController.renewPost);
 
 module.exports = router;

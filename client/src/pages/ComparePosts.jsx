@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -6,16 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
-  ShoppingCart,
   MapPin,
-  Tag,
-  Package,
-  Star,
-  Clock,
-  CheckCircle,
-  ShieldCheck,
-  X,
   Eye,
+  X,
+  Trash2,
 } from "lucide-react";
 import { FaExchangeAlt as CompareIcon } from "react-icons/fa";
 import { resolveMediaUrl } from "@/lib/mediaUrl";
@@ -55,7 +49,8 @@ const formatCurrency = (value) => {
 const getItemId = (item) =>
   String(item?.post_id ?? item?.postId ?? item?.id ?? "").trim();
 
-const SPEC_FIELDS = [
+/** Base spec fields that always apply */
+const BASE_SPEC_FIELDS = [
   { key: "price", label: "Price", getter: (i) => formatCurrency(i?.price) },
   { key: "condition", label: "Condition", getter: (i) => i?.condition || i?.item_condition },
   { key: "brand", label: "Brand", getter: (i) => i?.brand || i?.brand_name },
@@ -73,14 +68,79 @@ const SPEC_FIELDS = [
   { key: "status", label: "Status", getter: (i) => i?.status },
 ];
 
+/** Keys already covered by BASE_SPEC_FIELDS or meta fields we skip */
+const SKIP_KEYS = new Set([
+  "id", "post_id", "postId", "user_id", "userId", "images", "media",
+  "image_url", "imageUrl", "thumbnail", "cover", "title", "description",
+  "created_at", "updated_at", "deleted_at", "user", "__v", "is_active",
+  "price", "condition", "item_condition", "brand", "brand_name", "model",
+  "model_name", "category_name", "category", "subcategory_name", "subcategory",
+  "location", "city", "area", "user_name", "username", "seller_name",
+  "warranty", "warranty_period", "delivery_option", "delivery", "storage",
+  "storage_size", "color", "year", "manufacture_year", "status", "category_id",
+  "subcategory_id", "slug", "views", "likes", "is_featured", "is_premium",
+]);
+
+/** Build dynamic spec fields from item attributes not covered by base fields */
+const buildDynamicSpecs = (items) => {
+  const seen = new Set();
+  const dynamicFields = [];
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    // Check top-level attributes
+    for (const [key, value] of Object.entries(item)) {
+      if (SKIP_KEYS.has(key) || seen.has(key)) continue;
+      if (value == null || String(value).trim() === "" || typeof value === "object") continue;
+      seen.add(key);
+      const label = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      dynamicFields.push({ key, label, getter: (i) => i?.[key] ?? null });
+    }
+    // Check nested attributes/specs object
+    const attrs = item?.attributes || item?.specs || item?.specifications || item?.details;
+    if (attrs && typeof attrs === "object" && !Array.isArray(attrs)) {
+      for (const [key, value] of Object.entries(attrs)) {
+        const fullKey = `attr_${key}`;
+        if (seen.has(fullKey)) continue;
+        if (value == null || String(value).trim() === "") continue;
+        seen.add(fullKey);
+        const label = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        dynamicFields.push({
+          key: fullKey,
+          label,
+          getter: (i) => {
+            const a = i?.attributes || i?.specs || i?.specifications || i?.details;
+            return a?.[key] ?? null;
+          },
+        });
+      }
+    }
+  }
+  return dynamicFields;
+};
+
 export default function ComparePosts() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const items = useMemo(
+  const [removedIds, setRemovedIds] = useState(new Set());
+
+  const allItems = useMemo(
     () => (Array.isArray(location.state?.compareItems) ? location.state.compareItems : []),
     [location.state],
   );
+
+  const items = useMemo(
+    () => allItems.filter((item) => !removedIds.has(getItemId(item))),
+    [allItems, removedIds],
+  );
+
+  const removeItem = useCallback((itemId) => {
+    setRemovedIds((prev) => new Set([...prev, itemId]));
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setRemovedIds(new Set(allItems.map((item) => getItemId(item))));
+  }, [allItems]);
 
   const commonSubcategory = useMemo(() => {
     if (!items.length) return "";
@@ -88,14 +148,19 @@ export default function ComparePosts() {
     return sub;
   }, [items]);
 
+  const allSpecFields = useMemo(() => {
+    const dynamic = buildDynamicSpecs(items);
+    return [...BASE_SPEC_FIELDS, ...dynamic];
+  }, [items]);
+
   const visibleSpecs = useMemo(() => {
-    return SPEC_FIELDS.filter((spec) =>
+    return allSpecFields.filter((spec) =>
       items.some((item) => {
         const val = spec.getter(item);
         return val != null && String(val).trim() !== "";
       }),
     );
-  }, [items]);
+  }, [items, allSpecFields]);
 
   if (!items.length) {
     return (
@@ -145,15 +210,30 @@ export default function ComparePosts() {
               )}
             </div>
           </div>
+          {items.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              {t("clear_all", { defaultValue: "Clear All" })}
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* ── Product cards row ── */}
-        <div
-          className="grid gap-4 mb-8"
-          style={{ gridTemplateColumns: `repeat(${items.length}, minmax(240px, 1fr))` }}
-        >
+        <div className="overflow-x-auto pb-2 -mx-4 px-4">
+          <div
+            className="grid gap-4 mb-8"
+            style={{
+              gridTemplateColumns: `repeat(${items.length}, minmax(240px, ${items.length <= 3 ? "1fr" : "280px"}))`,
+              minWidth: items.length > 3 ? `${items.length * 280}px` : undefined,
+            }}
+          >
           {items.map((item) => {
             const itemId = getItemId(item);
             const imgSrc = getImageUrl(item);
@@ -168,8 +248,17 @@ export default function ComparePosts() {
                     src={imgSrc}
                     alt={item?.title || ""}
                     className="w-full h-48 object-cover"
+                    loading="lazy"
                     onError={(ev) => { ev.target.src = "/placeholder.svg"; }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => removeItem(itemId)}
+                    className="absolute top-2 right-2 bg-black/50 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors"
+                    aria-label={t("remove_from_compare", { defaultValue: "Remove from comparison" })}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                   {price && (
                     <span className="absolute bottom-2.5 left-3 bg-black/40 backdrop-blur-md rounded-lg px-2.5 py-1 text-lg font-bold text-white">
                       {price}
@@ -205,6 +294,7 @@ export default function ComparePosts() {
               </Card>
             );
           })}
+          </div>
         </div>
 
         {/* ── Comparison table ── */}

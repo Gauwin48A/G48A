@@ -3,6 +3,7 @@ const { body, validationResult } = require("express-validator");
 const rateLimit = require("express-rate-limit");
 
 const authController = require("../controllers/authController");
+const socialAuthController = require("../controllers/socialAuthController");
 const { createDeviceBindingHandlers } = require("../middleware/deviceBindingPostAuth");
 const deviceBindingHandlers = createDeviceBindingHandlers(authController);
 const authSessionController = require("../controllers/authSessionController");
@@ -92,7 +93,7 @@ const resolveDeviceKey = (req) =>
 const loginLimiter = rateLimit({
   windowMs: LOGIN_LIMIT_WINDOW_MS,
   max: LOGIN_LIMIT_MAX,
-  skipSuccessfulRequests: true,
+  skipSuccessfulRequests: false,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
@@ -308,6 +309,13 @@ router.post(
   authenticateToken,
   maybeBypassAuthRateLimit(otpVerifyLimiter),
   authController.completePhoneChange,
+);
+
+// Social login (#11)
+router.post(
+  "/social/google",
+  maybeBypassAuthRateLimit(loginLimiter),
+  socialAuthController.googleAuth,
 );
 
 module.exports = router;

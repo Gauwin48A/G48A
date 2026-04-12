@@ -24,6 +24,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import TransactionStepper from "@/components/TransactionStepper";
 import api from "../lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -315,6 +325,7 @@ const OffersPage = () => {
   const [role, setRole] = useState("seller");
   const [counterByOfferId, setCounterByOfferId] = useState({});
   const [processingOfferId, setProcessingOfferId] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null); // { offerId, action, offer }
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
@@ -463,6 +474,11 @@ const OffersPage = () => {
 
     if (action === "counter") {
       const value = Number(counterPrice);
+      const offer = offers.find((o) => (o.offer_id || o.id) === offerId);
+      const originalPrice = Number(offer?.original_price || 0);
+      const offeredPrice = Number(offer?.offered_price || 0);
+      const minCounter = Math.max(1, offeredPrice);
+
       if (!Number.isFinite(value) || value <= 0) {
         toast({
           title: tr("offers_invalid_counter", "Invalid counter offer"),
@@ -474,8 +490,45 @@ const OffersPage = () => {
         });
         return;
       }
+
+      if (originalPrice > 0 && value > originalPrice) {
+        toast({
+          title: tr("offers_counter_too_high", "Counter too high"),
+          description: tr(
+            "offers_counter_too_high_desc",
+            "Counter offer cannot exceed the original listing price of ₹{{price}}.",
+            { price: originalPrice.toLocaleString() },
+          ),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (value <= offeredPrice) {
+        toast({
+          title: tr("offers_counter_too_low", "Counter too low"),
+          description: tr(
+            "offers_counter_too_low_desc",
+            "Counter offer must be higher than the buyer's offer of ₹{{price}}.",
+            { price: offeredPrice.toLocaleString() },
+          ),
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
+    // For accept/reject, show confirmation dialog instead of acting immediately
+    if (action === "accept" || action === "reject") {
+      const offer = offers.find((o) => (o.offer_id || o.id) === offerId);
+      setConfirmAction({ offerId, action, offer });
+      return;
+    }
+
+    await executeOfferAction(offerId, action, counterPrice);
+  };
+
+  const executeOfferAction = async (offerId, action, counterPrice = null) => {
     setProcessingOfferId(offerId);
     try {
       const body = {
@@ -941,6 +994,57 @@ const OffersPage = () => {
                                 "Counter",
                               )}
                               className="w-24 text-sm"
+                              min="1"
+                              value={counterByOfferId[offerId] || ""}
+                              onChange={(event) =>
+                                setCounterByOfferId((prev) => ({
+                                  ...prev,
+                                  [offerId]: event.target.value,
+                                }))
+                              }
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={
+                                !counterByOfferId[offerId] ||
+                                processingOfferId === offerId
+                              }
+                              onClick={() =>
+                                handleOfferAction(
+                                  offerId,
+                                  "counter",
+                                  counterByOfferId[offerId],
+                                )
+                              }
+                            >
+                              {tr("send", "Send")}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {role === "buyer" && status === "countered" && (
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 dark:bg-green-700/40 dark:hover:bg-green-700/40"
+                            disabled={processingOfferId === offerId}
+                            onClick={() => handleOfferAction(offerId, "accept")}
+                          >
+                            <Check className="w-4 h-4 mr-1" />{" "}
+                            {tr("accept_counter", "Accept Counter")}
+                          </Button>
+
+                          <div className="flex gap-1">
+                            <Input
+                              type="number"
+                              placeholder={tr(
+                                "offers_counter_placeholder",
+                                "Counter",
+                              )}
+                              className="w-24 text-sm"
+                              min="1"
                               value={counterByOfferId[offerId] || ""}
                               onChange={(event) =>
                                 setCounterByOfferId((prev) => ({
@@ -977,6 +1081,61 @@ const OffersPage = () => {
           </div>
         )}
       </div>
+
+      {/* Confirmation dialog for accept/reject */}
+      <AlertDialog
+        open={!!confirmAction}
+        onOpenChange={(open) => { if (!open) setConfirmAction(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.action === "accept"
+                ? tr("offers_confirm_accept_title", "Accept this offer?")
+                : tr("offers_confirm_reject_title", "Reject this offer?")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.action === "accept"
+                ? tr(
+                    "offers_confirm_accept_desc",
+                    "You are accepting ₹{{price}} for \"{{title}}\". This action cannot be undone.",
+                    {
+                      price: Number(confirmAction?.offer?.offered_price || 0).toLocaleString(),
+                      title: confirmAction?.offer?.post_title || "",
+                    },
+                  )
+                : tr(
+                    "offers_confirm_reject_desc",
+                    "You are rejecting the offer of ₹{{price}} for \"{{title}}\". The buyer will be notified.",
+                    {
+                      price: Number(confirmAction?.offer?.offered_price || 0).toLocaleString(),
+                      title: confirmAction?.offer?.post_title || "",
+                    },
+                  )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tr("cancel", "Cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className={
+                confirmAction?.action === "accept"
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }
+              onClick={async () => {
+                if (confirmAction) {
+                  await executeOfferAction(confirmAction.offerId, confirmAction.action);
+                  setConfirmAction(null);
+                }
+              }}
+            >
+              {confirmAction?.action === "accept"
+                ? tr("confirm_accept", "Yes, Accept")
+                : tr("confirm_reject", "Yes, Reject")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

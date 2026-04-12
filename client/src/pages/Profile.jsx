@@ -64,7 +64,6 @@ import {
 } from "@/utils/authStorage";
 import { fetchCategoriesCached as bt } from "@/services/categoriesService";
 import { fetchUserPreferencesCached, clearUserPreferencesCache } from "@/services/preferencesService";
-import { resolveMediaUrl } from "@/lib/mediaUrl";
 import {
   hasUserSnapshotChanged as ht,
   mergeProfileIntoAuthUser as yt,
@@ -141,7 +140,7 @@ const ProfilePage = () => {
       riskState: null,
       underReview: !1,
     }),
-    [recentPosts, setRecentPosts] = n([]),
+    [, setRecentPosts] = n([]),
     [Ue, fe] = n(!0),
     [xe, ve] = n(null),
     [De, q] = n(!0),
@@ -269,40 +268,6 @@ const ProfilePage = () => {
     () => resolveMessage(Ne),
     [resolveMessage, Ne],
   );
-  const formatRank = L(
-    (value) => {
-      const normalized = String(value || "").trim().toLowerCase();
-      const rankMap = {
-        bronze: tr("bronze", "Bronze"),
-        silver: tr("silver", "Silver"),
-        gold: tr("gold", "Gold"),
-        platinum: tr("platinum", "Platinum"),
-        diamond: tr("diamond", "Diamond"),
-      };
-      return rankMap[normalized] || value || tr("unknown", "Unknown");
-    },
-    [tr],
-  );
-  const resolvePostImage = L((post) => {
-    const direct =
-      post?.image_url || post?.imageUrl || post?.thumbnail || post?.image;
-    if (direct) return resolveMediaUrl(direct, "/placeholder.svg");
-    const images = post?.images;
-    if (Array.isArray(images) && images.length) {
-      return resolveMediaUrl(images[0], "/placeholder.svg");
-    }
-    if (typeof images === "string" && images.trim()) {
-      try {
-        const parsed = JSON.parse(images);
-        if (Array.isArray(parsed) && parsed.length) {
-          return resolveMediaUrl(parsed[0], "/placeholder.svg");
-        }
-      } catch {
-        return resolveMediaUrl(images, "/placeholder.svg");
-      }
-    }
-    return "/placeholder.svg";
-  }, []);
   F(() => {
     W.current = y;
   }, [y]);
@@ -1031,22 +996,6 @@ const ProfilePage = () => {
     i?.phoneVerified
   );
   const kycVerified = !!(i?.kyc_verified ?? i?.kycVerified ?? i?.verified);
-  const emailStepDone = emailVerified;
-  const phoneStepDone = phoneVerified;
-  const kycStepDone = kycVerified;
-  const emailLabel = emailVerified
-    ? tr("email_verified", "Email verified")
-    : i?.email
-      ? tr("email_added", "Email added")
-      : tr("email_missing", "Email missing");
-  const phoneLabel = phoneVerified
-    ? tr("phone_verified", "Phone verified")
-    : i?.phone
-      ? tr("phone_added", "Phone added")
-      : tr("phone_missing", "Phone missing");
-  const kycLabel = kycVerified
-    ? tr("kyc_verified", "KYC verified")
-    : tr("kyc_pending", "KYC pending");
   const emailDisplay = i?.email
     ? String(i.email)
     : tr("email_missing_prompt", "Add your email");
@@ -1236,13 +1185,6 @@ const ProfilePage = () => {
       max: c.maxPrice || "100000",
     }),
   ];
-  const recentPostCount = Array.isArray(recentPosts) ? recentPosts.length : 0;
-  const listingCountChipLabel =
-    listingCountValue >= recentPostCount && listingCountValue > 0
-      ? tr("total_listings_chip", "{{count}} total", {
-          count: listingCountValue,
-        })
-      : tr("recent_items_chip", "{{count}} items", { count: recentPostCount });
   const budgetMinValue = Number.isFinite(Number(c.minPrice))
     ? Number(c.minPrice)
     : 0;
@@ -4198,6 +4140,3 @@ const ProfilePage = () => {
 };
 var Jt = ProfilePage;
 export { Jt as default };
-
-
-

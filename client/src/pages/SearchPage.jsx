@@ -1116,18 +1116,51 @@ const u = "recentSearches",
                   onRetry: () => setResultsRefresh((r) => r + 1),
                 })
               : resultsCount === 0
-                ? e.createElement(J, {
-                    marker: "empty",
-                    className: "border-0 shadow-none bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-800 dark:to-gray-800 rounded-2xl mt-4 dark:border-0 dark:bg-gradient-to-br",
-                    title: "No results found",
-                    description:
-                      "Try adjusting your keywords or filters to see more matches.",
-                    action: e.createElement(
-                      m,
-                      { type: "button", variant: "outline", onClick: T },
-                      "Clear filters",
-                    ),
-                  })
+                ? e.createElement(
+                    "div",
+                    { className: "mt-4 space-y-4" },
+                    e.createElement(J, {
+                      marker: "empty",
+                      className: "border-0 shadow-none bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-800 dark:to-gray-800 rounded-2xl dark:border-0 dark:bg-gradient-to-br",
+                      title: "No results found",
+                      description:
+                        "Try adjusting your keywords or filters to see more matches.",
+                      action: e.createElement(
+                        m,
+                        { type: "button", variant: "outline", onClick: T },
+                        "Clear filters",
+                      ),
+                    }),
+                    trendingSuggestions.length > 0 &&
+                      e.createElement(
+                        "div",
+                        { className: "bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700" },
+                        e.createElement("p", { className: "text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-2" },
+                          e.createElement(I, { className: "w-4 h-4" }),
+                          "Popular searches"
+                        ),
+                        e.createElement(
+                          "div",
+                          { className: "flex flex-wrap gap-2" },
+                          trendingSuggestions.map((suggestion) =>
+                            e.createElement(
+                              m,
+                              {
+                                key: suggestion,
+                                type: "button",
+                                variant: "secondary",
+                                size: "sm",
+                                className: "rounded-full text-xs",
+                                onClick: () => {
+                                  f((prev) => ({ ...prev, search: suggestion }));
+                                },
+                              },
+                              suggestion,
+                            ),
+                          ),
+                        ),
+                      ),
+                  )
                 : resultsCount === null
                   ? e.createElement(J, {
                       marker: "empty",

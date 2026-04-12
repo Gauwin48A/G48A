@@ -25,7 +25,6 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/AuthContext";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { getUserId as getUserIdFromStorage } from "@/utils/authStorage";
-import { getApiOriginBase } from "@/lib/networkConfig";
 import api from "@/lib/api";
 import {
   buildSavedPostsMap,
@@ -105,7 +104,6 @@ const MyFeedPage = () => {
   const { user: authUser } = useAuth();
   const currentUserId = getUserIdFromStorage(authUser);
   const { activeApp, categories: categoryModeCategories } = useCategoryMode();
-  const baseUrl = useMemo(() => getApiOriginBase(), []);
   const activeAppMatcher = useMemo(
     () => buildActiveAppMatcher(activeApp, categoryModeCategories),
     [activeApp, categoryModeCategories],
@@ -362,6 +360,7 @@ const MyFeedPage = () => {
       }
     },
     [
+      activeAppMatcher?.activeApp,
       buildFeedParams,
       filterFeedPost,
       postsPerPage,
@@ -555,9 +554,11 @@ const MyFeedPage = () => {
       setSavedPostStatus(mutationId, nextSaved);
 
     try {
-      const response = nextSaved
-        ? await api.post(`/wishlist`, { postId: mutationId })
-        : await api.delete(`/wishlist/${mutationId}`);
+      if (nextSaved) {
+        await api.post(`/wishlist`, { postId: mutationId });
+      } else {
+        await api.delete(`/wishlist/${mutationId}`);
+      }
     } catch {
       setSavedPosts((prev) => ({ ...prev, [mutationId]: isSaved }));
       setSavedPostStatus(mutationId, isSaved);

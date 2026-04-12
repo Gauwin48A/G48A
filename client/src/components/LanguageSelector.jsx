@@ -34,7 +34,7 @@ const LANGUAGES = [
   { code: "th", label: "Thai", native: "ไทย" },
   { code: "sw", label: "Swahili", native: "Kiswahili" },
 ];
-const WARM_PREFETCH_LIMIT = 7;
+const WARM_PREFETCH_LIMIT = 4;
 
 function normalizeLangCode(code) {
   const normalized = String(code || "").toLowerCase().trim();

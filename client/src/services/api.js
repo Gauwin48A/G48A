@@ -491,9 +491,16 @@ const getCookieValue = (name) => {
   }
   return "";
 };
+let csrfBootstrapRetryCount = 0;
+const CSRF_MAX_RETRIES = 3;
 async function ensureCsrfTokenCookie(apiRootUrl) {
   if (getCookieValue(CSRF_COOKIE_NAME)) {
+    csrfBootstrapRetryCount = 0;
     return true;
+  }
+
+  if (csrfBootstrapRetryCount >= CSRF_MAX_RETRIES) {
+    return false;
   }
 
   if (!csrfBootstrapPromise) {
@@ -502,8 +509,14 @@ async function ensureCsrfTokenCookie(apiRootUrl) {
         withCredentials: true,
         timeout: 10e3,
       })
-      .then(() => Boolean(getCookieValue(CSRF_COOKIE_NAME)))
-      .catch(() => false)
+      .then(() => {
+        csrfBootstrapRetryCount = 0;
+        return Boolean(getCookieValue(CSRF_COOKIE_NAME));
+      })
+      .catch(() => {
+        csrfBootstrapRetryCount++;
+        return false;
+      })
       .finally(() => {
         csrfBootstrapPromise = null;
       });

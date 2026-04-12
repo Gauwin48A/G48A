@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FaLock, FaUserPlus, FaSignInAlt } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -43,10 +43,24 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
     navigate("/signup", { state: { returnTo } });
   }, [navigate, returnTo]);
 
+  useEffect(() => {
+    if (!isOpen || typeof document === "undefined") return undefined;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-prompt-title"
+    >
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
@@ -75,7 +89,10 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
           <FaLock className="text-white text-3xl" />
         </div>
 
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-3">
+        <h2
+          id="login-prompt-title"
+          className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-3"
+        >
           {t("login_to_continue") || "Login to Continue"}
         </h2>
 
@@ -125,4 +142,3 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
 LoginPromptModal.displayName = "LoginPromptModal";
 
 export default LoginPromptModal;
-

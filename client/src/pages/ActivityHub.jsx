@@ -31,9 +31,60 @@ const ActivityHub = () => {
     []
   );
 
+  const FALLBACK_ITEMS = useMemo(
+    () => [
+      {
+        key: "chat",
+        icon: "message-circle",
+        labelKey: "activity_chat",
+        fallbackLabel: "Messages",
+        descKey: "activity_chat_desc",
+        fallbackDesc: "View your conversations and messages",
+        path: "/chat",
+        requiresAuth: true,
+      },
+      {
+        key: "offers",
+        icon: "shopping-cart",
+        labelKey: "activity_offers",
+        fallbackLabel: "Offers & Negotiations",
+        descKey: "activity_offers_desc",
+        fallbackDesc: "Manage your price negotiations",
+        path: "/offers",
+        requiresAuth: true,
+      },
+      {
+        key: "reviews",
+        icon: "star",
+        labelKey: "activity_reviews",
+        fallbackLabel: "Reviews",
+        descKey: "activity_reviews_desc",
+        fallbackDesc: "Check your ratings and reviews",
+        path: "/reviews",
+        requiresAuth: true,
+        requiresUserId: true,
+        pathTemplate: "/profile/{userId}",
+        fallbackPath: "/profile",
+      },
+      {
+        key: "nearby",
+        icon: "map-pin",
+        labelKey: "activity_nearby",
+        fallbackLabel: "Nearby Listings",
+        descKey: "activity_nearby_desc",
+        fallbackDesc: "Discover listings in your area",
+        path: "/all-posts?sort=nearby",
+      },
+    ],
+    [],
+  );
+
   const items = useMemo(
-    () => (Array.isArray(cmsContent?.items) ? cmsContent.items : []),
-    [cmsContent]
+    () =>
+      Array.isArray(cmsContent?.items) && cmsContent.items.length > 0
+        ? cmsContent.items
+        : FALLBACK_ITEMS,
+    [cmsContent, FALLBACK_ITEMS],
   );
 
   const title = cmsContent?.titleKey

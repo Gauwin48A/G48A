@@ -600,7 +600,7 @@ const GreenNavbar = () => {
       {/* Top Navbar and overlays remain as is */}
       {!hideChromeOnHub && showFullNavbar ? (
         // Full Navbar
-        <nav ref={topNavRef} className="mhub-top-nav mhub-top-nav--primary sticky top-0 z-[120] transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
+        <nav ref={topNavRef} className="mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
           <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-3 py-2 md:px-4 md:py-3 lg:gap-4">
             {/* Logo and Location */}
             <div className="flex shrink-0 items-center gap-2.5 lg:gap-3">
@@ -1217,7 +1217,13 @@ const GreenNavbar = () => {
 
       {/* --- More Menu Slide-out Panel --- */}
       {moreOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[200]" role="dialog" aria-modal="true" aria-label={t('menu', { defaultValue: 'Menu' })}>
+        <div
+          className="fixed inset-0 z-[200]"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('menu', { defaultValue: 'Menu' })}
+          onKeyDown={(e) => { if (e.key === 'Escape') setMoreOpen(false); }}
+        >
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fadeIn"
@@ -1236,6 +1242,7 @@ const GreenNavbar = () => {
                 onClick={() => setMoreOpen(false)}
                 className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label={t('close', { defaultValue: 'Close' })}
+                autoFocus
               >
                 <FiX className="w-5 h-5" />
               </button>

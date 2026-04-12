@@ -35,6 +35,7 @@ import { useTranslation as Ae } from "react-i18next";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
+import { useBeforeUnload } from "@/hooks/useBeforeUnload";
 import { getAccessToken as De, getUserId as Me } from "@/utils/authStorage";
 import { fetchCategoriesCached as Oe } from "@/services/categoriesService";
 import { fetchSubcategories as fetchPostSubcategories } from "@/services/subcategoriesService";
@@ -230,6 +231,9 @@ const Xe = 2 * 1024 * 1024,
       [ke, X] = n(!1),
       [i, se] = n({}),
       L = j(() => b.map((r) => URL.createObjectURL(r)), [b]);
+    // Warn user before leaving with unsaved form data
+    const hasUnsavedChanges = j(() => !!(t.title || t.description || t.price || b.length > 0), [t.title, t.description, t.price, b]);
+    useBeforeUnload(hasUnsavedChanges && te !== "success");
     const activeAppMatcher = j(
       () =>
         buildActiveAppMatcher(
@@ -376,6 +380,27 @@ const Xe = 2 * 1024 * 1024,
       t.subcategory_id,
       selectSubcategoryMode,
     ]);
+    // Draft autosave every 30s
+    U(() => {
+      if (!hasUnsavedChanges) return;
+      const timer = setTimeout(() => {
+        try { localStorage.setItem("mhub_post_draft", JSON.stringify(t)); } catch {}
+      }, 30000);
+      return () => clearTimeout(timer);
+    }, [t, hasUnsavedChanges]);
+    // Load draft on mount
+    U(() => {
+      try {
+        const draft = localStorage.getItem("mhub_post_draft");
+        if (draft) {
+          const parsed = JSON.parse(draft);
+          if (parsed && typeof parsed === "object" && parsed.title) {
+            R((prev) => ({ ...prev, ...parsed }));
+            y({ title: a("draft_restored") || "Draft Restored", description: a("draft_restored_desc") || "Your previous draft has been loaded." });
+          }
+        }
+      } catch {}
+    }, []);
     U(
       () => () => {
         L.forEach((r) => URL.revokeObjectURL(r));
@@ -539,6 +564,7 @@ const Xe = 2 * 1024 * 1024,
         ee((s) => [...s, ...o]);
       },
       Ce = (r) => {
+        if (!window.confirm("Remove this image?")) return;
         ee((o) => o.filter((d, s) => s !== r));
       };
     U(() => {
@@ -1292,7 +1318,7 @@ const Xe = 2 * 1024 * 1024,
                               e.createElement(D, {
                                 placeholder:
                                   subcategoriesLoading
-                                    ? a("loading", "Loading...")
+                                    ? "⏳ Loading subcategories..."
                                     : a("select_subcategory") ||
                                       "Select subcategory",
                               }),

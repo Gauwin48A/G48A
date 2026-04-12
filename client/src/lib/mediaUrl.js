@@ -2,6 +2,12 @@ import { getApiOriginBase } from "@/lib/networkConfig";
 
 export const DEFAULT_MEDIA_PLACEHOLDER = "/placeholder.svg";
 
+/**
+ * CDN URL prefix for user-uploaded media.
+ * Set VITE_CDN_BASE_URL env variable (e.g. "https://cdn.mhub.app") to enable CDN.
+ */
+const CDN_BASE_URL = (typeof import.meta !== "undefined" && import.meta.env?.VITE_CDN_BASE_URL || "").replace(/\/+$/, "");
+
 const ABSOLUTE_URL_PATTERN = /^https?:\/\//i;
 const DATA_URL_PATTERN = /^data:/i;
 const FILE_URL_PREFIX_PATTERN = /^file:\/+/i;
@@ -37,6 +43,11 @@ function toUploadsWebPath(rawValue) {
 
 function withApiOrigin(pathname) {
   if (!pathname) return DEFAULT_MEDIA_PLACEHOLDER;
+
+  // If CDN is configured, use CDN for /uploads/ paths (#86)
+  if (CDN_BASE_URL && pathname.startsWith("/uploads/")) {
+    return `${CDN_BASE_URL}${pathname}`;
+  }
 
   // In local dev, prefer Vite proxy (/uploads) to avoid cross-origin media blocks.
   if (

@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Info,
   Package,
   Bell,
   Star,
   BarChart3,
-  Shield,
   BadgeCheck,
   Crown,
   Award,
@@ -17,7 +15,6 @@ import {
   Phone,
   Users,
   Clock,
-  MessageCircle,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
