@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiSun, FiMoon } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiSun, FiMoon } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useCategoryMode } from '@/context/CategoryModeContext';
 import { useLocation } from '@/context/LocationContext';
@@ -60,6 +60,7 @@ const GreenNavbar = () => {
     { key: 'plans', path: '/tier-selection', icon: FiStar, group: 'trade' },
     { key: 'centre', path: '/centre', icon: FiUser, group: 'trade', label: t('centre_page', { defaultValue: 'CentrePage' }) },
     { key: 'nearby', path: '/nearby', icon: FiMapPin, group: 'trade' },
+    { key: 'category_mode', path: '/category-mode', icon: FiNavigation, group: 'trade', label: t('category_mode', { defaultValue: 'Category mode' }) },
     { key: 'subcategories', path: '/subcategories', icon: FiGrid, group: 'trade' },
     { key: 'chat', path: '/chat', icon: FiMessageCircle, group: 'social' },
     { key: 'feedback', path: '/feedback', icon: FiStar, group: 'social' },
@@ -79,7 +80,7 @@ const GreenNavbar = () => {
     { key: 'more', path: '#', icon: <FiMenu />, matchPaths: [] },
   ];
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { items: cartItems, totalCount } = useCart();
   const { filters, setFilters } = useFilter();
   const {
@@ -131,7 +132,7 @@ const GreenNavbar = () => {
   const [layoutMenuStyle, setLayoutMenuStyle] = useState(null);
 
   // Large font mode for accessibility
-  const [largeFont] = useState(() => {
+  const [largeFont, setLargeFont] = useState(() => {
     const stored = localStorage.getItem('largeFont');
     return parseStoredBoolean(stored, false);
   });
@@ -270,6 +271,28 @@ const GreenNavbar = () => {
         : LAYOUT_PRESETS[(currentIndex + 1) % LAYOUT_PRESETS.length];
     markLayoutUserOverride();
     setLayoutMode(nextPreset.key);
+  };
+
+  const handleLogout = async () => {
+    setMoreOpen(false);
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch {
+      // Fallback if logout API fails unexpectedly.
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('token');
+      navigate('/login', { replace: true });
+    }
+  };
+
+  const closeMoreMenu = () => {
+    setMoreOpen(false);
   };
 
   // User preferences for For You page filter pre-population
@@ -1218,56 +1241,145 @@ const GreenNavbar = () => {
       {/* --- More Menu Slide-out Panel --- */}
       {moreOpen && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[200]"
+          className="mhub-more-overlay fixed inset-0 z-[200]"
           role="dialog"
           aria-modal="true"
-          aria-label={t('menu', { defaultValue: 'Menu' })}
-          onKeyDown={(e) => { if (e.key === 'Escape') setMoreOpen(false); }}
+          aria-label={t('more_options', { defaultValue: 'More options' })}
+          onKeyDown={(e) => { if (e.key === 'Escape') closeMoreMenu(); }}
         >
-          {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fadeIn"
-            onClick={() => setMoreOpen(false)}
+            className="mhub-more-overlay-bg absolute inset-0 bg-black/30 backdrop-blur-sm animate-fadeIn"
+            onClick={closeMoreMenu}
+            aria-hidden="true"
           />
-          {/* Panel */}
-          <nav
-            className="absolute top-0 right-0 h-full w-72 max-w-[85vw] bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-700 overflow-y-auto animate-slideInRight"
+          <div
+            className="mhub-more-panel absolute top-0 right-0 z-[201] h-full w-80 max-w-full overflow-y-auto mhub-premium-surface p-8 pb-24 shadow-2xl ring-4 ring-blue-400 ring-opacity-80 animate-slideInRight dark:ring-yellow-400"
+            style={{ transition: 'transform 0.3s' }}
+            onClick={(e) => e.stopPropagation()}
             role="navigation"
-            aria-label={t('menu', { defaultValue: 'Menu' })}
+            aria-label={t('more_options', { defaultValue: 'More options' })}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-              <span className="text-lg font-bold text-slate-800 dark:text-slate-100">{t('menu', { defaultValue: 'Menu' })}</span>
+            <button
+              type="button"
+              className="mhub-more-close absolute top-3 right-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-gray-700 dark:hover:text-yellow-400"
+              aria-label={t('close', { defaultValue: 'Close' })}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                closeMoreMenu();
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                closeMoreMenu();
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h2 className="text-2xl font-bold text-blue-600 dark:text-yellow-300 mb-4 drop-shadow-lg">
+              {t('more_options', { defaultValue: 'More options' })}
+            </h2>
+            {(() => {
+              const restrictedKeys = [
+                'sell',
+                'centre',
+                'chat',
+                'verification',
+                'feedback',
+                'complaints',
+                'dashboard',
+                'admin_panel',
+              ];
+              const groupLabels = {
+                trade: t('trade', { defaultValue: 'Trade' }),
+                social: t('social', { defaultValue: 'Social' }),
+                account: t('account', { defaultValue: 'Account' }),
+              };
+              const filtered = moreMenuLinks.filter((link) => {
+                if (isLoggedIn && (link.key === 'login' || link.key === 'signup')) return false;
+                return true;
+              });
+              let lastGroup = null;
+              return filtered.map((link) => {
+                const isRestricted = !isLoggedIn && restrictedKeys.includes(link.key);
+                const LinkIcon = link.icon;
+                const showGroupHeader = link.group !== lastGroup;
+                lastGroup = link.group;
+                return (
+                  <React.Fragment key={link.key}>
+                    {showGroupHeader && (
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 px-2 pt-2 pb-1 mt-1">
+                        {groupLabels[link.group] || link.group}
+                      </p>
+                    )}
+                    <Link
+                      to={isRestricted ? '#' : link.path}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg text-blue-700 dark:text-yellow-200 hover:bg-blue-100 dark:hover:bg-gray-700 font-semibold text-base shadow transition-all duration-150 ${
+                        isRestricted ? 'opacity-50 cursor-not-allowed bg-[var(--chip-bg)]' : ''
+                      }`}
+                      onClick={(e) => {
+                        if (isRestricted) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toast({
+                            description: t('login_required', { defaultValue: 'Please login to access this feature' }),
+                            variant: 'destructive',
+                          });
+                        } else {
+                          closeMoreMenu();
+                        }
+                      }}
+                      tabIndex={0}
+                    >
+                      {isRestricted
+                        ? <FiLock className="w-4 h-4 text-gray-400 shrink-0" />
+                        : LinkIcon && <LinkIcon className="w-4 h-4 shrink-0" />}
+                      {link.label || t(link.key, { defaultValue: link.key })}
+                    </Link>
+                  </React.Fragment>
+                );
+              });
+            })()}
+            {isLoggedIn && (
               <button
-                type="button"
-                onClick={() => setMoreOpen(false)}
-                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                aria-label={t('close', { defaultValue: 'Close' })}
-                autoFocus
+                className="block w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-semibold text-center text-base shadow transition-colors duration-150"
+                onClick={handleLogout}
               >
-                <FiX className="w-5 h-5" />
+                {t('logout', { defaultValue: 'Logout' })}
+              </button>
+            )}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">
+                ♿ {t('accessibility', { defaultValue: 'Accessibility' })}
+              </p>
+              <button
+                className={`block w-full px-4 py-3 rounded-lg font-semibold text-center text-base shadow transition-all duration-150 ${
+                  largeFont
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+                onClick={() => setLargeFont(!largeFont)}
+                title={largeFont ? 'Switch to normal font size' : 'Increase font size for easier reading'}
+              >
+                {largeFont
+                  ? t('normal_size', { defaultValue: '🔤 Normal Size' })
+                  : t('larger_text', { defaultValue: '🔠 Larger Text' })}
+                <span className="block text-xs font-normal opacity-75 mt-1">
+                  {largeFont
+                    ? t('using_large_fonts', { defaultValue: 'Currently using large fonts' })
+                    : t('easier_to_read', { defaultValue: 'Easier to read for everyone' })}
+                </span>
               </button>
             </div>
-            <div className="py-2">
-              {moreMenuLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = normalizedPath === link.path || normalizedPath.startsWith(`${link.path}/`);
-                return (
-                  <button
-                    key={link.key}
-                    onClick={() => { setMoreOpen(false); navigate(link.path); }}
-                    className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold'
-                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 shrink-0" />
-                    <span>{link.label || t(link.key, { defaultValue: link.key })}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
+            <button
+              className="mt-4 px-4 py-2 bg-blue-600 dark:bg-yellow-400 text-white dark:text-gray-900 rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-yellow-500 shadow transition-colors duration-150"
+              onClick={closeMoreMenu}
+            >
+              {t('close', { defaultValue: 'Close' })}
+            </button>
+          </div>
         </div>,
         document.body,
       )}

@@ -9,7 +9,7 @@ import { LANGUAGES, getLanguageByCode } from "../constants/languages";
 import { translateText } from "../utils/translateContent";
 
 // Bump when locale files change to invalidate i18next localStorage cache.
-const TRANSLATION_VERSION = "v1.0.17";
+const TRANSLATION_VERSION = "v1.0.18";
 const PRIORITY_PRELOAD_LANGUAGES = ["en", "hi", "te", "ta", "kn", "mr", "bn"];
 const I18N_INIT_STARTED_FLAG = "__MHUB_I18N_INIT_STARTED__";
 const I18N_LISTENER_FLAG = "__MHUB_I18N_LISTENER_BOUND__";
@@ -146,6 +146,17 @@ function scheduleMissingKeyTranslation(lng, ns, key, fallback) {
 
 function applyLanguageSideEffects(language) {
   const normalized = normalizeLanguageCode(language);
+
+  if (typeof window !== "undefined") {
+    window.__MHUB_LANG_SWITCHING = true;
+    if (window.__MHUB_LANG_SWITCHING_TIMER) {
+      window.clearTimeout(window.__MHUB_LANG_SWITCHING_TIMER);
+    }
+    window.__MHUB_LANG_SWITCHING_TIMER = window.setTimeout(() => {
+      window.__MHUB_LANG_SWITCHING = false;
+      window.__MHUB_LANG_SWITCHING_TIMER = null;
+    }, 1600);
+  }
 
   if (typeof localStorage !== "undefined") {
     localStorage.setItem("mhub_language", normalized);

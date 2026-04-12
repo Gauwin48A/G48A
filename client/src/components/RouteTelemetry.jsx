@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 import {
   beginRouteSession,
@@ -38,6 +38,26 @@ const getHref = (element) =>
 const RouteTelemetry = () => {
   const location = useLocation();
   const navigationType = useNavigationType();
+  const navSwitchTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    window.__MHUB_NAV_SWITCHING = true;
+    if (navSwitchTimerRef.current) {
+      clearTimeout(navSwitchTimerRef.current);
+    }
+    navSwitchTimerRef.current = window.setTimeout(() => {
+      window.__MHUB_NAV_SWITCHING = false;
+      navSwitchTimerRef.current = null;
+    }, 800);
+    return () => {
+      if (navSwitchTimerRef.current) {
+        clearTimeout(navSwitchTimerRef.current);
+        navSwitchTimerRef.current = null;
+      }
+      window.__MHUB_NAV_SWITCHING = false;
+    };
+  }, [location.pathname, location.search]);
 
   // Track route sessions
   useEffect(() => {

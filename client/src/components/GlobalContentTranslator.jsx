@@ -7,6 +7,17 @@ const EXCLUDED_SELECTOR =
 
 const MAX_TEXT_LENGTH = 280;
 const MAX_TASKS_PER_SCAN = 480;
+const DEFER_SCAN_MIN_MS = 800;
+
+const shouldDeferScan = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return Boolean(window.__MHUB_NAV_SWITCHING || window.__MHUB_LANG_SWITCHING);
+};
+
+const getDeferredDelay = (delayMs) =>
+  shouldDeferScan() ? Math.max(delayMs, DEFER_SCAN_MIN_MS) : delayMs;
 
 const isEligibleText = (value) => {
   if (typeof value !== 'string') {
@@ -173,6 +184,7 @@ function GlobalContentTranslator() {
     if (scanTimerRef.current) {
       clearTimeout(scanTimerRef.current);
     }
+    const effectiveDelay = getDeferredDelay(delayMs);
     scanTimerRef.current = setTimeout(() => {
       scanTimerRef.current = null;
       const lang = latestLanguageRef.current;
@@ -181,6 +193,11 @@ function GlobalContentTranslator() {
         return;
       }
       if (!rootNode) {
+        return;
+      }
+      if (shouldDeferScan()) {
+        pendingRootsRef.current.add(rootNode);
+        scheduleScan(DEFER_SCAN_MIN_MS);
         return;
       }
       const runTask = () => {
@@ -200,11 +217,16 @@ function GlobalContentTranslator() {
       }
 
       runTask();
-    }, delayMs);
+    }, effectiveDelay);
   };
 
   const runScan = async (root, targetLang) => {
     if (!runtimeTranslationEnabled || !root || targetLang === 'en' || isWorkingRef.current) {
+      return;
+    }
+    if (shouldDeferScan()) {
+      pendingRootsRef.current.add(root);
+      scheduleScan(DEFER_SCAN_MIN_MS);
       return;
     }
 
@@ -374,7 +396,11 @@ function GlobalContentTranslator() {
       return undefined;
     }
 
-    rootNodeRef.current = document.getElementById('root') || document.body;
+    rootNodeRef.current =
+      document.querySelector('[data-translation-root="true"]') ||
+      document.querySelector('main.app-main') ||
+      document.getElementById('root') ||
+      document.body;
     const translationRoot = rootNodeRef.current;
     if (!translationRoot) {
       return undefined;
@@ -403,6 +429,11 @@ function GlobalContentTranslator() {
     scheduleScan(2000);
 
     const observer = new MutationObserver((records) => {
+      if (shouldDeferScan()) {
+        pendingRootsRef.current.add(translationRoot);
+        scheduleScan(DEFER_SCAN_MIN_MS);
+        return;
+      }
       records.forEach((record) => {
         if (record.type === 'attributes' && record.target) {
           pendingRootsRef.current.add(record.target);
