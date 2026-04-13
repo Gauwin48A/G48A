@@ -1,8 +1,9 @@
 # MHub — Actionable Implementation Backlog
 
 > Consolidated from deleted analysis files (`NEGATIVES.md`, `POSITIVES.md`, `NEGATIVES_DETAILED.md`, `POSITIVES_DETAILED.md`, `latest_md_txt.md`). Cross-referenced with already-completed fixes.
+> Updated: 2026-04-13 — Added 50 UI/UX/Perf audit items from automated 51-page scan (66 issues).
 > 
-> Date: 2026-03-30
+> Date: 2026-03-30 | Last Updated: 2026-04-13
 
 ---
 
@@ -190,6 +191,134 @@ client/src/services/api.js   ← "Defence" client (574 lines)
 | M24 | Add Playwright E2E tests to CI pipeline | `.github/workflows/` |
 | M25 | Add jest coverage thresholds | `jest.config.cjs` |
 | M26 | Restore Docker infrastructure (Dockerfile, docker-compose) | New files |
+
+---
+
+## 🔵 UI/UX AUDIT — April 13, 2026 (50 Items from Automated 51-Page Scan)
+
+> Source: `client/scripts/audit-all-pages.mjs` → `client/audit-screenshots/audit-report.json`  
+> Screenshots: `client/audit-screenshots/*.png`  
+> Cross-reference: `client/docs/AI_UX_PERF_FUTURE.md`
+
+### Audit Summary
+
+| Metric | Value |
+|---|---|
+| Pages audited | 51 |
+| Total issues | 66 |
+| High severity | 15 |
+| Medium severity | 44 |
+| Low severity | 7 |
+
+### 🔴 P0 — Layout Overflow (Fix Immediately)
+
+| # | Ticket | Route | Issue | File(s) | Effort |
+|---|---|---|---|---|---|
+| U1 | BLI-001 | `/all-posts`, `/listings` | Horizontal overflow — filter bar or card grid extends past viewport | `AllPosts.jsx`, `QuickFilters.jsx` | S-M |
+| U2 | BLI-002 | `/for-you` | Horizontal overflow on ForYou page | `ForYou.jsx` | S |
+| U3 | BLI-003 | `/home` | Horizontal overflow — hero/skeleton grid causes scroll | `Home.jsx` | S |
+| U4 | BLI-004 | `/all-posts`, `/listings` | `/api/posts` request fails — empty grid shown | `AllPosts.jsx`, `server/routes/posts.js` | S |
+
+### 🟠 P1 — Server 500 Errors (Fix This Sprint)
+
+| # | Ticket | Route | Issue | File(s) | Effort |
+|---|---|---|---|---|---|
+| U5 | BLI-005 | `/` | CSRF/session bootstrap returns 500 | `server/middleware/csrf.js`, `redisSession.js` | M |
+| U6 | BLI-006 | `/category-hub` | 500 on category hub load | `server/routes/categories.js` | S |
+| U7 | BLI-007 | `/categories` | Category tree fetch returns 500 | `server/controllers/categoriesController.js` | S |
+| U8 | BLI-008 | `/subcategories` | Subcategory list returns 500 | `server/routes/subcategories.js` | S |
+| U9 | BLI-009 | `/invite/demo` | Referral lookup returns 500 | `server/routes/referral.js` | S |
+| U10 | BLI-010 | `/privacy-policy` | CMS content endpoint 500 | `server/routes/cms.js` | S |
+| U11 | BLI-011 | `/terms` | Terms CMS endpoint fails | Same as U10 | S |
+| U12 | BLI-012 | `/refund-policy` | Refund policy endpoint fails | Same as U10 | S |
+| U13 | BLI-013 | `/offers` | Offers list returns 500 (auth-gated) | `server/routes/offers.js` | S |
+| U14 | BLI-014 | `/reviews` | Reviews endpoint returns 500 | `server/routes/reviews.js` | S |
+| U15 | BLI-015 | `/not-found-test-404` | 404 page triggers backend 500 | `server/middleware/errorHandler.js` | S |
+
+### 🟡 P2 — Dark Mode Fixes (Fix This Month)
+
+| # | Ticket | Route | Element | Missing | File(s) | Effort |
+|---|---|---|---|---|---|---|
+| U16 | BLI-016 | `/`, `/category-hub` | `<span>` chips (×4 each) | `bg-white/20` → add `dark:bg-white/10` | `AllPosts.jsx:4031` | S |
+| U17 | BLI-017 | `/all-posts`, `/for-you`, `/feed`, `/home` | `<button>` action | `bg-white/10` → verify or add dark variant | `FeedPage.jsx:782`, `LanguageSelector.jsx:203` | S |
+| U18 | BLI-018 | `/all-posts`, `/listings` | `<button>` pagination (×10) | `bg-white`, `bg-white/50` → add `dark:bg-gray-700` | `AllPosts.jsx:3813` | M |
+| U19 | BLI-019 | `/post/123`, `/listing/123` | `<button>` image nav | `bg-white/70` → add `dark:bg-gray-800/70` | `PostDetail.jsx:1835` | S |
+| U20 | BLI-020 | `/feed` | `<span>` marketplace link | `bg-white/15` → add dark variant | `FeedPage.jsx:782` | S |
+
+### 🟡 P2 — Accessibility Fixes
+
+| # | Ticket | Route | Issue | File(s) | Effort |
+|---|---|---|---|---|---|
+| U21 | BLI-021 | `/feed` | 25 elements with low contrast text | `FeedPage.jsx`, `FeedPostCard.jsx` | M |
+| U22 | BLI-022 | `/post/123`, `/listing/123` | 17 elements with low contrast | `PostDetail.jsx` | M |
+| U23 | BLI-023 | `/all-posts`, `/listings` | Buttons missing `aria-label` | `AllPosts.jsx:3094`, `QuickFilters.jsx:117` | S |
+| U24 | BLI-024 | `/search` | Button missing `aria-label` | `SearchPage.jsx` | S |
+| U25 | BLI-025 | `/reset-password/demo` | Password toggle missing labels | `Auth/ResetPassword.jsx` | S |
+| U26 | BLI-026 | `/post/123`, `/listing/123` | Image nav arrows missing labels | `PostDetail.jsx` | S |
+
+### 🟡 P2 — Code Quality / React Patterns
+
+| # | Ticket | Route | Issue | File(s) | Effort |
+|---|---|---|---|---|---|
+| U27 | BLI-027 | `/complaints` | `usePageDensity` in function `ve` — hooks violation | `Complaints.jsx:40` | M |
+| U28 | BLI-028 | `/feedback` | `usePageDensity` in function `me` — hooks violation | `Feedback.jsx:67` | M |
+| U29 | BLI-029 | `/search` | `usePageDensity` in function `se` + eslint-disable | `SearchPage.jsx:173` | M |
+| U30 | BLI-030 | `/all-posts` | Missing hook deps (suppressed) — render loop risk | `AllPosts.jsx:1099` | M |
+
+### 🟢 P3 — Layout Whitespace
+
+| # | Ticket | Route | Issue | File(s) | Effort |
+|---|---|---|---|---|---|
+| U31 | BLI-031 | `/` | 3 empty containers >200px height | Root layout | S |
+| U32 | BLI-032 | `/category-hub` | 3 empty containers | `CategoryHub.jsx` | S |
+| U33 | BLI-033 | `/all-posts` | 1 empty container | `AllPosts.jsx` | S |
+| U34 | BLI-034 | `/home` | 8 empty containers (~450px blank space) | `Home.jsx:74-82` | S |
+| U35 | BLI-035 | `/categories`, `/subcategories` | 1 empty container each | Page files | S |
+
+### 🟢 P3 — Console/Debug Cleanup
+
+| # | Ticket | Route | Issue | File(s) | Effort |
+|---|---|---|---|---|---|
+| U36 | BLI-036 | N/A | `debugger` statement in security.js:65 | `utils/security.js` | XS |
+| U37 | BLI-037 | `/my-home` | 4× `console.error` not DEV-gated | `MyHome.jsx:311,658,689,781` | S |
+| U38 | BLI-038 | `/notifications` | 6× `console.error` not DEV-gated | `Notifications.jsx:269,464,491,524,669,687,702` | S |
+| U39 | BLI-039 | `/analytics` | `console.error` not DEV-gated | `Analytics.jsx:206` | XS |
+| U40 | BLI-040 | `/centre` | 2× `console.error` not DEV-gated | `ChannelsListPage.jsx:53,102` | XS |
+
+### 🟢 P3 — Miscellaneous
+
+| # | Ticket | Route | Issue | File(s) | Effort |
+|---|---|---|---|---|---|
+| U41 | BLI-041 | N/A | z-index sprawl (1 to 1000) — no documented scale | `ui-enhancements.css`, `lib/zIndex.js` | M |
+| U42 | BLI-042 | `/my-home` | Tab bar `overflow-x-auto` can bleed layout | `MyHome.jsx:1264` | S |
+
+### ⚪ P4 — Future / Icebox
+
+| # | Ticket | Issue | Effort |
+|---|---|---|---|
+| U43 | BLI-043 | Source recovery for 5+ minified page components | XL |
+| U44 | BLI-044 | Error boundary per route (only Chat has one) | M |
+| U45 | BLI-045 | Test coverage 30% → 60% | XL |
+| U46 | BLI-046 | GitHub Actions CI pipeline | L |
+| U47 | BLI-047 | Sentry client error tracking | M |
+| U48 | BLI-048 | Virtual scrolling for listing pages | M |
+| U49 | BLI-049 | Image optimization (WebP, srcset, Cloudinary) | L |
+| U50 | BLI-050 | axe-core a11y CI integration | M |
+
+### Sprint Planning — UI/UX Audit Items
+
+**Sprint 1 (Current)**:
+- U1–U4 (P0 overflow fixes) — Frontend, S-M effort
+- U36 (remove debugger) — Frontend, XS effort
+
+**Sprint 2**:
+- U5–U15 (P1 server 500s) — Backend, S-M effort
+- U16–U20 (dark mode batch) — Frontend, S-M effort
+
+**Sprint 3**:
+- U21–U26 (a11y fixes) — Frontend, S-M effort
+- U27–U30 (hooks/code quality) — Frontend, M effort
+- U37–U40 (console cleanup) — Frontend, S effort
 
 ### Performance & UX
 | # | Item | File(s) |

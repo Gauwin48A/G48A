@@ -26,7 +26,11 @@ export default function ForgotPassword() {
   const [debugInfo, setDebugInfo] = useState(null);
   const [message, setMessage] = useState("");
 
-  const normalizePhone = (value) => String(value || "").replace(/\D/g, "");
+  const normalizePhone = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+    return digits;
+  };
   const isPhoneIdentifier = (value) => /^[6-9]\d{9}$/.test(normalizePhone(value));
 
   const mapError = (status, msg) =>

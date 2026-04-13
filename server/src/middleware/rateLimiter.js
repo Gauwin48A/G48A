@@ -55,12 +55,8 @@ const SUSPICIOUS_CLEANUP_INTERVAL_MS = 60 * 1000;
 const SUSPICIOUS_REQUEST_THRESHOLD = 500;
 
 function resolveClientIp(req) {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string' && forwarded.trim().length > 0) {
-        const first = forwarded.split(',')[0].trim();
-        if (first) return first;
-    }
-
+    // Use Express-resolved IP (respects trust proxy setting) instead of raw header parsing
+    // to prevent X-Forwarded-For spoofing bypasses
     return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
 }
 

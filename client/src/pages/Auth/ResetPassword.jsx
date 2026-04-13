@@ -81,7 +81,7 @@ export default function ResetPassword() {
       return;
     }
     if (!(requirements.isLongEnough && requirements.hasUppercase && requirements.hasLowercase && requirements.hasNumber && requirements.hasSpecial)) {
-      const msg = t("password_requirements_msg") || "Password must be 8+ characters with uppercase, lowercase, number, and special character";
+      const msg = t("password_requirements_msg") || "Password must be 12+ characters with uppercase, lowercase, number, and special character";
       setErrorMessage(msg);
       toast({ title: t("weak_password") || "Weak Password", description: msg, variant: "destructive" });
       return;
@@ -116,7 +116,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 px-4 py-8 transition-colors duration-300 dark:bg-gradient-to-br">
         <Card className="max-w-md w-full shadow-xl border-0 rounded-2xl sm:rounded-3xl mhub-premium-surface dark:border-0">
-          <CardContent className="p-6 sm:p-8 text-center dark:text-center">
+          <CardContent className="p-6 sm:p-8 text-center">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 dark:text-gray-100">
               {t("invalid_reset_link") || "Invalid Reset Link"}
             </h2>
@@ -240,6 +240,7 @@ export default function ResetPassword() {
                       size="sm"
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 dark:text-gray-300"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? t("hide_password", "Hide password") : t("show_password", "Show password")}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
@@ -267,6 +268,7 @@ export default function ResetPassword() {
                       size="sm"
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 dark:text-gray-300"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? t("hide_password", "Hide password") : t("show_password", "Show password")}
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
@@ -285,7 +287,7 @@ export default function ResetPassword() {
                   </p>
                   <ul className="space-y-1 text-gray-600 dark:text-gray-400 dark:text-gray-200">
                     <li className={requirements.isLongEnough ? "text-green-600 dark:text-green-400" : ""}>
-                      - {t("req_min_chars") || "At least 8 characters"}
+                      - {t("req_min_chars") || "At least 12 characters"}
                     </li>
                     <li className={requirements.hasUppercase ? "text-green-600 dark:text-green-400" : ""}>
                       - {t("req_uppercase") || "One uppercase letter"}

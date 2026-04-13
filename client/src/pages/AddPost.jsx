@@ -40,6 +40,7 @@ import { hasAuthSession as De, getUserId as Me } from "@/utils/authStorage";
 import { fetchCategoriesCached as Oe } from "@/services/categoriesService";
 import { fetchSubcategories as fetchPostSubcategories } from "@/services/subcategoriesService";
 import { buildApiPath as G } from "@/lib/networkConfig";
+import { getDeviceId as _getDeviceId } from "@/utils/device";
 import { buildActiveAppMatcher } from "@/utils/categoryModeFilters";
 const Xe = 2 * 1024 * 1024,
   M = [
@@ -627,8 +628,16 @@ const Xe = 2 * 1024 * 1024,
             const l = new XMLHttpRequest();
             l.open("POST", G("/posts")),
               (l.withCredentials = !0),
-              (l.timeout = 18e4),
-              (l.upload.onprogress = (c) => {
+              (l.timeout = 18e4);
+            try {
+              const csrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+              if (csrfMatch) l.setRequestHeader("X-XSRF-TOKEN", decodeURIComponent(csrfMatch[1]));
+            } catch {}
+            try {
+              const did = _getDeviceId();
+              if (did) l.setRequestHeader("X-Device-Id", did);
+            } catch {}
+            (l.upload.onprogress = (c) => {
                 if ((T("uploading"), c.lengthComputable && c.total > 0)) {
                   const ge = Math.max(
                     1,
@@ -714,6 +723,7 @@ const Xe = 2 * 1024 * 1024,
             s.append("is_flash_sale", N ? "true" : "false"),
             await Ie(s, o),
             localStorage.setItem("mhub:first-post-created", "true"),
+            localStorage.removeItem("mhub_post_draft"),
             y({
               title: "Post Created Successfully",
               description: "Your mobile listing has been created.",

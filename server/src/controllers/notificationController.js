@@ -293,8 +293,10 @@ exports.getNotifications = async (req, res) => {
     }
 
     if (search) {
-      params.push(`%${search}%`);
-      query += ` AND (n.title ILIKE $${params.length} OR n.message ILIKE $${params.length})`;
+      // Escape LIKE wildcards to prevent pattern DoS
+      const escapedSearch = search.replace(/[%_\\]/g, '\\$&');
+      params.push(`%${escapedSearch}%`);
+      query += ` AND (n.title ILIKE $${params.length} ESCAPE '\\' OR n.message ILIKE $${params.length} ESCAPE '\\')`;
     }
 
     if (cursor) {

@@ -2802,7 +2802,7 @@ const ve = 5,
       "div",
       {
           className:
-            `mhub-page-allposts mhub-premium-page min-h-screen transition-colors duration-300 pb-24 ${density === "compact" ? "mhub-compact" : ""}`,
+            `mhub-page-allposts mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-24 ${density === "compact" ? "mhub-compact" : ""}`,
       },
       showModeBanner &&
         React.createElement(

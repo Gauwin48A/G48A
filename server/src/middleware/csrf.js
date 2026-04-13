@@ -39,8 +39,8 @@ const csrfProtection = (options = {}) => {
     } = options;
 
     return (req, res, next) => {
-        // Skip CSRF for whitelisted paths
-        if (skipPaths.some(path => req.path.startsWith(path))) {
+        // Skip CSRF for whitelisted paths (exact match or exact path segment prefix)
+        if (skipPaths.some(path => req.path === path || req.path.startsWith(path + '/'))) {
             return next();
         }
 

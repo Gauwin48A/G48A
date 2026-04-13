@@ -242,7 +242,7 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
           </span>
           {s.new_today > 0 && (
             <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold backdrop-blur-sm ${app.chipBg} ${app.chipText}`}>
-              +{fmtCount(s.new_today)} today
+              +{fmtCount(s.new_today)} {t('today', { defaultValue: 'today' })}
             </span>
           )}
         </div>
@@ -423,7 +423,7 @@ export default function CategoryHub() {
       <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 md:pt-8 flex flex-col flex-1 min-h-0">
         {/* Header */}
         <div
-          className="mb-4 text-center transition-all duration-700 flex-shrink-0 dark:text-center"
+          className="mb-4 text-center transition-all duration-700 flex-shrink-0"
           style={{ opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(-16px)" }}
         >
           {currentApp && (

@@ -30,10 +30,17 @@ function formatDateTime(value) {
 
 function maskIp(ipAddress) {
   if (!ipAddress) return "Unknown";
-  const text = String(ipAddress).trim();
-  if (!text.includes(".")) return text;
+  let text = String(ipAddress).trim();
+  // Strip IPv4-mapped IPv6 prefix
+  if (text.startsWith("::ffff:")) text = text.slice(7);
+  // Handle IPv6
+  if (text.includes(":")) {
+    const groups = text.split(":");
+    return groups.length >= 2 ? `${groups[0]}:${groups[1]}:x:x::` : "Masked";
+  }
+  // Handle IPv4
   const parts = text.split(".");
-  if (parts.length !== 4) return text;
+  if (parts.length !== 4) return "Masked";
   return `${parts[0]}.${parts[1]}.x.x`;
 }
 

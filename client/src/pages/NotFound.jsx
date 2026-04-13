@@ -10,8 +10,7 @@ const NotFound = () => {
   const title = cmsContent?.title || t("page_not_found", "Page Not Found");
   const description =
     cmsContent?.description ||
-    t("page_not_found") ||
-    "The page you're looking for doesn't exist.";
+    t("page_not_found_description", "The page you're looking for doesn't exist.");
   const buttonLabel = cmsContent?.buttonLabel || t("home");
 
   return (
@@ -26,7 +25,7 @@ const NotFound = () => {
         {description}
       </p>
       <Link to="/">
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700/40 dark:hover:bg-blue-700/40 dark:text-white">
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700/40 dark:hover:bg-blue-600/50 dark:text-white">
           {buttonLabel}
         </Button>
       </Link>

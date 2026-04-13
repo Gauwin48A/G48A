@@ -113,9 +113,9 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 py-12 page-shell page-pad">
           <EmptyState
             type="posts"
-            title={t("no_posts_yet") || "No Posts Yet"}
-            message={t("be_first_to_list") || "Be the first to create a listing and kickstart the marketplace."}
-            actionLabel={t("open_all_posts") || "Open All Posts"}
+            title={t("no_posts_yet", { defaultValue: "No Posts Yet" })}
+            message={t("be_first_to_list", { defaultValue: "Be the first to create a listing and kickstart the marketplace." })}
+            actionLabel={t("open_all_posts", { defaultValue: "Open All Posts" })}
             onAction={() => navigate("/all-posts")}
           />
         </div>
@@ -124,7 +124,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+    <div className="min-h-screen overflow-x-hidden mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
       <div className="max-w-6xl mx-auto px-4 py-10 page-shell page-pad">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
@@ -132,16 +132,16 @@ export default function Home() {
               {t("trust_first_marketplace", { defaultValue: "Trust-First Marketplace" })}
             </p>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100">
-              {t("discover_near_you") || "Discover what is moving near you"}
+              {t("discover_near_you", { defaultValue: "Discover what is moving near you" })}
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 max-w-lg dark:text-gray-200">
-              {t("home_subtitle") || "Fresh listings, verified sellers, and quick actions. Browse the latest posts or jump into curated discovery."}
+              {t("home_subtitle", { defaultValue: "Fresh listings, verified sellers, and quick actions. Browse the latest posts or jump into curated discovery." })}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => navigate("/all-posts")}>{t("open_all_posts") || "Open All Posts"}</Button>
+            <Button onClick={() => navigate("/all-posts")}>{t("open_all_posts", { defaultValue: "Open All Posts" })}</Button>
             <Button variant="outline" onClick={() => navigate("/for-you")}>
-              {t("for_you") || "For You"}
+              {t("for_you", { defaultValue: "For You" })}
             </Button>
           </div>
         </div>

@@ -372,12 +372,13 @@ export default function SignUp() {
         <button
           type="button"
           onClick={() => step > 1 ? setStep((s) => s - 1) : navigate(-1)}
-          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors dark:text-gray-300"
+          aria-label={t("back") || "Go back"}
+          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
-          {step > 1 ? (t("back") || "Back") : (t("back") || "Back")}
+          {t("back") || "Back"}
         </button>
-        <div className="text-center dark:text-center">
+        <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25 dark:bg-gradient-to-br">
               <Sparkles className="h-7 w-7 sm:h-8 sm:w-8 text-white dark:text-white" />
@@ -398,7 +399,7 @@ export default function SignUp() {
             { n: 3, label: t("pan_verification") || "Verify PAN" },
             { n: 4, label: t("create_password") || "Set Password" },
           ].map(({ n, label }) => (
-            <div key={n} className="flex flex-col items-center gap-1">
+            <div key={n} className="flex flex-col items-center gap-1" aria-current={step === n ? "step" : undefined}>
               <div
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   step >= n ? "bg-purple-500 scale-110" : "bg-gray-300 dark:bg-gray-600"
@@ -412,7 +413,7 @@ export default function SignUp() {
         </div>
 
         <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden mhub-premium-surface backdrop-blur-sm dark:border-0">
-          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-indigo-600 to-purple-600 dark:text-center dark:bg-gradient-to-r">
+          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-indigo-600 to-purple-600">
             <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center dark:bg-slate-900/20">
               {step === 4 ? (
                 <KeyRound className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
@@ -442,7 +443,7 @@ export default function SignUp() {
 
           <CardContent className="p-5 sm:p-8">
             {errorMessage && (
-              <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-4 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
+              <div role="alert" className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-4 dark:border-amber-600/40 dark:bg-amber-950/20">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
@@ -532,7 +533,7 @@ export default function SignUp() {
                     maxLength={6}
                     value={form.otp}
                     onChange={(e) => setForm((p) => ({ ...p, otp: e.target.value }))}
-                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40 dark:text-center"
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-gray-700 dark:focus:border-purple-500/40"
                     placeholder="123456"
                   />
                 </div>
@@ -714,7 +715,7 @@ export default function SignUp() {
                     {t("password_requirements") || "Password Requirements"}
                   </p>
                   <ul className="space-y-1 text-gray-600 dark:text-gray-400 dark:text-gray-200">
-                    <li>- {t("req_min_chars") || "At least 8 characters"}</li>
+                    <li>- {t("req_min_chars") || "At least 12 characters"}</li>
                     <li>- {t("req_number") || "One number"}</li>
                     <li>- {t("req_special") || "One special character"}</li>
                   </ul>
@@ -744,7 +745,7 @@ export default function SignUp() {
               </form>
             )}
 
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6 dark:text-center dark:text-gray-200">
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
               {t("already_have_account") || "Already have an account?"}{" "}
               <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:underline font-medium dark:text-purple-300">
                 {t("sign_in") || "Sign In"}

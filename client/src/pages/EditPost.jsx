@@ -17,6 +17,7 @@ import { fetchSubcategories } from "@/services/subcategoriesService";
 import { useTranslation } from "react-i18next";
 import { ImagePlus, X, Upload, ArrowLeft } from "lucide-react";
 import { navigateBack } from "@/utils/navigation";
+import { getDeviceId } from "@/utils/device";
 
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -181,22 +182,27 @@ const EditPost = () => {
       return true;
     });
 
-    setNewFiles((prev) => {
-      const total = existingImages.length - removedImages.length + prev.length + valid.length;
-      if (total > MAX_IMAGES) {
-        toast({
-          title: t("too_many_images", "Too many images"),
-          description: t("max_images_desc", "Maximum {{max}} images allowed.", { max: MAX_IMAGES }),
-          variant: "destructive",
-        });
-        return prev;
+    const currentTotal = existingImages.length - removedImages.length + newFiles.length;
+    if (currentTotal + valid.length > MAX_IMAGES) {
+      toast({
+        title: t("too_many_images", "Too many images"),
+        description: t("max_images_desc", "Maximum {{max}} images allowed.", { max: MAX_IMAGES }),
+        variant: "destructive",
+      });
+      const allowed = valid.slice(0, Math.max(0, MAX_IMAGES - currentTotal));
+      if (allowed.length === 0) {
+        event.target.value = "";
+        return;
       }
-      return [...prev, ...valid];
-    });
+      setNewFiles((prev) => [...prev, ...allowed]);
+      setPreviewUrls((prev) => [...prev, ...allowed.map((f) => URL.createObjectURL(f))]);
+    } else {
+      setNewFiles((prev) => [...prev, ...valid]);
+      setPreviewUrls((prev) => [...prev, ...valid.map((f) => URL.createObjectURL(f))]);
+    }
 
-    setPreviewUrls((prev) => [...prev, ...valid.map((f) => URL.createObjectURL(f))]);
     event.target.value = "";
-  }, [existingImages, removedImages, toast, t]);
+  }, [existingImages, removedImages, newFiles.length, toast, t]);
 
   const removeExistingImage = useCallback((imgUrl) => {
     setRemovedImages((prev) => [...prev, imgUrl]);
@@ -266,6 +272,15 @@ const EditPost = () => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", buildApiPath(`/posts/${encodeURIComponent(postId)}`));
         xhr.withCredentials = true;
+
+        // Attach security headers matching the api service interceptor
+        const csrfToken = document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];
+        if (csrfToken) xhr.setRequestHeader("X-XSRF-TOKEN", decodeURIComponent(csrfToken));
+        try {
+          const deviceId = getDeviceId();
+          if (deviceId) xhr.setRequestHeader("X-Device-Id", deviceId);
+        } catch {}
+
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
         };
