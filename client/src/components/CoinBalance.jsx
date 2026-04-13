@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Coins, ArrowDown, ArrowUp, History, Loader2 } from "lucide-react";
 import { getApiOriginBase } from "@/lib/networkConfig";

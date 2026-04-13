@@ -360,9 +360,9 @@ function ReviewsSection({ reviews, reviewsStats, reviewsLoading, reviewsError, o
 /*  Updates Feed                                                      */
 /* ------------------------------------------------------------------ */
 function UpdatesFeed({
-  sortedPosts, isOwner, isCentre, channelId, posting,
+  sortedPosts, isOwner, isCentre, posting,
   description, setDescription, mediaUrl, setMediaUrl,
-  postType, setPostType, imageFiles, setImageFiles,
+  postType, setPostType, setImageFiles,
   imageUploadKey, setImageUploadKey, onSubmit, tr, t,
 }) {
   return (
@@ -846,14 +846,14 @@ const ChannelPage = ({ variant = "channel" } = {}) => {
           <CentrePageTabs channel={channel} isOwner={isOwner} activeTab={activeTab} onTabChange={setActiveTab}>
             {(tab) => {
               if (tab === "listings") return <ListingsGrid listings={listings} listingsLoading={listingsLoading} listingsError={listingsError} channelId={channelId} tr={tr} />;
-              if (tab === "updates") return <UpdatesFeed sortedPosts={sortedPosts} isOwner={isOwner} isCentre={isCentre} channelId={channelId} posting={posting} description={description} setDescription={setDescription} mediaUrl={mediaUrl} setMediaUrl={setMediaUrl} postType={postType} setPostType={setPostType} imageFiles={imageFiles} setImageFiles={setImageFiles} imageUploadKey={imageUploadKey} setImageUploadKey={setImageUploadKey} onSubmit={handleCreatePost} tr={tr} t={t} />;
+              if (tab === "updates") return <UpdatesFeed sortedPosts={sortedPosts} isOwner={isOwner} isCentre={isCentre} posting={posting} description={description} setDescription={setDescription} mediaUrl={mediaUrl} setMediaUrl={setMediaUrl} postType={postType} setPostType={setPostType} setImageFiles={setImageFiles} imageUploadKey={imageUploadKey} setImageUploadKey={setImageUploadKey} onSubmit={handleCreatePost} tr={tr} t={t} />;
               if (tab === "reviews") return <ReviewsSection reviews={reviews} reviewsStats={reviewsStats} reviewsLoading={reviewsLoading} reviewsError={reviewsError} ownerId={ownerId} tr={tr} />;
               if (tab === "analytics") return <CentrePageAnalytics channelId={channel.channel_id || channelId} />;
               return null;
             }}
           </CentrePageTabs>
         ) : (
-          <UpdatesFeed sortedPosts={sortedPosts} isOwner={isOwner} isCentre={isCentre} channelId={channelId} posting={posting} description={description} setDescription={setDescription} mediaUrl={mediaUrl} setMediaUrl={setMediaUrl} postType={postType} setPostType={setPostType} imageFiles={imageFiles} setImageFiles={setImageFiles} imageUploadKey={imageUploadKey} setImageUploadKey={setImageUploadKey} onSubmit={handleCreatePost} tr={tr} t={t} />
+          <UpdatesFeed sortedPosts={sortedPosts} isOwner={isOwner} isCentre={isCentre} posting={posting} description={description} setDescription={setDescription} mediaUrl={mediaUrl} setMediaUrl={setMediaUrl} postType={postType} setPostType={setPostType} setImageFiles={setImageFiles} imageUploadKey={imageUploadKey} setImageUploadKey={setImageUploadKey} onSubmit={handleCreatePost} tr={tr} t={t} />
         )}
       </div>
     </div>

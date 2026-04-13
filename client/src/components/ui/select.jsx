@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const SelectContext = createContext(null);
@@ -58,7 +58,7 @@ function Select({
     [options, currentValue],
   );
 
-  const selectValue = (nextValue) => {
+  const selectValue = useCallback((nextValue) => {
     if (!isControlled) {
       setInternalValue(nextValue);
     }
@@ -66,7 +66,7 @@ function Select({
       onValueChange(nextValue);
     }
     setOpen(false);
-  };
+  }, [isControlled, onValueChange]);
 
   useEffect(() => {
     if (!open) {
@@ -102,7 +102,7 @@ function Select({
       selectedLabel: selectedOption?.label ?? null,
       selectValue,
     }),
-    [open, disabled, currentValue, selectedOption],
+    [open, disabled, currentValue, selectedOption, selectValue],
   );
 
   return (

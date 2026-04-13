@@ -15,6 +15,7 @@ const Header = () => {
         <input
           className="mhub-input w-full max-w-lg px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
           placeholder={t('search_products_brands')}
+          aria-label={t('search_products_brands')}
         />
       </div>
       <div className="flex items-center gap-4 ml-4">
@@ -22,10 +23,10 @@ const Header = () => {
           <Filter className="w-5 h-5" />
           <span className="hidden md:inline text-sm font-medium">{t('filter')}</span>
         </button>
-        <button className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full p-2 shadow hover:bg-blue-50 dark:hover:bg-slate-700">
+        <button className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full p-2 shadow hover:bg-blue-50 dark:hover:bg-slate-700" aria-label={t('add_post')}>
           <Plus className="w-5 h-5" />
         </button>
-        <button className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full p-2 shadow hover:bg-blue-50 dark:hover:bg-slate-700">
+        <button className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full p-2 shadow hover:bg-blue-50 dark:hover:bg-slate-700" aria-label={t('notifications')}>
           <Bell className="w-5 h-5" />
         </button>
       </div>

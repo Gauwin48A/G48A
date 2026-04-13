@@ -100,7 +100,7 @@ const Xe = 2 * 1024 * 1024,
     const { t: a } = Ae(),
       m = je(),
       S = Fe(),
-      { activeCategory: categoryModeCategory, activeSubcategory: categoryModeSubcategory, activeApp, categories: categoryModeCategories, selectCategory: selectCategoryMode, selectSubcategory: selectSubcategoryMode, subcategories: categoryModeSubcategories, subcategoriesLoading: categoryModeSubcategoriesLoading, hasSelection: hasCategoryMode } =
+      { activeCategory: categoryModeCategory, activeSubcategory: categoryModeSubcategory, activeApp, categories: categoryModeCategories, selectCategory: selectCategoryMode, selectSubcategory: selectSubcategoryMode, subcategories: categoryModeSubcategories, hasSelection: hasCategoryMode } =
         useCategoryMode(),
       { user: authUser } = useAuth(),
       { toast: y } = Ee(),
@@ -622,7 +622,7 @@ const Xe = 2 * 1024 * 1024,
         P(0), T("idle"), w("");
       }, []),
       Ie = z(
-        (r, o) =>
+        (r) =>
           new Promise((d, s) => {
             const l = new XMLHttpRequest();
             l.open("POST", G("/posts")),

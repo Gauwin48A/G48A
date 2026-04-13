@@ -113,7 +113,7 @@ const KycVerification = () => {
       }));
       fetchStatus();
     } catch (error) {
-      console.error("KYC submission failed", error);
+      if (import.meta.env.DEV) console.error("KYC submission failed", error);
       setSubmitError(
         tr(
           "kyc_submission_failed",
@@ -128,7 +128,7 @@ const KycVerification = () => {
   const pageClassName =
     "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br";
 
-  if (!token) {
+  if (!hasSession) {
     return (
       <div className={`${pageClassName} flex items-center justify-center p-4`}>
         <div className="max-w-md w-full page-shell page-pad">

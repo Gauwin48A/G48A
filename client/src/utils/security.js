@@ -1,9 +1,12 @@
 import i18n from "@/i18n";
+import { requestSoftReload } from "@/utils/softReload";
 
 const DEFENSE_MODE_FLAG = "__mhub_defense_mode_active__";
 const DEFENSE_MODE_INTERVAL_KEY = "__mhub_defense_mode_interval__";
 const ENABLE_DEBUGGER_TRAP =
   import.meta.env.VITE_ENABLE_DEFENSE_DEBUGGER_TRAP === "true";
+const SOFT_RELOAD_COOLDOWN_MS = 30 * 1000;
+let lastSoftReloadAt = 0;
 const ALLOWED_DOMAINS = [
   "localhost",
   "127.0.0.1",
@@ -62,7 +65,14 @@ export const activateDefenseMode = () => {
       debugger;
       const end = performance.now();
       if (end - start > 100) {
-        window.location.reload();
+        const now = Date.now();
+        if (now - lastSoftReloadAt > SOFT_RELOAD_COOLDOWN_MS) {
+          lastSoftReloadAt = now;
+          requestSoftReload({
+            title: "Security check triggered",
+            description: "Refresh to continue securely.",
+          });
+        }
       }
     }, 2000);
   }

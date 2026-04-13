@@ -19,11 +19,7 @@ import {
   FaRegHeart as qe,
   FaEye as Qe,
   FaHandHoldingHeart as Ye,
-  FaShare as ko,
-  FaBookmark as Qo,
-  FaRegBookmark as Wo,
   FaArrowRight as Bo,
-  FaShoppingCart as Yo,
   FaEllipsisV as To,
   FaChevronLeft as Lo,
   FaChevronRight as Co,
@@ -991,7 +987,8 @@ const ve = 5,
         if (!Object.prototype.hasOwnProperty.call(post, "_translatedLang")) {
           return post;
         }
-        const { _translatedLang, ...rest } = post;
+        const rest = { ...post };
+        delete rest._translatedLang;
         return rest;
       });
     }, []);

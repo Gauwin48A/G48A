@@ -64,10 +64,9 @@ export function meetsWcagContrast(ratio, level = 'AA', largeText = false) {
 /**
  * Generate accessible color suggestion
  * @param {string} background - Background hex color
- * @param {string} level - 'AA' or 'AAA'
  * @returns {Object} Suggested foreground colors
  */
-export function suggestAccessibleColors(background, level = 'AA') {
+export function suggestAccessibleColors(background) {
   const bgLuminance = calculateContrastRatio('#ffffff', background) > 
                       calculateContrastRatio('#000000', background)
                       ? 'light' : 'dark';

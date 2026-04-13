@@ -116,7 +116,9 @@ export class NotificationManager {
 
   static sendEmail(userId, subject, message) {
     // Email sending simulation - replace with actual email service
-    console.log(`Email sent to user ${userId}: ${subject} - ${message}`);
+    if (import.meta.env.DEV) {
+      console.log(`[NotificationSystem] Email queued for user (subject: ${subject})`, message);
+    }
   }
 
   static generateId() {

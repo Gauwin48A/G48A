@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Native GPS Location Service
  * Uses Capacitor Geolocation for native device GPS
  * Falls back to browser geolocation for web
@@ -8,6 +8,9 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 
 const LOCATION_TIMEOUT = 60000; // 60 seconds for GPS lock
+const DEBUG = import.meta.env.DEV;
+const debugLog = (...args) => { if (DEBUG) console.log(...args); };
+const debugError = (...args) => { if (DEBUG) console.error(...args); };
 
 /**
  * Check if running on native platform (Android/iOS)
@@ -30,7 +33,7 @@ export const getPlatform = () => {
 export const checkLocationPermission = async () => {
     try {
         const status = await Geolocation.checkPermissions();
-        console.log('[NativeGPS] Permission status:', status.location);
+        debugLog('[NativeGPS] Permission status:', status.location);
 
         if (status.location === 'granted') {
             return true;
@@ -44,7 +47,7 @@ export const checkLocationPermission = async () => {
 
         return false;
     } catch (error) {
-        console.error('[NativeGPS] Permission check failed:', error);
+        debugError('[NativeGPS] Permission check failed:', error);
         return false;
     }
 };
@@ -56,11 +59,11 @@ export const checkLocationPermission = async () => {
  * @returns {Promise<{latitude, longitude, accuracy, altitude, speed, heading}>}
  */
 export const getCurrentPosition = async () => {
-    console.log('[NativeGPS] ================================');
-    console.log('[NativeGPS] NATIVE GPS DETECTION STARTED');
-    console.log('[NativeGPS] Platform:', getPlatform());
-    console.log('[NativeGPS] Is Native:', isNativePlatform());
-    console.log('[NativeGPS] ================================');
+    debugLog('[NativeGPS] ================================');
+    debugLog('[NativeGPS] NATIVE GPS DETECTION STARTED');
+    debugLog('[NativeGPS] Platform:', getPlatform());
+    debugLog('[NativeGPS] Is Native:', isNativePlatform());
+    debugLog('[NativeGPS] ================================');
 
     try {
         // Check permissions first
@@ -76,13 +79,13 @@ export const getCurrentPosition = async () => {
             maximumAge: 0                // Never use cached position
         });
 
-        console.log('[NativeGPS] ✅ GPS SUCCESS!');
-        console.log('[NativeGPS] Latitude:', position.coords.latitude);
-        console.log('[NativeGPS] Longitude:', position.coords.longitude);
-        console.log('[NativeGPS] Accuracy:', position.coords.accuracy, 'meters');
-        console.log('[NativeGPS] Altitude:', position.coords.altitude);
-        console.log('[NativeGPS] Speed:', position.coords.speed);
-        console.log('[NativeGPS] Heading:', position.coords.heading);
+        debugLog('[NativeGPS] âœ… GPS SUCCESS!');
+        debugLog('[NativeGPS] Latitude:', position.coords.latitude);
+        debugLog('[NativeGPS] Longitude:', position.coords.longitude);
+        debugLog('[NativeGPS] Accuracy:', position.coords.accuracy, 'meters');
+        debugLog('[NativeGPS] Altitude:', position.coords.altitude);
+        debugLog('[NativeGPS] Speed:', position.coords.speed);
+        debugLog('[NativeGPS] Heading:', position.coords.heading);
 
         return {
             latitude: position.coords.latitude,
@@ -96,7 +99,7 @@ export const getCurrentPosition = async () => {
         };
 
     } catch (error) {
-        console.error('[NativeGPS] ❌ GPS ERROR:', error);
+        debugError('[NativeGPS] âŒ GPS ERROR:', error);
         throw error;
     }
 };
@@ -122,12 +125,12 @@ export const watchPosition = async (callback, errorCallback) => {
             },
             (position, err) => {
                 if (err) {
-                    console.error('[NativeGPS] Watch error:', err);
+                    debugError('[NativeGPS] Watch error:', err);
                     errorCallback?.(err);
                     return;
                 }
 
-                console.log('[NativeGPS] Position update:', position.coords.latitude, position.coords.longitude);
+                debugLog('[NativeGPS] Position update:', position.coords.latitude, position.coords.longitude);
                 callback({
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
@@ -141,11 +144,11 @@ export const watchPosition = async (callback, errorCallback) => {
             }
         );
 
-        console.log('[NativeGPS] Watch started, ID:', watchId);
+        debugLog('[NativeGPS] Watch started, ID:', watchId);
         return watchId;
 
     } catch (error) {
-        console.error('[NativeGPS] Watch setup failed:', error);
+        debugError('[NativeGPS] Watch setup failed:', error);
         throw error;
     }
 };
@@ -157,9 +160,9 @@ export const watchPosition = async (callback, errorCallback) => {
 export const clearWatch = async (watchId) => {
     try {
         await Geolocation.clearWatch({ id: watchId });
-        console.log('[NativeGPS] Watch cleared:', watchId);
+        debugLog('[NativeGPS] Watch cleared:', watchId);
     } catch (error) {
-        console.error('[NativeGPS] Clear watch failed:', error);
+        debugError('[NativeGPS] Clear watch failed:', error);
     }
 };
 
@@ -190,7 +193,7 @@ export const reverseGeocode = async (lat, lng) => {
             address.county ||
             'Unknown';
 
-        console.log('[NativeGPS] Geocoded to:', specificLocation);
+        debugLog('[NativeGPS] Geocoded to:', specificLocation);
 
         return {
             city: specificLocation,
@@ -202,7 +205,7 @@ export const reverseGeocode = async (lat, lng) => {
         };
 
     } catch (error) {
-        console.error('[NativeGPS] Geocoding failed:', error);
+        debugError('[NativeGPS] Geocoding failed:', error);
         return null;
     }
 };

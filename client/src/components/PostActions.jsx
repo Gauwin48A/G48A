@@ -5,7 +5,7 @@ import { Heart, Share2, BookmarkPlus, Flag, CheckCircle } from "lucide-react";
 
 import { useTranslation } from 'react-i18next';
 
-const PostActions = ({ postId, isLiked = false, isSaved = false }) => {
+const PostActions = ({ isLiked = false, isSaved = false }) => {
   const { t } = useTranslation();
   const tr = (key, fallback) => {
     const value = t(key);

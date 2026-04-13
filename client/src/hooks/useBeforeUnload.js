@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
  * @param {boolean} shouldWarn - Whether to show the warning
  * @param {string} [message] - Custom warning message (browsers may ignore this)
  */
-export default function useBeforeUnload(shouldWarn, message = "You have unsaved changes. Leave anyway?") {
+export function useBeforeUnload(shouldWarn, message = "You have unsaved changes. Leave anyway?") {
   const messageRef = useRef(message);
   messageRef.current = message;
 
@@ -22,3 +22,5 @@ export default function useBeforeUnload(shouldWarn, message = "You have unsaved 
     return () => window.removeEventListener("beforeunload", handler);
   }, [shouldWarn]);
 }
+
+export default useBeforeUnload;

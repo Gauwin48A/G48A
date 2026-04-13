@@ -9,11 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { hasAuthSession } from "@/utils/authStorage";
-import { useTranslation } from "react-i18next";
 import { getApiOriginBase } from "@/lib/networkConfig";
 
 const MakeOfferModal = React.memo(({ isOpen, onClose, post, onSubmit }) => {
-  const { t } = useTranslation();
   const [offerPrice, setOfferPrice] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);

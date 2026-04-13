@@ -44,7 +44,7 @@
   "dependencies": {
     "@simplewebauthn/server": "^13.3.0",
     "argon2": "^0.44.0",
-    "axios": "^1.6.0",
+    "axios": "^1.15.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
     "compression": "^1.8.1",
@@ -52,7 +52,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "express-rate-limit": "^8.2.1",
+    "express-rate-limit": "^8.3.2",
     "express-slow-down": "^3.1.0",
     "express-validator": "^7.3.1",
     "geoip-lite": "^1.4.10",
@@ -60,7 +60,7 @@
     "hpp": "^0.2.3",
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2",
+    "multer": "^2.1.1",
     "node-cache": "^5.1.2",
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
@@ -79,5 +79,18 @@
     "jest": "^30.2.0",
     "nodemon": "^3.1.14",
     "supertest": "^7.1.4"
+  },
+  "overrides": {
+    "lodash": "^4.17.24",
+    "path-to-regexp@8.x": "8.4.0",
+    "picomatch@2.x": "2.3.2",
+    "picomatch@4.x": "4.0.4",
+    "brace-expansion@1.x": "1.1.13",
+    "brace-expansion@2.x": "2.0.3",
+    "brace-expansion@4.x": "5.0.5",
+    "nodemon": {
+      "brace-expansion": "5.0.5"
+    },
+    "socket.io-parser": "4.2.6"
   }
 }

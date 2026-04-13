@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Mic, Pause, Play, Square, Trash2, Volume2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,6 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
   const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState(existingAudio);
-  const [audioBlob, setAudioBlob] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -36,11 +35,24 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
     };
   }, [audioUrl, existingAudio]);
 
+  const stopRecording = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+    }
+  }, [isRecording]);
+
   useEffect(() => {
     if (elapsedSeconds >= MAX_RECORDING_SECONDS && isRecording) {
       stopRecording();
     }
-  }, [elapsedSeconds, isRecording]);
+  }, [elapsedSeconds, isRecording, stopRecording]);
 
   const startRecording = async () => {
     setErrorMessage(null);
@@ -66,7 +78,6 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
         const blob = new Blob(chunksRef.current, { type: mimeType });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
-        setAudioBlob(blob);
         chunksRef.current = [];
 
         if (onAudioReady) {
@@ -92,25 +103,11 @@ const AudioRecorder = ({ onAudioReady, existingAudio = null }) => {
     }
   };
 
-  function stopRecording() {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
-    }
-  }
-
   const removeAudio = () => {
     if (audioUrl && !existingAudio) {
       URL.revokeObjectURL(audioUrl);
     }
     setAudioUrl(null);
-    setAudioBlob(null);
     setElapsedSeconds(0);
     setIsPlaying(false);
 

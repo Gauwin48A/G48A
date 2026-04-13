@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Bell, BellOff, X, Smartphone } from 'lucide-react';
 import {
   isPushConfigured as isFirebaseConfigured,
@@ -44,12 +44,12 @@ export default function NotificationPermission({ userId, onDismiss }) {
     : baseDismissKey;
   const isMobilePreview = layoutMode === "mobile";
   const isDesktopPreview = layoutMode === "desktop";
-  const shouldShowForViewport = (nextLayout) => {
+  const shouldShowForViewport = useCallback((nextLayout) => {
     const mode = String(nextLayout || layoutMode || "").trim().toLowerCase();
     const isMobileMode = mode === "mobile";
     const isDesktopMode = mode === "desktop";
     return isMobileMode || (isDesktopMode && isSmallViewport());
-  };
+  }, [layoutMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -74,7 +74,7 @@ export default function NotificationPermission({ userId, onDismiss }) {
       window.removeEventListener("mhub:layout-change", handleLayoutChange);
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [shouldShowForViewport]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

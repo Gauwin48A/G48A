@@ -1,4 +1,5 @@
 const express = require("express");
+const { protect } = require("../middleware/auth");
 const {
   verifyDeviceAttestation,
   requireIdempotencyKey,
@@ -36,7 +37,7 @@ function resolveActorId(req) {
   return normalized || null;
 }
 
-router.post("/claim", verifyDeviceAttestation, requireIdempotencyKey, (req, res) => {
+router.post("/claim", protect, verifyDeviceAttestation, requireIdempotencyKey, (req, res) => {
   const deviceId = req.deviceIdentity?.deviceId || String(req.body?.deviceId || req.body?.device_id || "").trim();
   const tenantId = resolveTenantId(req);
   const actorId = resolveActorId(req);
@@ -63,7 +64,7 @@ router.post("/claim", verifyDeviceAttestation, requireIdempotencyKey, (req, res)
   return res.status(201).json(result);
 });
 
-router.post("/revoke", verifyDeviceAttestation, (req, res) => {
+router.post("/revoke", protect, verifyDeviceAttestation, (req, res) => {
   const deviceId = req.deviceIdentity?.deviceId || String(req.body?.deviceId || req.body?.device_id || "").trim();
   const reason = req.body?.reason;
   const actorId = resolveActorId(req);
@@ -75,7 +76,7 @@ router.post("/revoke", verifyDeviceAttestation, (req, res) => {
   return res.status(200).json(result);
 });
 
-router.post("/rotate-credentials", verifyDeviceAttestation, requireIdempotencyKey, (req, res) => {
+router.post("/rotate-credentials", protect, verifyDeviceAttestation, requireIdempotencyKey, (req, res) => {
   const deviceId = req.deviceIdentity?.deviceId || String(req.body?.deviceId || req.body?.device_id || "").trim();
   const reason = req.body?.reason;
   const actorId = resolveActorId(req);
@@ -103,7 +104,7 @@ router.post("/rotate-credentials", verifyDeviceAttestation, requireIdempotencyKe
   return res.status(200).json(result);
 });
 
-router.post("/revoke-credentials", verifyDeviceAttestation, (req, res) => {
+router.post("/revoke-credentials", protect, verifyDeviceAttestation, (req, res) => {
   const deviceId = req.deviceIdentity?.deviceId || String(req.body?.deviceId || req.body?.device_id || "").trim();
   const reason = req.body?.reason;
   const actorId = resolveActorId(req);

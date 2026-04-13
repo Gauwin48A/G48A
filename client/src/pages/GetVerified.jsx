@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -22,8 +22,11 @@ const isValidAadhaar = (value) => /^\d{12}$/.test(normalizeAadhaar(value));
 const GetVerified = () => {
   const { t } = useTranslation();
   const { data: cmsContent } = useCmsPage("get-verified");
-  const tr = (key, fallback, options = {}) =>
-    t(key, { defaultValue: fallback, ...options });
+  const tr = useCallback(
+    (key, fallback, options = {}) =>
+      t(key, { defaultValue: fallback, ...options }),
+    [t],
+  );
   const [verificationData, setVerificationData] = useState({
     fullName: "",
     aadhaarNumber: "",

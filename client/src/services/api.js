@@ -8,6 +8,7 @@ import { logAuthDiagnostic } from "@/services/authDiagnostics";
 import { isDevToolsOpen } from "@/utils/codeProtection";
 import { createRequestNonce } from "@/lib/requestSecurity";
 import { buildActiveAppMatcher, matchesCategoryModeItem } from "@/utils/categoryModeFilters";
+import { requestSoftNavigate } from "@/utils/softNavigate";
 const getCurrentApiRootUrl = () => {
   const resolved = getApiRootUrl();
   return typeof resolved === "string" && resolved ? resolved : "/api";
@@ -405,6 +406,7 @@ async function probeMhubHealth(origin) {
   }
 }
 async function resolveLocalDevBackendOrigin() {
+  if (!import.meta.env.DEV) return "";
   if (!isLocalhostRuntime()) return "";
   const now = Date.now();
   if (backendRecoveredOriginCache) {
@@ -473,8 +475,8 @@ const dispatchAuthRequiredOnce = (detail = {}) => {
   authEventCooldownUntil = now + AUTH_EVENT_COOLDOWN_MS;
   const payload = { ...detail, occurredAt: now };
   const eventDispatched = dispatchGlobalEvent(AUTH_EVENT_NAME, payload);
-  if (!eventDispatched && typeof window !== "undefined") {
-    window.location.href = detail.redirectTo || "/login?expired=true";
+  if (!eventDispatched) {
+    requestSoftNavigate(detail.redirectTo || "/login?expired=true", { replace: true });
   }
   return eventDispatched;
 };
@@ -897,7 +899,7 @@ api.interceptors.response.use(
         occurredAt: Date.now(),
       });
       if (!eventDispatched && typeof window !== "undefined") {
-        window.location.href = "/security";
+        requestSoftNavigate("/security", { replace: true });
       }
     }
     // Handle server-side VPN block — trigger client VPN blocker

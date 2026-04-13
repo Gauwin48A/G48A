@@ -58,8 +58,7 @@ const PostAdd = () => {
 
     setSubmitting(true);
     try {
-      const response = await api.post("/feed/add", { description: payload });
-      const result = response?.data ?? response;
+      await api.post("/feed/add", { description: payload });
 
       toast({
         title: t("post_published") || "Post Published",

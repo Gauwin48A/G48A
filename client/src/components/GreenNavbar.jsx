@@ -440,7 +440,7 @@ const GreenNavbar = () => {
   }, [moreOpen]);
 
   // Get location from context (for city display)
-  const { city, area, village, colony, locality, displayName, locationString, loading: locationLoading, permissionGranted, forceRefreshLocation, accuracyTier, isIpFallback, isStaleLocation } = useLocation();
+  const { city, area, village, colony, locality, displayName, locationString, loading: locationLoading, permissionGranted, accuracyTier, isIpFallback, isStaleLocation } = useLocation();
 
 
   // Router location for path detection
@@ -740,19 +740,17 @@ const GreenNavbar = () => {
                 </span>
               </Link>
 
-              {/* Location quick action - click to refresh GPS — shows visible location name */}
+              {/* Location label - display only */}
               <div className="relative group">
-                <button
-                  type="button"
-                  onClick={() => { if (forceRefreshLocation && !locationLoading) forceRefreshLocation().catch(() => {}); }}
-                  className={`mhub-nav-pill relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-pointer select-none items-center gap-1.5 rounded-full border px-2.5 transition-all active:scale-[0.97] ${
+                <div
+                  className={`mhub-nav-pill relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-default select-none items-center gap-1.5 rounded-full border px-2.5 transition-all ${
                     locationLoading ? 'border-yellow-400/40 bg-yellow-500/20' :
                     isIpFallback ? 'border-orange-400/40 bg-orange-500/15' :
                     accuracyTier === 'precise' || accuracyTier === 'good' ? 'border-green-400/40 bg-green-500/15' :
                     ''
                   }`}
-                  aria-label={`${t('location', { defaultValue: 'Location' })}: ${resolvedLocationLabel}. ${t('tap_to_refresh', { defaultValue: 'Tap to refresh' })}`}
-                  title={`${resolvedLocationLabel} - ${t('tap_to_refresh', { defaultValue: 'Tap to refresh GPS' })}`}
+                  aria-label={`${t('location', { defaultValue: 'Location' })}: ${resolvedLocationLabel}`}
+                  title={resolvedLocationLabel}
                 >
                   <FiMapPin className={`w-4 h-4 shrink-0 ${locationLoading ? 'animate-pulse' : ''}`} />
                   <span className="truncate text-xs font-medium leading-tight">
@@ -764,7 +762,7 @@ const GreenNavbar = () => {
                   {isIpFallback && !locationLoading && (
                     <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-orange-400 rounded-full border border-white/50" />
                   )}
-                </button>
+                </div>
                 <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 pointer-events-none z-50">
                   <span className="block font-medium">{resolvedLocationLabel}</span>
                   <span className="block text-white/60 text-[10px] mt-0.5">
@@ -772,7 +770,7 @@ const GreenNavbar = () => {
                      isIpFallback ? (t('approximate_ip', { defaultValue: 'Approximate (IP)' })) :
                      accuracyTier === 'precise' ? (t('precise_gps', { defaultValue: 'Precise GPS' })) :
                      accuracyTier === 'good' ? (t('good_gps', { defaultValue: 'Good GPS' })) :
-                     (t('tap_to_refresh', { defaultValue: 'Tap to refresh' }))}
+                     (t('location', { defaultValue: 'Location' }))}
                   </span>
                 </span>
               </div>
@@ -1643,4 +1641,3 @@ const GreenNavbar = () => {
 };
 
 export default GreenNavbar;
-

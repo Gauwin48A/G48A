@@ -3,15 +3,16 @@ const router = express.Router();
 const { protect } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/rbac");
 const reviewsController = require("../controllers/reviewsController");
+const { publicReadSlowDown } = require("../middleware/rateLimiter");
 
 /** @route GET /user/:userId - Fetch all reviews for a given user (public) */
-router.get("/user/:userId", reviewsController.getReviewsForUser);
+router.get("/user/:userId", publicReadSlowDown, reviewsController.getReviewsForUser);
 
 /** @route GET /buyer/:userId - Fetch buyer reviews for a given user (public) */
-router.get("/buyer/:userId", reviewsController.getBuyerReviews);
+router.get("/buyer/:userId", publicReadSlowDown, reviewsController.getBuyerReviews);
 
 /** @route GET /stats/:userId - Comprehensive rating stats (seller + buyer) */
-router.get("/stats/:userId", reviewsController.getUserRatingStats);
+router.get("/stats/:userId", publicReadSlowDown, reviewsController.getUserRatingStats);
 
 /** @route POST / - Create a new review */
 router.post("/", protect, reviewsController.createReview);

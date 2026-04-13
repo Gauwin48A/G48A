@@ -11,6 +11,7 @@ import { ToastProvider } from '@/hooks/use-toast';
 import { activateDefenseMode, isAuthorizedHostname } from './utils/security';
 import { initCodeProtection } from './utils/codeProtection';
 import { initErrorReporting } from './lib/errorReporting';
+import { requestSoftReload } from './utils/softReload';
 
 // Initialize code protection (anti-debug, DevTools blocking) — only active in production
 initCodeProtection();
@@ -74,9 +75,12 @@ if (typeof window !== 'undefined' && !window[BOOTSTRAP_LISTENER_FLAG]) {
     if (!Number.isFinite(lastReloadAt) || now - lastReloadAt > cooldownMs) {
       window.sessionStorage.setItem(storageKey, String(now));
       if (import.meta.env.DEV) {
-        console.warn(`[bootstrap] ${reasonLabel}. Reloading page once to recover stale deps/chunks.`);
+        console.warn(`[bootstrap] ${reasonLabel}. Prompting for refresh to recover stale deps/chunks.`);
       }
-      window.location.reload();
+      requestSoftReload({
+        title: 'Refresh recommended',
+        description: `${reasonLabel}. Refresh to recover.`,
+      });
       return true;
     }
 

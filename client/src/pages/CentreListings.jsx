@@ -290,7 +290,7 @@ export default function CentreListings() {
               <Store className="h-6 w-6 text-red-500" />
             </div>
             <p className="text-sm font-medium text-red-700 dark:text-red-300">{channelError}</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={loadChannel}>
               {tr("try_again", "Try Again")}
             </Button>
           </div>

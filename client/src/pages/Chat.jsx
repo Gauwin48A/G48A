@@ -102,7 +102,7 @@ const ChatPage = () => {
       } finally {
         counter === fetchCounterRef.current && setLoadingMessages(!1);
       }
-    }, []);
+    }, [tr]);
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]),
@@ -290,7 +290,7 @@ const ChatPage = () => {
           setSending(!1);
         }
       }
-    }, [currentUserId, messageInput, selectedConversation, sending]),
+    }, [currentUserId, messageInput, selectedConversation, sending, tr]),
     selectConversation = useCallback(
       (conv) => {
         setSelectedConversation(conv),
@@ -958,8 +958,6 @@ const ChatPage = () => {
         ),
       );
 };
-var ChatPageDefault = ChatPage;
-
 // Chat-specific error boundary wrapper (#90)
 class ChatErrorBoundary extends React.Component {
   constructor(props) {

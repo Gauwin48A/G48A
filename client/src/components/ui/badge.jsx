@@ -1,7 +1,6 @@
 import * as n from "react";
 import { cva as a } from "class-variance-authority";
 import { cn as i } from "@/lib/utils";
-import { useTranslation as s } from "react-i18next";
 
 const r = a(
   "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
@@ -24,7 +23,6 @@ const r = a(
 );
 
 function d({ className: e, variant: t, ...o }) {
-  const { t: u } = s();
   return n.createElement("div", {
     className: i(r({ variant: t }), e),
     ...o,

@@ -68,7 +68,7 @@ const ImageUpload = ({
 
             return compressed;
         } catch (err) {
-            console.error('[ImageUpload] Compression failed:', err);
+            if (import.meta.env.DEV) console.error('[ImageUpload] Compression failed:', err);
             return file; // Return original if compression fails
         }
     };
@@ -118,7 +118,7 @@ const ImageUpload = ({
 
         } catch (err) {
             setError('Failed to process images');
-            console.error('[ImageUpload] Error:', err);
+            if (import.meta.env.DEV) console.error('[ImageUpload] Error:', err);
         } finally {
             setCompressing(false);
             setProgress(0);

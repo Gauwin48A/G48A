@@ -44,7 +44,7 @@ export const useFeed = (options = {}) => {
     ], [effectiveCategory, subcategoryId, minPrice, maxPrice, sortBy, lat, lng, radius, searchQuery]);
 
     // Fetch function
-    const fetchPosts = async ({ pageParam = 1, signal }) => {
+    const fetchPosts = useCallback(async ({ pageParam = 1, signal }) => {
         const params = new URLSearchParams({
             page: pageParam.toString(),
             limit: PAGE_SIZE.toString()
@@ -76,7 +76,17 @@ export const useFeed = (options = {}) => {
             page: pageParam,
             hasMore: feedPosts.length === PAGE_SIZE
         };
-    };
+    }, [
+        effectiveCategory,
+        subcategoryId,
+        minPrice,
+        maxPrice,
+        sortBy,
+        lat,
+        lng,
+        radius,
+        searchQuery,
+    ]);
 
     // Use infinite query for pagination
     const {
@@ -126,7 +136,7 @@ export const useFeed = (options = {}) => {
                 queryFn: () => fetchPosts({ pageParam: currentPage + 1 })
             });
         }
-    }, [data, hasNextPage, queryClient, queryKey]);
+    }, [data, fetchPosts, hasNextPage, queryClient, queryKey]);
 
     // Invalidate cache and refetch
     const refresh = useCallback(() => {

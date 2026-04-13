@@ -123,7 +123,7 @@ export default function NearbyPosts() {
     } finally {
       setLoading(false);
     }
-  }, [requestLocation, t]);
+  }, [requestLocation]);
 
   useEffect(() => {
     if (locationReady) {
@@ -198,7 +198,7 @@ export default function NearbyPosts() {
         activeAppMatcher,
       }),
     );
-  }, [activeAppMatcher, categoryModeCategory, activeCategoryKey, hasCategoryMode, posts]);
+  }, [activeAppMatcher, categoryModeCategory, hasCategoryMode, posts]);
 
   const isFilteredEmpty =
     (Boolean(hasCategoryMode && activeCategoryKey) ||

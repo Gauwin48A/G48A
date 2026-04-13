@@ -7,7 +7,6 @@ import {
   Users,
   ShoppingBag,
   BarChart3,
-  Calendar,
   ArrowUpRight,
   ArrowDownRight,
   Loader2,

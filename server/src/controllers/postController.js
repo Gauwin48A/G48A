@@ -1032,7 +1032,6 @@ exports.getAllPosts = async (req, res) => {
         COALESCE(p.shares, 0) as shares,
         COALESCE(p.likes, 0) as likes,
         u.username,
-        u.email,
         u.rating as seller_rating,
         COALESCE(pr.full_name, u.username) as user_name,
         c.name as category_name,
@@ -1473,7 +1472,6 @@ exports.getPostById = async (req, res) => {
         up.updated_at,
         COALESCE(u.username, 'Unknown') AS author,
         u.username,
-        COALESCE(u.email, '') AS email,
         COALESCE(pr.full_name, u.username) AS user_name,
         COALESCE(c.name, 'Unknown') AS category,
         c.name AS category_name,
@@ -1483,7 +1481,6 @@ exports.getPostById = async (req, res) => {
           'user_id', u.user_id,
           'username', u.username,
           'name', COALESCE(pr.full_name, u.username),
-          'email', u.email,
           'avatar_url', pr.avatar_url,
           'verified', COALESCE(pr.verified, false)
         ) AS "user"

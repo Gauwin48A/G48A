@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Share2, Check, Copy, Link } from 'lucide-react';
+import { Share2, Check, Copy } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 
 const ShareButton = ({

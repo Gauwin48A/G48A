@@ -42,12 +42,16 @@ export function warnIfPushMisconfigured() {
   if (warnedConfig) return;
   if (isPushConfigured()) return;
   warnedConfig = true;
-  console.warn('[Push] VITE_VAPID_PUBLIC_KEY is missing or placeholder. Push notifications disabled.');
+  if (import.meta.env.DEV) {
+    console.warn('[Push] VITE_VAPID_PUBLIC_KEY is missing or placeholder. Push notifications disabled.');
+  }
 }
 
 export async function requestNotificationPermission() {
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.warn('[Push] Push notifications not supported in this browser');
+    if (import.meta.env.DEV) {
+      console.warn('[Push] Push notifications not supported in this browser');
+    }
     return null;
   }
 

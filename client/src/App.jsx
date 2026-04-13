@@ -8,6 +8,7 @@ import RouteTelemetry from "./components/RouteTelemetry.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import { Toaster } from "@/components/ui/toaster";
+import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 import { socket } from "./lib/socket";
 import { FilterProvider } from "./context/FilterContext.jsx";
@@ -20,12 +21,12 @@ import VPNBlocker from "./components/VPNBlocker.jsx";
 import { App as CapacitorApp } from "@capacitor/app";
 import { getUserId } from "@/utils/authStorage";
 import { MapPin } from "lucide-react";
+import { registerSoftReloadHandler, requestSoftReload } from "@/utils/softReload";
+import { registerSoftNavigationHandler } from "@/utils/softNavigate";
 
 const LAZY_CACHE_KEY_PREFIX = "mhub:lazy-retry:";
 const LAZY_RETRY_WINDOW_MS = 60 * 1000;
-const DEV_THROTTLE_MS = 1500;
 const SYNC_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes between background location syncs
-let lastDevSyncAt = 0;
 let lastSyncAt = 0;
 
 function lazyWithRetry(importFn, name) {
@@ -51,11 +52,13 @@ function lazyWithRetry(importFn, name) {
           window.sessionStorage.setItem(cacheKey, String(now));
           if (import.meta.env.DEV) {
             console.warn(
-              `[LAZY_RETRY] Reloading after module import failure on "${name}": ${message}`,
+              `[LAZY_RETRY] Module import failed on "${name}". Prompting for refresh: ${message}`,
             );
           }
-          window.location.reload();
-          return new Promise(() => {});
+          requestSoftReload({
+            title: "Refresh recommended",
+            description: "We had trouble loading this screen. Refresh to recover.",
+          });
         }
       }
       if (typeof window !== "undefined") {
@@ -238,6 +241,14 @@ function ScrollToTop() {
     }
 
     prevPathname.current = pathname;
+
+    return () => {
+      if (window.__MHUB_NAV_SWITCHING_TIMER) {
+        window.clearTimeout(window.__MHUB_NAV_SWITCHING_TIMER);
+        window.__MHUB_NAV_SWITCHING_TIMER = null;
+        window.__MHUB_NAV_SWITCHING = false;
+      }
+    };
   }, [pathname]);
   return null;
 }
@@ -305,7 +316,6 @@ function AppShell() {
         if (now - lastSyncAt < SYNC_THROTTLE_MS) return;
         lastSyncAt = now;
         if (isDev) {
-          lastDevSyncAt = now;
           console.log("[DEFENDER] App Active. Syncing Banking-Grade Location...");
         }
         requestLocation({ silent: true }).catch(() => {});
@@ -337,6 +347,16 @@ function AppShell() {
           if (userId) navigate(`/profile/${userId}`);
         } else if (path.startsWith("feed")) {
           navigate("/feed");
+        } else if (path.startsWith("chat")) {
+          navigate("/chat");
+        } else if (path.startsWith("orders") || path.startsWith("bought-posts")) {
+          navigate("/bought-posts");
+        } else if (path.startsWith("wishlist")) {
+          navigate("/wishlist");
+        } else if (path.startsWith("notifications")) {
+          navigate("/notifications");
+        } else if (path) {
+          navigate(`/${path}`);
         }
       } catch (err) {
         if (isDev) console.warn("[DEEP_LINK] Failed to handle URL:", url, err);
@@ -363,6 +383,36 @@ function AppShell() {
       socket.off("notification");
     };
   }, [toast]);
+
+  useEffect(() => {
+    return registerSoftNavigationHandler(({ to, options }) => {
+      navigate(to, options);
+    });
+  }, [navigate]);
+
+  useEffect(() => {
+    const reloadLabel = t("reload", { defaultValue: "Reload" });
+    return registerSoftReloadHandler((payload) => {
+      const title =
+        payload?.title ||
+        t("refresh_recommended", { defaultValue: "Refresh recommended" });
+      const description =
+        payload?.description ||
+        t("refresh_recommended_body", {
+          defaultValue: "A refresh is recommended to keep things stable.",
+        });
+      toast({
+        title,
+        description,
+        duration: Number.isFinite(payload?.duration) ? payload.duration : 10000,
+        action: (
+          <ToastAction altText={reloadLabel} onClick={() => window.location.reload()}>
+            {reloadLabel}
+          </ToastAction>
+        ),
+      });
+    });
+  }, [toast, t]);
 
   const isInitializing = loading && !userSkipped;
 
@@ -478,7 +528,7 @@ function AppShell() {
                   <Route path="/refund-policy" element={<RefundPage />} />
                   <Route path="/support-ticket-policy" element={<SupportTicketPage />} />
                   <Route path="/search" element={<SearchPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/analytics" element={<RequireAuth><AnalyticsPage /></RequireAuth>} />
                   <Route path="/channels" element={<ChannelsListPage />} />
                   <Route path="/channels/create" element={<RequireAuth><CreateChannelPage /></RequireAuth>} />
                   <Route path="/channels/:id" element={<ChannelPage />} />

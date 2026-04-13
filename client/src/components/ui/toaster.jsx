@@ -1,6 +1,5 @@
 import e from "react";
 import { useToast as m } from "@/hooks/use-toast";
-import { useTranslation as l } from "react-i18next";
 import {
   Toast as c,
   ToastClose as i,
@@ -11,7 +10,6 @@ import {
 } from "@/components/ui/toast";
 
 function w() {
-  const { t: f } = l();
   const { toasts: r } = m();
   return e.createElement(
     u,

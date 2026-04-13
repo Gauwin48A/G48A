@@ -13,9 +13,11 @@ const { captureException } = require("../services/errorReporter");
  * @param {import('express').NextFunction} next
  */
 const errorHandler = (err, req, res, next) => {
-  console.error("🔥 [Global Error Handler]", err);
-
-  if (logger && logger.error) logger.error(err);
+  if (logger && logger.error) {
+    logger.error("[Global Error Handler]", err);
+  } else {
+    console.error("[Global Error Handler]", err);
+  }
 
   captureException(err, {
     method: req.method,
@@ -71,7 +73,8 @@ const errorHandler = (err, req, res, next) => {
     success: false
   };
 
-  if (process.env.NODE_ENV === "development") {
+  const isDevEnv = process.env.NODE_ENV === "development";
+  if (isDevEnv) {
     response.stack = err.stack;
     response.details = err.message;
   }

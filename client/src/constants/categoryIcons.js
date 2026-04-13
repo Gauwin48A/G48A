@@ -40,7 +40,6 @@ import {
   // Jobs & Services
   Briefcase,
   Wrench,
-  Users,
   UserCheck,
   
   // Books & Education
@@ -76,7 +75,6 @@ import {
   LayoutGrid,
   Tag,
   ShoppingBag,
-  Box,
   Star,
   CircleDot,
 } from "lucide-react";

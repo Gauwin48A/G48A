@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { requestSoftNavigate } from "@/utils/softNavigate";
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -26,7 +27,7 @@ class ErrorBoundary extends Component {
   };
 
   handleGoHome = () => {
-    window.location.href = "/";
+    requestSoftNavigate("/", { replace: true });
   };
 
   render() {

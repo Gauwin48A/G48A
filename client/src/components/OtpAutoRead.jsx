@@ -40,6 +40,7 @@ const OtpAutoRead = ({
                 .catch((err) => {
                     if (err.name !== 'AbortError') {
                         console.log('[OTP] Auto-read not available:', err.message);
+                        onError?.(err);
                     }
                 })
                 .finally(() => {
@@ -54,7 +55,7 @@ const OtpAutoRead = ({
             // Cancel OTP listener on unmount
             abortControllerRef.current?.abort();
         };
-    }, [onComplete]);
+    }, [onComplete, onError]);
 
     const handleChange = (e) => {
         const value = e.target.value.replace(/[^0-9]/g, '').slice(0, length);

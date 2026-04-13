@@ -155,7 +155,12 @@ function getSafeOrder(order) {
  */
 function escapeCsvValue(value) {
   const normalized = value === undefined || value === null ? "" : String(value);
-  return `"${normalized.replace(/"/g, '""')}"`;
+  // Prevent CSV formula injection: prepend single quote if value starts with formula characters
+  const FORMULA_CHARS = new Set(["=", "+", "-", "@", "\t", "\r", "\n"]);
+  const sanitized = FORMULA_CHARS.has(normalized.charAt(0))
+    ? `'${normalized}`
+    : normalized;
+  return `"${sanitized.replace(/"/g, '""')}"`;
 }
 
 /**

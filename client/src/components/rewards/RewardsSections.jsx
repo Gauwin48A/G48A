@@ -1336,7 +1336,6 @@ export function RewardsEarn({
   onToggleChallenges,
   tr,
 }) {
-  const showEngagementLoading = engagementLoading && !engagementReady;
   return (
     <div className="space-y-4">
       <Card
