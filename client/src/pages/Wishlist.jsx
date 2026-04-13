@@ -204,16 +204,21 @@ const Wishlist = () => {
 
   /* ─── effects ─── */
 
+  const mountedRef = useRef(false);
+
   useEffect(() => {
     if (authLoading || !isAuth || !userId) {
       setLoading(false);
       return;
     }
-    fetchWishlist({ reset: true });
-  }, [authLoading, fetchWishlist, isAuth, userId]);
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      fetchWishlist({ reset: true });
+    }
+  }, [authLoading, isAuth, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!isAuth || !userId) return;
+    if (!isAuth || !userId || !mountedRef.current) return;
     const debounce = setTimeout(() => {
       fetchWishlist({ reset: true });
     }, 250);

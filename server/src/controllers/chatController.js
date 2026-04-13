@@ -229,11 +229,15 @@ const sendMessage = async (req, res) => {
   const messageType = parseOptionalString(req.body.messageType || req.body.message_type) || "text";
   const content = parseOptionalString(req.body.content);
 
+  const MAX_MESSAGE_LENGTH = 10000;
   if (!senderId) {
     return res.status(401).json({ error: "Authentication required" });
   }
   if (!receiverId || !content) {
     return res.status(400).json({ error: "Receiver ID and content required" });
+  }
+  if (content.length > MAX_MESSAGE_LENGTH) {
+    return res.status(400).json({ error: `Message too long (max ${MAX_MESSAGE_LENGTH} characters)` });
   }
   if (idsEqual(senderId, receiverId)) {
     return res.status(400).json({ error: "Cannot message yourself" });

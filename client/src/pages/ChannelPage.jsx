@@ -122,7 +122,7 @@ function formatPrice(value, tr) {
   if (!Number.isFinite(numeric) || numeric <= 0) {
     return tr("price_on_request", "Price on request");
   }
-  return `â‚¹${numeric.toLocaleString()}`;
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(numeric);
 }
 
 /* ------------------------------------------------------------------ */

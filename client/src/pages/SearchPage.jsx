@@ -850,6 +850,7 @@ const u = "recentSearches",
                   "button",
                   {
                     type: "button",
+                    "aria-label": n("clear_search", "Clear search"),
                     onClick: () => h(""),
                     className:
                       "absolute right-12 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-[var(--surface-2)] dark:hover:bg-[var(--surface-2)]",
@@ -860,6 +861,7 @@ const u = "recentSearches",
                 "button",
                 {
                   type: "submit",
+                  "aria-label": n("search", "Search"),
                   className:
                     "absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/25 hover:shadow-lg transition-all duration-200 active:scale-95 dark:bg-gradient-to-r",
                 },

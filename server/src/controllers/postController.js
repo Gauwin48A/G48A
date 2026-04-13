@@ -677,14 +677,19 @@ function mapPostForResponse(post) {
  */
 exports.getUserPosts = async (req, res) => {
   try {
-    const {
-      userId,
-      status,
-      page = DEFAULT_PAGE,
-      limit = DEFAULT_USER_POST_LIMIT,
-    } = req.query;
+    // Enforce that users can only view their own posts via this endpoint
+    const authenticatedUserId = req.user?.id || req.user?.userId || req.user?.user_id;
+    const requestedUserId = req.query.userId;
 
-    if (!userId) return res.status(400).json({ error: "userId required" });
+    if (!requestedUserId) return res.status(400).json({ error: "userId required" });
+
+    // Security: only allow viewing own posts
+    if (String(requestedUserId) !== String(authenticatedUserId)) {
+      return res.status(403).json({ error: "Not authorized to view another user's posts" });
+    }
+
+    const userId = requestedUserId;
+    const { status, page = DEFAULT_PAGE, limit = DEFAULT_USER_POST_LIMIT } = req.query;
 
     const categoryId = parseOptionalStringScalar(
       req.query.category || req.query.category_id || req.query.categoryId
@@ -889,8 +894,16 @@ exports.getUserPosts = async (req, res) => {
  */
 exports.getUserPostTotals = async (req, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "userId required" });
+    const requestedUserId = req.query.userId;
+    if (!requestedUserId) return res.status(400).json({ error: "userId required" });
+
+    // Security: only allow viewing own totals
+    const authenticatedUserId = req.user?.id || req.user?.userId || req.user?.user_id;
+    if (String(requestedUserId) !== String(authenticatedUserId)) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const userId = requestedUserId;
 
     const categoryId = parseOptionalStringScalar(
       req.query.category || req.query.category_id || req.query.categoryId

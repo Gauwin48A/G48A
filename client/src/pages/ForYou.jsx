@@ -1127,7 +1127,7 @@ const te = 12,
           "div",
           {
               className:
-                `min-h-screen mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-start justify-center p-4 pt-10 pb-24 relative dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
+                `min-h-screen mhub-premium-page overflow-x-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-start justify-center p-4 pt-10 pb-24 relative dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
           },
           e.createElement(
             "div",
@@ -1328,7 +1328,7 @@ const te = 12,
             "div",
             {
               className:
-                `min-h-screen mhub-premium-page bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
+                `min-h-screen mhub-premium-page overflow-x-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
             },
           e.createElement(
             "div",

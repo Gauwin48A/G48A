@@ -26,7 +26,7 @@ import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 
 const formatCurrency = (value, currency = "INR") =>
-  new Intl.NumberFormat(undefined, {
+  new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency,
     maximumFractionDigits: currency === "INR" ? 0 : 2,
@@ -368,7 +368,7 @@ const Cart = () => {
               <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3 dark:text-slate-100">
                 {t("cart_empty_title") || "Your cart is empty"}
               </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 max-w-[300px] mx-auto leading-relaxed text-center dark:text-slate-300 dark:text-center">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 max-w-[300px] mx-auto leading-relaxed text-center">
                 {t("cart_empty_desc") ||
                   "Explore listings and add items you'd like to purchase."}
               </p>
@@ -405,7 +405,7 @@ const Cart = () => {
                     {t("cart_items") || "Cart Items"}
                   </h2>
                   <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-gray-700/60 px-2.5 py-1 rounded-full font-medium dark:text-slate-300 dark:bg-slate-950">
-                    {displayCount} {displayCount === 1 ? "item" : "items"}
+                    {displayCount} {displayCount === 1 ? (t("item") || "item") : (t("items") || "items")}
                   </span>
                 </div>
                 {cartError && (
@@ -691,7 +691,7 @@ const Cart = () => {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500 dark:text-slate-400 dark:text-slate-300">
                   {t("subtotal") || "Subtotal"} ({displayCount}{" "}
-                  {displayCount === 1 ? "item" : "items"})
+                  {displayCount === 1 ? (t("item") || "item") : (t("items") || "items")})
                 </span>
                 <span className="font-semibold text-slate-800 dark:text-white dark:text-slate-100">
                   {formatCurrency(displaySubtotalValidated, currency)}

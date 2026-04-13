@@ -427,15 +427,20 @@ const GreenNavbar = () => {
         setMoreOpen(false);
       }
     };
+    const handleResize = () => {
+      setMoreOpen(false);
+    };
 
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
       document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
     };
   }, [moreOpen]);
 

@@ -83,6 +83,12 @@ const ProductCard = memo(function ProductCard({ product }) {
       tabIndex={0}
       role="article"
       aria-label={safeProduct.name}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.querySelector("button")?.click();
+        }
+      }}
     >
       <img
         src={getImageUrl(safeProduct.image_url || safeProduct.image)}
@@ -117,17 +123,17 @@ const ProductCard = memo(function ProductCard({ product }) {
             ) : null}
             {isFrozen ? (
               <span className="inline-flex items-center rounded-full px-2 py-0.5 font-semibold bg-rose-600 text-white">
-                Seller Frozen
+                {t("seller_frozen") || "Seller Frozen"}
               </span>
             ) : underReview ? (
               <span className="inline-flex items-center rounded-full px-2 py-0.5 font-semibold bg-amber-500 text-white">
-                Under Review
+                {t("under_review") || "Under Review"}
               </span>
             ) : null}
           </div>
         ) : null}
         <div className="flex items-center justify-between mt-auto">
-          <span className="text-primary font-bold text-xl">₹{Number(safeProduct.price).toLocaleString()}</span>
+          <span className="text-primary font-bold text-xl">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(safeProduct.price))}</span>
           <Button size="sm" aria-label={t("view_product")}>
             {t("view")}
           </Button>

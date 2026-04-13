@@ -497,7 +497,7 @@ router.get("/undone", protect, async (req, res) => {
  * Enqueue a batch of post-view increments for deferred processing.
  * @body {string[]} postIds - Array of post IDs to record views for
  */
-router.post("/batch-view", async (req, res) => {
+router.post("/batch-view", optionalAuth, publicReadSlowDown, async (req, res) => {
   try {
     const postIds = req.body?.postIds;
     if (!Array.isArray(postIds) || postIds.length === 0) {
@@ -545,7 +545,7 @@ router.get(
  * POST /:postId/view
  * Increment the view count for a single post.
  */
-router.post("/:postId/view", async (req, res) => {
+router.post("/:postId/view", optionalAuth, publicReadSlowDown, async (req, res) => {
   const { postId } = req.params;
   try {
     const result = await runQuery(
@@ -567,7 +567,7 @@ router.post("/:postId/view", async (req, res) => {
  * POST /:postId/share
  * Increment the share count for a post (best-effort, never fails to client).
  */
-router.post("/:postId/share", async (req, res) => {
+router.post("/:postId/share", optionalAuth, publicReadSlowDown, async (req, res) => {
   const { postId } = req.params;
   try {
     await runQuery(
@@ -755,7 +755,7 @@ router.delete("/:postId", protect, async (req, res) => {
     const postOwnerId = ownerCheck.rows[0].user_id;
     if (String(postOwnerId) !== String(userId)) {
       return res.status(403).json({
-        error: `Not authorized (owner: ${postOwnerId}, you: ${userId})`,
+        error: "Not authorized to delete this post",
       });
     }
 

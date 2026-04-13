@@ -540,7 +540,19 @@ const PaymentPage = () => {
     const upiId = String(paymentConfig?.upi_id || "");
     if (!upiId) return;
     try {
-      await navigator.clipboard.writeText(upiId);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(upiId);
+      } else {
+        // Fallback for HTTP or older browsers
+        const textarea = document.createElement("textarea");
+        textarea.value = upiId;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
       toast({
         title: tr("copied", "Copied"),
         description: tr("upi_id_copied", "UPI ID copied to clipboard."),
@@ -555,7 +567,15 @@ const PaymentPage = () => {
   };
   const handleOpenUpi = () => {
     if (typeof window === "undefined") return;
-    window.location.href = upiUri;
+    const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = upiUri;
+    } else {
+      toast({
+        title: tr("desktop_upi_hint", "Open on mobile"),
+        description: tr("desktop_upi_desc", "UPI payment links work best on mobile devices. Please scan the QR code or copy the UPI ID."),
+      });
+    }
   };
 
   const handleRazorpayPay = async () => {

@@ -23,6 +23,12 @@ class ErrorBoundary extends Component {
   }
 
   handleRetry = () => {
+    const isChunkError = this.state.error?.message &&
+      /loading chunk|dynamically imported module|failed to fetch/i.test(this.state.error.message);
+    if (isChunkError) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
@@ -34,7 +40,7 @@ class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50 to-gray-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 p-4">
-          <div className="max-w-md w-full bg-white/80 dark:bg-white/10 backdrop-blur-xl rounded-2xl p-8 text-center border border-gray-200 dark:border-white/20 shadow-xl">
+          <div className="max-w-md w-full bg-white/80 dark:bg-white/10 backdrop-blur-xl rounded-2xl p-8 text-center border border-gray-200 dark:border-white/20 shadow-xl" role="alert" aria-live="assertive">
             <div className="w-16 h-16 mx-auto mb-6 bg-red-500/20 rounded-full flex items-center justify-center">
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>

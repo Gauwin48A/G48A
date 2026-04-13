@@ -33,10 +33,9 @@ import api from "@/lib/api";
 import PageDensityToggle from "@/components/ui/PageDensityToggle";
 import { usePageDensity } from "@/hooks/usePageDensity";
 import { hasAuthSession } from "@/utils/authStorage";
-const ve = () => {
+const ComplaintsPage = () => {
   const { t: r } = le(),
     tr = (t, s, l = {}) => r(t, { defaultValue: s, ...l }),
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     { density, setDensity } = usePageDensity("mhub_complaints_density"),
     densityClass = density === "compact" ? " mhub-compact" : "",
     { toast: d } = ne(),
@@ -1222,5 +1221,5 @@ const ve = () => {
         ),
       );
 };
-var je = ve;
+var je = ComplaintsPage;
 export { je as default };

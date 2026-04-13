@@ -305,15 +305,16 @@ export default function Login() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors dark:text-gray-300"
+          aria-label={t("back") || "Go back"}
+          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
           {t("back") || "Back"}
         </button>
-        <div className="text-center dark:text-center">
+        <div className="text-center">
           <div className="flex justify-center mb-5">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 dark:bg-gradient-to-r">
-              <Shield className="h-7 w-7 sm:h-8 sm:w-8 text-white dark:text-white" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <Shield className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
             </div>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 dark:text-gray-100">
@@ -378,7 +379,8 @@ export default function Login() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 dark:text-gray-300"
+                    aria-label={showPassword ? (t("hide_password") || "Hide password") : (t("show_password") || "Show password")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -389,12 +391,13 @@ export default function Login() {
               <div className="flex items-center justify-between text-sm">
                 <p className="text-gray-600 dark:text-gray-400 dark:text-gray-200">
                   {t("dont_have_account") || "Don't have an account?"}{" "}
-                  <span
-                    className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline font-medium dark:text-blue-300"
+                  <button
+                    type="button"
+                    className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline font-medium"
                     onClick={() => navigate("/signup")}
                   >
                     {t("sign_up_here") || "Sign up here"}
-                  </span>
+                  </button>
                 </p>
                 <Link
                   to="/forgot-password"
@@ -405,7 +408,7 @@ export default function Login() {
               </div>
 
               {errorMessage && (
-                <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
+                <div role="alert" className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2 dark:border-amber-600/40 dark:bg-amber-950/20">
                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>{errorMessage}</span>
                 </div>

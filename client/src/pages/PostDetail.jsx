@@ -379,13 +379,13 @@ function PostDetail() {
               c(!1);
           } catch (a) {
             if (abortCtrl.signal.aborted) return;
-            if (import.meta.env.DEV) console.error("Error fetching post data:", a),
-              N({
+            if (import.meta.env.DEV) console.error("Error fetching post data:", a);
+            N({
                 key: "load_product_failed",
                 fallback: "Failed to load product details. Please retry.",
-              }),
-              c(!1),
-              u(null);
+              });
+            c(!1);
+            u(null);
           }
         })(),
       m(0);

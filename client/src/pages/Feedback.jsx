@@ -35,12 +35,13 @@ import { Link as I, useNavigate as le } from "react-router-dom";
 import { useTranslation as de } from "react-i18next";
 import { useAuth as ie } from "@/context/AuthContext";
 import api from "@/lib/api";
-const me = () => {
+const FeedbackPage = () => {
   const { t } = de(),
     tr = (r, a, l = {}) => t(r, { defaultValue: a, ...l }),
     { toast: d } = Q(),
     c = le(),
     { user: k } = ie(),
+    { density, setDensity } = usePageDensity("mhub_feedback_density"),
     w = S(
       () =>
         !!(k || hasAuthSession()),
@@ -63,8 +64,6 @@ const me = () => {
       directContact: !0,
       thankYou: !0,
     }),
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    { density, setDensity } = usePageDensity("mhub_feedback_density"),
     P = (r, a) => {
       const l = String(r || "").trim();
       if (!l) return a;
@@ -1327,5 +1326,5 @@ const me = () => {
         ),
       );
 };
-var _e = me;
+var _e = FeedbackPage;
 export { _e as default };
