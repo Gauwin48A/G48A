@@ -95,7 +95,6 @@ const RecentlyViewed = () => {
   const cursorRef = useRef(null);
   const initialFetchRef = useRef(true);
 
-  const currentUserId = useMemo(() => getUserId(user), [user]);
   const isUserAuthenticated = useMemo(
     () => isAuthenticated(user),
     [user],

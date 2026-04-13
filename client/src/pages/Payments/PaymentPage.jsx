@@ -190,7 +190,7 @@ const PaymentPage = () => {
     return steps;
   }, [tr, isBoostFlow, cmsSteps]);
 
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     setConfigLoading(true);
     setConfigError("");
 
@@ -234,9 +234,9 @@ const PaymentPage = () => {
     } finally {
       setConfigLoading(false);
     }
-  };
+  }, [isBoostFlow, tr]);
 
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
     setHistoryError("");
 
@@ -261,7 +261,7 @@ const PaymentPage = () => {
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, [tr]);
 
   useEffect(() => {
     if (!loggedIn) {
@@ -272,7 +272,7 @@ const PaymentPage = () => {
 
     loadConfig();
     loadHistory();
-  }, [loggedIn, isBoostFlow]);
+  }, [loadConfig, loadHistory, loggedIn]);
 
   const plans = useMemo(
     () => Object.keys(paymentConfig?.tiers || {}),

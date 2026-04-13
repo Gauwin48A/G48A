@@ -564,7 +564,7 @@ exports.updateProfile = async (req, res) => {
     return res.json(payload);
   } catch (err) {
     logger.error("Error updating profile:", err);
-    return res.status(500).json({ error: err.message, fallback: null });
+    return res.status(500).json({ error: "Failed to update profile", fallback: null });
   }
 };
 

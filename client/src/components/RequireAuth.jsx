@@ -79,6 +79,14 @@ const AUTH_GATE_CONTENT = {
     description: "Discover listings around your location after signing in.",
     highlights: ["Local listings", "Distance filters", "Instant chats"],
   },
+  "/security": {
+    title: "Authentication Required",
+    description: "Please sign in to manage security settings and active sessions.",
+    highlights: ["Protect your account", "Manage sessions", "Enable 2FA"],
+    badge: "Authentication Required",
+    primaryLabel: "Go to Login",
+    secondaryLabel: "Browse Marketplace",
+  },
 };
 
 const getGateContent = (pathname) => {
@@ -87,6 +95,9 @@ const getGateContent = (pathname) => {
     title: "Sign in to continue",
     description: "This page requires an account. Sign in or create one to proceed.",
     highlights: ["Secure sign-in", "Personalized experience", "Sync across devices"],
+    badge: "Account Required",
+    primaryLabel: "Sign In",
+    secondaryLabel: "Browse Marketplace",
   };
   return match
     ? { ...defaults, ...AUTH_GATE_CONTENT[match] }
@@ -121,26 +132,27 @@ export default function RequireAuth({
     }
     const queryJoiner = redirectTo.includes("?") ? "&" : "?";
     const loginTarget = `${redirectTo}${queryJoiner}returnTo=${encodeURIComponent(returnTo)}`;
-    const { title, description, highlights } = getGateContent(location.pathname);
+    const { title, description, highlights, badge, primaryLabel, secondaryLabel } =
+      getGateContent(location.pathname);
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="page-shell page-pad py-16">
           <PageAuthGateState
             title={title}
             description={description}
-            badge="Account Required"
+            badge={badge}
             highlights={highlights}
             primaryAction={
               <Button
                 className="bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => navigate(loginTarget)}
               >
-                Sign In
+                {primaryLabel}
               </Button>
             }
             secondaryAction={
               <Button variant="outline" onClick={() => navigate("/all-posts")}>
-                Browse Marketplace
+                {secondaryLabel}
               </Button>
             }
           />

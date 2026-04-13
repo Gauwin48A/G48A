@@ -184,11 +184,6 @@ const cacheIpFallbackLocation = (location) => {
   );
 };
 
-const readManualLocation = () => {
-  const manual = readJson("mhub_manual_location");
-  return normalizeLocation(manual);
-};
-
 const saveManualLocation = (location) => {
   writeJson(
     "mhub_manual_location",
@@ -778,7 +773,7 @@ export function LocationProvider({ children }) {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [requestLocation, userSkipped]);
+  }, [permissionDenied, requestLocation, userSkipped]);
 
   const currentLocation = {
     street,

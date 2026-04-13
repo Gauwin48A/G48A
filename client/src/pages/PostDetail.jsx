@@ -379,7 +379,7 @@ function PostDetail() {
               c(!1);
           } catch (a) {
             if (abortCtrl.signal.aborted) return;
-            console.error("Error fetching post data:", a),
+            if (import.meta.env.DEV) console.error("Error fetching post data:", a),
               N({
                 key: "load_product_failed",
                 fallback: "Failed to load product details. Please retry.",

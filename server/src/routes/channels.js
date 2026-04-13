@@ -283,7 +283,8 @@ const createChannelHandler = async (req, res) => {
     });
     res.json(channel);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    logger.error("Channel creation error:", err);
+    res.status(400).json({ error: "Failed to create channel" });
   }
 };
 

@@ -152,7 +152,7 @@ const resolveFileExtension = (file) => {
 if (isCloudinaryConfigured) {
   const { createCloudinaryStorage } = require("../config/cloudinary");
   storage = createCloudinaryStorage();
-  console.log("[Upload] Cloudinary storage enabled");
+  if (process.env.NODE_ENV !== "production") console.log("[Upload] Cloudinary storage enabled");
 } else {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -169,7 +169,7 @@ if (isCloudinaryConfigured) {
     },
   });
 
-  console.log("[Upload] Local disk storage enabled");
+  if (process.env.NODE_ENV !== "production") console.log("[Upload] Local disk storage enabled");
 }
 
 const fileFilter = (req, file, cb) => {

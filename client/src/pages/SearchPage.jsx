@@ -1151,9 +1151,9 @@ const u = "recentSearches",
                                 variant: "secondary",
                                 size: "sm",
                                 className: "rounded-full text-xs",
-                                onClick: () => {
-                                  f((prev) => ({ ...prev, search: suggestion }));
-                                },
+                                  onClick: () => {
+                                    l((prev) => ({ ...prev, search: suggestion }));
+                                  },
                               },
                               suggestion,
                             ),

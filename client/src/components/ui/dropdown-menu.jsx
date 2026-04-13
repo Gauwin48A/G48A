@@ -2,7 +2,6 @@ import * as e from "react";
 import * as o from "@radix-ui/react-dropdown-menu";
 import { Check as g, ChevronRight as N, Circle as y } from "lucide-react";
 import { cn as s } from "@/lib/utils";
-import { useTranslation as x } from "react-i18next";
 
 const h = o.Root;
 const D = o.Trigger;
@@ -153,7 +152,6 @@ const w = e.forwardRef(({ className: t, ...a }, n) =>
 w.displayName = o.Separator.displayName;
 
 const b = ({ className: t, ...a }) => {
-  const { t: n } = x();
   return e.createElement("span", {
     className: s("ml-auto text-xs tracking-widest text-[var(--text-faint)]", t),
     ...a,

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -37,8 +37,11 @@ import api from "@/services/api";
 
 const SaleDone = () => {
   const { t } = useTranslation();
-  const tr = (key, fallback, options = {}) =>
-    t(key, { defaultValue: fallback, ...options });
+  const tr = useCallback(
+    (key, fallback, options = {}) =>
+      t(key, { defaultValue: fallback, ...options }),
+    [t],
+  );
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -211,13 +214,13 @@ const SaleDone = () => {
     return error?.message || fallback;
   };
 
-  const isRouteMissing = (error) => {
+  const isRouteMissing = useCallback((error) => {
     const status = Number(error?.status || error?.response?.status || 0);
     const message = String(error?.message || "").toLowerCase();
     return status === 404 || message.includes("route not found");
-  };
+  }, []);
 
-  const requestWithFallback = async (method, primaryPath, fallbackPath, payload) => {
+  const requestWithFallback = useCallback(async (method, primaryPath, fallbackPath, payload) => {
     try {
       return await api[method](primaryPath, payload);
     } catch (error) {
@@ -226,7 +229,7 @@ const SaleDone = () => {
       }
       throw error;
     }
-  };
+  }, [isRouteMissing]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -303,7 +306,7 @@ const SaleDone = () => {
     return () => {
       cancelled = true;
     };
-  }, [refreshTick]);
+  }, [refreshTick, requestWithFallback]);
 
   const pendingErrorMessage = pendingError
     ? toSafeMessage(
@@ -521,7 +524,6 @@ const SaleDone = () => {
 
   const saleItem = completedSale?.item || null;
   const saleBuyer = completedSale?.buyer || null;
-  const saleSeller = completedSale?.seller || null;
   const saleRewards = completedSale?.rewards || null;
   const saleReceipt = completedSale?.receipt || null;
 

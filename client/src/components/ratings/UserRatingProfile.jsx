@@ -8,8 +8,6 @@ import {
   TrendingUp,
   Truck,
   ShieldCheck,
-  ThumbsUp,
-  ThumbsDown,
   Loader2,
 } from "lucide-react";
 

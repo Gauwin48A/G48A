@@ -49,14 +49,12 @@ export default function PostBoostPanel({ postId }) {
   const [loading, setLoading] = useState(null);
   const [boosted, setBoosted] = useState(null);
   const [quotaStatus, setQuotaStatus] = useState(null);
-  const [quotaLoading, setQuotaLoading] = useState(true);
   const [coinBalance, setCoinBalance] = useState(null);
   const [coinLoading, setCoinLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     async function loadData() {
-      setQuotaLoading(true);
       setCoinLoading(true);
       try {
         const [quotaData, coinData] = await Promise.allSettled([
@@ -74,7 +72,6 @@ export default function PostBoostPanel({ postId }) {
         }
       } finally {
         if (mounted) {
-          setQuotaLoading(false);
           setCoinLoading(false);
         }
       }

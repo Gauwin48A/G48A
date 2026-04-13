@@ -101,7 +101,7 @@ export async function fetchSubcategoriesGrouped({ force = false } = {}) {
 /**
  * Get cached subcategories for a given category (sync, may return empty).
  */
-export function getCachedSubcategories(_categoryId) {
+export function getCachedSubcategories() {
   return [];
 }
 

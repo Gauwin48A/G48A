@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RUNTIME_TRANSLATION_ENABLED, translateBatch } from '@/utils/translateContent';
 
@@ -61,6 +61,8 @@ function GlobalContentTranslator() {
   const scanTimerRef = useRef(null);
   const scanIdleRef = useRef(null);
   const pendingRootsRef = useRef(new Set());
+  const scheduleScanRef = useRef(null);
+  const runScanRef = useRef(null);
   const isWorkingRef = useRef(false);
   const latestLanguageRef = useRef(getNormalizedLanguage(i18n.language));
 
@@ -79,7 +81,7 @@ function GlobalContentTranslator() {
     };
   }, [i18n]);
 
-  const cleanupDetachedState = () => {
+  const cleanupDetachedState = useCallback(() => {
     const textStates = textNodeStateRef.current;
     for (const [node] of textStates) {
       if (!isNodeConnected(node)) {
@@ -93,9 +95,9 @@ function GlobalContentTranslator() {
         attrStates.delete(element);
       }
     }
-  };
+  }, []);
 
-  const restoreOriginalContent = () => {
+  const restoreOriginalContent = useCallback(() => {
     cleanupDetachedState();
 
     for (const [node, state] of textNodeStateRef.current) {
@@ -124,7 +126,7 @@ function GlobalContentTranslator() {
       });
       state.translatedLang = 'en';
     }
-  };
+  }, [cleanupDetachedState]);
 
   const collectTextNodes = (root) => {
     if (!root) {
@@ -177,7 +179,7 @@ function GlobalContentTranslator() {
     });
   };
 
-  const scheduleScan = (delayMs = 100, { immediate = false } = {}) => {
+  const scheduleScan = useCallback((delayMs = 100, { immediate = false } = {}) => {
     if (!runtimeTranslationEnabled) {
       return;
     }
@@ -201,6 +203,10 @@ function GlobalContentTranslator() {
         return;
       }
       const runTask = () => {
+        const runScan = runScanRef.current;
+        if (!runScan) {
+          return;
+        }
         const pendingRoots = Array.from(pendingRootsRef.current);
         pendingRootsRef.current.clear();
         const rootsToScan = pendingRoots.length > 0 ? pendingRoots : [rootNode];
@@ -218,15 +224,17 @@ function GlobalContentTranslator() {
 
       runTask();
     }, effectiveDelay);
-  };
+  }, [runtimeTranslationEnabled]);
 
-  const runScan = async (root, targetLang) => {
+  scheduleScanRef.current = scheduleScan;
+
+  const runScan = useCallback(async (root, targetLang) => {
     if (!runtimeTranslationEnabled || !root || targetLang === 'en' || isWorkingRef.current) {
       return;
     }
     if (shouldDeferScan()) {
       pendingRootsRef.current.add(root);
-      scheduleScan(DEFER_SCAN_MIN_MS);
+      scheduleScanRef.current?.(DEFER_SCAN_MIN_MS);
       return;
     }
 
@@ -382,10 +390,12 @@ function GlobalContentTranslator() {
       isWorkingRef.current = false;
       if (hasMoreTasks) {
         pendingRootsRef.current.add(root);
-        scheduleScan(200);
+        scheduleScanRef.current?.(200);
       }
     }
-  };
+  }, [cleanupDetachedState, runtimeTranslationEnabled]);
+
+  runScanRef.current = runScan;
 
   useEffect(() => {
     const normalizedLang = currentLang;
@@ -403,6 +413,7 @@ function GlobalContentTranslator() {
     // Intentionally do NOT fall back to document.body — watching the entire body
     // would trigger MutationObserver on navbar, tooltips, modals and flood the main thread.
     const translationRoot = rootNodeRef.current;
+    const pendingRoots = pendingRootsRef.current;
     if (!translationRoot) {
       return undefined;
     }
@@ -415,7 +426,7 @@ function GlobalContentTranslator() {
       window.cancelIdleCallback(scanIdleRef.current);
       scanIdleRef.current = null;
     }
-    pendingRootsRef.current.clear();
+    pendingRoots.clear();
 
     if (!shouldRunRuntimeTranslation) {
       if (observerRef.current) {
@@ -484,13 +495,13 @@ function GlobalContentTranslator() {
         window.cancelIdleCallback(scanIdleRef.current);
         scanIdleRef.current = null;
       }
-      pendingRootsRef.current.clear();
+      pendingRoots.clear();
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
       }
     };
-  }, [currentLang, i18n, runtimeTranslationEnabled]);
+  }, [currentLang, i18n, restoreOriginalContent, runtimeTranslationEnabled, scheduleScan]);
 
   return null;
 }

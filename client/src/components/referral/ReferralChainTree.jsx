@@ -83,7 +83,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function TreeNode({ node, depth = 0, isLast = false, statusMap = {} }) {
+function TreeNode({ node, depth = 0, statusMap = {} }) {
   const [expanded, setExpanded] = useState(depth < 2);
   const hasChildren = node.children && node.children.length > 0;
   const colorIdx = Math.min(depth, LEVEL_COLORS.length - 1);
@@ -186,7 +186,6 @@ function TreeNode({ node, depth = 0, isLast = false, statusMap = {} }) {
               key={child.id || idx}
               node={child}
               depth={depth + 1}
-              isLast={idx === node.children.length - 1}
               statusMap={statusMap}
             />
           ))}

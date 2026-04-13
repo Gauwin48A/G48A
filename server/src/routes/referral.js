@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/auth");
 const { captchaMiddleware } = require("../middleware/captcha");
+const { publicReadSlowDown } = require("../middleware/rateLimiter");
 const referralController = require("../controllers/referralController");
 
 // ---------------------------------------------------------------------------
@@ -60,7 +61,7 @@ router.post(
  * @desc    Public leaderboard of top referrers.
  * @access  Public
  */
-router.get("/leaderboard", referralController.getLeaderboard);
+router.get("/leaderboard", publicReadSlowDown, referralController.getLeaderboard);
 
 /**
  * @route   GET /chain-status

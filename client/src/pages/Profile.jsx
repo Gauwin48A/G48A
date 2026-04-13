@@ -343,7 +343,7 @@ const ProfilePage = () => {
       }
     } catch (s) {
       if (r !== b.current) return;
-      console.error("Profile fetch error:", s);
+      if (import.meta.env.DEV) console.error("Profile fetch error:", s);
       const l = s?.status || s?.response?.status;
       if ((l === 401 || l === 403) && rr && !refreshAttemptedRef.current) {
         refreshAttemptedRef.current = !0;
@@ -669,7 +669,7 @@ const ProfilePage = () => {
             t("sync_complete_desc") || "Your contacts have been processed.",
         });
       } catch (a) {
-        console.error("[Profile] Contact sync failed:", a),
+        if (import.meta.env.DEV) console.error("[Profile] Contact sync failed:", a),
           v({
             key: "contacts_sync_failed",
             fallback: "Unable to sync contacts right now. Please retry.",

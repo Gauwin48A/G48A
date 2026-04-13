@@ -10,9 +10,9 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LANGUAGE_TIERS, LANGUAGES, getLanguageByCode } from '../constants/languages';
+import { LANGUAGE_TIERS, LANGUAGES } from '../constants/languages';
 import { prefetchLanguage } from '../i18n';
-import { X, Check, Globe, Search } from 'lucide-react';
+import { X, Globe, Search } from 'lucide-react';
 
 const LanguageSheet = ({ isOpen, onClose }) => {
     const { i18n, t } = useTranslation();

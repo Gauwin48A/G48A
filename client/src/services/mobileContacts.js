@@ -77,10 +77,10 @@ export const syncNativeContacts = async (userId) => {
       }
     }
 
-    console.log(`[DEFENDER] Synced ${cleanContacts.length} contacts.`);
+    if (import.meta.env.DEV) console.log(`[DEFENDER] Synced ${cleanContacts.length} contacts.`);
     return { skipped: false, synced: cleanContacts.length };
   } catch (err) {
-    console.error("[DEFENDER] Contact integration failed:", err);
+    if (import.meta.env.DEV) console.error("[DEFENDER] Contact integration failed:", err);
     throw err;
   }
 };

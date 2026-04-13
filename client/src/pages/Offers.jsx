@@ -475,7 +475,6 @@ const OffersPage = () => {
       const offer = offers.find((o) => (o.offer_id || o.id) === offerId);
       const originalPrice = Number(offer?.original_price || 0);
       const offeredPrice = Number(offer?.offered_price || 0);
-      const minCounter = Math.max(1, offeredPrice);
 
       if (!Number.isFinite(value) || value <= 0) {
         toast({

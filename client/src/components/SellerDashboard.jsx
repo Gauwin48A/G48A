@@ -11,7 +11,6 @@ import {
   TrendingUp,
   Eye,
   ShoppingCart,
-  MessageSquare,
   BarChart3,
   DollarSign,
   ArrowUpRight,
@@ -94,7 +93,7 @@ function ConversionFunnel({ funnel }) {
       </CardHeader>
       <CardContent>
         <div className="flex items-end justify-between gap-2">
-          {steps.map((step, i) => (
+          {steps.map((step) => (
             <div key={step.label} className="flex-1 text-center">
               <div
                 className="bg-blue-500/20 rounded-t mx-auto transition-all"
@@ -209,7 +208,6 @@ export default function SellerDashboard() {
     setExporting(true);
     try {
       const res = await fetch(`${API_BASE}/seller-analytics/export?period=30d`, {
-        headers: { ...getAuthHeaders() },
         credentials: "include",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

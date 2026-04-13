@@ -75,9 +75,9 @@ const PostImageCarousel = ({ imageUrls = [], title, postId, handleViewDetails })
           
           {/* Indicator Dots */}
           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1 bg-black bg-opacity-20 rounded-full p-1">
-            {imageUrls.map((_, index) => (
+            {imageUrls.map((url, index) => (
               <span
-                key={index}
+                key={`dot-${url}-${index}`}
                 className={`w-2 h-2 rounded-full ${index === currentImageIndex ? 'bg-white' : 'bg-gray-400'} opacity-80 transition-colors`}
                 aria-label={`Image ${index + 1}`}
               />

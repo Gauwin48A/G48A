@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e7]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: Location Permission Required
+          - paragraph [ref=e12]: Location permission denied. Please enable in settings.
+      - generic [ref=e13]:
+        - button "Allow Location Access" [ref=e14] [cursor=pointer]
+        - button "Later" [ref=e15] [cursor=pointer]
+    - navigation "Bottom navigation" [ref=e17]:
+      - generic [ref=e18]:
+        - button "Home" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e24]: Home
+        - button "All Posts" [ref=e25] [cursor=pointer]:
+          - img [ref=e27]
+          - generic [ref=e32]: All Posts
+        - button "For You" [ref=e33] [cursor=pointer]:
+          - img [ref=e35]
+          - generic [ref=e37]: For You
+      - generic [ref=e38]:
+        - button "Feed" [ref=e39] [cursor=pointer]:
+          - img [ref=e41]
+          - generic [ref=e44]: Feed
+        - button "Rewards" [ref=e45] [cursor=pointer]:
+          - img [ref=e47]
+          - generic [ref=e51]: Rewards
+        - button "Profile" [ref=e52] [cursor=pointer]:
+          - img [ref=e54]
+          - generic [ref=e57]: Profile
+        - button "More" [ref=e58] [cursor=pointer]:
+          - img [ref=e60]
+          - generic [ref=e61]: More
+    - main [ref=e62]:
+      - status [ref=e66]:
+        - generic [ref=e68]: Account Required
+        - img [ref=e70]
+        - paragraph [ref=e73]: Sign in to continue
+        - paragraph [ref=e74]: This page requires an account. Sign in or create one to proceed.
+        - generic [ref=e75]:
+          - generic [ref=e76]: Secure sign-in
+          - generic [ref=e77]: Personalized experience
+          - generic [ref=e78]: Sync across devices
+        - generic [ref=e79]:
+          - button "Sign In" [ref=e80] [cursor=pointer]
+          - button "Browse Marketplace" [ref=e81] [cursor=pointer]
+    - region "Notifications (F8)":
+      - list
+  - button "Refresh location" [ref=e82] [cursor=pointer]:
+    - img [ref=e83]
+    - generic [ref=e85]: GPS
+```

@@ -8,8 +8,8 @@ const { protect, optionalAuth } = require("../middleware/auth");
  * @description Handles buyer inquiries on posts, seller replies, and inquiry analytics
  */
 
-/** @route POST / - Create a new inquiry (auth optional for guests) */
-router.post("/", optionalAuth, inquiryController.createInquiry);
+/** @route POST / - Create a new inquiry (requires auth to prevent spam) */
+router.post("/", protect, inquiryController.createInquiry);
 
 /** @route GET /seller - Get all inquiries received by the authenticated seller */
 router.get("/seller", protect, inquiryController.getInquiriesForSeller);

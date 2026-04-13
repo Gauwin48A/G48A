@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { fetchAllSubcategories } from "@/services/subcategoriesService";
-import { getCategoryIcon, getSubcategoryIcon } from "@/constants/categoryIcons";
+import { getSubcategoryIcon } from "@/constants/categoryIcons";
 import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
@@ -121,7 +121,7 @@ export default function Subcategories() {
     params.get("mode") === "for-you" ||
     (route?.state?.returnTo || "").startsWith("/for-you");
 
-  const loadSubcategories = async () => {
+  const loadSubcategories = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -138,11 +138,11 @@ export default function Subcategories() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     void loadSubcategories();
-  }, []);
+  }, [loadSubcategories]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });

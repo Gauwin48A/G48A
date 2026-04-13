@@ -1,17 +1,3 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
-import { isAuthenticated } from "@/utils/authStorage";
-import api from "@/services/api";
-import { useTranslation } from "react-i18next";
-
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -29,7 +15,7 @@ import { resolveMediaUrl } from "@/lib/mediaUrl";
 import { fetchCategoriesCached } from "@/services/categoriesService";
 import { fetchSubcategories } from "@/services/subcategoriesService";
 import { useTranslation } from "react-i18next";
-import { ImagePlus, X, GripVertical, Upload, ArrowLeft } from "lucide-react";
+import { ImagePlus, X, Upload, ArrowLeft } from "lucide-react";
 import { navigateBack } from "@/utils/navigation";
 
 const MAX_IMAGES = 10;

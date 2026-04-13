@@ -105,10 +105,8 @@ export default function LocationSelector({ isOpen, onClose }) {
     setDetectedLocation(null);
     setIsSearching(false);
     setIsDetecting(false);
-
-    if (!query.trim()) {
-      setResults(POPULAR_CITIES);
-    }
+    setQuery("");
+    setResults(POPULAR_CITIES);
 
     const timer = setTimeout(() => {
       searchInputRef.current?.focus();

@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +53,6 @@ const STEPS = [
 
 export default function OnboardingTour({ onComplete }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(true);
 

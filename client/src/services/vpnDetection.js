@@ -13,8 +13,6 @@ import { buildApiPath } from "@/lib/networkConfig";
  */
 
 const VPN_CHECK_INTERVAL_MS = 60 * 1000; // Re-check every 60 seconds
-const VPN_STATUS_KEY = "mhub_vpn_status";
-const VPN_LAST_CHECK_KEY = "mhub_vpn_last_check";
 const VPN_CACHE_TTL_MS = 30 * 1000; // Cache result for 30 seconds
 const VPN_IP_RATE_LIMIT_FALLBACK_MS = 60 * 1000;
 const VPN_IP_COOLDOWN_MAX_MS = 10 * 60 * 1000;

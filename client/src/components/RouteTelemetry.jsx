@@ -37,6 +37,7 @@ const getHref = (element) =>
 
 const RouteTelemetry = () => {
   const location = useLocation();
+  const { key, pathname, search, state } = location;
   const navigationType = useNavigationType();
   const navSwitchTimerRef = useRef(null);
 
@@ -57,44 +58,45 @@ const RouteTelemetry = () => {
       }
       window.__MHUB_NAV_SWITCHING = false;
     };
-  }, [location.pathname, location.search]);
+  }, [pathname, search]);
 
   // Track route sessions
   useEffect(() => {
     beginRouteSession({
-      pathname: location.pathname,
-      search: location.search,
+      pathname,
+      search,
     });
 
     return () => {
       endRouteSession("route_change");
     };
-  }, [location.pathname, location.search]);
+  }, [pathname, search]);
 
   // Store scroll position and last route on navigation
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const currentPath = `${location.pathname}${location.search}`;
+    const currentPath = `${pathname}${search}`;
+    const scrollKey = buildScrollKey({ key, pathname, search });
     saveRouteToHistory(currentPath);
     return () => {
       try {
-        sessionStorage.setItem(buildScrollKey(location), String(window.scrollY));
+        sessionStorage.setItem(scrollKey, String(window.scrollY));
         sessionStorage.setItem(LAST_ROUTE_KEY, currentPath);
       } catch {
         // Ignore storage errors (private mode / quota)
       }
     };
-  }, [location.key, location.pathname, location.search]);
+  }, [key, pathname, search]);
 
   // Restore scroll position on back/forward navigation
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const preserveScroll = Boolean(location.state?.preserveScroll);
+    const preserveScroll = Boolean(state?.preserveScroll);
     if (preserveScroll && navigationType !== "POP") {
       return;
     }
     try {
-      const currentPath = `${location.pathname}${location.search}`;
+      const currentPath = `${pathname}${search}`;
       const lastRoute = sessionStorage.getItem(LAST_ROUTE_KEY) || "";
       if (lastRoute === currentPath && navigationType !== "POP") {
         return;
@@ -103,7 +105,7 @@ const RouteTelemetry = () => {
       // ignore storage read errors
     }
     try {
-      const stored = sessionStorage.getItem(buildScrollKey(location));
+      const stored = sessionStorage.getItem(buildScrollKey({ key, pathname, search }));
       if (navigationType === "POP" && stored !== null) {
         const y = Number.parseInt(stored, 10);
         if (Number.isFinite(y)) {
@@ -115,7 +117,7 @@ const RouteTelemetry = () => {
     } catch {
       window.scrollTo(0, 0);
     }
-  }, [location.key, location.pathname, location.search, navigationType]);
+  }, [key, pathname, search, navigationType, state]);
 
   // Track UI clicks
   useEffect(() => {

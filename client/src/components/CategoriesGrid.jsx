@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutGrid, Package } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { useFilter } from "../context/FilterContext";
 import { fetchCategoriesCached } from "@/services/categoriesService";
-import { getCategoryIcon, CATEGORY_ICON_MAP } from "@/constants/categoryIcons";
+import { getCategoryIcon } from "@/constants/categoryIcons";
 
 /**
  * Horizontal scrollable grid of category filter buttons.
@@ -95,7 +95,17 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
   }
 
   if (error) {
-    return null;
+    return (
+      <div className="w-full mb-6 text-center py-3">
+        <p className="text-sm text-muted-foreground">Failed to load categories</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -143,4 +153,3 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
 };
 
 export default CategoriesGrid;
-

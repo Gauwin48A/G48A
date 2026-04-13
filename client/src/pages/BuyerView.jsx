@@ -144,8 +144,11 @@ const normalizePrice = (value) => {
       : !0,
   BuyerView = () => {
     const { t: translate } = useTranslation(),
-      tr = (key, fallback, options = {}) =>
-        translate(key, { defaultValue: fallback, ...options }),
+      tr = useCallback(
+        (key, fallback, options = {}) =>
+          translate(key, { defaultValue: fallback, ...options }),
+        [translate],
+      ),
       navigate = useNavigate(),
       [searchQuery, setSearchQuery] = useState(""),
       [brandFilter, setBrandFilter] = useState(""),

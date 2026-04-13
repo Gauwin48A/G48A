@@ -31,7 +31,6 @@ import {
   buildActiveAppMatcher,
   matchesCategoryModeItem,
 } from "@/utils/categoryModeFilters";
-import { buildApiPath as re } from "@/lib/networkConfig";
 import { hasAuthSession } from "@/utils/authStorage";
 import oe from "../components/TransactionStepper";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -125,7 +124,6 @@ const SaleUndonePage = () => {
       const id = match?.category_id || match?.id;
       return id ? String(id) : null;
     })(),
-    S = re("/transactions/undone"),
     $ = (r, o, a = 0) => {
       const i = String(r || "").toLowerCase();
       if (

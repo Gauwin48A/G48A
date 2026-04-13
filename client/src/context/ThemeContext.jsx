@@ -3,7 +3,7 @@
  * Provides app-wide theme modes (light/dark/system) with persistence
  */
 
-import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const ThemeContext = createContext();
 const STORAGE_KEY = 'mhub-theme';
@@ -80,17 +80,17 @@ export const ThemeProvider = ({ children }) => {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, [mode]);
 
-    const setThemeMode = (nextMode) => {
+    const setThemeMode = useCallback((nextMode) => {
         if (!THEME_MODES.includes(nextMode)) return;
         setMode(nextMode);
-    };
+    }, []);
 
-    const toggleTheme = () => {
+    const toggleTheme = useCallback(() => {
         const nextResolved = resolvedTheme === 'dark' ? 'light' : 'dark';
         setMode(nextResolved);
-    };
+    }, [resolvedTheme]);
 
-    const setTheme = (value) => {
+    const setTheme = useCallback((value) => {
         if (typeof value === 'boolean') {
             setMode(value ? 'dark' : 'light');
             return;
@@ -98,7 +98,7 @@ export const ThemeProvider = ({ children }) => {
         if (THEME_MODES.includes(value)) {
             setMode(value);
         }
-    };
+    }, []);
 
     const contextValue = useMemo(() => ({
         mode,
@@ -107,7 +107,7 @@ export const ThemeProvider = ({ children }) => {
         toggleTheme,
         setTheme,
         setThemeMode,
-    }), [mode, resolvedTheme]);
+    }), [mode, resolvedTheme, setTheme, setThemeMode, toggleTheme]);
 
     return (
         <ThemeContext.Provider value={contextValue}>

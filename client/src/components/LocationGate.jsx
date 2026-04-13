@@ -77,9 +77,11 @@ function LocationGate({ children }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (loading && !permissionGranted) {
-        console.log(
-          "[LocationGate] Auto-bypassing after 5 seconds - app will load while GPS continues in background",
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            "[LocationGate] Auto-bypassing after 5 seconds - app will load while GPS continues in background",
+          );
+        }
         setBypassed(true);
       }
     }, 5000);
@@ -115,9 +117,9 @@ function LocationGate({ children }) {
         }),
       });
       sessionStorage.setItem(DEVICE_INFO_KEY, "1");
-      console.log("[LocationGate] Device info sent:", info.fingerprint);
+      if (import.meta.env.DEV) console.log("[LocationGate] Device info sent:", info.fingerprint);
     } catch (err) {
-      console.error("[LocationGate] Failed to send device info:", err);
+      if (import.meta.env.DEV) console.error("[LocationGate] Failed to send device info:", err);
     }
   };
 

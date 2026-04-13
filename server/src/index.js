@@ -294,7 +294,7 @@ const isOriginAllowed = (origin) => {
 
 const resolveCorsOrigin = (origin, callback) => {
   if (isOriginAllowed(origin)) return callback(null, true);
-  console.warn(`[CORS] Blocked origin: ${origin}`);
+  if (isDevelopment) console.warn(`[CORS] Blocked origin: ${origin}`);
   return callback(new Error("Not allowed by CORS"));
 };
 
@@ -487,6 +487,20 @@ app.use(hpp());
 app.use(wafEvidenceHeaders);
 app.use(wafRequestFilter);
 app.use(sanitizeInput);
+
+// ── Query Param Type Safety ───────────────────────────────
+// Collapse array query params to their first value to prevent type confusion attacks
+// (e.g., ?userId[]=1&userId[]=2 becomes ?userId=1)
+app.use((req, res, next) => {
+  if (req.query && typeof req.query === "object") {
+    for (const key of Object.keys(req.query)) {
+      if (Array.isArray(req.query[key])) {
+        req.query[key] = req.query[key][0];
+      }
+    }
+  }
+  next();
+});
 
 // ── CSRF Protection (Double Submit Cookie) ────────────────
 const { csrfProtection } = require("./middleware/csrf");
@@ -779,7 +793,7 @@ app.get("/api/ready", async (req, res) => {
     return res.status(503).json({
       status: "not_ready",
       checkedAt: new Date().toISOString(),
-      error: err.message,
+      error: "Readiness check failed",
     });
   }
 });

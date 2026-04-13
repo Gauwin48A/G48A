@@ -17,7 +17,7 @@ const GreenSkeletonLoader = ({ count = 4 }) => (
 export const SkeletonLoader = ({ height = 24, width = '100%', className = '' }) => {
   const { t } = useTranslation();
   return (
-    <div className={`skeleton-loader`} style={{ height, width }} aria-busy="true" aria-label={t("common_loading")} />
+    <div className={`skeleton-loader ${className}`.trim()} style={{ height, width }} aria-busy="true" aria-label={t("common_loading")} />
   );
 };
 

@@ -27,7 +27,7 @@ const formatCurrency = (value, currency = "INR") => {
 
 const MiniCartPopover = ({ className = "" }) => {
   const cart = useCart() || {};
-  const items = Array.isArray(cart.items) ? cart.items : [];
+  const items = useMemo(() => (Array.isArray(cart.items) ? cart.items : []), [cart.items]);
   const summary = cart.summary || {};
   const { activeApp, activeCategory, categories: categoryModeCategories } = useCategoryMode();
   const { filters } = useFilter();

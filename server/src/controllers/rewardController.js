@@ -249,7 +249,7 @@ exports.redeemRewards = async (req, res) => {
       });
     }
     if (err instanceof InvalidRewardInputError) {
-      return res.status(400).json({ error: err.message });
+      return res.status(400).json({ error: "Invalid reward input" });
     }
     logger.error("Redeem error:", err);
     return res.status(500).json({ error: "Failed to redeem rewards" });

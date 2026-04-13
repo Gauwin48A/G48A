@@ -4,9 +4,10 @@
  * Mount once in App.jsx: <PwaEnhancements />
  */
 import { useState, useEffect, useCallback } from 'react';
-import { canInstall, promptInstall, skipWaiting, registerSW, initInstallPrompt } from '@/lib/pwa';
+import { promptInstall, skipWaiting, registerSW, initInstallPrompt } from '@/lib/pwa';
 import { initWebVitals } from '@/lib/webVitals';
 import { isOnline, onOnlineChange } from '@/lib/network';
+import { requestSoftReload } from '@/utils/softReload';
 
 let initialized = false;
 
@@ -53,7 +54,11 @@ export default function PwaEnhancements() {
 
   const handleUpdate = useCallback(() => {
     skipWaiting();
-    window.location.reload();
+    setDismissed((d) => ({ ...d, update: true }));
+    requestSoftReload({
+      title: 'Update ready',
+      description: 'Refresh to apply the latest version.',
+    });
   }, []);
 
   return (

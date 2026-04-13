@@ -60,13 +60,13 @@ const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
           navigator.vibrate && navigator.vibrate(50);
         }
       } catch (err) {
-        console.error("Offer error:", err);
+        if (import.meta.env.DEV) console.error("Offer error:", err);
         toast({ description: "Failed to send offer. Please try again.", variant: "destructive" });
       } finally {
         setSending(false);
       }
     },
-    [currentUser, post, navigate, basePrice]
+    [currentUser, post, navigate, basePrice, toast]
   );
 
   const price20Off = Math.floor(basePrice * 0.8);

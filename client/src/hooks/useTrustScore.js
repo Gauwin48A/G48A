@@ -3,6 +3,14 @@ import api from "@/lib/api";
 
 const trustCache = new Map();
 const inflightCache = new Map();
+const EMPTY_TRUST_STATE = {
+  loading: false,
+  score: null,
+  level: "",
+  label: "",
+  riskState: null,
+  underReview: false,
+};
 
 const normalizeScore = (value) => {
   const numeric = Number(value);
@@ -110,29 +118,21 @@ export const invalidateTrustCache = (userId) => {
 };
 
 export const useTrustScore = (userId, { enabled = true } = {}) => {
-  const emptyState = {
-    loading: false,
-    score: null,
-    level: "",
-    label: "",
-    riskState: null,
-    underReview: false,
-  };
   const [state, setState] = useState(() => {
     if (!userId) {
-      return emptyState;
+      return EMPTY_TRUST_STATE;
     }
     const cached = trustCache.get(userId);
     if (cached) {
       return { loading: false, ...cached };
     }
-    return { loading: true, ...emptyState };
+    return { loading: true, ...EMPTY_TRUST_STATE };
   });
 
   useEffect(() => {
     let cancelled = false;
     if (!enabled || !userId) {
-      setState(emptyState);
+      setState(EMPTY_TRUST_STATE);
       return () => {};
     }
 
