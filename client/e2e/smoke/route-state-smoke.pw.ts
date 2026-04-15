@@ -2,6 +2,28 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Route State Smoke', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const now = Date.now();
+      const location = {
+        latitude: 17.385,
+        longitude: 78.4867,
+        accuracy: 50,
+        city: 'Hyderabad',
+        state: 'Telangana',
+        country: 'India',
+        area: 'Bachupally',
+        locality: 'Bachupally',
+        provider: 'e2e-smoke',
+        timestamp: now
+      };
+      localStorage.setItem('mhub_location', JSON.stringify(location));
+      localStorage.setItem('mhub_user_city', location.city);
+      localStorage.setItem(
+        'mhub_location_skipped',
+        JSON.stringify({ skipped: true, timestamp: now })
+      );
+    });
+
     // Bootstrap preflight probes /api/health before routes render.
     await page.route('**/api/health**', async (route) => {
       await route.fulfill({
@@ -70,9 +92,10 @@ test.describe('Route State Smoke', () => {
   test('shows security auth gate and recovery CTA when logged out', async ({ page }) => {
     await page.goto('/security');
 
-    await expect(page.getByText('Authentication Required')).toBeVisible();
-    await expect(page.locator('[data-ux-state="auth-gate"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Go to Login' })).toBeVisible();
+    const authGate = page.locator('[data-ux-state="auth-gate"]');
+    await expect(authGate).toBeVisible();
+    await expect(authGate.getByText('Authentication Required').first()).toBeVisible();
+    await expect(authGate.getByRole('button', { name: 'Go to Login' })).toBeVisible();
   });
 
   test('shows feed-detail error state with retry and back actions', async ({ page }) => {

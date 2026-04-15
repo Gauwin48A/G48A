@@ -168,6 +168,10 @@ test.describe('Visual Audit Capture', () => {
       localStorage.setItem('user_id', '123');
       localStorage.setItem('mhub_location', JSON.stringify(location));
       localStorage.setItem('mhub_user_city', location.city);
+      localStorage.setItem(
+        'mhub_location_skipped',
+        JSON.stringify({ skipped: true, timestamp: now })
+      );
     });
 
     await page.route('**/api/**', async (route) => {

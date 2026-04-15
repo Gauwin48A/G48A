@@ -3,6 +3,19 @@ import { expect, test } from '@playwright/test';
 test.describe('Notifications / Recently Viewed / My Home smoke', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
+      const now = Date.now();
+      const location = {
+        latitude: 17.385,
+        longitude: 78.4867,
+        accuracy: 50,
+        city: 'Hyderabad',
+        state: 'Telangana',
+        country: 'India',
+        area: 'Bachupally',
+        locality: 'Bachupally',
+        provider: 'e2e-smoke',
+        timestamp: now
+      };
       localStorage.setItem('authToken', 'test.token.value');
       localStorage.setItem('userId', 'user-1');
       localStorage.setItem(
@@ -10,6 +23,12 @@ test.describe('Notifications / Recently Viewed / My Home smoke', () => {
         JSON.stringify({ id: 'user-1', name: 'E2E User' })
       );
       localStorage.setItem('authSession', 'true');
+      localStorage.setItem('mhub_location', JSON.stringify(location));
+      localStorage.setItem('mhub_user_city', location.city);
+      localStorage.setItem(
+        'mhub_location_skipped',
+        JSON.stringify({ skipped: true, timestamp: now })
+      );
     });
 
     await page.route('**/api/**', async (route) => {
