@@ -21,6 +21,7 @@ async function ensureOutputDir() {
 test.describe('Header/Nav Logged-Out', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
+      const now = Date.now();
       localStorage.removeItem('authToken');
       localStorage.removeItem('authSession');
       localStorage.removeItem('user');
@@ -36,10 +37,14 @@ test.describe('Header/Nav Logged-Out', () => {
         area: 'Bachupally',
         locality: 'Bachupally',
         provider: 'visual_audit_cache',
-        timestamp: Date.now()
+        timestamp: now
       };
       localStorage.setItem('mhub_location', JSON.stringify(location));
       localStorage.setItem('mhub_user_city', location.city);
+      localStorage.setItem(
+        'mhub_location_skipped',
+        JSON.stringify({ skipped: true, timestamp: now })
+      );
     });
 
     await page.route('**/api/**', async (route) => {

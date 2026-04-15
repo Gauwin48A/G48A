@@ -11,7 +11,26 @@ export default defineConfig({
   },
   fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
-  reporter: [['list']],
+  reporter: process.env.CI
+    ? [['list'], ['html', { outputFolder: 'test-results/html', open: 'never' }]]
+    : [['list']],
+  projects: [
+    {
+      name: 'smoke',
+      testMatch: 'smoke/**/*.pw.ts'
+    },
+    {
+      name: 'visual',
+      testMatch: 'visual/**/*.pw.ts',
+      timeout: 10 * 60 * 1000
+    },
+    {
+      name: 'comprehensive',
+      testMatch: 'comprehensive/**/*.pw.ts',
+      timeout: 60_000,
+      retries: 1
+    }
+  ],
   use: {
     baseURL,
     headless: true,
