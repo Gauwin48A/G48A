@@ -23,6 +23,9 @@ interface AuthRepository {
     suspend fun resetPassword(token: String, password: String): Result<String>
     suspend fun logout(): Result<Unit>
     suspend fun refreshToken(): Result<Unit>
+    suspend fun getSessions(): Result<List<com.mhub.core.network.model.SessionInfo>>
+    suspend fun revokeSession(sessionId: String): Result<Unit>
+    suspend fun revokeAllSessions(): Result<Unit>
     fun clearSession()
 }
 
@@ -185,6 +188,39 @@ class AuthRepositoryImpl @Inject constructor(
             val response = authApi.refreshToken()
             if (response.isSuccessful) Result.Success(Unit)
             else Result.Error(Exception("Refresh failed"))
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    override suspend fun getSessions(): Result<List<com.mhub.core.network.model.SessionInfo>> {
+        return try {
+            val response = authApi.getSessions()
+            if (response.isSuccessful) {
+                Result.Success(response.body()?.sessions ?: emptyList())
+            } else {
+                Result.Error(Exception("Failed to load sessions"))
+            }
+        } catch (e: Exception) {
+            Result.Error(e, "Could not load sessions")
+        }
+    }
+
+    override suspend fun revokeSession(sessionId: String): Result<Unit> {
+        return try {
+            val response = authApi.revokeSession(sessionId)
+            if (response.isSuccessful) Result.Success(Unit)
+            else Result.Error(Exception("Failed to revoke session"))
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    override suspend fun revokeAllSessions(): Result<Unit> {
+        return try {
+            val response = authApi.revokeAllSessions()
+            if (response.isSuccessful) Result.Success(Unit)
+            else Result.Error(Exception("Failed to revoke sessions"))
         } catch (e: Exception) {
             Result.Error(e)
         }

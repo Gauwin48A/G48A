@@ -15,12 +15,14 @@ data class ChatUiState(
     val isLoading: Boolean = true,
     val isOtherTyping: Boolean = false,
     val error: String? = null,
+    val currentUserId: Int = 0,
 )
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val chatSocketManager: ChatSocketManager,
+    private val authRepository: com.mhub.core.data.repository.AuthRepository,
 ) : ViewModel() {
 
     private val conversationId: Int = savedStateHandle.get<Int>("conversationId") ?: 0
@@ -32,6 +34,10 @@ class ChatViewModel @Inject constructor(
     val messageText: StateFlow<String> = _messageText.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            val userId = authRepository.currentUser.first()?.id ?: 0
+            _uiState.update { it.copy(currentUserId = userId) }
+        }
         chatSocketManager.joinConversation(conversationId)
         observeIncomingMessages()
         observeTyping()

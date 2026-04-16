@@ -28,6 +28,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToSignup: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
+    onNavigateToOtpLogin: () -> Unit = {},
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -163,6 +164,15 @@ fun LoginScreen(
             TextButton(onClick = onNavigateToSignup) {
                 Text("Sign Up")
             }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = onNavigateToOtpLogin,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Sign in with OTP")
         }
     }
 }

@@ -148,7 +148,10 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(uiState.messages, key = { it.id }) { message ->
-                ChatBubble(message = message, isOwnMessage = false) // TODO: compare with current userId
+                ChatBubble(
+                    message = message,
+                    isOwnMessage = message.senderId == uiState.currentUserId,
+                )
             }
         }
     }

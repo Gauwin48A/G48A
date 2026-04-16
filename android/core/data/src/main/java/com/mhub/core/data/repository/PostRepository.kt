@@ -17,6 +17,7 @@ interface PostRepository {
     fun observePost(id: Int): Flow<Post?>
     suspend fun fetchPosts(page: Int = 1, category: String? = null, search: String? = null): Result<List<Post>>
     suspend fun fetchPost(id: Int): Result<Post>
+    suspend fun fetchUserPosts(userId: Int, page: Int = 1): Result<List<Post>>
     suspend fun createPost(request: CreatePostRequest): Result<Post>
     suspend fun updatePost(id: Int, request: CreatePostRequest): Result<Post>
     suspend fun deletePost(id: Int): Result<Unit>
@@ -62,6 +63,21 @@ class PostRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Fetch post error")
             Result.Error(e)
+        }
+    }
+
+    override suspend fun fetchUserPosts(userId: Int, page: Int): Result<List<Post>> {
+        return try {
+            val response = postsApi.getUserPosts(userId, page)
+            if (response.isSuccessful) {
+                val posts = response.body()?.posts ?: emptyList()
+                Result.Success(posts)
+            } else {
+                Result.Error(Exception("Failed to fetch user posts: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Fetch user posts error")
+            Result.Error(e, "Could not load your posts.")
         }
     }
 

@@ -40,6 +40,7 @@ fun ProfileScreen(
     onNavigateToMyPosts: () -> Unit = {},
     onNavigateToWishlist: () -> Unit = {},
     onNavigateToMessages: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -127,6 +128,10 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Quick links
+                    ListItem(
+                        headlineContent = { Text("Edit Profile") },
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToEditProfile),
+                    )
                     ListItem(
                         headlineContent = { Text("My Listings") },
                         modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToMyPosts),

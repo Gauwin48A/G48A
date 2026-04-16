@@ -155,12 +155,13 @@ class MyPostsViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            when (val result = postRepository.fetchPosts()) {
-                is Result.Success -> {
-                    val userId = authRepository.currentUser.first()?.id
-                    val myPosts = result.data.filter { it.userId == userId }
-                    _uiState.update { it.copy(isLoading = false, posts = myPosts) }
-                }
+            val userId = authRepository.currentUser.first()?.id
+            if (userId == null) {
+                _uiState.update { it.copy(isLoading = false, error = "Not logged in") }
+                return@launch
+            }
+            when (val result = postRepository.fetchUserPosts(userId)) {
+                is Result.Success -> _uiState.update { it.copy(isLoading = false, posts = result.data) }
                 is Result.Error -> _uiState.update { it.copy(isLoading = false, error = result.message) }
                 is Result.Loading -> {}
             }

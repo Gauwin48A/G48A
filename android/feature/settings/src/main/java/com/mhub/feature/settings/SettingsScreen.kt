@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToSecurity: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -86,6 +87,12 @@ fun SettingsScreen(
                         enabled = uiState.biometricAvailable,
                     )
                 },
+            )
+            ListItem(
+                headlineContent = { Text("Active Sessions") },
+                supportingContent = { Text("Manage logged-in devices") },
+                leadingContent = { Icon(Icons.Default.Devices, null) },
+                modifier = Modifier.clickable(onClick = onNavigateToSecurity),
             )
 
             HorizontalDivider()

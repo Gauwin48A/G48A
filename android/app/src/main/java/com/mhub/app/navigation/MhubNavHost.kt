@@ -11,6 +11,7 @@ import androidx.navigation.navDeepLink
 import com.mhub.feature.auth.LoginScreen
 import com.mhub.feature.auth.SignupScreen
 import com.mhub.feature.auth.ForgotPasswordScreen
+import com.mhub.feature.auth.OtpLoginScreen
 import com.mhub.feature.auth.ResetPasswordScreen
 import com.mhub.feature.chat.ChatScreen
 import com.mhub.feature.chat.ConversationListScreen
@@ -23,8 +24,10 @@ import com.mhub.feature.listings.AddPostScreen
 import com.mhub.feature.listings.MyPostsScreen
 import com.mhub.feature.listings.WishlistScreen
 import com.mhub.feature.notifications.NotificationsScreen
+import com.mhub.feature.profile.EditProfileScreen
 import com.mhub.feature.profile.ProfileScreen
 import com.mhub.feature.search.SearchScreen
+import com.mhub.feature.settings.SecuritySettingsScreen
 import com.mhub.feature.settings.SettingsScreen
 
 @Composable
@@ -50,6 +53,7 @@ fun MhubNavHost(
                 },
                 onNavigateToSignup = { navController.navigate("signup") },
                 onNavigateToForgotPassword = { navController.navigate("forgot_password") },
+                onNavigateToOtpLogin = { navController.navigate("otp_login") },
             )
         }
 
@@ -66,6 +70,17 @@ fun MhubNavHost(
 
         composable("forgot_password") {
             ForgotPasswordScreen(
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("otp_login") {
+            OtpLoginScreen(
+                onLoginSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("otp_login") { inclusive = true }
+                    }
+                },
                 onBack = { navController.popBackStack() },
             )
         }
@@ -155,6 +170,7 @@ fun MhubNavHost(
                 onNavigateToMyPosts = { navController.navigate("my_posts") },
                 onNavigateToWishlist = { navController.navigate("wishlist") },
                 onNavigateToMessages = { navController.navigate("conversations") },
+                onNavigateToEditProfile = { navController.navigate("edit_profile") },
             )
         }
 
@@ -248,6 +264,20 @@ fun MhubNavHost(
         composable("settings") {
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToSecurity = { navController.navigate("security_settings") },
+            )
+        }
+
+        composable("security_settings") {
+            SecuritySettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+
+        composable("edit_profile") {
+            EditProfileScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
             )
         }
     }

@@ -33,6 +33,7 @@ fun MhubApp(
     viewModel: MainViewModel = hiltViewModel(),
 ) {
     val isAuthenticated by viewModel.isAuthenticated.collectAsStateWithLifecycle()
+    val unreadNotifications by viewModel.unreadNotificationCount.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -84,10 +85,21 @@ fun MhubApp(
                         val selected = currentDestination?.hierarchy?.any { it.route == route.route } == true
                         NavigationBarItem(
                             icon = {
-                                Icon(
-                                    imageVector = if (selected) route.selectedIcon else route.unselectedIcon,
-                                    contentDescription = route.label,
-                                )
+                                if (route.route == "notifications" && unreadNotifications > 0) {
+                                    BadgedBox(badge = {
+                                        Badge { Text("$unreadNotifications") }
+                                    }) {
+                                        Icon(
+                                            imageVector = if (selected) route.selectedIcon else route.unselectedIcon,
+                                            contentDescription = route.label,
+                                        )
+                                    }
+                                } else {
+                                    Icon(
+                                        imageVector = if (selected) route.selectedIcon else route.unselectedIcon,
+                                        contentDescription = route.label,
+                                    )
+                                }
                             },
                             label = { Text(route.label) },
                             selected = selected,
