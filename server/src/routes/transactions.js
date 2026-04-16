@@ -1,47 +1,41 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const saleController = require('../controllers/saleController');
-const pool = require('../config/db');
-const logger = require('../utils/logger');
+const { protect } = require("../middleware/auth");
+const saleController = require("../controllers/saleController");
+const { runQuery, getAuthUserId, isAdmin } = require("../utils/dbHelpers");
+const logger = require("../utils/logger");
 
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
-
-function getUserId(req) {
-  return req.user?.userId || req.user?.id || req.user?.user_id || null;
-}
-
-function isAdmin(req) {
-  const role = String(req.user?.role || '').toLowerCase();
-  return role === 'admin' || role === 'superadmin';
-}
-
-// Keep this route family authenticated by default.
+/** All transaction routes require authentication */
 router.use(protect);
 
-// Backward-compatible aliases for sale workflow.
-router.post('/initiate', saleController.initiateSale);
-router.post('/confirm', saleController.confirmSale);
-router.post('/cancel', saleController.cancelSale);
-router.get('/pending', saleController.getPendingSales);
+/** @route POST /initiate - Start a new sale transaction */
+router.post("/initiate", saleController.initiateSale);
 
-// Fetch undone posts for current user (or another user if caller is admin).
-router.get('/undone', async (req, res) => {
+/** @route POST /confirm - Confirm a pending sale */
+router.post("/confirm", saleController.confirmSale);
+
+/** @route POST /cancel - Cancel a pending sale */
+router.post("/cancel", saleController.cancelSale);
+
+/** @route GET /pending - Get all pending sales for the current user */
+router.get("/pending", saleController.getPendingSales);
+
+/**
+ * @route GET /undone
+ * @desc  Fetch posts with 'undone' status for the current user (or another user if admin).
+ */
+router.get("/undone", async (req, res) => {
   try {
-    const requesterId = getUserId(req);
+    const requesterId = getAuthUserId(req);
     if (!requesterId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: "Authentication required" });
     }
 
-    const requestedUserId = req.query.userId ? String(req.query.userId).trim() : null;
+    const categoryIdRaw = req.query.category || req.query.category_id || req.query.categoryId || null;
+    const categoryId = categoryIdRaw ? String(categoryIdRaw).trim() : null;
+    const requestedUserId = req.query.userId
+      ? String(req.query.userId).trim()
+      : null;
     let targetUserId = String(requesterId);
 
     if (requestedUserId && requestedUserId !== targetUserId) {
@@ -51,34 +45,62 @@ router.get('/undone', async (req, res) => {
       targetUserId = requestedUserId;
     }
 
+    const params = [targetUserId];
+    let categoryClause = "";
+    if (categoryId) {
+      params.push(categoryId);
+      categoryClause = ` AND category_id::text = $${params.length}`;
+    }
+
     const result = await runQuery(
       `
         SELECT
-          post_id,
-          title,
-          description,
-          category_id,
-          post_type,
-          condition,
-          price,
-          status,
-          images,
-          location,
-          created_at,
-          updated_at
-        FROM posts
-        WHERE status = 'undone'
-          AND user_id::text = $1
-        ORDER BY COALESCE(updated_at, created_at) DESC
+          p.post_id,
+          p.user_id,
+          p.title,
+          p.description,
+          p.category_id,
+          p.subcategory_id,
+          c.name AS category_name,
+          sc.name AS subcategory_name,
+          p.post_type,
+          p.condition,
+          p.price,
+          p.status,
+          p.images,
+          p.location,
+          p.created_at,
+          p.updated_at,
+          tx.transaction_id AS last_transaction_id,
+          tx.status AS last_transaction_status,
+          tx.created_at AS last_transaction_created_at,
+          tx.completed_at AS last_transaction_completed_at,
+          buyer.user_id AS buyer_id,
+          COALESCE(bp.full_name, buyer.username) AS buyer_name
+        FROM posts p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
+        LEFT JOIN LATERAL (
+          SELECT transaction_id, buyer_id, status, created_at, completed_at
+          FROM transactions
+          WHERE post_id::text = p.post_id::text
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) tx ON true
+        LEFT JOIN users buyer ON tx.buyer_id::text = buyer.user_id::text
+        LEFT JOIN profiles bp ON tx.buyer_id::text = bp.user_id::text
+        WHERE p.status = 'undone'
+          AND p.user_id::text = $1${categoryClause}
+        ORDER BY COALESCE(p.updated_at, p.created_at) DESC
         LIMIT 200
       `,
-      [targetUserId]
+      params
     );
 
     return res.json(result.rows);
   } catch (err) {
-    logger.error('[Transactions] Error fetching undone sales:', err);
-    return res.status(500).json({ error: 'Failed to fetch undone sales', details: err.message });
+    logger.error("[Transactions] Error fetching undone sales:", err);
+    return res.status(500).json({ error: "Failed to fetch undone sales" });
   }
 });
 

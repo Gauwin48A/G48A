@@ -1,34 +1,38 @@
-// src/components/ui/avatar.jsx
+import r, { forwardRef as t } from "react";
+import * as f from "@radix-ui/react-avatar";
+import { cn as m } from "@/lib/utils";
 
-import React, { forwardRef } from "react";
-import * as AvatarPrimitive from "@radix-ui/react-avatar";
-import { cn } from "@/lib/utils";
+const s = t(({ className: a, ...e }, l) =>
+  r.createElement(f.Root, {
+    ref: l,
+    className: m(
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+      a
+    ),
+    ...e,
+  })
+);
+s.displayName = "Avatar";
 
-const Avatar = forwardRef(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)}
-    {...props}
-  />
-));
-Avatar.displayName = "Avatar";
+const o = t(({ className: a, ...e }, l) =>
+  r.createElement(f.Image, {
+    ref: l,
+    className: m("aspect-square h-full w-full", a),
+    ...e,
+  })
+);
+o.displayName = "AvatarImage";
 
-const AvatarImage = forwardRef(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-));
-AvatarImage.displayName = "AvatarImage";
+const i = t(({ className: a, ...e }, l) =>
+  r.createElement(f.Fallback, {
+    ref: l,
+    className: m(
+      "flex h-full w-full items-center justify-center rounded-full bg-muted",
+      a
+    ),
+    ...e,
+  })
+);
+i.displayName = "AvatarFallback";
 
-const AvatarFallback = forwardRef(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Fallback
-    ref={ref}
-    className={cn("flex h-full w-full items-center justify-center rounded-full bg-muted", className)}
-    {...props}
-  />
-));
-AvatarFallback.displayName = "AvatarFallback";
-
-export { Avatar, AvatarImage, AvatarFallback };
+export { s as Avatar, i as AvatarFallback, o as AvatarImage };

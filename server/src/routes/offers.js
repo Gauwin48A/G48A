@@ -1,26 +1,30 @@
-/**
- * Offers Routes
- */
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const offersController = require('../controllers/offersController');
+const { protect } = require("../middleware/auth");
+const offersController = require("../controllers/offersController");
+const { offerLimiter } = require("../middleware/rateLimiter");
 
+/**
+ * @route Offer routes
+ * @description Handles buyer/seller offer negotiations on posts
+ */
+
+/* All offer routes require authentication */
 router.use(protect);
 
-// Create an offer
-router.post('/', offersController.createOffer);
+/** @route POST / - Create a new offer on a post */
+router.post("/", offerLimiter, offersController.createOffer);
 
-// Get offers (as seller or buyer)
-router.get('/', offersController.getOffers);
+/** @route GET / - Get all offers for the authenticated user */
+router.get("/", offersController.getOffers);
 
-// Get offer history for a post
-router.get('/history/:postId', offersController.getOfferHistory);
+/** @route GET /history/:postId - Get offer history for a specific post */
+router.get("/history/:postId", offersController.getOfferHistory);
 
-// Set auto-accept threshold
-router.put('/auto-accept', offersController.setAutoAcceptThreshold);
+/** @route PUT /auto-accept - Set an auto-accept price threshold */
+router.put("/auto-accept", offerLimiter, offersController.setAutoAcceptThreshold);
 
-// Respond to an offer
-router.patch('/:offerId', offersController.respondToOffer);
+/** @route PATCH /:offerId - Respond to (accept/reject/counter) an offer */
+router.patch("/:offerId", offerLimiter, offersController.respondToOffer);
 
 module.exports = router;

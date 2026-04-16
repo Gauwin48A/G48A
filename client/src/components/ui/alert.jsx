@@ -1,9 +1,8 @@
-import React, { forwardRef } from "react"
-import { cva } from "class-variance-authority"
+import s, { forwardRef as l } from "react";
+import { cva as v } from "class-variance-authority";
+import { cn as i } from "@/lib/utils";
 
-import { cn } from "@/lib/utils"
-
-const alertVariants = cva(
+const m = v(
   "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
   {
     variants: {
@@ -17,44 +16,37 @@ const alertVariants = cva(
       variant: "default",
     },
   }
-)
+);
 
-const Alert = forwardRef((props, ref) => {
-  const { className, variant, ...rest } = props
-  return (
-    <div
-      ref={ref}
-      role="alert"
-      className={cn(alertVariants({ variant }), className)}
-      {...rest}
-    />
-  )
-})
-Alert.displayName = "Alert"
+const o = l((e, t) => {
+  const { className: r, variant: a, ...c } = e;
+  return s.createElement("div", {
+    ref: t,
+    role: "alert",
+    className: i(m({ variant: a }), r),
+    ...c,
+  });
+});
+o.displayName = "Alert";
 
-const AlertTitle = forwardRef((props, ref) => {
-  const { className, ...rest } = props
-  return (
-    <h5
-      ref={ref}
-      className={cn("mb-1 font-medium leading-none tracking-tight", className)}
-      {...rest}
-    />
-  )
-})
-AlertTitle.displayName = "AlertTitle"
+const n = l((e, t) => {
+  const { className: r, ...a } = e;
+  return s.createElement("h5", {
+    ref: t,
+    className: i("mb-1 font-medium leading-none tracking-tight", r),
+    ...a,
+  });
+});
+n.displayName = "AlertTitle";
 
-const AlertDescription = forwardRef((props, ref) => {
-  const { className, ...rest } = props
-  return (
-    <div
-      ref={ref}
-      className={cn("text-sm [&_p]:leading-relaxed", className)}
-      {...rest}
-    />
-  )
-})
-AlertDescription.displayName = "AlertDescription"
+const d = l((e, t) => {
+  const { className: r, ...a } = e;
+  return s.createElement("div", {
+    ref: t,
+    className: i("text-sm [&_p]:leading-relaxed", r),
+    ...a,
+  });
+});
+d.displayName = "AlertDescription";
 
-export { Alert, AlertTitle, AlertDescription }
-
+export { o as Alert, d as AlertDescription, n as AlertTitle };

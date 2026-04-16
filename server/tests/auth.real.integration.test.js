@@ -64,15 +64,38 @@ const cookieHeader = () => {
 
 const apiRequest = async (route, { method = 'GET', body, token, useCookies = true } = {}) => {
   const headers = {};
+  const normalizedMethod = String(method || 'GET').toUpperCase();
+  const shouldAttachCsrfHeader = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(normalizedMethod);
+
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
   if (useCookies && cookieJar.size > 0) headers.Cookie = cookieHeader();
+  if (useCookies && shouldAttachCsrfHeader) {
+    const csrfToken = cookieJar.get('XSRF-TOKEN');
+    if (csrfToken) {
+      headers['X-XSRF-TOKEN'] = csrfToken;
+    }
+  }
 
-  const response = await fetch(`${BASE_URL}${route}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
+  let response;
+  try {
+    response = await fetch(`${BASE_URL}${route}`, {
+      method: normalizedMethod,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+  } catch (error) {
+    const detail = [
+      `Request failed: ${normalizedMethod} ${route}`,
+      `BASE_URL: ${BASE_URL}`,
+      `STDOUT tail:\n${capturedStdout.slice(-2500)}`,
+      `STDERR tail:\n${capturedStderr.slice(-2500)}`,
+      `Cause: ${error?.message || String(error)}`
+    ].join('\n\n');
+    const enrichedError = new Error(detail);
+    enrichedError.cause = error;
+    throw enrichedError;
+  }
 
   updateCookieJar(response);
 
@@ -87,6 +110,17 @@ const apiRequest = async (route, { method = 'GET', body, token, useCookies = tru
   }
 
   return { status: response.status, body: json };
+};
+
+const ensureCsrfToken = async () => {
+  if (cookieJar.get('XSRF-TOKEN')) {
+    return cookieJar.get('XSRF-TOKEN');
+  }
+  const csrfRes = await apiRequest('/api/auth/csrf-token', { method: 'GET' });
+  if (csrfRes.status !== 200) {
+    throw new Error(`Failed to bootstrap CSRF token (status ${csrfRes.status})`);
+  }
+  return cookieJar.get('XSRF-TOKEN');
 };
 
 const waitForServer = async () => {
@@ -259,6 +293,8 @@ describe('Auth Real Integration (Express + DB)', () => {
       body: { email: testUser.email, password: originalPassword }
     });
     expect(loginRes.status).toBe(200);
+
+    await ensureCsrfToken();
 
     const refreshRes = await apiRequest('/api/auth/refresh-token', {
       method: 'POST',

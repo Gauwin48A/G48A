@@ -44,14 +44,16 @@
     }
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-    .lazy-image-wrapper {
-        background: #374151;
-    }
+/* Dark mode - class-based (Tailwind darkMode: 'class') */
+html.dark .lazy-image-wrapper {
+    background: #374151;
+}
 
-    .lazy-image-placeholder {
-        background: linear-gradient(90deg, #2d2d2d 25%, #3d3d3d 50%, #2d2d2d 75%);
-        background-size: 200% 100%;
-    }
+html.dark .lazy-image-placeholder {
+    background: linear-gradient(90deg, #2d2d2d 25%, #3d3d3d 50%, #2d2d2d 75%);
+    background-size: 200% 100%;
+}
+
+html.dark .lazy-image-icon {
+    color: #6b7280;
 }

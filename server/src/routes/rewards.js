@@ -1,29 +1,32 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const rewardsController = require('../controllers/rewardsController');
-const rewardController = require('../controllers/rewardController');
+const { protect } = require("../middleware/auth");
+const rewardsController = require("../controllers/rewardsController");
+const rewardController = require("../controllers/rewardController");
+const { rewardRedeemLimiter } = require("../middleware/rateLimiter");
 
+/** All reward routes require authentication */
 router.use(protect);
 
-// GET /api/rewards?userId=X
-// Returns full rewards data with user profile, rank, and referral chain
-router.get('/', rewardsController.getRewards);
+/** @route GET / - Get rewards overview */
+router.get("/", rewardsController.getRewards);
 
-// GET /api/rewards/log?userId=X
-// Returns reward history/log entries
-router.get('/log', rewardsController.getRewardLog);
+/** @route GET /log - Get reward activity log */
+router.get("/log", rewardsController.getRewardLog);
 
-// Protected: Get my rewards summary
-router.get('/my', rewardController.getMyRewards);
+/** @route GET /stream - Stream real-time reward updates (SSE) */
+router.get("/stream", rewardsController.streamRewardUpdates);
 
-// Protected: Redeem rewards for credits
-router.post('/redeem', rewardController.redeemRewards);
+/** @route GET /my - Get the current user's rewards */
+router.get("/my", rewardController.getMyRewards);
 
-// Legacy endpoint for backwards compatibility
-router.get('/by-user', rewardsController.getRewardsByUser);
+/** @route POST /redeem - Redeem accumulated rewards */
+router.post("/redeem", rewardRedeemLimiter, rewardController.redeemRewards);
 
-// GET /api/rewards/user/:userId
-router.get('/user/:userId', rewardsController.getRewardsByUser);
+/** @route GET /by-user - Get rewards filtered by user (query param) */
+router.get("/by-user", (req, res, next) => { const targetId = req.query.userId; if (targetId && req.user?.userId !== targetId && req.user?.role !== 'admin') return res.status(403).json({ error: 'Access denied' }); next(); }, rewardsController.getRewardsByUser);
+
+/** @route GET /user/:userId - Get rewards for a specific user */
+router.get("/user/:userId", (req, res, next) => { const targetId = req.params.userId; if (targetId && req.user?.userId !== targetId && req.user?.role !== 'admin') return res.status(403).json({ error: 'Access denied' }); next(); }, rewardsController.getRewardsByUser);
 
 module.exports = router;

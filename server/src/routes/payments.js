@@ -1,33 +1,72 @@
+const express = require("express");
+const router = express.Router();
+const rateLimit = require("express-rate-limit");
+const paymentController = require("../controllers/paymentController");
+const { protect, optionalAuth } = require("../middleware/auth");
+const { transactionLimiter, webhookLimiter } = require("../middleware/rateLimiter");
+const { requireAdmin } = require("../middleware/rbac");
+
+/** Rate limit for public payment info endpoints */
+const publicPaymentInfoLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Try again later." },
+});
+
 /**
- * Payment Routes
- * Zero-Cost UPI Verification System
+ * @route Payment routes
+ * @description Handles UPI payments, webhooks, promo codes, reconciliation, and payment management
  */
 
-const express = require('express');
-const router = express.Router();
-const paymentController = require('../controllers/paymentController');
-const { protect, optionalAuth } = require('../middleware/auth');
+/* ── Public routes (no auth required) ──────────────────── */
 
-// Public - Get UPI payment details (for QR code display)
-router.get('/upi-details', paymentController.getUpiDetails);
+/** @route GET /upi-details - Get UPI payment details */
+router.get("/upi-details", publicPaymentInfoLimiter, paymentController.getUpiDetails);
 
-// Webhook (Public, verify signature in controller)
-router.post('/webhook', paymentController.handleWebhook);
+/** @route POST /webhook - Handle payment provider webhook callbacks */
+router.post("/webhook", webhookLimiter, paymentController.handleWebhook);
 
-// Validate promo code (auth optional — show discount before login)
-router.post('/validate-promo', paymentController.validatePromoCode);
+/** @route POST /validate-promo - Validate a promotional code */
+router.post("/validate-promo", protect, transactionLimiter, paymentController.validatePromoCode);
 
-// User routes (require authentication)
-router.post('/submit', protect, paymentController.submitPayment);
-router.get('/status', protect, paymentController.getPaymentStatus);
-router.get('/reconciliation/report', protect, paymentController.getReconciliationReport);
-router.post('/reconciliation/run', protect, paymentController.runReconciliation);
-router.post('/:id/retry', protect, paymentController.retryPayment);
+/* ── Protected routes (auth required) ──────────────────── */
 
-// Admin routes (require authentication + admin check could be added)
-router.get('/pending', protect, paymentController.getPendingPayments);
-router.post('/:id/verify', protect, paymentController.verifyPayment);
-router.post('/:id/reject', protect, paymentController.rejectPayment);
-router.get('/stats', protect, paymentController.getPaymentStats);
+/** @route POST /submit - Submit a new payment */
+router.post("/submit", protect, transactionLimiter, paymentController.submitPayment);
+
+/** @route POST /razorpay/order - Create Razorpay order for instant payment */
+router.post("/razorpay/order", protect, transactionLimiter, paymentController.createRazorpayOrder);
+
+/** @route POST /razorpay/verify - Verify Razorpay payment signature */
+router.post("/razorpay/verify", protect, transactionLimiter, paymentController.verifyRazorpayPayment);
+
+/** @route GET /status - Get payment status for the current user */
+router.get("/status", protect, paymentController.getPaymentStatus);
+
+/** @route GET /reconciliation/report - Get payment reconciliation report */
+router.get("/reconciliation/report", protect, paymentController.getReconciliationReport);
+
+/** @route POST /reconciliation/run - Trigger a reconciliation run */
+router.post("/reconciliation/run", protect, requireAdmin, paymentController.runReconciliation);
+
+/** @route POST /:id/retry - Retry a failed payment */
+router.post("/:id/retry", protect, transactionLimiter, paymentController.retryPayment);
+
+/** @route GET /pending - Get all pending payments (admin only) */
+router.get("/pending", protect, requireAdmin, paymentController.getPendingPayments);
+
+/** @route POST /:id/verify - Verify a payment */
+router.post("/:id/verify", protect, requireAdmin, paymentController.verifyPayment);
+
+/** @route POST /:id/reject - Reject a payment */
+router.post("/:id/reject", protect, requireAdmin, paymentController.rejectPayment);
+
+/** @route POST /:id/refund - Initiate a refund for a verified payment */
+router.post("/:id/refund", protect, requireAdmin, paymentController.initiateRefund);
+
+/** @route GET /stats - Get payment statistics (admin only) */
+router.get("/stats", protect, requireAdmin, paymentController.getPaymentStats);
 
 module.exports = router;

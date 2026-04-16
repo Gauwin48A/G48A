@@ -1,11 +1,8 @@
+import * as n from "react";
+import { cva as a } from "class-variance-authority";
+import { cn as i } from "@/lib/utils";
 
-import * as React from "react"
-import { cva } from "class-variance-authority"
-import { cn } from "@/lib/utils"
-
-import { useTranslation } from 'react-i18next';
-
-const badgeVariants = cva(
+const r = a(
   "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
@@ -23,13 +20,13 @@ const badgeVariants = cva(
       variant: "default",
     },
   }
-)
+);
 
-function Badge({ className, variant, ...props }) {
-  const { t } = useTranslation();
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  )
+function d({ className: e, variant: t, ...o }) {
+  return n.createElement("div", {
+    className: i(r({ variant: t }), e),
+    ...o,
+  });
 }
 
-export { Badge, badgeVariants }
+export { d as Badge, r as badgeVariants };

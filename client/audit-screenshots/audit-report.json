@@ -1,0 +1,771 @@
+{
+  "timestamp": "2026-04-13T14:51:05.657Z",
+  "totalPages": 51,
+  "totalIssues": 66,
+  "bySeverity": {
+    "critical": 0,
+    "high": 15,
+    "medium": 44,
+    "low": 7
+  },
+  "pages": [
+    {
+      "route": "/",
+      "name": "root-redirect",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\root-redirect.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\root-redirect-dark.png",
+      "issueCount": 6,
+      "issues": [
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "WHITESPACE",
+          "severity": "low",
+          "detail": "3 large empty containers (200px+ height)"
+        },
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/category-hub",
+      "name": "category-hub",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\category-hub.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\category-hub-dark.png",
+      "issueCount": 6,
+      "issues": [
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/20 without dark: variant"
+        },
+        {
+          "type": "WHITESPACE",
+          "severity": "low",
+          "detail": "3 large empty containers (200px+ height)"
+        },
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/all-posts",
+      "name": "all-posts",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\all-posts.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\all-posts-dark.png",
+      "issueCount": 14,
+      "issues": [
+        {
+          "type": "OVERFLOW",
+          "severity": "high",
+          "detail": "Page has horizontal overflow/scroll"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/10 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "1 buttons without accessible labels"
+        },
+        {
+          "type": "WHITESPACE",
+          "severity": "low",
+          "detail": "1 large empty containers (200px+ height)"
+        },
+        {
+          "type": "NETWORK",
+          "severity": "medium",
+          "detail": "1 failed requests: http://127.0.0.1:5174/api/posts?page=1&limit=6&refresh=1776091686612"
+        }
+      ]
+    },
+    {
+      "route": "/listings",
+      "name": "listings",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\listings.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\listings-dark.png",
+      "issueCount": 13,
+      "issues": [
+        {
+          "type": "OVERFLOW",
+          "severity": "high",
+          "detail": "Page has horizontal overflow/scroll"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/10 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/50 without dark: variant"
+        },
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "1 buttons without accessible labels"
+        },
+        {
+          "type": "WHITESPACE",
+          "severity": "low",
+          "detail": "1 large empty containers (200px+ height)"
+        }
+      ]
+    },
+    {
+      "route": "/for-you",
+      "name": "for-you",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\for-you.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\for-you-dark.png",
+      "issueCount": 2,
+      "issues": [
+        {
+          "type": "OVERFLOW",
+          "severity": "high",
+          "detail": "Page has horizontal overflow/scroll"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/10 without dark: variant"
+        }
+      ]
+    },
+    {
+      "route": "/feed",
+      "name": "feed",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\feed.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\feed-dark.png",
+      "issueCount": 3,
+      "issues": [
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "span has bg-white/15 without dark: variant"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/10 without dark: variant"
+        },
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "25 elements with potentially low contrast text"
+        }
+      ]
+    },
+    {
+      "route": "/home",
+      "name": "home",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\home.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\home-dark.png",
+      "issueCount": 3,
+      "issues": [
+        {
+          "type": "OVERFLOW",
+          "severity": "high",
+          "detail": "Page has horizontal overflow/scroll"
+        },
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/10 without dark: variant"
+        },
+        {
+          "type": "WHITESPACE",
+          "severity": "low",
+          "detail": "8 large empty containers (200px+ height)"
+        }
+      ]
+    },
+    {
+      "route": "/search",
+      "name": "search",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\search.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\search-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "1 buttons without accessible labels"
+        }
+      ]
+    },
+    {
+      "route": "/nearby",
+      "name": "nearby",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\nearby.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\nearby-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/post/123",
+      "name": "post-detail",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\post-detail.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\post-detail-dark.png",
+      "issueCount": 3,
+      "issues": [
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/70 without dark: variant"
+        },
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "2 buttons without accessible labels"
+        },
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "17 elements with potentially low contrast text"
+        }
+      ]
+    },
+    {
+      "route": "/listing/123",
+      "name": "listing-detail",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\listing-detail.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\listing-detail-dark.png",
+      "issueCount": 3,
+      "issues": [
+        {
+          "type": "DARK_MODE",
+          "severity": "medium",
+          "detail": "button has bg-white/70 without dark: variant"
+        },
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "2 buttons without accessible labels"
+        },
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "17 elements with potentially low contrast text"
+        }
+      ]
+    },
+    {
+      "route": "/public-wall",
+      "name": "public-wall",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\public-wall.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\public-wall-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/categories",
+      "name": "categories",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\categories.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\categories-dark.png",
+      "issueCount": 2,
+      "issues": [
+        {
+          "type": "WHITESPACE",
+          "severity": "low",
+          "detail": "1 large empty containers (200px+ height)"
+        },
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/subcategories",
+      "name": "subcategories",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\subcategories.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\subcategories-dark.png",
+      "issueCount": 2,
+      "issues": [
+        {
+          "type": "WHITESPACE",
+          "severity": "low",
+          "detail": "1 large empty containers (200px+ height)"
+        },
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "name": "login",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\login.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\login-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/signup",
+      "name": "signup",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\signup.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\signup-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/forgot-password",
+      "name": "forgot-password",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\forgot-password.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\forgot-password-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/reset-password/demo",
+      "name": "reset-password",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\reset-password.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\reset-password-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "A11Y",
+          "severity": "medium",
+          "detail": "2 buttons without accessible labels"
+        }
+      ]
+    },
+    {
+      "route": "/invite/demo",
+      "name": "invite-redirect",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\invite-redirect.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\invite-redirect-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/profile",
+      "name": "profile",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\profile.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\profile-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/dashboard",
+      "name": "dashboard",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\dashboard.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\dashboard-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/add-post",
+      "name": "add-post",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\add-post.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\add-post-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/sell",
+      "name": "sell",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\sell.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\sell-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/my-home",
+      "name": "my-home",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\my-home.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\my-home-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/cart",
+      "name": "cart",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\cart.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\cart-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/wishlist",
+      "name": "wishlist",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\wishlist.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\wishlist-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/chat",
+      "name": "chat",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\chat.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\chat-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/notifications",
+      "name": "notifications",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\notifications.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\notifications-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/rewards",
+      "name": "rewards",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\rewards.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\rewards-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/activity",
+      "name": "activity",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\activity.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\activity-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/analytics",
+      "name": "analytics",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\analytics.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\analytics-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/feedback",
+      "name": "feedback",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\feedback.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\feedback-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/complaints",
+      "name": "complaints",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\complaints.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\complaints-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/security",
+      "name": "security",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\security.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\security-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/tier-selection",
+      "name": "tier-selection",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\tier-selection.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\tier-selection-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/pricing",
+      "name": "pricing",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\pricing.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\pricing-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/centre",
+      "name": "centre",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\centre.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\centre-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/verification",
+      "name": "verification",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\verification.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\verification-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/admin-panel",
+      "name": "admin-panel",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\admin-panel.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\admin-panel-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/privacy-policy",
+      "name": "privacy-policy",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\privacy-policy.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\privacy-policy-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/terms",
+      "name": "terms",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\terms.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\terms-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/refund-policy",
+      "name": "refund-policy",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\refund-policy.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\refund-policy-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/compare",
+      "name": "compare",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\compare.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\compare-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/recently-viewed",
+      "name": "recently-viewed",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\recently-viewed.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\recently-viewed-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/saved-searches",
+      "name": "saved-searches",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\saved-searches.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\saved-searches-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/bought-posts",
+      "name": "bought-posts",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\bought-posts.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\bought-posts-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/sold-posts",
+      "name": "sold-posts",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\sold-posts.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\sold-posts-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/offers",
+      "name": "offers",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\offers.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\offers-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/reviews",
+      "name": "reviews",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\reviews.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\reviews-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "route": "/post-welcome",
+      "name": "post-welcome",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\post-welcome.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\post-welcome-dark.png",
+      "issueCount": 0,
+      "issues": []
+    },
+    {
+      "route": "/not-found-test-404",
+      "name": "404-not-found",
+      "screenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\404-not-found.png",
+      "darkScreenshot": "C:\\Users\\laksh\\GITHUB\\MHUB\\Mhub\\client\\audit-screenshots\\404-not-found-dark.png",
+      "issueCount": 1,
+      "issues": [
+        {
+          "type": "CONSOLE_ERROR",
+          "severity": "high",
+          "detail": "1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    }
+  ]
+}

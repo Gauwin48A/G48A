@@ -1,332 +1,1576 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { AlertTriangle, Users, FileText, Flag, Shield, TrendingUp, Search, MoreVertical, Ban, CheckCircle } from "lucide-react";
-import { getApiOriginBase } from '@/lib/networkConfig';
+import e, {
+  useState as d,
+  useEffect as ve,
+  useMemo as ne,
+  useCallback as v,
+  useRef as fe,
+} from "react";
+import { useTranslation as be } from "react-i18next";
+import { useNavigate as xe } from "react-router-dom";
+import {
+  Card as o,
+  CardContent as g,
+  CardDescription as U,
+  CardHeader as _,
+  CardTitle as D,
+} from "@/components/ui/card";
+import { Button as m } from "@/components/ui/button";
+import { Badge as V } from "@/components/ui/badge";
+import {
+  Tabs as ye,
+  TabsContent as P,
+  TabsList as he,
+  TabsTrigger as I,
+} from "@/components/ui/tabs";
+import { Input as le } from "@/components/ui/input";
+import {
+  Alert as Y,
+  AlertDescription as W,
+  AlertTitle as G,
+} from "@/components/ui/alert";
+import {
+  AlertTriangle as de,
+  CheckCircle as Ne,
+  FileText as we,
+  Flag as ke,
+  Search as oe,
+  Shield as Ce,
+  Users as Ae,
+  Ban as Te,
+  RefreshCw as Se,
+} from "lucide-react";
+import {
+  AlertDialog as Ue,
+  AlertDialogAction as _e,
+  AlertDialogCancel as De,
+  AlertDialogContent as Pe,
+  AlertDialogDescription as Ie,
+  AlertDialogFooter as Be,
+  AlertDialogHeader as qe,
+  AlertDialogTitle as Le,
+} from "@/components/ui/alert-dialog";
+import { useToast as ze } from "@/components/ui/use-toast";
+import { useAuth as Ve } from "@/context/AuthContext";
+import k from "../lib/api";
+const ge = {
+    totalUsers: 0,
+    totalPosts: 0,
+    flaggedPosts: 0,
+    restrictedUsers: 0,
+    todaySignups: 0,
+    todayPosts: 0,
+  },
+  ADMIN_ALLOWED_ROLES = new Set([
+    "admin",
+    "superadmin",
+    "moderator",
+    "risk",
+    "ops",
+  ]),
+  normalizeRole = (value) => {
+    const normalized = String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+    if (!normalized) return "";
+    if (normalized === "super_admin") return "superadmin";
+    if (normalized === "administrator") return "admin";
+    if (normalized === "mod") return "moderator";
+    if (normalized === "operations") return "ops";
+    return normalized;
+  },
+  hasAdminPanelReadAccess = (role) =>
+    ADMIN_ALLOWED_ROLES.has(normalizeRole(role)),
+  readStoredUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  },
+  C = (s) => {
+    const b = Number(s?.status || s?.response?.status || 0),
+      l = String(s?.message || "").toLowerCase();
+    return b === 401 ||
+      b === 403 ||
+      l.includes("permission") ||
+      l.includes("unauthorized")
+      ? "You do not have access to admin operations in this session."
+      : "Admin dashboard data is temporarily unavailable. Please retry.";
+  },
+  J = (s) => (Array.isArray(s) ? s : []),
+  $e = () => {
+    const { t: s } = be(),
+      b = xe(),
+      { user: Bn } = Ve(),
+      { toast: l } = ze(),
+      f = fe(null),
+      [x, N] = d(ge),
+      [B, q] = d([]),
+      [L, z] = d([]),
+      [K, me] = d([]),
+      [Q, y] = d(""),
+      [ce, X] = d(!0),
+      [accessChecked, setAccessChecked] = d(!1),
+      [hasAdminAccess, setHasAdminAccess] = d(!1),
+      [, Z] = d(!1),
+      [, $] = d(""),
+      [j, R] = d(""),
+      [E, ee] = d(""),
+      [u, F] = d(null),
+      [c, A] = d(!1),
+      [n, M] = d(null),
+      te = v(() => {
+        f.current && (clearTimeout(f.current), (f.current = null)), M(null);
+      }, []),
+      T = v((t) => {
+        f.current && clearTimeout(f.current),
+          M(t),
+          (f.current = setTimeout(() => {
+            M(null), (f.current = null);
+          }, 12e3));
+      }, []),
+      S = v(async ({ panel: t = "all" } = {}) => {
+        const r = t === "activity";
+        r ? (Z(!0), $("")) : X(!0);
+        try {
+          const a = await k.get("/admin/dashboard"),
+            i = a?.data ?? a;
+          N({ ...ge, ...(i?.stats || {}) }),
+            q(J(i?.flaggedUsers)),
+            z(J(i?.flaggedPosts)),
+            me(J(i?.recentActivity)),
+            r ? $("") : y("");
+        } catch (a) {
+          const i = C(a),
+            status = Number(a?.status || a?.response?.status || 0);
+          if (status === 401 || status === 403) {
+            setHasAdminAccess(!1);
+          }
+          r ? $(i) : y(i),
+            import.meta.env.DEV &&
+              status !== 403 &&
+              status !== 401 &&
+              console.error("[AdminPanel] Dashboard fetch failed:", a);
+        } finally {
+          r ? Z(!1) : X(!1);
+        }
+      }, []);
+    ve(() => {
+      let t = !1;
+      (async () => {
+        const profileRole = normalizeRole(Bn?.role);
+        const storedRole = normalizeRole(readStoredUser()?.role);
+        let allowed = hasAdminPanelReadAccess(profileRole || storedRole);
 
-const AdminPanel = () => {
-  const { t } = useTranslation();
-  const [stats, setStats] = useState({});
-  const [flaggedUsers, setFlaggedUsers] = useState([]);
-  const [flaggedPosts, setFlaggedPosts] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+        if (!allowed) {
+          try {
+            const profile = await k.get("/auth/me");
+            const fetchedRole = normalizeRole(
+              profile?.role || profile?.user?.role,
+            );
+            allowed = hasAdminPanelReadAccess(fetchedRole);
+          } catch {
+            allowed = false;
+          }
+        }
 
-  useEffect(() => {
-    setLoading(true);
-    const baseUrl = getApiOriginBase();
-    fetch(`${baseUrl}/api/admin/dashboard`)
-      .then(res => res.json())
-      .then(data => {
-        setStats(data.stats || {});
-        setFlaggedUsers(data.flaggedUsers || []);
-        setFlaggedPosts(data.flaggedPosts || []);
-        setRecentActivity(data.recentActivity || []);
-        setError(null);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message || 'Failed to fetch admin dashboard data');
-        setLoading(false);
-      });
-  }, []);
+        if (t) return;
 
-  const handleUserAction = (userId, action) => {
-    // Implementation for user actions
+        setHasAdminAccess(allowed);
+        setAccessChecked(true);
+
+        if (!allowed) {
+          X(false);
+          Z(false);
+          N(ge);
+          q([]);
+          z([]);
+          me([]);
+          y("You do not have access to admin operations in this session.");
+        }
+      })();
+
+      return () => {
+        t = true;
+      };
+    }, [Bn?.role]);
+    ve(
+      () => (
+        accessChecked && hasAdminAccess && S(),
+        () => {
+          f.current && clearTimeout(f.current);
+        }
+      ),
+      [S, accessChecked, hasAdminAccess],
+    );
+    if (!accessChecked) {
+      return e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br dark:from-slate-900 dark:to-blue-900/50",
+        },
+        e.createElement(
+          "div",
+          { className: "max-w-6xl mx-auto py-20 text-center page-shell page-pad dark:text-center" },
+          e.createElement("div", {
+            className:
+              "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-2 dark:border-blue-500/40 dark:border-t-transparent",
+          }),
+          e.createElement(
+            "p",
+            { className: "mt-4 text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+            "Checking admin access...",
+          ),
+        ),
+      );
+    }
+    const se = ne(() => {
+        const t = j.trim().toLowerCase();
+        return t
+          ? B.filter((r) =>
+              [r.name, r.email, r.phone, r.reason, r.status, r.id]
+                .map((i) => String(i || "").toLowerCase())
+                .join(" ")
+                .includes(t),
+            )
+          : B;
+      }, [B, j]),
+      re = ne(() => {
+        const t = E.trim().toLowerCase();
+        return t
+          ? L.filter((r) =>
+              [r.title, r.reason, r.sellerName, r.sellerId, r.status, r.id]
+                .map((i) => String(i || "").toLowerCase())
+                .join(" ")
+                .includes(t),
+            )
+          : L;
+      }, [L, E]),
+      h = v((t) => {
+        F(t);
+      }, []),
+      H = v(
+        (t, r) => {
+          if (r === "review") {
+            b(`/complaints?userId=${encodeURIComponent(String(t.id || ""))}`);
+            return;
+          }
+          if (r === "warn") {
+            l({
+              title: "Warning workflow queued",
+              description:
+                "Send policy reminders using neutral language and include evidence references.",
+            });
+            return;
+          }
+          if (r === "suspend") {
+            h({
+              kind: "user",
+              action: "suspend",
+              id: t.id,
+              label: t.name,
+              previousStatus: t.status,
+              snapshot: t,
+              confirmLabel: "Restrict User",
+              title: `Restrict ${t.name}?`,
+              description:
+                "This blocks account activity while review continues. Use this only when evidence supports temporary restriction.",
+            });
+            return;
+          }
+          r === "unsuspend" &&
+            h({
+              kind: "user",
+              action: "unsuspend",
+              id: t.id,
+              label: t.name,
+              previousStatus: t.status,
+              snapshot: t,
+              confirmLabel: "Re-Activate User",
+              title: `Re-activate ${t.name}?`,
+              description:
+                "This restores account access and moves status back to review mode.",
+            });
+        },
+        [b, h, l],
+      ),
+      O = v(
+        (t, r) => {
+          if (r === "view") {
+            b(`/post/${encodeURIComponent(String(t.id || ""))}`);
+            return;
+          }
+          if (r === "remove") {
+            h({
+              kind: "post",
+              action: "remove",
+              id: t.id,
+              label: t.title,
+              previousStatus: t.status,
+              snapshot: t,
+              confirmLabel: "Remove Post",
+              title: `Remove "${t.title}"?`,
+              description:
+                "This will hide the post from the marketplace. Ensure the removal reason is policy-based and documented.",
+            });
+            return;
+          }
+          r === "approve" &&
+            h({
+              kind: "post",
+              action: "approve",
+              id: t.id,
+              label: t.title,
+              previousStatus: t.status,
+              snapshot: t,
+              confirmLabel: "Approve Post",
+              title: `Approve "${t.title}"?`,
+              description:
+                "This returns the post to active status and closes the current moderation flag.",
+            });
+        },
+        [b, h],
+      ),
+      ae = v(
+        async (t) => {
+          const r = await k.post(
+              "/admin/dashboard/flagged-posts/bulk-action",
+              {
+                postIds: [String(t.id)],
+                action: t.action,
+                reason: `Admin panel ${t.action} action`,
+              },
+            ),
+            a = r?.data ?? r,
+            i =
+              a?.statusAfter || (t.action === "approve" ? "active" : "removed");
+          return (
+            z((p) => p.filter((w) => String(w.id) !== String(t.id))),
+            N((p) => ({
+              ...p,
+              flaggedPosts: Math.max(0, Number(p.flaggedPosts || 0) - 1),
+            })),
+            l({
+              title: "Post moderation updated",
+              description: a?.requestId
+                ? `Request reference: ${a.requestId}`
+                : "Post status updated successfully.",
+            }),
+            (t.action === "approve" || t.action === "remove") &&
+              T({
+                kind: "post",
+                reverseAction: "reflag",
+                id: t.id,
+                snapshot: {
+                  ...t.snapshot,
+                  status: t.previousStatus || "flagged",
+                },
+                successMessage: "Post restored to flagged review status.",
+                requestId: a?.requestId || "",
+              }),
+            i
+          );
+        },
+        [T, l],
+      ),
+      ie = v(
+        async (t) => {
+          const r = await k.post("/admin/users/bulk-action", {
+              userIds: [String(t.id)],
+              action: t.action,
+              reason: `Admin panel ${t.action} action`,
+            }),
+            a = r?.data ?? r,
+            i = t.action === "suspend" ? "Restricted" : "Under Review";
+          q((p) =>
+            p.map((w) =>
+              String(w.id) === String(t.id) ? { ...w, status: i } : w,
+            ),
+          ),
+            N((p) => ({
+              ...p,
+              restrictedUsers:
+                t.action === "suspend"
+                  ? Number(p.restrictedUsers || 0) + 1
+                  : Math.max(0, Number(p.restrictedUsers || 0) - 1),
+            })),
+            l({
+              title: "User moderation updated",
+              description: a?.requestId
+                ? `Request reference: ${a.requestId}`
+                : "User status updated successfully.",
+            }),
+            t.action === "suspend" &&
+              T({
+                kind: "user",
+                reverseAction: "unsuspend",
+                id: t.id,
+                snapshot: t.snapshot,
+                successMessage: "User restriction was reverted.",
+                requestId: a?.requestId || "",
+              });
+        },
+        [T, l],
+      ),
+      ue = v(async () => {
+        if (u) {
+          A(!0), y("");
+          try {
+            u.kind === "post"
+              ? await ae(u)
+              : u.kind === "user" && (await ie(u)),
+              F(null);
+          } catch (t) {
+            y(C(t)),
+              l({
+                title: "Action failed",
+                description: C(t),
+                variant: "destructive",
+              });
+          } finally {
+            A(!1);
+          }
+        }
+      }, [ae, ie, u, l]),
+      pe = v(async () => {
+        if (n) {
+          A(!0), y("");
+          try {
+            n.kind === "post" &&
+              (await k.post("/admin/dashboard/flagged-posts/bulk-action", {
+                postIds: [String(n.id)],
+                action: n.reverseAction,
+                reason: "Undo from admin panel",
+              }),
+              z((t) =>
+                t.some((a) => String(a.id) === String(n.id))
+                  ? t
+                  : [{ ...n.snapshot, status: "flagged" }, ...t],
+              ),
+              N((t) => ({
+                ...t,
+                flaggedPosts: Number(t.flaggedPosts || 0) + 1,
+              }))),
+              n.kind === "user" &&
+                (await k.post("/admin/users/bulk-action", {
+                  userIds: [String(n.id)],
+                  action: n.reverseAction,
+                  reason: "Undo from admin panel",
+                }),
+                q((t) =>
+                  t.map((r) =>
+                    String(r.id) === String(n.id)
+                      ? { ...r, status: n.snapshot?.status || "Under Review" }
+                      : r,
+                  ),
+                ),
+                N((t) => ({
+                  ...t,
+                  restrictedUsers: Math.max(
+                    0,
+                    Number(t.restrictedUsers || 0) - 1,
+                  ),
+                }))),
+              l({
+                title: "Undo complete",
+                description: n.successMessage || "Reverted successfully.",
+              }),
+              te();
+          } catch (t) {
+            y(C(t)),
+              l({
+                title: "Undo failed",
+                description: C(t),
+                variant: "destructive",
+              });
+          } finally {
+            A(!1);
+          }
+        }
+      }, [te, l, n]);
+    return ce
+      ? e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br dark:from-slate-900 dark:to-blue-900/50",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-6xl mx-auto py-20 text-center page-shell page-pad dark:text-center" },
+            e.createElement("div", {
+              className:
+                "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-2 dark:border-blue-500/40 dark:border-t-transparent",
+            }),
+            e.createElement(
+              "p",
+              { className: "mt-4 text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+              "Loading admin operations...",
+            ),
+          ),
+        )
+      : e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-100 p-4 transition-colors duration-300 dark:bg-gradient-to-br dark:from-slate-900 dark:to-blue-900/50",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-6xl mx-auto space-y-4 page-shell page-pad" },
+            e.createElement(
+              "div",
+              { className: "text-center md:text-left dark:text-center dark:md:text-left" },
+              e.createElement(
+                "h1",
+                {
+                  className:
+                    "text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
+                },
+                s("admin_panel"),
+              ),
+              e.createElement(
+                "p",
+                { className: "text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+                s("admin_panel_desc"),
+              ),
+            ),
+            e.createElement(
+              Y,
+              { className: "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-blue-200" },
+              e.createElement(Ce, { className: "h-4 w-4 text-blue-700 dark:text-blue-300" }),
+              e.createElement(G, null, "Moderation safety baseline"),
+              e.createElement(
+                W,
+                null,
+                "Confirm evidence before actioning. Use neutral policy language, avoid accusations, and include traceable references.",
+              ),
+            ),
+            Q
+              ? e.createElement(
+                  Y,
+                  { variant: "destructive" },
+                  e.createElement(de, { className: "h-4 w-4" }),
+                  e.createElement(G, null, "Operational warning"),
+                  e.createElement(W, null, Q),
+                  e.createElement(
+                    "div",
+                    { className: "mt-3 flex flex-wrap gap-2" },
+                    e.createElement(
+                      m,
+                      { size: "sm", onClick: S },
+                      e.createElement(Se, { className: "h-4 w-4 mr-1" }),
+                      "Retry",
+                    ),
+                    e.createElement(
+                      m,
+                      {
+                        size: "sm",
+                        variant: "outline",
+                        onClick: () => b("/dashboard"),
+                      },
+                      "Open user dashboard",
+                    ),
+                  ),
+                )
+              : null,
+            n
+              ? e.createElement(
+                  Y,
+                  {
+                    className:
+                      "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-600/40 dark:bg-emerald-950/20 dark:text-emerald-200",
+                  },
+                  e.createElement(G, null, "Recent action available for undo"),
+                  e.createElement(
+                    W,
+                    null,
+                    "Reverse the last moderation update if this was applied incorrectly.",
+                    n.requestId ? ` Reference: ${n.requestId}.` : "",
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "mt-3" },
+                    e.createElement(
+                      m,
+                      {
+                        size: "sm",
+                        variant: "outline",
+                        onClick: pe,
+                        disabled: c,
+                      },
+                      "Undo",
+                    ),
+                  ),
+                )
+              : null,
+            e.createElement(
+              "div",
+              { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
+              e.createElement(
+                o,
+                {
+                  className:
+                    "bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-900 text-white shadow-lg border-0 dark:bg-gradient-to-r dark:text-white dark:border-0",
+                },
+                e.createElement(
+                  g,
+                  { className: "p-4" },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between" },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "div",
+                        { className: "text-2xl font-bold" },
+                        Number(x.totalUsers || 0),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-blue-100 text-sm dark:text-blue-200" },
+                        s("total_users"),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-blue-200 text-xs dark:text-blue-200" },
+                        "+",
+                        Number(x.todaySignups || 0),
+                        " ",
+                        s("today"),
+                      ),
+                    ),
+                    e.createElement(Ae, { className: "w-8 h-8 text-blue-200 dark:text-blue-200" }),
+                  ),
+                ),
+              ),
+              e.createElement(
+                o,
+                {
+                  className:
+                    "bg-gradient-to-r from-green-500 to-green-600 dark:from-green-700 dark:to-green-900 text-white shadow-lg border-0 dark:bg-gradient-to-r dark:text-white dark:border-0",
+                },
+                e.createElement(
+                  g,
+                  { className: "p-4" },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between" },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "div",
+                        { className: "text-2xl font-bold" },
+                        Number(x.totalPosts || 0),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-green-100 text-sm dark:text-green-200" },
+                        s("total_posts"),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-green-200 text-xs dark:text-green-200" },
+                        "+",
+                        Number(x.todayPosts || 0),
+                        " ",
+                        s("today"),
+                      ),
+                    ),
+                    e.createElement(we, {
+                      className: "w-8 h-8 text-green-200 dark:text-green-200",
+                    }),
+                  ),
+                ),
+              ),
+              e.createElement(
+                o,
+                {
+                  className:
+                    "bg-gradient-to-r from-orange-500 to-orange-600 dark:from-orange-700 dark:to-orange-900 text-white shadow-lg border-0 dark:bg-gradient-to-r dark:text-white dark:border-0",
+                },
+                e.createElement(
+                  g,
+                  { className: "p-4" },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between" },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "div",
+                        { className: "text-2xl font-bold" },
+                        Number(x.flaggedPosts || 0),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-orange-100 text-sm dark:text-orange-200" },
+                        s("flagged_posts"),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-orange-200 text-xs dark:text-orange-200" },
+                        s("need_review"),
+                      ),
+                    ),
+                    e.createElement(ke, {
+                      className: "w-8 h-8 text-orange-200 dark:text-orange-200",
+                    }),
+                  ),
+                ),
+              ),
+              e.createElement(
+                o,
+                {
+                  className:
+                    "bg-gradient-to-r from-red-500 to-red-600 dark:from-red-700 dark:to-red-900 text-white shadow-lg border-0 dark:bg-gradient-to-r dark:text-white dark:border-0",
+                },
+                e.createElement(
+                  g,
+                  { className: "p-4" },
+                  e.createElement(
+                    "div",
+                    { className: "flex items-center justify-between" },
+                    e.createElement(
+                      "div",
+                      null,
+                      e.createElement(
+                        "div",
+                        { className: "text-2xl font-bold" },
+                        Number(x.restrictedUsers || 0),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-red-100 text-sm dark:text-red-200" },
+                        s("restricted"),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "text-red-200 text-xs dark:text-red-200" },
+                        s("users_blocked"),
+                      ),
+                    ),
+                    e.createElement(de, { className: "w-8 h-8 text-red-200 dark:text-red-200" }),
+                  ),
+                ),
+              ),
+            ),
+            e.createElement(
+              ye,
+              { defaultValue: "users", className: "space-y-6" },
+              e.createElement(
+                he,
+                {
+                  className:
+                    "grid w-full grid-cols-4 h-12 mhub-premium-surface",
+                },
+                e.createElement(
+                  I,
+                  {
+                    value: "users",
+                    className:
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
+                  },
+                  s("users"),
+                ),
+                e.createElement(
+                  I,
+                  {
+                    value: "posts",
+                    className:
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
+                  },
+                  s("posts"),
+                ),
+                e.createElement(
+                  I,
+                  {
+                    value: "flags",
+                    className:
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
+                  },
+                  s("flags"),
+                ),
+                e.createElement(
+                  I,
+                  {
+                    value: "activity",
+                    className:
+                      "text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white",
+                  },
+                  s("activity"),
+                ),
+              ),
+              e.createElement(
+                P,
+                { value: "users" },
+                e.createElement(
+                  o,
+                  { className: "shadow-lg mhub-premium-surface border-0 dark:border-0" },
+                  e.createElement(
+                    _,
+                    null,
+                    e.createElement(
+                      D,
+                      {
+                        className:
+                          "flex items-center justify-between text-gray-900 dark:text-white flex-wrap gap-2 dark:text-gray-100",
+                      },
+                      e.createElement(
+                        "span",
+                        null,
+                        s("flagged_users_management"),
+                      ),
+                      e.createElement(
+                        "div",
+                        { className: "relative w-full sm:w-72" },
+                        e.createElement(oe, {
+                          className:
+                            "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 dark:text-gray-300",
+                        }),
+                        e.createElement(le, {
+                          value: j,
+                          onChange: (t) => R(t.target.value),
+                          placeholder: s("search_users"),
+                          className:
+                            "pl-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white",
+                        }),
+                      ),
+                    ),
+                    e.createElement(
+                      U,
+                      { className: "dark:text-gray-400" },
+                      s("review_manage_flagged_users"),
+                    ),
+                  ),
+                  e.createElement(
+                    g,
+                    null,
+                    se.length === 0
+                      ? e.createElement(
+                          "div",
+                          { className: "text-center py-10 space-y-3 dark:text-center" },
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                            },
+                            "No flagged users match this filter.",
+                          ),
+                          e.createElement(
+                            m,
+                            {
+                              variant: "outline",
+                              size: "sm",
+                              onClick: () => R(""),
+                            },
+                            "Clear User Filter",
+                          ),
+                        )
+                      : e.createElement(
+                          "div",
+                          { className: "space-y-4" },
+                          se.map((t) => {
+                            const r =
+                              String(t.status || "").toLowerCase() ===
+                              "restricted";
+                            return e.createElement(
+                              o,
+                              {
+                                key: t.id,
+                                className:
+                                  "border-l-4 border-l-red-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:border-l-4 dark:border-l-red-500 dark:bg-slate-900",
+                              },
+                              e.createElement(
+                                g,
+                                { className: "p-4" },
+                                e.createElement(
+                                  "div",
+                                  {
+                                    className:
+                                      "flex flex-col md:flex-row justify-between gap-4",
+                                  },
+                                  e.createElement(
+                                    "div",
+                                    { className: "flex-1" },
+                                    e.createElement(
+                                      "div",
+                                      {
+                                        className:
+                                          "flex items-center space-x-2 mb-2 flex-wrap",
+                                      },
+                                      e.createElement(
+                                        "h3",
+                                        {
+                                          className:
+                                            "font-semibold text-lg text-gray-900 dark:text-white dark:text-gray-100",
+                                        },
+                                        t.name,
+                                      ),
+                                      e.createElement(
+                                        V,
+                                        {
+                                          variant: r
+                                            ? "destructive"
+                                            : "secondary",
+                                          className: "dark:text-white",
+                                        },
+                                        t.status || "Flagged",
+                                      ),
+                                      e.createElement(
+                                        V,
+                                        {
+                                          variant: "outline",
+                                          className:
+                                            "text-red-600 dark:text-red-400 dark:border-red-400 dark:text-red-300",
+                                        },
+                                        Number(t.flagCount || 0),
+                                        " ",
+                                        s("flags"),
+                                      ),
+                                    ),
+                                    e.createElement(
+                                      "div",
+                                      {
+                                        className:
+                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                      },
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("email"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.email || "N/A",
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("phone"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.phone || "N/A",
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("reason"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.reason || "Policy review triggered",
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("stats"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        Number(t.totalPosts || 0),
+                                        " ",
+                                        s("posts"),
+                                        ", ",
+                                        Number(t.completedSales || 0),
+                                        " ",
+                                        s("sales_completed"),
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("joined"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.joinDate || "N/A",
+                                      ),
+                                    ),
+                                  ),
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className:
+                                        "flex flex-col space-y-2 md:w-52",
+                                    },
+                                    e.createElement(
+                                      m,
+                                      {
+                                        size: "sm",
+                                        variant: "outline",
+                                        className:
+                                          "w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500",
+                                        onClick: () => H(t, "review"),
+                                        disabled: c,
+                                      },
+                                      s("review_details"),
+                                    ),
+                                    e.createElement(
+                                      m,
+                                      {
+                                        size: "sm",
+                                        variant: r
+                                          ? "secondary"
+                                          : "destructive",
+                                        className: "w-full",
+                                        onClick: () =>
+                                          H(t, r ? "unsuspend" : "suspend"),
+                                        disabled: c,
+                                      },
+                                      e.createElement(Te, {
+                                        className: "w-4 h-4 mr-1",
+                                      }),
+                                      r
+                                        ? "Re-Activate User"
+                                        : s("restrict_user"),
+                                    ),
+                                    e.createElement(
+                                      m,
+                                      {
+                                        size: "sm",
+                                        variant: "secondary",
+                                        className:
+                                          "w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500",
+                                        onClick: () => H(t, "warn"),
+                                        disabled: c,
+                                      },
+                                      s("send_warning"),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                  ),
+                ),
+              ),
+              e.createElement(
+                P,
+                { value: "posts" },
+                e.createElement(
+                  o,
+                  { className: "shadow-lg mhub-premium-surface border-0 dark:border-0" },
+                  e.createElement(
+                    _,
+                    null,
+                    e.createElement(
+                      D,
+                      {
+                        className:
+                          "text-gray-900 dark:text-white flex items-center justify-between gap-2 flex-wrap dark:text-gray-100",
+                      },
+                      s("flagged_posts_management"),
+                      e.createElement(
+                        "div",
+                        { className: "relative w-full sm:w-72" },
+                        e.createElement(oe, {
+                          className:
+                            "absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 dark:text-gray-300",
+                        }),
+                        e.createElement(le, {
+                          value: E,
+                          onChange: (t) => ee(t.target.value),
+                          placeholder: "Search flagged posts",
+                          className:
+                            "pl-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white",
+                        }),
+                      ),
+                    ),
+                    e.createElement(
+                      U,
+                      { className: "dark:text-gray-400" },
+                      s("review_moderate_flagged_posts"),
+                    ),
+                  ),
+                  e.createElement(
+                    g,
+                    null,
+                    re.length === 0
+                      ? e.createElement(
+                          "div",
+                          { className: "text-center py-10 space-y-3 dark:text-center" },
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                            },
+                            "No flagged posts match this filter.",
+                          ),
+                          e.createElement(
+                            m,
+                            {
+                              variant: "outline",
+                              size: "sm",
+                              onClick: () => ee(""),
+                            },
+                            "Clear Post Filter",
+                          ),
+                        )
+                      : e.createElement(
+                          "div",
+                          { className: "space-y-4" },
+                          re.map((t) =>
+                            e.createElement(
+                              o,
+                              {
+                                key: t.id,
+                                className:
+                                  "border-l-4 border-l-orange-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:border-l-4 dark:border-l-orange-500 dark:bg-slate-900",
+                              },
+                              e.createElement(
+                                g,
+                                { className: "p-4" },
+                                e.createElement(
+                                  "div",
+                                  {
+                                    className:
+                                      "flex flex-col md:flex-row justify-between gap-4",
+                                  },
+                                  e.createElement(
+                                    "div",
+                                    { className: "flex-1" },
+                                    e.createElement(
+                                      "div",
+                                      {
+                                        className:
+                                          "flex items-center space-x-2 mb-2 flex-wrap",
+                                      },
+                                      e.createElement(
+                                        "h3",
+                                        {
+                                          className:
+                                            "font-semibold text-gray-900 dark:text-white dark:text-gray-100",
+                                        },
+                                        t.title,
+                                      ),
+                                      e.createElement(
+                                        V,
+                                        {
+                                          variant: "secondary",
+                                          className:
+                                            "dark:bg-gray-600 dark:text-white",
+                                        },
+                                        t.status || "flagged",
+                                      ),
+                                    ),
+                                    e.createElement(
+                                      "div",
+                                      {
+                                        className:
+                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                      },
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("price"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.price || "N/A",
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("seller"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.sellerName || "N/A",
+                                        " (",
+                                        t.sellerId || "N/A",
+                                        ")",
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("reason"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.reason || "Policy review required",
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("flagged_by"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        t.flaggedBy || "system",
+                                      ),
+                                      e.createElement(
+                                        "p",
+                                        null,
+                                        e.createElement(
+                                          "strong",
+                                          null,
+                                          s("views"),
+                                          ":",
+                                        ),
+                                        " ",
+                                        Number(t.views || 0),
+                                      ),
+                                    ),
+                                  ),
+                                  e.createElement(
+                                    "div",
+                                    {
+                                      className:
+                                        "flex flex-col space-y-2 md:w-48",
+                                    },
+                                    e.createElement(
+                                      m,
+                                      {
+                                        size: "sm",
+                                        variant: "outline",
+                                        className:
+                                          "w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500",
+                                        onClick: () => O(t, "view"),
+                                        disabled: c,
+                                      },
+                                      s("view_post"),
+                                    ),
+                                    e.createElement(
+                                      m,
+                                      {
+                                        size: "sm",
+                                        variant: "destructive",
+                                        className: "w-full",
+                                        onClick: () => O(t, "remove"),
+                                        disabled: c,
+                                      },
+                                      s("remove_post"),
+                                    ),
+                                    e.createElement(
+                                      m,
+                                      {
+                                        size: "sm",
+                                        variant: "secondary",
+                                        className:
+                                          "w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500",
+                                        onClick: () => O(t, "approve"),
+                                        disabled: c,
+                                      },
+                                      e.createElement(Ne, {
+                                        className: "w-4 h-4 mr-1",
+                                      }),
+                                      s("approve"),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                  ),
+                ),
+              ),
+              e.createElement(
+                P,
+                { value: "flags" },
+                e.createElement(
+                  o,
+                  { className: "shadow-lg mhub-premium-surface border-0 dark:border-0" },
+                  e.createElement(
+                    _,
+                    null,
+                    e.createElement(
+                      D,
+                      { className: "text-gray-900 dark:text-white dark:text-gray-100" },
+                      s("flag_management_system"),
+                    ),
+                    e.createElement(
+                      U,
+                      { className: "dark:text-gray-400" },
+                      s("advanced_flagging_tools"),
+                    ),
+                  ),
+                  e.createElement(
+                    g,
+                    null,
+                    e.createElement(
+                      "div",
+                      { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+                      e.createElement(
+                        o,
+                        {
+                          className:
+                            "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 dark:bg-yellow-950/20 dark:border-yellow-600/40",
+                        },
+                        e.createElement(
+                          g,
+                          { className: "p-4" },
+                          e.createElement(
+                            "h3",
+                            {
+                              className:
+                                "font-semibold mb-2 text-yellow-800 dark:text-yellow-100 dark:text-yellow-200",
+                            },
+                            s("auto_detection_rules"),
+                          ),
+                          e.createElement(
+                            "ul",
+                            {
+                              className:
+                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                            },
+                            e.createElement(
+                              "li",
+                              null,
+                              "Rapid price changes requiring review",
+                            ),
+                            e.createElement(
+                              "li",
+                              null,
+                              "Potential duplicate listing clusters",
+                            ),
+                            e.createElement(
+                              "li",
+                              null,
+                              "Suspicious off-platform contact patterns",
+                            ),
+                            e.createElement(
+                              "li",
+                              null,
+                              "Repeated sale disputes requiring escalation",
+                            ),
+                          ),
+                        ),
+                      ),
+                      e.createElement(
+                        o,
+                        {
+                          className:
+                            "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 dark:bg-red-950/20 dark:border-red-600/40",
+                        },
+                        e.createElement(
+                          g,
+                          { className: "p-4" },
+                          e.createElement(
+                            "h3",
+                            {
+                              className:
+                                "font-semibold mb-2 text-red-800 dark:text-red-100 dark:text-red-200",
+                            },
+                            s("user_report_categories"),
+                          ),
+                          e.createElement(
+                            "ul",
+                            {
+                              className:
+                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                            },
+                            e.createElement(
+                              "li",
+                              null,
+                              "Possible authenticity concerns",
+                            ),
+                            e.createElement(
+                              "li",
+                              null,
+                              "Potential spam behavior",
+                            ),
+                            e.createElement(
+                              "li",
+                              null,
+                              "Potentially inappropriate listing content",
+                            ),
+                            e.createElement(
+                              "li",
+                              null,
+                              "Possible pricing manipulation pattern",
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              e.createElement(
+                P,
+                { value: "activity" },
+                e.createElement(
+                  o,
+                  { className: "shadow-lg mhub-premium-surface border-0 dark:border-0" },
+                  e.createElement(
+                    _,
+                    null,
+                    e.createElement(
+                      D,
+                      { className: "text-gray-900 dark:text-white dark:text-gray-100" },
+                      s("recent_platform_activity"),
+                    ),
+                    e.createElement(
+                      U,
+                      { className: "dark:text-gray-400" },
+                      s("realtime_activity_desc"),
+                    ),
+                  ),
+                  e.createElement(
+                    g,
+                    null,
+                    K.length === 0
+                      ? e.createElement(
+                          "div",
+                          { className: "text-center py-8 space-y-3 dark:text-center" },
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                            },
+                            "No recent admin activity available.",
+                          ),
+                          e.createElement(
+                            m,
+                            { size: "sm", variant: "outline", onClick: S },
+                            "Refresh Activity",
+                          ),
+                        )
+                      : e.createElement(
+                          "div",
+                          { className: "space-y-3" },
+                          K.map((t, r) => {
+                            const a = String(t.type || "").toLowerCase(),
+                              i =
+                                a === "signup"
+                                  ? "border-l-green-500 bg-green-50 dark:bg-green-900/20"
+                                  : a === "flag"
+                                    ? "border-l-red-500 bg-red-50 dark:bg-red-900/20"
+                                    : a === "sale"
+                                      ? "border-l-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                                      : a === "verification"
+                                        ? "border-l-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                                        : "border-l-gray-500 bg-gray-50 dark:bg-gray-700";
+                            return e.createElement(
+                              "div",
+                              {
+                                key: `${t.action}-${r}`,
+                                className: `flex items-center justify-between p-3 rounded-lg border-l-4 dark:border-l-4${i}`,
+                              },
+                              e.createElement(
+                                "div",
+                                { className: "flex-1" },
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "font-medium text-gray-900 dark:text-white dark:text-gray-100",
+                                  },
+                                  t.action || "Activity event",
+                                ),
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                  },
+                                  s("by"),
+                                  " ",
+                                  t.user || "system",
+                                ),
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                  },
+                                  t.details ||
+                                    "No additional details available.",
+                                ),
+                              ),
+                              e.createElement(
+                                "div",
+                                { className: "text-right dark:text-right" },
+                                e.createElement(
+                                  "span",
+                                  {
+                                    className:
+                                      "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                  },
+                                  t.time || "now",
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          e.createElement(
+            Ue,
+            {
+              open: !!u,
+              onOpenChange: (t) => {
+                !t && !c && F(null);
+              },
+            },
+            e.createElement(
+              Pe,
+              null,
+              e.createElement(
+                qe,
+                null,
+                e.createElement(Le, null, u?.title || "Confirm action"),
+                e.createElement(
+                  Ie,
+                  null,
+                  u?.description ||
+                    "This action changes moderation state and may impact user visibility.",
+                ),
+              ),
+              e.createElement(
+                Be,
+                null,
+                e.createElement(De, { disabled: c }, "Cancel"),
+                e.createElement(
+                  _e,
+                  { onClick: ue, disabled: c },
+                  c ? "Applying..." : u?.confirmLabel || "Confirm",
+                ),
+              ),
+            ),
+          ),
+        );
   };
-
-  const handlePostAction = (postId, action) => {
-    // Implementation for post actions
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 text-center md:text-left">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('admin_panel')}</h1>
-          <p className="text-gray-600 dark:text-gray-300">{t('admin_panel_desc')}</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-900 text-white shadow-lg border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                  <div className="text-blue-100 text-sm">{t('total_users')}</div>
-                  <div className="text-blue-200 text-xs">+{stats.todaySignups} {t('today')}</div>
-                </div>
-                <Users className="w-8 h-8 text-blue-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 dark:from-green-700 dark:to-green-900 text-white shadow-lg border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{stats.totalPosts}</div>
-                  <div className="text-green-100 text-sm">{t('total_posts')}</div>
-                  <div className="text-green-200 text-xs">+{stats.todayPosts} {t('today')}</div>
-                </div>
-                <FileText className="w-8 h-8 text-green-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 dark:from-orange-700 dark:to-orange-900 text-white shadow-lg border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{stats.flaggedPosts}</div>
-                  <div className="text-orange-100 text-sm">{t('flagged_posts')}</div>
-                  <div className="text-orange-200 text-xs">{t('need_review')}</div>
-                </div>
-                <Flag className="w-8 h-8 text-orange-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-red-500 to-red-600 dark:from-red-700 dark:to-red-900 text-white shadow-lg border-0">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{stats.restrictedUsers}</div>
-                  <div className="text-red-100 text-sm">{t('restricted')}</div>
-                  <div className="text-red-200 text-xs">{t('users_blocked')}</div>
-                </div>
-                <AlertTriangle className="w-8 h-8 text-red-200" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-12 bg-white dark:bg-gray-800">
-            <TabsTrigger value="users" className="text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">{t('users')}</TabsTrigger>
-            <TabsTrigger value="posts" className="text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">{t('posts')}</TabsTrigger>
-            <TabsTrigger value="flags" className="text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">{t('flags')}</TabsTrigger>
-            <TabsTrigger value="activity" className="text-sm dark:text-gray-300 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">{t('activity')}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="users">
-            <Card className="shadow-lg bg-white dark:bg-gray-800 border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-gray-900 dark:text-white">
-                  <span>{t('flagged_users_management')}</span>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input placeholder={t('search_users')} className="pl-10 w-64 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                  </div>
-                </CardTitle>
-                <CardDescription className="dark:text-gray-400">{t('review_manage_flagged_users')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {flaggedUsers.map((user) => (
-                    <Card key={user.id} className="border-l-4 border-l-red-500 bg-white dark:bg-gray-700 dark:border-gray-600">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row justify-between space-y-4 md:space-y-0">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{user.name}</h3>
-                              <Badge variant={
-                                user.status === 'Restricted' ? 'destructive' :
-                                  user.status === 'Under Review' ? 'secondary' : 'outline'
-                              } className="dark:text-white">
-                                {user.status}
-                              </Badge>
-                              <Badge variant="outline" className="text-red-600 dark:text-red-400 dark:border-red-400">
-                                {user.flagCount} {t('flags')}
-                              </Badge>
-                            </div>
-                            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                              <p><strong>{t('email')}:</strong> {user.email}</p>
-                              <p><strong>{t('phone')}:</strong> {user.phone}</p>
-                              <p><strong>{t('reason')}:</strong> {user.reason}</p>
-                              <p><strong>{t('stats')}:</strong> {user.totalPosts} {t('posts')}, {user.completedSales} {t('sales_completed')}</p>
-                              <p><strong>{t('joined')}:</strong> {user.joinDate}</p>
-                            </div>
-                          </div>
-                          <div className="flex flex-col space-y-2 md:w-48">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
-                              onClick={() => handleUserAction(user.id, 'review')}
-                            >
-                              {t('review_details')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="w-full"
-                              onClick={() => handleUserAction(user.id, 'restrict')}
-                            >
-                              <Ban className="w-4 h-4 mr-1" />
-                              {t('restrict_user')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
-                              onClick={() => handleUserAction(user.id, 'warn')}
-                            >
-                              {t('send_warning')}
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="posts">
-            <Card className="shadow-lg bg-white dark:bg-gray-800 border-0">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">{t('flagged_posts_management')}</CardTitle>
-                <CardDescription className="dark:text-gray-400">{t('review_moderate_flagged_posts')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {flaggedPosts.map((post) => (
-                    <Card key={post.id} className="border-l-4 border-l-orange-500 bg-white dark:bg-gray-700 dark:border-gray-600">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row justify-between space-y-4 md:space-y-0">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-semibold text-gray-900 dark:text-white">{post.title}</h3>
-                              <Badge variant="secondary" className="dark:bg-gray-600 dark:text-white">{post.status}</Badge>
-                            </div>
-                            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                              <p><strong>{t('price')}:</strong> {post.price}</p>
-                              <p><strong>{t('seller')}:</strong> {post.sellerName} ({post.sellerId})</p>
-                              <p><strong>{t('reason')}:</strong> {post.reason}</p>
-                              <p><strong>{t('flagged_by')}:</strong> {post.flaggedBy}</p>
-                              <p><strong>{t('views')}:</strong> {post.views}</p>
-                            </div>
-                          </div>
-                          <div className="flex flex-col space-y-2 md:w-48">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
-                              onClick={() => handlePostAction(post.id, 'view')}
-                            >
-                              {t('view_post')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="w-full"
-                              onClick={() => handlePostAction(post.id, 'remove')}
-                            >
-                              {t('remove_post')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="w-full dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
-                              onClick={() => handlePostAction(post.id, 'approve')}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              {t('approve')}
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="flags">
-            <Card className="shadow-lg bg-white dark:bg-gray-800 border-0">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">{t('flag_management_system')}</CardTitle>
-                <CardDescription className="dark:text-gray-400">{t('advanced_flagging_tools')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold mb-2 text-yellow-800 dark:text-yellow-100">{t('auto_detection_rules')}</h3>
-                      <ul className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-                        <li>• {t('rule_price_drop')}</li>
-                        <li>• {t('rule_duplicate_post')}</li>
-                        <li>• {t('rule_suspicious_contact')}</li>
-                        <li>• {t('rule_sale_undone')}</li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold mb-2 text-red-800 dark:text-red-100">{t('user_report_categories')}</h3>
-                      <ul className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-                        <li>• {t('report_fake_post')}</li>
-                        <li>• {t('report_spam')}</li>
-                        <li>• {t('report_inappropriate')}</li>
-                        <li>• {t('report_pricing_manipulation')}</li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="activity">
-            <Card className="shadow-lg bg-white dark:bg-gray-800 border-0">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">{t('recent_platform_activity')}</CardTitle>
-                <CardDescription className="dark:text-gray-400">{t('realtime_activity_desc')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${activity.type === 'signup' ? 'border-l-green-500 bg-green-50 dark:bg-green-900/20' :
-                      activity.type === 'flag' ? 'border-l-red-500 bg-red-50 dark:bg-red-900/20' :
-                        activity.type === 'sale' ? 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/20' :
-                          activity.type === 'verification' ? 'border-l-purple-500 bg-purple-50 dark:bg-purple-900/20' :
-                            'border-l-gray-500 bg-gray-50 dark:bg-gray-700'
-                      }`}>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-white">{activity.action}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{t('by')} {activity.user}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{activity.details}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</span>
-                        <div className={`inline-block w-2 h-2 rounded-full ml-2 ${activity.type === 'signup' ? 'bg-green-500' :
-                          activity.type === 'flag' ? 'bg-red-500' :
-                            activity.type === 'sale' ? 'bg-blue-500' :
-                              activity.type === 'verification' ? 'bg-purple-500' :
-                                'bg-gray-500'
-                          }`}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-};
-
-export default AdminPanel;
-
+var Re = $e;
+export { Re as default };

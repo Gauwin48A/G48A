@@ -66,6 +66,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_created ON transactions(created_at D
 -- =====================================================
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read) WHERE is_read = false;
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read_created ON notifications(user_id, is_read, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
 CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
 
@@ -73,6 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at
 -- FEEDBACK TABLE INDEXES
 -- =====================================================
 CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_user_created ON feedback(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status);
 CREATE INDEX IF NOT EXISTS idx_feedback_category ON feedback(category);
 
@@ -108,6 +110,7 @@ CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating);
 -- =====================================================
 CREATE INDEX IF NOT EXISTS idx_wishlist_user ON wishlists(user_id);
 CREATE INDEX IF NOT EXISTS idx_wishlist_post ON wishlists(post_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_wishlist_user_post ON wishlists(user_id, post_id);
 
 -- =====================================================
 -- RECENTLY VIEWED TABLE INDEXES
@@ -162,6 +165,7 @@ CREATE INDEX IF NOT EXISTS idx_push_tokens_active ON push_tokens(is_active) WHER
 -- OFFERS TABLE INDEXES
 -- =====================================================
 CREATE INDEX IF NOT EXISTS idx_offers_post ON offers(post_id);
+CREATE INDEX IF NOT EXISTS idx_offers_post_status ON offers(post_id, status);
 CREATE INDEX IF NOT EXISTS idx_offers_buyer ON offers(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_offers_seller ON offers(seller_id);
 CREATE INDEX IF NOT EXISTS idx_offers_status ON offers(status);
@@ -179,6 +183,24 @@ CREATE INDEX IF NOT EXISTS idx_price_alerts_post ON price_drop_alerts(post_id);
 -- =====================================================
 CREATE INDEX IF NOT EXISTS idx_channels_owner ON channels(owner_id);
 CREATE INDEX IF NOT EXISTS idx_channels_public ON channels(is_public) WHERE is_public = true;
+
+-- =====================================================
+-- MESSAGES TABLE INDEXES
+-- =====================================================
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at DESC);
+
+-- =====================================================
+-- USER SESSIONS TABLE INDEXES
+-- =====================================================
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_active ON user_sessions(user_id, is_active);
+
+-- =====================================================
+-- REWARD LOG TABLE INDEXES
+-- =====================================================
+CREATE INDEX IF NOT EXISTS idx_reward_log_user_action ON reward_log(user_id, action);
+CREATE INDEX IF NOT EXISTS idx_reward_log_created ON reward_log(created_at DESC);
 
 -- =====================================================
 -- UPDATE STATISTICS FOR QUERY PLANNER

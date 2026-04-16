@@ -1,0 +1,6 @@
+# Cloudflare Pages redirects
+# Serves SPA — all routes fall through to index.html
+
+# Explicit crawlable routes pass through (already handled by SPA)
+# Catch-all for client-side routing
+/*  /index.html  200

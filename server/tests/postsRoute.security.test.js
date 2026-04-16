@@ -75,6 +75,8 @@ const express = require('express');
 const request = require('supertest');
 const router = require('../src/routes/posts');
 const pool = require('../src/config/db');
+const postController = require('../src/controllers/postController');
+const postViewBufferService = require('../src/services/postViewBufferService');
 
 describe('posts route security behavior', () => {
   const app = express();
@@ -175,5 +177,90 @@ describe('posts route security behavior', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
+  });
+
+  it('rejects batch-view without postIds', async () => {
+    const response = await request(app)
+      .post('/api/posts/batch-view')
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toBe('postIds must be a non-empty array');
+  });
+
+  it('rejects batch-view when no valid postIds remain', async () => {
+    postViewBufferService.enqueueBatchView.mockResolvedValueOnce({
+      mode: 'async',
+      queued: 0,
+      skipped: 1,
+      updated: 0,
+      flushScheduled: false
+    });
+
+    const response = await request(app)
+      .post('/api/posts/batch-view')
+      .send({ postIds: ['bad-id'] });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toBe('No valid postIds provided');
+  });
+
+  it('accepts batch-view when valid postIds provided', async () => {
+    postViewBufferService.enqueueBatchView.mockResolvedValueOnce({
+      mode: 'async',
+      queued: 2,
+      skipped: 0,
+      updated: 0,
+      flushScheduled: true
+    });
+
+    const response = await request(app)
+      .post('/api/posts/batch-view')
+      .send({
+        postIds: [
+          '11111111-1111-1111-1111-111111111111',
+          '22222222-2222-2222-2222-222222222222'
+        ]
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.queued).toBe(2);
+  });
+
+  it('supports legacy PATCH /status for active -> reactivate mapping', async () => {
+    const response = await request(app)
+      .patch('/api/posts/42/status')
+      .set('x-test-user-id', 'seller-1')
+      .send({ status: 'active' });
+
+    expect(response.status).toBe(200);
+    expect(postController.reactivatePost).toHaveBeenCalled();
+    expect(postController.markAsSold).not.toHaveBeenCalled();
+  });
+
+  it('supports legacy PATCH /status for sold -> markAsSold mapping', async () => {
+    const response = await request(app)
+      .patch('/api/posts/42/status')
+      .set('x-test-user-id', 'seller-1')
+      .send({ status: 'sold' });
+
+    expect(response.status).toBe(200);
+    expect(postController.markAsSold).toHaveBeenCalled();
+    expect(postController.reactivatePost).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsupported statuses on legacy PATCH /status', async () => {
+    const response = await request(app)
+      .patch('/api/posts/42/status')
+      .set('x-test-user-id', 'seller-1')
+      .send({ status: 'undone' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('Unsupported status transition');
+    expect(postController.markAsSold).not.toHaveBeenCalled();
+    expect(postController.reactivatePost).not.toHaveBeenCalled();
   });
 });

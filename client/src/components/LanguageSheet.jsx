@@ -10,20 +10,27 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LANGUAGE_TIERS, LANGUAGES, getLanguageByCode } from '../constants/languages';
+import { LANGUAGE_TIERS, LANGUAGES } from '../constants/languages';
 import { prefetchLanguage } from '../i18n';
-import { X, Check, Globe, Search } from 'lucide-react';
+import { X, Globe, Search } from 'lucide-react';
 
 const LanguageSheet = ({ isOpen, onClose }) => {
     const { i18n, t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleLanguageChange = (lang) => {
+        // Persist before changing so context providers pick up the value
+        localStorage.setItem('mhub_language', lang.code);
+        localStorage.setItem('lang', lang.code);
+
         i18n.changeLanguage(lang.code);
 
         // Dynamic RTL Support
         document.documentElement.dir = lang.dir;
         document.documentElement.lang = lang.code;
+
+        // Notify other parts of the app
+        window.dispatchEvent(new Event('languageChanged'));
 
         onClose?.();
     };
@@ -52,16 +59,16 @@ const LanguageSheet = ({ isOpen, onClose }) => {
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm"
                 onClick={onClose}
             />
 
             {/* Sheet */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[420px] animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95">
-                <div className="bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="fixed bottom-0 left-0 right-0 z-[1010] sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[420px] animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95">
+                <div className="mhub-premium-surface rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
 
                     {/* Header */}
-                    <div className="sticky top-0 bg-white dark:bg-gray-900 z-10 p-4 border-b border-gray-100 dark:border-gray-800">
+                    <div className="sticky top-0 mhub-premium-bar z-10 p-4 border-b border-gray-100 dark:border-gray-800">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-full flex items-center justify-center">
@@ -89,10 +96,10 @@ const LanguageSheet = ({ isOpen, onClose }) => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search languages..."
+                                placeholder={t("search_languages_placeholder")}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full ps-10 pe-4 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-white"
+                                className="mhub-input w-full ps-10 pe-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                             />
                         </div>
                     </div>
@@ -151,13 +158,13 @@ const LanguageSheet = ({ isOpen, onClose }) => {
 
                         {filteredTiers[0]?.languages.length === 0 && (
                             <div className="text-center py-8 text-gray-500">
-                                No languages found for "{searchQuery}"
+                                No languages found for &quot;{searchQuery}&quot;
                             </div>
                         )}
                     </div>
 
                     {/* Footer */}
-                    <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                    <div className="p-3 border-t border-gray-100 dark:border-gray-800 mhub-premium-bar">
                         <p className="text-[10px] text-center text-gray-400 dark:text-gray-500">
                             ⚡ Zero-latency • Cached locally • Works offline
                         </p>

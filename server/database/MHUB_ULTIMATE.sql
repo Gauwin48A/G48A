@@ -1,8 +1,11 @@
 -- =====================================================
 -- MHUB ULTIMATE DATABASE SCRIPT
--- Version: 6.0 (Production Ready - Consolidated)
+-- Version: 6.0 (Consolidated)
 -- =====================================================
--- This is the ONLY script you need to run!
+-- !! DANGER: DEVELOPMENT ONLY — DO NOT RUN IN PRODUCTION !!
+-- This script DROPS ALL TABLES and inserts fake seed data.
+-- For production schema, use individual migrations in /migrations/.
+-- =====================================================
 -- Combines: MASTER_COMPLETE + seed_500_posts + seed_50_profiles + indexes
 -- =====================================================
 -- Run: \i 'C:/Users/laksh/GITHUB/AG/Mhub/server/database/MHUB_ULTIMATE.sql'
@@ -10,6 +13,14 @@
 -- =====================================================
 -- WARNING: This will DROP all existing tables and recreate them!
 -- =====================================================
+
+-- Safety gate: abort if connected to a production-tagged database
+DO $$
+BEGIN
+  IF current_setting('app.environment', true) = 'production' THEN
+    RAISE EXCEPTION 'MHUB_ULTIMATE.sql must NOT be run against a production database!';
+  END IF;
+END $$;
 
 -- ===========================================
 -- STEP 0: DROP ALL INDEXES FIRST (to avoid orphaned index errors)
@@ -156,6 +167,21 @@ CREATE TABLE categories (
     is_active BOOLEAN DEFAULT TRUE
 );
 
+-- SUBCATEGORIES
+CREATE TABLE subcategories (
+    subcategory_id SERIAL PRIMARY KEY,
+    category_id INTEGER NOT NULL REFERENCES categories(category_id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    icon_url VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    display_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(category_id, name)
+);
+CREATE INDEX idx_subcategories_category ON subcategories(category_id);
+CREATE INDEX idx_subcategories_active ON subcategories(is_active);
+
 -- TIERS
 CREATE TABLE tiers (
     tier_id SERIAL PRIMARY KEY,
@@ -170,6 +196,7 @@ CREATE TABLE posts (
     post_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     category_id INTEGER REFERENCES categories(category_id) ON DELETE SET NULL,
+    subcategory_id INTEGER REFERENCES subcategories(subcategory_id) ON DELETE SET NULL,
     tier_id INTEGER REFERENCES tiers(tier_id) ON DELETE SET NULL,
     title VARCHAR(200) NOT NULL,
     description TEXT,
@@ -192,6 +219,7 @@ CREATE TABLE posts (
 CREATE INDEX idx_posts_user ON posts(user_id);
 CREATE INDEX idx_posts_status ON posts(status);
 CREATE INDEX idx_posts_category ON posts(category_id);
+CREATE INDEX idx_posts_subcategory ON posts(subcategory_id);
 CREATE INDEX idx_posts_price ON posts(price);
 CREATE INDEX idx_posts_created ON posts(created_at DESC);
 CREATE INDEX idx_posts_type ON posts(post_type);
@@ -201,6 +229,7 @@ CREATE INDEX idx_posts_type ON posts(post_type);
 CREATE INDEX IF NOT EXISTS idx_posts_search ON posts USING GIN (to_tsvector('english', title || ' ' || COALESCE(description, '')));
 -- 2. Composite Indexes for common filters
 CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category_id, status);
+CREATE INDEX IF NOT EXISTS idx_posts_category_subcategory ON posts(category_id, subcategory_id);
 CREATE INDEX IF NOT EXISTS idx_posts_user_status ON posts(user_id, status);
 
 -- REFERRALS
@@ -222,6 +251,45 @@ CREATE TABLE rewards (
     tier VARCHAR(20) DEFAULT 'Bronze',
     last_activity TIMESTAMP DEFAULT NOW()
 );
+
+-- REWARD LEDGER
+CREATE TABLE reward_log (
+    id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    action VARCHAR(80) NOT NULL,
+    points INTEGER NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_reward_log_user_created ON reward_log(user_id, created_at DESC);
+
+-- SUBSCRIPTIONS
+ALTER TABLE users ADD COLUMN IF NOT EXISTS tier VARCHAR(20) DEFAULT 'basic';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS current_plan VARCHAR(20) DEFAULT 'basic';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_id INTEGER;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expiry TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS post_credits INTEGER DEFAULT 0;
+
+CREATE TABLE user_subscriptions (
+    id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    plan_name VARCHAR(20) NOT NULL,
+    started_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    payment_id TEXT,
+    boost_used_this_month INTEGER DEFAULT 0,
+    featured_used_this_month INTEGER DEFAULT 0,
+    spotlight_used_this_month INTEGER DEFAULT 0,
+    quota_reset_at TIMESTAMP DEFAULT NOW(),
+    listings_count INTEGER DEFAULT 0,
+    is_trial BOOLEAN DEFAULT FALSE,
+    cancelled_at TIMESTAMP,
+    cancel_reason TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_user_sub_active ON user_subscriptions(user_id, is_active);
+CREATE INDEX idx_user_sub_expires ON user_subscriptions(expires_at);
 
 -- TRANSACTIONS
 CREATE TABLE transactions (

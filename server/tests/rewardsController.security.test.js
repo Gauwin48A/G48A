@@ -16,6 +16,9 @@ function loadControllerWithQueryMock(queryImpl) {
   jest.doMock('../src/config/db', () => ({ query }));
   jest.doMock('../src/utils/logger', () => logger);
   jest.doMock('../src/services/cacheService', () => cacheService);
+  jest.doMock('../src/services/rewardsLedgerService', () => ({
+    ensureRewardLogTable: jest.fn(async () => true)
+  }));
 
   const controller = require('../src/controllers/rewardsController');
   return { controller, query, logger, cacheService };
