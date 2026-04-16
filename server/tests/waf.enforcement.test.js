@@ -18,7 +18,9 @@ function buildApp(envOverrides = {}) {
 
   app.get('/api/posts', (req, res) => res.json({ ok: true }));
   app.post('/api/posts', (req, res) => res.status(201).json({ created: true }));
-  app.post('/api/auth/login', strictLoginLimiter, (req, res) => res.json({ success: true }));
+  app.post('/api/auth/login', strictLoginLimiter, (_req, res) =>
+    res.status(401).json({ success: false, error: 'Invalid credentials' })
+  );
 
   return app;
 }
@@ -61,8 +63,8 @@ describe('WAF Enforcement', () => {
     const second = await request(app).post('/api/auth/login').send({ identifier: 'test', password: 'pass' });
     const third = await request(app).post('/api/auth/login').send({ identifier: 'test', password: 'pass' });
 
-    expect(first.statusCode).toBe(200);
-    expect(second.statusCode).toBe(200);
+    expect(first.statusCode).toBe(401);
+    expect(second.statusCode).toBe(401);
     expect(third.statusCode).toBe(429);
     expect(third.body.code).toBe('WAF_RATE_LIMIT');
   });

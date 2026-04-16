@@ -11,6 +11,8 @@ function buildPageBurstApp(envOverrides = {}) {
     process.env.API_RATE_LIMIT_NORMAL_SCENARIO_MAX = envOverrides.API_RATE_LIMIT_NORMAL_SCENARIO_MAX ?? '8';
     process.env.JWT_SECRET = envOverrides.JWT_SECRET ?? 'burst_test_jwt_secret_12345678901234567890';
     process.env.REFRESH_SECRET = envOverrides.REFRESH_SECRET ?? 'burst_test_refresh_secret_123456789012345';
+    process.env.JWT_ISSUER = envOverrides.JWT_ISSUER ?? 'mhub-api';
+    process.env.JWT_AUDIENCE = envOverrides.JWT_AUDIENCE ?? 'mhub-client';
     delete process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS;
 
     // Require after env setup so limiter config is re-evaluated per test.
@@ -19,17 +21,25 @@ function buildPageBurstApp(envOverrides = {}) {
 
     const app = express();
     app.use(apiLimiter);
-    app.get('/api/profile', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/profile/preferences', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/posts/mine', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/rewards/user/u-1', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/channels/owner/u-1', (_req, res) => res.status(200).json({ ok: true }));
-    app.get('/api/categories', (_req, res) => res.status(200).json({ ok: true }));
+    app.get('/api/test/profile', (_req, res) => res.status(200).json({ ok: true }));
+    app.get('/api/test/profile/preferences', (_req, res) => res.status(200).json({ ok: true }));
+    app.get('/api/test/posts/mine', (_req, res) => res.status(200).json({ ok: true }));
+    app.get('/api/test/rewards/user/u-1', (_req, res) => res.status(200).json({ ok: true }));
+    app.get('/api/test/channels/owner/u-1', (_req, res) => res.status(200).json({ ok: true }));
+    app.get('/api/test/categories', (_req, res) => res.status(200).json({ ok: true }));
     return app;
 }
 
 function buildToken(userId, secret = process.env.JWT_SECRET) {
-    return jwt.sign({ userId }, secret, { expiresIn: '5m' });
+    return jwt.sign(
+        { userId },
+        secret,
+        {
+            expiresIn: '5m',
+            issuer: process.env.JWT_ISSUER || 'mhub-api',
+            audience: process.env.JWT_AUDIENCE || 'mhub-client'
+        }
+    );
 }
 
 describe('apiLimiter page-load burst contract', () => {
@@ -41,12 +51,12 @@ describe('apiLimiter page-load burst contract', () => {
         const token = buildToken('u-1');
         const headers = { Authorization: `Bearer ${token}` };
         const paths = [
-            '/api/profile',
-            '/api/profile/preferences',
-            '/api/posts/mine',
-            '/api/rewards/user/u-1',
-            '/api/channels/owner/u-1',
-            '/api/categories'
+            '/api/test/profile',
+            '/api/test/profile/preferences',
+            '/api/test/posts/mine',
+            '/api/test/rewards/user/u-1',
+            '/api/test/channels/owner/u-1',
+            '/api/test/categories'
         ];
 
         const responses = await Promise.all(
@@ -64,10 +74,10 @@ describe('apiLimiter page-load burst contract', () => {
         });
 
         const responses = await Promise.all([
-            request(app).get('/api/profile'),
-            request(app).get('/api/profile/preferences'),
-            request(app).get('/api/posts/mine'),
-            request(app).get('/api/categories')
+            request(app).get('/api/test/profile'),
+            request(app).get('/api/test/profile/preferences'),
+            request(app).get('/api/test/posts/mine'),
+            request(app).get('/api/test/categories')
         ]);
 
         expect(responses[0].statusCode).toBe(200);
@@ -76,4 +86,3 @@ describe('apiLimiter page-load burst contract', () => {
         expect(responses[3].statusCode).toBe(429);
     });
 });
-

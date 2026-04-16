@@ -76,6 +76,9 @@ describe('postController regression coverage', () => {
   test('getUserPosts keeps optimized query pagination bounds stable', async () => {
     pool.query.mockResolvedValueOnce({ rows: [] });
     const req = {
+      user: {
+        user_id: 'u-1'
+      },
       query: {
         userId: 'u-1',
         page: '3',

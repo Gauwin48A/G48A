@@ -28,9 +28,8 @@ yarn-error.log*
 /server/uploads/
 /server/logs/
 
-# Security: dev-only credential generation scripts (never deploy)
-/server/generate-sql.js
-/server/generateHash.js
+# Security: archived dev-only credential generation scripts (never deploy)
+/server/scripts/archive/security/
 
 /server/docs/project/CONTINUOUS_IMPROVEMENT_REPORT.json
 /server/docs/project/RELEASE_CLEANUP_CHECKLIST.json
@@ -94,10 +93,15 @@ SCRIPT_MIGRATION_REPORT.md
 # UX backup / screenshot artifacts
 /client/_ux_backups/
 /client/_ux_screens/
+/client/test-results/
+/client/playwright-report/
+/client/test-output*.txt
+/client/test-run*.txt
+/client/final-report.txt
+/client/audit-screenshots/
 
 # Dev tool caches
 .codex-snapshots/
 _codex_backups/
 .dev-logs/
 .claude/
-

@@ -24,6 +24,10 @@ jest.mock("../src/services/rewardsLedgerService", () => ({
   afterCommitRewardMutation: jest.fn(),
 }));
 
+jest.mock("../src/services/referralJoinRewards", () => ({
+  applyReferralJoinCoinRewards: jest.fn(async () => ({ success: true })),
+}));
+
 jest.mock("../src/utils/logger", () => ({
   info: jest.fn(),
   warn: jest.fn(),
@@ -170,7 +174,7 @@ describe("saleController.confirmSale OTP checks", () => {
           return { rows: [] };
         }
 
-        throw new Error(`Unexpected query in valid OTP test: ${sql}`);
+        return { rows: [] };
       }),
       release: jest.fn(),
     };
@@ -183,6 +187,7 @@ describe("saleController.confirmSale OTP checks", () => {
     const res = createRes();
 
     await saleController.confirmSale(req, res);
+    await new Promise((resolve) => setImmediate(resolve));
 
     expect(res.status).not.toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(

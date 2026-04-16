@@ -99,7 +99,7 @@ const deviceBindingPostLogin = async (req, res, next) => {
   const userId = authResult?.user?.id ?? authResult?.user?.user_id ?? null;
   if (userId == null || userId === "") {
     // No user in result — pass through
-    return res.status(200).json(authResult);
+    return res.status(authResult?._statusCode || 200).json(authResult);
   }
 
   let bindingResult = null;
@@ -257,7 +257,7 @@ const deviceBindingPostLogin = async (req, res, next) => {
   logAuthActivity(userId, "login", req).catch(() => {});
 
   // Send the successful auth response
-  return res.status(200).json(authResult);
+  return res.status(authResult?._statusCode || 200).json(authResult);
 };
 
 /**
@@ -276,7 +276,7 @@ const deviceBindingPostOtp = async (req, res, next) => {
 
   const userId = authResult?.user?.id ?? authResult?.user?.user_id ?? null;
   if (userId == null || userId === "") {
-    return res.status(200).json(authResult);
+    return res.status(authResult?._statusCode || 200).json(authResult);
   }
 
   try {
@@ -318,7 +318,7 @@ const deviceBindingPostOtp = async (req, res, next) => {
 
   logAuthActivity(userId, "login_otp", req).catch(() => {});
 
-  return res.status(200).json(authResult);
+  return res.status(authResult?._statusCode || 200).json(authResult);
 };
 
 /**

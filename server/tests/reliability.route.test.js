@@ -57,16 +57,21 @@ describe("reliability routes", () => {
         expect(register.status).toBe(201);
         expect(register.body.status).toBe("registered");
 
-        const sample = await request(app).post("/api/reliability/slos/availability-sample").send({
-          serviceName: "telemetry-ingest",
-          minutesObserved: 120,
-          minutesError: 2,
-        });
+        const sample = await request(app)
+          .post("/api/reliability/slos/availability-sample")
+          .set("x-reliability-admin-token", "rel-admin")
+          .send({
+            serviceName: "telemetry-ingest",
+            minutesObserved: 120,
+            minutesError: 2,
+          });
         expect(sample.status).toBe(200);
         expect(sample.body.status).toBe("recorded");
         expect(sample.body.slo.consumedErrorMinutes).toBe(2);
 
-        const lookup = await request(app).get("/api/reliability/slos/telemetry-ingest");
+        const lookup = await request(app)
+          .get("/api/reliability/slos/telemetry-ingest")
+          .set("x-reliability-admin-token", "rel-admin");
         expect(lookup.status).toBe(200);
         expect(lookup.body.slo.serviceName).toBe("telemetry-ingest");
       }
@@ -79,12 +84,15 @@ describe("reliability routes", () => {
       },
       async () => {
         const app = buildApp();
-        const trace = await request(app).post("/api/reliability/observability/traces").send({
-          serviceName: "api-gateway",
-          traceId: "trace-1",
-          severity: "warn",
-          latencyMs: 240,
-        });
+        const trace = await request(app)
+          .post("/api/reliability/observability/traces")
+          .set("x-reliability-admin-token", "rel-admin")
+          .send({
+            serviceName: "api-gateway",
+            traceId: "trace-1",
+            severity: "warn",
+            latencyMs: 240,
+          });
         expect(trace.status).toBe(201);
         expect(trace.body.status).toBe("ingested");
 
@@ -121,11 +129,14 @@ describe("reliability routes", () => {
       },
       async () => {
         const app = buildApp();
-        const open = await request(app).post("/api/reliability/incidents/open").send({
-          title: "Telemetry delay spike",
-          severity: "SEV1",
-          commanderId: "sre-1",
-        });
+        const open = await request(app)
+          .post("/api/reliability/incidents/open")
+          .set("x-reliability-admin-token", "rel-admin")
+          .send({
+            title: "Telemetry delay spike",
+            severity: "SEV1",
+            commanderId: "sre-1",
+          });
         expect(open.status).toBe(201);
         const incidentId = open.body.incident.incidentId;
 
@@ -140,7 +151,9 @@ describe("reliability routes", () => {
         expect(postmortem.body.status).toBe("published");
         expect(postmortem.body.incident.status).toBe("CLOSED");
 
-        const summary = await request(app).get("/api/reliability/summary");
+        const summary = await request(app)
+          .get("/api/reliability/summary")
+          .set("x-reliability-admin-token", "rel-admin");
         expect(summary.status).toBe(200);
         expect(summary.body.summary).toHaveProperty("slosTracked");
       }

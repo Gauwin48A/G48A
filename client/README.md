@@ -161,7 +161,7 @@ npm install
 
 ```bash
 cd server
-node run_migration.js           # Run complete schema setup
+node scripts/ops/run_migration.js           # Run migration script
 npm run seed:sample-data        # Seed sample data (optional)
 ```
 
@@ -2969,7 +2969,7 @@ npm install
 cd server
 
 # Run the complete schema setup
-node run_migration.js
+node scripts/ops/run_migration.js
 
 # Seed sample data (optional)
 npm run seed:sample-data

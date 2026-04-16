@@ -18,6 +18,7 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(filters.category || "All");
+  const [retryKey, setRetryKey] = useState(0);
   const navigate = useNavigate();
 
   // Use shared icon mapping from constants
@@ -31,11 +32,13 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
     );
   }, [filters.category, activeCategory]);
 
-  // Fetch categories on mount
+  // Fetch categories on mount (and when user retries) without a hard page reload
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
+      setLoading(true);
+      setError(null);
       try {
         const data = await fetchCategoriesCached();
         if (cancelled) return;
@@ -58,7 +61,7 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [retryKey]);
 
   /**
    * Handle category button clicks.
@@ -99,7 +102,7 @@ const CategoriesGrid = ({ onCategorySelect, activeCategory }) => {
       <div className="w-full mb-6 text-center py-3">
         <p className="text-sm text-muted-foreground">Failed to load categories</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => setRetryKey((value) => value + 1)}
           className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
         >
           Retry
