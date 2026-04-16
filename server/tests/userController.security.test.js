@@ -99,4 +99,48 @@ describe('userController security guards', () => {
     expect(res.status).not.toHaveBeenCalledWith(401);
     expect(res.status).not.toHaveBeenCalledWith(403);
   });
+
+  it('rejects unauthenticated getKYCStatus', async () => {
+    const req = { user: null };
+    const res = createRes();
+
+    await userController.getKYCStatus(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Authentication required' });
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it('falls back to schema-flex query when KYC columns are missing', async () => {
+    const missingColumnError = new Error('column "aadhaar_status" does not exist');
+    missingColumnError.code = '42703';
+
+    pool.query
+      .mockRejectedValueOnce(missingColumnError)
+      .mockResolvedValueOnce({
+        rows: [{
+          aadhaar_status: 'VERIFIED',
+          rejection_reason: null,
+          aadhaar_number: '123456789012',
+          pan_number: 'ABCDE1234F',
+          kyc_documents: { front: '/uploads/front.jpg' }
+        }]
+      });
+
+    const req = { user: { userId: 'user-123' } };
+    const res = createRes();
+
+    await userController.getKYCStatus(req, res);
+
+    expect(pool.query).toHaveBeenCalledTimes(2);
+    expect(pool.query.mock.calls[1][0].text).toContain("to_jsonb(u)->>'aadhaar_status'");
+    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      status: 'VERIFIED',
+      rejection_reason: null,
+      aadhaar_number: 'XXXX-XXXX-9012',
+      pan_number: 'XXXXX234F',
+      documents: { front: '/uploads/front.jpg' }
+    });
+  });
 });

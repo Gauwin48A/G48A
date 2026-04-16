@@ -1,559 +1,759 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  Eye, EyeOff, User, Mail, Phone, Lock, Gift,
-  CheckCircle, ArrowRight, Sparkles, Shield, Users
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Shield,
+  Lock,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  KeyRound,
 } from "lucide-react";
-import { registerUser } from "@/lib/auth";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
+import api from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+import { purgeLegacyTokens } from "@/utils/authStorage";
 
-const SignUp = () => {
+const verhoeffTableD = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+  [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+  [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+  [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+  [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+  [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+  [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+  [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+  [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+];
+const verhoeffTableP = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+  [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+  [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+  [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+  [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+  [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+  [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
+];
+
+const normalizeAadhaar = (value) => String(value || "").replace(/\s+/g, "");
+
+const isValidAadhaarNumber = (value) => {
+  const digits = normalizeAadhaar(value).replace(/\D/g, "");
+  if (!/^\d{12}$/.test(digits)) return false;
+  let c = 0;
+  for (let i = 0; i < digits.length; i += 1) {
+    const digit = Number(digits[digits.length - 1 - i]);
+    c = verhoeffTableD[c][verhoeffTableP[i % 8][digit]];
+  }
+  return c === 0;
+};
+
+const normalizeMobile = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+  return digits;
+};
+const isValidMobile = (value) => /^[6-9]\d{9}$/.test(normalizeMobile(value));
+
+const normalizePan = (value) =>
+  String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+const isValidPan = (value) => /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(normalizePan(value));
+const maskPan = (value) => {
+  const normalized = normalizePan(value);
+  if (!normalized) return "";
+  return `XXXXX${normalized.slice(-4)}`;
+};
+
+export default function SignUp() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { setUser } = useAuth();
-
-  const resolveUserId = (user) => {
-    const candidate = user?.id ?? user?.user_id ?? null;
-    if (candidate === null || candidate === undefined || candidate === '') {
-      return null;
-    }
-    return String(candidate);
-  };
-
-  // Get referral code from URL if present
-  const urlParams = new URLSearchParams(location.search);
-  const refCode = urlParams.get('ref') || '';
+  const { refreshAuth, setUser } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    referralCode: refCode,
-    agreeToTerms: false
+  const [form, setForm] = useState({
+    aadhaar: "",
+    mobile: "",
+    otp: "",
+    pan: "",
+    password: "",
+    confirmPassword: "",
+    referralCode: "",
   });
+  const [panVerified, setPanVerified] = useState(false);
+  const [panMasked, setPanMasked] = useState("");
+  const [txnId, setTxnId] = useState("");
+  const [signupToken, setSignupToken] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
+  useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const timer = setInterval(() => setResendIn((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [resendIn]);
 
-  // Real-time validation states
-  const [validations, setValidations] = useState({
-    fullName: null,
-    email: null,
-    phoneNumber: null,
-    password: null,
-    confirmPassword: null
-  });
+  const referralParam = useMemo(() => {
+    const raw =
+      searchParams.get("ref") ||
+      searchParams.get("referral") ||
+      searchParams.get("referralCode") ||
+      searchParams.get("code") ||
+      "";
+    return String(raw || "").trim();
+  }, [searchParams]);
 
-  // Validate field in real-time
-  const validateField = (name, value) => {
-    switch (name) {
-      case 'fullName':
-        return value.length >= 2 ? 'valid' : value.length > 0 ? 'invalid' : null;
-      case 'email':
-        const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-        return emailRegex.test(value) ? 'valid' : value.length > 0 ? 'invalid' : null;
-      case 'phoneNumber':
-        const phoneRegex = /^[6-9]\d{9}$/;
-        return phoneRegex.test(value) ? 'valid' : value.length > 0 ? 'invalid' : null;
-      case 'password':
-        const hasLength = value.length >= 8;
-        const hasUpper = /[A-Z]/.test(value);
-        const hasLower = /[a-z]/.test(value);
-        const hasNumber = /[0-9]/.test(value);
-        return hasLength && hasUpper && hasLower && hasNumber ? 'valid' : value.length > 0 ? 'invalid' : null;
-      case 'confirmPassword':
-        return value === formData.password && value.length > 0 ? 'valid' : value.length > 0 ? 'invalid' : null;
-      default:
-        return null;
+  useEffect(() => {
+    if (!referralParam) return;
+    setForm((prev) =>
+      prev.referralCode
+        ? prev
+        : { ...prev, referralCode: referralParam },
+    );
+  }, [referralParam]);
+
+  const aadhaarStatus = useMemo(() => {
+    if (!form.aadhaar) return null;
+    return isValidAadhaarNumber(form.aadhaar) ? "valid" : "invalid";
+  }, [form.aadhaar]);
+
+  const mobileStatus = useMemo(() => {
+    if (!form.mobile) return null;
+    return isValidMobile(form.mobile) ? "valid" : "invalid";
+  }, [form.mobile]);
+
+  const panStatus = useMemo(() => {
+    if (!form.pan) return null;
+    return isValidPan(form.pan) ? "valid" : "invalid";
+  }, [form.pan]);
+
+  const passwordStrength = useMemo(() => {
+    const pw = form.password;
+    if (!pw) return { score: 0, label: "", color: "" };
+    let score = 0;
+    if (pw.length >= 8) score += 1;
+    if (pw.length >= 12) score += 1;
+    if (/[A-Z]/.test(pw)) score += 1;
+    if (/[a-z]/.test(pw)) score += 1;
+    if (/\d/.test(pw)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pw)) score += 1;
+
+    if (score <= 2) return { score: 1, label: t("weak") || "Weak", color: "bg-red-500" };
+    if (score <= 4) return { score: 2, label: t("medium") || "Medium", color: "bg-yellow-500" };
+    return { score: 3, label: t("strong") || "Strong", color: "bg-green-500" };
+  }, [form.password, t]);
+
+  const applyAuthResponse = async (response) => {
+    const hasAuthSignal = Boolean(response?.token || response?.user);
+    if (hasAuthSignal) {
+      purgeLegacyTokens();
+      localStorage.setItem("authSession", "true");
+    }
+    if (response?.user) {
+      setUser(response.user);
+    } else if (hasAuthSignal) {
+      await refreshAuth();
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setValidations(prev => ({ ...prev, [name]: validateField(name, value) }));
-  };
+  const handleSendOtp = async () => {
+    setErrorMessage("");
+    const aadhaarDigits = normalizeAadhaar(form.aadhaar);
+    const mobileDigits = normalizeMobile(form.mobile);
 
-  // Password strength calculation
-  const getPasswordStrength = () => {
-    const password = formData.password;
-    if (!password) return { score: 0, label: '', color: '' };
-
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
-
-    if (score <= 2) return { score: 1, label: 'Weak', color: 'bg-red-500' };
-    if (score <= 4) return { score: 2, label: 'Medium', color: 'bg-yellow-500' };
-    return { score: 3, label: 'Strong', color: 'bg-green-500' };
-  };
-
-  const canProceedStep1 = () => {
-    return formData.fullName.length >= 2 &&
-      formData.phoneNumber.length === 10 &&
-      formData.email.includes('@') &&
-      formData.password.length >= 8 &&
-      formData.password === formData.confirmPassword;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.agreeToTerms) {
+    if (!isValidAadhaarNumber(aadhaarDigits) || !isValidMobile(mobileDigits)) {
+      const msg =
+        t("aadhaar_mobile_required") ||
+        "Enter a valid Aadhaar number and Aadhaar-registered mobile number.";
+      setErrorMessage(msg);
       toast({
-        title: "Please accept terms",
-        description: "You must agree to the terms and conditions to continue.",
-        variant: "destructive"
+        title: t("validation_error") || "Validation Error",
+        description: msg,
+        variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      const userData = {
-        name: formData.fullName,
-        phone: formData.phoneNumber,
-        email: formData.email,
-        password: formData.password,
-        referral_code: formData.referralCode || undefined
-      };
-
-      const registerResponse = await registerUser(userData);
-
-      // Auto-login logic
-      if (registerResponse && registerResponse.token) {
-        localStorage.setItem("authToken", registerResponse.token);
-        localStorage.removeItem('token');
-        if (registerResponse.refreshToken) localStorage.setItem("refreshToken", registerResponse.refreshToken);
-        if (registerResponse.user) {
-          localStorage.setItem("user", JSON.stringify(registerResponse.user));
-          const userId = resolveUserId(registerResponse.user);
-          if (userId) {
-            localStorage.setItem("userId", userId);
-          }
-          setUser(registerResponse.user);
-        }
-
-        toast({
-          title: "Welcome to MHub! 🎉",
-          description: "Account created and logged in successfully.",
-        });
-
-        navigate("/all-posts", { replace: true });
-      } else {
-        // Fallback if no token returned (shouldn't happen with current backend)
-        setShowSuccess(true);
-        setTimeout(() => {
-          navigate("/login", { replace: true });
-        }, 2000);
-      }
-
-    } catch (err) {
-      toast({
-        title: "Signup Failed",
-        description: err.errors ? err.errors.join(", ") : (err.error || "Something went wrong. Please try again."),
-        variant: "destructive",
+      const response = await api.post("/auth/aadhaar/send-otp", {
+        aadhaarNumber: aadhaarDigits,
+        mobileNumber: mobileDigits,
       });
+      setTxnId(response?.txnId || "");
+      setResendIn(30);
+      setStep(2);
+      toast({
+        title: t("otp_sent") || "OTP Sent",
+        description:
+          t("aadhaar_otp_sent") || "OTP sent to your Aadhaar-registered mobile.",
+      });
+    } catch (err) {
+      const msg = err?.message || t("otp_send_failed") || "Failed to send OTP.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Success animation component
-  if (showSuccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
-        <div className="text-center animate-fadeIn">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center animate-bounce">
-            <CheckCircle className="w-14 h-14 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2">{t('account_created')}</h2>
-          <p className="text-white/80">{t('redirecting_login')}</p>
-        </div>
-      </div>
-    );
-  }
+  const handleVerifyOtp = async () => {
+    setErrorMessage("");
+    const otpValue = String(form.otp || "").trim();
+    if (!/^\d{4,8}$/.test(otpValue)) {
+      const msg = t("otp_valid_desc") || "Please enter a valid OTP.";
+      setErrorMessage(msg);
+      toast({ title: t("invalid_otp") || "Invalid OTP", description: msg, variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/aadhaar/verify-otp", {
+        aadhaarNumber: normalizeAadhaar(form.aadhaar),
+        mobileNumber: normalizeMobile(form.mobile),
+        otp: otpValue,
+        txnId,
+      });
+      setSignupToken(response?.signupToken || "");
+      setForm((p) => ({ ...p, pan: "" }));
+      setPanVerified(false);
+      setPanMasked("");
+      setStep(3);
+      toast({
+        title: t("otp_verified") || "OTP Verified",
+        description: t("pan_verification") || "Verify your PAN to finish setup.",
+      });
+    } catch (err) {
+      const msg = err?.message || t("otp_verify_failed") || "OTP verification failed.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const ValidationIcon = ({ status }) => {
-    if (status === 'valid') return <CheckCircle className="w-5 h-5 text-green-500" />;
-    if (status === 'invalid') return <div className="w-5 h-5 rounded-full border-2 border-red-400" />;
+  const handleVerifyPan = async () => {
+    setErrorMessage("");
+    const panValue = normalizePan(form.pan);
+    if (!isValidPan(panValue)) {
+      const msg = t("pan_invalid") || "Please enter a valid PAN number.";
+      setErrorMessage(msg);
+      toast({ title: t("validation_error") || "Validation Error", description: msg, variant: "destructive" });
+      return;
+    }
+    if (!signupToken) {
+      const msg = t("signup_session_expired") || "Signup session expired. Please verify Aadhaar again.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/pan/verify", {
+        signupToken,
+        panNumber: panValue,
+      });
+      const normalizedPan =
+        response?.panNumber || response?.pan_number || panValue;
+      const maskedPan =
+        response?.panMasked || response?.pan_masked || maskPan(normalizedPan);
+      setForm((p) => ({ ...p, pan: normalizedPan }));
+      setPanMasked(maskedPan);
+      setPanVerified(true);
+      setStep(4);
+      toast({
+        title: t("pan_verified") || "PAN Verified",
+        description: t("create_password") || "Create your password to finish setup.",
+      });
+    } catch (err) {
+      const msg = err?.message || t("pan_verification_failed") || "PAN verification failed.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteSignup = async (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+
+    if (!panVerified) {
+      const msg =
+        t("pan_verification_required") ||
+        "Please verify your PAN number before continuing.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+      return;
+    }
+    if (!form.password || !form.confirmPassword) {
+      const msg = t("fill_all_fields") || "Please fill in all fields.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      const msg = t("passwords_do_not_match") || "Passwords do not match.";
+      setErrorMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
+      return;
+    }
+    if (!/\d/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password) || form.password.length < 12) {
+      const msg =
+        t("password_policy") ||
+        "Password must be 12+ characters with at least 1 number and 1 special character.";
+      setErrorMessage(msg);
+      toast({ title: t("weak_password") || "Weak Password", description: msg, variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        signupToken,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        panNumber: normalizePan(form.pan),
+      };
+      const referralCode = String(form.referralCode || "").trim();
+      if (referralCode) {
+        payload.referralCode = referralCode;
+      }
+      const response = await api.post("/auth/aadhaar/complete-signup", payload);
+      await applyAuthResponse(response);
+      toast({
+        title: t("welcome_to_mhub") || "Welcome to MHub!",
+        description: t("account_created_success") || "Account created successfully.",
+      });
+      navigate("/all-posts", { replace: true });
+    } catch (err) {
+      const msg = err?.message || t("signup_failed") || "Signup failed.";
+      setErrorMessage(msg);
+      toast({ title: t("signup_failed") || "Signup Failed", description: msg, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const FieldStatus = ({ status }) => {
+    if (status === "valid") return <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-300" />;
+    if (status === "invalid") return <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-300" />;
     return null;
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated background elements */}
+    <div className="min-h-screen mhub-premium-page flex items-center justify-center py-8 px-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-purple-950/30 dark:to-gray-900 relative overflow-hidden transition-colors duration-300 dark:bg-gradient-to-br">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300/30 dark:bg-purple-500/20 rounded-full blur-3xl animate-pulse dark:bg-purple-900/30" />
+        <div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300/30 dark:bg-indigo-500/20 rounded-full blur-3xl animate-pulse dark:bg-indigo-900/30"
+          style={{ animationDelay: "1s" }}
+        />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Header */}
-        <div className="text-center mb-8">
+      <div className="w-full max-w-md relative z-10 space-y-6">
+        <button
+          type="button"
+          onClick={() => step > 1 ? setStep((s) => s - 1) : navigate(-1)}
+          aria-label={t("back") || "Go back"}
+          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+          {t("back") || "Back"}
+        </button>
+        <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-purple-500/30 rotate-3 hover:rotate-0 transition-transform">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25 dark:bg-gradient-to-br">
+              <Sparkles className="h-7 w-7 sm:h-8 sm:w-8 text-white dark:text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            {t('create_account')}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1 dark:text-gray-100">
+            {t("create_account") || "Create Account"}
           </h1>
-          <p className="text-gray-400">
-            {t('join_thousands') || "Join thousands of verified buyers & sellers"}
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 dark:text-gray-200">
+            {t("aadhaar_signup_hint") || "Register with your Aadhaar and PAN details"}
           </p>
         </div>
 
-        {/* Progress Dots */}
-        <div className="flex justify-center gap-2 mb-6">
-          <div className={`w-3 h-3 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-purple-500 scale-110' : 'bg-gray-600'}`} />
-          <div className={`w-3 h-3 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-purple-500 scale-110' : 'bg-gray-600'}`} />
+        <div className="flex justify-center gap-6">
+          {[
+            { n: 1, label: t("aadhaar_verification") || "Verify Aadhaar" },
+            { n: 2, label: t("otp_verification") || "Enter OTP" },
+            { n: 3, label: t("pan_verification") || "Verify PAN" },
+            { n: 4, label: t("create_password") || "Set Password" },
+          ].map(({ n, label }) => (
+            <div key={n} className="flex flex-col items-center gap-1" aria-current={step === n ? "step" : undefined}>
+              <div
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  step >= n ? "bg-purple-500 scale-110" : "bg-gray-300 dark:bg-gray-600"
+                }`}
+              />
+              <span className={`text-[10px] font-medium ${step >= n ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}>
+                {label}
+              </span>
+            </div>
+          ))}
         </div>
 
-        {/* Main Card */}
-        <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl rounded-3xl overflow-hidden">
-          <CardContent className="p-6 sm:p-8">
-            <form onSubmit={handleSubmit}>
-              {/* Step 1: Basic Info */}
-              {step === 1 && (
-                <div className="space-y-5 animate-fadeIn">
-                  {/* Full Name */}
+        <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden mhub-premium-surface backdrop-blur-sm dark:border-0">
+          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-indigo-600 to-purple-600">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center dark:bg-slate-900/20">
+              {step === 4 ? (
+                <KeyRound className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
+              ) : (
+                <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
+              )}
+            </div>
+            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-white">
+              {step === 1
+                ? t("aadhaar_verification") || "Aadhaar Verification"
+                : step === 2
+                  ? t("otp_verification") || "OTP Verification"
+                  : step === 3
+                    ? t("pan_verification") || "PAN Verification"
+                    : t("create_password") || "Create Password"}
+            </CardTitle>
+            <CardDescription className="text-purple-100 text-sm dark:text-purple-200">
+              {step === 1
+                ? t("enter_aadhaar_details") || "Enter your Aadhaar details to continue"
+                : step === 2
+                  ? t("enter_otp_received") || "Enter the OTP sent to your Aadhaar-registered mobile"
+                  : step === 3
+                    ? t("pan_verification_hint") || "Verify your PAN to continue"
+                    : t("set_secure_password") || "Set a strong password for your account"}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="p-5 sm:p-8">
+            {errorMessage && (
+              <div role="alert" className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-4 dark:border-amber-600/40 dark:bg-amber-950/20">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="space-y-5">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
+                    {t("aadhaar_number") || "Aadhaar Number"}
+                  </Label>
                   <div className="relative">
-                    <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <User className="w-4 h-4" /> {t('full_name_label')}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        name="fullName"
-                        type="text"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        onFocus={() => setFocusedField('fullName')}
-                        onBlur={() => setFocusedField(null)}
-                        className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'fullName' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder={t('enter_full_name')}
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <ValidationIcon status={validations.fullName} />
-                      </div>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={12}
+                      value={form.aadhaar}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, aadhaar: e.target.value }))
+                      }
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl pr-10 dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                      placeholder={t("aadhaar_placeholder") || "Enter your 12-digit Aadhaar number"}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <FieldStatus status={aadhaarStatus} />
                     </div>
                   </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                    {t("aadhaar_validation_hint") || "We validate Aadhaar in real time."}{" "}
+                    <Link to="/privacy-policy" className="underline text-purple-500 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-300">
+                      {t("privacy_policy") || "Privacy Policy"}
+                    </Link>
+                  </p>
+                </div>
 
-                  {/* Phone Number */}
-                  <div className="relative">
-                    <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Phone className="w-4 h-4" /> {t('phone')}
-                    </Label>
-                    <div className="relative flex">
-                      <span className="inline-flex items-center px-3 bg-white/5 border border-r-0 border-white/20 rounded-l-xl text-gray-400 text-sm">
-                        +91
-                      </span>
-                      <Input
-                        name="phoneNumber"
-                        type="tel"
-                        maxLength={10}
-                        value={formData.phoneNumber}
-                        onChange={handleInputChange}
-                        onFocus={() => setFocusedField('phoneNumber')}
-                        onBlur={() => setFocusedField(null)}
-                        className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-l-none rounded-r-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'phoneNumber' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder="9876543210"
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <ValidationIcon status={validations.phoneNumber} />
-                      </div>
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
+                    {t("aadhaar_mobile") || "Aadhaar Registered Mobile"}
+                  </Label>
+                  <div className="relative flex">
+                    <span className="inline-flex items-center px-3 bg-gray-100 dark:bg-gray-600 border-2 border-r-0 border-gray-200 dark:border-gray-600 rounded-l-xl text-gray-500 dark:text-gray-300 text-sm dark:bg-gray-950 dark:border-2 dark:border-r-0 dark:border-gray-700">
+                      +91
+                    </span>
+                    <Input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={form.mobile}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, mobile: e.target.value }))
+                      }
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-l-none rounded-r-xl pr-10 dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                      placeholder="9876543210"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <FieldStatus status={mobileStatus} />
                     </div>
                   </div>
+                </div>
 
-                  {/* Email */}
-                  <div className="relative">
-                    <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Mail className="w-4 h-4" /> {t('email')}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        onFocus={() => setFocusedField('email')}
-                        onBlur={() => setFocusedField(null)}
-                        className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-10 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'email' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder={t('email_placeholder')}
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <ValidationIcon status={validations.email} />
-                      </div>
-                    </div>
-                  </div>
+                <Button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={loading}
+                  className="w-full h-11 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 transition-all flex items-center justify-center gap-2 dark:bg-gradient-to-r dark:text-white"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      {t("send_otp") || "Send OTP"} <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
 
-                  {/* Password */}
-                  <div className="relative">
-                    <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Lock className="w-4 h-4" /> {t('password')}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        onFocus={() => setFocusedField('password')}
-                        onBlur={() => setFocusedField(null)}
-                        className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-20 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'password' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder={t('create_password_placeholder')}
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="text-gray-400 hover:text-white transition"
-                        >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                        </button>
-                      </div>
-                    </div>
+            {step === 2 && (
+              <div className="space-y-5">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
+                    {t("enter_otp") || "Enter OTP"}
+                  </Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={form.otp}
+                    onChange={(e) => setForm((p) => ({ ...p, otp: e.target.value }))}
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-gray-700 dark:focus:border-purple-500/40"
+                    placeholder="123456"
+                  />
+                </div>
 
-                    {/* Password Strength */}
-                    {formData.password && (
-                      <div className="mt-2">
-                        <div className="flex gap-1 mb-1">
-                          {[1, 2, 3].map((level) => (
-                            <div
-                              key={level}
-                              className={`h-1 flex-1 rounded-full transition-all ${getPasswordStrength().score >= level ? getPasswordStrength().color : 'bg-gray-600'}`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          {t('password_strength') || "Password strength"}: <span className={`font-medium ${getPasswordStrength().score === 3 ? 'text-green-400' : getPasswordStrength().score === 2 ? 'text-yellow-400' : 'text-red-400'}`}>{getPasswordStrength().label}</span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div className="relative">
-                    <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Lock className="w-4 h-4" /> {t('confirm_new_password_label')}
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        name="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        onFocus={() => setFocusedField('confirmPassword')}
-                        onBlur={() => setFocusedField(null)}
-                        className={`h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl pr-20 focus:border-purple-500 focus:ring-purple-500/20 transition-all ${focusedField === 'confirmPassword' ? 'border-purple-500 ring-2 ring-purple-500/20' : ''}`}
-                        placeholder={t('confirm_password_placeholder')}
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="text-gray-400 hover:text-white transition"
-                        >
-                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                        </button>
-                        <ValidationIcon status={validations.confirmPassword} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Next Button */}
+                <div className="flex flex-col gap-3">
                   <Button
                     type="button"
-                    onClick={() => setStep(2)}
-                    disabled={!canProceedStep1()}
-                    className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    onClick={handleVerifyOtp}
+                    disabled={loading}
+                    className="w-full h-11 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl dark:bg-gradient-to-r dark:text-white"
                   >
-                    {t('continue')} <ArrowRight className="w-5 h-5" />
-                  </Button>
-                </div>
-              )}
-
-              {/* Step 2: Referral & Terms */}
-              {step === 2 && (
-                <div className="space-y-5 animate-fadeIn">
-                  {/* Referral Code */}
-                  <div className="relative">
-                    <Label className="text-white/80 text-sm font-medium mb-2 flex items-center gap-2">
-                      <Gift className="w-4 h-4" /> {t('referral_code_label')} <span className="text-gray-500 text-xs">{t('optional_label')}</span>
-                    </Label>
-                    <Input
-                      name="referralCode"
-                      type="text"
-                      value={formData.referralCode}
-                      onChange={handleInputChange}
-                      className="h-12 bg-white/10 border-white/20 text-white placeholder:text-gray-400 rounded-xl focus:border-purple-500 focus:ring-purple-500/20 uppercase"
-                      placeholder={t('enter_referral_code')}
-                      maxLength={8}
-                    />
-                    {formData.referralCode && (
-                      <p className="text-xs text-purple-400 mt-1">{t('signup_bonus_msg')}</p>
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t("verifying") || "Verifying..."}
+                      </span>
+                    ) : (
+                      t("verify_otp") || "Verify OTP"
                     )}
-                  </div>
-
-                  {/* Benefits Card */}
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                    <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-purple-400" /> {t('what_you_get')}
-                    </h3>
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        {t('buy_sell_securely') || "Buy & sell products securely"}
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        {t('earn_rewards') || "Earn rewards & referral coins"}
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        {t('personalized_recommendations') || "Get personalized recommendations"}
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        {t('optional_kyc') || "Optional KYC for verified badge"}
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Terms Checkbox */}
-                  <div className="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
-                    <Checkbox
-                      id="agreeToTerms"
-                      checked={formData.agreeToTerms}
-                      onCheckedChange={(checked) =>
-                        setFormData(prev => ({ ...prev, agreeToTerms: checked }))
-                      }
-                      className="mt-0.5 border-white/30 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                    />
-                    <Label htmlFor="agreeToTerms" className="text-sm text-gray-300 leading-relaxed cursor-pointer">
-                      {t('agree_to_terms_prefix') || "I agree to the "}{' '}
-                      <Link to="/terms" className="text-purple-400 hover:text-purple-300 underline">
-                        {t('terms_of_service')}
-                      </Link>{' '}
-                      {t('and')}{' '}
-                      <Link to="/privacy" className="text-purple-400 hover:text-purple-300 underline">
-                        {t('privacy_policy')}
-                      </Link>
-                    </Label>
-                  </div>
-
-                  {/* Buttons */}
-                  <div className="flex gap-3">
+                  </Button>
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={() => setStep(1)}
-                      className="flex-1 h-12 bg-transparent border-white/20 text-white hover:bg-white/10 rounded-xl"
+                      variant="ghost"
+                      disabled={resendIn > 0 || loading}
+                      onClick={handleSendOtp}
+                      className="text-indigo-600 dark:text-indigo-400 dark:text-indigo-300"
                     >
-                      {t('back')}
+                      {resendIn > 0
+                        ? `${t("resend_in") || "Resend in"} ${resendIn}s`
+                        : t("resend_otp") || "Resend OTP"}
                     </Button>
                     <Button
-                      type="submit"
-                      disabled={isLoading || !formData.agreeToTerms}
-                      className="flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 disabled:opacity-50 transition-all"
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setStep(1)}
+                      className="text-gray-500 dark:text-gray-300"
                     >
-                      {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        t('create_account')
-                      )}
+                      <ArrowLeft className="w-4 h-4 mr-1" /> {t("back") || "Back"}
                     </Button>
                   </div>
                 </div>
-              )}
-            </form>
-
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
               </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-transparent px-3 text-gray-500">{t('continue_with')}</span>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-5">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
+                    {t("pan_number") || "PAN Number"}
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      maxLength={10}
+                      value={form.pan}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, pan: normalizePan(e.target.value) }))
+                      }
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl pr-10 dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                      placeholder={t("pan_placeholder") || "ABCDE1234F"}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <FieldStatus status={panStatus} />
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                    {t("pan_verification_hint") || "We verify PAN in real time."}
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(2)}
+                    className="flex-1 h-11 sm:h-12 rounded-xl dark:border-gray-600 dark:text-gray-200"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" /> {t("back") || "Back"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleVerifyPan}
+                    disabled={loading}
+                    className="flex-1 h-11 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 dark:bg-gradient-to-r dark:text-white"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      t("verify_pan") || "Verify PAN"
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Social Buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2"
-                onClick={() => toast({ title: "Coming Soon", description: "Google login will be available soon!" })}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Google
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2"
-                onClick={() => toast({ title: t('coming_soon'), description: t('phone_otp_coming_soon') })}
-              >
-                <Phone className="w-5 h-5" />
-                {t('phone_otp')}
-              </Button>
-            </div>
+            {step === 4 && (
+              <form onSubmit={handleCompleteSignup} className="space-y-5">
+                {panVerified ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200">
+                    {t("pan_verified") || "PAN verified"}
+                    {panMasked ? ` - ${panMasked}` : ""}
+                  </div>
+                ) : null}
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
+                    <Lock className="w-4 h-4 inline-block mr-1" /> {t("password") || "Password"}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                    placeholder={t("create_password_placeholder") || "Create a strong password"}
+                  />
+                  {form.password && (
+                    <div className="mt-2">
+                      <div className="flex gap-1 mb-1">
+                        {[1, 2, 3].map((level) => (
+                          <div
+                            key={level}
+                            className={`h-1 flex-1 rounded-full transition-all ${
+                              passwordStrength.score >= level
+                                ? passwordStrength.color
+                                : "bg-gray-200 dark:bg-gray-600"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                        {t("password_strength") || "Password strength"}: {" "}
+                        <span
+                          className={`font-medium ${
+                            passwordStrength.score === 3
+                              ? "text-green-500"
+                              : passwordStrength.score === 2
+                                ? "text-yellow-500"
+                                : "text-red-500"
+                          }`}
+                        >
+                          {passwordStrength.label}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-            {/* Login Link */}
-            <p className="text-center text-sm text-gray-400 mt-6">
-              {t('already_have_account') || "Already have an account?"}{' '}
-              <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">
-                {t('sign_in')}
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
+                    {t("confirm_new_password_label") || "Confirm Password"}
+                  </Label>
+                  <Input
+                    type="password"
+                    value={form.confirmPassword}
+                    onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                    placeholder={t("confirm_password_placeholder") || "Re-enter your password"}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block dark:text-gray-200">
+                    {t("referral_code_optional") || "Referral Code (optional)"}
+                  </Label>
+                  <Input
+                    type="text"
+                    value={form.referralCode}
+                    onChange={(e) => setForm((p) => ({ ...p, referralCode: e.target.value }))}
+                    className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-purple-500/40"
+                    placeholder={t("enter_referral_code") || "Enter referral code"}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                    {t("referral_code_hint") || "Paste a referral code to credit your referrer."}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:border dark:border-gray-700">
+                  <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                    {t("password_requirements") || "Password Requirements"}
+                  </p>
+                  <ul className="space-y-1 text-gray-600 dark:text-gray-400 dark:text-gray-200">
+                    <li>- {t("req_min_chars") || "At least 12 characters"}</li>
+                    <li>- {t("req_number") || "One number"}</li>
+                    <li>- {t("req_special") || "One special character"}</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(3)}
+                    className="flex-1 h-11 sm:h-12 rounded-xl dark:border-gray-600 dark:text-gray-200"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1" /> {t("back") || "Back"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 h-11 sm:h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 dark:bg-gradient-to-r dark:text-white"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      t("create_account") || "Create Account"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+              {t("already_have_account") || "Already have an account?"}{" "}
+              <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:underline font-medium dark:text-purple-300">
+                {t("sign_in") || "Sign In"}
               </Link>
             </p>
           </CardContent>
         </Card>
-
-        {/* Trust Badges */}
-        <div className="flex justify-center gap-6 mt-6 text-gray-500 text-xs">
-          <div className="flex items-center gap-1">
-            <Shield className="w-4 h-4" />
-            <span>{t('secure_signup')}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            <span>{t('users_count_signup')}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <CheckCircle className="w-4 h-4" />
-            <span>{t('verified_signup')}</span>
-          </div>
-        </div>
       </div>
     </div>
   );
-};
-
-export default SignUp;
+}

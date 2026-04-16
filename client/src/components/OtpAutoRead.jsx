@@ -40,6 +40,7 @@ const OtpAutoRead = ({
                 .catch((err) => {
                     if (err.name !== 'AbortError') {
                         console.log('[OTP] Auto-read not available:', err.message);
+                        onError?.(err);
                     }
                 })
                 .finally(() => {
@@ -54,7 +55,7 @@ const OtpAutoRead = ({
             // Cancel OTP listener on unmount
             abortControllerRef.current?.abort();
         };
-    }, [onComplete]);
+    }, [onComplete, onError]);
 
     const handleChange = (e) => {
         const value = e.target.value.replace(/[^0-9]/g, '').slice(0, length);
@@ -165,7 +166,7 @@ export const OtpBoxInput = ({
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
                     maxLength={1}
-                    className="w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg focus:border-blue-500 focus:outline-none bg-white dark:bg-gray-800"
+                    className="mhub-input w-12 h-14 text-center text-2xl font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 />
             ))}
         </div>
@@ -173,3 +174,4 @@ export const OtpBoxInput = ({
 };
 
 export default OtpAutoRead;
+

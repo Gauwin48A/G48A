@@ -1,13 +1,4 @@
-const pool = require('../config/db');
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-    return pool.query({
-        text,
-        values,
-        query_timeout: DB_QUERY_TIMEOUT_MS
-    });
-}
+const { runQuery } = require("../utils/dbHelpers");
 
 // CONFIGURATION
 const MAX_SPEED_KMH = 900; // Plane speed (Approx 800-900 km/h)

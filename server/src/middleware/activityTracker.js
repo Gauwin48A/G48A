@@ -1,109 +1,99 @@
-/**
- * Activity Tracker Middleware
- * Protocol: Presence Tracking
- * 
- * Throttled heartbeat - only updates DB once every 5 minutes per user
- * Reduces 100,000 writes/sec to ~300 writes/sec
- */
+const { runQuery } = require("../utils/dbHelpers");
+const logger = require("../utils/logger");
+const { recordVisit } = require("../services/streakRewardsService");
 
-const pool = require('../config/db');
-const logger = require('../utils/logger');
+const CACHE_CLEANUP_INTERVAL_MS = 60 * 60 * 1e3;
+const CACHE_CLEANUP_THRESHOLD_MS = 60 * 60 * 1e3;
+const TRACK_ACTIVITY_THRESHOLD_MS = 5 * 60 * 1e3;
 
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-const CACHE_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
-const CACHE_CLEANUP_THRESHOLD_MS = 60 * 60 * 1000;
-const TRACK_ACTIVITY_THRESHOLD_MS = 5 * 60 * 1000;
-
-function runQuery(text, values = []) {
-    return pool.query({
-        text,
-        values,
-        query_timeout: DB_QUERY_TIMEOUT_MS
-    });
-}
-
-// IN-MEMORY CACHE
-// Stores userId -> lastUpdatedTimestamp
-// With 1M users, this takes ~50MB RAM - acceptable
+/** In-memory cache mapping userId to last-activity timestamp (epoch ms). */
 const activityCache = new Map();
 
-// CLEANUP: Clear old entries every hour to prevent memory leaks
+/** Periodic cleanup timer that removes stale entries from the activity cache. */
 const activityCleanupTimer = setInterval(() => {
-    const now = Date.now();
-
-    for (const [userId, lastUpdate] of activityCache) {
-        if (now - lastUpdate > CACHE_CLEANUP_THRESHOLD_MS) {
-            activityCache.delete(userId);
-        }
+  const now = Date.now();
+  for (const [userId, lastUpdate] of activityCache) {
+    if (now - lastUpdate > CACHE_CLEANUP_THRESHOLD_MS) {
+      activityCache.delete(userId);
     }
+  }
 }, CACHE_CLEANUP_INTERVAL_MS);
 
-if (typeof activityCleanupTimer.unref === 'function') {
-    activityCleanupTimer.unref();
+if (typeof activityCleanupTimer.unref === "function") {
+  activityCleanupTimer.unref();
 }
 
 /**
- * Track user activity with 5-minute throttle
+ * Express middleware that updates the authenticated user's last-active timestamp.
+ * Throttles DB writes to at most once per TRACK_ACTIVITY_THRESHOLD_MS (5 min)
+ * using an in-memory cache. Also records a visit for streak/rewards tracking.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 const trackActivity = (req, res, next) => {
-    // Skip if user not authenticated
-    if (!req.user) return next();
+  if (!req.user) return next();
 
-    const userId = req.user.user_id || req.user.id || req.user.userId;
-    if (!userId) return next();
+  const userId = req.user.user_id || req.user.id || req.user.userId;
+  if (!userId) return next();
 
-    const now = Date.now();
-    const lastUpdate = activityCache.get(userId);
+  const now = Date.now();
+  const lastUpdate = activityCache.get(userId);
+  if (lastUpdate && now - lastUpdate < TRACK_ACTIVITY_THRESHOLD_MS) {
+    return next();
+  }
 
-    // THE FIREWALL: Only update DB if > 5 minutes have passed
-    if (lastUpdate && (now - lastUpdate) < TRACK_ACTIVITY_THRESHOLD_MS) {
-        return next(); // Skip DB write, proceed to API
-    }
+  activityCache.set(userId, now);
 
-    // Update cache immediately
-    activityCache.set(userId, now);
+  runQuery(
+    "UPDATE users SET last_active_at = NOW() WHERE user_id = $1",
+    [userId]
+  ).catch(err => {
+    logger.error("[Activity Tracker] Error:", err.message);
+  });
 
-    // FIRE AND FORGET - Don't await, don't slow down the request
-    runQuery(
-        'UPDATE users SET last_active_at = NOW() WHERE user_id = $1',
-        [userId]
-    ).catch(err => {
-        // Silently fail on tracking errors
-        logger.error('[Activity Tracker] Error:', err.message);
+  recordVisit(String(userId)).catch(err => {
+    logger.warn("[Activity Tracker] Streak update failed", {
+      message: err.message
     });
+  });
 
-    next();
+  next();
 };
 
 /**
- * Get online users count (for admin dashboard)
+ * Retrieve the count of users active in the last 5 minutes.
+ * @returns {Promise<number>} Number of currently online users.
  */
 const getOnlineCount = async () => {
-    try {
-        const result = await runQuery(`
-      SELECT COUNT(*) as online_count 
-      FROM users 
+  try {
+    const result = await runQuery(`
+      SELECT COUNT(*) as online_count
+      FROM users
       WHERE last_active_at > NOW() - INTERVAL '5 minutes'
     `);
-        return parseInt(result.rows[0]?.online_count) || 0;
-    } catch (err) {
-        logger.error('[Activity Tracker] Count error:', err.message);
-        return 0;
-    }
+    return parseInt(result.rows[0]?.online_count) || 0;
+  } catch (err) {
+    logger.error("[Activity Tracker] Count error:", err.message);
+    return 0;
+  }
 };
 
 /**
- * Check if a specific user is online
+ * Determine whether a user is currently online based on their last active timestamp.
+ * A user is considered online if active within the last 6 minutes.
+ * @param {string|Date|null} lastActiveAt - The user's last_active_at value.
+ * @returns {boolean} True if the user is online.
  */
 const isUserOnline = (lastActiveAt) => {
-    if (!lastActiveAt) return false;
-    const date = new Date(lastActiveAt);
-    const diffInMinutes = (Date.now() - date.getTime()) / 1000 / 60;
-    return diffInMinutes < 6; // Online if active in last 6 minutes
+  if (!lastActiveAt) return false;
+  const date = new Date(lastActiveAt);
+  const diffInMinutes = (Date.now() - date.getTime()) / 1e3 / 60;
+  return diffInMinutes < 6;
 };
 
 module.exports = {
-    trackActivity,
-    getOnlineCount,
-    isUserOnline
+  trackActivity,
+  getOnlineCount,
+  isUserOnline
 };

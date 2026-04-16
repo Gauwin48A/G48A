@@ -1,19 +1,15 @@
-const pool = require('../config/db');
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require('../utils/logger');
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
 
 exports.getDailyCode = async (req, res) => {
-  const { userId } = req.query;
-  if (!userId) {
-    return res.status(400).json({ error: 'userId required' });
+  const authUserId = getAuthUserId(req);
+  if (!authUserId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const userId = req.query.userId || authUserId;
+  // Users can only view their own daily code
+  if (String(userId) !== String(authUserId)) {
+    return res.status(403).json({ error: 'Forbidden' });
   }
 
   try {

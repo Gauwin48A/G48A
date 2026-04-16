@@ -53,9 +53,9 @@ const checkPasswordBreach = async (password) => {
 
         return { breached: false, count: 0 };
     } catch (error) {
-        console.error('[BreachCheck] Error:', error.message);
-        // On error, allow the password (fail open for availability)
-        return { breached: false, count: 0, error: true };
+        // Fail open for availability, but log prominently so the team knows
+        console.warn('[BreachCheck] HIBP API unavailable — breach check SKIPPED:', error.message);
+        return { breached: false, count: 0, error: true, skipped: true };
     }
 };
 

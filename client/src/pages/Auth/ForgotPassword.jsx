@@ -1,101 +1,203 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
-import { useTranslation } from 'react-i18next';
-import { getApiOriginBase } from '@/lib/networkConfig';
+import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import api from "@/services/api";
+import { mapPasswordResetError } from "@/utils/passwordResetErrorMapper";
 
-const ForgotPassword = () => {
+export default function ForgotPassword() {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resetLink, setResetLink] = useState("");
+  const [debugInfo, setDebugInfo] = useState(null);
+  const [message, setMessage] = useState("");
+
+  const normalizePhone = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (/^91[6-9]\d{9}$/.test(digits)) return digits.slice(2);
+    return digits;
+  };
+  const isPhoneIdentifier = (value) => /^[6-9]\d{9}$/.test(normalizePhone(value));
+
+  const mapError = (status, msg) =>
+    mapPasswordResetError({ status, message: msg, t, context: "forgot" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
 
-    if (!email) {
-      toast({ title: t('error'), description: t('enter_your_email'), variant: "destructive" });
+    if (!identifier) {
+      const msg = t("enter_email_phone_username") || "Enter your email, phone, or username.";
+      setMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
-      const baseUrl = getApiOriginBase();
-      const res = await fetch(`${baseUrl}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email }) // Works for both email and phone
+      const response = await api.post("/auth/forgot-password", { identifier });
+      const data = response?.data ?? response;
+
+      setSent(true);
+      const debug = data?.debug || null;
+      setDebugInfo(debug);
+      setResetLink(debug?.resetLink || "");
+      const info = debug?.mock
+        ? t("reset_link_preview_mode") || "Email is in local preview mode. Use the reset link shown on this page."
+        : t("reset_delivery_hint") || "If an account exists, reset instructions were sent. Check spam/junk if you don't see it.";
+      setMessage(info);
+      toast({
+        title: t("success") || "Success",
+        description: debug?.mock
+          ? t("reset_link_preview_mode") || "Email is in local preview mode."
+          : t("reset_link_sent") || "Password reset instructions have been sent.",
       });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setSent(true);
-        toast({ title: t('success'), description: t('reset_link_sent') || "Password reset link has been sent to your email" });
-      } else {
-        toast({ title: t('error'), description: data.error || t('failed_send_link') || "Failed to send reset link", variant: "destructive" });
-      }
     } catch (err) {
-      toast({ title: t('error'), description: t('network_error'), variant: "destructive" });
+      const status = err.response?.status || null;
+      const errData = err.response?.data || {};
+      const msg = mapError(status, errData.error || errData.message || err.message);
+      setMessage(msg);
+      toast({ title: t("error") || "Error", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] p-4">
-      <div className="max-w-md w-full">
-        <Link to="/login" className="flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-6 transition-colors">
+    <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 px-4 py-8 sm:py-12 transition-colors duration-300 dark:bg-gradient-to-br">
+      <div className="w-full max-w-md space-y-4">
+        {/* Back link */}
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors text-sm font-medium dark:text-blue-300"
+        >
           <ArrowLeft className="w-4 h-4" />
-          <span>{t('back_to_login')}</span>
+          {t("back_to_login") || "Back to Login"}
         </Link>
 
-        <Card className="shadow-2xl border-0 rounded-3xl overflow-hidden bg-white dark:bg-gray-800">
-          <CardHeader className="text-center py-8 bg-gradient-to-r from-blue-600 to-blue-700">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center">
-              {sent ? <CheckCircle className="w-8 h-8 text-white" /> : <Mail className="w-8 h-8 text-white" />}
+        <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden mhub-premium-surface backdrop-blur-sm dark:border-0">
+          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-blue-500 to-blue-600 dark:text-center dark:bg-gradient-to-r">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center dark:bg-slate-900/20">
+              {sent ? (
+                <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
+              ) : (
+                <Mail className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
+              )}
             </div>
-            <CardTitle className="text-2xl text-white">
-              {sent ? t('check_your_email') || 'Check Your Email' : t('forgot_password')}
+            <CardTitle className="text-xl sm:text-2xl text-white font-bold dark:text-white">
+              {sent
+                ? t("check_your_email") || "Check Your Email"
+                : t("forgot_password") || "Forgot Password"}
             </CardTitle>
-            <CardDescription className="text-blue-100">
-              {sent ? t('sent_reset_link_msg') || 'We sent you a password reset link' : t('enter_email_reset_msg') || 'Enter your email to reset your password'}
+            <CardDescription className="text-blue-100 text-sm dark:text-blue-200">
+              {sent
+                ? t("sent_reset_link_msg") || "We sent you password reset instructions"
+                : t("enter_email_reset_msg") || "Enter your email, phone, or username to reset your password"}
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="p-8">
+          <CardContent className="p-5 sm:p-8">
+            {/* Status message */}
+            {message && (
+              <div
+                className={`mb-4 rounded-xl border p-3 text-sm flex items-start gap-2 ${
+                  sent && !message.toLowerCase().includes("error")
+                    ? "border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200"
+                    : "border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200"
+                }`}
+              >
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{message}</span>
+              </div>
+            )}
+
             {sent ? (
-              <div className="text-center space-y-4">
-                <p className="text-gray-600 dark:text-gray-300">
-                  {t('sent_link_to') || "We've sent a password reset link to"} <strong>{email}</strong>.
-                  {t('check_inbox_instructions') || "Please check your inbox and follow the instructions."}
+              <div className="text-center space-y-4 dark:text-center">
+                <p className="text-gray-600 dark:text-gray-300 text-sm dark:text-gray-200">
+                  {t("sent_link_to") || "We've sent reset instructions for"}{" "}
+                  <strong className="text-gray-900 dark:text-white dark:text-gray-100">{identifier}</strong>.{" "}
+                  {t("check_inbox_instructions") || "Please check your inbox and follow the instructions."}
                 </p>
-                <p className="text-sm text-gray-500">
-                  {t('didnt_receive_email') || "Didn't receive the email?"} {t('check_spam') || "Check your spam folder or"}
-                  <button onClick={() => setSent(false)} className="text-blue-600 hover:underline ml-1">
-                    {t('try_again')}
+
+                {isPhoneIdentifier(identifier) && (
+                  <div className="rounded-xl border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 p-3 text-left dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20 dark:text-left">
+                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                      {t("reset_with_otp") || "Prefer OTP reset?"}
+                    </p>
+                    <Link
+                      to={`/reset-password?phone=${encodeURIComponent(normalizePhone(identifier))}`}
+                      className="mt-1 inline-flex items-center text-sm text-indigo-600 dark:text-indigo-400 hover:underline dark:text-indigo-300"
+                    >
+                      {t("use_otp_reset") || "Use OTP to reset password"}
+                    </Link>
+                  </div>
+                )}
+
+                {resetLink && (
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 p-3 text-left dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-left">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                      {t("dev_reset_preview") || "Local reset preview link"}
+                    </p>
+                    <a
+                      href={resetLink}
+                      className="mt-1 block break-all text-sm text-blue-600 dark:text-blue-400 hover:underline dark:text-blue-300"
+                    >
+                      {resetLink}
+                    </a>
+                    <p className="mt-1 text-xs text-blue-500 dark:text-blue-400 dark:text-blue-300">
+                      {debugInfo?.mock
+                        ? t("email_provider_not_configured") || "Email provider not configured; this link is shown for local testing."
+                        : `${t("email_delivery_channel") || "Delivery channel"}: ${debugInfo?.channel || "email"}`}
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                  {t("didnt_receive_email") || "Didn't receive the email?"}{" "}
+                  {t("check_spam") || "Check your spam folder or"}
+                  <button
+                    onClick={() => {
+                      setSent(false);
+                      setDebugInfo(null);
+                      setResetLink("");
+                      setMessage("");
+                    }}
+                    className="text-blue-600 dark:text-blue-400 hover:underline ml-1 font-medium dark:text-blue-300"
+                  >
+                    {t("try_again") || "try again"}
                   </button>
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    {t('email_address') || "Email Address"}
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200"
+                  >
+                    {t("email_phone_username") || "Email / Phone / Username"}
                   </Label>
                   <Input
                     id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-2 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl"
-                    placeholder={t('enter_your_email')}
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40"
+                    placeholder={t("email_phone_username_placeholder") || "Enter your email, phone, or username"}
                     disabled={loading}
                   />
                 </div>
@@ -103,17 +205,24 @@ const ForgotPassword = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-6 text-lg bg-[#96C2DB] hover:bg-blue-500 text-white rounded-xl"
+                  className="w-full h-11 sm:h-12 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl text-base sm:text-lg font-semibold dark:bg-gradient-to-r dark:text-white"
                 >
-                  {loading ? t('sending') + "..." : t('send_reset_link') || 'Send Reset Link'}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {t("sending") || "Sending"}...
+                    </span>
+                  ) : (
+                    t("send_reset_link") || "Send Reset Link"
+                  )}
                 </Button>
               </form>
             )}
 
-            <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400">
-              {t('remember_password') || "Remember your password?"}{' '}
-              <Link to="/login" className="text-blue-600 hover:underline font-medium">
-                {t('sign_in')}
+            <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400 dark:text-center dark:text-gray-200">
+              {t("remember_password") || "Remember your password?"}{" "}
+              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium dark:text-blue-300">
+                {t("sign_in") || "Sign In"}
               </Link>
             </div>
           </CardContent>
@@ -121,7 +230,5 @@ const ForgotPassword = () => {
       </div>
     </div>
   );
-};
-
-export default ForgotPassword;
+}
 

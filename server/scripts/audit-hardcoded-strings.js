@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const srcDir = path.resolve(__dirname, '../client/src');
+const srcDir = path.resolve(__dirname, '../../client/src');
 const ignoreFiles = ['main.jsx', 'App.jsx', 'index.css', 'vite-env.d.ts'];
+const reportPath = path.resolve(__dirname, 'hardcoded-strings-audit.generated.md');
 
-console.log('🔍 Starting Audit for Hardcoded English Strings (FS Mode)...\n');
+console.log('Starting audit for hardcoded strings...');
 
 function getAllFiles(dirPath, arrayOfFiles) {
     const files = fs.readdirSync(dirPath);
@@ -76,7 +77,10 @@ try {
     const files = getAllFiles(srcDir);
     let totalIssues = 0;
     let filesWithIssues = 0;
-    let report = '# Audit Results\n\n';
+    const runDate = new Date().toISOString().slice(0, 10);
+    let report = '# Hardcoded Strings Audit (Generated)\n\n';
+    report += `Generated: ${runDate}\n\n`;
+    report += `Source root: ${srcDir}\n\n`;
 
     files.forEach(file => {
         const issues = scanFile(file);
@@ -91,15 +95,13 @@ try {
         }
     });
 
-    report += '--------------------------------------------------\n';
-    report += `🏁 Audit Complete.\n`;
-    report += `📂 Files Scanned: ${files.length}\n`;
-    report += `⚠️  Files with Issues: ${filesWithIssues}\n`;
-    report += `🔴 Total Potential Hardcoded Strings: ${totalIssues}\n`;
-    report += '--------------------------------------------------\n';
+    report += '---\n';
+    report += `Files scanned: ${files.length}\n`;
+    report += `Files with issues: ${filesWithIssues}\n`;
+    report += `Total potential hardcoded strings: ${totalIssues}\n`;
 
-    fs.writeFileSync('audit_results.md', report, 'utf8');
-    console.log(`Audit saved to audit_results.md (${totalIssues} issues found)`);
+    fs.writeFileSync(reportPath, report, 'utf8');
+    console.log(`Audit saved to ${reportPath} (${totalIssues} issues found)`);
 
 } catch (err) {
     console.error('Error running audit:', err);

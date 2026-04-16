@@ -1,19 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const complaintsController = require('../controllers/complaintsController');
+const { protect } = require("../middleware/auth");
+const complaintsController = require("../controllers/complaintsController");
+const { isAdmin } = require("../utils/dbHelpers");
 
-// Public/admin: List all complaints (with filters)
-router.get('/', protect, complaintsController.getComplaints);
-
-// Protected: Submit a new complaint
-router.post('/', protect, complaintsController.createComplaint);
-
-// Protected: Get my complaints
-router.get('/my', protect, complaintsController.getMyComplaints);
-
-// Protected: Admin update complaint status
-router.patch('/:id/status', protect, complaintsController.updateComplaintStatus);
-router.patch('/:id/evidence', protect, complaintsController.addComplaintEvidence);
+/**
+ * @route GET / - List all complaints
+ * @route POST / - Create a new complaint
+ * @route GET /my - List complaints filed by the current user
+ * @route PATCH /:id/status - Update complaint status
+ * @route PATCH /:id/evidence - Add evidence to a complaint
+ */
+router.get("/", protect, complaintsController.getComplaints);
+router.post("/", protect, complaintsController.createComplaint);
+router.get("/my", protect, complaintsController.getMyComplaints);
+router.patch("/:id/status", protect, (req, res, next) => { if (!isAdmin(req)) return res.status(403).json({ error: 'Admin access required' }); next(); }, complaintsController.updateComplaintStatus);
+router.patch("/:id/evidence", protect, complaintsController.addComplaintEvidence);
 
 module.exports = router;

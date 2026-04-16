@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Star } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 import './StarRating.css';
 
@@ -13,7 +12,6 @@ const StarRating = ({
     showValue = true,
     totalReviews
 }) => {
-  const { t } = useTranslation();
     const [hoverRating, setHoverRating] = useState(0);
 
     const handleClick = (value) => {

@@ -1,21 +1,21 @@
-// Wishlist Routes
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const wishlistController = require('../controllers/wishlistController');
+const { protect } = require("../middleware/auth");
+const wishlistController = require("../controllers/wishlistController");
 
+/** All wishlist routes require authentication */
 router.use(protect);
 
-// Get user's wishlist
-router.get('/', wishlistController.getWishlist);
+/** @route GET / - Get the current user's wishlist */
+router.get("/", wishlistController.getWishlist);
 
-// Add to wishlist
-router.post('/', wishlistController.addToWishlist);
+/** @route POST / - Add a post to the wishlist */
+router.post("/", wishlistController.addToWishlist);
 
-// Check if post is in wishlist
-router.get('/check/:postId', wishlistController.checkWishlist);
+/** @route GET /check/:postId - Check if a post is in the user's wishlist */
+router.get("/check/:postId", wishlistController.checkWishlist);
 
-// Remove from wishlist
-router.delete('/:postId', wishlistController.removeFromWishlist);
+/** @route DELETE /:postId - Remove a post from the wishlist */
+router.delete("/:postId", wishlistController.removeFromWishlist);
 
 module.exports = router;

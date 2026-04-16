@@ -1,66 +1,85 @@
-import api from './api';
+import api from "./api";
+import {
+  validateEmail,
+  validatePassword,
+  validatePhone,
+  validateName,
+} from "./validate";
 
-import { validateEmail, validatePassword, validatePhone, validateName } from './validate';
-
+/**
+ * Register a new user after client-side validation.
+ * @param {object} userData - User registration fields (name, email, password, phone, referral_code).
+ * @returns {Promise<object>} The signup API response.
+ * @throws {{ errors: string[] } | { error: string }} Validation or server errors.
+ */
 export const registerUser = async (userData) => {
-  // Frontend validation
   const errors = [];
-  if (!validateName(userData.name)) errors.push('Name must be at least 2 characters.');
-  if (!validateEmail(userData.email)) errors.push('Invalid email format.');
-  if (!validatePassword(userData.password)) errors.push('Password must be at least 8 characters, include uppercase, lowercase, and a number.');
-  if (!validatePhone(userData.phone)) errors.push('Phone number must be 10 digits, start with 6-9, and not be a fake pattern.');
+
+  if (!validateName(userData.name))
+    errors.push("Name must be at least 2 characters.");
+  if (!validateEmail(userData.email))
+    errors.push("Invalid email format.");
+  if (!validatePassword(userData.password))
+    errors.push(
+      "Password must be at least 8 characters, include uppercase, lowercase, and a number."
+    );
+  if (!validatePhone(userData.phone))
+    errors.push(
+      "Phone number must be 10 digits, start with 6-9, and not be a fake pattern."
+    );
+
   if (errors.length > 0) {
-    throw { errors };
+    throw { errors: errors };
   }
 
-  // Map frontend field names to backend expected names
   const signupData = {
-    fullName: userData.name,           // Backend expects 'fullName'
-    phone: userData.phone,             // Backend expects 'phone'
+    fullName: userData.name,
+    phone: userData.phone,
     email: userData.email,
     password: userData.password,
-    referral_code: userData.referral_code
+    referral_code: userData.referral_code,
   };
 
   try {
-    // Use /auth/signup (baseURL already includes /api)
-    const res = await api.post('/auth/signup', signupData);
-    return res; // api.js interceptor already unwraps response.data
+    const res = await api.post("/auth/signup", signupData);
+    return res;
   } catch (err) {
-    console.error('[registerUser] Error:', err);
-    // Re-throw with proper format
+    console.error("[registerUser] Error:", err);
     if (err.errors) {
-      throw { errors: err.errors.map(e => e.msg || e.message || e) };
+      throw { errors: err.errors.map((e) => e.msg || e.message || e) };
     }
     if (err.error) {
       throw { error: err.error };
     }
-    throw { error: err.message || 'Signup failed' };
+    throw { error: err.message || "Signup failed" };
   }
 };
 
+/**
+ * Log in an existing user with email and password.
+ * @param {object} loginData - Contains email and password.
+ * @returns {Promise<object>} The login API response.
+ * @throws {{ errors: string[] } | { error: string }} Validation or server errors.
+ */
 export const loginUser = async (loginData) => {
-  // Simple validation for login - no complex password rules
-  if (!loginData.email || !loginData.email.includes('@')) {
-    throw { errors: ['Please enter a valid email address.'] };
+  if (!loginData.email || !loginData.email.includes("@")) {
+    throw { errors: ["Please enter a valid email address."] };
   }
   if (!loginData.password || loginData.password.length < 6) {
-    throw { errors: ['Password must be at least 6 characters.'] };
+    throw { errors: ["Password must be at least 6 characters."] };
   }
 
-  console.log('[loginUser] Attempting login for:', loginData.email);
+  if (import.meta.env.DEV) console.log("[loginUser] Attempting login");
 
   try {
-    // Note: api.js baseURL already includes /api, so use relative path
-    const res = await api.post('/auth/login', loginData);
-    console.log('[loginUser] Success:', res);
-    return res; // api.js interceptor already unwraps response.data
+    const res = await api.post("/auth/login", loginData);
+    if (import.meta.env.DEV) console.log("[loginUser] Success");
+    return res;
   } catch (err) {
-    console.error('[loginUser] Error:', err);
-    // Re-throw with proper format for Login.jsx to handle
+    if (import.meta.env.DEV) console.error("[loginUser] Error:", err);
     if (err.error) {
       throw { error: err.error };
     }
-    throw { errors: [err.message || 'Login failed'] };
+    throw { errors: [err.message || "Login failed"] };
   }
 };

@@ -1,17 +1,12 @@
-const pool = require('../config/db');
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
 const logger = require('../utils/logger');
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
 
 exports.getSaleUndone = async (req, res) => {
   try {
+    const userId = getAuthUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const result = await runQuery(`
       SELECT
         post_id,
@@ -35,6 +30,6 @@ exports.getSaleUndone = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     logger.error('Error fetching saleundone posts:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

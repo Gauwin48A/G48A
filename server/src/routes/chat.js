@@ -1,24 +1,32 @@
-/**
- * Chat Routes
- */
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const chatController = require('../controllers/chatController');
+const rateLimit = require("express-rate-limit");
+const { protect } = require("../middleware/auth");
+const chatController = require("../controllers/chatController");
 
-// All routes require authentication
+/** All chat routes require authentication */
 router.use(protect);
 
-// Get all conversations
-router.get('/conversations', chatController.getConversations);
+/** Rate limit chat message sending to prevent spam */
+const chatSendLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many messages. Slow down." },
+});
 
-// Get messages in a conversation
-router.get('/conversations/:conversationId', chatController.getMessages);
-
-// Send a message
-router.post('/send', chatController.sendMessage);
-
-// Get unread count
-router.get('/unread', chatController.getUnreadCount);
+/**
+ * @route GET /conversations - List user conversations (supports ?page=&limit=)
+ * @route GET /conversations/:conversationId - Get messages in a conversation
+ * @route POST /send - Send a new message (rate-limited)
+ * @route GET /unread - Get unread message count
+ */
+router.get("/conversations", chatController.getConversations);
+router.get("/conversations/:conversationId", chatController.getMessages);
+router.post("/send", chatSendLimiter, chatController.sendMessage);
+router.get("/unread", chatController.getUnreadCount);
+router.put("/conversations/:conversationId/delivered", chatController.markDelivered);
+router.put("/conversations/:conversationId/seen", chatController.markSeen);
 
 module.exports = router;

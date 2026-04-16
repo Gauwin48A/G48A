@@ -1,50 +1,60 @@
 const express = require("express");
 const router = express.Router();
-const multer = require('multer');
-const profileController = require('../controllers/profileController');
-const { protect } = require('../middleware/auth');
+const multer = require("multer");
+const profileController = require("../controllers/profileController");
+const { protect } = require("../middleware/auth");
+const { body, validationResult } = require("express-validator");
 
-// Multer setup for avatar uploads (store in memory for base64 conversion)
+/**
+ * @route Profile routes
+ * @description Manages user profile retrieval, updates, avatar uploads, and preferences
+ */
+
+/* ── Multer config for avatar uploads (5 MB, images only) ── */
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error("Only image files are allowed"));
     }
-  }
+  },
 });
 
-// GET /api/profile?userId=1
-router.get('/', protect, profileController.getProfile);
-
-// POST /api/profile/update
-const { body, validationResult } = require('express-validator');
-
+/* ── Validation middleware for profile updates ───────────── */
 const validateProfileUpdate = [
-  body('email').optional().isEmail().withMessage('Invalid email format'),
-  body('phone').optional().isMobilePhone().withMessage('Invalid phone number'),
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Invalid email format"),
+  body("phone")
+    .optional()
+    .isMobilePhone()
+    .withMessage("Invalid phone number"),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
     next();
-  }
+  },
 ];
 
-// POST /api/profile/update
-router.post('/update', protect, validateProfileUpdate, profileController.updateProfile);
+/** @route GET / - Get the authenticated user's profile */
+router.get("/", protect, profileController.getProfile);
 
-// POST /api/profile/upload-avatar
-router.post('/upload-avatar', protect, upload.single('avatar'), profileController.uploadAvatar);
+/** @route POST /update - Update profile fields (with validation) */
+router.post("/update", protect, validateProfileUpdate, profileController.updateProfile);
 
-// GET /api/profile/preferences?userId=1
-router.get('/preferences', protect, profileController.getPreferences);
+/** @route POST /upload-avatar - Upload a new avatar image */
+router.post("/upload-avatar", protect, upload.single("avatar"), profileController.uploadAvatar);
 
-// POST /api/profile/preferences/update
-router.post('/preferences/update', protect, profileController.updatePreferences);
+/** @route GET /preferences - Get user preferences */
+router.get("/preferences", protect, profileController.getPreferences);
+
+/** @route POST /preferences/update - Update user preferences */
+router.post("/preferences/update", protect, profileController.updatePreferences);
 
 module.exports = router;

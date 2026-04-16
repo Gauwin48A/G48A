@@ -273,9 +273,25 @@ BEGIN
         u.full_name
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.user_id
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
     WHERE 
         p.status = 'active'
-        AND (p_query IS NULL OR p_query = '' OR p.search_vector @@ plainto_tsquery('english', p_query) OR p.title ILIKE '%' || p_query || '%')
+        AND (
+            p_query IS NULL
+            OR p_query = ''
+            OR p.search_vector @@ plainto_tsquery('english', p_query)
+            OR p.title ILIKE '%' || p_query || '%'
+            OR p.description ILIKE '%' || p_query || '%'
+            OR p.location ILIKE '%' || p_query || '%'
+            OR c.name ILIKE '%' || p_query || '%'
+            OR sc.name ILIKE '%' || p_query || '%'
+            OR u.full_name ILIKE '%' || p_query || '%'
+            OR (to_jsonb(u)->>'username') ILIKE '%' || p_query || '%'
+            OR (to_jsonb(u)->>'name') ILIKE '%' || p_query || '%'
+            OR (to_jsonb(p)->>'brand') ILIKE '%' || p_query || '%'
+            OR (to_jsonb(p)->>'model') ILIKE '%' || p_query || '%'
+        )
         AND (p_lat IS NULL OR p_lng IS NULL OR p.lat IS NULL OR haversine_distance(p_lat, p_lng, CAST(p.lat AS float), CAST(p.long AS float)) <= p_radius_km)
         AND (p_category_id IS NULL OR p.category_id = p_category_id)
         AND (p_min_price IS NULL OR p.price >= p_min_price)

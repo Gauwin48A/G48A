@@ -1,31 +1,35 @@
-/**
- * Reviews Routes
- * Ratings, reviews, and seller reputation
- */
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const reviewsController = require('../controllers/reviewsController');
+const { protect } = require("../middleware/auth");
+const { requireAdmin } = require("../middleware/rbac");
+const reviewsController = require("../controllers/reviewsController");
+const { publicReadSlowDown } = require("../middleware/rateLimiter");
 
-// Public: Get reviews for a user (seller)
-router.get('/user/:userId', reviewsController.getReviewsForUser);
+/** @route GET /user/:userId - Fetch all reviews for a given user (public) */
+router.get("/user/:userId", publicReadSlowDown, reviewsController.getReviewsForUser);
 
-// Protected: Create a review
-router.post('/', protect, reviewsController.createReview);
+/** @route GET /buyer/:userId - Fetch buyer reviews for a given user (public) */
+router.get("/buyer/:userId", publicReadSlowDown, reviewsController.getBuyerReviews);
 
-// Protected: Mark review as helpful
-router.patch('/:reviewId/helpful', protect, reviewsController.markReviewHelpful);
+/** @route GET /stats/:userId - Comprehensive rating stats (seller + buyer) */
+router.get("/stats/:userId", publicReadSlowDown, reviewsController.getUserRatingStats);
 
-// Protected: Seller response to review
-router.post('/:reviewId/respond', protect, reviewsController.respondToReview);
+/** @route POST / - Create a new review */
+router.post("/", protect, reviewsController.createReview);
 
-// Protected: User flags review for abuse
-router.post('/:reviewId/flag', protect, reviewsController.flagReview);
+/** @route PATCH /:reviewId/helpful - Mark a review as helpful */
+router.patch("/:reviewId/helpful", protect, reviewsController.markReviewHelpful);
 
-// Protected: Admin/moderator hide/unhide
-router.patch('/:reviewId/moderate', protect, reviewsController.moderateReviewVisibility);
+/** @route POST /:reviewId/respond - Respond to a review */
+router.post("/:reviewId/respond", protect, reviewsController.respondToReview);
 
-// Protected: Delete own review
-router.delete('/:reviewId', protect, reviewsController.deleteReview);
+/** @route POST /:reviewId/flag - Flag a review for moderation */
+router.post("/:reviewId/flag", protect, reviewsController.flagReview);
+
+/** @route PATCH /:reviewId/moderate - Moderate review visibility */
+router.patch("/:reviewId/moderate", protect, requireAdmin, reviewsController.moderateReviewVisibility);
+
+/** @route DELETE /:reviewId - Delete a review */
+router.delete("/:reviewId", protect, reviewsController.deleteReview);
 
 module.exports = router;

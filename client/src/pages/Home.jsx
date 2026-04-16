@@ -1,449 +1,207 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import {
-  RefreshCw, TrendingUp, Sparkles, Clock, Eye, Heart,
-  MapPin, ChevronRight, Zap, ShoppingBag, AlertTriangle
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import api from '../services/api'; // Centralized Axios Service
-import { fetchCategoriesCached } from '@/services/categoriesService';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "@/lib/api";
+import { getApiOriginBase } from "@/lib/networkConfig";
+import { Button } from "@/components/ui/button";
+import EmptyState from "@/components/EmptyState";
+import FeaturedCentrePages from "@/components/FeaturedCentrePages";
+import CentreUpdatesFeed from "@/components/CentreUpdatesFeed";
+import { useAuth } from "@/context/AuthContext";
+import { isAuthenticated } from "@/utils/authStorage";
+import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
-const FEED_REFRESH_COOLDOWN_MS = 3000;
-const FEED_PAGE_SIZE = 20;
-const FALLBACK_IMAGE_URL = 'https://via.placeholder.com/300x200?text=No+Image';
-
-const createSeededRandom = (seed) => {
-  let state = seed % 2147483647;
-  if (state <= 0) {
-    state += 2147483646;
-  }
-  return () => {
-    state = (state * 16807) % 2147483647;
-    return (state - 1) / 2147483646;
-  };
-};
-
-const shufflePostsWithSeed = (posts, seed) => {
-  const random = createSeededRandom(seed);
-  const shuffled = [...posts];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
-
-const Home = () => {
-  useTranslation();
+export default function Home() {
   const navigate = useNavigate();
-  const [feedPosts, setFeedPosts] = useState([]);
-  const [trendingPosts, setTrendingPosts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  useDocumentTitle(t("home_title", { defaultValue: "MHub — Home" }));
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // Defensive UI: Error State
-  const [refreshing, setRefreshing] = useState(false);
-  const [feedMeta, setFeedMeta] = useState(null);
-  const [lastRefresh, setLastRefresh] = useState(null);
-  const refreshCooldown = useRef(false);
-  const refreshCooldownTimeoutRef = useRef(null);
-  const latestRequestIdRef = useRef(0);
-  const currencyFormatter = useMemo(
-    () => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
-    []
+  const [error, setError] = useState("");
+
+  const isLoggedIn = useMemo(() => isAuthenticated(user), [user]);
+  const apiOrigin = useMemo(() => getApiOriginBase(), []);
+
+  const resolveImage = useCallback(
+    (value) => {
+      if (!value) return "/placeholder.svg";
+      if (value.startsWith("http")) return value;
+      if (value.startsWith("/")) return `${apiOrigin}${value}`;
+      return value;
+    },
+    [apiOrigin],
   );
 
-  const devLog = useCallback((message, error) => {
-    if (import.meta.env.DEV) {
-      console.error(message, error);
-    }
-  }, []);
-
-  // Fetch dynamic feed
-  const fetchDynamicFeed = useCallback(async (forceRefresh = false) => {
-    if (refreshCooldown.current && !forceRefresh) return;
-    const requestId = ++latestRequestIdRef.current;
-    setError(null);
-
-    try {
-      if (forceRefresh) {
-        setRefreshing(true);
-        refreshCooldown.current = true;
-        if (refreshCooldownTimeoutRef.current) {
-          clearTimeout(refreshCooldownTimeoutRef.current);
-        }
-        refreshCooldownTimeoutRef.current = setTimeout(() => {
-          refreshCooldown.current = false;
-          refreshCooldownTimeoutRef.current = null;
-        }, FEED_REFRESH_COOLDOWN_MS);
-      }
-
-      // Always fetch fresh data with cache buster
-      const cacheBuster = Date.now();
-      const response = await api.get('/feed/dynamic', {
-        params: { refresh: 'true', limit: FEED_PAGE_SIZE, seed: cacheBuster, _t: cacheBuster }
-      });
-      if (requestId !== latestRequestIdRef.current) {
-        return;
-      }
-
-      const payload = response?.data ?? response;
-      const posts = Array.isArray(payload?.posts) ? payload.posts : [];
-      const randomizedPosts = shufflePostsWithSeed(posts, cacheBuster);
-
-      setFeedPosts(randomizedPosts);
-      setFeedMeta(payload?.feedMeta || null);
-      setLastRefresh(new Date());
-
-      // Track impressions for exploration analytics
-      if (randomizedPosts.length > 0) {
-        const postIds = randomizedPosts.map((post) => post.post_id).filter(Boolean);
-        api.post('/feed/impression', { postIds }).catch(() => { });
-      }
-    } catch (err) {
-      devLog('Feed fetch error:', err);
-      if (requestId === latestRequestIdRef.current) {
-        setError('Failed to load your feed. Please try again.');
-      }
-    } finally {
-      if (requestId === latestRequestIdRef.current) {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    }
-  }, [devLog]);
-
-  // Fetch trending
-  const fetchTrending = useCallback(async () => {
-    try {
-      const response = await api.get('/feed/trending');
-      const payload = response?.data ?? response;
-      setTrendingPosts(Array.isArray(payload?.posts) ? payload.posts : []);
-    } catch (err) {
-      devLog('Trending fetch error:', err);
-      // Non-critical, don't set global error
-    }
-  }, [devLog]);
-
-  // Fetch categories
-  const fetchCategories = useCallback(async () => {
-    try {
-      const list = await fetchCategoriesCached();
-      setCategories(Array.isArray(list) ? list.slice(0, 8) : []);
-    } catch (err) {
-      devLog('Categories fetch error:', err);
-    }
-  }, [devLog]);
-
-  // Initial load
-  useEffect(() => {
+  const loadPosts = useCallback(async () => {
     setLoading(true);
-    fetchDynamicFeed();
-    fetchTrending();
-    fetchCategories();
-
-    return () => {
-      latestRequestIdRef.current += 1;
-      if (refreshCooldownTimeoutRef.current) {
-        clearTimeout(refreshCooldownTimeoutRef.current);
-        refreshCooldownTimeoutRef.current = null;
-      }
-    };
-  }, [fetchDynamicFeed, fetchTrending, fetchCategories]);
-
-  // Pull to refresh (simulated with button)
-  const handleRefresh = () => {
-    if (!refreshCooldown.current) {
-      fetchDynamicFeed(true);
+    setError("");
+    try {
+      const response = await api.get("/posts", {
+        params: { page: 1, limit: 8 },
+      });
+      const payload = response?.data ?? response;
+      const list = Array.isArray(payload?.posts)
+        ? payload.posts
+        : Array.isArray(payload)
+          ? payload
+          : [];
+      setPosts(list);
+    } catch (err) {
+      setError(
+        err?.message ||
+          t("home_load_error", {
+            defaultValue: "Unable to load posts right now.",
+          }),
+      );
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [t]);
 
-  const legacyFormatPrice = (price) => {
-    if (!price) return '₹ --';
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(price);
-  };
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
 
-  const legacyGetImageUrl = (images) => {
-    if (!images) return 'https://via.placeholder.com/300x200?text=No+Image';
-    if (Array.isArray(images) && images.length > 0) return images[0];
-    if (typeof images === 'string') {
-      try {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) ? parsed[0] : images;
-      } catch {
-        return images;
-      }
-    }
-    return 'https://via.placeholder.com/300x200?text=No+Image';
-  };
-
-  const formatPrice = (price) => {
-    const numericPrice = Number(price);
-    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      return legacyFormatPrice(price);
-    }
-    return currencyFormatter.format(numericPrice);
-  };
-
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) {
-      return '';
-    }
-    const now = new Date();
-    const diff = Math.max(0, now - date);
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 60) return `${minutes}m`;
-    if (hours < 24) return `${hours}h`;
-    return `${days}d`;
-  };
-
-  const getImageUrl = (images) => {
-    if (!images) return FALLBACK_IMAGE_URL;
-    const resolvedImage = legacyGetImageUrl(images);
-    return resolvedImage || FALLBACK_IMAGE_URL;
-  };
-
-  const getPhaseBadge = (phase) => {
-    switch (phase) {
-      case 'fresh':
-        return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs"><Zap className="h-3 w-3 mr-1" />New</Badge>;
-      case 'exploration':
-        return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs"><Sparkles className="h-3 w-3 mr-1" />Discover</Badge>;
-      default:
-        return null;
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+        <div className="max-w-6xl mx-auto px-4 py-10 page-shell page-pad">
+          <div className="mb-8 space-y-3">
+            <div className="h-8 w-48 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse dark:bg-emerald-950/20" />
+            <div className="h-4 w-72 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse dark:bg-emerald-950/20" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="h-56 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-emerald-100 dark:border-slate-700 animate-pulse dark:bg-slate-900/60 dark:border dark:border-emerald-600/40"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900 p-4">
-        <AlertTriangle className="h-16 w-16 text-red-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
-        <p className="text-gray-500 mb-6 text-center">{error}</p>
-        <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
-          Reload Page
-        </Button>
+      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+        <div className="max-w-lg w-full mhub-premium-surface rounded-3xl p-6 text-center dark:text-center">
+          <h2 className="text-2xl font-bold text-rose-700 dark:text-rose-200 mb-2 dark:text-rose-300">
+            {t("something_went_wrong", { defaultValue: "Something went wrong" })}
+          </h2>
+          <p className="text-sm text-rose-600 dark:text-rose-300 mb-6">
+            {error}
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button onClick={loadPosts}>
+              {t("reload_page", { defaultValue: "Reload Page" })}
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/all-posts")}>
+              {t("open_all_posts", { defaultValue: "Open All Posts" })}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+        <div className="max-w-4xl mx-auto px-4 py-12 page-shell page-pad">
+          <EmptyState
+            type="posts"
+            title={t("no_posts_yet", { defaultValue: "No Posts Yet" })}
+            message={t("be_first_to_list", { defaultValue: "Be the first to create a listing and kickstart the marketplace." })}
+            actionLabel={t("open_all_posts", { defaultValue: "Open All Posts" })}
+            onAction={() => navigate("/all-posts")}
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-900 dark:via-gray-900 dark:to-slate-900 pb-24">
-      {/* Premium Header */}
-      <div className="sticky top-0 z-50 bg-gradient-to-r from-white/95 via-gray-50/95 to-white/95 dark:from-slate-900/95 dark:via-gray-900/95 dark:to-slate-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                For You
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {feedMeta ? `${feedMeta.freshCount} fresh • ${feedMeta.explorationCount} discoveries` : 'Personalized feed'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing || refreshCooldown.current}
-                className={`text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl ${refreshing ? 'animate-spin' : ''}`}
-              >
-                <RefreshCw className="h-5 w-5" />
-              </Button>
-              {lastRefresh && (
-                <span className="text-xs text-gray-500 dark:text-gray-500">
-                  {formatTimeAgo(lastRefresh)}
-                </span>
-              )}
-            </div>
+    <div className="min-h-screen overflow-x-hidden mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
+      <div className="max-w-6xl mx-auto px-4 py-10 page-shell page-pad">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <div>
+            <p className="uppercase tracking-[0.3em] text-xs text-emerald-500 dark:text-emerald-300">
+              {t("trust_first_marketplace", { defaultValue: "Trust-First Marketplace" })}
+            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100">
+              {t("discover_near_you", { defaultValue: "Discover what is moving near you" })}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 max-w-lg dark:text-gray-200">
+              {t("home_subtitle", { defaultValue: "Fresh listings, verified sellers, and quick actions. Browse the latest posts or jump into curated discovery." })}
+            </p>
           </div>
-        </div>
-      </div>
-
-      {/* Categories Scroll */}
-      <div className="px-4 py-4 overflow-x-auto">
-        <div className="flex gap-2 min-w-max">
-          <button
-            onClick={() => navigate('/all-posts')}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/25 flex items-center gap-2"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            All Posts
-          </button>
-          {categories.map(cat => (
-            <button
-              key={cat.category_id || cat.id}
-              onClick={() => navigate(`/all-posts?category=${cat.category_id || cat.id}`)}
-              className="px-4 py-2 bg-gray-100 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 rounded-xl font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-700/60 hover:text-gray-900 dark:hover:text-white transition-all border border-gray-200 dark:border-gray-700/50"
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Trending Section */}
-      {trendingPosts.length > 0 && (
-        <div className="px-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-orange-400" />
-              Trending Now
-            </h2>
-            <button className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1">
-              View All <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {trendingPosts.map((post, idx) => (
-              <div
-                key={post.post_id}
-                onClick={() => navigate(`/post/${post.post_id}`)}
-                className="flex-shrink-0 w-40 bg-white dark:bg-gray-800/60 rounded-xl p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/60 transition-all border border-gray-200 dark:border-gray-700/50 shadow-sm"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-orange-400 font-bold text-lg">#{idx + 1}</span>
-                  <TrendingUp className="h-4 w-4 text-orange-400" />
-                </div>
-                <p className="text-gray-900 dark:text-white text-sm font-medium truncate">{post.title}</p>
-                <p className="text-emerald-400 font-bold text-sm mt-1">{formatPrice(post.price)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Main Feed Grid */}
-      <div className="px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-400" />
-            Your Feed
-          </h2>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-blue-500/30 rounded-full"></div>
-              <div className="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400">Loading your personalized feed...</p>
-          </div>
-        ) : feedPosts.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShoppingBag className="h-12 w-12 text-blue-400" />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-3">No Posts Yet</h3>
-            <p className="text-gray-400 mb-8">Be the first to post something amazing!</p>
-            <Button
-              onClick={() => navigate('/create-post')}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-8 py-6 text-lg font-semibold shadow-xl"
-            >
-              Create Post
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => navigate("/all-posts")}>{t("open_all_posts", { defaultValue: "Open All Posts" })}</Button>
+            <Button variant="outline" onClick={() => navigate("/for-you")}>
+              {t("for_you", { defaultValue: "For You" })}
             </Button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {feedPosts.map((post) => (
-              <Card
-                key={post.post_id}
-                className="group bg-white dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900/80 border-gray-200 dark:border-gray-700/50 overflow-hidden cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/50 hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 rounded-2xl shadow-sm"
-                onClick={() => navigate(`/post/${post.post_id}`)}
+        </div>
+
+        {isLoggedIn && <CentreUpdatesFeed className="mb-8" />}
+        {isLoggedIn && <FeaturedCentrePages className="mb-8" />}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {posts.slice(0, 8).map((post) => {
+            const image = resolveImage(
+              post.image_url || post.images?.[0] || "",
+            );
+            return (
+              <button
+                key={post.post_id || post.id}
+                type="button"
+                onClick={() => navigate(`/post/${post.post_id || post.id}`)}
+                className="group text-left mhub-premium-surface rounded-2xl hover:shadow-lg transition-all overflow-hidden dark:text-left"
               >
-                {/* Image */}
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
-                    src={getImageUrl(post.images)}
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => { e.target.src = FALLBACK_IMAGE_URL; }}
+                    src={image}
+                    alt={post.title || t("listing", { defaultValue: "Listing" })}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = "/placeholder.svg";
+                    }}
+                    loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-
-                  {/* Phase Badge */}
-                  <div className="absolute top-3 left-3">
-                    {getPhaseBadge(post.feed_phase)}
-                  </div>
-
-                  {/* Price */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent dark:bg-gradient-to-t" />
                   <div className="absolute bottom-3 left-3">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white drop-shadow-lg">
-                      {formatPrice(post.price)}
+                    <p className="text-white text-lg font-semibold dark:text-white">
+                      {t("currency_inr", { defaultValue: "INR" })}{" "}
+                      {Number(post.price || 0).toLocaleString("en-IN")}
                     </p>
                   </div>
-
-                  {/* Stats */}
-                  <div className="absolute bottom-3 right-3 flex gap-2">
-                    <span className="bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {post.views_count || 0}
-                    </span>
-                    <span className="bg-black/50 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs flex items-center gap-1">
-                      <Heart className="h-3 w-3" />
-                      {post.likes_count || 0}
-                    </span>
-                  </div>
                 </div>
-
-                {/* Content */}
                 <div className="p-4">
-                  {/* Category */}
-                  {post.category_name && (
-                    <Badge className="mb-2 bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                      {post.category_name}
-                    </Badge>
-                  )}
-
-                  <h3 className="text-gray-900 dark:text-white font-semibold text-lg truncate mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {post.title}
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-base line-clamp-2 dark:text-gray-100">
+                    {post.title ||
+                      t("untitled_listing", { defaultValue: "Untitled Listing" })}
                   </h3>
-
-                  {/* Seller */}
-                  {post.author_name && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <Avatar className="h-6 w-6 bg-gradient-to-br from-purple-500 to-pink-500">
-                        <AvatarFallback className="text-white text-xs font-bold">
-                          {post.author_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-400 truncate">
-                        {post.author_name}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {post.location || 'Unknown'}
-                    </span>
-                    <span className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
-                      <Clock className="h-3.5 w-3.5" />
-                      {formatTimeAgo(post.created_at)}
-                    </span>
-                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300">
+                    {post.category_name ||
+                      post.category ||
+                      t("general_category", { defaultValue: "General" })}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 dark:text-gray-300">
+                    {post.location ||
+                      t("location_not_specified", {
+                        defaultValue: "Location not specified",
+                      })}
+                  </p>
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
-};
-
-export default Home;
+}

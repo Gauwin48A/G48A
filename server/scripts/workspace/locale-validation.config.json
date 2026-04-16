@@ -1,0 +1,26 @@
+{
+  "allowPublicOnlyLocales": [
+    "ar",
+    "de",
+    "es",
+    "fr",
+    "gu",
+    "id",
+    "it",
+    "ja",
+    "ko",
+    "ml",
+    "pa",
+    "pt",
+    "ru",
+    "sw",
+    "th",
+    "tr",
+    "ur",
+    "vi",
+    "zh"
+  ],
+  "allowKeyCountDriftLocales": [
+    "en"
+  ]
+}

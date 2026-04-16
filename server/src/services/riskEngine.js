@@ -1,15 +1,5 @@
-const pool = require('../config/db');
+const { runQuery } = require("../utils/dbHelpers");
 const geoip = require('geoip-lite');
-
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-    return pool.query({
-        text,
-        values,
-        query_timeout: DB_QUERY_TIMEOUT_MS
-    });
-}
 
 // --- CONSTANTS ---
 const MAX_CITY_SPEED = 60; // km/h (Traffic limit)

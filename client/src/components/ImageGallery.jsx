@@ -17,7 +17,7 @@ const ImageGallery = ({ images = [], alt = 'Product image' }) => {
         return (
             <div className="gallery-placeholder">
                 <span>📷</span>
-                <p>No images available</p>
+                <p>{t("no_images_available")}</p>
             </div>
         );
     }
@@ -64,8 +64,10 @@ const ImageGallery = ({ images = [], alt = 'Product image' }) => {
                                 key={index}
                                 className={`gallery-thumb ${index === currentIndex ? 'active' : ''}`}
                                 onClick={() => setCurrentIndex(index)}
+                                type="button"
+                                aria-label={`${t("view_image") || "View image"} ${index + 1}`}
                             >
-                                <img src={img} alt={`Thumbnail ${index + 1}`} />
+                                <img src={img} alt={`Thumbnail ${index + 1}`} loading="lazy" decoding="async" onError={(e) => { e.target.style.opacity = '0.3'; }} />
                             </button>
                         ))}
                     </div>
@@ -74,10 +76,20 @@ const ImageGallery = ({ images = [], alt = 'Product image' }) => {
                 {/* Navigation Arrows */}
                 {imageArray.length > 1 && (
                     <>
-                        <button className="gallery-nav gallery-prev" onClick={goToPrevious}>
+                        <button
+                            type="button"
+                            className="gallery-nav gallery-prev"
+                            onClick={goToPrevious}
+                            aria-label={t("previous_image") || "Previous image"}
+                        >
                             <ChevronLeft size={24} />
                         </button>
-                        <button className="gallery-nav gallery-next" onClick={goToNext}>
+                        <button
+                            type="button"
+                            className="gallery-nav gallery-next"
+                            onClick={goToNext}
+                            aria-label={t("next_image") || "Next image"}
+                        >
                             <ChevronRight size={24} />
                         </button>
                     </>
@@ -91,26 +103,39 @@ const ImageGallery = ({ images = [], alt = 'Product image' }) => {
                     onClick={() => setShowLightbox(false)}
                     onKeyDown={handleKeyDown}
                     tabIndex={0}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={t("image_gallery") || "Image gallery"}
                 >
-                    <button className="lightbox-close" onClick={() => setShowLightbox(false)}>
+                    <button
+                        type="button"
+                        className="lightbox-close"
+                        onClick={() => setShowLightbox(false)}
+                        aria-label={t("close") || "Close"}
+                    >
                         <X size={28} />
                     </button>
                     <img
                         src={imageArray[currentIndex]}
                         alt={`${alt} ${currentIndex + 1}`}
                         onClick={(e) => e.stopPropagation()}
+                        onError={(e) => { e.target.style.opacity = '0.3'; }}
                     />
                     {imageArray.length > 1 && (
                         <>
                             <button
                                 className="lightbox-nav lightbox-prev"
                                 onClick={(e) => { e.stopPropagation(); goToPrevious(); }}
+                                type="button"
+                                aria-label={t("previous_image") || "Previous image"}
                             >
                                 <ChevronLeft size={32} />
                             </button>
                             <button
                                 className="lightbox-nav lightbox-next"
                                 onClick={(e) => { e.stopPropagation(); goToNext(); }}
+                                type="button"
+                                aria-label={t("next_image") || "Next image"}
                             >
                                 <ChevronRight size={32} />
                             </button>

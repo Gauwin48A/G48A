@@ -7,6 +7,7 @@
  */
 
 import api from '../lib/api';
+import { hasAuthSession } from "@/utils/authStorage";
 
 const CONTACT_BATCH_SIZE = 100;
 const CONTACT_SYNC_CONCURRENCY = 3;
@@ -111,8 +112,7 @@ export const syncContactsToServer = async () => {
         return { synced: 0 };
     }
 
-    const token = localStorage.getItem('authToken');
-    if (!token) {
+    if (!hasAuthSession()) {
         return { error: 'Not authenticated' };
     }
 
@@ -150,8 +150,7 @@ export const syncContactsToServer = async () => {
  * Find friends who are on the platform
  */
 export const findFriendsOnPlatform = async () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) return [];
+    if (!hasAuthSession()) return [];
 
     try {
         const response = await api.get('/api/contacts/friends');

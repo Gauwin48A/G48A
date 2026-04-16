@@ -5,9 +5,10 @@
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
+const { getUploadsSubdir } = require('../utils/uploads');
 
 // Configuration
-const OUTPUT_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads/optimized');
+const OUTPUT_DIR = getUploadsSubdir('optimized');
 const MAX_WIDTH = 1200;
 const MAX_HEIGHT = 1200;
 const QUALITY = 80;
