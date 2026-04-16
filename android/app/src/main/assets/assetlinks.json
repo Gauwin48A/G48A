@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.mhub.app",
+      "sha256_cert_fingerprints": [
+        "TODO: Replace with your app's SHA-256 certificate fingerprint from: keytool -list -v -keystore <keystore> -alias <alias>"
+      ]
+    }
+  }
+]
