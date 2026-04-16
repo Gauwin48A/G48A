@@ -4,6 +4,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.mhub.core.common.model.Category
 import com.mhub.core.common.model.Notification
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 
 @Entity(tableName = "categories")
 data class CategoryEntity(
@@ -44,7 +47,7 @@ fun NotificationEntity.toModel() = Notification(
     type = type, isRead = isRead,
     data = data?.let {
         try {
-            kotlinx.serialization.json.Json.decodeFromString<Map<String, String>>(it)
+            Json.decodeFromString<Map<String, String>>(it)
         } catch (_: Exception) { null }
     },
     createdAt = createdAt,
@@ -53,12 +56,10 @@ fun NotificationEntity.toModel() = Notification(
 fun Notification.toEntity() = NotificationEntity(
     id = id, title = title, body = body,
     type = type, isRead = isRead,
-    data = data?.let {
-        kotlinx.serialization.json.Json.encodeToString(
-            kotlinx.serialization.builtins.MapSerializer(
-                kotlinx.serialization.builtins.serializer<String>(),
-                kotlinx.serialization.builtins.serializer<String>(),
-            ), it
+    data = data?.let { map ->
+        Json.encodeToString(
+            MapSerializer(String.serializer(), String.serializer()),
+            map
         )
     },
     createdAt = createdAt,

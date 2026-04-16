@@ -2,13 +2,9 @@ package com.mhub.feature.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mhub.core.common.result.Result
-import com.mhub.core.network.api.PostsApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import retrofit2.Response
-import retrofit2.http.*
 import javax.inject.Inject
 
 data class ConversationListUiState(

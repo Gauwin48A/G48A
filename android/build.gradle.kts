@@ -10,3 +10,12 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
 }
+
+// Force all Android modules to use build-tools 35.0.0 (installed locally)
+subprojects {
+    afterEvaluate {
+        extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
+            buildToolsVersion = "35.0.0"
+        }
+    }
+}

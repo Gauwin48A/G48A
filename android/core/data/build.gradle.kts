@@ -13,6 +13,7 @@ android {
     defaultConfig {
         minSdk = 26
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        missingDimensionStrategy("environment", "dev")
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -32,6 +33,9 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:network"))
+
+    // Retrofit Response type needed for API calls
+    implementation(libs.retrofit)
 
     implementation(libs.bundles.room)
     ksp(libs.room.compiler)

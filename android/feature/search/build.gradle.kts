@@ -13,6 +13,7 @@ android {
     defaultConfig {
         minSdk = 26
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        missingDimensionStrategy("environment", "dev")
     }
 
     compileOptions {
@@ -44,6 +45,7 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.coil.compose)
     implementation(libs.bundles.paging)
+    implementation(libs.retrofit)
     implementation(libs.timber)
 
     debugImplementation(libs.bundles.compose.debug)

@@ -1,5 +1,10 @@
 package com.mhub.app.service
 
+// TODO: Enable when Firebase is configured (google-services.json + plugins)
+// This service requires firebase-messaging dependency which is disabled until
+// Firebase project is set up.
+
+/*
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
@@ -9,18 +14,13 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.mhub.app.MainActivity
 import com.mhub.app.R
-import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class MhubFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Timber.d("FCM token refreshed: ${token.take(10)}...")
-        // Token is sent to server via PushApi when user is authenticated
-        // Store locally for later registration
         getSharedPreferences("mhub_fcm", MODE_PRIVATE)
             .edit()
             .putString("fcm_token", token)
@@ -75,3 +75,4 @@ class MhubFirebaseMessagingService : FirebaseMessagingService() {
         notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 }
+*/

@@ -12,11 +12,11 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class com.mhub.app.**$$serializer { *; }
--keepclassmembers class com.mhub.app.** {
+-keep,includedescriptorclasses class com.mhub.**$$serializer { *; }
+-keepclassmembers class com.mhub.** {
     *** Companion;
 }
--keepclasseswithmembers class com.mhub.app.** {
+-keepclasseswithmembers class com.mhub.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 
@@ -40,6 +40,13 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -keep class okhttp3.** { *; }
+
+# Socket.IO
+-dontwarn io.socket.**
+-keep class io.socket.** { *; }
+
+# WebKit CookieManager
+-keep class android.webkit.CookieManager { *; }
 
 # Firebase Crashlytics
 -keepattributes SourceFile,LineNumberTable

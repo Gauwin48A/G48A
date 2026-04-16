@@ -13,6 +13,7 @@ plugins {
 android {
     namespace = "com.mhub.app"
     compileSdk = 35
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "com.mhub.app"
@@ -166,7 +167,7 @@ dependencies {
     implementation(libs.biometric)
 
     // Google Sign-In
-    implementation(libs.bundles.google.sign.in)
+    implementation(libs.bundles.googleSignIn)
 
     // Debug
     debugImplementation(libs.bundles.compose.debug)

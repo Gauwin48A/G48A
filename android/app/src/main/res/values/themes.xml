@@ -6,6 +6,7 @@
     </style>
 
     <style name="Theme.MHub.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
         <item name="postSplashScreenTheme">@style/Theme.MHub</item>
     </style>
 </resources>

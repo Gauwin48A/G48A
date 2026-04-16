@@ -34,7 +34,7 @@ fun ListingsScreen(
                 SearchBar(
                     query = uiState.searchQuery,
                     onQueryChange = viewModel::updateSearch,
-                    onSearch = viewModel::search,
+                    onSearch = { viewModel.search() },
                     active = true,
                     onActiveChange = {},
                     placeholder = { Text("Search listings...") },

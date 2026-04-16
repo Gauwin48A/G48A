@@ -14,7 +14,6 @@ import com.mhub.core.network.api.NotificationsApi
 import com.mhub.core.network.api.ProfileApi
 import com.mhub.core.network.api.WishlistApi
 import com.mhub.core.network.model.UpdateProfileRequest
-import com.mhub.core.network.api.WishlistApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber

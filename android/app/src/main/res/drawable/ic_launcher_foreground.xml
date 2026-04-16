@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- MHub "M" logo foreground -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,72V36h6l14,20 14,-20h6v36h-6V48L56,64h-4L40,48v24z" />
+</vector>
