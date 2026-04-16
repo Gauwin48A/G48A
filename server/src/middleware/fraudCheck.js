@@ -1,243 +1,575 @@
-/**
- * Protocol: Reality Check - Fraud Detection Middleware
- * The Architect's Triangulation Forensics
- * 
- * Detects VPN, GPS spoofing, and location fraud by comparing:
- * 1. Browser Timezone (client-reported)
- * 2. IP Location (server-detected via geoip)
- * 3. GPS Coordinates (client-reported)
- * 
- * If these three don't align, the user is lying.
- */
+const geoip = require("geoip-lite");
+const requestIp = require("request-ip");
 
-const geoip = require('geoip-lite');
-const requestIp = require('request-ip');
+const DEFAULT_MAX_DISTANCE_KM = 300;
 
-// CONFIG: Maximum allowed distance between IP location and GPS location (in km)
-// Mobile networks often route traffic through central hubs, so be generous
-const MAX_DISTANCE_KM = 300;
+const parseBooleanEnv = (raw, fallback) => {
+  if (raw === undefined || raw === null || raw === "") return fallback;
+  const normalized = String(raw).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return fallback;
+};
 
-// CONFIG: Enable/Disable specific checks
+const parseNumberEnv = (raw, fallback) => {
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
 const CONFIG = {
-    checkTimezone: true,        // Block if browser timezone != IP timezone
-    checkDistance: true,        // Block if GPS is too far from IP location
-    checkPerfectCoords: true,   // Block suspiciously perfect GPS coordinates
-    logOnly: false,             // If true, log suspicious activity but don't block
-    bypassLocalhost: true       // Skip checks for localhost in development
+  checkTimezone: parseBooleanEnv(process.env.FRAUD_CHECK_TIMEZONE, true),
+  checkDistance: parseBooleanEnv(process.env.FRAUD_CHECK_DISTANCE, true),
+  checkPerfectCoords: parseBooleanEnv(process.env.FRAUD_CHECK_PERFECT_COORDS, true),
+  logOnly: parseBooleanEnv(process.env.FRAUD_LOG_ONLY, false),
+  bypassLocalhost: parseBooleanEnv(process.env.FRAUD_BYPASS_LOCALHOST, true),
+  maxDistanceKm: parseNumberEnv(process.env.FRAUD_MAX_DISTANCE_KM, DEFAULT_MAX_DISTANCE_KM),
+  blockUnknownPublicIp: parseBooleanEnv(process.env.FRAUD_BLOCK_UNKNOWN_PUBLIC_IP, true),
+  requireGpsForAuth: parseBooleanEnv(process.env.FRAUD_REQUIRE_GPS_FOR_AUTH, false),
+  requireTimezoneForAuth: parseBooleanEnv(process.env.FRAUD_REQUIRE_TIMEZONE_FOR_AUTH, false),
 };
 
-/**
- * Haversine formula to calculate distance between two points in km
- */
 const getDistanceKm = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-/**
- * Check if coordinates are suspiciously "perfect" (likely fake GPS)
- * Real GPS has high precision jitter, fake GPS often returns rounded numbers
- */
 const isPerfectCoordinate = (coord) => {
-    if (coord === undefined || coord === null) return false;
+  if (coord === undefined || coord === null) return false;
+  if (!Number.isFinite(Number(coord))) return false;
 
-    // Check if it's exactly an integer (no decimals)
-    if (coord % 1 === 0) return true;
+  const numeric = Number(coord);
+  if (numeric % 1 === 0) return true;
 
-    // Check if it has very few decimal places (< 4)
-    const decimalPart = String(coord).split('.')[1];
-    if (!decimalPart || decimalPart.length < 4) return true;
+  const decimalPart = String(Math.abs(numeric)).split(".")[1] || "";
+  if (decimalPart.length < 4) return true;
 
-    // Check if decimal part is suspiciously round (e.g., .5000, .2500)
-    const lastFour = decimalPart.slice(-4);
-    if (lastFour === '0000' || lastFour === '5000') return true;
-
-    return false;
+  const lastFour = decimalPart.slice(-4);
+  return lastFour === "0000" || lastFour === "5000";
 };
 
-/**
- * Get timezone continent/region for loose matching
- * Because timezone names can vary (America/New_York vs America/Chicago)
- */
-const getTimezoneRegion = (tz) => {
-    if (!tz) return null;
-    const parts = tz.split('/');
-    return parts[0]; // e.g., "Asia", "America", "Europe"
+const getTimezoneRegion = (timezone) => {
+  if (!timezone) return null;
+  const parts = String(timezone).split("/");
+  return parts[0] || null;
 };
 
+const toFiniteOrNull = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeIp = (rawIp) => {
+  const value = String(rawIp || "").split(",")[0].trim();
+  if (!value) return "";
+
+  if (value.startsWith("::ffff:")) {
+    return value.replace("::ffff:", "");
+  }
+
+  return value;
+};
+
+const isPrivateOrLocalIp = (ip) => {
+  const normalized = normalizeIp(ip);
+  if (!normalized) return true;
+
+  if (
+    normalized === "::1" ||
+    normalized === "127.0.0.1" ||
+    normalized.startsWith("10.") ||
+    normalized.startsWith("192.168.") ||
+    normalized.startsWith("169.254.") ||
+    normalized.startsWith("fc") ||
+    normalized.startsWith("fd") ||
+    normalized.startsWith("fe80:")
+  ) {
+    return true;
+  }
+
+  const octets = normalized.split(".").map((part) => Number(part));
+  if (octets.length === 4 && octets.every((part) => Number.isFinite(part))) {
+    const [a, b] = octets;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+  }
+
+  return false;
+};
+
+const extractTimezone = (req) => {
+  return (
+    String(req.body?.timezone || "").trim() ||
+    String(req.headers["x-timezone"] || "").trim() ||
+    null
+  );
+};
+
+const extractGpsCoordinates = (req) => {
+  const latitude =
+    req.body?.latitude ?? req.body?.lat ?? req.query?.latitude ?? req.query?.lat;
+  const longitude =
+    req.body?.longitude ?? req.body?.lng ?? req.query?.longitude ?? req.query?.lng;
+
+  return {
+    latitude: toFiniteOrNull(latitude),
+    longitude: toFiniteOrNull(longitude),
+  };
+};
+
+const detectProxyHeaderSignal = (req) => {
+  const via = String(req.headers?.via || "").toLowerCase();
+  const forwarded = String(req.headers?.forwarded || "").toLowerCase();
+
+  const suspectTokens = ["proxy", "vpn", "tor", "socks", "tunnel", "anonymizer"];
+  const combined = `${via} ${forwarded}`;
+
+  return suspectTokens.some((token) => combined.includes(token));
+};
+
+const blockResponse = (code, message, extras = {}) => ({
+  blocked: true,
+  status: 403,
+  payload: {
+    error: "Security Alert",
+    code,
+    message,
+    ...extras,
+  },
+});
+
+const buildOutcome = ({
+  blocked = false,
+  status = 200,
+  payload = null,
+  risk = null,
+  ipLocation = null,
+  verified = false,
+}) => ({
+  blocked,
+  status,
+  payload,
+  risk,
+  ipLocation,
+  verified,
+});
+
 /**
- * Main fraud detection middleware
- * Apply this to location sync endpoints
+ * Compute a server-side location trust score (0–100).
+ * This is entirely server-computed — no client-reported scores are trusted.
  */
-const detectVpnOrSpoof = (req, res, next) => {
-    const { latitude, longitude, timezone, lat, lng } = req.body;
+const computeLocationTrustScore = ({ latitude, longitude, geo, timezone, spoofSignals, hasGps, hasTimezone, proxyDetected }) => {
+  let score = 50; // Baseline
 
-    // Support both naming conventions
-    const userLat = latitude || lat;
-    const userLng = longitude || lng;
+  // GPS present: +20
+  if (hasGps) score += 20;
+  else score -= 15;
 
-    // Get client IP
-    const clientIp = requestIp.getClientIp(req);
+  // Timezone present: +5
+  if (hasTimezone) score += 5;
 
-    // 1. Skip localhost in development
-    if (CONFIG.bypassLocalhost) {
-        if (!clientIp || clientIp === '::1' || clientIp === '127.0.0.1' ||
-            clientIp.startsWith('192.168.') || clientIp.startsWith('10.') ||
-            clientIp.startsWith('172.16.')) {
-            console.log('[RealityCheck] Skipping localhost/private IP:', clientIp);
-            return next();
-        }
-    }
+  // GeoIP resolved: +10
+  if (geo) score += 10;
+  else score -= 10;
 
-    // 2. Lookup IP Data using local geoip database
-    const geo = geoip.lookup(clientIp);
+  // GPS-IP distance within range: +10 (checked if both available)
+  if (hasGps && geo?.ll) {
+    const dist = getDistanceKm(latitude, longitude, geo.ll[0], geo.ll[1]);
+    if (dist < 50) score += 10;
+    else if (dist < 150) score += 5;
+    else if (dist > 500) score -= 15;
+  }
 
-    if (!geo) {
-        // IP not found in DB. Might be new or VPN exit node.
-        console.warn(`[RealityCheck] ⚠️ Unknown IP: ${clientIp} - Allowing but logging`);
-        req.fraudRisk = { level: 'low', reason: 'unknown_ip' };
-        return next();
-    }
+  // Timezone matches IP: +5
+  if (hasTimezone && geo?.timezone && timezone === geo.timezone) {
+    score += 5;
+  }
 
-    console.log(`[RealityCheck] IP: ${clientIp}, Location: ${geo.city}, ${geo.country}, TZ: ${geo.timezone}`);
+  // Spoof signals: -10 each
+  score -= (spoofSignals?.length || 0) * 10;
 
-    // 3. CHECK 1: Timezone Mismatch (VPN Detection)
-    if (CONFIG.checkTimezone && timezone && geo.timezone) {
-        const browserRegion = getTimezoneRegion(timezone);
-        const ipRegion = getTimezoneRegion(geo.timezone);
+  // Proxy detected: -25
+  if (proxyDetected) score -= 25;
 
-        // Strict check: exact timezone match
-        if (timezone !== geo.timezone) {
-            // Loose check: at least same continent/region
-            if (browserRegion !== ipRegion) {
-                const message = `Timezone mismatch. Browser: ${timezone} (${browserRegion}), IP: ${geo.timezone} (${ipRegion})`;
-                console.warn(`[RealityCheck] 🔴 BLOCKED - ${message}`);
+  // Clamp 0–100
+  return Math.max(0, Math.min(100, score));
+};
 
-                if (CONFIG.logOnly) {
-                    req.fraudRisk = { level: 'high', reason: 'timezone_mismatch', details: message };
-                    return next();
-                }
+const detectVpnOrSpoofRisk = (req, options = {}) => {
+  const policy = {
+    checkTimezone: options.checkTimezone ?? CONFIG.checkTimezone,
+    checkDistance: options.checkDistance ?? CONFIG.checkDistance,
+    checkPerfectCoords: options.checkPerfectCoords ?? CONFIG.checkPerfectCoords,
+    bypassLocalhost: options.bypassLocalhost ?? CONFIG.bypassLocalhost,
+    maxDistanceKm: options.maxDistanceKm ?? CONFIG.maxDistanceKm,
+    blockUnknownPublicIp: options.blockUnknownPublicIp ?? CONFIG.blockUnknownPublicIp,
+    requireGps: options.requireGps ?? false,
+    requireTimezone: options.requireTimezone ?? false,
+  };
 
-                return res.status(403).json({
-                    error: 'Security Alert',
-                    message: 'Your location settings do not match your network. Please turn off VPN or proxy.',
-                    code: 'TIMEZONE_MISMATCH'
-                });
-            }
-        }
-    }
+  const { latitude, longitude } = extractGpsCoordinates(req);
+  const timezone = extractTimezone(req);
 
-    // 4. CHECK 2: Impossible Distance (Teleportation/GPS Spoofing)
-    if (CONFIG.checkDistance && userLat && userLng && geo.ll) {
-        const ipLat = geo.ll[0];
-        const ipLng = geo.ll[1];
-        const distance = getDistanceKm(userLat, userLng, ipLat, ipLng);
+  const rawIp = requestIp.getClientIp(req);
+  const clientIp = normalizeIp(rawIp);
 
-        console.log(`[RealityCheck] Distance: GPS(${userLat}, ${userLng}) <-> IP(${ipLat}, ${ipLng}) = ${Math.round(distance)}km`);
+  if (policy.bypassLocalhost && isPrivateOrLocalIp(clientIp)) {
+    return buildOutcome({
+      verified: true,
+      risk: { level: "none", reason: "private_or_local_ip" },
+      ipLocation: {
+        ip: clientIp,
+        city: "localhost",
+        region: "local",
+        country: "local",
+        timezone: timezone || null,
+        ll: [latitude, longitude],
+      },
+    });
+  }
 
-        if (distance > MAX_DISTANCE_KM) {
-            const message = `Location spoofing detected. GPS is ${Math.round(distance)}km from IP location.`;
-            console.warn(`[RealityCheck] 🔴 BLOCKED - ${message}`);
-
-            if (CONFIG.logOnly) {
-                req.fraudRisk = { level: 'high', reason: 'location_spoofing', distance: Math.round(distance) };
-                return next();
-            }
-
-            return res.status(403).json({
-                error: 'Location Mismatch',
-                message: 'GPS location does not match your network location. Please disable Fake GPS or VPN.',
-                code: 'LOCATION_SPOOF',
-                distance: Math.round(distance)
-            });
-        }
-    }
-
-    // 5. CHECK 3: Perfect Coordinates (Mock Location App Detection)
-    if (CONFIG.checkPerfectCoords && userLat !== undefined && userLng !== undefined) {
-        if (isPerfectCoordinate(userLat) || isPerfectCoordinate(userLng)) {
-            const message = `Suspicious coordinates detected: (${userLat}, ${userLng}) - likely fake GPS`;
-            console.warn(`[RealityCheck] 🟠 WARNING - ${message}`);
-
-            // This is a softer check - log but allow with warning
-            // Many older devices or indoor locations may have less precision
-            req.fraudRisk = { level: 'medium', reason: 'perfect_coordinates' };
-
-            // Only block if coordinates are EXACTLY integers
-            if (userLat % 1 === 0 && userLng % 1 === 0) {
-                if (!CONFIG.logOnly) {
-                    return res.status(403).json({
-                        error: 'Invalid GPS Data',
-                        message: 'The GPS coordinates appear to be invalid. Please allow location access.',
-                        code: 'INVALID_GPS'
-                    });
-                }
-            }
-        }
-    }
-
-    // 6. All checks passed - mark as verified
-    req.locationVerified = true;
-    req.ipLocation = {
+  const geo = geoip.lookup(clientIp);
+  const ipLocation = geo
+    ? {
         ip: clientIp,
         city: geo.city,
         region: geo.region,
         country: geo.country,
         timezone: geo.timezone,
-        ll: geo.ll
+        ll: geo.ll,
+      }
+    : {
+        ip: clientIp,
+        city: null,
+        region: null,
+        country: null,
+        timezone: null,
+        ll: null,
+      };
+
+  if (!geo && policy.blockUnknownPublicIp) {
+    return {
+      ...blockResponse(
+        "UNKNOWN_NETWORK",
+        "Unable to verify your network location. Please disable VPN/proxy and retry.",
+      ),
+      risk: { level: "high", reason: "unknown_public_ip" },
+      ipLocation,
+      verified: false,
     };
+  }
 
-    console.log(`[RealityCheck] ✅ Location verified for IP: ${clientIp}`);
-    next();
-};
+  if (policy.requireGps && (latitude === null || longitude === null)) {
+    return {
+      ...blockResponse(
+        "GPS_REQUIRED",
+        "GPS location is required for secure access. Enable location and retry.",
+      ),
+      risk: { level: "high", reason: "gps_missing" },
+      ipLocation,
+      verified: false,
+    };
+  }
 
-/**
- * Lightweight version - just logs suspicious activity without blocking
- * Use this for less critical endpoints
- */
-const logLocationRisk = (req, res, next) => {
-    const originalConfig = { ...CONFIG };
-    CONFIG.logOnly = true;
-    detectVpnOrSpoof(req, res, () => {
-        Object.assign(CONFIG, originalConfig);
-        next();
-    });
-};
+  if (policy.requireTimezone && !timezone) {
+    return {
+      ...blockResponse(
+        "TIMEZONE_REQUIRED",
+        "Timezone is required for secure access. Enable automatic date/time settings.",
+      ),
+      risk: { level: "medium", reason: "timezone_missing" },
+      ipLocation,
+      verified: false,
+    };
+  }
 
-/**
- * Get IP location only (no fraud check)
- * Useful for enriching location data
- */
-const enrichWithIpLocation = (req, res, next) => {
-    const clientIp = requestIp.getClientIp(req);
+  // ── Server-side GPS quality analysis ─────────────────────
+  // NOTE: We do NOT trust any client-reported flags (isMock, trust_score).
+  // All spoof detection is computed server-side from raw GPS data.
+  if (latitude !== null && longitude !== null) {
+    const spoofSignals = [];
 
-    if (clientIp && clientIp !== '::1' && clientIp !== '127.0.0.1') {
-        const geo = geoip.lookup(clientIp);
-        if (geo) {
-            req.ipLocation = {
-                ip: clientIp,
-                city: geo.city,
-                region: geo.region,
-                country: geo.country,
-                timezone: geo.timezone,
-                ll: geo.ll
-            };
-        }
+    // 1. Accuracy analysis: impossibly precise (<0.5m) = fake GPS app
+    // Professional survey GPS achieves ~0.5-1m; consumer GPS ≥3m
+    const gpsAccuracy = toFiniteOrNull(req.body?.accuracy ?? req.body?.locationAccuracy);
+    if (gpsAccuracy !== null && gpsAccuracy > 0 && gpsAccuracy < 0.5) {
+      spoofSignals.push("impossible_accuracy");
     }
 
-    next();
+    // 2. Altitude analysis: altitude exactly 0 is only suspicious WITH precise accuracy
+    // Many legitimate locations are at sea level, so this is a weak signal
+    const altitude = toFiniteOrNull(req.body?.altitude);
+    if (altitude !== null && altitude === 0 && gpsAccuracy !== null && gpsAccuracy < 3) {
+      spoofSignals.push("zero_altitude_precise");
+    }
+
+    // 3. Speed analysis: if speed is provided and unrealistic (>300 km/h = 83 m/s)
+    const speed = toFiniteOrNull(req.body?.speed);
+    if (speed !== null && speed > 83) {
+      spoofSignals.push("unrealistic_speed");
+    }
+
+    // 4. Coordinate decimal analysis: fewer than 4 decimal places = likely spoofed
+    const latStr = String(Math.abs(latitude)).split(".")[1] || "";
+    const lngStr = String(Math.abs(longitude)).split(".")[1] || "";
+    if (latStr.length < 4 && lngStr.length < 4) {
+      spoofSignals.push("low_precision_coords");
+    }
+
+    // 5. Repeating decimal pattern detection
+    if (latStr.length >= 4) {
+      const lastFour = latStr.slice(-4);
+      if (lastFour === "0000" || lastFour === "5000" || lastFour === "1111" || lastFour === "9999") {
+        spoofSignals.push("suspicious_decimal_pattern");
+      }
+    }
+
+    // Block if 2+ server-computed signals detected
+    if (spoofSignals.length >= 2) {
+      return {
+        ...blockResponse(
+          "LOCATION_SPOOF_DETECTED",
+          "Location integrity check failed. Disable fake GPS apps and use real location.",
+        ),
+        risk: {
+          level: "high",
+          reason: "server_spoof_analysis",
+          signals: spoofSignals,
+        },
+        ipLocation,
+        verified: false,
+      };
+    }
+
+    // Attach signals to request for downstream use (logging, scoring)
+    req._serverSpoofSignals = spoofSignals;
+  }
+
+  if (policy.checkTimezone && timezone && geo?.timezone) {
+    const browserRegion = getTimezoneRegion(timezone);
+    const ipRegion = getTimezoneRegion(geo.timezone);
+    // Also check country mismatch (Europe/Berlin vs Europe/Paris = same region but diff country)
+    const ipCountry = geo?.country || "";
+    const tzCountryMap = {
+      "Asia/Kolkata": "IN", "Asia/Calcutta": "IN", "Asia/Colombo": "LK",
+      "Asia/Dhaka": "BD", "Asia/Karachi": "PK", "Asia/Kathmandu": "NP",
+      "Asia/Thimphu": "BT", "Asia/Yangon": "MM", "Asia/Bangkok": "TH",
+      "Asia/Singapore": "SG", "Asia/Kuala_Lumpur": "MY", "Asia/Jakarta": "ID",
+      "Asia/Manila": "PH", "Asia/Ho_Chi_Minh": "VN", "Asia/Tokyo": "JP",
+      "Asia/Seoul": "KR", "Asia/Shanghai": "CN", "Asia/Hong_Kong": "HK",
+      "Asia/Taipei": "TW", "Asia/Dubai": "AE", "Asia/Riyadh": "SA",
+      "Europe/London": "GB", "Europe/Berlin": "DE", "Europe/Paris": "FR",
+      "Europe/Moscow": "RU", "America/New_York": "US", "America/Chicago": "US",
+      "America/Los_Angeles": "US", "America/Toronto": "CA",
+      "Australia/Sydney": "AU", "Pacific/Auckland": "NZ",
+    };
+    const browserCountry = tzCountryMap[timezone] || "";
+    const countryMismatch = browserCountry && ipCountry && browserCountry !== ipCountry;
+
+    if ((timezone !== geo.timezone && browserRegion !== ipRegion) || countryMismatch) {
+      return {
+        ...blockResponse(
+          "TIMEZONE_MISMATCH",
+          "Timezone mismatch detected. Please disable VPN/proxy and use real device timezone.",
+          {
+            browserTimezone: timezone,
+            networkTimezone: geo.timezone,
+          },
+        ),
+        risk: {
+          level: "high",
+          reason: "timezone_mismatch",
+          browserTimezone: timezone,
+          networkTimezone: geo.timezone,
+        },
+        ipLocation,
+        verified: false,
+      };
+    }
+  }
+
+  if (policy.checkDistance && latitude !== null && longitude !== null && Array.isArray(geo?.ll) && geo.ll.length >= 2) {
+    const [ipLat, ipLng] = geo.ll;
+    const distanceKm = getDistanceKm(latitude, longitude, ipLat, ipLng);
+
+    // Guard against NaN from invalid coordinates
+    if (!Number.isFinite(distanceKm)) {
+      return {
+        ...blockResponse(
+          "INVALID_GPS",
+          "Unable to verify location. Please enable GPS and retry.",
+        ),
+        risk: { level: "high", reason: "distance_computation_failed" },
+        ipLocation,
+        verified: false,
+      };
+    }
+
+    if (distanceKm > policy.maxDistanceKm) {
+      return {
+        ...blockResponse(
+          "LOCATION_SPOOF",
+          "GPS and network locations are too far apart. Disable VPN/fake GPS and retry.",
+          {
+            distanceKm: Math.round(distanceKm),
+          },
+        ),
+        risk: {
+          level: "high",
+          reason: "location_spoof",
+          distanceKm: Math.round(distanceKm),
+        },
+        ipLocation,
+        verified: false,
+      };
+    }
+  }
+
+  if (policy.checkPerfectCoords && latitude !== null && longitude !== null) {
+    const suspicious = isPerfectCoordinate(latitude) || isPerfectCoordinate(longitude);
+
+    if (suspicious) {
+      const bothInteger = Number(latitude) % 1 === 0 && Number(longitude) % 1 === 0;
+      if (bothInteger) {
+        return {
+          ...blockResponse(
+            "INVALID_GPS",
+            "Invalid GPS coordinates detected. Disable fake GPS/VPN and retry.",
+          ),
+          risk: {
+            level: "high",
+            reason: "invalid_perfect_coordinates",
+            latitude,
+            longitude,
+          },
+          ipLocation,
+          verified: false,
+        };
+      }
+
+      return buildOutcome({
+        verified: true,
+        risk: {
+          level: "medium",
+          reason: "suspicious_perfect_coordinates",
+          latitude,
+          longitude,
+        },
+        ipLocation,
+      });
+    }
+  }
+
+  if (detectProxyHeaderSignal(req)) {
+    return {
+      ...blockResponse(
+        "PROXY_HEADER_DETECTED",
+        "Proxy/VPN header signal detected. Please disable VPN/proxy and retry.",
+      ),
+      risk: {
+        level: "high",
+        reason: "proxy_header_signal",
+      },
+      ipLocation,
+      verified: false,
+    };
+  }
+
+  // ── Compute server-side location trust score (0–100) ────────
+  // This replaces any client-reported trust_score. Higher = more trustworthy.
+  const trustScore = computeLocationTrustScore({
+    latitude, longitude, geo, timezone, ipLocation,
+    spoofSignals: req._serverSpoofSignals || [],
+    hasGps: latitude !== null && longitude !== null,
+    hasTimezone: Boolean(timezone),
+    proxyDetected: false,
+  });
+  req._locationTrustScore = trustScore;
+
+  return buildOutcome({
+    verified: true,
+    risk: { level: trustScore >= 70 ? "low" : trustScore >= 40 ? "medium" : "high", reason: "verified", trustScore },
+    ipLocation,
+  });
 };
 
+const applyDetection = (req, res, next, options = {}) => {
+  const logOnly = options.logOnly ?? CONFIG.logOnly;
+
+  const outcome = detectVpnOrSpoofRisk(req, options);
+
+  req.fraudRisk = outcome.risk || null;
+  req.ipLocation = outcome.ipLocation || null;
+  req.locationVerified = Boolean(outcome.verified);
+  req.locationTrustScore = req._locationTrustScore || (outcome.risk?.trustScore ?? null);
+
+  if (outcome.blocked) {
+    if (logOnly) {
+      req.locationVerified = false;
+      return next();
+    }
+
+    return res.status(outcome.status || 403).json(
+      outcome.payload || {
+        error: "Security Alert",
+        message: "Location verification failed.",
+        code: "LOCATION_VERIFICATION_FAILED",
+      },
+    );
+  }
+
+  return next();
+};
+
+const detectVpnOrSpoof = (req, res, next) => applyDetection(req, res, next, { logOnly: false });
+
+const logLocationRisk = (req, res, next) => applyDetection(req, res, next, { logOnly: true });
+
+const enrichWithIpLocation = (req, _res, next) => {
+  const clientIp = normalizeIp(requestIp.getClientIp(req));
+  if (!clientIp || isPrivateOrLocalIp(clientIp)) {
+    return next();
+  }
+
+  const geo = geoip.lookup(clientIp);
+  if (geo) {
+    req.ipLocation = {
+      ip: clientIp,
+      city: geo.city,
+      region: geo.region,
+      country: geo.country,
+      timezone: geo.timezone,
+      ll: geo.ll,
+    };
+  }
+
+  return next();
+};
+
+const enforceNoVpnForAuth = (req, res, next) =>
+  applyDetection(req, res, next, {
+    logOnly: true,
+    requireGps: CONFIG.requireGpsForAuth,
+    requireTimezone: CONFIG.requireTimezoneForAuth,
+    blockUnknownPublicIp: true,
+    checkTimezone: true,
+    checkDistance: true,
+  });
+
 module.exports = {
-    detectVpnOrSpoof,
-    logLocationRisk,
-    enrichWithIpLocation,
-    getDistanceKm,
-    isPerfectCoordinate,
-    CONFIG
+  detectVpnOrSpoof,
+  detectVpnOrSpoofRisk,
+  logLocationRisk,
+  enforceNoVpnForAuth,
+  enrichWithIpLocation,
+  getDistanceKm,
+  isPerfectCoordinate,
+  CONFIG,
 };

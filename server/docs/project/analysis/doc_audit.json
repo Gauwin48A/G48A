@@ -1,0 +1,1580 @@
+[
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\.github\\PULL_REQUEST_TEMPLATE.md",
+        "lines":  49,
+        "title":  "Summary",
+        "headings":  [
+                         "## Summary",
+                         "## Zero-INR / Non-AI Compliance",
+                         "## Quality Checklist",
+                         "## Contract And Regression Checklist",
+                         "## Documentation Checklist",
+                         "## Screenshots",
+                         "## KPI / Outcome",
+                         "## Risk And Rollback"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  45,
+                                 "text":  "## Risk And Rollback"
+                             },
+                             {
+                                 "line":  47,
+                                 "text":  "- Risk level: Low / Medium / High"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\client\\docs\\E2E_SMOKE.md",
+        "lines":  22,
+        "title":  "E2E Smoke Coverage",
+        "headings":  [
+                         "# E2E Smoke Coverage",
+                         "## Files",
+                         "## Commands",
+                         "## Notes"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  4,
+                                 "text":  "empty/error/retry states."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\client\\docs\\NETWORK_RELIABILITY_RUNBOOK.md",
+        "lines":  54,
+        "title":  "Network Reliability Runbook",
+        "headings":  [
+                         "# Network Reliability Runbook",
+                         "## Canonical Local Ports",
+                         "## Startup Order",
+                         "## Required Environment Values",
+                         "## Reliability Controls (Current)",
+                         "## Troubleshooting 404/CORS/Socket Issues",
+                         "## Regression Gates"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  30,
+                                 "text":  "- Shared API client refreshes auth and normalizes network/CORS error messages."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\client\\docs\\PHASE2_LOCALIZATION_AUDIT.md",
+        "lines":  41,
+        "title":  "Phase 2 Localization Audit (Profile, Rewards, MyHome, Support)",
+        "headings":  [
+                         "# Phase 2 Localization Audit (Profile, Rewards, MyHome, Support)",
+                         "## Scope",
+                         "## Checks Performed",
+                         "## Findings",
+                         "## Fix Applied",
+                         "## Result"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  22,
+                                 "text":  "- Missing keys: none for all four pages."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\client\\lint_log.txt",
+        "lines":  29,
+        "title":  "\u003e client@0.0.0 lint",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\client\\public\\robots.txt",
+        "lines":  17,
+        "title":  "User-agent: *",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\client\\README.md",
+        "lines":  24,
+        "title":  "MHub Client",
+        "headings":  [
+                         "# MHub Client",
+                         "## Stack",
+                         "## Scripts",
+                         "## Runtime Notes",
+                         "## Validation"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\client\\stderr.txt",
+        "lines":  15,
+        "title":  "\u001b[31mx\u001b[39m Build failed in 3.50s",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\root-docs\\MD_IMPLEMENTATION_MASTER_CHECKLIST.md",
+        "lines":  191,
+        "title":  "Markdown Implementation Master Checklist",
+        "headings":  [
+                         "# Markdown Implementation Master Checklist",
+                         "## 1) Analysis Summary",
+                         "## 2) Missing-Reference Repair Checklist",
+                         "## 3) Consolidated Implementation Checklist",
+                         "## 4) AUTH_README Normalization Checklist (Large Backlog Cleanup)",
+                         "## 5) File-by-File Disposition",
+                         "## 6) Recommended Execution Order"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  14,
+                                 "text":  "- Files containing missing markdown references: `0`"
+                             },
+                             {
+                                 "line":  27,
+                                 "text":  "## 2) Missing-Reference Repair Checklist"
+                             },
+                             {
+                                 "line":  65,
+                                 "text":  "### Phase C - Product/UX Sprint Backlog (P1)"
+                             },
+                             {
+                                 "line":  72,
+                                 "text":  "- [ ] Verify and close mobile UX checklist: sticky quick filters, visible category rail, single-line action row behavior at target breakpoints."
+                             },
+                             {
+                                 "line":  78,
+                                 "text":  "### Phase D - Localization and Language-Latency Backlog (P1)"
+                             },
+                             {
+                                 "line":  103,
+                                 "text":  "- [ ] Run `npm run audit:worktree` and ensure zero blocker findings."
+                             },
+                             {
+                                 "line":  106,
+                                 "text":  "### Phase G - External/Blocked Backlog Tracking (P2)"
+                             },
+                             {
+                                 "line":  114,
+                                 "text":  "## 4) AUTH_README Normalization Checklist (Large Backlog Cleanup)"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\PROJECT_STRUCTURE.md",
+        "lines":  63,
+        "title":  "MHub Project Structure",
+        "headings":  [
+                         "# MHub Project Structure",
+                         "## Root Layout",
+                         "## Client Structure",
+                         "## Server Structure",
+                         "## Boundary Rules"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\README.md",
+        "lines":  1132,
+        "title":  "?? Executive Summary",
+        "headings":  [
+                         "## ?? Executive Summary",
+                         "## ? Quick Start",
+                         "## ??? Architecture Overview",
+                         "## ?? Technology Stack",
+                         "## ??? Project Structure",
+                         "## ?? Feature / Module Catalog",
+                         "## ?? Authentication \u0026 Authorization",
+                         "## ?? Roles \u0026 Permissions",
+                         "## ??? Database Schema / Data Model",
+                         "## ?? Multi-Tenancy \u0026 Scalability"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  168,
+                                 "text":  "| Trust-first commerce | Reduce fraud + dispute risk | OTP-verified sale flow, reward ledger, review moderation |"
+                             },
+                             {
+                                 "line":  315,
+                                 "text":  "- Mobile-first layout constraints for navbars and action rows."
+                             },
+                             {
+                                 "line":  728,
+                                 "text":  "| `npm run audit:worktree` | node server/scripts/workspace/worktree-risk-audit.js |"
+                             },
+                             {
+                                 "line":  742,
+                                 "text":  "| `npm run continuous:run:strict` | node server/scripts/workspace/continuous-improvement.js --mode=strict --fail-fast=true |"
+                             },
+                             {
+                                 "line":  744,
+                                 "text":  "| `npm run continuous:watch:strict` | node server/scripts/workspace/continuous-improvement.js --mode=strict --watch=true --interval-seconds=300 --fail-fast=true |"
+                             },
+                             {
+                                 "line":  745,
+                                 "text":  "| `npm run continuous:watch:strict:nonstop` | node server/scripts/workspace/continuous-improvement.js --mode=strict --watch=true --interval-seconds=300 --fail-fast=false |"
+                             },
+                             {
+                                 "line":  757,
+                                 "text":  "| `npm run implementation:safe:strict` | node server/scripts/workspace/safe-e2e-implementation.js --mode=strict --fail-fast=true --refresh-backup-evidence=true --enforce-ops-gate=true |"
+                             },
+                             {
+                                 "line":  758,
+                                 "text":  "| `npm run implementation:safe:watch` | node server/scripts/workspace/safe-e2e-implementation.js --mode=strict --watch=true --interval-seconds=300 --fail-fast=false --refresh-backup-evidence=true -..."
+                             },
+                             {
+                                 "line":  833,
+                                 "text":  "| `npm run risk:telemetry:export` | node scripts/export_risk_telemetry.js |"
+                             },
+                             {
+                                 "line":  1040,
+                                 "text":  "# Error Reporting (optional)"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\database\\README.md",
+        "lines":  16,
+        "title":  "Database Guide",
+        "headings":  [
+                         "# Database Guide",
+                         "## Setup",
+                         "## Notes",
+                         "## Validation"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\29_ML_FRAUD_SPIKE_PLAN.md",
+        "lines":  43,
+        "title":  "29 - ML Fraud Scoring Productionization Plan",
+        "headings":  [
+                         "# 29 - ML Fraud Scoring Productionization Plan",
+                         "## Delivered in This Closure Cycle",
+                         "## Evidence",
+                         "## Validation Commands",
+                         "## Exit Decision"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  6,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  17,
+                                 "text":  "- Admin endpoint: `GET /api/auth/risk-metrics`"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\30_MULTI_REGION_FAILOVER_PLAYBOOK_DRAFT.md",
+        "lines":  52,
+        "title":  "30 - Multi-Region Failover Playbook (Draft + Drill-Aligned)",
+        "headings":  [
+                         "# 30 - Multi-Region Failover Playbook (Draft + Drill-Aligned)",
+                         "## Trigger Conditions",
+                         "## Pre-Failover Safety Gate",
+                         "## Failover Sequence",
+                         "## Rollback Sequence",
+                         "## Drill and Orchestration Evidence",
+                         "## Measured/Estimated Targets from Drill",
+                         "## Remaining Dependencies",
+                         "## Exit Status"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  6,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  18,
+                                 "text":  "5. If any gate is `BLOCKED` or `PENDING`, halt live shift and continue on synthetic/tabletop path."
+                             },
+                             {
+                                 "line":  46,
+                                 "text":  "- Live active-active execution remains BLOCKED by missing secondary-region infra and traffic-manager credentials."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\31_PROGRESSIVE_FEATURE_ROLLOUT_BASELINE.md",
+        "lines":  38,
+        "title":  "31 - Progressive Feature Rollout Baseline",
+        "headings":  [
+                         "# 31 - Progressive Feature Rollout Baseline",
+                         "## Operational Lifecycle Rules",
+                         "## Auditability Controls",
+                         "## Rollout Checklist",
+                         "## Operational Proof",
+                         "## Exit Status"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  6,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  20,
+                                 "text":  "- Required fields: `flagKey`, `actor`, `action`, `owner`, `rollbackOwner`, `changeTicket`, `rolloutBefore`, `rolloutAfter`, `reason`, `abortThreshold`"
+                             },
+                             {
+                                 "line":  27,
+                                 "text":  "4. Abort: kill-switch / rollback owner action"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\32_FAILOVER_DRILL_EVIDENCE.md",
+        "lines":  40,
+        "title":  "32 - Failover Drill Evidence",
+        "headings":  [
+                         "# 32 - Failover Drill Evidence",
+                         "## Drill Type",
+                         "## Artifacts",
+                         "## Timeline Summary (T+)",
+                         "## RTO/RPO Evidence",
+                         "## Gaps Identified",
+                         "## Decision"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  6,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\33_FLAG_ROLLOUT_OPERATIONAL_AUDIT.md",
+        "lines":  42,
+        "title":  "33 - Flag Rollout Operational Audit",
+        "headings":  [
+                         "# 33 - Flag Rollout Operational Audit",
+                         "## Objective",
+                         "## Artifact",
+                         "## Simulated Rollout",
+                         "## Audit Trail Requirements Verified",
+                         "## Kill-Switch Proof",
+                         "## Lifecycle Governance Proof",
+                         "## Decision"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  6,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  24,
+                                 "text":  "- `action`"
+                             },
+                             {
+                                 "line":  38,
+                                 "text":  "Lifecycle validation fails when mandatory metadata is missing and passes when owner, rollback owner, change ticket, and expiry are present."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md",
+        "lines":  48,
+        "title":  "34 - Multi-Region Active-Active Execution Backlog",
+        "headings":  [
+                         "# 34 - Multi-Region Active-Active Execution Backlog",
+                         "## Objective",
+                         "## Automation Command Set (Current)",
+                         "## Ticket Backlog (Execution-Ready)",
+                         "## Risk Register",
+                         "## Blocking Dependencies",
+                         "## Exit Criteria"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  1,
+                                 "text":  "# 34 - Multi-Region Active-Active Execution Backlog"
+                             },
+                             {
+                                 "line":  6,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  22,
+                                 "text":  "## Ticket Backlog (Execution-Ready)"
+                             },
+                             {
+                                 "line":  33,
+                                 "text":  "## Risk Register"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\BACKUP_RESTORE_DRILL.md",
+        "lines":  66,
+        "title":  "Backup and Restore Drill Plan",
+        "headings":  [
+                         "# Backup and Restore Drill Plan",
+                         "## 1. Objectives",
+                         "## 2. Targets",
+                         "## 3. Scripted Drill Command",
+                         "## 4. Environment Variables",
+                         "## 5. Manual Validation Checklist",
+                         "## 6. Evidence Table",
+                         "## 7. Escalation Rules"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  50,
+                                 "text":  "- [ ] Restore command completed without error."
+                             },
+                             {
+                                 "line":  65,
+                                 "text":  "3. If RTO breach occurs: open corrective action with owner and deadline."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\edge-caching-setup.md",
+        "lines":  56,
+        "title":  "Edge Caching Setup (Runtime-Aligned)",
+        "headings":  [
+                         "# Edge Caching Setup (Runtime-Aligned)",
+                         "## Runtime Cache Configuration (Current)",
+                         "## API Caching Guidance",
+                         "## CDN Alignment (Cloudflare/AWS CDN)",
+                         "## Verification Steps",
+                         "## Completion Decision"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\INCIDENT_RESPONSE.md",
+        "lines":  113,
+        "title":  "Incident Response Runbook",
+        "headings":  [
+                         "# Incident Response Runbook",
+                         "## 0. Ownership and On-call",
+                         "## 1. Severity Levels",
+                         "## 2. Immediate Actions (First 10 Minutes)",
+                         "## 3. Diagnostic Checklist",
+                         "## 4. Common Playbooks",
+                         "## 5. Communication Template",
+                         "## 6. Recovery and Closeout",
+                         "## 7. Postmortem Minimum Fields"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  17,
+                                 "text":  "- Service outage, security breach, data-loss risk."
+                             },
+                             {
+                                 "line":  46,
+                                 "text":  "2. Check error logs for spikes (5xx, auth failures, DB timeouts)."
+                             },
+                             {
+                                 "line":  57,
+                                 "text":  "2. Verify message queue/backlog for notifications."
+                             },
+                             {
+                                 "line":  105,
+                                 "text":  "4. Open postmortem action items with owners and due dates."
+                             },
+                             {
+                                 "line":  110,
+                                 "text":  "3. Detection gap."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\PERFORMANCE.md",
+        "lines":  24,
+        "title":  "Performance Guide",
+        "headings":  [
+                         "# Performance Guide",
+                         "## Implemented Performance Controls",
+                         "## Validation Commands",
+                         "## Current Notes",
+                         "## Pending Enhancements"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  21,
+                                 "text":  "## Pending Enhancements"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\PHASE5_VALIDATION_EVIDENCE_2026-02-27.md",
+        "lines":  44,
+        "title":  "Phase 5 Validation Evidence",
+        "headings":  [
+                         "# Phase 5 Validation Evidence",
+                         "## Item 1: WAF checklist and enforcement proof",
+                         "## Item 2: Test-validation records",
+                         "## Item 3: Edge caching alignment",
+                         "## Item 4: Security policy reconciliation",
+                         "## Item 5: Unified status reporting model",
+                         "## Final Phase 5 Decision"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\auth_improve.md",
+        "lines":  165,
+        "title":  "Authentication Improvement Report (Implemented)",
+        "headings":  [
+                         "# Authentication Improvement Report (Implemented)",
+                         "## Scope",
+                         "## Completed Improvements",
+                         "## Final Status",
+                         "## 2026-03-12 Client Hardening Update",
+                         "## Verification Checklist"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  6,
+                                 "text":  "- Goal: Implement every pending item from previous auth hardening backlog."
+                             },
+                             {
+                                 "line":  73,
+                                 "text":  "- Preserved explicit challenge responses (`requireOtp`, risk challenge, MFA challenge)."
+                             },
+                             {
+                                 "line":  127,
+                                 "text":  "- All previously listed pending items are now implemented in code."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\AUTH_README.md",
+        "lines":  2137,
+        "title":  "🔐 MHub Authentication System",
+        "headings":  [
+                         "# 🔐 MHub Authentication System",
+                         "## 📋 Problem Analysis",
+                         "## ✅ Fixes Applied",
+                         "## 🏗️ Architecture Overview",
+                         "## 🔧 Configuration",
+                         "# server/.env",
+                         "# Database",
+                         "# JWT (REQUIRED - 256-bit secrets)",
+                         "# Redis (RECOMMENDED for 100k+ users)",
+                         "## 🧪 Testing Checklist"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  13,
+                                 "text":  "| `Login.jsx` | `authToken` ✅ | Missing ❌ | Fixed |"
+                             },
+                             {
+                                 "line":  220,
+                                 "text":  "# MHub - Executive Summary: What\u0027s Done \u0026 What\u0027s Pending"
+                             },
+                             {
+                                 "line":  251,
+                                 "text":  "- **Revenue at risk:** 30% (users abandon if verification slow)"
+                             },
+                             {
+                                 "line":  258,
+                                 "text":  "- **Revenue at risk:** 25% (users can\u0027t close deals)"
+                             },
+                             {
+                                 "line":  265,
+                                 "text":  "- **Revenue at risk:** 15% (sellers go to competitors)"
+                             },
+                             {
+                                 "line":  341,
+                                 "text":  "├─ No risk scoring"
+                             },
+                             {
+                                 "line":  346,
+                                 "text":  "└─ Bulk actions/advanced filters missing"
+                             },
+                             {
+                                 "line":  500,
+                                 "text":  "- Fraud warnings missing"
+                             },
+                             {
+                                 "line":  530,
+                                 "text":  "❌ Payment verification (BLOCKER)"
+                             },
+                             {
+                                 "line":  556,
+                                 "text":  "- 2-3 TODO comments in code"
+                             },
+                             {
+                                 "line":  564,
+                                 "text":  "- Image upload error handling incomplete"
+                             },
+                             {
+                                 "line":  571,
+                                 "text":  "- Analytics schema exists but UI missing"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\CHANGELOG_AUTO.md",
+        "lines":  153,
+        "title":  "Auto Changelog",
+        "headings":  [
+                         "# Auto Changelog",
+                         "## Features",
+                         "## Refactors",
+                         "## Documentation",
+                         "## Tests",
+                         "## Build",
+                         "## Other"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  15,
+                                 "text":  "- 2025-11-09 `7b01c5e` feat(frontend): Add permission tracking and error handling to location hook"
+                             },
+                             {
+                                 "line":  80,
+                                 "text":  "- 2026-02-28 `e674eb0` chore/mhub-ops-artifacts-active-active-forwarding-pass (phase2 latest blocker proof)"
+                             },
+                             {
+                                 "line":  84,
+                                 "text":  "- 2026-02-28 `ed71d09` chore/mhub-ops-artifacts-active-active-latest-pass (phase2 latest blocker evidence)"
+                             },
+                             {
+                                 "line":  88,
+                                 "text":  "- 2026-02-28 `584f430` chore/mhub-ops-artifacts-active-active-dependency-gate (phase2 blocker proof)"
+                             },
+                             {
+                                 "line":  91,
+                                 "text":  "- 2026-02-28 `556b872` feat/mhub-scale-active-active-dependency-gate (phase2 blocker evidence automation)"
+                             },
+                             {
+                                 "line":  100,
+                                 "text":  "- 2026-02-28 `49ca41f` feat/backend-scale-persistent-risk-telemetry-and-auth-load-profile"
+                             },
+                             {
+                                 "line":  101,
+                                 "text":  "- 2026-02-28 `3f93152` feat/backend-scale-remaining-half-pending-closure"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\EXECUTIVE_SUMMARY.md",
+        "lines":  29,
+        "title":  "MHub Executive Summary",
+        "headings":  [
+                         "# MHub Executive Summary",
+                         "## Current State",
+                         "## What Is Operational",
+                         "## Validation Snapshot",
+                         "## Residual Backlog (Non-blocking)"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  24,
+                                 "text":  "## Residual Backlog (Non-blocking)"
+                             },
+                             {
+                                 "line":  28,
+                                 "text":  "- Jest open-handle warning cleanup."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\FEATURE_COMPLETION_MATRIX.md",
+        "lines":  44,
+        "title":  "MHub Feature Completion Matrix (Unified)",
+        "headings":  [
+                         "# MHub Feature Completion Matrix (Unified)",
+                         "## Matrix",
+                         "## Rollup"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  5,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  40,
+                                 "text":  "- PENDING: 0"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\FEATURE_STATUS_REPORT.md",
+        "lines":  55,
+        "title":  "MHub Feature Status Report (Unified Model)",
+        "headings":  [
+                         "# MHub Feature Status Report (Unified Model)",
+                         "## Status Definitions",
+                         "## Executive Summary",
+                         "## Capability Status",
+                         "## Validation Snapshot",
+                         "## Residual Risks",
+                         "## Current Scores",
+                         "## Gate Decision"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  5,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  10,
+                                 "text":  "- PENDING: approved but not complete."
+                             },
+                             {
+                                 "line":  15,
+                                 "text":  "- Remaining half-pending backend closure items: COMPLETE"
+                             },
+                             {
+                                 "line":  16,
+                                 "text":  "- Residual strategic backlog: BLOCKED (live multi-region infra dependency)"
+                             },
+                             {
+                                 "line":  35,
+                                 "text":  "- Server full suite: PASS (`npm test` -\u003e 23/23 suites, 130/130 tests, no open-handle warning)."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\HALF_PENDING_OR_YET_TO_IMPLEMENT_FEATURES.md",
+        "lines":  21,
+        "title":  "Pending and Yet-To-Implement Features",
+        "headings":  [
+                         "# Pending and Yet-To-Implement Features",
+                         "## Completed Baseline Areas",
+                         "## Pending Enhancements"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  1,
+                                 "text":  "# Pending and Yet-To-Implement Features"
+                             },
+                             {
+                                 "line":  4,
+                                 "text":  "Status model: completed baseline vs enhancement backlog"
+                             },
+                             {
+                                 "line":  15,
+                                 "text":  "## Pending Enhancements"
+                             },
+                             {
+                                 "line":  16,
+                                 "text":  "- ML-assisted fraud/risk scoring pipeline."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\IMMEDIATE_ACTION_ITEMS.md",
+        "lines":  68,
+        "title":  "Immediate Action Items",
+        "headings":  [
+                         "# Immediate Action Items",
+                         "## Priority 1 (Execution-Verified)",
+                         "## Priority 2 (Performance + Readiness)",
+                         "## Priority 3 (Trust/Ops Evidence)",
+                         "## Remaining Blockers",
+                         "## Current Gate Snapshot"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  1,
+                                 "text":  "# Immediate Action Items"
+                             },
+                             {
+                                 "line":  5,
+                                 "text":  "Scope: backend remaining + half-pending closure"
+                             },
+                             {
+                                 "line":  6,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\IMPLEMENTATION_CHECKLIST.md",
+        "lines":  24,
+        "title":  "Unified Implementation Checklist",
+        "headings":  [
+                         "# Unified Implementation Checklist",
+                         "## Phase Status",
+                         "## Completed Deliverables",
+                         "## Enhancement Backlog"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  20,
+                                 "text":  "## Enhancement Backlog"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\IMPLEMENTATION_REPORT.md",
+        "lines":  25,
+        "title":  "Implementation Report",
+        "headings":  [
+                         "# Implementation Report",
+                         "## Summary",
+                         "## Major Work Streams",
+                         "## Validation Executed",
+                         "## Residual Notes"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  24,
+                                 "text":  "- Non-blocking: intermittent Jest open-handle warning."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\IMPROVEMENTS_SUMMARY.md",
+        "lines":  23,
+        "title":  "Improvements Summary",
+        "headings":  [
+                         "# Improvements Summary",
+                         "## Backend",
+                         "## Frontend",
+                         "## Database",
+                         "## Operations and Docs"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  15,
+                                 "text":  "- Added query-path indexes for feed, channel, inquiries, pending transactions, and undone posts."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\ISSUES_FOUND_ANALYSIS.md",
+        "lines":  19,
+        "title":  "Issues Analysis",
+        "headings":  [
+                         "# Issues Analysis",
+                         "## Resolved During Current Cycle",
+                         "## Operationally Verified",
+                         "## Remaining Risks"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  7,
+                                 "text":  "- Missing pagination bounds on multiple list endpoints."
+                             },
+                             {
+                                 "line":  17,
+                                 "text":  "- Open-handle warning in test teardown."
+                             },
+                             {
+                                 "line":  18,
+                                 "text":  "- Enhancement-only backlog (fraud ML, multi-region, advanced feature flags)."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\NEW_ADDITIONAL_FEATURES.md",
+        "lines":  19,
+        "title":  "Additional Feature Proposals",
+        "headings":  [
+                         "# Additional Feature Proposals",
+                         "## P1 Candidates",
+                         "## P2 Candidates",
+                         "## P3 Candidates"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  7,
+                                 "text":  "- ML-assisted fraud scoring and explainable risk reasoning."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\ORDERED_EXECUTION_CHECKLIST.md",
+        "lines":  76,
+        "title":  "MHub Ordered Execution Checklist",
+        "headings":  [
+                         "# MHub Ordered Execution Checklist",
+                         "## Phase Status",
+                         "## Remaining/Half-Pending Closure Result",
+                         "## Active-Active Live Path",
+                         "## Final Checklist Status"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  5,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  57,
+                                 "text":  "## Remaining/Half-Pending Closure Result"
+                             },
+                             {
+                                 "line":  73,
+                                 "text":  "- Pending items in scoped backend closure: 0"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\PRODUCTION_LAUNCH_ROADMAP.md",
+        "lines":  46,
+        "title":  "MHub Production Launch Roadmap (Unified)",
+        "headings":  [
+                         "# MHub Production Launch Roadmap (Unified)",
+                         "## Current Position",
+                         "## Completed Phases",
+                         "## Evidence Pack",
+                         "## Remaining Roadmap",
+                         "## Launch Gate"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  5,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  8,
+                                 "text":  "Backend remaining + half-pending closure items are COMPLETE with fresh evidence. One strategic dependency remains BLOCKED outside repository control."
+                             },
+                             {
+                                 "line":  38,
+                                 "text":  "- Execution backlog: `server/docs/34_MULTI_REGION_ACTIVE_ACTIVE_EXECUTION_BACKLOG.md`"
+                             },
+                             {
+                                 "line":  44,
+                                 "text":  "- Known hard blocker for full multi-region launch: live infra dependency"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\README_END_TO_END.md",
+        "lines":  32,
+        "title":  "MHub End-to-End Reference",
+        "headings":  [
+                         "# MHub End-to-End Reference",
+                         "## Application Layers",
+                         "## Operational Capabilities",
+                         "## Evidence Docs",
+                         "## Remaining Enhancements"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\RELEASE_CLEANUP_CHECKLIST.md",
+        "lines":  147,
+        "title":  "Release Cleanup Checklist",
+        "headings":  [
+                         "# Release Cleanup Checklist",
+                         "## Snapshot",
+                         "## Release Blockers",
+                         "## Checklist",
+                         "## Command Hints",
+                         "## Breakdown",
+                         "## Samples"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  9,
+                                 "text":  "- High-risk intentional deletions: 0"
+                             },
+                             {
+                                 "line":  20,
+                                 "text":  "- [ ] Run `npm run audit:worktree` and verify no BLOCKER findings remain."
+                             },
+                             {
+                                 "line":  145,
+                                 "text":  "### High-risk intentional deletions (first 80)"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\SPRINT_PLAN_AUTH_E2E.md",
+        "lines":  133,
+        "title":  "Authentication E2E Sprint Plan",
+        "headings":  [
+                         "# Authentication E2E Sprint Plan",
+                         "## Goals",
+                         "## Non-Goals",
+                         "## Baseline (Already Present)",
+                         "## Sprint Breakdown",
+                         "## Execution Order (Strict)",
+                         "## Risks and Mitigations",
+                         "## Deliverables for Current Run"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  9,
+                                 "text":  "- Strengthen session lifecycle control (issue, rotate, revoke, inspect) end to end."
+                             },
+                             {
+                                 "line":  10,
+                                 "text":  "- Improve security posture without breaking existing user flows."
+                             },
+                             {
+                                 "line":  51,
+                                 "text":  "- Improve refresh retry guardrails to prevent duplicated refresh storms."
+                             },
+                             {
+                                 "line":  67,
+                                 "text":  "- Improve login/session error mapping for actionable user messages."
+                             },
+                             {
+                                 "line":  72,
+                                 "text":  "- End users see clear next action on auth failure."
+                             },
+                             {
+                                 "line":  76,
+                                 "text":  "- Added shared auth error mapper with security-safe messaging and category classification."
+                             },
+                             {
+                                 "line":  80,
+                                 "text":  "### Sprint D - Testing + Regression Shield (Pending)"
+                             },
+                             {
+                                 "line":  95,
+                                 "text":  "### Sprint E - Operability \u0026 Rollout (Pending)"
+                             },
+                             {
+                                 "line":  105,
+                                 "text":  "- Clear rollback steps with zero schema risk."
+                             },
+                             {
+                                 "line":  115,
+                                 "text":  "- Risk: Existing flows depend on implicit 401 bootstrapping."
+                             },
+                             {
+                                 "line":  117,
+                                 "text":  "- Risk: Token claim shape variance."
+                             },
+                             {
+                                 "line":  119,
+                                 "text":  "- Risk: Dirty worktree side effects."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\SPRINT_PLAN_WEEK1_TO_WEEK10.md",
+        "lines":  28,
+        "title":  "Week 1-10 Sprint Plan",
+        "headings":  [
+                         "# Week 1-10 Sprint Plan",
+                         "## Execution Status",
+                         "## Completed in Current Closure Cycle",
+                         "## Next 72 Hours (Strict Backend Sequence)"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  5,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             },
+                             {
+                                 "line":  9,
+                                 "text":  "- Week 6-8 remaining half-pending closure: COMPLETE"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\WORKTREE_RISK_REPORT.md",
+        "lines":  52,
+        "title":  "Worktree Risk Report",
+        "headings":  [
+                         "# Worktree Risk Report",
+                         "## Summary",
+                         "## Risk Findings",
+                         "## Status Breakdown",
+                         "## Top-Level Breakdown",
+                         "## Samples"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  1,
+                                 "text":  "# Worktree Risk Report"
+                             },
+                             {
+                                 "line":  15,
+                                 "text":  "## Risk Findings"
+                             },
+                             {
+                                 "line":  16,
+                                 "text":  "1. [INFO] No high-risk worktree anomalies detected."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\ZERO_INR_TOP100_EXECUTION_PLAN.md",
+        "lines":  251,
+        "title":  "Zero-INR Top-100 Execution Plan (Non-AI, Fire-and-Forget)",
+        "headings":  [
+                         "# Zero-INR Top-100 Execution Plan (Non-AI, Fire-and-Forget)",
+                         "## 1) Mission",
+                         "## 2) Non-Negotiable Constraints",
+                         "## 3) ROI Prioritization Formula",
+                         "## 4) Top-100 Catalog Canonical Source",
+                         "## 5) Wave Plan (Top-50 First)",
+                         "## Wave 1 (Weeks 1-2): Abuse + Trust Baseline",
+                         "## Wave 2 (Weeks 3-4): Performance Baseline",
+                         "## Wave 3 (Weeks 5-6): SEO Growth Core",
+                         "## Wave 4 (Weeks 7-8): Conversion + Re-Engagement"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  46,
+                                 "text":  "- Effort: engineering + migration + regression risk."
+                             },
+                             {
+                                 "line":  172,
+                                 "text":  "## 8) Risk Controls"
+                             },
+                             {
+                                 "line":  174,
+                                 "text":  "| Risk | Control |"
+                             },
+                             {
+                                 "line":  176,
+                                 "text":  "| Scope bloat | Lock active wave; backlog untouched until wave gate passes |"
+                             },
+                             {
+                                 "line":  235,
+                                 "text":  "2. Fast pages improve retention and reduce acquisition wastage."
+                             },
+                             {
+                                 "line":  244,
+                                 "text":  "## 12) Next Action"
+                             },
+                             {
+                                 "line":  246,
+                                 "text":  "Immediate action from this plan:"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\security.md",
+        "lines":  25,
+        "title":  "Security Controls Overview",
+        "headings":  [
+                         "# Security Controls Overview",
+                         "## Core Security Controls",
+                         "## Evidence",
+                         "## Validation",
+                         "## Pending Security Enhancements"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  22,
+                                 "text":  "## Pending Security Enhancements"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\security-policy.md",
+        "lines":  48,
+        "title":  "Security Policy and Response Governance",
+        "headings":  [
+                         "# Security Policy and Response Governance",
+                         "## Linked Operational Docs",
+                         "## Security Controls (Current)",
+                         "## Incident Severity Targets",
+                         "## Validation Evidence",
+                         "## Policy Sync Rule"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  5,
+                                 "text":  "Status model: OPERATIONAL | COMPLETE | PENDING | BLOCKED"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\TEST_CASES.md",
+        "lines":  30,
+        "title":  "Test Cases (Current Baseline)",
+        "headings":  [
+                         "# Test Cases (Current Baseline)",
+                         "## Critical Server Flows",
+                         "## Client Flows",
+                         "## Executed Commands (Reference)",
+                         "## Result",
+                         "## Remaining Test Expansion Areas"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\waf-rules.md",
+        "lines":  110,
+        "title":  "WAF (Web Application Firewall) Configuration Guide",
+        "headings":  [
+                         "# WAF (Web Application Firewall) Configuration Guide",
+                         "## Recommended WAF Rules for MHub",
+                         "## Proof of Enforcement (2026-02-27)"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  11,
+                                 "text":  "Action: Block after 10 requests per minute per IP"
+                             },
+                             {
+                                 "line":  18,
+                                 "text":  "Action: Managed Challenge"
+                             },
+                             {
+                                 "line":  23,
+                                 "text":  "Rule: Block traffic from high-risk countries"
+                             },
+                             {
+                                 "line":  25,
+                                 "text":  "Action: Block"
+                             },
+                             {
+                                 "line":  36,
+                                 "text":  "Action: Block"
+                             },
+                             {
+                                 "line":  44,
+                                 "text":  "Action: Block"
+                             },
+                             {
+                                 "line":  76,
+                                 "text":  "\"Action\": { \"Block\": {} }"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\hash.txt",
+        "lines":  2,
+        "title":  "$2b$10$cs5L/stAgPhMZGzzxocEsu5OQ4EF2euKQNGVKu0BaHCQRZA7DL0h6",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\hash_out.txt",
+        "lines":  3,
+        "title":  "$2b$10$XQLzAvb/TjUFOaP0I58IDuDYwcStmr91gk2UuBlF7kTqqO7mwD032",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\migration_log.txt",
+        "lines":  5,
+        "title":  "[dotenv@17.2.3] injecting env (12) from .env -- tip: G��n+�  suppress all logs with { quiet: true }",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\posts_schema.txt",
+        "lines":  24,
+        "title":  "post_id: integer",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\README.md",
+        "lines":  135,
+        "title":  "MHub Server",
+        "headings":  [
+                         "# MHub Server",
+                         "## Stack",
+                         "## Scripts",
+                         "## Local Runtime",
+                         "## Operational Modules",
+                         "## Epic 1 Foundation Env Flags",
+                         "## Epic 2 Device Lifecycle Env Flags",
+                         "## Epic 3 Telemetry Env Flags",
+                         "## Epic 4 Automation Env Flags",
+                         "## Epic 5 Fleet/OTA Env Flags"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\schema_log.txt",
+        "lines":  1,
+        "title":  "Error: connect ECONNREFUSED 127.0.0.1:5432",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  1,
+                                 "text":  "Error: connect ECONNREFUSED 127.0.0.1:5432"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\scripts\\audit_report.txt",
+        "lines":  3,
+        "title":  "=��� Starting Audit for Hardcoded English Strings...",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\scripts\\audit_results.md",
+        "lines":  22,
+        "title":  "Audit Results",
+        "headings":  [
+                         "# Audit Results",
+                         "## Purpose",
+                         "## Current Status",
+                         "## Action State",
+                         "## Related Artifact"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  12,
+                                 "text":  "- This remains a non-blocking localization backlog item for high-traffic screens."
+                             },
+                             {
+                                 "line":  15,
+                                 "text":  "## Action State"
+                             },
+                             {
+                                 "line":  18,
+                                 "text":  "- [x] Add CI warning gate for newly introduced hardcoded strings."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\scripts\\hardcoded-strings-audit.generated.md",
+        "lines":  11,
+        "title":  "Hardcoded Strings Audit (Generated)",
+        "headings":  [
+                         "# Hardcoded Strings Audit (Generated)"
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\scripts\\hardcoded-strings-audit.md",
+        "lines":  19,
+        "title":  "Hardcoded Strings Audit",
+        "headings":  [
+                         "# Hardcoded Strings Audit",
+                         "## Summary",
+                         "## Status",
+                         "## Recommended Next Steps"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  12,
+                                 "text":  "- Findings are tracked as localization backlog and are not blocking backend/runtime optimization completion."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\scripts\\missing-keys.txt",
+        "lines":  48,
+        "title":  "Missing 45 keys in Tamil:",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  1,
+                                 "text":  "Missing 45 keys in Tamil:"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\scripts\\verification_report.txt",
+        "lines":  55,
+        "title":  "=== Translation Readiness Report ===",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  8,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  16,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  24,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  32,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  41,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  50,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\TEST_USER_SQL.txt",
+        "lines":  19,
+        "title":  "-- ================================================",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\users_schema.txt",
+        "lines":  27,
+        "title":  "user_id: integer",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\server\\docs\\project\\SPRINT_PLAN_WEEK1_TO_WEEK10.md",
+        "lines":  225,
+        "title":  "MHub Sprint Plan (Week 1 to Week 10)",
+        "headings":  [
+                         "# MHub Sprint Plan (Week 1 to Week 10)",
+                         "## 1. Goal",
+                         "## 2. Rules",
+                         "## 3. Phase Timeline",
+                         "## 4. Phase Details",
+                         "## 5. Immediate Execution Queue (Active)",
+                         "## 6. Tracking Format"
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  22,
+                                 "text":  "| 1 | Phase 1 | UI stabilization (mobile navbar + action rows) | Completed |"
+                             },
+                             {
+                                 "line":  39,
+                                 "text":  "- Post action rows to single-line behavior in narrow widths."
+                             },
+                             {
+                                 "line":  44,
+                                 "text":  "- Single-line post action row behavior for common breakpoints."
+                             },
+                             {
+                                 "line":  77,
+                                 "text":  "- Unified auth error mapper applied app-wide."
+                             },
+                             {
+                                 "line":  181,
+                                 "text":  "- Known-risk matrix and rollback instructions published."
+                             },
+                             {
+                                 "line":  192,
+                                 "text":  "- Prioritize highest-ROI backlog from telemetry."
+                             },
+                             {
+                                 "line":  193,
+                                 "text":  "- Tighten cycle from issue -\u003e fix -\u003e verify."
+                             },
+                             {
+                                 "line":  197,
+                                 "text":  "- Backlog resequenced by impact and effort."
+                             },
+                             {
+                                 "line":  224,
+                                 "text":  "- `Risk`: low/medium/high"
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\--Tier setup -subscription.txt",
+        "lines":  311,
+        "title":  "--Tier setup -subscription.txt",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  10,
+                                 "text":  "myposts load issue fix it and then"
+                             },
+                             {
+                                 "line":  15,
+                                 "text":  "Fix the notification popup issues - when switched to other tablet view etc notification is displaying until closed so this is a popup issues or notification issue need to fix."
+                             }
+                         ]
+    },
+    {
+        "file":  "C:\\Users\\laksh\\GITHUB\\AG\\Mhub\\verification_report.txt",
+        "lines":  70,
+        "title":  "=== Translation Readiness Report ===",
+        "headings":  [
+
+                     ],
+        "action_lines":  [
+                             {
+                                 "line":  8,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  19,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  30,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  41,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  52,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             },
+                             {
+                                 "line":  63,
+                                 "text":  "Missing Keys: 0 (Key synced)"
+                             }
+                         ]
+    }
+]
+
+

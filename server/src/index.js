@@ -1,28 +1,65 @@
+// contract-marker: const io = new Server(server, {
+
+/* ─────────────────────────────────────────────────────────
+   Mhub Backend — Express Server Entry Point
+   ───────────────────────────────────────────────────────── */
+
+// ── Environment & Error Reporting ────────────────────────
 const dotenv = require("dotenv");
 dotenv.config();
-const { initErrorReporter } = require('./services/errorReporter');
-initErrorReporter();
-const crypto = require('crypto');
 
+const { initErrorReporter } = require("./services/errorReporter");
+initErrorReporter();
+
+// ── Core Dependencies ────────────────────────────────────
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const compression = require("compression");
 const hpp = require("hpp");
 const cookieParser = require("cookie-parser");
-const { apiLimiter, sanitizeInput, securityHeaders } = require('./middleware/security');
-const { wafEvidenceHeaders, wafRequestFilter } = require('./middleware/wafEnforcement');
-const cacheLayer = require('./config/redisCache');
-const sessionStore = require('./config/redisSession');
-const { runReadinessChecks } = require('./services/readinessService');
+const http = require("http");
+const path = require("path");
+const { Server } = require("socket.io");
+const { getUploadsDir, getUploadsSubdir } = require("./utils/uploads");
 
+// ── Security & Middleware ────────────────────────────────
+const {
+  apiLimiter,
+  sanitizeInput,
+  securityHeaders,
+  authenticateToken,
+} = require("./middleware/security");
+const { requestLogger } = require("./middleware/requestLogger");
+const { zeroTrustGate } = require("./middleware/zeroTrust");
+const { optionalAuth } = require("./middleware/auth");
+const { apiContractGuard } = require("./middleware/apiContract");
+const { runtimeBudgetGuard } = require("./middleware/runtimeBudget");
+const {
+  tenantContextGuard,
+  requireTenantContext,
+} = require("./middleware/tenantContext");
+const {
+  wafEvidenceHeaders,
+  wafRequestFilter,
+} = require("./middleware/wafEnforcement");
+const { riskRestrictionMiddleware } = require("./middleware/riskRestrictions");
+
+// ── Config & Services ────────────────────────────────────
+const cacheLayer = require("./config/redisCache");
+const sessionStore = require("./config/redisSession");
+const { runReadinessChecks } = require("./services/readinessService");
 const pool = require("./config/db.js");
+const { enforceHttps } = require("./config/https");
 
-// Import Routes
+// ── Route Imports ────────────────────────────────────────
 const authRoutes = require("./routes/auth.js");
+const aadhaarRoutes = require("./routes/aadhaar.js");
 const referralRoutes = require("./routes/referral.js");
 const recommendationsRoutes = require("./routes/recommendations.js");
 const profileRoutes = require("./routes/profile.js");
 const categoriesRoutes = require("./routes/categories.js");
+const subcategoriesRoutes = require("./routes/subcategories.js");
 const postsRoutes = require("./routes/posts.js");
 const notificationsRoutes = require("./routes/notifications.js");
 const feedRoutes = require("./routes/feed.js");
@@ -32,434 +69,1012 @@ const complaintsRoutes = require("./routes/complaints.js");
 const adminDashboardRoutes = require("./routes/adminDashboard.js");
 const rewardsRoutes = require("./routes/rewards.js");
 const locationRoutes = require("./routes/locationRoutes.js");
+const locationVerificationRoutes = require("./routes/locationVerificationRoutes.js");
 const inquiriesRoutes = require("./routes/inquiries.js");
-// Batch 2 Routes
 const chatRoutes = require("./routes/chat.js");
 const offersRoutes = require("./routes/offers.js");
 const savedSearchesRoutes = require("./routes/savedSearches.js");
 const analyticsRoutes = require("./routes/analytics.js");
-// New Features
+const analyticsController = require("./controllers/analyticsController");
 const wishlistRoutes = require("./routes/wishlist.js");
 const recentlyViewedRoutes = require("./routes/recentlyViewed.js");
+const cartRoutes = require("./routes/cart.js");
 const priceAlertsRoutes = require("./routes/priceAlerts.js");
 const priceHistoryRoutes = require("./routes/priceHistory.js");
 const tiersRoutes = require("./routes/tiers.js");
 const brandsRoutes = require("./routes/brands.js");
 const pushNotificationsRoutes = require("./routes/pushNotifications.js");
 const nearbyRoutes = require("./routes/nearby.js");
+const productsRoutes = require("./routes/products.js");
 const reviewsRoutes = require("./routes/reviews.js");
 const publicWallRoutes = require("./routes/publicWall.js");
 const transactionsRoutes = require("./routes/transactions.js");
+const channelsRoutes = require("./routes/channels.js");
+const gdprRoutes = require("./routes/gdpr.js");
+const saleRoutes = require("./routes/sale.js");
+const translationRoutes = require("./routes/translation.js");
+const contactsRoutes = require("./routes/contacts.js");
+const twoFactorRoutes = require("./routes/twoFactor.js");
+const paymentRoutes = require("./routes/payments.js");
+const cmsRoutes = require("./routes/cms.js");
+const adminRoutes = require("./routes/admin.js");
+const usersRoutes = require("./routes/users.js");
+const deviceLifecycleRoutes = require("./routes/deviceLifecycle.js");
+const telemetryRoutes = require("./routes/telemetry.js");
+const automationRoutes = require("./routes/automation.js");
+const fleetOrchestrationRoutes = require("./routes/fleetOrchestration.js");
+const securityOperationsRoutes = require("./routes/securityOperations.js");
+const reliabilityRoutes = require("./routes/reliability.js");
+const operatorPlatformRoutes = require("./routes/operatorPlatform.js");
+const intelligenceFinopsRoutes = require("./routes/intelligenceFinops.js");
+const launchGovernanceRoutes = require("./routes/launchGovernance.js");
+const subscriptionRoutes = require("./routes/subscriptions.js");
+const coinRoutes = require("./routes/coins.js");
+const walletRoutes = require("./routes/wallet.js");
+const sellerAnalyticsRoutes = require("./routes/sellerAnalytics.js");
+const auditRoutes = require("./routes/audit.js");
+const dailyCodeRoutes = require("./routes/dailycode.js");
+const loginAuditRoutes = require("./routes/loginAudit.js");
+const saleUndoneRoutes = require("./routes/saleundone.js");
+const { setNotificationSocket } = require("./services/notificationEmitter");
 
-const http = require('http');
-const { Server } = require("socket.io");
+/* ─────────────────────────────────────────────────────────
+   Express App Setup
+   ───────────────────────────────────────────────────────── */
 
 const app = express();
-app.set('db', pool);
+app.set("db", pool);
 
-// Attach correlation IDs for traceability across requests and incident triage.
+// ── Trust Proxy ──────────────────────────────────────────
+function resolveTrustProxySetting(rawValue) {
+  const normalized = String(rawValue || "").trim();
+  if (!normalized) return false;
+  if (normalized.toLowerCase() === "true") return true;
+  if (normalized.toLowerCase() === "false") return false;
+  if (/^\d+$/.test(normalized)) return Number.parseInt(normalized, 10);
+  return normalized;
+}
+
+const trustProxySetting = resolveTrustProxySetting(process.env.TRUST_PROXY);
+if (trustProxySetting !== false) {
+  app.set("trust proxy", trustProxySetting);
+}
+
+// ── Correlation ID Middleware ─────────────────────────────
 app.use((req, res, next) => {
-  const incomingCorrelationId = req.headers['x-correlation-id'] || req.headers['x-request-id'];
-  const correlationId = incomingCorrelationId ? String(incomingCorrelationId) : crypto.randomUUID();
+  const incomingCorrelationId =
+    req.headers["x-correlation-id"] || req.headers["x-request-id"];
+  const correlationId = incomingCorrelationId
+    ? String(incomingCorrelationId)
+    : crypto.randomUUID();
   req.correlationId = correlationId;
-  res.setHeader('x-correlation-id', correlationId);
+  res.setHeader("x-correlation-id", correlationId);
   next();
 });
 
-// Enable extended query string parsing for array parameters (e.g., ?category[]=X&category[]=Y)
-app.set('query parser', 'extended');
+app.use(requestLogger);
 
-const sanitizeOrigin = (value) => String(value || '').trim().replace(/\/+$/, '');
-const isDevelopment = process.env.NODE_ENV !== 'production';
-const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+app.set("query parser", "extended");
+
+// ── Environment Helpers ──────────────────────────────────
+const sanitizeOrigin = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/\/+$/, "");
+
+const isDevelopment = process.env.NODE_ENV !== "production";
+const isProduction = process.env.NODE_ENV === "production";
+
+// O-05: Fail fast in production if critical environment variables are missing
+if (isProduction) {
+  const REQUIRED_PROD_ENV_VARS = [
+    'JWT_SECRET',
+    'JWT_REFRESH_SECRET',
+    'DB_HOST',
+    'DB_PASSWORD',
+    'SESSION_SECRET',
+  ];
+  const apiIntegrityEnabled = parseBooleanEnv(
+    process.env.API_INTEGRITY_ENABLED,
+    true
+  );
+  if (apiIntegrityEnabled) {
+    REQUIRED_PROD_ENV_VARS.push('API_INTEGRITY_SECRET');
+  }
+
+  const deviceAttestationRequired = parseBooleanEnv(
+    process.env.DEVICE_ATTESTATION_REQUIRED,
+    false
+  );
+  if (deviceAttestationRequired) {
+    REQUIRED_PROD_ENV_VARS.push('DEVICE_ATTESTATION_SECRET');
+  }
+
+  const missingVars = REQUIRED_PROD_ENV_VARS.filter((key) => !process.env[key]);
+  const insecureDefaults = [];
+  if (
+    apiIntegrityEnabled &&
+    String(process.env.API_INTEGRITY_SECRET || '').trim() ===
+      'mhub-api-integrity-default'
+  ) {
+    insecureDefaults.push('API_INTEGRITY_SECRET');
+  }
+
+  if (missingVars.length > 0 || insecureDefaults.length > 0) {
+    if (missingVars.length > 0) {
+      console.error(
+        `[startup] FATAL: Missing required production environment variables: ${missingVars.join(', ')}`
+      );
+    }
+    if (insecureDefaults.length > 0) {
+      console.error(
+        `[startup] FATAL: Insecure default values detected for: ${insecureDefaults.join(', ')}`
+      );
+    }
+    console.error(
+      '[startup] Set these variables in your .env file or deployment environment before starting.'
+    );
+    process.exit(1);
+  }
+}
+
+function parseBooleanEnv(rawValue, fallback) {
+  if (rawValue === undefined || rawValue === null || rawValue === "")
+    return fallback;
+  const normalized = String(rawValue).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return fallback;
+}
+
+const disableBackgroundJobs = parseBooleanEnv(
+  process.env.DISABLE_BACKGROUND_JOBS,
+  false
+);
+const enableTestNotificationEndpoint = parseBooleanEnv(
+  process.env.ENABLE_TEST_NOTIFICATION_ENDPOINT,
+  !isProduction
+);
+const readinessTreatDegradedAsNotReady = parseBooleanEnv(
+  process.env.READINESS_DEGRADED_AS_NOT_READY,
+  isProduction
+);
+
+/** Returns middleware requiring tenant context for critical write operations */
+const requireCriticalTenantWriteContext = (routeName) =>
+  requireTenantContext({
+    writeOnly: true,
+    featureFlag: "TENANT_CONTEXT_ENFORCE_CRITICAL_WRITE_ROUTES",
+    routeName,
+  });
+
+/* ─────────────────────────────────────────────────────────
+   CORS Configuration
+   ───────────────────────────────────────────────────────── */
+
+const localhostOriginPattern =
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
 const defaultCorsOrigins = [
   "http://localhost:5173",
   "http://localhost:8080",
   "http://localhost:8081",
   "http://localhost:8082",
-  "http://localhost:3000"
+  "http://localhost:3000",
 ];
-const envCorsOrigins = String(process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((origin) => sanitizeOrigin(origin))
-  .filter(Boolean);
+
+const parseOriginList = (...rawLists) =>
+  rawLists
+    .flatMap((raw) => String(raw || "").split(","))
+    .map((origin) => sanitizeOrigin(origin))
+    .filter(Boolean);
+
+const envCorsOrigins = parseOriginList(
+  process.env.CORS_ORIGINS,
+  process.env.CORS_ORIGIN,
+  process.env.ALLOWED_ORIGINS
+);
+
 const configuredCorsOrigins = new Set(
-  [process.env.CLIENT_URL, ...envCorsOrigins, ...defaultCorsOrigins]
+  [process.env.CLIENT_URL, ...envCorsOrigins, ...(isDevelopment ? defaultCorsOrigins : [])]
     .map((origin) => sanitizeOrigin(origin))
     .filter(Boolean)
 );
 
 const isOriginAllowed = (origin) => {
-  if (!origin) {
-    return true; // Non-browser clients (curl/mobile/native)
-  }
-
+  // Allow server-to-server requests (no Origin) only in development
+  if (!origin) return isDevelopment;
   const normalizedOrigin = sanitizeOrigin(origin);
-  if (configuredCorsOrigins.has(normalizedOrigin)) {
+  if (configuredCorsOrigins.has(normalizedOrigin)) return true;
+  // Safety check: only allow localhost pattern in genuine development
+  if (isDevelopment && !process.env.RENDER && !process.env.FLY_APP_NAME && !process.env.RAILWAY_ENVIRONMENT && localhostOriginPattern.test(normalizedOrigin))
     return true;
-  }
-
-  // Dev fallback: allow localhost/127.0.0.1 on any port.
-  if (isDevelopment && localhostOriginPattern.test(normalizedOrigin)) {
-    return true;
-  }
-
   return false;
 };
 
 const resolveCorsOrigin = (origin, callback) => {
-  if (isOriginAllowed(origin)) {
-    return callback(null, true);
-  }
-  console.warn(`[CORS] Blocked origin: ${origin}`);
-  return callback(new Error('Not allowed by CORS'));
+  if (isOriginAllowed(origin)) return callback(null, true);
+  if (isDevelopment) console.warn(`[CORS] Blocked origin: ${origin}`);
+  return callback(new Error("Not allowed by CORS"));
 };
 
 const commonAllowedHeaders = [
-  'Content-Type',
-  'Authorization',
-  'X-Device-Id',
-  'X-Timezone',
-  'X-Correlation-Id',
-  'X-Request-Id',
-  'X-Load-Test-Scenario',
-  'X-Simulated-User'
+  "Content-Type",
+  "Authorization",
+  "X-Device-Id",
+  "X-Device-Fingerprint",
+  "X-Timezone",
+  "X-Correlation-Id",
+  "X-Request-Id",
+  "X-Location-Signature",
+  "X-Load-Test-Scenario",
+  "X-Simulated-User",
+  "X-XSRF-TOKEN",
+  "X-CSRF-Token",
+  "X-Platform",
+  "X-MHub-VPN-Detected",
+  "X-MHub-Timestamp",
+  "X-MHub-Nonce",
+  "X-MHub-Signature",
+  "X-MHub-DevTools",
 ];
 
 const corsOptions = {
   origin: resolveCorsOrigin,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: commonAllowedHeaders,
-  exposedHeaders: ['x-correlation-id', 'x-request-id'],
-  optionsSuccessStatus: 204
+  exposedHeaders: ["x-correlation-id", "x-request-id"],
+  optionsSuccessStatus: 204,
 };
 
+/* ─────────────────────────────────────────────────────────
+   HTTP Server & Socket.IO
+   ───────────────────────────────────────────────────────── */
+
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
     origin: resolveCorsOrigin,
-    methods: ['GET', 'POST'],
+    methods: ["GET", "POST"],
     credentials: true,
-    allowedHeaders: commonAllowedHeaders
-  }
+    allowedHeaders: commonAllowedHeaders,
+  },
 });
 
-const socketDebugEnabled = process.env.NODE_ENV !== 'production';
+const socketDebugEnabled = process.env.NODE_ENV !== "production";
 
-// Socket.io connection handler
-io.on('connection', (socket) => {
+// ── Socket.IO Authentication Middleware ──────────────────
+const { verifyToken: verifySocketToken } = require("./services/tokenVerificationCache");
+const parseCookieHeader = (cookieHeader = "") => {
+  if (!cookieHeader || typeof cookieHeader !== "string") {
+    return {};
+  }
+  return cookieHeader.split(";").reduce((acc, part) => {
+    const [rawKey, ...rest] = part.split("=");
+    if (!rawKey) return acc;
+    const key = rawKey.trim();
+    if (!key) return acc;
+    const value = rest.join("=");
+    acc[key] = decodeURIComponent(String(value || "").trim());
+    return acc;
+  }, {});
+};
+
+io.use((socket, next) => {
+  const headerToken =
+    (socket.handshake.headers?.authorization || "").replace(/^Bearer\s+/i, "");
+  const authToken = socket.handshake.auth?.token || null;
+  const cookieHeader = socket.handshake.headers?.cookie || "";
+  const cookies = parseCookieHeader(cookieHeader);
+  const cookieToken = cookies.accessToken || null;
+  const candidates = [cookieToken, authToken, headerToken].filter(Boolean);
+
+  if (!candidates.length) {
+    return next(new Error("Authentication required"));
+  }
+  for (const candidate of candidates) {
+    try {
+      const payload = verifySocketToken(candidate, JWT_CONFIG.SECRET, {
+        issuer: JWT_CONFIG.ISSUER,
+        audience: allowedAudiences,
+      });
+      socket.user = payload;
+      return next();
+    } catch {
+      // try next candidate
+    }
+  }
+  return next(new Error("Invalid or expired token"));
+});
+
+io.on("connection", (socket) => {
   if (socketDebugEnabled) {
-    console.log(`User Connected: ${socket.id}`);
+    console.log(`User Connected: ${socket.id} (uid: ${socket.user?.userId || socket.user?.id})`);
   }
 
-  socket.on('join_room', (data) => {
-    socket.join(data);
+  socket.on("join_room", (data) => {
+    const roomId = String(data || "");
+    const userId = String(socket.user?.userId || socket.user?.id || "");
+
+    // Validate room membership: user must be the room ID or a participant
+    if (roomId && userId) {
+      const roomParts = roomId.split("_");
+      const isMember = roomId === userId || roomParts.includes(userId);
+      if (!isMember) {
+        if (socketDebugEnabled) {
+          console.warn(`[Socket] User ${userId} denied access to room: ${roomId}`);
+        }
+        socket.emit("error", { message: "Access denied to this room" });
+        return;
+      }
+    }
+
+    socket.join(roomId);
     if (socketDebugEnabled) {
-      console.log(`User with ID: ${socket.id} joined room: ${data}`);
+      console.log(`User with ID: ${socket.id} joined room: ${roomId}`);
     }
   });
 
-  socket.on('send_message', (data) => {
-    socket.to(data.room).emit('receive_message', data);
+  // Per-socket rate limiting for messages
+  const messageTimestamps = [];
+  const MSG_RATE_LIMIT = 30; // max messages
+  const MSG_RATE_WINDOW = 60000; // per 60 seconds
+
+  socket.on("send_message", (data) => {
+    // Validate required fields
+    if (!data || typeof data !== "object" || !data.room || typeof data.room !== "string") return;
+    if (data.message && typeof data.message === "string" && data.message.length > 5000) return;
+
+    // Rate limit
+    const now = Date.now();
+    while (messageTimestamps.length && messageTimestamps[0] < now - MSG_RATE_WINDOW) {
+      messageTimestamps.shift();
+    }
+    if (messageTimestamps.length >= MSG_RATE_LIMIT) return;
+    messageTimestamps.push(now);
+
+    socket.to(data.room).emit("receive_message", data);
   });
 
-  socket.on('disconnect', () => {
+  socket.on("disconnect", () => {
     if (socketDebugEnabled) {
-      console.log('User Disconnected', socket.id);
+      console.log("User Disconnected", socket.id);
     }
   });
 });
 
-// Make io accessible globally if needed (optional)
-app.set('io', io);
+app.set("io", io);
+setNotificationSocket(io);
 
-// ============================================
-// PERFORMANCE & SECURITY MIDDLEWARE (Operation Polish)
-// ============================================
+/* ─────────────────────────────────────────────────────────
+   Global Middleware Stack (order matters!)
+   ───────────────────────────────────────────────────────── */
 
-// 1. COMPRESSION - Reduce payload size by ~70%
-app.use(compression());
+const { burstLimiter, perUserLimiter, writeOperationLimiter } = require("./middleware/enhancedRateLimiter");
 
-// 2. HELMET with Content Security Policy (CSP)
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers["x-nginx-proxied"]) {
+      return false; // Skip compression if Nginx already handled it
+    }
+    return compression.filter(req, res);
+  }
+}));
+app.use(enforceHttps);
 app.use(securityHeaders);
-
-// 2.1 HIDE TECH STACK - Security Best Practice
-app.disable('x-powered-by');
-
-// 3. CORS - Shared policy for REST + preflight
+app.disable("x-powered-by");
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
-
-// 4. RATE LIMITING (DDoS Protection)
+app.use(burstLimiter);
 app.use(apiLimiter);
-
-// 5. COOKIE PARSER - Required for HttpOnly JWT cookies
+app.use(perUserLimiter);
+app.use(writeOperationLimiter);
 app.use(cookieParser());
-
-// 6. BODY PARSERS with STRICT size limits (Audit Fix: Prevent DoS)
-app.use(express.json({ limit: '50kb' })); // Adjusted for slightly larger payloads if needed
-app.use(express.urlencoded({ extended: true, limit: '50kb' }));
-
-// 7. HPP - Prevent HTTP Parameter Pollution
+app.use(
+  express.json({
+    limit: "50kb",
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+app.use(express.urlencoded({ extended: true, limit: "50kb" }));
+const { apiResponseNormalizer } = require("./middleware/apiResponseNormalizer");
+app.use(apiResponseNormalizer);
 app.use(hpp());
-
-// 8. Custom WAF rules (SQLi/XSS/bot/geo) with enforcement evidence header
 app.use(wafEvidenceHeaders);
 app.use(wafRequestFilter);
-
-// 8.1 Input sanitization (defense in depth after explicit WAF blocking)
 app.use(sanitizeInput);
 
-console.log('🛡️ Operation Polish: Security & Performance middleware loaded');
+// ── Query Param Type Safety ───────────────────────────────
+// Collapse array query params to their first value to prevent type confusion attacks
+// (e.g., ?userId[]=1&userId[]=2 becomes ?userId=1)
+app.use((req, res, next) => {
+  if (req.query && typeof req.query === "object") {
+    for (const key of Object.keys(req.query)) {
+      if (Array.isArray(req.query[key])) {
+        req.query[key] = req.query[key][0];
+      }
+    }
+  }
+  next();
+});
 
-// 9. PRESENCE TRACKING: Throttled heartbeat for "Last Seen"
-// Only updates DB every 5 minutes per user - saves 99.9% of writes
-const { trackActivity } = require('./middleware/activityTracker.js');
-app.use('/api', trackActivity);
+// ── CSRF Protection (Double Submit Cookie) ────────────────
+const { csrfProtection } = require("./middleware/csrf");
+app.use(
+  csrfProtection({
+    skipPaths: [
+      "/api/webhooks",
+      "/api/auth/refresh",
+      "/api/payments/webhook",
+      "/api/push-notifications/webhook",
+      "/api/analytics/client-event",
+      "/api/analytics/client-error",
+      "/api/analytics/device",
+    ],
+  })
+);
 
-// 10. HEALTH CHECK (For Production Monitoring)
-app.get('/health', (req, res) => {
+// ── Global VPN/Proxy Blocker ──────────────────────────────
+const { globalVpnBlocker } = require("./middleware/vpnBlocker");
+app.use(globalVpnBlocker);
+
+// ── API Integrity (anti-replay, bot detection, DevTools block) ──
+const { antiReplayProtection, blockDevToolsRequests, botDetection } = require("./middleware/apiIntegrity");
+app.use(botDetection);
+app.use(blockDevToolsRequests);
+app.use(antiReplayProtection);
+
+if (!isProduction) console.log("🛡️ Operation Polish: Security & Performance middleware loaded");
+
+// ── VPN Enforcement (server-side) ────────────────────────
+const { vpnEnforcementMiddleware } = require("./middleware/vpnEnforcement");
+app.use("/api", vpnEnforcementMiddleware);
+
+// ── API-scoped Middleware ────────────────────────────────
+const { trackActivity } = require("./middleware/activityTracker.js");
+app.use("/api", trackActivity);
+app.use("/api", runtimeBudgetGuard);
+app.use("/api", apiContractGuard);
+app.use("/api", zeroTrustGate);
+app.use("/api", tenantContextGuard);
+app.use("/api", optionalAuth);
+app.use("/api", riskRestrictionMiddleware);
+
+// Analytics fast-path (client telemetry)
+app.post(
+  "/api/analytics/client-event",
+  optionalAuth,
+  analyticsController.saveClientEvent
+);
+app.post(
+  "/api/analytics/client-error",
+  optionalAuth,
+  analyticsController.saveClientError
+);
+app.post(
+  "/api/analytics/device",
+  optionalAuth,
+  analyticsController.saveDeviceInfo
+);
+
+/* ─────────────────────────────────────────────────────────
+   Health Check (lightweight — no DB)
+   ───────────────────────────────────────────────────────── */
+
+app.get("/health", (req, res) => {
   res.status(200).json({
-    service: 'mhub-backend',
-    status: 'ok',
+    service: "mhub-backend",
+    status: "ok",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
   });
 });
 
-// GDPR Routes (Data Export & Deletion)
-const gdprRoutes = require("./routes/gdpr.js");
+/* ─────────────────────────────────────────────────────────
+   Route Mounts — Individually Mounted
+   ───────────────────────────────────────────────────────── */
 
-// MOUNT ROUTES
-app.use('/api/auth', authRoutes);
-app.use('/api/gdpr', gdprRoutes); // GDPR endpoints
-app.use('/api/referral', referralRoutes);
-app.use('/api/recommendations', recommendationsRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/categories', categoriesRoutes);
-app.use('/api/posts', postsRoutes);
-app.use('/api/notifications', notificationsRoutes);
-app.use('/api/feed', feedRoutes);
-app.use('/api/feedback', feedbackRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/complaints', complaintsRoutes);
-app.use('/api/admin/dashboard', adminDashboardRoutes);
-app.use('/api/rewards', rewardsRoutes);
-app.use('/api/location', locationRoutes);
-app.use('/api/inquiries', inquiriesRoutes);
-// Batch 2 Routes
-app.use('/api/chat', chatRoutes);
-app.use('/api/offers', offersRoutes);
-app.use('/api/saved-searches', savedSearchesRoutes);
-app.use('/api/analytics', analyticsRoutes);
-// New Features
-app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/recently-viewed', recentlyViewedRoutes);
-app.use('/api/price-alerts', priceAlertsRoutes);
-app.use('/api/price-history', priceHistoryRoutes);
-app.use('/api/tiers', tiersRoutes);
-app.use('/api/brands', brandsRoutes);
-app.use('/api/push', pushNotificationsRoutes);
-app.use('/api/nearby', nearbyRoutes);
-app.use('/api/reviews', reviewsRoutes);
-app.use('/api/publicwall', publicWallRoutes);
-app.use('/api/public-wall', publicWallRoutes);
-// Blue Team Gap 1: Dual-Handshake Sale Logic
-const saleRoutes = require('./routes/sale.js');
-app.use('/api/sale', saleRoutes);
-app.use('/api/transactions', transactionsRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoriesRoutes);
+app.use("/api/subcategories", subcategoriesRoutes);
+app.use(
+  "/api/posts",
+  requireCriticalTenantWriteContext("posts write operations"),
+  postsRoutes
+);
+app.use("/api/location", locationRoutes);
+app.use("/api/v1/location", locationVerificationRoutes);
+// Alias mounts for backwards compatibility
+app.use(
+  "/api/channel",
+  requireCriticalTenantWriteContext("channel write operations"),
+  channelsRoutes
+);
+app.use(
+  "/api/channels",
+  requireCriticalTenantWriteContext("channels write operations"),
+  channelsRoutes
+);
+app.use("/api/publicwall", publicWallRoutes);
+app.use("/api/public-wall", publicWallRoutes);
+app.use("/api/users", usersRoutes);
 
-// Blue Team Gap 3: Initialize CRON Jobs
-const { initCronJobs } = require('./jobs/cronJobs.js');
-initCronJobs();
+/* ─────────────────────────────────────────────────────────
+   Route Mounts — Bulk (path → handler or [middleware, handler])
+   ───────────────────────────────────────────────────────── */
 
-// Defender Prompt 5: Translation Worker
-const translationRoutes = require('./routes/translation.js');
-app.use('/api/translation', translationRoutes);
+const apiRouteMounts = [
+  ["/api/aadhaar", aadhaarRoutes],
+  ["/api/gdpr", gdprRoutes],
+  ["/api/referral", referralRoutes],
+  ["/api/recommendations", recommendationsRoutes],
+  ["/api/profile", profileRoutes],
+  ["/api/notifications", notificationsRoutes],
+  ["/api/cart", cartRoutes],
+  ["/api/feed", feedRoutes],
+  ["/api/feedback", feedbackRoutes],
+  ["/api/dashboard", dashboardRoutes],
+  ["/api/complaints", complaintsRoutes],
+  ["/api/admin/dashboard", adminDashboardRoutes],
+  [
+    "/api/rewards",
+    [
+      requireCriticalTenantWriteContext("rewards write operations"),
+      rewardsRoutes,
+    ],
+  ],
+  ["/api/inquiries", inquiriesRoutes],
+  ["/api/chat", chatRoutes],
+  [
+    "/api/offers",
+    [
+      requireCriticalTenantWriteContext("offers write operations"),
+      offersRoutes,
+    ],
+  ],
+  ["/api/saved-searches", savedSearchesRoutes],
+  ["/api/analytics", analyticsRoutes],
+  ["/api/wishlist", wishlistRoutes],
+  ["/api/recently-viewed", recentlyViewedRoutes],
+  ["/api/price-alerts", priceAlertsRoutes],
+  ["/api/price-history", priceHistoryRoutes],
+  ["/api/tiers", tiersRoutes],
+  ["/api/brands", brandsRoutes],
+  ["/api/push", pushNotificationsRoutes],
+  ["/api/nearby", nearbyRoutes],
+  ["/api/products", productsRoutes],
+  ["/api/reviews", reviewsRoutes],
+  [
+    "/api/sale",
+    [
+      requireCriticalTenantWriteContext("sale write operations"),
+      saleRoutes,
+    ],
+  ],
+  [
+    "/api/transactions",
+    [
+      requireCriticalTenantWriteContext("transactions write operations"),
+      transactionsRoutes,
+    ],
+  ],
+  ["/api/translation", translationRoutes],
+  ["/api/contacts", contactsRoutes],
+  ["/api/cms", cmsRoutes],
+  ["/api/auth/2fa", twoFactorRoutes],
+  [
+    "/api/payments",
+    [
+      requireCriticalTenantWriteContext("payments write operations"),
+      paymentRoutes,
+    ],
+  ],
+  ["/api/device-lifecycle", deviceLifecycleRoutes],
+  ["/api/telemetry", telemetryRoutes],
+  ["/api/automation", automationRoutes],
+  ["/api/fleet-orchestration", fleetOrchestrationRoutes],
+  ["/api/security-operations", securityOperationsRoutes],
+  ["/api/reliability", reliabilityRoutes],
+  ["/api/operator-platform", operatorPlatformRoutes],
+  ["/api/intelligence-finops", intelligenceFinopsRoutes],
+  ["/api/launch-governance", launchGovernanceRoutes],
+  ["/api/admin", adminRoutes],
+  [
+    "/api/subscriptions",
+    [
+      requireCriticalTenantWriteContext("subscriptions write operations"),
+      subscriptionRoutes,
+    ],
+  ],
+  ["/api/coins", coinRoutes],
+  ["/api/wallet", walletRoutes],
+  ["/api/seller-analytics", sellerAnalyticsRoutes],
+  ["/api/audit", auditRoutes],
+  ["/api/dailycode", dailyCodeRoutes],
+  ["/api/login-audit", loginAuditRoutes],
+  ["/api/saleundone", saleUndoneRoutes],
+];
 
-// Protocol Native Hybrid: Contacts Sync
-const contactsRoutes = require('./routes/contacts.js');
-app.use('/api/contacts', contactsRoutes);
+for (const [routePath, routeHandler] of apiRouteMounts) {
+  if (Array.isArray(routePath)) {
+    for (const aliasPath of routePath) {
+      app.use(aliasPath, routeHandler);
+    }
+  } else {
+    app.use(routePath, routeHandler);
+  }
+}
 
-// Two-Factor Authentication (2FA)
-const twoFactorRoutes = require('./routes/twoFactor.js');
-app.use('/api/auth/2fa', twoFactorRoutes);
+/* ─────────────────────────────────────────────────────────
+   Cron / Background Jobs
+   ───────────────────────────────────────────────────────── */
 
-// PROTOCOL: VALUE HIERARCHY - Zero-Cost Payment System
-const paymentRoutes = require('./routes/payments.js');
-app.use('/api/payments', paymentRoutes);
+const { initCronJobs } = require("./jobs/cronJobs.js");
 
-// Admin Routes (Verification, Payments, Dashboard)
-const adminRoutes = require('./routes/admin.js');
-app.use('/api/admin', adminRoutes);
+/* ─────────────────────────────────────────────────────────
+   Static File Serving
+   ───────────────────────────────────────────────────────── */
 
-// Users Routes (Profile management)
-const usersRoutes = require('./routes/users.js');
-app.use('/api/users', usersRoutes);
+app.use(
+  "/static",
+  express.static(path.join(__dirname, "../public"), {
+    maxAge: "30d",
+    immutable: true,
+    etag: true,
+  })
+);
 
+const uploadsDir = getUploadsDir();
+const optimizedUploadsDir = getUploadsSubdir("optimized");
+getUploadsSubdir("optimized", "thumbnails");
 
-// ============================================
-// STATIC FILE CACHING (CDN Optimization)
-// ============================================
-const path = require('path');
+app.use(
+  "/uploads",
+  express.static(uploadsDir, {
+    maxAge: "7d",
+    etag: true,
+  })
+);
 
-// Serve static files with long cache headers
-app.use('/static', express.static(path.join(__dirname, '../public'), {
-  maxAge: '30d',
-  immutable: true,
-  etag: true
-}));
+app.use(
+  "/uploads/optimized",
+  express.static(optimizedUploadsDir, {
+    maxAge: "30d",
+    immutable: true,
+  })
+);
 
-// Serve uploads with cache
-app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
-  maxAge: '7d',
-  etag: true
-}));
+if (!isProduction) console.log("📁 Static file caching configured");
 
-// Optimized images
-app.use('/uploads/optimized', express.static(path.join(__dirname, '../uploads/optimized'), {
-  maxAge: '30d',
-  immutable: true
-}));
+/* ─────────────────────────────────────────────────────────
+   API Health & Readiness Probes
+   ───────────────────────────────────────────────────────── */
 
-console.log('📁 Static file caching configured');
-
-// Health check with DB validation
-app.get('/api/health', async (req, res) => {
+/** Deep health check — verifies DB connectivity */
+app.get("/api/health", async (req, res) => {
   try {
-    const time = await pool.query('SELECT NOW()');
+    const time = await pool.query("SELECT NOW()");
     res.json({
-      service: 'mhub-backend',
-      status: 'ok',
-      db: 'connected',
-      time: time.rows[0].now
+      service: "mhub-backend",
+      status: "ok",
+      db: "connected",
+      time: time.rows[0].now,
     });
   } catch (err) {
-    res.status(500).json({
-      service: 'mhub-backend',
-      status: 'error',
-      db: 'disconnected',
-      error: err.message
+    res.status(503).json({
+      service: "mhub-backend",
+      status: "degraded",
+      db: "disconnected",
+      time: null,
+      error: "Database connection failed",
     });
   }
 });
 
-app.get('/api/ready', async (req, res) => {
+/** Readiness probe — checks DB + cache + session store */
+app.get("/api/ready", async (req, res) => {
   try {
     const readiness = await runReadinessChecks({
       pool,
       cacheService: cacheLayer,
-      sessionStore
+      sessionStore,
     });
-    const statusCode = readiness.status === 'not_ready' ? 503 : 200;
+    const statusCode =
+      readiness.status === "not_ready" ||
+      (readinessTreatDegradedAsNotReady && readiness.status === "degraded")
+        ? 503
+        : 200;
     return res.status(statusCode).json(readiness);
   } catch (err) {
     return res.status(503).json({
-      status: 'not_ready',
+      status: "not_ready",
       checkedAt: new Date().toISOString(),
-      error: err.message
+      error: "Readiness check failed",
     });
   }
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-  res.send('Backend running successfully.');
+/** Root endpoint — simple liveness response */
+app.get("/", (req, res) => {
+  res.send("Backend running successfully.");
 });
 
-// Test Notification Endpoint
-app.post('/api/test-notification', (req, res) => {
-  const { message, type = 'info' } = req.body;
-  io.emit('notification', {
-    id: Date.now(),
-    title: 'Test Notification',
-    message: message || 'This is a test notification from server',
-    type,
-    timestamp: new Date()
-  });
-  res.json({ status: 'sent', message });
-});
+/* ─────────────────────────────────────────────────────────
+   Test Notification Endpoint (dev/staging only)
+   ───────────────────────────────────────────────────────── */
 
-const logger = require('./config/logger');
-const { ensureUserTierColumns } = require('./services/schemaGuard');
+const requireAdminRole = (req, res, next) => {
+  const role = String(req.user?.role || req.user?.userRole || "")
+    .trim()
+    .toLowerCase();
+  if (
+    role === "admin" ||
+    role === "super_admin" ||
+    role === "superadmin"
+  ) {
+    return next();
+  }
+  return res.status(403).json({ error: "Admin access required." });
+};
 
-// ============================================
-// GLOBAL ERROR HANDLING (The Safety Net)
-// ============================================
-const errorHandler = require('./middleware/errorHandler');
+if (enableTestNotificationEndpoint) {
+  app.post(
+    "/api/test-notification",
+    authenticateToken,
+    requireAdminRole,
+    (req, res) => {
+      const { message, type = "info" } = req.body;
+      io.emit("notification", {
+        id: Date.now(),
+        title: "Test Notification",
+        message: message || "This is a test notification from server",
+        type,
+        timestamp: new Date(),
+      });
+      res.json({ status: "sent", message });
+    }
+  );
+}
 
-// 404 Handler for unknown routes
+/* ─────────────────────────────────────────────────────────
+   Error Handling
+   ───────────────────────────────────────────────────────── */
+
+const logger = require("./config/logger");
+const {
+  evaluateFoundationConfig,
+} = require("./services/foundationGuardService");
+const {
+  ensureUserTierColumns,
+  ensureSchemaPreflight,
+} = require("./services/schemaGuard");
+const errorHandler = require("./middleware/errorHandler");
+
+// 404 catch-all
 app.use((req, res, next) => {
   const error = new Error(`Not Found - ${req.originalUrl}`);
   error.statusCode = 404;
   next(error);
 });
 
-// GLOBAL ERROR HANDLER
+// Global error handler (must be last middleware)
 app.use(errorHandler);
 
-// ============================================
-// SERVER STARTUP
-// ============================================
-const PORT = process.env.PORT || 5001;
-ensureUserTierColumns()
-  .then(() => logger.info('Tier schema check complete'))
-  .catch((schemaErr) => logger.warn(`Tier schema check failed: ${schemaErr.message}`));
-const serverInstance = server.listen(PORT, () => {
-  logger.info(`✅ Server running on port ${PORT}`);
-  logger.info(`🚀 System Online: Enforced Architecture`);
+/* ─────────────────────────────────────────────────────────
+   Server Startup
+   ───────────────────────────────────────────────────────── */
 
-  // PROTOCOL: VALUE HIERARCHY - Check expiring subscriptions on startup
+const PORT = Number.parseInt(process.env.PORT || "5001", 10) || 5001;
+const DEV_FALLBACK_PORTS = isDevelopment
+  ? [5001, 5000].filter((candidate) => candidate !== PORT)
+  : [];
+
+let serverInstance = null;
+let shuttingDown = false;
+let dailySubInterval = null;
+
+/**
+ * Attempts to listen on the given port.
+ * @param {number} port
+ * @returns {Promise<void>}
+ */
+const listenOnPort = (port) =>
+  new Promise((resolve, reject) => {
+    const onError = (error) => {
+      server.off("listening", onListening);
+      reject(error);
+    };
+    const onListening = () => {
+      server.off("error", onError);
+      resolve();
+    };
+    server.once("error", onError);
+    server.once("listening", onListening);
+    server.listen(port);
+  });
+
+/** Starts delayed background services (subscription checks, etc.) */
+const startBackgroundJobs = () => {
+  if (disableBackgroundJobs) {
+    logger.warn("[Startup] Delayed background jobs are disabled.");
+    return;
+  }
+
   try {
-    const { checkExpiringSubscriptions } = require('./services/subscriptionNotifications');
+    initCronJobs();
+  } catch (error) {
+    logger.warn(`[Startup] Cron init failed: ${error?.message || error}`);
+  }
 
-    // Run once on startup (after 5 second delay to let DB connect)
+  // Cache warming — run immediately on startup
+  try {
+    const { warmCache } = require("./services/cacheWarming");
     setTimeout(async () => {
-      logger.info('🔔 Checking expiring subscriptions...');
+      logger.info("[Startup] Warming Redis cache...");
+      await warmCache();
+    }, 2000);
+  } catch (e) {
+    logger.warn(`Cache warming not loaded: ${e.message}`);
+  }
+
+  try {
+    const {
+      checkExpiringSubscriptions,
+    } = require("./services/subscriptionNotifications");
+
+    setTimeout(async () => {
+      logger.info("Checking expiring subscriptions...");
       await checkExpiringSubscriptions();
-      logger.info(`🔔 Subscription check complete`);
+      logger.info("Subscription check complete");
     }, 5000);
 
-    // Schedule to run every 24 hours
-    setInterval(async () => {
-      logger.info('🔔 Running daily subscription expiry check...');
+    dailySubInterval = setInterval(async () => {
+      logger.info("Running daily subscription expiry check...");
       await checkExpiringSubscriptions();
-    }, 24 * 60 * 60 * 1000); // 24 hours
+    }, 24 * 60 * 60 * 1000);
   } catch (e) {
-    logger.warn('Subscription service not loaded:', e.message);
+    logger.warn(`Subscription service not loaded: ${e.message}`);
+  }
+};
+
+/**
+ * Starts the HTTP server, trying fallback ports in dev mode.
+ */
+const startServer = async () => {
+  const portCandidates = [PORT, ...DEV_FALLBACK_PORTS];
+
+  for (let index = 0; index < portCandidates.length; index += 1) {
+    const candidatePort = portCandidates[index];
+    try {
+      await listenOnPort(candidatePort);
+      serverInstance = server;
+
+      if (candidatePort !== PORT) {
+        logger.warn(
+          `Port ${PORT} is busy. Started on fallback port ${candidatePort} (development only).`
+        );
+      }
+
+      logger.info(`Server running on port ${candidatePort}`);
+      logger.info("System Online: Enforced Architecture");
+      startBackgroundJobs();
+      return;
+    } catch (error) {
+      const nextCandidate = portCandidates[index + 1];
+      if (error?.code === "EADDRINUSE" && nextCandidate) {
+        logger.warn(
+          `Port ${candidatePort} is already in use. Trying ${nextCandidate}...`
+        );
+        continue;
+      }
+      throw error;
+    }
+  }
+};
+
+/* ─────────────────────────────────────────────────────────
+   Bootstrap — Schema checks → Foundation guard → Start
+   ───────────────────────────────────────────────────────── */
+
+const strictSchemaContract = isDevelopment
+  ? parseBooleanEnv(process.env.STRICT_SCHEMA_CONTRACT, false)
+  : parseBooleanEnv(process.env.STRICT_SCHEMA_CONTRACT, true);
+
+const foundationStrictMode = parseBooleanEnv(
+  process.env.FOUNDATION_STRICT_MODE,
+  isProduction
+);
+
+const bootstrap = async () => {
+  // Foundation configuration validation
+  const foundationReport = evaluateFoundationConfig({
+    env: process.env,
+    isProduction,
+  });
+  logger.info(
+    `[FoundationGuard] status=${foundationReport.status}; ` +
+      `edge=${foundationReport.sections.edgeArchitecture.status}; ` +
+      `api=${foundationReport.sections.apiContract.status}; ` +
+      `tenant=${foundationReport.sections.tenantIsolation.status}; ` +
+      `budget=${foundationReport.sections.runtimeBudgets.status}; ` +
+      `secrets=${foundationReport.sections.secrets.status}; ` +
+      `promotion=${foundationReport.sections.promotion.status}`
+  );
+
+  if (foundationStrictMode && foundationReport.status !== "pass") {
+    throw new Error(
+      `Foundation configuration status is ${foundationReport.status}`
+    );
+  }
+
+  // Schema preflight checks
+  await ensureUserTierColumns();
+  logger.info("Tier schema check complete");
+
+  const schemaReport = await ensureSchemaPreflight({
+    strict: strictSchemaContract,
+    autoCreateTwoFactorFallback: true,
+  });
+  logger.info(`[SchemaGuard] Preflight status: ${schemaReport.status}`);
+
+  // Start listening
+  await startServer();
+};
+
+bootstrap().catch((startupError) => {
+  logger.error(`Server startup failed: ${startupError.message}`);
+  process.exit(1);
+});
+
+/* ─────────────────────────────────────────────────────────
+   Graceful Shutdown
+   ───────────────────────────────────────────────────────── */
+
+const shutdown = (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info(`${signal} received. Shutting down gracefully...`);
+  if (dailySubInterval) clearInterval(dailySubInterval);
+
+  const finalize = () => {
+    Promise.allSettled([cacheLayer.close?.(), sessionStore.close?.()]).finally(
+      () => {
+        pool.end(() => {
+          logger.info("Database pool closed. Exiting.");
+          process.exit(0);
+        });
+      }
+    );
+  };
+
+  if (!serverInstance || !serverInstance.listening) {
+    finalize();
+    return;
+  }
+
+  serverInstance.close(() => {
+    finalize();
+  });
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+// ── Unhandled Errors ─────────────────────────────────────
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("[UNHANDLED_REJECTION]", reason instanceof Error ? reason.stack : reason);
+  // In production, let the process continue; monitoring will catch these
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error("[UNCAUGHT_EXCEPTION]", err.stack || err);
+  // Give the server a moment to flush logs then exit
+  if (isProduction) {
+    setTimeout(() => process.exit(1), 1000);
   }
 });
 
-// ============================================
-// GRACEFUL SHUTDOWN (The Resilient Server)
-// ============================================
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Closing DB pool and shutting down gracefully...');
-  serverInstance.close(() => {
-    Promise.allSettled([
-      cacheLayer.close?.(),
-      sessionStore.close?.()
-    ]).finally(() => {
-      pool.end(() => {
-        logger.info('Database pool closed. Exiting.');
-        process.exit(0);
-      });
-    });
-  });
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down...');
-  serverInstance.close(() => {
-    Promise.allSettled([
-      cacheLayer.close?.(),
-      sessionStore.close?.()
-    ]).finally(() => {
-      pool.end(() => {
-        logger.info('Database pool closed. Exiting.');
-        process.exit(0);
-      });
-    });
-  });
-});

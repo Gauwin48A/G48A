@@ -10,12 +10,10 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const fsp = fs.promises;
+const { getUploadsDir } = require('../utils/uploads');
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../../public/uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
+const uploadsDir = getUploadsDir();
 
 /**
  * Compress and resize a single image

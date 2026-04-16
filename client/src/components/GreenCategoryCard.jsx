@@ -10,11 +10,11 @@ const icons = {
 
 
 const GreenCategoryCard = ({ category }) => (
-  <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+  <div className="bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-slate-900/30 p-4 flex flex-col items-center">
     {icons[category.name] || <img src={category.icon_url} alt={category.name} className="h-12 w-12 mb-2" onError={e => {e.target.src='/placeholder.svg';}} />}
-    <span className="font-semibold text-gray-800 text-center">{category.name}</span>
+    <span className="font-semibold text-gray-800 dark:text-gray-100 text-center">{category.name}</span>
     {category.product_count !== undefined && (
-      <span className="text-xs text-gray-500 mt-1">{category.product_count} products</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">{category.product_count} products</span>
     )}
   </div>
 );

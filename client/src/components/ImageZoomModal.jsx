@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { X, ZoomIn, ZoomOut } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
-import { useTranslation } from 'react-i18next';
-
-const ImageZoomModal = ({ isOpen, onClose, imageUrl, alt = 'Image' }) => {
-  const { t } = useTranslation();
+const ImageZoomModal = ({
+    isOpen,
+    onClose,
+    imageUrl,
+    alt = 'Image',
+    onNext,
+    onPrev,
+    currentIndex = 0,
+    totalCount = 0,
+}) => {
     const [scale, setScale] = useState(1);
+    const showNav = (typeof onNext === 'function' || typeof onPrev === 'function') && totalCount > 1;
+    const swipeState = useRef({ startX: 0, startY: 0, active: false });
 
     useEffect(() => {
         if (isOpen) {
@@ -21,6 +29,21 @@ const ImageZoomModal = ({ isOpen, onClose, imageUrl, alt = 'Image' }) => {
             document.body.style.overflow = 'unset';
         };
     }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                onClose();
+            } else if (event.key === 'ArrowRight' && typeof onNext === 'function') {
+                onNext();
+            } else if (event.key === 'ArrowLeft' && typeof onPrev === 'function') {
+                onPrev();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose, onNext, onPrev]);
 
     const handleZoomIn = () => {
         setScale(prev => Math.min(prev + 0.5, 4));
@@ -39,6 +62,27 @@ const ImageZoomModal = ({ isOpen, onClose, imageUrl, alt = 'Image' }) => {
         }
     };
 
+    const handleTouchStart = (event) => {
+        const touch = event?.touches?.[0];
+        if (!touch) return;
+        swipeState.current = { startX: touch.clientX, startY: touch.clientY, active: true };
+    };
+
+    const handleTouchEnd = (event) => {
+        if (!swipeState.current.active) return;
+        const touch = event?.changedTouches?.[0];
+        swipeState.current.active = false;
+        if (!touch) return;
+        const deltaX = touch.clientX - swipeState.current.startX;
+        const deltaY = touch.clientY - swipeState.current.startY;
+        if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+        if (deltaX < 0 && typeof onNext === 'function') {
+            onNext();
+        } else if (deltaX > 0 && typeof onPrev === 'function') {
+            onPrev();
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -46,6 +90,11 @@ const ImageZoomModal = ({ isOpen, onClose, imageUrl, alt = 'Image' }) => {
             className="fixed inset-0 z-[999] bg-black/90 backdrop-blur-sm flex items-center justify-center"
             onClick={onClose}
         >
+            {totalCount > 1 && (
+                <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-white/15 text-white text-xs font-semibold">
+                    {Math.max(0, Number(currentIndex) + 1)} / {totalCount}
+                </div>
+            )}
             {/* Close Button */}
             <button
                 onClick={onClose}
@@ -72,12 +121,33 @@ const ImageZoomModal = ({ isOpen, onClose, imageUrl, alt = 'Image' }) => {
                     <ZoomIn className="w-6 h-6 text-white" />
                 </button>
             </div>
+            {showNav && (
+                <>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); if (typeof onPrev === 'function') onPrev(); }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors z-50"
+                        aria-label="Previous image"
+                    >
+                        <ChevronLeft className="w-7 h-7 text-white" />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); if (typeof onNext === 'function') onNext(); }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/30 transition-colors z-50"
+                        aria-label="Next image"
+                    >
+                        <ChevronRight className="w-7 h-7 text-white" />
+                    </button>
+                </>
+            )}
 
             {/* Image Container */}
             <div
                 className="relative overflow-auto max-w-[90vw] max-h-[85vh]"
                 onClick={(e) => e.stopPropagation()}
                 onWheel={handleWheel}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={() => { swipeState.current.active = false; }}
             >
                 <img
                     src={imageUrl}
@@ -91,10 +161,11 @@ const ImageZoomModal = ({ isOpen, onClose, imageUrl, alt = 'Image' }) => {
 
             {/* Instructions */}
             <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm bg-black/40 px-4 py-2 rounded-full">
-                Scroll to zoom • Click outside to close
+                Scroll to zoom - click outside to close
             </div>
         </div>
     );
 };
 
 export default ImageZoomModal;
+

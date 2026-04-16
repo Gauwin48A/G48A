@@ -21,7 +21,7 @@ VALUES (
     '9999999999',
     'Test User',
     -- This is the Argon2id hash for password: "Test@12345"
-    '$argon2id$v=19$m=65536,t=3,p=1$randomsalthere$hashedpasswordvalue',
+    '$argon2id$v=19$m=65536,t=3,p=1$XrhSz2uKm7VayjXlHcM/lA$ye7vOB5RNDfT9uiHSUtb/bQxHxiiLOWI0p2URsmyskA',
     true,
     'user',
     'test@mhub.com'
@@ -43,7 +43,7 @@ WHERE phone_number = '9999999999';
 -- to "Test@12345"
 --
 -- UPDATE users 
--- SET password_hash = '$argon2id$v=19$m=65536,t=3,p=1$randomsalthere$hashedpasswordvalue'
+-- SET password_hash = '$argon2id$v=19$m=65536,t=3,p=1$XrhSz2uKm7VayjXlHcM/lA$ye7vOB5RNDfT9uiHSUtb/bQxHxiiLOWI0p2URsmyskA'
 -- WHERE phone_number = 'YOUR_PHONE_HERE';
 --
 -- ============================================================================

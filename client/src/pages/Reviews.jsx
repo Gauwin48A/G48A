@@ -1,251 +1,814 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Star, ThumbsUp, MessageSquare, User, ArrowLeft } from "lucide-react";
-import api from '../lib/api';
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '../context/AuthContext';
-
-const Reviews = () => {
-    const { userId } = useParams();
-    const navigate = useNavigate();
-    const { user } = useAuth();
-    const { toast } = useToast();
-
-    const [reviews, setReviews] = useState([]);
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const isSelf = user?.user_id === userId || user?.id === userId;
-
-    useEffect(() => {
-        fetchReviews();
-    }, [userId]);
-
-    const fetchReviews = async () => {
-        setLoading(true);
-        try {
-            const res = await api.get(`/api/reviews/user/${userId}`);
-            if (res.data) {
-                setReviews(res.data.reviews || []);
-                setStats(res.data.stats || {});
-            }
-        } catch (error) {
-            console.error("Failed to fetch reviews:", error);
-            toast({ title: "Error", description: "Failed to load reviews", variant: "destructive" });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSubmitReview = async () => {
-        if (!newReview.comment.trim()) {
-            toast({ title: "Comment required", variant: "destructive" });
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            await api.post('/api/reviews', {
-                revieweeId: userId,
-                rating: newReview.rating,
-                comment: newReview.comment
-            });
-
-            toast({ title: "Review submitted!", description: "Thank you for your feedback." });
-            setNewReview({ rating: 5, comment: '' });
-            fetchReviews(); // Refresh list
-        } catch (error) {
-            toast({
-                title: "Submission failed",
-                description: error.response?.data?.error || "Could not submit review",
-                variant: "destructive"
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleHelpful = async (reviewId) => {
-        try {
-            await api.patch(`/api/reviews/${reviewId}/helpful`);
-            // Optimistic update
-            setReviews(prev => prev.map(r =>
-                r.review_id === reviewId ? { ...r, helpful_count: (r.helpful_count || 0) + 1 } : r
-            ));
-        } catch (error) {
-            console.error("Helpful click error:", error);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
+import e, {
+  useCallback as I,
+  useEffect as H,
+  useMemo as j,
+  useState as i,
+} from "react";
+import { useParams as F, useNavigate as U } from "react-router-dom";
+import {
+  Card as h,
+  CardContent as y,
+  CardHeader as D,
+  CardTitle as M,
+} from "@/components/ui/card";
+import { Button as u } from "@/components/ui/button";
+import { Badge as pe } from "@/components/ui/badge";
+import {
+  Avatar as q,
+  AvatarFallback as W,
+  AvatarImage as z,
+} from "@/components/ui/avatar";
+import { Textarea as G } from "@/components/ui/textarea";
+import {
+  Star as o,
+  ThumbsUp as O,
+  MessageSquare as J,
+  User as K,
+  ArrowLeft as T,
+} from "lucide-react";
+import x from "@/services/api";
+import { useToast as Q } from "@/hooks/use-toast";
+import { useAuth as V } from "@/context/AuthContext";
+import { navigateBack } from "@/utils/navigation";
+import {
+  PageEmptyState as X,
+  PageErrorState as Y,
+  PageLoadingState as Z,
+} from "@/components/page-state/PageStateBlocks";
+const R = () => {
+  const { userId: a } = F(),
+    g = U(),
+    { user: n } = V(),
+    { toast: d } = Q(),
+    [N, c] = i([]),
+    [s, k] = i(null),
+    [$, b] = i(!0),
+    [C, p] = i(""),
+    [l, f] = i({ rating: 5, comment: "" }),
+    [S, A] = i(!1),
+    [filterRating, setFilterRating] = i("all"),
+    [filterVerified, setFilterVerified] = i(!1),
+    [filterSort, setFilterSort] = i("recent"),
+    [responseDrafts, setResponseDrafts] = i({}),
+    [responseBusy, setResponseBusy] = i({}),
+    w = n?.user_id || n?.id ? String(n?.user_id || n?.id) : "",
+    _ = !!(w && a && w === String(a)),
+    B = !!w,
+    m = I(async () => {
+      if (!a) {
+        p("Invalid review target."), b(!1);
+        return;
+      }
+      b(!0), p("");
+      try {
+        const r = await x.get(`/reviews/user/${a}`);
+        c(Array.isArray(r?.reviews) ? r.reviews : []), k(r?.stats || {});
+      } catch (r) {
+        import.meta.env.DEV && console.error("Failed to fetch reviews:", r),
+          p("Unable to load reviews right now. Please retry."),
+          c([]),
+          k(null);
+      } finally {
+        b(!1);
+      }
+    }, [a]);
+  H(() => {
+    m();
+  }, [m]);
+  const E = async () => {
+      if (!B) {
+        g("/login", { state: { returnTo: `/reviews/${a}` } });
+        return;
+      }
+      if (!l.comment.trim()) {
+        d({
+          title: "Comment required",
+          description: "Please add a short comment.",
+          variant: "destructive",
+        });
+        return;
+      }
+      A(!0);
+      try {
+        await x.post("/reviews", {
+          revieweeId: a,
+          rating: l.rating,
+          comment: l.comment.trim(),
+        }),
+          d({
+            title: "Review submitted",
+            description: "Thank you for your feedback.",
+          }),
+          f({ rating: 5, comment: "" }),
+          m();
+      } catch (r) {
+        import.meta.env.DEV && console.error("Review submission failed:", r),
+          d({
+            title: "Submission failed",
+            description: "We could not post your review. Please retry.",
+            variant: "destructive",
+          });
+      } finally {
+        A(!1);
+      }
+    },
+    L = async (r) => {
+      if (!B) {
+        g("/login", { state: { returnTo: `/reviews/${a}` } });
+        return;
+      }
+      try {
+        const t = await x.patch(`/reviews/${r}/helpful`),
+          v = t?.helpfulCount ?? t?.data?.helpfulCount,
+          _ = t?.alreadyVoted ?? t?.data?.alreadyVoted;
+        c((n) =>
+          n.map((B) =>
+            B.review_id === r
+              ? {
+                  ...B,
+                  helpful_count: Number.isFinite(Number(v))
+                    ? Number(v)
+                    : _
+                      ? B.helpful_count || 0
+                      : (B.helpful_count || 0) + 1,
+                }
+              : B,
+          ),
         );
-    }
-
-    return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 pt-8 pb-16 px-4">
-                <div className="max-w-4xl mx-auto">
-                    <Button variant="ghost" className="text-white mb-4 pl-0 hover:text-blue-100 hover:bg-white/10" onClick={() => navigate(-1)}>
-                        <ArrowLeft className="w-5 h-5 mr-2" /> Back
-                    </Button>
-                    <div className="flex items-center gap-6">
-                        <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-                            <Star className="w-12 h-12 text-yellow-400 fill-yellow-400" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-white mb-2">User Reviews</h1>
-                            <p className="text-blue-100 text-lg">See what others are saying regarding this user</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="max-w-4xl mx-auto px-4 -mt-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                    {/* Stats Card */}
-                    <Card className="md:col-span-1 shadow-xl border-0 h-fit">
-                        <CardHeader>
-                            <CardTitle>Rating Overview</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-center">
-                            <div className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
-                                {stats?.averageRating || '0.0'}
-                            </div>
-                            <div className="flex justify-center gap-1 mb-2">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                        key={star}
-                                        className={`w-5 h-5 ${star <= Math.round(stats?.averageRating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                                    />
-                                ))}
-                            </div>
-                            <p className="text-gray-500 mb-6">{stats?.totalReviews || 0} total reviews</p>
-
-                            <div className="space-y-2">
-                                {[5, 4, 3, 2, 1].map((rating) => (
-                                    <div key={rating} className="flex items-center gap-2 text-sm">
-                                        <span className="w-3">{rating}</span>
-                                        <Star className="w-3 h-3 text-gray-400" />
-                                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-yellow-400 rounded-full"
-                                                style={{ width: `${stats?.totalReviews ? ((stats.distribution?.[rating] || 0) / stats.totalReviews) * 100 : 0}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className="w-6 text-right text-gray-400">{stats?.distribution?.[rating] || 0}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Reviews List */}
-                    <div className="md:col-span-2 space-y-6">
-
-                        {/* Write Review Form */}
-                        {!isSelf && (
-                            <Card className="shadow-md border-0">
-                                <CardContent className="p-6">
-                                    <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
-                                    <div className="flex gap-2 mb-4">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <button
-                                                key={star}
-                                                onClick={() => setNewReview(prev => ({ ...prev, rating: star }))}
-                                                className="focus:outline-none transition-transform hover:scale-110"
-                                            >
-                                                <Star
-                                                    className={`w-8 h-8 ${star <= newReview.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                                                />
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <Textarea
-                                        placeholder="Share your experience dealing with this user..."
-                                        value={newReview.comment}
-                                        onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
-                                        className="mb-4"
-                                    />
-                                    <Button
-                                        onClick={handleSubmitReview}
-                                        disabled={isSubmitting}
-                                        className="w-full bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        {isSubmitting ? 'Submitting...' : 'Post Review'}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* List */}
-                        {reviews.length === 0 ? (
-                            <Card className="bg-gray-50 border-dashed border-2 border-gray-200 p-8 text-center text-gray-500">
-                                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                                No reviews yet. Be the first to review!
-                            </Card>
-                        ) : (
-                            reviews.map((review) => (
-                                <Card key={review.review_id} className="shadow-sm hover:shadow-md transition-shadow">
-                                    <CardContent className="p-6">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar>
-                                                    <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
-                                                    {review.reviewer_avatar && <AvatarImage src={review.reviewer_avatar} />}
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-semibold">{review.reviewer_name || 'Anonymous'}</p>
-                                                    <p className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString()}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex">
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <Star
-                                                        key={star}
-                                                        className={`w-4 h-4 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                                            {review.comment}
-                                        </p>
-
-                                        <div className="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleHelpful(review.review_id)}
-                                                className="text-gray-500 hover:text-blue-600"
-                                            >
-                                                <ThumbsUp className="w-4 h-4 mr-2" />
-                                                Helpful ({review.helpful_count || 0})
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))
-                        )}
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+      } catch (t) {
+        import.meta.env.DEV && console.error("Helpful click error:", t),
+          d({
+            title: "Action failed",
+            description: "Could not register your helpful vote. Please retry.",
+            variant: "destructive",
+          });
+      }
+    },
+    addSellerResponse = async (r, responseText) => {
+      if (!B) {
+        g("/login", { state: { returnTo: `/reviews/${a}` } });
+        return;
+      }
+      if (!_)
+        return d({
+          title: "Not allowed",
+          description: "Only the reviewed seller can respond to this review.",
+          variant: "destructive",
+        });
+      const t = (responseText ?? "").trim();
+      if (!t) {
+        d({
+          title: "Response required",
+          description: "Please add a short response before submitting.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setResponseBusy((v) => ({ ...v, [r]: !0 }));
+      try {
+        const v = await x.post(`/reviews/${r}/respond`, { response: t }),
+          updatedReview = v?.review ?? v?.data?.review;
+        updatedReview &&
+          c((B) =>
+            B.map((E) =>
+              E.review_id === r ? { ...E, ...updatedReview } : E,
+            ),
+          );
+        d({
+          title: "Response saved",
+          description: "Your response is now visible to buyers.",
+        });
+      } catch (v) {
+        console.error("Seller response error:", v),
+          d({
+            title: "Response failed",
+            description: "We could not save your response. Please retry.",
+            variant: "destructive",
+          });
+      } finally {
+        setResponseBusy((v) => ({ ...v, [r]: !1 }));
+      }
+    },
+    P = j(() => s?.distribution || {}, [s?.distribution]);
+  const isVerifiedReview = (r) =>
+      Boolean(
+        r?.verified_purchase ||
+          r?.is_verified_purchase ||
+          r?.transaction_id ||
+          r?.order_id ||
+          r?.verified,
+      ),
+    isRecentReview = (r) => {
+      if (!r?.created_at) return !1;
+      const t = new Date(r.created_at);
+      if (Number.isNaN(t.getTime())) return !1;
+      return Date.now() - t.getTime() < 30 * 24 * 60 * 60 * 1000;
+    },
+    filteredReviews = j(() => {
+      let list = Array.isArray(N) ? [...N] : [];
+      if (filterRating !== "all") {
+        const ratingValue = Number(filterRating);
+        if (Number.isFinite(ratingValue) && ratingValue > 0) {
+          list = list.filter((r) => Number(r.rating) === ratingValue);
+        }
+      }
+      if (filterVerified) {
+        list = list.filter((r) => isVerifiedReview(r));
+      }
+      switch (filterSort) {
+        case "highest":
+          list.sort((a, b) => Number(b.rating) - Number(a.rating));
+          break;
+        case "lowest":
+          list.sort((a, b) => Number(a.rating) - Number(b.rating));
+          break;
+        case "helpful":
+          list.sort(
+            (a, b) =>
+              Number(b.helpful_count || 0) - Number(a.helpful_count || 0),
+          );
+          break;
+        default:
+          list.sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime(),
+          );
+      }
+      return list;
+    }, [N, filterRating, filterSort, filterVerified]),
+    hasReviewFilters = filterRating !== "all" || filterVerified;
+  return $
+    ? e.createElement(
+        "div",
+        {
+          className:
+            "min-h-screen mhub-premium-page flex items-center justify-center bg-gray-50 dark:bg-gray-900 dark:bg-gray-950",
+        },
+        e.createElement(
+          "div",
+          { className: "w-full max-w-md px-4 page-shell page-pad" },
+          e.createElement(Z, {
+            marker: "loading",
+            className: "mhub-premium-surface",
+            title: "Loading reviews",
+            description: "Fetching rating history for this user.",
+          }),
+        ),
+      )
+    : C
+      ? e.createElement(
+          "div",
+          {
+            className:
+              "min-h-screen mhub-premium-page bg-gray-50 flex items-center justify-center p-4 dark:bg-gray-950",
+          },
+          e.createElement(
+            "div",
+            { className: "max-w-md w-full page-shell page-pad" },
+            e.createElement(Y, {
+              marker: "error",
+              className: "border-red-200 bg-red-50 dark:border-red-600/40 dark:bg-red-950/20",
+              title: "Reviews unavailable",
+              description: C,
+              onRetry: m,
+              secondaryAction: e.createElement(
+                u,
+                { variant: "outline", onClick: () => navigateBack(g) },
+                e.createElement(T, { className: "w-4 h-4 mr-2" }),
+                " Go back",
+              ),
+            }),
+          ),
+        )
+      : e.createElement(
+          "div",
+          { className: "min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950" },
+          e.createElement(
+            "div",
+            {
+              className:
+                "bg-gradient-to-r from-blue-600 to-indigo-700 pt-8 pb-16 px-4 dark:bg-gradient-to-r",
+            },
+            e.createElement(
+              "div",
+              { className: "max-w-4xl mx-auto" },
+              e.createElement(
+                u,
+                {
+                  variant: "ghost",
+                  className:
+                    "text-white mb-4 pl-0 hover:text-blue-100 hover:bg-white/10 dark:text-white dark:hover:text-blue-200 dark:hover:bg-slate-900/10",
+                  onClick: () => navigateBack(g),
+                },
+                e.createElement(T, { className: "w-5 h-5 mr-2" }),
+                " Back",
+              ),
+              e.createElement(
+                "div",
+                { className: "flex flex-wrap items-center gap-6" },
+                e.createElement(
+                  "div",
+                  { className: "bg-white/10 p-4 rounded-2xl backdrop-blur-sm dark:bg-slate-900/10" },
+                  e.createElement(o, {
+                    className: "w-12 h-12 text-yellow-400 fill-yellow-400 dark:text-yellow-200",
+                  }),
+                ),
+                e.createElement(
+                  "div",
+                  { className: "min-w-0" },
+                  e.createElement(
+                    "h1",
+                    {
+                      className: "text-3xl font-bold text-white mb-2 truncate dark:text-white",
+                      title: "User Reviews",
+                    },
+                    "User Reviews",
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-blue-100 text-lg break-words dark:text-blue-200" },
+                    "See what buyers and sellers say about this user.",
+                  ),
+                ),
+              ),
+            ),
+          ),
+          e.createElement(
+            "div",
+            { className: "max-w-4xl mx-auto px-4 mt-8 -translate-y-8 page-shell page-pad" },
+            e.createElement(
+              "div",
+              { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
+              e.createElement(
+                h,
+                { className: "md:col-span-1 shadow-xl border-0 h-fit dark:border-0" },
+                e.createElement(
+                  D,
+                  null,
+                  e.createElement(M, null, "Rating Overview"),
+                ),
+                e.createElement(
+                  y,
+                  { className: "text-center dark:text-center" },
+                  e.createElement(
+                    "div",
+                    {
+                      className:
+                        "text-5xl font-bold text-gray-800 dark:text-white mb-2 dark:text-gray-100",
+                    },
+                    s?.averageRating || "0.0",
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "flex justify-center gap-1 mb-2" },
+                    [1, 2, 3, 4, 5].map((r) =>
+                      e.createElement(o, {
+                        key: r,
+                        className: `w-5 h-5 ${r <= Math.round(s?.averageRating || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`,
+                      }),
+                    ),
+                  ),
+                  e.createElement(
+                    "p",
+                    { className: "text-gray-500 mb-6 dark:text-gray-300" },
+                    s?.totalReviews || 0,
+                    " total reviews",
+                  ),
+                  e.createElement(
+                    "div",
+                    { className: "space-y-2" },
+                    [5, 4, 3, 2, 1].map((r) =>
+                      e.createElement(
+                        "div",
+                        {
+                          key: r,
+                          className: "flex items-center gap-2 text-sm",
+                        },
+                        e.createElement("span", { className: "w-3" }, r),
+                        e.createElement(o, {
+                          className: "w-3 h-3 text-gray-400 dark:text-gray-300",
+                        }),
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "flex-1 h-2 bg-gray-100 rounded-full overflow-hidden dark:bg-gray-950",
+                          },
+                          e.createElement("div", {
+                            className: "h-full bg-yellow-400 rounded-full dark:bg-yellow-800/30",
+                            style: {
+                              width: `${s?.totalReviews ? ((P?.[r] || 0) / s.totalReviews) * 100 : 0}%`,
+                            },
+                          }),
+                        ),
+                        e.createElement(
+                          "span",
+                          { className: "w-6 text-right text-gray-400 dark:text-right dark:text-gray-300" },
+                          P?.[r] || 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              e.createElement(
+                "div",
+                { className: "md:col-span-2 space-y-6" },
+                !_ &&
+                  e.createElement(
+                    h,
+                    { className: "shadow-md border-0 dark:border-0" },
+                    e.createElement(
+                      y,
+                      { className: "p-6" },
+                      e.createElement(
+                        "h3",
+                        { className: "text-lg font-semibold mb-4" },
+                        "Write a Review",
+                      ),
+                      !B &&
+                        e.createElement(
+                          "div",
+                          {
+                            className:
+                              "mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200",
+                          },
+                          "Log in to submit your review.",
+                        ),
+                      e.createElement(
+                        "div",
+                        { className: "flex gap-2 mb-4" },
+                        [1, 2, 3, 4, 5].map((r) =>
+                          e.createElement(
+                            "button",
+                            {
+                              key: r,
+                              onClick: () => f((t) => ({ ...t, rating: r })),
+                              className:
+                                "focus:outline-none transition-transform hover:scale-110",
+                              "aria-label": `Rate ${r} stars`,
+                            },
+                            e.createElement(o, {
+                              className: `w-8 h-8 ${r <= l.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`,
+                            }),
+                          ),
+                        ),
+                      ),
+                      e.createElement(G, {
+                        placeholder:
+                          "Share your experience dealing with this user...",
+                        value: l.comment,
+                        onChange: (r) =>
+                          f((t) => ({ ...t, comment: r.target.value })),
+                        className: "mb-4",
+                      }),
+                      e.createElement(
+                        u,
+                        {
+                          onClick: E,
+                          disabled: S,
+                          className: "w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700/40 dark:hover:bg-blue-700/40",
+                        },
+                        S ? "Submitting..." : "Post Review",
+                      ),
+                    ),
+                  ),
+                e.createElement(
+                  h,
+                  { className: "shadow-sm border-0 dark:border-0" },
+                  e.createElement(
+                    y,
+                    { className: "p-4 space-y-3" },
+                    e.createElement(
+                      "div",
+                      { className: "flex flex-wrap items-center gap-2" },
+                      e.createElement(
+                        "span",
+                        {
+                          className:
+                            "text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300",
+                        },
+                        "Filters",
+                      ),
+                      ["all", 5, 4, 3, 2, 1].map((r) =>
+                        e.createElement(
+                          u,
+                          {
+                            key: r,
+                            size: "sm",
+                            variant:
+                              filterRating === String(r)
+                                ? "default"
+                                : "outline",
+                            onClick: () => setFilterRating(String(r)),
+                          },
+                          r === "all" ? "All" : `${r} stars`,
+                        ),
+                      ),
+                    ),
+                    e.createElement(
+                      "div",
+                      { className: "flex flex-wrap items-center gap-3" },
+                      e.createElement(
+                        "label",
+                        { className: "text-xs font-semibold text-gray-500 dark:text-gray-300" },
+                        "Sort by",
+                        e.createElement(
+                          "select",
+                          {
+                            value: filterSort,
+                            onChange: (r) => setFilterSort(r.target.value),
+                            className:
+                              "ml-2 h-9 rounded-lg border border-gray-200 px-2 text-sm dark:border dark:border-gray-700",
+                          },
+                          e.createElement(
+                            "option",
+                            { value: "recent" },
+                            "Most recent",
+                          ),
+                          e.createElement(
+                            "option",
+                            { value: "highest" },
+                            "Highest rating",
+                          ),
+                          e.createElement(
+                            "option",
+                            { value: "lowest" },
+                            "Lowest rating",
+                          ),
+                          e.createElement(
+                            "option",
+                            { value: "helpful" },
+                            "Most helpful",
+                          ),
+                        ),
+                      ),
+                      e.createElement(
+                        u,
+                        {
+                          size: "sm",
+                          variant: filterVerified ? "default" : "outline",
+                          onClick: () => setFilterVerified((r) => !r),
+                        },
+                        "Verified only",
+                      ),
+                    ),
+                  ),
+                ),
+                filteredReviews.length === 0
+                  ? e.createElement(X, {
+                      marker: "empty",
+                      className:
+                        "bg-gray-50 border-dashed border-2 border-gray-200 dark:bg-gray-950 dark:border-dashed dark:border-2 dark:border-gray-700",
+                      icon: J,
+                      title: hasReviewFilters
+                        ? "No reviews match these filters."
+                        : "No reviews yet.",
+                      description: hasReviewFilters
+                        ? "Try adjusting the filters to see more reviews."
+                        : _
+                          ? "This user has no reviews yet."
+                          : "Be the first to leave helpful feedback.",
+                      action: null,
+                    })
+                  : filteredReviews.map((r) => {
+                      const reviewIsVerified = isVerifiedReview(r);
+                      const reviewIsRecent = isRecentReview(r);
+                      const reviewIsHelpful = (r.helpful_count || 0) >= 3;
+                      const sellerResponse =
+                        r?.seller_response || r?.sellerResponse || "";
+                      const responseValue =
+                        responseDrafts?.[r.review_id] ?? sellerResponse ?? "";
+                      const responseSaving = responseBusy?.[r.review_id];
+                      return e.createElement(
+                        h,
+                        {
+                          key: r.review_id,
+                          className:
+                            "shadow-sm hover:shadow-md transition-shadow",
+                        },
+                        e.createElement(
+                          y,
+                          { className: "p-6" },
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "flex items-start justify-between mb-4",
+                            },
+                            e.createElement(
+                              "div",
+                              { className: "flex items-center gap-3" },
+                              e.createElement(
+                                q,
+                                null,
+                                e.createElement(
+                                  W,
+                                  null,
+                                  e.createElement(K, { className: "w-4 h-4" }),
+                                ),
+                                r.reviewer_avatar &&
+                                  e.createElement(z, {
+                                    src: r.reviewer_avatar,
+                                  }),
+                              ),
+                              e.createElement(
+                                "div",
+                                null,
+                                e.createElement(
+                                  "p",
+                                  { className: "font-semibold" },
+                                  r.reviewer_name || "Anonymous",
+                                ),
+                                e.createElement(
+                                  "p",
+                                  { className: "text-xs text-gray-500 dark:text-gray-300" },
+                                  new Date(r.created_at).toLocaleDateString(),
+                                ),
+                              ),
+                            ),
+                            e.createElement(
+                              "div",
+                              { className: "flex" },
+                              [1, 2, 3, 4, 5].map((t) =>
+                                e.createElement(o, {
+                                  key: t,
+                                  className: `w-4 h-4 ${t <= r.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}`,
+                                }),
+                              ),
+                            ),
+                          ),
+                          e.createElement(
+                            "div",
+                            { className: "flex flex-wrap gap-2 mb-4" },
+                            reviewIsVerified &&
+                              e.createElement(
+                                pe,
+                                {
+                                  className:
+                                    "bg-emerald-100 text-emerald-700 border-0 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-0",
+                                },
+                                "Verified trade",
+                              ),
+                            reviewIsRecent &&
+                              e.createElement(
+                                pe,
+                                {
+                                  className:
+                                    "bg-blue-100 text-blue-700 border-0 dark:bg-blue-950/20 dark:text-blue-300 dark:border-0",
+                                },
+                                "Recent",
+                              ),
+                            reviewIsHelpful &&
+                              e.createElement(
+                                pe,
+                                {
+                                  className:
+                                    "bg-amber-100 text-amber-700 border-0 dark:bg-amber-950/20 dark:text-amber-300 dark:border-0",
+                                },
+                                "Helpful",
+                              ),
+                          ),
+                          e.createElement(
+                            "p",
+                            {
+                              className:
+                                "text-gray-700 dark:text-gray-300 mb-4 leading-relaxed dark:text-gray-200",
+                            },
+                            r.comment,
+                          ),
+                          sellerResponse &&
+                            e.createElement(
+                              "div",
+                              {
+                                className:
+                                  "mb-4 rounded-lg bg-slate-50 border border-slate-200 p-3 dark:bg-slate-900/40 dark:border-slate-700",
+                              },
+                              e.createElement(
+                                "p",
+                                {
+                                  className:
+                                    "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
+                                },
+                                "Seller response",
+                              ),
+                              e.createElement(
+                                "p",
+                                {
+                                  className:
+                                    "mt-2 text-sm text-slate-700 dark:text-slate-200",
+                                },
+                                sellerResponse,
+                              ),
+                              r?.seller_response_at &&
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "mt-2 text-xs text-slate-400 dark:text-slate-400",
+                                  },
+                                  `Responded ${new Date(
+                                    r.seller_response_at,
+                                  ).toLocaleDateString()}`,
+                                ),
+                            ),
+                          _ &&
+                            e.createElement(
+                              "div",
+                              {
+                                className:
+                                  "mb-4 rounded-xl border border-slate-200/80 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/40",
+                              },
+                              e.createElement(
+                                "div",
+                                {
+                                  className:
+                                    "mb-2 flex items-center justify-between",
+                                },
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-sm font-semibold text-slate-700 dark:text-slate-200",
+                                  },
+                                  sellerResponse
+                                    ? "Update your response"
+                                    : "Respond to this review",
+                                ),
+                              ),
+                              e.createElement(G, {
+                                value: responseValue,
+                                onChange: (t) =>
+                                  setResponseDrafts((v) => ({
+                                    ...v,
+                                    [r.review_id]: t.target.value,
+                                  })),
+                                placeholder:
+                                  "Share a helpful response (max 1000 characters)",
+                                className:
+                                  "min-h-[96px] text-sm dark:text-slate-100",
+                              }),
+                              e.createElement(
+                                "div",
+                                {
+                                  className:
+                                    "mt-2 flex items-center justify-between",
+                                },
+                                e.createElement(
+                                  "p",
+                                  {
+                                    className:
+                                      "text-xs text-slate-500 dark:text-slate-400",
+                                  },
+                                  `${responseValue.length}/1000`,
+                                ),
+                                e.createElement(
+                                  u,
+                                  {
+                                    size: "sm",
+                                    onClick: () =>
+                                      addSellerResponse(r.review_id, responseValue),
+                                    disabled:
+                                      responseSaving ||
+                                      !responseValue.trim(),
+                                  },
+                                  responseSaving
+                                    ? "Saving..."
+                                    : sellerResponse
+                                      ? "Update response"
+                                      : "Post response",
+                                ),
+                              ),
+                            ),
+                          e.createElement(
+                            "div",
+                            {
+                              className:
+                                "flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-800 dark:border-t dark:border-gray-700",
+                            },
+                            e.createElement(
+                              u,
+                              {
+                                variant: "ghost",
+                                size: "sm",
+                                onClick: () => L(r.review_id),
+                                className: "text-gray-500 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-300",
+                              },
+                              e.createElement(O, { className: "w-4 h-4 mr-2" }),
+                              "Helpful (",
+                              r.helpful_count || 0,
+                              ")",
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+              ),
+            ),
+          ),
+        );
 };
+var ve = R;
+export { ve as default };
 
-export default Reviews;

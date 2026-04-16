@@ -7,9 +7,9 @@
  */
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import api from '../lib/api';
-import { getBestAvailableLocation } from '../services/locationService';
+import { useLocation as useLocationContext } from '../context/LocationContext';
 
 const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 const PAGE_SIZE = 20;
@@ -22,6 +22,8 @@ const hasValue = (value) => value !== undefined && value !== null && value !== '
 export const useFeed = (options = {}) => {
     const {
         category = null,
+        categoryId = null,
+        subcategoryId = null,
         minPrice = null,
         maxPrice = null,
         sortBy = 'created_at',
@@ -33,21 +35,23 @@ export const useFeed = (options = {}) => {
     } = options;
 
     const queryClient = useQueryClient();
+    const effectiveCategory = hasValue(categoryId) ? categoryId : category;
 
     // Build query key for caching
     const queryKey = useMemo(() => [
         'feed',
-        { category, minPrice, maxPrice, sortBy, lat, lng, radius, searchQuery }
-    ], [category, minPrice, maxPrice, sortBy, lat, lng, radius, searchQuery]);
+        { category: effectiveCategory, subcategoryId, minPrice, maxPrice, sortBy, lat, lng, radius, searchQuery }
+    ], [effectiveCategory, subcategoryId, minPrice, maxPrice, sortBy, lat, lng, radius, searchQuery]);
 
     // Fetch function
-    const fetchPosts = async ({ pageParam = 1, signal }) => {
+    const fetchPosts = useCallback(async ({ pageParam = 1, signal }) => {
         const params = new URLSearchParams({
             page: pageParam.toString(),
             limit: PAGE_SIZE.toString()
         });
 
-        if (hasValue(category)) params.set('category', String(category));
+        if (hasValue(effectiveCategory)) params.set('category_id', String(effectiveCategory));
+        if (hasValue(subcategoryId)) params.set('subcategory_id', String(subcategoryId));
         if (hasValue(minPrice)) params.set('minPrice', String(minPrice));
         if (hasValue(maxPrice)) params.set('maxPrice', String(maxPrice));
         if (hasValue(sortBy)) params.set('sortBy', String(sortBy));
@@ -72,7 +76,17 @@ export const useFeed = (options = {}) => {
             page: pageParam,
             hasMore: feedPosts.length === PAGE_SIZE
         };
-    };
+    }, [
+        effectiveCategory,
+        subcategoryId,
+        minPrice,
+        maxPrice,
+        sortBy,
+        lat,
+        lng,
+        radius,
+        searchQuery,
+    ]);
 
     // Use infinite query for pagination
     const {
@@ -122,7 +136,7 @@ export const useFeed = (options = {}) => {
                 queryFn: () => fetchPosts({ pageParam: currentPage + 1 })
             });
         }
-    }, [data, hasNextPage, queryClient, queryKey]);
+    }, [data, fetchPosts, hasNextPage, queryClient, queryKey]);
 
     // Invalidate cache and refetch
     const refresh = useCallback(() => {
@@ -148,50 +162,33 @@ export const useFeed = (options = {}) => {
  * Hook for nearby posts with geolocation
  */
 export const useNearbyPosts = (options = {}) => {
-    const { radius = 50, category = null, enabled = true } = options;
+    const { radius = 50, category = null, categoryId = null, subcategoryId = null, enabled = true } = options;
 
-    // Get user location
-    const [location, setLocation] = useState(null);
+    const {
+        latitude,
+        longitude,
+        permissionDenied,
+        userSkipped,
+        requestLocation,
+    } = useLocationContext();
 
     useEffect(() => {
         if (!enabled) return;
-        let active = true;
-
-        const detectLocation = async () => {
-            try {
-                const bestLoc = await getBestAvailableLocation({
-                    allowCache: true,
-                    allowIpFallback: true,
-                    requiredAccuracy: 500
-                });
-                if (!active) return;
-                setLocation({
-                    lat: bestLoc.latitude ?? bestLoc.lat,
-                    lng: bestLoc.longitude ?? bestLoc.lng
-                });
-            } catch (err) {
-                console.warn('[Geolocation] Error:', err?.message || err);
-                if (!active) return;
-                // Fallback to default location (Hyderabad)
-                setLocation({ lat: 17.385, lng: 78.4867 });
-            }
-        };
-
-        detectLocation();
-
-        return () => {
-            active = false;
-        };
-    }, [enabled]);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) return;
+        if (permissionDenied || userSkipped) return;
+        requestLocation({ silent: true }).catch(() => {});
+    }, [enabled, latitude, longitude, permissionDenied, requestLocation, userSkipped]);
 
     return useFeed({
         ...options,
-        lat: location?.lat,
-        lng: location?.lng,
+        lat: latitude,
+        lng: longitude,
         radius,
         category,
-        enabled: enabled && !!location
+        categoryId,
+        subcategoryId,
+        enabled: enabled && Number.isFinite(latitude) && Number.isFinite(longitude)
     });
 };
-
 export default useFeed;
+

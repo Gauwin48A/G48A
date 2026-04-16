@@ -1,15 +1,16 @@
-// src/components/ui/label.jsx
+import e from "react";
+import { cn as d } from "@/lib/utils";
 
-import React from "react";
-import { cn } from "@/lib/utils";
+const a = e.forwardRef(({ className: o, ...r }, l) =>
+  e.createElement("label", {
+    ref: l,
+    className: d(
+      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+      o
+    ),
+    ...r,
+  })
+);
+a.displayName = "Label";
 
-const Label = React.forwardRef(({ className, ...props }, ref) => (
-  <label
-    ref={ref}
-    className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)}
-    {...props}
-  />
-));
-Label.displayName = "Label";
-
-export { Label };
+export { a as Label };

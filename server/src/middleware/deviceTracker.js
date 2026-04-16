@@ -3,19 +3,9 @@
  * Detects new devices and flags suspicious activity
  */
 const crypto = require('crypto');
-const pool = require('../config/db');
+const { runQuery } = require('../utils/dbHelpers');
 const { logSecurityEvent, EVENTS } = require('../config/auditLogger');
 const logger = require('../utils/logger');
-
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-    return pool.query({
-        text,
-        values,
-        query_timeout: DB_QUERY_TIMEOUT_MS
-    });
-}
 
 /**
  * Generate device fingerprint from request headers

@@ -1,30 +1,35 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const inquiryController = require('../controllers/inquiryController');
-const { protect, optionalAuth } = require('../middleware/auth');
+const inquiryController = require("../controllers/inquiryController");
+const { protect, optionalAuth } = require("../middleware/auth");
 
-// POST /api/inquiries - Submit buyer interest (auth optional for guests)
-router.post('/', optionalAuth, inquiryController.createInquiry);
+/**
+ * @route Inquiry routes
+ * @description Handles buyer inquiries on posts, seller replies, and inquiry analytics
+ */
 
-// GET /api/inquiries/seller - Get all inquiries for logged-in seller (with search/filter)
-router.get('/seller', protect, inquiryController.getInquiriesForSeller);
+/** @route POST / - Create a new inquiry (requires auth to prevent spam) */
+router.post("/", protect, inquiryController.createInquiry);
 
-// GET /api/inquiries/templates - Quick-reply templates
-router.get('/templates', protect, inquiryController.getQuickReplyTemplates);
+/** @route GET /seller - Get all inquiries received by the authenticated seller */
+router.get("/seller", protect, inquiryController.getInquiriesForSeller);
 
-// GET /api/inquiries/analytics - Seller inquiry analytics
-router.get('/analytics', protect, inquiryController.getInquiryAnalytics);
+/** @route GET /templates - Get quick-reply templates for the seller */
+router.get("/templates", protect, inquiryController.getQuickReplyTemplates);
 
-// GET /api/inquiries/post/:postId - Get inquiries for a specific post
-router.get('/post/:postId', protect, inquiryController.getInquiriesForPost);
+/** @route GET /analytics - Get inquiry analytics for the seller */
+router.get("/analytics", protect, inquiryController.getInquiryAnalytics);
 
-// PATCH /api/inquiries/:inquiryId/status - Update inquiry status
-router.patch('/:inquiryId/status', protect, inquiryController.updateInquiryStatus);
+/** @route GET /post/:postId - Get all inquiries for a specific post */
+router.get("/post/:postId", protect, inquiryController.getInquiriesForPost);
 
-// POST /api/inquiries/:inquiryId/reply - Seller quick-reply
-router.post('/:inquiryId/reply', protect, inquiryController.replyToInquiry);
+/** @route PATCH /:inquiryId/status - Update the status of an inquiry */
+router.patch("/:inquiryId/status", protect, inquiryController.updateInquiryStatus);
 
-// PATCH /api/inquiries/:inquiryId/spam - Mark as spam
-router.patch('/:inquiryId/spam', protect, inquiryController.markAsSpam);
+/** @route POST /:inquiryId/reply - Reply to an inquiry */
+router.post("/:inquiryId/reply", protect, inquiryController.replyToInquiry);
+
+/** @route PATCH /:inquiryId/spam - Mark an inquiry as spam */
+router.patch("/:inquiryId/spam", protect, inquiryController.markAsSpam);
 
 module.exports = router;

@@ -1,18 +1,8 @@
-const pool = require('../config/db');
+const { runQuery, getAuthUserId, pool } = require("../utils/dbHelpers");
 const logger = require('../utils/logger');
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
-
-function getUserId(req) {
-  return req.user?.id || req.user?.userId || req.user?.user_id || null;
-}
+// Alias shared helper to match existing call sites
+const getUserId = getAuthUserId;
 
 exports.createChannel = async (req, res) => {
   try {
@@ -20,8 +10,8 @@ exports.createChannel = async (req, res) => {
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     // Check if user is premium
     const userRes = await runQuery(
-      'SELECT role, name, username, bio, profile_pic FROM users WHERE id = $1',
-      [userId]
+      'SELECT role, name, username, bio, profile_pic FROM users WHERE user_id = $1 OR id::text = $1',
+      [String(userId)]
     );
     if (!userRes.rows[0] || userRes.rows[0].role !== 'premium') {
       return res.status(403).json({ error: 'Channel creation is available for Premium Users only.' });
@@ -33,25 +23,37 @@ exports.createChannel = async (req, res) => {
     }
     // Use profile info
     const { name, username, bio, profile_pic } = userRes.rows[0];
-    const result = await runQuery(
-      `
-        INSERT INTO channels (user_id, name, username, bio, profile_pic)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, user_id, name, username, bio, profile_pic, created_at, updated_at
-      `,
-      [userId, name, username, bio, profile_pic]
-    );
-    // Assign role
-    await runQuery('UPDATE users SET role = $1 WHERE id = $2', ['content_creator', userId]);
-    res.json({ channel: result.rows[0], message: 'Channel created successfully.' });
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `
+          INSERT INTO channels (user_id, name, username, bio, profile_pic)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING id, user_id, name, username, bio, profile_pic, created_at, updated_at
+        `,
+        [userId, name, username, bio, profile_pic]
+      );
+      // Assign role
+      await client.query('UPDATE users SET role = $1 WHERE id = $2', ['content_creator', userId]);
+      await client.query('COMMIT');
+      res.status(201).json({ channel: result.rows[0], message: 'Channel created successfully.' });
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     logger.error('Create channel error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 exports.getChannelByUser = async (req, res) => {
   try {
+    const authUserId = getUserId(req);
+    if (!authUserId) return res.status(401).json({ error: 'Unauthorized' });
     const { userId } = req.params;
     const result = await runQuery(
       `
@@ -69,7 +71,7 @@ exports.getChannelByUser = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Get channel by user error:', err);
-    res.status(500).json({ error: err.message, fallback: null });
+    res.status(500).json({ error: "Internal server error", fallback: null });
   }
 };
 
@@ -83,6 +85,8 @@ exports.updateChannel = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
     const { name, bio, profile_pic } = req.body;
+    if (name && name.length > 100) return res.status(400).json({ error: 'Name too long (max 100)' });
+    if (bio && bio.length > 500) return res.status(400).json({ error: 'Bio too long (max 500)' });
     const result = await runQuery(
       `
         UPDATE channels
@@ -95,7 +99,7 @@ exports.updateChannel = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Update channel error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -120,6 +124,11 @@ exports.createChannelPost = async (req, res) => {
     }
     // Insert post
     const { content, type, media_url } = req.body;
+    const ALLOWED_TYPES = ['image', 'video', 'text'];
+    if (!ALLOWED_TYPES.includes(type)) {
+      return res.status(400).json({ error: `Invalid type. Allowed: ${ALLOWED_TYPES.join(', ')}` });
+    }
+    if (content && content.length > 5000) return res.status(400).json({ error: 'Content too long (max 5000)' });
     const result = await runQuery(
       `
         INSERT INTO posts (user_id, channel_id, content, type, media_url, posted_date)
@@ -131,12 +140,15 @@ exports.createChannelPost = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Create channel post error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 exports.getAllChannels = async (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(Math.max(1, parseInt(req.query.limit, 10) || 20), 100);
+    const offset = (page - 1) * limit;
     const result = await runQuery(`
       SELECT
         c.*,
@@ -149,11 +161,13 @@ exports.getAllChannels = async (req, res) => {
         FROM channel_followers
         GROUP BY channel_id
       ) fc ON fc.channel_id = c.id
-    `);
+      ORDER BY c.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
     res.json(result.rows);
   } catch (err) {
     logger.error('Get all channels error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -177,6 +191,6 @@ exports.followChannel = async (req, res) => {
     return res.json({ message: 'Followed channel' });
   } catch (err) {
     logger.error('Follow channel error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };

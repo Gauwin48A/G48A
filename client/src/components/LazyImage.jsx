@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 
 import './LazyImage.css';
 
@@ -12,7 +11,6 @@ const LazyImage = ({
     aspectRatio = '4/3',
     ...props
 }) => {
-  const { t } = useTranslation();
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState(false);
     const [inView, setInView] = useState(false);

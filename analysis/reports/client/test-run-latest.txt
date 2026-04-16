@@ -1,0 +1,285 @@
+﻿
+Running 152 tests using 6 workers
+
+[1A[2K[1/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:27:3 ΓÇ║ Category Hub ΓÇ║ renders header with gradient title
+[1A[2K[2/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:80:3 ΓÇ║ Wishlist ΓÇö auth gate ΓÇ║ shows sign-in CTA when logged out
+[1A[2K[3/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:65:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ renders post title and price
+[1A[2K[4/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:103:3 ΓÇ║ Cart ΓÇö empty state ΓÇ║ empty cart shows illustration and browse CTA
+[1A[2K[5/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:136:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ renders post cards with title and price
+[1A[2K[6/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:43:3 ΓÇ║ Search Page ΓÇ║ search input is focused on mount
+[1A[2K[7/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:92:3 ΓÇ║ Wishlist ΓÇö empty state ΓÇ║ authenticated empty wishlist shows message
+[1A[2K[8/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:48:3 ΓÇ║ Search Page ΓÇ║ recent searches render from localStorage
+[1A[2K[9/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:117:3 ΓÇ║ Cart ΓÇö empty state ΓÇ║ browse products link navigates to all-posts
+[1A[2K[10/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:32:3 ΓÇ║ Category Hub ΓÇ║ renders all 4 category tiles with labels and taglines
+[1A[2K[11/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:145:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ renders category bar with category chips
+[1A[2K[12/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:70:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ renders post description
+[1A[2K[13/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:125:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ renders wishlist items with titles
+[1A[2K[14/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:54:3 ΓÇ║ Search Page ΓÇ║ clicking a recent search applies it
+[1A[2K[15/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:130:3 ΓÇ║ Cart ΓÇö empty state ΓÇ║ my wishlist link is visible
+[1A[2K[16/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:39:3 ΓÇ║ Category Hub ΓÇ║ each tile shows listing count stats
+[1A[2K[17/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:149:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ quick filters and sort controls render and toggle
+[1A[2K[18/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:130:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ heading shows My Wishlist
+[1A[2K[19/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:59:3 ΓÇ║ Search Page ΓÇ║ typing search and pressing Enter shows results
+[1A[2K[20/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:74:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ renders seller info with name
+[1A[2K[21/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:155:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ renders cart items with title and price
+[1A[2K[22/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:43:3 ΓÇ║ Category Hub ΓÇ║ clicking Electronics tile navigates to filtered listings
+[1A[2K[23/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:134:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ grid/list view toggle works
+[1A[2K[24/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:154:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ clicking a post card navigates to post detail
+[1A[2K[25/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:67:3 ΓÇ║ Search Page ΓÇ║ clear search button works
+[1A[2K[26/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:78:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ image gallery has navigation arrows
+[1A[2K[27/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:160:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ renders order summary section
+[1A[2K[28/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:139:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ sort dropdown changes order
+[1A[2K[29/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:49:3 ΓÇ║ Category Hub ΓÇ║ clicking Fashion tile navigates to filtered listings
+[1A[2K[30/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:77:3 ΓÇ║ Search Page ΓÇ║ category suggestion chips render
+[1A[2K[31/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:144:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ search input filters wishlist items
+[1A[2K[32/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:165:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ quantity stepper ΓÇö increase button works
+[1A[2K[33/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:81:3 ΓÇ║ Search Page ΓÇ║ clear filters resets everything
+[1A[2K[34/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:55:3 ΓÇ║ Category Hub ΓÇ║ clicking Vehicles tile navigates to filtered listings
+[1A[2K[35/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:150:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ remove item from wishlist
+[1A[2K[36/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:86:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ save/unsave button toggles state
+[1A[2K[37/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:171:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ quantity stepper ΓÇö decrease button works
+[1A[2K[38/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:61:3 ΓÇ║ Category Hub ΓÇ║ clicking Others tile navigates to filtered listings
+[1A[2K[39/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:90:3 ΓÇ║ Search Page ΓÇ║ back button navigates away
+[1A[2K[40/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:155:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ add to cart button is visible
+[1A[2K[41/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:97:3 ΓÇ║ Search ΓÇö error states ΓÇ║ category suggestions error renders retry button
+[1A[2K[42/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:177:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ remove button removes item from cart
+[1A[2K[43/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:67:3 ΓÇ║ Category Hub ΓÇ║ active category shows Active pill after selection
+[1A[2K[44/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:160:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ refresh button reloads wishlist
+[1A[2K[45/152] [comprehensive] ΓÇ║ e2e\comprehensive\04-search-page.pw.ts:115:3 ΓÇ║ Search ΓÇö error states ΓÇ║ empty results show appropriate message
+[1A[2K[46/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:92:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ share button opens share dialog
+[1A[2K  1) [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:154:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ clicking a post card navigates to post detail 
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveURL[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/\/post/[39m
+    Received string:  [31m"http://127.0.0.1:4173/all-posts"[39m
+    Timeout: 7500ms
+
+    Call log:
+    [2m  - Expect "toHaveURL" with timeout 7500ms[22m
+    [2m    10 ├ù unexpected value "http://127.0.0.1:4173/all-posts"[22m
+
+
+      154 |   test("clicking a post card navigates to post detail", async ({ page }) => {
+      155 |     await page.getByRole("heading", { name: "Vintage Camera" }).first().click();
+    > 156 |     await expect(page).toHaveURL(/\/post/);
+          |                        ^
+      157 |   });
+      158 |
+      159 |   test("wishlist save via more options menu", async ({ page }) => {
+        at C:\Users\laksh\GITHUB\MHUB\Mhub\client\e2e\comprehensive\02-all-posts-listings.pw.ts:156:24
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-02-all-posts-c4f90-rd-navigates-to-post-detail-comprehensive\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    attachment #2: video (video/webm) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-02-all-posts-c4f90-rd-navigates-to-post-detail-comprehensive\video.webm
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: test-results\comprehensive-02-all-posts-c4f90-rd-navigates-to-post-detail-comprehensive\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-02-all-posts-c4f90-rd-navigates-to-post-detail-comprehensive\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\comprehensive-02-all-posts-c4f90-rd-navigates-to-post-detail-comprehensive\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+
+[1A[2K[47/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:181:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ clear all empties cart
+[1A[2K[48/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:75:3 ΓÇ║ Category Hub ΓÇ║ layout switcher cycles Mobile ΓåÆ Tablet ΓåÆ Desktop
+[1A[2K[49/152] [comprehensive] ΓÇ║ e2e\comprehensive\06-wishlist.pw.ts:166:3 ΓÇ║ Wishlist ΓÇö interactions ΓÇ║ back button is visible
+[1A[2K[50/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:6:3 ΓÇ║ Compare Posts ΓÇö empty state ΓÇ║ shows empty state when no items
+[1A[2K[51/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:16:3 ΓÇ║ Compare Posts ΓÇö empty state ΓÇ║ back to listings link is visible
+[1A[2K[52/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:51:3 ΓÇ║ Feed Page ΓÇö logged out ΓÇ║ renders feed header with title
+[1A[2K[53/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:185:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ save for later button is visible
+[1A[2K[54/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:159:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ wishlist save via more options menu
+[1A[2K[55/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:97:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ make offer button opens modal
+[1A[2K[56/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:90:3 ΓÇ║ Category Hub ΓÇ║ dark mode toggle switches to dark theme
+[1A[2K[57/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:39:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ renders comparison heading
+[1A[2K[58/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:55:3 ΓÇ║ Feed Page ΓÇö logged out ΓÇ║ renders feed post content
+[1A[2K[59/152] [comprehensive] ΓÇ║ e2e\comprehensive\05-cart.pw.ts:190:3 ΓÇ║ Cart ΓÇö with items ΓÇ║ back button is visible
+[1A[2K[60/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:96:3 ΓÇ║ Category Hub ΓÇ║ dark mode toggle switches back to light theme
+[1A[2K[61/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:43:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ renders all comparison items
+[1A[2K[62/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:32:3 ΓÇ║ Navbar ΓÇö logged out ΓÇ║ shows profile button when unauthenticated
+[1A[2K[63/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:59:3 ΓÇ║ Feed Page ΓÇö logged out ΓÇ║ renders community feed chip
+[1A[2K[64/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:165:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ add to cart via more options menu
+[1A[2K[65/152] [comprehensive] ΓÇ║ e2e\comprehensive\01-category-hub.pw.ts:106:3 ΓÇ║ Category Hub ΓÇ║ category stats chips show listing counts
+[1A[2K[66/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:104:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ report button is available
+[1A[2K[67/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:49:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ renders price and condition values
+[1A[2K[68/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:44:3 ΓÇ║ Navbar ΓÇö logged out ΓÇ║ logo navigates to home
+[1A[2K[69/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:63:3 ΓÇ║ Feed Page ΓÇö logged out ΓÇ║ like button exists and is clickable
+[1A[2K[70/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:99:3 ΓÇ║ Profile Page ΓÇ║ renders profile heading
+[1A[2K[71/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:55:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ view details links are visible
+[1A[2K[72/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:57:3 ΓÇ║ Navbar ΓÇö logged out ΓÇ║ search bar is visible
+[1A[2K[73/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:68:3 ΓÇ║ Feed Page ΓÇö logged out ΓÇ║ share button exists and is clickable
+[1A[2K[74/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:171:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ compare via more options menu
+[1A[2K[75/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:107:3 ΓÇ║ Profile Page ΓÇ║ renders user name
+[1A[2K[76/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:84:3 ΓÇ║ Navbar ΓÇö logged in ΓÇ║ navigation links are visible
+[1A[2K[77/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:73:3 ΓÇ║ Feed Page ΓÇö logged out ΓÇ║ browse marketplace button is visible
+[1A[2K[78/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:114:3 ΓÇ║ Profile Page ΓÇ║ settings button is visible
+[1A[2K[79/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:177:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ image carousel next/prev arrows work
+[1A[2K[80/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:79:3 ΓÇ║ Feed Page ΓÇö logged in ΓÇ║ renders feed with auth
+[1A[2K[81/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:89:3 ΓÇ║ Navbar ΓÇö logged in ΓÇ║ cart link with badge is visible
+[1A[2K[82/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:110:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ chat seller button is visible
+[1A[2K[83/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:131:3 ΓÇ║ Dashboard Page ΓÇ║ renders dashboard with welcome message
+[1A[2K[84/152] [comprehensive] ΓÇ║ e2e\comprehensive\08-feed-page.pw.ts:94:3 ΓÇ║ Feed ΓÇö error states ΓÇ║ feed detail error shows retry and back
+[1A[2K[85/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:184:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ search params filter posts
+[1A[2K[86/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:94:3 ΓÇ║ Navbar ΓÇö logged in ΓÇ║ wishlist link is visible
+[1A[2K[87/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:114:3 ΓÇ║ Post Detail ΓÇö authenticated ΓÇ║ back button navigates away
+[1A[2K[88/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:138:3 ΓÇ║ Dashboard Page ΓÇ║ renders quick stats
+[1A[2K[89/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:10:3 ΓÇ║ Legal & Static Pages ΓÇ║ terms and conditions page renders
+[1A[2K[90/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:99:3 ΓÇ║ Navbar ΓÇö logged in ΓÇ║ notifications link is visible
+[1A[2K[91/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:147:3 ΓÇ║ Analytics Page ΓÇ║ renders seller analytics heading
+[1A[2K[92/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:16:3 ΓÇ║ Legal & Static Pages ΓÇ║ privacy policy page renders
+[1A[2K[93/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:190:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ empty state renders when no posts match
+[1A[2K[94/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:121:3 ΓÇ║ Post Detail ΓÇö error states ΓÇ║ invalid post shows error state
+[1A[2K[95/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:104:3 ΓÇ║ Navbar ΓÇö logged in ΓÇ║ dark mode toggle in navbar works
+[1A[2K[96/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:22:3 ΓÇ║ Legal & Static Pages ΓÇ║ refund policy page renders
+[1A[2K[97/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:160:3 ΓÇ║ Analytics Page ΓÇ║ renders analytics subtitle
+[1A[2K[98/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:137:3 ΓÇ║ Post Detail ΓÇö error states ΓÇ║ renders loading state initially
+[1A[2K[99/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:28:3 ΓÇ║ Legal & Static Pages ΓÇ║ support ticket policy page renders
+[1A[2K[100/152] [comprehensive] ΓÇ║ e2e\comprehensive\03-post-detail.pw.ts:157:3 ΓÇ║ Post Detail ΓÇö unauthenticated ΓÇ║ renders post detail without auth
+[1A[2K  2) [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:55:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ view details links are visible 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('link', { name: /view|details/i }).first()
+    Expected: visible
+    Timeout: 7500ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 7500ms[22m
+    [2m  - waiting for getByRole('link', { name: /view|details/i }).first()[22m
+
+
+      55 |   test("view details links are visible", async ({ page }) => {
+      56 |     const viewDetailsLinks = page.getByRole("link", { name: /view|details/i }).first();
+    > 57 |     await expect(viewDetailsLinks).toBeVisible();
+         |                                    ^
+      58 |   });
+      59 |
+      60 |   test("remove from comparison buttons exist", async ({ page }) => {
+        at C:\Users\laksh\GITHUB\MHUB\Mhub\client\e2e\comprehensive\07-compare-posts.pw.ts:57:36
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-07-compare-p-49ac3-w-details-links-are-visible-comprehensive\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    attachment #2: video (video/webm) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-07-compare-p-49ac3-w-details-links-are-visible-comprehensive\video.webm
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: test-results\comprehensive-07-compare-p-49ac3-w-details-links-are-visible-comprehensive\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-07-compare-p-49ac3-w-details-links-are-visible-comprehensive\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\comprehensive-07-compare-p-49ac3-w-details-links-are-visible-comprehensive\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+
+[1A[2K[101/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:203:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ category group filter from URL works
+[1A[2K[102/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:114:3 ΓÇ║ Navbar ΓÇö logged in ΓÇ║ recently viewed link is visible
+[1A[2K[103/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:34:3 ΓÇ║ Legal & Static Pages ΓÇ║ terms alias /terms works
+[1A[2K[104/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:183:3 ΓÇ║ My Home Page ΓÇ║ renders my home heading
+[1A[2K[105/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:40:3 ΓÇ║ Legal & Static Pages ΓÇ║ terms alias /t&c works
+[1A[2K[106/152] [comprehensive] ΓÇ║ e2e\comprehensive\09-navbar-navigation.pw.ts:121:3 ΓÇ║ Navbar ΓÇö navigation flow ΓÇ║ clicking feed link navigates
+[1A[2K[107/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:190:3 ΓÇ║ My Home Page ΓÇ║ renders post cards in my home
+[1A[2K[108/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:32:3 ΓÇ║ Notifications ΓÇö auth gate ΓÇ║ shows login required when not authenticated
+[1A[2K[109/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:53:3 ΓÇ║ Not Found & Auth Gate ΓÇ║ 404 page renders for invalid route
+[1A[2K[110/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:60:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ remove from comparison buttons exist
+[1A[2K[111/152] [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:211:3 ΓÇ║ All Posts ΓÇö unauthenticated ΓÇ║ renders posts without auth
+[1A[2K[112/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:52:3 ΓÇ║ Notifications ΓÇö authenticated ΓÇ║ renders notifications heading
+[1A[2K[113/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:74:3 ΓÇ║ Rewards Page ΓÇ║ renders rewards heading
+[1A[2K[114/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:59:3 ΓÇ║ Not Found & Auth Gate ΓÇ║ account deletion page shows auth gate
+[1A[2K[115/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:65:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ clear all removes all items
+[1A[2K[116/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:60:3 ΓÇ║ Notifications ΓÇö authenticated ΓÇ║ renders notification items
+[1A[2K[117/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:67:3 ΓÇ║ Home Page ΓÇ║ home page renders
+[1A[2K[118/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:65:3 ΓÇ║ Channels List ΓÇ║ renders channels page with items
+[1A[2K[119/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:82:3 ΓÇ║ Rewards Page ΓÇ║ shows coin balance
+[1A[2K[120/152] [comprehensive] ΓÇ║ e2e\comprehensive\11-legal-static-pages.pw.ts:76:3 ΓÇ║ Home Page ΓÇ║ root redirects to category-hub
+[1A[2K[121/152] [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:70:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ remove button removes individual item
+[1A[2K[122/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:79:3 ΓÇ║ Channels List ΓÇ║ renders channel names and descriptions
+[1A[2K[123/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:69:3 ΓÇ║ Notifications ΓÇö authenticated ΓÇ║ mark as read button works
+[1A[2K[124/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:90:3 ΓÇ║ Rewards Page ΓÇ║ rewards tabs are visible
+[1A[2K  3) [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:190:3 ΓÇ║ My Home Page ΓÇ║ renders post cards in my home 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/vintage camera/i).first()
+    Expected: visible
+    Timeout: 7500ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 7500ms[22m
+    [2m  - waiting for getByText(/vintage camera/i).first()[22m
+
+
+      192 |     await waitForPageReady(page);
+      193 |
+    > 194 |     await expect(page.getByText(/vintage camera/i).first()).toBeVisible();
+          |                                                             ^
+      195 |   });
+      196 |
+      197 |   test("tab buttons are visible (all, active, sold)", async ({ page }) => {
+        at C:\Users\laksh\GITHUB\MHUB\Mhub\client\e2e\comprehensive\10-profile-dashboard.pw.ts:194:61
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-10-profile-d-ee158-nders-post-cards-in-my-home-comprehensive\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    attachment #2: video (video/webm) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-10-profile-d-ee158-nders-post-cards-in-my-home-comprehensive\video.webm
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: test-results\comprehensive-10-profile-d-ee158-nders-post-cards-in-my-home-comprehensive\error-context.md
+
+    attachment #4: trace (application/zip) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\comprehensive-10-profile-d-ee158-nders-post-cards-in-my-home-comprehensive\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\comprehensive-10-profile-d-ee158-nders-post-cards-in-my-home-comprehensive\trace.zip
+
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+
+[1A[2K[125/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:93:3 ΓÇ║ Channel Detail ΓÇ║ renders individual channel page
+[1A[2K[126/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:78:3 ΓÇ║ Notifications ΓÇö authenticated ΓÇ║ filter tabs render (all, unread)
+[1A[2K[127/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:107:3 ΓÇ║ Tier Selection ΓÇ║ renders tier plan cards
+[1A[2K[128/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:106:3 ΓÇ║ Centre Pages ΓÇ║ centre list renders
+[1A[2K[129/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:87:3 ΓÇ║ Notifications ΓÇö authenticated ΓÇ║ clicking unread tab filters notifications
+[1A[2K[130/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:197:3 ΓÇ║ My Home Page ΓÇ║ tab buttons are visible (all, active, sold)
+[1A[2K[131/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:114:3 ΓÇ║ Tier Selection ΓÇ║ plan CTA buttons are visible
+[1A[2K[132/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:119:3 ΓÇ║ Centre Pages ΓÇ║ centre detail renders
+[1A[2K[133/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:95:3 ΓÇ║ Notifications ΓÇö authenticated ΓÇ║ mark all as read button is visible
+[1A[2K[134/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:123:3 ΓÇ║ Offers Page ΓÇ║ renders offers heading
+[1A[2K[135/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:206:3 ΓÇ║ My Home Page ΓÇ║ clicking active tab filters posts
+[1A[2K[136/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:133:3 ΓÇ║ Subcategories Page ΓÇ║ renders subcategories heading
+[1A[2K[137/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:111:3 ΓÇ║ Recently Viewed ΓÇ║ renders recently viewed heading
+[1A[2K[138/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:136:3 ΓÇ║ Reviews Page ΓÇ║ renders review cards with ratings
+[1A[2K[139/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:146:3 ΓÇ║ Nearby Posts ΓÇ║ renders nearby posts page
+[1A[2K[140/152] [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:215:3 ΓÇ║ Security Settings ΓÇö auth gate ΓÇ║ shows auth gate when logged out
+[1A[2K[141/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:118:3 ΓÇ║ Recently Viewed ΓÇ║ renders recently viewed items
+[1A[2K[142/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:149:3 ΓÇ║ Verification & KYC pages ΓÇ║ verification page renders when authenticated
+[1A[2K[143/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:160:3 ΓÇ║ Public Wall ΓÇ║ renders public wall page
+[1A[2K[144/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:159:3 ΓÇ║ Verification & KYC pages ΓÇ║ kyc page renders when authenticated
+[1A[2K[145/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:125:3 ΓÇ║ Recently Viewed ΓÇ║ browsing history label is visible
+[1A[2K[146/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:173:3 ΓÇ║ Saved Searches ΓÇ║ renders saved searches list
+[1A[2K[147/152] [comprehensive] ΓÇ║ e2e\comprehensive\13-rewards-tiers-offers.pw.ts:169:3 ΓÇ║ Verification & KYC pages ΓÇ║ verification page shows auth gate when logged out
+[1A[2K[148/152] [comprehensive] ΓÇ║ e2e\comprehensive\12-notifications-recently-viewed.pw.ts:134:3 ΓÇ║ Recently Viewed ΓÇö empty state ΓÇ║ empty recently viewed shows message
+[1A[2K[149/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:187:3 ΓÇ║ Feedback Page ΓÇ║ renders feedback form heading
+[1A[2K[150/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:199:3 ΓÇ║ Feedback Page ΓÇ║ feedback auth gate when logged out
+[1A[2K[151/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:211:3 ΓÇ║ Complaints Page ΓÇ║ renders complaints form heading
+[1A[2K[152/152] [comprehensive] ΓÇ║ e2e\comprehensive\14-channels-centre-misc.pw.ts:223:3 ΓÇ║ Complaints Page ΓÇ║ complaints auth gate when logged out
+[1A[2K  3 failed
+    [comprehensive] ΓÇ║ e2e\comprehensive\02-all-posts-listings.pw.ts:154:3 ΓÇ║ All Posts / Listings ΓÇö authenticated ΓÇ║ clicking a post card navigates to post detail 
+    [comprehensive] ΓÇ║ e2e\comprehensive\07-compare-posts.pw.ts:55:3 ΓÇ║ Compare Posts ΓÇö with items ΓÇ║ view details links are visible 
+    [comprehensive] ΓÇ║ e2e\comprehensive\10-profile-dashboard.pw.ts:190:3 ΓÇ║ My Home Page ΓÇ║ renders post cards in my home 
+  149 passed (5.2m)

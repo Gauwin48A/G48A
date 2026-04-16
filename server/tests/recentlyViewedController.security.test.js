@@ -61,9 +61,22 @@ describe('recentlyViewedController security guards', () => {
   });
 
   it('tracks view for authenticated user and ignores same-id body override', async () => {
-    pool.query.mockResolvedValueOnce({
-      rows: [{ id: 1, user_id: 'user-1', post_id: 'post-1', view_count: 1, source: 'feed' }]
-    });
+    pool.query
+      .mockResolvedValueOnce({ rows: [{ exists: true }] })
+      .mockResolvedValueOnce({
+        rows: [
+          { column_name: 'id' },
+          { column_name: 'user_id' },
+          { column_name: 'post_id' },
+          { column_name: 'view_count' },
+          { column_name: 'viewed_at' },
+          { column_name: 'source' }
+        ]
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, user_id: 'user-1', post_id: 'post-1', view_count: 1, source: 'feed' }]
+      });
 
     const req = {
       user: { id: 'user-1' },
@@ -74,8 +87,11 @@ describe('recentlyViewedController security guards', () => {
 
     await controller.addRecentlyViewed(req, res);
 
-    expect(pool.query).toHaveBeenCalledTimes(1);
-    expect(pool.query.mock.calls[0][0].values[0]).toBe('user-1');
+    expect(pool.query).toHaveBeenCalled();
+    const userScopedCall = pool.query.mock.calls.find(
+      (call) => Array.isArray(call?.[0]?.values) && call[0].values[0] === 'user-1'
+    );
+    expect(userScopedCall).toBeDefined();
     expect(res.status).not.toHaveBeenCalledWith(401);
     expect(res.status).not.toHaveBeenCalledWith(403);
   });

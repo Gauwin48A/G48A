@@ -1,26 +1,22 @@
-/**
- * Sale Routes - Dual-Handshake Logic
- * Blue Team Gap 1: Verified Sale Process
- */
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const saleController = require('../controllers/saleController');
+const { protect } = require("../middleware/auth");
+const saleController = require("../controllers/saleController");
+const { transactionLimiter } = require("../middleware/rateLimiter");
 
-// All routes require authentication
+/** All sale routes require authentication */
 router.use(protect);
 
-// Seller initiates a sale
-router.post('/initiate', saleController.initiateSale);
+/** @route POST /initiate - Start a new sale transaction */
+router.post("/initiate", transactionLimiter, saleController.initiateSale);
 
-// Buyer confirms with OTP
-router.post('/confirm', saleController.confirmSale);
+/** @route POST /confirm - Confirm a pending sale */
+router.post("/confirm", transactionLimiter, saleController.confirmSale);
 
-// Either party cancels
-router.post('/cancel', saleController.cancelSale);
+/** @route POST /cancel - Cancel a pending sale */
+router.post("/cancel", transactionLimiter, saleController.cancelSale);
 
-// Get pending sales
-router.get('/pending', saleController.getPendingSales);
+/** @route GET /pending - Get all pending sales for the current user */
+router.get("/pending", saleController.getPendingSales);
 
 module.exports = router;

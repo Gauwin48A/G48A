@@ -87,8 +87,8 @@ describe('postController regression coverage', () => {
     await postController.getUserPosts(req, res);
 
     const queryArg = pool.query.mock.calls[0][0];
-    expect(queryArg.values[2]).toBe(100);
-    expect(queryArg.values[3]).toBe(200);
+    expect(queryArg.values[queryArg.values.length - 2]).toBe(100);
+    expect(queryArg.values[queryArg.values.length - 1]).toBe(200);
     expect(res.json).toHaveBeenCalledWith({
       posts: [],
       total: 0,
