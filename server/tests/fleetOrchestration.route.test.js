@@ -47,14 +47,17 @@ describe("fleet orchestration routes", () => {
       },
       async () => {
         const app = buildApp();
-        const send = await request(app).post("/api/fleet-orchestration/commands/send").send({
-          deviceId: "device-c1",
-          tenantId: "tenant-1",
-          commandType: "reboot",
-          payload: { reason: "maintenance" },
-          critical: true,
-          actorId: "operator-1",
-        });
+        const send = await request(app)
+          .post("/api/fleet-orchestration/commands/send")
+          .set("x-fleet-admin-token", "fleet-admin")
+          .send({
+            deviceId: "device-c1",
+            tenantId: "tenant-1",
+            commandType: "reboot",
+            payload: { reason: "maintenance" },
+            critical: true,
+            actorId: "operator-1",
+          });
 
         expect(send.status).toBe(201);
         expect(send.body.command.status).toBe("PENDING_APPROVAL");
@@ -83,6 +86,7 @@ describe("fleet orchestration routes", () => {
 
         const ack = await request(app)
           .post(`/api/fleet-orchestration/commands/${commandId}/ack`)
+          .set("x-fleet-admin-token", "fleet-admin")
           .send({ ackCode: "OK", details: { applied: true } });
         expect(ack.status).toBe(200);
         expect(ack.body.status).toBe("acked");
@@ -145,33 +149,46 @@ describe("fleet orchestration routes", () => {
         expect(promote.body.status).toBe("promoted");
         expect(promote.body.rollout.status).toBe("COMPLETED");
 
-        const lookup = await request(app).get(`/api/fleet-orchestration/ota/rollouts/${rolloutId}`);
+        const lookup = await request(app)
+          .get(`/api/fleet-orchestration/ota/rollouts/${rolloutId}`)
+          .set("x-fleet-admin-token", "fleet-admin");
         expect(lookup.status).toBe(200);
         expect(lookup.body.rollout.status).toBe("COMPLETED");
       }
     ));
 
-  it("runs diagnostics and reports summary", async () => {
-    const app = buildApp();
-    const diagnostics = await request(app).post("/api/fleet-orchestration/diagnostics/run").send({
-      deviceId: "device-c9",
-      metrics: {
-        batteryLevel: 9,
-        offlineMinutes: 21,
-        crashLoopCount: 3,
+  it("runs diagnostics and reports summary", async () =>
+    withEnv(
+      {
+        FLEET_ADMIN_TOKEN: "fleet-admin",
       },
-    });
+      async () => {
+        const app = buildApp();
+        const diagnostics = await request(app)
+          .post("/api/fleet-orchestration/diagnostics/run")
+          .set("x-fleet-admin-token", "fleet-admin")
+          .send({
+            deviceId: "device-c9",
+            metrics: {
+              batteryLevel: 9,
+              offlineMinutes: 21,
+              crashLoopCount: 3,
+            },
+          });
 
-    expect(diagnostics.status).toBe(200);
-    expect(diagnostics.body.status).toBe("completed");
-    expect(diagnostics.body.diagnostics.issues).toContain("Low battery");
-    expect(diagnostics.body.diagnostics.issues).toContain("Intermittent connectivity");
-    expect(diagnostics.body.diagnostics.issues).toContain("Application crash loop");
+        expect(diagnostics.status).toBe(200);
+        expect(diagnostics.body.status).toBe("completed");
+        expect(diagnostics.body.diagnostics.issues).toContain("Low battery");
+        expect(diagnostics.body.diagnostics.issues).toContain("Intermittent connectivity");
+        expect(diagnostics.body.diagnostics.issues).toContain("Application crash loop");
 
-    const summary = await request(app).get("/api/fleet-orchestration/summary");
-    expect(summary.status).toBe(200);
-    expect(summary.body.status).toBe("ok");
-    expect(summary.body.summary).toHaveProperty("totalCommands");
-    expect(summary.body.summary).toHaveProperty("totalArtifacts");
-  });
+        const summary = await request(app)
+          .get("/api/fleet-orchestration/summary")
+          .set("x-fleet-admin-token", "fleet-admin");
+        expect(summary.status).toBe(200);
+        expect(summary.body.status).toBe("ok");
+        expect(summary.body.summary).toHaveProperty("totalCommands");
+        expect(summary.body.summary).toHaveProperty("totalArtifacts");
+      }
+    ));
 });

@@ -28,7 +28,9 @@ describe('postViewBufferService', () => {
   it('enqueues async and flushes buffered increments', async () => {
     const validA = '00000000-0000-4000-8000-000000000011';
     const validB = '00000000-0000-4000-8000-000000000012';
-    pool.query.mockResolvedValue({ rowCount: 2 });
+    pool.query
+      .mockResolvedValueOnce({ rows: [{ data_type: 'uuid', udt_name: 'uuid' }] })
+      .mockResolvedValueOnce({ rowCount: 2 });
 
     const enqueueResult = await postViewBufferService.enqueueBatchView([validA, validB]);
     expect(enqueueResult.mode).toBe('async');
@@ -37,17 +39,20 @@ describe('postViewBufferService', () => {
     const flushResult = await postViewBufferService.flushNow();
     expect(flushResult.failed).toBe(false);
     expect(flushResult.updatedRows).toBe(2);
-    expect(pool.query).toHaveBeenCalledTimes(1);
+    expect(pool.query).toHaveBeenCalledTimes(2);
+    expect(String(pool.query.mock.calls[0][0].text || '')).toContain('information_schema.columns');
   });
 
   it('supports sync mode for strict updates', async () => {
     process.env.BATCH_VIEW_SYNC_MODE = 'true';
-    pool.query.mockResolvedValue({ rowCount: 1 });
+    pool.query
+      .mockResolvedValueOnce({ rows: [{ data_type: 'uuid', udt_name: 'uuid' }] })
+      .mockResolvedValueOnce({ rowCount: 1 });
     const validA = '00000000-0000-4000-8000-000000000021';
 
     const result = await postViewBufferService.enqueueBatchView([validA]);
     expect(result.mode).toBe('sync');
     expect(result.updated).toBe(1);
-    expect(pool.query).toHaveBeenCalledTimes(1);
+    expect(pool.query).toHaveBeenCalledTimes(2);
   });
 });

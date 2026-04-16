@@ -10,7 +10,14 @@ function loadControllerWithQueryMock(queryImpl) {
     jest.doMock('../src/config/db', () => ({ query }));
     jest.doMock('../src/utils/logger', () => logger);
 
+    const previousAutoCreate = process.env.AUTO_CREATE_COMPLAINTS_TABLE;
+    process.env.AUTO_CREATE_COMPLAINTS_TABLE = 'false';
     const controller = require('../src/controllers/complaintsController');
+    if (previousAutoCreate === undefined) {
+        delete process.env.AUTO_CREATE_COMPLAINTS_TABLE;
+    } else {
+        process.env.AUTO_CREATE_COMPLAINTS_TABLE = previousAutoCreate;
+    }
     return { controller, query, logger };
 }
 

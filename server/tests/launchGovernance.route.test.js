@@ -39,42 +39,65 @@ describe("launch governance routes", () => {
     resetForTests();
   });
 
-  it("starts onboarding, updates steps, and returns onboarding state", async () => {
-    const app = buildApp();
-    const start = await request(app).post("/api/launch-governance/onboarding/start").send({
-      tenantId: "tenant-a1",
-      plan: "growth",
-      region: "ap-south",
-    });
-    expect(start.status).toBe(201);
-    expect(start.body.status).toBe("started");
+  it("starts onboarding, updates steps, and returns onboarding state", async () =>
+    withEnv(
+      {
+        LAUNCH_GOVERNANCE_ADMIN_TOKEN: "launch-admin",
+      },
+      async () => {
+        const app = buildApp();
+        const start = await request(app)
+          .post("/api/launch-governance/onboarding/start")
+          .set("x-launch-admin-token", "launch-admin")
+          .send({
+            tenantId: "tenant-a1",
+            plan: "growth",
+            region: "ap-south",
+          });
+        expect(start.status).toBe(201);
+        expect(start.body.status).toBe("started");
 
-    const step = await request(app)
-      .post("/api/launch-governance/onboarding/tenant-a1/steps")
-      .send({ step: "first_telemetry", status: "done" });
-    expect(step.status).toBe(200);
-    expect(step.body.onboarding.status).toBe("ACTIVE");
+        const step = await request(app)
+          .post("/api/launch-governance/onboarding/tenant-a1/steps")
+          .set("x-launch-admin-token", "launch-admin")
+          .send({ step: "first_telemetry", status: "done" });
+        expect(step.status).toBe(200);
+        expect(step.body.onboarding.status).toBe("ACTIVE");
 
-    const onboarding = await request(app).get("/api/launch-governance/onboarding/tenant-a1");
-    expect(onboarding.status).toBe(200);
-    expect(onboarding.body.onboarding.status).toBe("ACTIVE");
-  });
+        const onboarding = await request(app)
+          .get("/api/launch-governance/onboarding/tenant-a1")
+          .set("x-launch-admin-token", "launch-admin");
+        expect(onboarding.status).toBe(200);
+        expect(onboarding.body.onboarding.status).toBe("ACTIVE");
+      }
+    ));
 
-  it("records usage and returns tenant usage ledger", async () => {
-    const app = buildApp();
-    const usage = await request(app).post("/api/launch-governance/billing/usage/record").send({
-      tenantId: "tenant-b1",
-      metric: "telemetry_events",
-      amount: 1500,
-      planLimit: 1000,
-    });
-    expect(usage.status).toBe(201);
-    expect(usage.body.usage.breached).toBe(true);
+  it("records usage and returns tenant usage ledger", async () =>
+    withEnv(
+      {
+        LAUNCH_GOVERNANCE_ADMIN_TOKEN: "launch-admin",
+      },
+      async () => {
+        const app = buildApp();
+        const usage = await request(app)
+          .post("/api/launch-governance/billing/usage/record")
+          .set("x-launch-admin-token", "launch-admin")
+          .send({
+            tenantId: "tenant-b1",
+            metric: "telemetry_events",
+            amount: 1500,
+            planLimit: 1000,
+          });
+        expect(usage.status).toBe(201);
+        expect(usage.body.usage.breached).toBe(true);
 
-    const ledger = await request(app).get("/api/launch-governance/billing/tenants/tenant-b1");
-    expect(ledger.status).toBe(200);
-    expect(ledger.body.usage.metrics.telemetry_events).toBe(1500);
-  });
+        const ledger = await request(app)
+          .get("/api/launch-governance/billing/tenants/tenant-b1")
+          .set("x-launch-admin-token", "launch-admin");
+        expect(ledger.status).toBe(200);
+        expect(ledger.body.usage.metrics.telemetry_events).toBe(1500);
+      }
+    ));
 
   it("registers compliance evidence, runs certification, and registers integration", async () =>
     withEnv(
@@ -131,7 +154,9 @@ describe("launch governance routes", () => {
         expect(integration.status).toBe(201);
         expect(integration.body.status).toBe("registered");
 
-        const summary = await request(app).get("/api/launch-governance/summary");
+        const summary = await request(app)
+          .get("/api/launch-governance/summary")
+          .set("x-launch-admin-token", "launch-admin");
         expect(summary.status).toBe(200);
         expect(summary.body.summary.integrations).toBe(1);
       }
