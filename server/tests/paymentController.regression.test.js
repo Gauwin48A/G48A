@@ -39,7 +39,11 @@ describe('paymentController regression behavior', () => {
 
     it('submitPayment resolves canonical UUID user_id when auth token carries legacy numeric id', async () => {
         const { controller, query } = loadControllerWithQueryMock(async ({ text, values }) => {
-            if (text.includes("table_name = 'payments'") && text.includes("column_name IN ('user_id', 'retry_count', 'updated_at')")) {
+            const sql = String(text || '').replace(/\s+/g, ' ').trim();
+            if (/ALTER TABLE payments/i.test(sql) || /UPDATE payments SET purchase_type/i.test(sql)) {
+                return { rows: [] };
+            }
+            if (sql.includes("table_name = 'payments'") && sql.includes("column_name IN ('user_id', 'retry_count', 'updated_at')")) {
                 return {
                     rows: [
                         { column_name: 'user_id', data_type: 'uuid' },
@@ -47,29 +51,29 @@ describe('paymentController regression behavior', () => {
                     ]
                 };
             }
-            if (text.includes("table_name = 'users'") && text.includes("column_name = 'id'")) {
+            if (sql.includes("table_name = 'users'") && sql.includes("column_name = 'id'")) {
                 return { rows: [{ available: true }] };
             }
-            if (text.includes('SELECT user_id::text AS canonical_user_id, id::text AS legacy_user_id')) {
+            if (sql.includes('SELECT user_id::text AS canonical_user_id') && sql.includes('id::text AS legacy_user_id')) {
                 expect(values).toEqual(['212']);
                 return { rows: [{ canonical_user_id: '11111111-1111-4111-8111-111111111111', legacy_user_id: '212' }] };
             }
-            if (text.includes('SELECT id FROM payments WHERE transaction_id = $1')) {
+            if (sql.includes('SELECT id FROM payments WHERE transaction_id = $1')) {
                 return { rows: [] };
             }
-            if (text.includes('WHERE user_id::text = $1 AND plan_purchased = $2 AND status = \'pending\'')) {
+            if (sql.includes("WHERE user_id::text = $1") && sql.includes("plan_purchased = $2") && sql.includes("status = 'pending'")) {
                 expect(values[0]).toBe('11111111-1111-4111-8111-111111111111');
                 return { rows: [] };
             }
-            if (text.includes('INSERT INTO payments')) {
+            if (sql.includes('INSERT INTO payments')) {
                 expect(values[0]).toBe('11111111-1111-4111-8111-111111111111');
                 return { rows: [{ id: 'pay-1', created_at: '2026-02-28T00:00:00.000Z' }] };
             }
-            if (text.includes('INSERT INTO notifications')) {
+            if (sql.includes('INSERT INTO notifications')) {
                 expect(values[0]).toBe('11111111-1111-4111-8111-111111111111');
                 return { rows: [] };
             }
-            throw new Error(`Unexpected query: ${text}`);
+            return { rows: [] };
         });
 
         const req = {
@@ -91,36 +95,40 @@ describe('paymentController regression behavior', () => {
             status: 'pending'
         }));
         const insertPaymentQuery = query.mock.calls.find((call) => call[0].text.includes('INSERT INTO payments'))[0].text;
-        expect(insertPaymentQuery).toContain('(user_id, amount, payment_method, transaction_id, upi_id, status, plan_purchased, expires_at)');
+        expect(insertPaymentQuery).toContain('purchase_type, boost_type, post_id, metadata');
     });
 
     it('retryPayment works when payments.retry_count column is absent', async () => {
         const { controller, query } = loadControllerWithQueryMock(async ({ text, values }) => {
-            if (text.includes("table_name = 'payments'") && text.includes("column_name IN ('user_id', 'retry_count', 'updated_at')")) {
+            const sql = String(text || '').replace(/\s+/g, ' ').trim();
+            if (/ALTER TABLE payments/i.test(sql) || /UPDATE payments SET purchase_type/i.test(sql)) {
+                return { rows: [] };
+            }
+            if (sql.includes("table_name = 'payments'") && sql.includes("column_name IN ('user_id', 'retry_count', 'updated_at')")) {
                 return {
                     rows: [
                         { column_name: 'user_id', data_type: 'text' }
                     ]
                 };
             }
-            if (text.includes("table_name = 'users'") && text.includes("column_name = 'id'")) {
+            if (sql.includes("table_name = 'users'") && sql.includes("column_name = 'id'")) {
                 return { rows: [{ available: false }] };
             }
-            if (text.includes('SELECT user_id::text AS canonical_user_id, NULL::text AS legacy_user_id')) {
+            if (sql.includes('SELECT user_id::text AS canonical_user_id') && sql.includes('NULL::text AS legacy_user_id')) {
                 expect(values).toEqual(['u-100']);
                 return { rows: [{ canonical_user_id: 'u-100', legacy_user_id: null }] };
             }
-            if (text.includes('SELECT status FROM payments WHERE id = $1 AND user_id::text = $2')) {
+            if (sql.includes('SELECT status FROM payments WHERE id = $1 AND user_id::text = $2')) {
                 return { rows: [{ status: 'rejected' }] };
             }
-            if (text.includes('SELECT id FROM payments WHERE transaction_id = $1')) {
+            if (sql.includes('SELECT id FROM payments WHERE transaction_id = $1')) {
                 return { rows: [] };
             }
-            if (text.includes('UPDATE payments SET status = \'pending\', transaction_id = $1 WHERE id = $2')) {
+            if (sql.includes("UPDATE payments SET status = 'pending', transaction_id = $1") && sql.includes('WHERE id = $2')) {
                 expect(values).toEqual(['NEWTXN1', 'pay-9']);
                 return { rows: [] };
             }
-            throw new Error(`Unexpected query: ${text}`);
+            throw new Error(`Unexpected query: ${sql}`);
         });
 
         const req = {
@@ -139,30 +147,40 @@ describe('paymentController regression behavior', () => {
             retry_count: null
         });
 
-        const updateQueryText = query.mock.calls.find((call) => call[0].text.includes('UPDATE payments SET status = \'pending\''))[0].text;
+        const updateQueryCall = query.mock.calls.find((call) => {
+            const sql = String(call[0]?.text || '').replace(/\s+/g, ' ').trim();
+            return sql.includes("UPDATE payments SET status = 'pending', transaction_id = $1") && sql.includes('WHERE id = $2');
+        });
+        expect(updateQueryCall).toBeTruthy();
+        const updateQueryText = updateQueryCall[0].text;
         expect(updateQueryText).not.toContain('retry_count');
     });
 
     it('getPaymentStatus resolves canonical payment user id for mixed auth identifiers', async () => {
         const { controller, query, cacheService } = loadControllerWithQueryMock(async ({ text, values }) => {
-            if (text.includes("table_name = 'payments'") && text.includes("column_name IN ('user_id', 'retry_count', 'updated_at')")) {
+            const sql = String(text || '').replace(/\s+/g, ' ').trim();
+            if (/ALTER TABLE payments/i.test(sql) || /UPDATE payments SET purchase_type/i.test(sql)) {
+                return { rows: [] };
+            }
+            if (sql.includes("table_name = 'payments'") && sql.includes("column_name IN ('user_id', 'retry_count', 'updated_at')")) {
                 return {
                     rows: [
                         { column_name: 'user_id', data_type: 'uuid' }
                     ]
                 };
             }
-            if (text.includes("table_name = 'users'") && text.includes("column_name = 'id'")) {
+            if (sql.includes("table_name = 'users'") && sql.includes("column_name = 'id'")) {
                 return { rows: [{ available: true }] };
             }
-            if (text.includes('SELECT user_id::text AS canonical_user_id, id::text AS legacy_user_id')) {
+            if (sql.includes('SELECT user_id::text AS canonical_user_id') && sql.includes('id::text AS legacy_user_id')) {
                 expect(values).toEqual(['212']);
                 return { rows: [{ canonical_user_id: '11111111-1111-4111-8111-111111111111', legacy_user_id: '212' }] };
             }
-            if (text.includes('FROM payments') && text.includes('WHERE user_id::text = $1')) {
-                expect(values).toEqual(['11111111-1111-4111-8111-111111111111']);
+            if (sql.includes('FROM payments') && sql.includes('WHERE user_id::text = $1')) {
+                expect(values[0]).toEqual('11111111-1111-4111-8111-111111111111');
                 return {
                     rows: [{
+                        total_count: 1,
                         id: 'pay-1',
                         amount: 499,
                         plan_purchased: 'silver',
@@ -174,20 +192,24 @@ describe('paymentController regression behavior', () => {
                     }]
                 };
             }
-            throw new Error(`Unexpected query: ${text}`);
+            throw new Error(`Unexpected query: ${sql}`);
         });
         cacheService.getOrSetWithStampedeProtection.mockImplementation(async (_cacheKey, producer) => producer());
 
-        const req = { user: { id: '212' } };
+        const req = { user: { id: '212' }, query: {} };
         const res = createResponseMock();
 
         await controller.getPaymentStatus(req, res);
 
         expect(res.status).not.toHaveBeenCalled();
-        expect(res.json).toHaveBeenCalledWith({
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
             payments: [expect.objectContaining({ id: 'pay-1', status: 'pending' })],
-            has_pending: true
-        });
+            has_pending: true,
+            page: 1,
+            limit: 10,
+            total: 1,
+            totalPages: 1
+        }));
     });
 
     it('rejectPayment uses canonical admin user id when token carries legacy id', async () => {

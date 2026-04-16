@@ -50,7 +50,10 @@ function buildConfig(args) {
         passes: parseIntSafe(args.passes, 2),
         files: migrationFiles.length > 0 ? migrationFiles : defaultFiles,
         outputDir: path.resolve(serverRoot, args['output-dir'] || 'docs/artifacts'),
-        runMigrationScript: path.resolve(serverRoot, args['runner-script'] || 'run_migration.js'),
+        runMigrationScript: path.resolve(
+            serverRoot,
+            args['runner-script'] || 'scripts/ops/run_migration.js'
+        ),
         serverRoot
     };
 }
@@ -70,7 +73,7 @@ function runMigration(config, migrationFile) {
             status: 'COMPLETE',
             startedAt,
             finishedAt: new Date().toISOString(),
-            command: `node run_migration.js ${relPath}`,
+            command: `node scripts/ops/run_migration.js ${relPath}`,
             output: String(stdout || '').trim()
         };
     } catch (error) {
@@ -79,7 +82,7 @@ function runMigration(config, migrationFile) {
             status: 'BLOCKED',
             startedAt,
             finishedAt: new Date().toISOString(),
-            command: `node run_migration.js ${relPath}`,
+            command: `node scripts/ops/run_migration.js ${relPath}`,
             error: error.message
         };
     }

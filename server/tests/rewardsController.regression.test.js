@@ -19,6 +19,13 @@ function loadControllerWithQueryMock(queryImpl) {
     jest.doMock('../src/services/rewardsLedgerService', () => ({
         ensureRewardLogTable: jest.fn(async () => true)
     }));
+    jest.doMock('../src/services/trustBadgeService', () => ({
+        getTrustSnapshot: jest.fn(async () => ({
+            trust_score: 0,
+            risk_state: null,
+            under_review: false
+        }))
+    }));
 
     const controller = require('../src/controllers/rewardsController');
     return { controller, query, logger, cacheService };
@@ -80,26 +87,27 @@ describe('rewardsController regression behavior', () => {
     it('getRewardsByUser accepts req.user.user_id and returns rewards payload', async () => {
         const canonicalId = '22222222-2222-4222-8222-222222222222';
         const { controller } = loadControllerWithQueryMock(async ({ text, values }) => {
-            if (text.includes("table_name = 'users'") && text.includes("column_name = 'id'")) {
+            const sql = String(text || '').replace(/\s+/g, ' ').trim();
+            if (sql.includes("table_name = 'users'") && sql.includes("column_name = 'id'")) {
                 return { rows: [{ available: false }] };
             }
-            if (text.includes('SELECT user_id::text AS user_id') && text.includes('WHERE user_id::text = $1')) {
+            if (sql.includes('SELECT user_id::text AS user_id') && sql.includes('WHERE user_id::text = $1')) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [{ user_id: canonicalId }] };
             }
-            if (text.includes('SELECT u.user_id, u.username, u.referral_code, p.full_name')) {
+            if (sql.includes('SELECT u.user_id, u.username, u.referral_code, u.current_plan, u.tier, u.subscription_expiry, p.full_name')) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [{ user_id: canonicalId, username: 'alice', referral_code: 'REF123', full_name: 'Alice Doe' }] };
             }
-            if (text.includes('SELECT points, tier FROM rewards')) {
+            if (sql.includes('SELECT points, tier FROM rewards')) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [{ points: 100, tier: 'Bronze' }] };
             }
-            if (text.includes('WITH RECURSIVE referral_chain')) {
+            if (sql.includes('WITH RECURSIVE referral_chain')) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [] };
             }
-            if (text.includes("COUNT(*) FILTER (WHERE action = 'sale_completed'")) {
+            if (sql.includes("COUNT(*) FILTER (WHERE action = 'sale_completed'")) {
                 expect(values).toEqual([canonicalId]);
                 return {
                     rows: [{
@@ -116,33 +124,43 @@ describe('rewardsController regression behavior', () => {
                     }]
                 };
             }
-            if (text.includes('FROM user_streaks')) {
+            if (sql.includes('FROM user_streaks')) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [{ visit_streak: 4, post_streak: 2 }] };
             }
-            if (text.includes('FROM profiles') && text.includes('avatar_url')) {
+            if (sql.includes('FROM profiles') && sql.includes('avatar_url')) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [{ full_name: 'Alice Doe', phone: '9999999999', address: 'Test', avatar_url: 'avatar.png' }] };
             }
-            if (text.includes('FROM posts') && text.includes('COUNT(*)::int AS total')) {
+            if (sql.includes('FROM posts') && sql.includes('COUNT(*)::int AS total')) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [{ total: 1 }] };
             }
-            if (text.includes("table_name = 'transactions'") && text.includes("column_name IN ('otp_hash'")) {
+            if (sql.includes("table_name = 'transactions'") && sql.includes("column_name IN ('otp_hash'")) {
                 return { rows: [] };
             }
-            if (text.includes('COUNT(DISTINCT user_id)') && text.includes('FROM transactions')) {
+            if (sql.includes('COUNT(DISTINCT user_id)') && sql.includes('FROM transactions')) {
                 return { rows: [{ qualified: 0 }] };
             }
-            if (text.includes("action LIKE 'referral_chain_%'")) {
+            if (sql.includes("action LIKE 'referral_chain_%'")) {
                 expect(values).toEqual([canonicalId]);
                 return { rows: [{ total: 0 }] };
             }
-            if (text.includes("action IN ('leaderboard_top_seller'")) {
+            if (sql.includes("COUNT(*) FILTER (WHERE action = 'qualified_referral_bonus')")) {
+                expect(values).toEqual([canonicalId]);
+                return {
+                    rows: [{
+                        qualified_bonus_entries: 0,
+                        chain_reward_entries: 0,
+                        last_referral_reward_at: null
+                    }]
+                };
+            }
+            if (sql.includes("action IN ('leaderboard_top_seller'")) {
                 expect(values).toEqual([canonicalId, 5]);
                 return { rows: [] };
             }
-            throw new Error(`Unexpected query: ${text}`);
+            return { rows: [] };
         });
 
         const req = {

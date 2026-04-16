@@ -14,7 +14,8 @@ jest.mock('../src/controllers/userController', () => ({
   upgradeTier: jest.fn((req, res) => res.json({})),
   getTierStatus: jest.fn((req, res) => res.json({})),
   submitKYC: jest.fn((req, res) => res.json({})),
-  getKYCStatus: jest.fn((req, res) => res.json({}))
+  getKYCStatus: jest.fn((req, res) => res.json({})),
+  deleteAccount: jest.fn((req, res) => res.json({ success: true }))
 }));
 
 jest.mock('../src/middleware/auth', () => ({
@@ -32,7 +33,8 @@ jest.mock('../src/middleware/auth', () => ({
 }));
 
 jest.mock('../src/middleware/upload', () => ({
-  fields: () => (req, res, next) => next()
+  fields: () => (req, res, next) => next(),
+  postUploadSecurity: (req, res, next) => next()
 }));
 
 jest.mock('../src/middleware/imageOptimizer', () => (req, res, next) => next());

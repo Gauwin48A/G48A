@@ -12,7 +12,23 @@ function createResponseMock() {
 function loadGdprControllerWithMocks(queryImpl, compareImpl = async () => true) {
   jest.resetModules();
 
-  const query = jest.fn(queryImpl);
+  const normalizeQueryInput = (textOrConfig, values) => {
+    if (typeof textOrConfig === "string") {
+      return { text: textOrConfig, values: values || [] };
+    }
+    return textOrConfig || { text: "", values: [] };
+  };
+
+  const query = jest.fn((textOrConfig, values) =>
+    queryImpl(normalizeQueryInput(textOrConfig, values))
+  );
+  const client = {
+    query: jest.fn((textOrConfig, values) =>
+      queryImpl(normalizeQueryInput(textOrConfig, values))
+    ),
+    release: jest.fn()
+  };
+  const connect = jest.fn(async () => client);
   const logger = {
     info: jest.fn(),
     warn: jest.fn(),
@@ -20,7 +36,7 @@ function loadGdprControllerWithMocks(queryImpl, compareImpl = async () => true) 
   };
   const logSecurityEvent = jest.fn();
 
-  jest.doMock('../src/config/db', () => ({ query }));
+  jest.doMock('../src/config/db', () => ({ query, connect }));
   jest.doMock('../src/utils/logger', () => logger);
   jest.doMock('../src/config/auditLogger', () => ({
     logSecurityEvent,
@@ -38,7 +54,7 @@ function loadGdprControllerWithMocks(queryImpl, compareImpl = async () => true) 
   );
 
   const controller = require('../src/controllers/gdprController');
-  return { controller, query, logSecurityEvent };
+  return { controller, query, client, logSecurityEvent };
 }
 
 describe('gdprController regression behavior', () => {
@@ -74,7 +90,7 @@ describe('gdprController regression behavior', () => {
   });
 
   it('deleteUserData accepts req.user.user_id when id is absent', async () => {
-    const { controller, query, logSecurityEvent } = loadGdprControllerWithMocks(async ({ text }) => {
+    const { controller, query, client, logSecurityEvent } = loadGdprControllerWithMocks(async ({ text }) => {
       if (text.includes('SELECT password_hash FROM users')) {
         return { rows: [{ password_hash: 'hash' }] };
       }
@@ -98,10 +114,16 @@ describe('gdprController regression behavior', () => {
       success: true,
       message: 'Your account and all associated data have been permanently deleted.'
     });
-    const deleteUsersCall = query.mock.calls.find((call) =>
-      call[0].text.includes('DELETE FROM users WHERE user_id = $1')
-    );
-    expect(deleteUsersCall[0].values[0]).toBe('u-legacy');
+    const deleteUsersCall = client.query.mock.calls.find((call) => {
+      const [textOrConfig] = call;
+      const text = typeof textOrConfig === 'string' ? textOrConfig : textOrConfig?.text || '';
+      return text.includes('DELETE FROM users WHERE user_id::text = $1');
+    });
+    expect(deleteUsersCall).toBeTruthy();
+    const deleteUsersValues = typeof deleteUsersCall[0] === 'string'
+      ? deleteUsersCall[1]
+      : deleteUsersCall[0].values;
+    expect(deleteUsersValues[0]).toBe('u-legacy');
     expect(logSecurityEvent).toHaveBeenCalled();
   });
 });

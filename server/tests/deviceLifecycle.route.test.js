@@ -1,8 +1,16 @@
 const express = require("express");
 const request = require("supertest");
-const deviceLifecycleRoutes = require("../src/routes/deviceLifecycle");
 const { buildAttestationSignature } = require("../src/middleware/deviceIdentity");
 const { resetForTests } = require("../src/services/deviceLifecycleService");
+
+jest.mock("../src/middleware/auth", () => ({
+  protect: (req, _res, next) => {
+    req.user = { userId: "test-user-1", role: "admin" };
+    return next();
+  },
+}));
+
+const deviceLifecycleRoutes = require("../src/routes/deviceLifecycle");
 
 function withEnv(overrides, testFn) {
   const previous = {};

@@ -69,20 +69,40 @@ function execCommand(command) {
 async function listPidsOnPort(port) {
     const isWin = os.platform() === 'win32';
     const command = isWin
-        ? `netstat -ano -p tcp | findstr :${port}`
+        ? 'netstat -ano -p tcp'
         : `lsof -i :${port} -t`;
     const output = await execCommand(command);
     if (!output.trim()) return [];
+
+    if (isWin) {
+        const pids = output
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter((line) => /^TCP\s+/i.test(line))
+            .map((line) => {
+                const parts = line.split(/\s+/);
+                if (parts.length < 5) return null;
+                return {
+                    localAddress: parts[1],
+                    state: (parts[3] || '').toUpperCase(),
+                    pid: Number.parseInt(parts[4], 10)
+                };
+            })
+            .filter((entry) => entry && Number.isInteger(entry.pid) && entry.pid > 0)
+            .filter((entry) => {
+                const match = String(entry.localAddress).match(/:(\d+)$/);
+                const localPort = match ? Number.parseInt(match[1], 10) : NaN;
+                return localPort === port && entry.state === 'LISTENING';
+            })
+            .map((entry) => entry.pid);
+
+        return [...new Set(pids)];
+    }
 
     const pids = output
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean)
-        .map((line) => {
-            if (!isWin) return line;
-            const parts = line.split(/\s+/);
-            return parts[parts.length - 1];
-        })
         .map((value) => Number.parseInt(value, 10))
         .filter((value) => Number.isInteger(value) && value > 0);
 

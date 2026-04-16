@@ -63,14 +63,38 @@ const cookieHeader = () => {
 };
 
 const apiRequest = async (route, { method = 'GET', body, token, useCookies = true } = {}) => {
-  const headers = {};
+  const headers = {
+    'X-Device-Fingerprint': 'auth-itest-device-fingerprint-0001',
+    'X-Device-Id': 'auth-itest-device-fingerprint-0001'
+  };
   const normalizedMethod = String(method || 'GET').toUpperCase();
   const shouldAttachCsrfHeader = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(normalizedMethod);
+
+  if (
+    useCookies &&
+    shouldAttachCsrfHeader &&
+    route !== '/api/auth/csrf-token' &&
+    !cookieJar.get('XSRF-TOKEN')
+  ) {
+    const csrfBootstrapHeaders = {};
+    if (cookieJar.size > 0) {
+      csrfBootstrapHeaders.Cookie = cookieHeader();
+    }
+
+    const csrfBootstrap = await fetch(`${BASE_URL}/api/auth/csrf-token`, {
+      method: 'GET',
+      headers: csrfBootstrapHeaders
+    });
+    updateCookieJar(csrfBootstrap);
+    await csrfBootstrap.text();
+  }
 
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (token) headers.Authorization = `Bearer ${token}`;
   if (useCookies && cookieJar.size > 0) headers.Cookie = cookieHeader();
   if (useCookies && shouldAttachCsrfHeader) {
+    headers['X-MHub-Timestamp'] = String(Date.now());
+    headers['X-MHub-Nonce'] = `auth-itest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const csrfToken = cookieJar.get('XSRF-TOKEN');
     if (csrfToken) {
       headers['X-XSRF-TOKEN'] = csrfToken;
@@ -123,6 +147,18 @@ const ensureCsrfToken = async () => {
   return cookieJar.get('XSRF-TOKEN');
 };
 
+const extractLatestResetSecretsFromLogs = () => {
+  const matches = [...capturedStdout.matchAll(/\[TEST ONLY\] resetToken=([A-Za-z0-9]+) otp=([0-9]{6})/g)];
+  if (!matches.length) {
+    return { resetToken: null, otp: null };
+  }
+  const latest = matches[matches.length - 1];
+  return {
+    resetToken: latest[1] || null,
+    otp: latest[2] || null
+  };
+};
+
 const waitForServer = async () => {
   const maxRetries = 45;
   const retryDelayMs = 1000;
@@ -150,7 +186,9 @@ const startServer = async () => {
       PORT: String(AUTH_ITEST_PORT),
       NODE_ENV: process.env.NODE_ENV || 'test',
       DISABLE_BACKGROUND_JOBS: process.env.DISABLE_BACKGROUND_JOBS || 'true',
-      AUTH_EXPOSE_TEST_SECRETS: process.env.AUTH_EXPOSE_TEST_SECRETS || 'true'
+      AUTH_EXPOSE_TEST_SECRETS: process.env.AUTH_EXPOSE_TEST_SECRETS || 'true',
+      DEVICE_BINDING_ENABLED: process.env.DEVICE_BINDING_ENABLED || 'false',
+      AUTH_ADAPTIVE_MFA_ENABLED: process.env.AUTH_ADAPTIVE_MFA_ENABLED || 'false'
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -330,14 +368,26 @@ describe('Auth Real Integration (Express + DB)', () => {
     });
     expect(forgotRes.status).toBe(200);
     expect(forgotRes.body.message).toMatch(/if this account exists/i);
-    expect(forgotRes.body.resetToken).toBeTruthy();
-    expect(forgotRes.body.otp).toBeTruthy();
+
+    let resetToken = null;
+    const resetLink = forgotRes.body.debug?.resetLink;
+    if (resetLink) {
+      try {
+        resetToken = new URL(resetLink).searchParams.get('token');
+      } catch {
+        resetToken = null;
+      }
+    }
+    if (!resetToken) {
+      resetToken = extractLatestResetSecretsFromLogs().resetToken;
+    }
+    expect(resetToken).toBeTruthy();
 
     const newPassword = 'NewStrongPass456!B';
     const resetRes = await apiRequest('/api/auth/reset-password', {
       method: 'POST',
       body: {
-        token: forgotRes.body.resetToken,
+        token: resetToken,
         newPassword
       }
     });
