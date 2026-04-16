@@ -259,7 +259,7 @@ Phase 3: Add automated visual regression in CI
    - Docker build validation
    - Lighthouse CI for performance regression
 2. **Staging environment**: Deploy PRs to preview URLs for QA
-3. **Database migrations**: Automate `run_migration.js` in CI — currently manual
+3. **Database migrations**: Automate `scripts/ops/run_migration.js` in CI — currently manual
 4. **Monitoring & alerting**: 
    - Add Sentry for client-side error tracking (replace console.error with Sentry.captureException)
    - Server-side APM for slow query detection

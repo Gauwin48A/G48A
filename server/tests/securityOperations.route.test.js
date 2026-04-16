@@ -39,39 +39,54 @@ describe("security operations routes", () => {
     resetForTests();
   });
 
-  it("evaluates access decisions and records abuse signals", async () => {
-    const app = buildApp();
+  it("evaluates access decisions and records abuse signals", async () =>
+    withEnv(
+      {
+        SECURITY_OPS_ADMIN_TOKEN: "sec-admin",
+      },
+      async () => {
+        const app = buildApp();
 
-    const allow = await request(app).post("/api/security-operations/access/evaluate").send({
-      actorId: "operator-1",
-      role: "operator",
-      action: "write",
-      resource: "fleet.command",
-      tenantId: "tenant-1",
-      context: { tenantId: "tenant-1" },
-    });
-    expect(allow.status).toBe(200);
-    expect(allow.body.decision).toBe("allow");
+        const allow = await request(app)
+          .post("/api/security-operations/access/evaluate")
+          .set("x-security-admin-token", "sec-admin")
+          .send({
+            actorId: "operator-1",
+            role: "operator",
+            action: "write",
+            resource: "fleet.command",
+            tenantId: "tenant-1",
+            context: { tenantId: "tenant-1" },
+          });
+        expect(allow.status).toBe(200);
+        expect(allow.body.decision).toBe("allow");
 
-    const deny = await request(app).post("/api/security-operations/access/evaluate").send({
-      actorId: "operator-1",
-      role: "operator",
-      action: "write",
-      resource: "fleet.command",
-      tenantId: "tenant-2",
-      context: { tenantId: "tenant-1" },
-    });
-    expect(deny.status).toBe(200);
-    expect(deny.body.decision).toBe("deny");
+        const deny = await request(app)
+          .post("/api/security-operations/access/evaluate")
+          .set("x-security-admin-token", "sec-admin")
+          .send({
+            actorId: "operator-1",
+            role: "operator",
+            action: "write",
+            resource: "fleet.command",
+            tenantId: "tenant-2",
+            context: { tenantId: "tenant-1" },
+          });
+        expect(deny.status).toBe(200);
+        expect(deny.body.decision).toBe("deny");
 
-    const abuse = await request(app).post("/api/security-operations/abuse/signals").send({
-      sourceIp: "10.0.0.1",
-      vector: "credential_stuffing",
-      severity: "high",
-    });
-    expect(abuse.status).toBe(201);
-    expect(abuse.body.signal.totalSignals).toBe(1);
-  });
+        const abuse = await request(app)
+          .post("/api/security-operations/abuse/signals")
+          .set("x-security-admin-token", "sec-admin")
+          .send({
+            sourceIp: "10.0.0.1",
+            vector: "credential_stuffing",
+            severity: "high",
+          });
+        expect(abuse.status).toBe(201);
+        expect(abuse.body.signal.totalSignals).toBe(1);
+      }
+    ));
 
   it("enforces security admin token for supply chain and privacy controls", async () =>
     withEnv(
@@ -127,12 +142,15 @@ describe("security operations routes", () => {
       },
       async () => {
         const app = buildApp();
-        const open = await request(app).post("/api/security-operations/incidents/open").send({
-          title: "Suspicious login burst",
-          severity: "SEV2",
-          detector: "waf",
-          detectedAfterMinutes: 4,
-        });
+        const open = await request(app)
+          .post("/api/security-operations/incidents/open")
+          .set("x-security-admin-token", "sec-admin")
+          .send({
+            title: "Suspicious login burst",
+            severity: "SEV2",
+            detector: "waf",
+            detectedAfterMinutes: 4,
+          });
         expect(open.status).toBe(201);
         const incidentId = open.body.incident.incidentId;
 

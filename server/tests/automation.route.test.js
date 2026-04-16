@@ -84,45 +84,58 @@ describe("automation routes", () => {
   it("evaluates event, updates twin, and dedupes alerts", async () =>
     withEnv(
       {
+        AUTOMATION_RULES_ADMIN_TOKEN: "automation-admin",
         AUTOMATION_ALERT_DEDUPE_SECONDS: "300",
       },
       async () => {
         const app = buildApp();
-        await request(app).post("/api/automation/rules/register").send({
-          rule: {
-            ruleId: "rule-temp-2",
-            name: "High temp with twin",
-            version: "1",
-            condition: { field: "temperature", op: ">", value: 70 },
-            action: { type: "raise_alert", severity: "P1", message: "Overheat" },
-          },
-        });
-        await request(app).post("/api/automation/rules/activate").send({ ruleId: "rule-temp-2" });
+        await request(app)
+          .post("/api/automation/rules/register")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({
+            rule: {
+              ruleId: "rule-temp-2",
+              name: "High temp with twin",
+              version: "1",
+              condition: { field: "temperature", op: ">", value: 70 },
+              action: { type: "raise_alert", severity: "P1", message: "Overheat" },
+            },
+          });
+        await request(app)
+          .post("/api/automation/rules/activate")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({ ruleId: "rule-temp-2" });
 
-        const first = await request(app).post("/api/automation/events/evaluate").send({
-          event: {
-            eventId: "auto-event-1",
-            deviceId: "device-a1",
-            tenantId: "tenant-1",
-            eventType: "temperature.reading",
-            occurredAt: new Date().toISOString(),
-            payload: { temperature: 91, unit: "c" },
-          },
-        });
+        const first = await request(app)
+          .post("/api/automation/events/evaluate")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({
+            event: {
+              eventId: "auto-event-1",
+              deviceId: "device-a1",
+              tenantId: "tenant-1",
+              eventType: "temperature.reading",
+              occurredAt: new Date().toISOString(),
+              payload: { temperature: 91, unit: "c" },
+            },
+          });
         expect(first.status).toBe(200);
         expect(first.body.executedRules.length).toBe(1);
         expect(first.body.executedRules[0].action.status).toBe("created");
 
-        const second = await request(app).post("/api/automation/events/evaluate").send({
-          event: {
-            eventId: "auto-event-2",
-            deviceId: "device-a1",
-            tenantId: "tenant-1",
-            eventType: "temperature.reading",
-            occurredAt: new Date(Date.now() + 1000).toISOString(),
-            payload: { temperature: 92, unit: "c" },
-          },
-        });
+        const second = await request(app)
+          .post("/api/automation/events/evaluate")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({
+            event: {
+              eventId: "auto-event-2",
+              deviceId: "device-a1",
+              tenantId: "tenant-1",
+              eventType: "temperature.reading",
+              occurredAt: new Date(Date.now() + 1000).toISOString(),
+              payload: { temperature: 92, unit: "c" },
+            },
+          });
         expect(second.status).toBe(200);
         expect(second.body.executedRules[0].action.status).toBe("deduped");
 
@@ -136,46 +149,67 @@ describe("automation routes", () => {
       }
     ));
 
-  it("simulates a rule and acknowledges alert", async () => {
-    const app = buildApp();
-    await request(app).post("/api/automation/rules/register").send({
-      rule: {
-        ruleId: "rule-temp-3",
-        name: "Sim rule",
-        version: "1",
-        condition: { field: "temperature", op: ">", value: 80 },
-        action: { type: "raise_alert", severity: "P2", message: "Temp warning" },
+  it("simulates a rule and acknowledges alert", async () =>
+    withEnv(
+      {
+        AUTOMATION_RULES_ADMIN_TOKEN: "automation-admin",
       },
-    });
-    await request(app).post("/api/automation/rules/activate").send({ ruleId: "rule-temp-3" });
+      async () => {
+        const app = buildApp();
+        await request(app)
+          .post("/api/automation/rules/register")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({
+            rule: {
+              ruleId: "rule-temp-3",
+              name: "Sim rule",
+              version: "1",
+              condition: { field: "temperature", op: ">", value: 80 },
+              action: { type: "raise_alert", severity: "P2", message: "Temp warning" },
+            },
+          });
+        await request(app)
+          .post("/api/automation/rules/activate")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({ ruleId: "rule-temp-3" });
 
-    const simulation = await request(app).post("/api/automation/rules/simulate").send({
-      rule: {
-        name: "Sim rule candidate",
-        version: "2",
-        condition: { field: "temperature", op: ">", value: 80 },
-        action: { type: "raise_alert", severity: "P2", message: "Temp warning" },
-      },
-      sampleEvents: [
-        { deviceId: "device-a2", eventType: "temperature.reading", occurredAt: new Date().toISOString(), payload: { temperature: 70 } },
-        { deviceId: "device-a2", eventType: "temperature.reading", occurredAt: new Date().toISOString(), payload: { temperature: 90 } },
-      ],
-    });
-    expect(simulation.status).toBe(200);
-    expect(simulation.body.result.matchedCount).toBe(1);
+        const simulation = await request(app)
+          .post("/api/automation/rules/simulate")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({
+            rule: {
+              name: "Sim rule candidate",
+              version: "2",
+              condition: { field: "temperature", op: ">", value: 80 },
+              action: { type: "raise_alert", severity: "P2", message: "Temp warning" },
+            },
+            sampleEvents: [
+              { deviceId: "device-a2", eventType: "temperature.reading", occurredAt: new Date().toISOString(), payload: { temperature: 70 } },
+              { deviceId: "device-a2", eventType: "temperature.reading", occurredAt: new Date().toISOString(), payload: { temperature: 90 } },
+            ],
+          });
+        expect(simulation.status).toBe(200);
+        expect(simulation.body.result.matchedCount).toBe(1);
 
-    const evaluate = await request(app).post("/api/automation/events/evaluate").send({
-      event: {
-        eventId: "auto-event-3",
-        deviceId: "device-a2",
-        eventType: "temperature.reading",
-        occurredAt: new Date().toISOString(),
-        payload: { temperature: 91 },
-      },
-    });
-    const alertId = evaluate.body.executedRules[0].action.alertId;
-    const ack = await request(app).post(`/api/automation/alerts/${alertId}/ack`).send({ actorId: "operator-1" });
-    expect(ack.status).toBe(200);
-    expect(ack.body.status).toBe("acknowledged");
-  });
+        const evaluate = await request(app)
+          .post("/api/automation/events/evaluate")
+          .set("x-automation-admin-token", "automation-admin")
+          .send({
+            event: {
+              eventId: "auto-event-3",
+              deviceId: "device-a2",
+              eventType: "temperature.reading",
+              occurredAt: new Date().toISOString(),
+              payload: { temperature: 91 },
+            },
+          });
+        const alertId = evaluate.body.executedRules[0].action.alertId;
+        const ack = await request(app)
+          .post(`/api/automation/alerts/${alertId}/ack`)
+          .set("x-automation-admin-token", "automation-admin")
+          .send({ actorId: "operator-1" });
+        expect(ack.status).toBe(200);
+        expect(ack.body.status).toBe("acknowledged");
+      }
+    ));
 });

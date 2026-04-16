@@ -11,6 +11,8 @@ function buildLimiterApp(envOverrides = {}) {
     process.env.API_RATE_LIMIT_NORMAL_SCENARIO_MAX = envOverrides.API_RATE_LIMIT_NORMAL_SCENARIO_MAX ?? '1';
     process.env.JWT_SECRET = envOverrides.JWT_SECRET ?? 'unit_test_jwt_secret_12345678901234567890';
     process.env.REFRESH_SECRET = envOverrides.REFRESH_SECRET ?? 'unit_test_refresh_secret_123456789012345';
+    process.env.JWT_ISSUER = envOverrides.JWT_ISSUER ?? 'mhub-api';
+    process.env.JWT_AUDIENCE = envOverrides.JWT_AUDIENCE ?? 'mhub-client';
     if (Object.prototype.hasOwnProperty.call(envOverrides, 'RATE_LIMIT_ALLOW_SIMULATED_IDS')) {
         process.env.RATE_LIMIT_ALLOW_SIMULATED_IDS = envOverrides.RATE_LIMIT_ALLOW_SIMULATED_IDS;
     } else {
@@ -23,12 +25,20 @@ function buildLimiterApp(envOverrides = {}) {
 
     const app = express();
     app.use(apiLimiter);
-    app.get('/api/posts', (_req, res) => res.status(200).json({ ok: true }));
+    app.get('/api/private-rate-limit', (_req, res) => res.status(200).json({ ok: true }));
     return app;
 }
 
 function buildToken(userId, secret = process.env.JWT_SECRET) {
-    return jwt.sign({ userId }, secret, { expiresIn: '5m' });
+    return jwt.sign(
+        { userId },
+        secret,
+        {
+            expiresIn: '5m',
+            issuer: process.env.JWT_ISSUER || 'mhub-api',
+            audience: process.env.JWT_AUDIENCE || 'mhub-client'
+        }
+    );
 }
 
 describe('apiLimiter simulated load behavior', () => {
@@ -36,15 +46,16 @@ describe('apiLimiter simulated load behavior', () => {
         const app = buildLimiterApp({
             NODE_ENV: 'test',
             API_RATE_LIMIT_MAX: '1',
-            API_RATE_LIMIT_NORMAL_SCENARIO_MAX: '1'
+            API_RATE_LIMIT_NORMAL_SCENARIO_MAX: '1',
+            RATE_LIMIT_ALLOW_SIMULATED_IDS: 'true'
         });
 
         const first = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('x-load-test-scenario', 'normal')
             .set('x-simulated-user', 'normal:u1');
         const second = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('x-load-test-scenario', 'normal')
             .set('x-simulated-user', 'normal:u2');
 
@@ -60,10 +71,10 @@ describe('apiLimiter simulated load behavior', () => {
         });
 
         const first = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('x-simulated-user', 'normal:u1');
         const second = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('x-simulated-user', 'normal:u2');
 
         expect(first.statusCode).toBe(200);
@@ -82,13 +93,13 @@ describe('apiLimiter simulated load behavior', () => {
         const tokenUserTwo = buildToken('u-2');
 
         const first = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('Authorization', `Bearer ${tokenUserOne}`);
         const second = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('Authorization', `Bearer ${tokenUserTwo}`);
         const third = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('Authorization', `Bearer ${tokenUserOne}`);
 
         expect(first.statusCode).toBe(200);
@@ -105,10 +116,10 @@ describe('apiLimiter simulated load behavior', () => {
         });
 
         const first = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('Authorization', 'Bearer invalid-token-one');
         const second = await request(app)
-            .get('/api/posts')
+            .get('/api/private-rate-limit')
             .set('Authorization', 'Bearer invalid-token-two');
 
         expect(first.statusCode).toBe(200);

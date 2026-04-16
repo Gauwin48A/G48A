@@ -1,6 +1,7 @@
 jest.mock('../src/controllers/postController', () => ({
   getAllPosts: jest.fn((req, res) => res.json({ posts: [], total: 0 })),
   getUserPosts: jest.fn((req, res) => res.json({ posts: [], total: 0 })),
+  getUserPostTotals: jest.fn((req, res) => res.json({ total: 0 })),
   getNearbyPosts: jest.fn((req, res) => res.json({ posts: [] })),
   getSimilarPosts: jest.fn((req, res) => res.json({ posts: [] })),
   getUserTrustScore: jest.fn((req, res) => res.json({ score: 0 })),
@@ -9,7 +10,9 @@ jest.mock('../src/controllers/postController', () => ({
   createPost: jest.fn((req, res) => res.status(201).json({})),
   markAsSold: jest.fn((req, res) => res.json({ success: true })),
   reactivatePost: jest.fn((req, res) => res.json({ success: true })),
-  getPostById: jest.fn((req, res) => res.json({}))
+  getPostById: jest.fn((req, res) => res.json({})),
+  reportPost: jest.fn((req, res) => res.json({ success: true })),
+  renewPost: jest.fn((req, res) => res.json({ success: true }))
 }));
 
 jest.mock('../src/middleware/validators', () => ({
@@ -40,7 +43,8 @@ jest.mock('../src/middleware/auth', () => ({
 }));
 
 jest.mock('../src/middleware/upload', () => ({
-  fields: () => (req, res, next) => next()
+  fields: () => (req, res, next) => next(),
+  postUploadSecurity: (req, res, next) => next()
 }));
 
 jest.mock('../src/config/db', () => ({

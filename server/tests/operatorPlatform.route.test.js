@@ -94,12 +94,15 @@ describe("operator platform routes", () => {
 
         const run = await request(app)
           .post("/api/operator-platform/playbooks/pb-2/run")
+          .set("x-operator-admin-token", "ops-admin")
           .send({ actorId: "oncall-1", context: { region: "ap-south" } });
         expect(run.status).toBe(200);
         expect(run.body.status).toBe("executed");
         expect(run.body.execution.status).toBe("completed");
 
-        const list = await request(app).get("/api/operator-platform/playbooks");
+        const list = await request(app)
+          .get("/api/operator-platform/playbooks")
+          .set("x-operator-admin-token", "ops-admin");
         expect(list.status).toBe(200);
         expect(list.body.playbooks.length).toBe(1);
       }
@@ -136,7 +139,9 @@ describe("operator platform routes", () => {
         expect(accessibility.status).toBe(201);
         expect(accessibility.body.audit.pass).toBe(true);
 
-        const summary = await request(app).get("/api/operator-platform/summary");
+        const summary = await request(app)
+          .get("/api/operator-platform/summary")
+          .set("x-operator-admin-token", "ops-admin");
         expect(summary.status).toBe(200);
         expect(summary.body.summary.developerApps).toBe(1);
       }

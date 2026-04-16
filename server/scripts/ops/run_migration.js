@@ -2,10 +2,12 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+const serverRoot = path.resolve(__dirname, '..', '..');
+
+require('dotenv').config({ path: path.join(serverRoot, '.env') });
 
 const defaultMigration = path.join(
-  __dirname,
+  serverRoot,
   'database',
   'migrations',
   'fix_user_sessions_user_id_type.sql'
@@ -13,7 +15,7 @@ const defaultMigration = path.join(
 
 const inputPath = process.argv[2];
 const migrationPath = inputPath
-  ? (path.isAbsolute(inputPath) ? inputPath : path.join(__dirname, inputPath))
+  ? (path.isAbsolute(inputPath) ? inputPath : path.join(serverRoot, inputPath))
   : defaultMigration;
 
 const pool = new Pool({

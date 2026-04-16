@@ -39,34 +39,48 @@ describe("intelligence finops routes", () => {
     resetForTests();
   });
 
-  it("ingests health and returns maintenance recommendation", async () => {
-    const app = buildApp();
-    const health = await request(app).post("/api/intelligence-finops/health/ingest").send({
-      deviceId: "device-z1",
-      tenantId: "tenant-1",
-      metrics: {
-        uptimePercent: 94,
-        errorRatePercent: 3,
-        latencyMs: 220,
-        temperatureC: 82,
+  it("ingests health and returns maintenance recommendation", async () =>
+    withEnv(
+      {
+        INTELLIGENCE_ADMIN_TOKEN: "intel-admin",
       },
-    });
-    expect(health.status).toBe(201);
-    expect(health.body.status).toBe("ingested");
+      async () => {
+        const app = buildApp();
+        const health = await request(app)
+          .post("/api/intelligence-finops/health/ingest")
+          .set("x-intelligence-admin-token", "intel-admin")
+          .send({
+            deviceId: "device-z1",
+            tenantId: "tenant-1",
+            metrics: {
+              uptimePercent: 94,
+              errorRatePercent: 3,
+              latencyMs: 220,
+              temperatureC: 82,
+            },
+          });
+        expect(health.status).toBe(201);
+        expect(health.body.status).toBe("ingested");
 
-    const lookup = await request(app).get("/api/intelligence-finops/health/device-z1");
-    expect(lookup.status).toBe(200);
-    expect(lookup.body.health.deviceId).toBe("device-z1");
+        const lookup = await request(app)
+          .get("/api/intelligence-finops/health/device-z1")
+          .set("x-intelligence-admin-token", "intel-admin");
+        expect(lookup.status).toBe(200);
+        expect(lookup.body.health.deviceId).toBe("device-z1");
 
-    const maintenance = await request(app).post("/api/intelligence-finops/maintenance/recommend").send({
-      deviceId: "device-z1",
-      recentFailures: 4,
-      offlineMinutes: 16,
-    });
-    expect(maintenance.status).toBe(200);
-    expect(maintenance.body.status).toBe("generated");
-    expect(maintenance.body.recommendation.riskScore).toBeGreaterThan(40);
-  });
+        const maintenance = await request(app)
+          .post("/api/intelligence-finops/maintenance/recommend")
+          .set("x-intelligence-admin-token", "intel-admin")
+          .send({
+            deviceId: "device-z1",
+            recentFailures: 4,
+            offlineMinutes: 16,
+          });
+        expect(maintenance.status).toBe(200);
+        expect(maintenance.body.status).toBe("generated");
+        expect(maintenance.body.recommendation.riskScore).toBeGreaterThan(40);
+      }
+    ));
 
   it("evaluates energy optimization and records tenant cost usage", async () =>
     withEnv(
@@ -76,12 +90,15 @@ describe("intelligence finops routes", () => {
       async () => {
         const app = buildApp();
 
-        const energy = await request(app).post("/api/intelligence-finops/energy/optimize").send({
-          deviceId: "device-z2",
-          baselineWh: 100,
-          currentWh: 80,
-          networkMb: 25,
-        });
+        const energy = await request(app)
+          .post("/api/intelligence-finops/energy/optimize")
+          .set("x-intelligence-admin-token", "intel-admin")
+          .send({
+            deviceId: "device-z2",
+            baselineWh: 100,
+            currentWh: 80,
+            networkMb: 25,
+          });
         expect(energy.status).toBe(200);
         expect(energy.body.recommendation.meetsTarget).toBe(true);
 
@@ -105,7 +122,9 @@ describe("intelligence finops routes", () => {
         expect(usage.status).toBe(201);
         expect(usage.body.status).toBe("recorded");
 
-        const ledger = await request(app).get("/api/intelligence-finops/finops/tenants/tenant-2");
+        const ledger = await request(app)
+          .get("/api/intelligence-finops/finops/tenants/tenant-2")
+          .set("x-intelligence-admin-token", "intel-admin");
         expect(ledger.status).toBe(200);
         expect(ledger.body.ledger.totalCostUsd).toBe(120.5);
       }
@@ -131,7 +150,9 @@ describe("intelligence finops routes", () => {
         expect(experiment.status).toBe(200);
         expect(experiment.body.experiment.rollback).toBe(true);
 
-        const summary = await request(app).get("/api/intelligence-finops/summary");
+        const summary = await request(app)
+          .get("/api/intelligence-finops/summary")
+          .set("x-intelligence-admin-token", "intel-admin");
         expect(summary.status).toBe(200);
         expect(summary.body.summary.experiments).toBe(1);
         expect(summary.body.summary.rollbackRecommended).toBe(1);
