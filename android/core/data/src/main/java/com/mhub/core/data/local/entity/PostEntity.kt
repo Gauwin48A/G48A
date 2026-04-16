@@ -1,0 +1,82 @@
+package com.mhub.core.data.local.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.mhub.core.common.model.Post
+
+@Entity(tableName = "posts")
+data class PostEntity(
+    @PrimaryKey val id: Int,
+    val title: String,
+    val description: String?,
+    val price: Double?,
+    val currency: String,
+    val images: List<String>,
+    val categoryId: Int?,
+    val categoryName: String?,
+    val subcategoryId: Int?,
+    val subcategoryName: String?,
+    val condition: String?,
+    val location: String?,
+    val latitude: Double?,
+    val longitude: Double?,
+    val userId: Int,
+    val userName: String?,
+    val userAvatar: String?,
+    val isSold: Boolean,
+    val isFeatured: Boolean,
+    val viewCount: Int,
+    val createdAt: String?,
+    val updatedAt: String?,
+    val cachedAt: Long = System.currentTimeMillis(),
+)
+
+fun PostEntity.toModel() = Post(
+    id = id,
+    title = title,
+    description = description,
+    price = price,
+    currency = currency,
+    images = images,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    subcategoryId = subcategoryId,
+    subcategoryName = subcategoryName,
+    condition = condition,
+    location = location,
+    latitude = latitude,
+    longitude = longitude,
+    userId = userId,
+    userName = userName,
+    userAvatar = userAvatar,
+    isSold = isSold,
+    isFeatured = isFeatured,
+    viewCount = viewCount,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+)
+
+fun Post.toEntity() = PostEntity(
+    id = id,
+    title = title,
+    description = description,
+    price = price,
+    currency = currency,
+    images = images,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    subcategoryId = subcategoryId,
+    subcategoryName = subcategoryName,
+    condition = condition,
+    location = location,
+    latitude = latitude,
+    longitude = longitude,
+    userId = userId,
+    userName = userName,
+    userAvatar = userAvatar,
+    isSold = isSold,
+    isFeatured = isFeatured,
+    viewCount = viewCount,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+)

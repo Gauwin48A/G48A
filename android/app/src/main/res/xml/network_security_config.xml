@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">mhub.app</domain>
+        <domain includeSubdomains="true">api.mhub.app</domain>
+    </domain-config>
+    <!-- Allow cleartext for local dev (emulator localhost) in debug only -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>
