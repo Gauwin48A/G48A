@@ -1,62 +1,85 @@
-const logger = require('../utils/logger');
-const { captureException } = require('../services/errorReporter');
+const logger = require("../utils/logger");
+const { captureException } = require("../services/errorReporter");
 
+/**
+ * Global Express error-handling middleware.
+ * Logs the error, reports it to the error-tracking service, and returns
+ * a structured JSON response. Translates common Postgres and JWT error
+ * codes into user-friendly messages and appropriate HTTP status codes.
+ * In non-production environments, the stack trace and raw error are included.
+ * @param {Error} err - The error object.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 const errorHandler = (err, req, res, next) => {
-    // Log the raw error for debugging
-    console.error('🔥 [Global Error Handler]', err);
-    if (logger && logger.error) logger.error(err);
-    captureException(err, {
-        method: req.method,
-        path: req.originalUrl,
-        userId: req.user?.userId || req.user?.id || null
-    });
+  if (logger && logger.error) {
+    logger.error("[Global Error Handler]", err);
+  } else {
+    console.error("[Global Error Handler]", err);
+  }
 
-    // Default error defaults
-    let statusCode = err.statusCode || 500;
-    let message = err.message || 'Internal Server Error';
+  captureException(err, {
+    method: req.method,
+    path: req.originalUrl,
+    userId: req.user?.userId || req.user?.id || null
+  });
 
-    // 1. Handle PostgreSQL Unique Constraint Violations (e.g. Duplicate Email)
-    if (err.code === '23505') {
-        statusCode = 409; // Conflict
-        message = 'Duplicate entry found. This record already exists.';
-        if (err.detail && err.detail.includes('email')) message = 'This email is already registered.';
-        if (err.detail && err.detail.includes('phone')) message = 'This phone number is already registered.';
-    }
+  let statusCode = err.statusCode || 500;
+  let message = "Internal Server Error";
 
-    // 2. Handle UUID Syntax Errors
-    if (err.code === '22P02' && err.message.includes('uuid')) {
-        statusCode = 400;
-        message = 'Invalid ID format.';
-    }
+  // Postgres: unique violation
+  if (err.code === "23505") {
+    statusCode = 409;
+    message = "Duplicate entry found. This record already exists.";
+    if (err.detail && err.detail.includes("email"))
+      message = "This email is already registered.";
+    if (err.detail && err.detail.includes("phone"))
+      message = "This phone number is already registered.";
+  }
 
-    // 3. Handle Foreign Key Violations (e.g. User not found for post)
-    if (err.code === '23503') {
-        statusCode = 400;
-        message = 'Referenced record not found (Invalid ID).';
-    }
+  // Postgres: invalid text representation (bad UUID)
+  if (err.code === "22P02" && err.message.includes("uuid")) {
+    statusCode = 400;
+    message = "Invalid ID format.";
+  }
 
-    // 4. Handle JWT Errors
-    if (err.name === 'JsonWebTokenError') {
-        statusCode = 401;
-        message = 'Invalid token. Please log in again.';
-    }
-    if (err.name === 'TokenExpiredError') {
-        statusCode = 401;
-        message = 'Session expired. Please log in again.';
-    }
+  // Postgres: invalid input syntax (e.g. string passed as integer)
+  if (err.code === "22P02" && !err.message.includes("uuid")) {
+    statusCode = 400;
+    message = "Invalid request parameter.";
+  }
 
-    // Security: Don't leak stack traces in production
-    const response = {
-        error: message,
-        success: false
-    };
+  // Postgres: foreign key violation
+  if (err.code === "23503") {
+    statusCode = 400;
+    message = "Referenced record not found (Invalid ID).";
+  }
 
-    if (process.env.NODE_ENV !== 'production') {
-        response.stack = err.stack;
-        response.rawError = err;
-    }
+  // JWT: malformed token
+  if (err.name === "JsonWebTokenError") {
+    statusCode = 401;
+    message = "Invalid token. Please log in again.";
+  }
 
-    res.status(statusCode).json(response);
+  // JWT: expired token
+  if (err.name === "TokenExpiredError") {
+    statusCode = 401;
+    message = "Session expired. Please log in again.";
+  }
+
+  const response = {
+    error: message,
+    success: false
+  };
+
+  const isDevEnv = process.env.NODE_ENV === "development";
+  if (isDevEnv) {
+    response.stack = err.stack;
+    response.details = err.message;
+  }
+
+  res.status(statusCode).json(response);
 };
 
 module.exports = errorHandler;

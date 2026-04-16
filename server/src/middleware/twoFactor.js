@@ -8,19 +8,10 @@
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const bcrypt = require('bcrypt');
-const pool = require('../config/db');
+const { runQuery } = require('../utils/dbHelpers');
 const logger = require('../utils/logger');
 
 const APP_NAME = 'MHub';
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-    return pool.query({
-        text,
-        values,
-        query_timeout: DB_QUERY_TIMEOUT_MS
-    });
-}
 
 /**
  * Generate a new 2FA secret for a user

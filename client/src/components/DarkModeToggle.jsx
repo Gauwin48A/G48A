@@ -15,8 +15,8 @@ const DarkModeToggle = ({ className = '' }) => {
             onClick={toggleTheme}
             className={`
         relative p-2 rounded-full
-        bg-gray-100 dark:bg-gray-800
-        hover:bg-gray-200 dark:hover:bg-gray-700
+        bg-[var(--chip-bg)]
+        hover:bg-[var(--surface-2)]
         transition-all duration-300
         ${className}
       `}

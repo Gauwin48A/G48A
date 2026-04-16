@@ -1,19 +1,16 @@
+import * as e from "react";
+import { cn as a } from "@/lib/utils";
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+const r = e.forwardRef(({ className: o, ...i }, t) =>
+  e.createElement("textarea", {
+    className: a(
+      "mhub-input flex min-h-[96px] w-full rounded-xl px-3.5 py-2 text-sm ring-offset-background placeholder:text-[var(--text-faint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50",
+      o
+    ),
+    ref: t,
+    ...i,
+  })
+);
+r.displayName = "Textarea";
 
-const Textarea = React.forwardRef(({ className, ...props }, ref) => {
-  return (
-    <textarea
-      className={cn(
-        "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      ref={ref}
-      {...props}
-    />
-  )
-})
-Textarea.displayName = "Textarea"
-
-export { Textarea }
+export { r as Textarea };

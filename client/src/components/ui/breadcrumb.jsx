@@ -3,10 +3,12 @@ import { Slot } from "@radix-ui/react-slot"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useTranslation } from "react-i18next"
 
-const Breadcrumb = forwardRef(({ ...props }, ref) => (
-  <nav ref={ref} aria-label="breadcrumb" {...props} />
-))
+const Breadcrumb = forwardRef(({ ...props }, ref) => {
+  const { t } = useTranslation()
+  return <nav ref={ref} aria-label={t("breadcrumb_label")} {...props} />
+})
 Breadcrumb.displayName = "Breadcrumb"
 
 const BreadcrumbList = forwardRef(({ className, ...props }, ref) => (
@@ -67,17 +69,20 @@ const BreadcrumbSeparator = ({ children, className, ...props }) => (
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
 
-const BreadcrumbEllipsis = ({ className, ...props }) => (
-  <span
-    role="presentation"
-    aria-hidden="true"
-    className={cn("flex h-9 w-9 items-center justify-center", className)}
-    {...props}
-  >
-    <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More</span>
-  </span>
-)
+const BreadcrumbEllipsis = ({ className, ...props }) => {
+  const { t } = useTranslation()
+  return (
+    <span
+      role="presentation"
+      aria-hidden="true"
+      className={cn("flex h-9 w-9 items-center justify-center", className)}
+      {...props}
+    >
+      <MoreHorizontal className="h-4 w-4" />
+      <span className="sr-only">{t("more")}</span>
+    </span>
+  )
+}
 BreadcrumbEllipsis.displayName = "BreadcrumbEllipsis"
 
 export {

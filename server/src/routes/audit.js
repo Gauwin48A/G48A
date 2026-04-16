@@ -1,28 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/db');
+const { runQuery, getAuthUserId } = require('../utils/dbHelpers');
+const { protect } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
-
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
+// All audit routes require authentication
+router.use(protect);
 
 // POST /api/audit
 router.post('/', async (req, res) => {
-  const { user_id, latitude, longitude, event_type } = req.body;
-  if (!user_id || !latitude || !longitude || !event_type) return res.status(400).json({ error: 'Missing fields' });
+  const authUserId = getAuthUserId(req);
+  if (!authUserId) return res.status(401).json({ error: 'Authentication required' });
+
+  const { latitude, longitude, event_type } = req.body;
+  if (!latitude || !longitude || !event_type) {
+    return res.status(400).json({ error: 'Missing fields' });
+  }
+
+  const normalizedEventType = String(event_type || "").trim();
+  if (!normalizedEventType || normalizedEventType.length > 64 || !/^[a-z0-9_:-]+$/i.test(normalizedEventType)) {
+    return res.status(400).json({ error: 'Invalid event_type' });
+  }
+
+  // Enforce: user can only log audit events for themselves
   try {
-    await runQuery('INSERT INTO audit (user_id, latitude, longitude, event_type) VALUES ($1, $2, $3, $4)', [user_id, latitude, longitude, event_type]);
+    await runQuery(
+      'INSERT INTO audit (user_id, latitude, longitude, event_type) VALUES ($1, $2, $3, $4)',
+      [String(authUserId), latitude, longitude, normalizedEventType]
+    );
     res.json({ success: true });
   } catch (err) {
     logger.error('[Audit] Insert failed:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Audit log failed' });
   }
 });
 

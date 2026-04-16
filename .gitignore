@@ -24,6 +24,19 @@ yarn-error.log*
 # Generated artifacts
 /server/docs/artifacts/
 /server/tests/load/results/
+/server/backups/
+/server/uploads/
+/server/logs/
+
+# Security: dev-only credential generation scripts (never deploy)
+/server/generate-sql.js
+/server/generateHash.js
+
+/server/docs/project/CONTINUOUS_IMPROVEMENT_REPORT.json
+/server/docs/project/RELEASE_CLEANUP_CHECKLIST.json
+/server/docs/project/SAFE_E2E_IMPLEMENTATION_REPORT.json
+/server/docs/project/SAFE_E2E_IMPLEMENTATION_REPORT_REAL.json
+/server/docs/project/WORKTREE_RISK_REPORT.json
 /client/tmpclaude-*
 /client/stderr.txt
 /client/lint_log.txt
@@ -39,3 +52,52 @@ yarn-error.log*
 # System files
 .DS_Store
 Thumbs.db
+nul.css
+
+# Backup files
+*.bak
+*.backup
+
+# Generated reports
+FILE_VALIDATION_REPORT.md
+FILE_VALIDATION_RATINGS.csv
+README_FILE_ANALYSIS.md
+compare.md
+IMPLEMENTATION_COMPLETE_SUMMARY.md
+SCRIPT_MIGRATION_REPORT.md
+
+# Visual Studio workspace cache
+.vs/
+
+# Server debug/schema dumps
+/server/hash.txt
+/server/hash_out.txt
+/server/migration_log.txt
+/server/schema_log.txt
+/server/posts_schema.txt
+/server/users_schema.txt
+/server/TEST_USER_SQL.txt
+/server/tests/test*.json
+
+# Server generated audit outputs
+/server/scripts/audit_report.txt
+/server/scripts/missing-keys.txt
+/server/scripts/verification_report.txt
+/server/scripts/*.generated.md
+
+# Client build artifacts / caches
+/client/dist/
+/client/.vite/
+/client/lighthouse-report.json
+/client/screenshots/
+
+# UX backup / screenshot artifacts
+/client/_ux_backups/
+/client/_ux_screens/
+
+# Dev tool caches
+.codex-snapshots/
+_codex_backups/
+.dev-logs/
+.claude/
+

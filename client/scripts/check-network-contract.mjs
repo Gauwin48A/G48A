@@ -50,7 +50,7 @@ const checks = [
     id: 'categories-contract',
     file: 'src/services/categoriesService.js',
     patterns: [
-      /\.get\(['"]\/categories['"]\)/
+      /\.get\([\s\S]*?['"]\/categories['"]/
     ]
   },
   {

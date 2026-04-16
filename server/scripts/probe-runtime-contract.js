@@ -153,8 +153,86 @@ async function run() {
         validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
       },
       {
+        name: 'GET /api/channels',
+        request: { method: 'GET', path: '/api/channels' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/channels/owner/:userId',
+        request: { method: 'GET', path: '/api/channels/owner/runtime-probe-user?limit=1' },
+        validate: (result) => {
+          if (result.status === 404) return 'unexpected 404';
+          if (![401, 403].includes(result.status)) return 'expected auth-guarded status (401/403)';
+          return '';
+        }
+      },
+      {
+        name: 'GET /api/channel',
+        request: { method: 'GET', path: '/api/channel' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'POST /api/channel/create',
+        request: {
+          method: 'POST',
+          path: '/api/channel/create',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}'
+        },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
         name: 'GET /api/posts/for-you?page=1&limit=6',
         request: { method: 'GET', path: '/api/posts/for-you?page=1&limit=6' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/profile',
+        request: { method: 'GET', path: '/api/profile' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/profile/preferences',
+        request: { method: 'GET', path: '/api/profile/preferences' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/users/kyc/status',
+        request: { method: 'GET', path: '/api/users/kyc/status' },
+        validate: (result) => {
+          if (result.status === 404) return 'unexpected 404';
+          if (![401, 403].includes(result.status)) return 'expected auth-guarded status (401/403)';
+          return '';
+        }
+      },
+      {
+        name: 'GET /api/feed?page=1&limit=1',
+        request: { method: 'GET', path: '/api/feed?page=1&limit=1' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/feed/mine?page=1&limit=1',
+        request: { method: 'GET', path: '/api/feed/mine?page=1&limit=1' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/notifications?page=1&limit=1',
+        request: { method: 'GET', path: '/api/notifications?page=1&limit=1' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/wishlist?page=1&limit=1',
+        request: { method: 'GET', path: '/api/wishlist?page=1&limit=1' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/recently-viewed?page=1&limit=1',
+        request: { method: 'GET', path: '/api/recently-viewed?page=1&limit=1' },
+        validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
+      },
+      {
+        name: 'GET /api/saved-searches?page=1&limit=1',
+        request: { method: 'GET', path: '/api/saved-searches?page=1&limit=1' },
         validate: (result) => (result.status === 404 ? 'unexpected 404' : '')
       },
       {
@@ -223,6 +301,12 @@ async function run() {
       if (!result.ok) {
         failures += 1;
         console.error(buildFailureMessage(probe, result));
+        continue;
+      }
+
+      if (result.status === 429) {
+        failures += 1;
+        console.error(buildFailureMessage(probe, result, 'unexpected 429 rate-limit'));
         continue;
       }
 

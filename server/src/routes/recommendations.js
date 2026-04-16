@@ -1,69 +1,136 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const pool = require('../config/db');
-const logger = require('../utils/logger');
-const { optionalAuth } = require('../middleware/auth');
+const { runQuery, getAuthUserId, parseOptionalString, parsePositiveInt } = require("../utils/dbHelpers");
+const logger = require("../utils/logger");
+const { optionalAuth } = require("../middleware/auth");
+const { attachTrustToPosts } = require("../services/trustBadgeService");
+const {
+  CATEGORY_GROUP_SQL,
+  CATEGORY_GROUP_VALUES,
+} = require("../utils/categoryGroupSql");
 
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 50;
 
-function runQuery(text, values = []) {
-  return pool.query({
-    text,
-    values,
-    query_timeout: DB_QUERY_TIMEOUT_MS
-  });
-}
-
-function parsePositiveInt(value, fallback, maxValue = Number.MAX_SAFE_INTEGER) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return fallback;
+function parseOptionalDate(value) {
+  const normalized = parseOptionalString(value);
+  if (!normalized) {
+    return null;
   }
 
-  return Math.min(parsed, maxValue);
+  const timestamp = Date.parse(normalized);
+  return Number.isNaN(timestamp) ? null : normalized;
 }
 
-function parseOptionalString(value) {
-  if (value === undefined || value === null) return null;
-  const normalized = String(value).trim();
-  return normalized.length ? normalized : null;
+function normalizeCategoryGroup(value) {
+  const normalized = parseOptionalString(value)?.toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  if (normalized.startsWith("electronic") || normalized.startsWith("mobile")) {
+    return "electronics";
+  }
+  if (normalized.startsWith("fashion")) {
+    return "fashion";
+  }
+  if (normalized.startsWith("vehicle") || normalized.startsWith("auto")) {
+    return "vehicles";
+  }
+  if (normalized === "other" || normalized === "others") {
+    return "others";
+  }
+  return CATEGORY_GROUP_VALUES.has(normalized) ? normalized : null;
 }
 
-function getAuthenticatedUserId(req) {
-  return parseOptionalString(req.user?.userId || req.user?.id || req.user?.user_id);
-}
-
-// Attach best-effort auth context for optional personalization.
+/** Apply optional authentication to all routes */
 router.use(optionalAuth);
 
+/**
+ * Normalize a category filter into a deduplicated lowercase array.
+ */
 function normalizeCategoryFilter(category) {
   if (!category) {
     return [];
   }
-
   const values = Array.isArray(category)
     ? category
-    : String(category)
-        .split(',')
-        .map((entry) => entry.trim());
-
-  return [...new Set(values.map((entry) => String(entry).trim().toLowerCase()).filter(Boolean))];
+    : String(category).split(",").map(entry => entry.trim());
+  return [
+    ...new Set(
+      values
+        .map(entry => String(entry).trim().toLowerCase())
+        .filter(Boolean)
+    )
+  ];
 }
 
-// GET /api/recommendations?userId=1&location=Mumbai&minPrice=1000&maxPrice=50000&category=Electronics&search=iPhone
-router.get('/', async (req, res) => {
-  const { userId, search } = req.query;
-  let { location, minPrice, maxPrice, category, page = DEFAULT_PAGE, limit = DEFAULT_LIMIT } = req.query;
-  const authenticatedUserId = getAuthenticatedUserId(req);
-  const requestedUserId = parseOptionalString(userId);
+function normalizeSubcategoryFilter(subcategory) {
+  if (!subcategory) {
+    return [];
+  }
 
-  // Privacy hardening: only authenticated self-context can hydrate saved preferences.
+  const values = Array.isArray(subcategory)
+    ? subcategory
+    : String(subcategory).split(",").map((entry) => entry.trim());
+
+  return [
+    ...new Set(
+      values
+        .flatMap((entry) => String(entry).split(","))
+        .map((entry) => String(entry).trim().toLowerCase())
+        .filter((entry) => entry && entry !== "all")
+    ),
+  ];
+}
+
+/**
+ * @route GET /
+ * @desc  Fetch recommended posts with optional filters (location, price, category, search).
+ *        Falls back to saved user preferences when no filters are supplied.
+ */
+router.get("/", async (req, res) => {
+  const { userId, search } = req.query;
+  let {
+    location,
+    minPrice,
+    maxPrice,
+    category,
+    category_id: categoryId,
+    category_group: categoryGroupParam,
+    subcategory_id: subcategoryId,
+    startDate,
+    endDate,
+    latestWindow,
+    page = DEFAULT_PAGE,
+    limit = DEFAULT_LIMIT
+  } = req.query;
+
+  const authenticatedUserId = getAuthUserId(req);
+  const requestedUserId = parseOptionalString(userId);
   const effectiveUserId = authenticatedUserId || null;
+  const trimmedSearch = typeof search === "string" ? search.trim() : "";
+  const latestWindowValue = parsePositiveInt(latestWindow, null, MAX_LIMIT);
+  const categoryGroup = normalizeCategoryGroup(
+    categoryGroupParam || req.query.categoryGroup || req.query.group
+  );
+
+  if (latestWindowValue) {
+    limit = latestWindowValue;
+  }
+
+  let normalizedStartDate = parseOptionalDate(startDate);
+  let normalizedEndDate = parseOptionalDate(endDate);
+  if (
+    normalizedStartDate &&
+    normalizedEndDate &&
+    Date.parse(normalizedStartDate) > Date.parse(normalizedEndDate)
+  ) {
+    [normalizedStartDate, normalizedEndDate] = [normalizedEndDate, normalizedStartDate];
+  }
+
   if (requestedUserId && authenticatedUserId && requestedUserId !== authenticatedUserId) {
-    logger.warn('[RECOMMENDATIONS] Ignoring cross-user override request', {
+    logger.warn("[RECOMMENDATIONS] Ignoring cross-user override request", {
       requester: authenticatedUserId,
       requested: requestedUserId
     });
@@ -74,40 +141,61 @@ router.get('/', async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
-    // Hydrate preferences only for authenticated user context.
-    if (effectiveUserId && (!location && !minPrice && !maxPrice && !category)) {
+    /* Load saved preferences when the user supplies no explicit filters */
+    if (
+      effectiveUserId &&
+      !trimmedSearch &&
+      !location &&
+      !minPrice &&
+      !maxPrice &&
+      !category &&
+      !categoryId &&
+      !categoryGroup &&
+      !subcategoryId &&
+      !req.query.subcategory &&
+      !req.query.subcategories &&
+      !normalizedStartDate &&
+      !normalizedEndDate &&
+      !latestWindowValue
+    ) {
       try {
         const prefResult = await runQuery(
-          'SELECT location, min_price, max_price, categories FROM preferences WHERE user_id = $1 LIMIT 1',
+          "SELECT location, min_price, max_price, categories FROM preferences WHERE user_id = $1 LIMIT 1",
           [effectiveUserId]
         );
 
         if (prefResult.rows && prefResult.rows.length > 0) {
           const userPref = prefResult.rows[0];
-
-          location = location || userPref.location || '';
+          location = location || userPref.location || "";
           minPrice = minPrice || userPref.min_price;
           maxPrice = maxPrice || userPref.max_price;
 
-          if (!category && Array.isArray(userPref.categories) && userPref.categories.length > 0) {
-            category = userPref.categories;
+          const savedSubcategories = Array.isArray(userPref.subcategories)
+            ? userPref.subcategories
+            : Array.isArray(userPref.categories)
+              ? userPref.categories
+              : [];
+
+          if (!req.query.subcategory && !req.query.subcategories && savedSubcategories.length > 0) {
+            req.query.subcategory = savedSubcategories.join(",");
           }
 
-          logger.info('[RECOMMENDATIONS] Applied saved user preferences', {
+          logger.info("[RECOMMENDATIONS] Applied saved user preferences", {
             userId: effectiveUserId,
             hasLocation: Boolean(location),
             hasMinPrice: minPrice !== undefined && minPrice !== null,
             hasMaxPrice: maxPrice !== undefined && maxPrice !== null,
-            categoryCount: normalizeCategoryFilter(category).length
+            subcategoryCount: normalizeSubcategoryFilter(req.query.subcategory).length
           });
         }
       } catch (prefErr) {
-        logger.info('[RECOMMENDATIONS] Could not fetch user preferences', prefErr.message);
+        logger.info("[RECOMMENDATIONS] Could not fetch user preferences", prefErr.message);
       }
     }
 
+    /* Build dynamic WHERE clause */
     const params = [];
-    const addParam = (value) => {
+    const addParam = value => {
       params.push(value);
       return `$${params.length}`;
     };
@@ -118,7 +206,6 @@ router.get('/', async (req, res) => {
       whereClauses.push(`p.user_id != ${addParam(effectiveUserId)}`);
     }
 
-    const trimmedSearch = typeof search === 'string' ? search.trim() : '';
     if (trimmedSearch) {
       const searchParam = addParam(`%${trimmedSearch}%`);
       whereClauses.push(
@@ -126,7 +213,7 @@ router.get('/', async (req, res) => {
       );
     }
 
-    const trimmedLocation = typeof location === 'string' ? location.trim() : '';
+    const trimmedLocation = typeof location === "string" ? location.trim() : "";
     if (trimmedLocation) {
       whereClauses.push(`p.location ILIKE ${addParam(`%${trimmedLocation}%`)}`);
     }
@@ -141,7 +228,15 @@ router.get('/', async (req, res) => {
       whereClauses.push(`p.price <= ${addParam(maxPriceValue)}`);
     }
 
-    const categoryFilters = normalizeCategoryFilter(category);
+    if (normalizedStartDate) {
+      whereClauses.push(`p.created_at >= ${addParam(normalizedStartDate)}::date`);
+    }
+
+    if (normalizedEndDate) {
+      whereClauses.push(`p.created_at < (${addParam(normalizedEndDate)}::date + INTERVAL '1 day')`);
+    }
+
+    const categoryFilters = normalizeCategoryFilter(categoryId || category);
     if (categoryFilters.length > 0) {
       const categoryParam = addParam(categoryFilters);
       whereClauses.push(
@@ -149,10 +244,36 @@ router.get('/', async (req, res) => {
       );
     }
 
+    if (categoryGroup) {
+      if (categoryGroup === "others") {
+        whereClauses.push(
+          `${CATEGORY_GROUP_SQL} NOT IN ('electronics', 'fashion', 'vehicles')`
+        );
+      } else {
+        whereClauses.push(`${CATEGORY_GROUP_SQL} = ${addParam(categoryGroup)}`);
+      }
+    }
+
+    const subcategoryFilters = normalizeSubcategoryFilter(
+      subcategoryId ||
+        req.query.subcategory ||
+        req.query.subcategories ||
+        req.query["subcategory[]"]
+    );
+    if (subcategoryFilters.length > 0) {
+      const subcategoryParam = addParam(subcategoryFilters);
+      whereClauses.push(
+        `(LOWER(sc.name) = ANY(${subcategoryParam}::text[]) OR p.subcategory_id::text = ANY(${subcategoryParam}::text[]))`
+      );
+    }
+
     let query = `
-      SELECT p.*, c.name as category_name, u.username as seller_name, COALESCE(pr.full_name, u.username, 'Seller') as author_name
+      SELECT p.*, c.name as category_name, sc.name as subcategory_name,
+             u.username as seller_name,
+             COALESCE(pr.full_name, u.username, 'Seller') as author_name
       FROM posts p
       LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN subcategories sc ON p.subcategory_id = sc.subcategory_id
       LEFT JOIN users u ON p.user_id = u.user_id
       LEFT JOIN LATERAL (
         SELECT full_name
@@ -160,44 +281,55 @@ router.get('/', async (req, res) => {
         WHERE user_id = p.user_id
         LIMIT 1
       ) pr ON TRUE
-      WHERE ${whereClauses.join(' AND ')}
+      WHERE ${whereClauses.join(" AND ")}
     `;
 
     query += ` ORDER BY p.created_at DESC LIMIT ${addParam(limit)} OFFSET ${addParam(offset)}`;
 
-    logger.info('[RECOMMENDATIONS] Executing query', {
+    logger.info("[RECOMMENDATIONS] Executing query", {
       userId: effectiveUserId,
-      requestedUserId,
-      page,
-      limit,
+      requestedUserId: requestedUserId,
+      page: page,
+      limit: limit,
       hasSearch: Boolean(trimmedSearch),
       hasLocation: Boolean(trimmedLocation),
       hasMinPrice: Number.isFinite(minPriceValue),
       hasMaxPrice: Number.isFinite(maxPriceValue),
-      categoryCount: categoryFilters.length
+      hasStartDate: Boolean(normalizedStartDate),
+      hasEndDate: Boolean(normalizedEndDate),
+      latestWindow: latestWindowValue,
+      categoryCount: categoryFilters.length,
+      subcategoryCount: subcategoryFilters.length,
+      categoryGroup
     });
 
     const result = await runQuery(query, params);
-
-    logger.info('[RECOMMENDATIONS] Found', result.rows.length, 'posts');
+    logger.info("[RECOMMENDATIONS] Found", result.rows.length, "posts");
+    const enrichedPosts = await attachTrustToPosts(result.rows || []);
 
     res.json({
-      posts: result.rows,
+      posts: enrichedPosts,
       count: result.rows.length,
-      page,
-      limit,
+      page: page,
+      limit: limit,
       filters: {
-        location,
-        minPrice,
-        maxPrice,
-        category,
-        search: trimmedSearch
+        location: location,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        category_id: categoryId,
+        category_group: categoryGroup,
+        subcategory_id: subcategoryId,
+        category: category,
+        search: trimmedSearch,
+        startDate: normalizedStartDate,
+        endDate: normalizedEndDate,
+        latestWindow: latestWindowValue
       }
     });
   } catch (err) {
-    logger.error('[RECOMMENDATIONS] Error:', err.message);
-    logger.error('[RECOMMENDATIONS] Full error:', err);
-    res.status(500).json({ error: 'Failed to fetch recommendations', details: err.message });
+    logger.error("[RECOMMENDATIONS] Error:", err.message);
+    logger.error("[RECOMMENDATIONS] Full error:", err);
+    res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });
 

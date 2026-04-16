@@ -1,49 +1,40 @@
-/**
- * Contacts Routes
- * Protocol: Native Hybrid - Contact Sync
- */
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const pool = require('../config/db');
-const logger = require('../utils/logger');
+const { protect } = require("../middleware/auth");
+const { runQuery, getAuthUserId } = require("../utils/dbHelpers");
+const logger = require("../utils/logger");
 
-const DB_QUERY_TIMEOUT_MS = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS, 10) || 10000;
+const MAX_CONTACTS_SYNC = Number.parseInt(
+  process.env.CONTACTS_SYNC_MAX || "500",
+  10,
+);
 
-function runQuery(text, values = []) {
-    return pool.query({
-        text,
-        values,
-        query_timeout: DB_QUERY_TIMEOUT_MS
-    });
-}
-
-function getUserId(req) {
-    return req.user?.userId || req.user?.id || req.user?.user_id || null;
-}
-
-// All routes require authentication
+/** All contact routes require authentication */
 router.use(protect);
 
 /**
- * Sync contacts from device
- * POST /api/contacts/sync
+ * @route POST /sync - Sync device contacts and match platform users
  */
-router.post('/sync', async (req, res) => {
-    const userId = getUserId(req);
-    const { contacts } = req.body;
+router.post("/sync", async (req, res) => {
+  const userId = getAuthUserId(req);
+  const { contacts } = req.body;
 
-    if (!userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  if (!Array.isArray(contacts) || contacts.length === 0) {
+    return res.status(400).json({ error: "Contacts array required" });
+  }
+  if (contacts.length > MAX_CONTACTS_SYNC) {
+    return res.status(413).json({
+      error: "Contacts batch too large",
+      max: MAX_CONTACTS_SYNC,
+    });
+  }
 
-    if (!Array.isArray(contacts) || contacts.length === 0) {
-        return res.status(400).json({ error: 'Contacts array required' });
-    }
-
-    try {
-        const upsertResult = await runQuery(`
+  try {
+    const upsertResult = await runQuery(
+      `
       WITH incoming AS (
         SELECT
           $1::bigint AS owner_id,
@@ -63,11 +54,14 @@ router.post('/sync', async (req, res) => {
       ON CONFLICT (owner_id, phone)
       DO UPDATE SET name = EXCLUDED.name
       RETURNING phone
-    `, [userId, JSON.stringify(contacts)]);
-        const synced = upsertResult.rowCount || 0;
+    `,
+      [userId, JSON.stringify(contacts)]
+    );
 
-        // Check which contacts are on the platform
-        await runQuery(`
+    const synced = upsertResult.rowCount || 0;
+
+    await runQuery(
+      `
       WITH incoming AS (
         SELECT DISTINCT c.phone
         FROM jsonb_to_recordset($2::jsonb) AS c(name text, phone text)
@@ -80,33 +74,30 @@ router.post('/sync', async (req, res) => {
       WHERE uc.owner_id = $1
         AND (u.phone_number = uc.phone OR u.phone_number = CONCAT('+91', uc.phone))
         AND u.user_id != $1
-    `, [userId, JSON.stringify(contacts)]);
+    `,
+      [userId, JSON.stringify(contacts)]
+    );
 
-        res.json({
-            message: 'Contacts synced',
-            synced
-        });
-
-    } catch (error) {
-        logger.error('[Contacts] Sync error:', error);
-        res.status(500).json({ error: 'Failed to sync contacts' });
-    }
+    res.json({ message: "Contacts synced", synced: synced });
+  } catch (error) {
+    logger.error("[Contacts] Sync error:", error);
+    res.status(500).json({ error: "Failed to sync contacts" });
+  }
 });
 
 /**
- * Get friends on platform
- * GET /api/contacts/friends
+ * @route GET /friends - Find contacts who are also on the platform
  */
-router.get('/friends', async (req, res) => {
-    const userId = getUserId(req);
+router.get("/friends", async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
 
-    if (!userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    try {
-        const result = await runQuery(`
-      SELECT 
+  try {
+    const result = await runQuery(
+      `
+      SELECT
         uc.name as contact_name,
         uc.phone,
         u.user_id,
@@ -119,42 +110,43 @@ router.get('/friends', async (req, res) => {
       WHERE uc.owner_id = $1
         AND u.user_id != $1
       ORDER BY uc.name
-    `, [userId]);
+    `,
+      [userId]
+    );
 
-        res.json({ friends: result.rows });
-
-    } catch (error) {
-        logger.error('[Contacts] Find friends error:', error);
-        res.status(500).json({ error: 'Failed to find friends' });
-    }
+    res.json({ friends: result.rows });
+  } catch (error) {
+    logger.error("[Contacts] Find friends error:", error);
+    res.status(500).json({ error: "Failed to find friends" });
+  }
 });
 
 /**
- * Get contact sync stats
- * GET /api/contacts/stats
+ * @route GET /stats - Get contact sync statistics
  */
-router.get('/stats', async (req, res) => {
-    const userId = getUserId(req);
+router.get("/stats", async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
 
-    if (!userId) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    try {
-        const stats = await runQuery(`
-      SELECT 
+  try {
+    const stats = await runQuery(
+      `
+      SELECT
         COUNT(*) as total_contacts,
         COUNT(CASE WHEN is_on_platform THEN 1 END) as friends_on_platform
       FROM user_contacts
       WHERE owner_id = $1
-    `, [userId]);
+    `,
+      [userId]
+    );
 
-        res.json(stats.rows[0]);
-
-    } catch (error) {
-        logger.error('[Contacts] Stats error:', error);
-        res.status(500).json({ error: 'Failed to get stats' });
-    }
+    res.json(stats.rows[0]);
+  } catch (error) {
+    logger.error("[Contacts] Stats error:", error);
+    res.status(500).json({ error: "Failed to get stats" });
+  }
 });
 
 module.exports = router;

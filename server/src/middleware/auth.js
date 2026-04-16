@@ -1,58 +1,77 @@
-const JWT_CONFIG = require('../config/jwtConfig');
-const { verifyToken } = require('../services/tokenVerificationCache');
-const { getAccessTokenFromRequest } = require('../utils/requestAuth');
-const authDebugEnabled = process.env.AUTH_DEBUG === 'true';
+const { getBearerTokenFromHeader } = require("../utils/requestAuth");
+const { resolveVerifiedAuth } = require("../utils/authResolver");
+const {
+  isAccessTokenInvalidByPasswordChange,
+  isAccessTokenRevoked,
+} = require("../services/accessTokenPolicyService");
 
-/**
- * Auth Middleware - Operation Polish
- * Reads JWT from HttpOnly cookie first (secure), then falls back to Authorization header
- */
-const protect = (req, res, next) => {
-  const token = getAccessTokenFromRequest(req, { preferCookie: true });
+const authDebugEnabled = process.env.AUTH_DEBUG === "true";
 
-  if (!token) {
+const protect = async (req, res, next) => {
+  const hasCookieToken = Boolean(req?.cookies?.accessToken);
+  const hasHeaderToken = Boolean(
+    getBearerTokenFromHeader(req?.headers?.authorization),
+  );
+
+  if (!hasCookieToken && !hasHeaderToken) {
     if (authDebugEnabled) {
-      console.log('[AUTH] No token provided for:', req.path);
+      console.log("[AUTH] No token provided for:", req.path);
     }
     return res.status(401).json({ error: "No token provided, authorization denied" });
   }
 
-  try {
-    const decoded = verifyToken(token, JWT_CONFIG.SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    console.error("[AUTH] Token verification failed:", err.message, "| Path:", req.path);
-    res.status(401).json({ error: "Invalid or expired token" });
+  const verifiedAuth = resolveVerifiedAuth(req, { preferCookie: true });
+  if (!verifiedAuth) {
+    if (authDebugEnabled) {
+      console.warn("[AUTH] Token verification failed | Path:", req.path);
+    }
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
+
+  try {
+    const revoked = await isAccessTokenRevoked(verifiedAuth.token);
+    if (revoked) {
+      return res.status(401).json({ error: "Session revoked. Please login again." });
+    }
+
+    const invalidByPasswordChange = await isAccessTokenInvalidByPasswordChange(
+      verifiedAuth.payload,
+    );
+    if (invalidByPasswordChange) {
+      return res
+        .status(401)
+        .json({ error: "Session expired due to password change. Please login again." });
+    }
+  } catch (policyError) {
+    if (authDebugEnabled) {
+      console.warn("[AUTH] Token policy check failed (denying):", policyError?.message);
+    }
+    return res.status(500).json({ error: "Authentication service temporarily unavailable." });
+  }
+
+  req.user = verifiedAuth.payload;
+  req.authToken = verifiedAuth.token;
+  return next();
 };
 
-/**
- * Optional Auth - allows unauthenticated requests but parses token if present
- * Also checks HttpOnly cookie first
- */
 const optionalAuth = (req, res, next) => {
-  const token = getAccessTokenFromRequest(req, { preferCookie: true });
-
-  if (!token) {
-    req.user = null;
-    return next();
-  }
-
-  try {
-    const decoded = verifyToken(token, JWT_CONFIG.SECRET);
-    req.user = decoded;
-  } catch (err) {
-    req.user = null;
-  }
-  next();
+  const verifiedAuth = resolveVerifiedAuth(req);
+  req.user = verifiedAuth?.payload || null;
+  req.authToken = verifiedAuth?.token || null;
+  return next();
 };
 
 const requireAadhaarVerified = (req, res, next) => {
   if (!req.user || !req.user.aadhaar_verified) {
-    return res.status(403).json({ error: 'Aadhaar verification required to access this feature.' });
+    return res.status(403).json({
+      error: "Aadhaar verification required to access this feature.",
+    });
   }
-  next();
+  return next();
 };
 
-module.exports = { protect, optionalAuth, requireAadhaarVerified };
+module.exports = {
+  protect,
+  optionalAuth,
+  requireAadhaarVerified,
+};

@@ -1,52 +1,77 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const localesDir = 'client/src/locales';
-const languages = ['en', 'hi', 'te', 'ta', 'kn', 'mr', 'bn'];
+const repoRoot = path.resolve(__dirname, "..", "..");
+const localesDir = path.join(repoRoot, "client", "src", "locales");
+const languages = ["en", "hi", "te", "ta", "kn", "mr", "bn"];
 
-const en = JSON.parse(fs.readFileSync(path.join(localesDir, 'en.json'), 'utf8'));
+const en = JSON.parse(fs.readFileSync(path.join(localesDir, "en.json"), "utf8"));
 const enKeys = Object.keys(en).sort();
 
-const reportFile = 'verification_report.txt';
-fs.writeFileSync(reportFile, '=== Translation Readiness Report ===\n\n');
-fs.appendFileSync(reportFile, `Base Language (EN): ${enKeys.length} keys\n`);
+const reportFile = path.join(repoRoot, "verification_report.txt");
+const reportLines = [];
+const log = (line = "") => {
+  reportLines.push(line);
+  if (line) {
+    console.log(line);
+  } else {
+    console.log("");
+  }
+};
 
-languages.filter(l => l !== 'en').forEach(lang => {
+log("=== Translation Readiness Report ===");
+log("");
+log(`Base Language (EN): ${enKeys.length} keys`);
+
+languages
+  .filter((l) => l !== "en")
+  .forEach((lang) => {
     const filePath = path.join(localesDir, `${lang}.json`);
-    const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const content = JSON.parse(fs.readFileSync(filePath, "utf8"));
     const keys = Object.keys(content);
 
-    // Find missing keys
-    const missing = enKeys.filter(k => !keys.includes(k));
-
-    // Find potential English placeholders
-    const suspicious = keys.filter(k => {
-        // Ignore if key is not in EN (custom key?)
-        if (!en[k]) return false;
-        // Ignore short strings and numbers
-        if (en[k].length < 3 || /^\d+$/.test(en[k])) return false;
-        // Ignore if identical
-        return content[k] === en[k];
+    const missing = enKeys.filter((k) => !keys.includes(k));
+    const suspicious = keys.filter((k) => {
+      if (!en[k]) return false;
+      if (en[k].length < 3 || /^\d+$/.test(en[k])) return false;
+      return content[k] === en[k];
     });
 
-    // Calculate true translated percentage (total - matches English)
     const translatedCount = enKeys.length - missing.length - suspicious.length;
-    const translationPercent = Math.round((translatedCount / enKeys.length) * 100);
+    const translationPercent = Math.round(
+      (translatedCount / enKeys.length) * 100,
+    );
+    const coveragePercent = Math.round(
+      ((enKeys.length - missing.length) / enKeys.length) * 100,
+    );
 
-    fs.appendFileSync(reportFile, `\n[${lang.toUpperCase()}] Translated: ${translationPercent}%\n`);
-    fs.appendFileSync(reportFile, `Total Keys: ${keys.length}\n`);
-    fs.appendFileSync(reportFile, `Untranslated (English): ${suspicious.length} keys\n`);
+    log("");
+    log(`[${lang.toUpperCase()}] Translated: ${translationPercent}%`);
+    log(`Coverage (keys present): ${coveragePercent}%`);
+    log(`Total Keys: ${keys.length}`);
+    log(`Untranslated (English): ${suspicious.length} keys`);
 
     if (missing.length > 0) {
-        fs.appendFileSync(reportFile, `Missing Keys (${missing.length}): ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? '...' : ''}\n`);
+      log(
+        `Missing Keys (${missing.length}): ${missing.slice(0, 5).join(", ")}${
+          missing.length > 5 ? "..." : ""
+        }`,
+      );
     } else {
-        fs.appendFileSync(reportFile, `Missing Keys: 0 (Key synced)\n`);
+      log("Missing Keys: 0 (Key synced)");
     }
 
     if (suspicious.length > 0) {
-        const examples = suspicious.slice(0, 5).map(k => `   ${k}: "${content[k]}"`).join('\n');
-        fs.appendFileSync(reportFile, `   Examples of Untranslated:\n${examples}\n`);
+      const examples = suspicious
+        .slice(0, 5)
+        .map((k) => `   ${k}: "${content[k]}"`)
+        .join("\n");
+      reportLines.push("   Examples of Untranslated:");
+      reportLines.push(examples);
+      console.log("   Examples of Untranslated:");
+      console.log(examples);
     }
-});
+  });
 
-console.log('Report generated: verification_report.txt');
+fs.writeFileSync(reportFile, `${reportLines.join("\n")}\n`);
+console.log(`\nReport generated: ${reportFile}`);

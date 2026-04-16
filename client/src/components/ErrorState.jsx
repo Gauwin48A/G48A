@@ -1,8 +1,9 @@
-import React from 'react';
-import { AlertCircle, WifiOff, ServerCrash, RefreshCw, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import './ErrorState.css';
+import React from "react";
+import { AlertCircle, WifiOff, ServerCrash, RefreshCw, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import "./ErrorState.css";
 
 const ErrorState = ({
     type = 'generic',
@@ -59,16 +60,16 @@ const ErrorState = ({
 
             <div className="error-actions">
                 {onRetry && (
-                    <button className="error-btn error-btn-primary" onClick={onRetry}>
+                    <Button className="error-btn error-btn-primary" onClick={onRetry}>
                         <RefreshCw size={18} />
                         {t('error.retry', 'Try Again')}
-                    </button>
+                    </Button>
                 )}
                 {showHome && (
-                    <button className="error-btn error-btn-secondary" onClick={() => navigate('/')}>
+                    <Button variant="outline" className="error-btn error-btn-secondary" onClick={() => navigate('/')}>
                         <Home size={18} />
                         {t('error.home', 'Go Home')}
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

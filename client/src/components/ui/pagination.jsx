@@ -5,14 +5,17 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 
-const Pagination = ({ className, ...props }) => (
-  <nav
-    role="navigation"
-    aria-label="pagination"
-    className={cn("mx-auto flex w-full justify-center", className)}
-    {...props}
-  />
-);
+const Pagination = ({ className, ...props }) => {
+  const { t } = useTranslation();
+  return (
+    <nav
+      role="navigation"
+      aria-label={t("pagination_label")}
+      className={cn("mx-auto flex w-full justify-center", className)}
+      {...props}
+    />
+  );
+};
 Pagination.displayName = "Pagination";
 
 const PaginationContent = React.forwardRef(({ className, ...props }, ref) => (

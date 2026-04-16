@@ -1,156 +1,166 @@
-/**
- * Firebase Cloud Messaging Service
- * 
- * This file handles sending push notifications via FCM.
- * 
- * SETUP REQUIRED:
- * 1. Create a Firebase project at https://console.firebase.google.com
- * 2. Go to Project Settings > Service Accounts > Generate new private key
- * 3. Save the JSON file as 'firebase-service-account.json' in server/config/
- * 4. Add GOOGLE_APPLICATION_CREDENTIALS to your .env
- */
+const pool = require("../config/db");
+const logger = require("../utils/logger");
 
-// Uncomment after adding firebase-admin: npm install firebase-admin
-// const admin = require('firebase-admin');
-
-// Initialize Firebase Admin (uncomment after setup)
-// const serviceAccount = require('../config/firebase-service-account.json');
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount)
-// });
-
-const pool = require('../config/db');
-
-/**
- * Send notification to a single device
- * @param {string} token - FCM device token
- * @param {string} title - Notification title
- * @param {string} body - Notification body
- * @param {object} data - Additional data payload
- */
-async function sendNotification(token, title, body, data = {}) {
-    // TODO: Uncomment after Firebase setup
-    // const message = {
-    //   notification: { title, body },
-    //   data: { ...data, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
-    //   token
-    // };
-    // 
-    // try {
-    //   const response = await admin.messaging().send(message);
-    //   console.log('Successfully sent notification:', response);
-    //   return { success: true, messageId: response };
-    // } catch (error) {
-    //   console.error('Error sending notification:', error);
-    //   throw error;
-    // }
-
-    console.log(`[FCM Placeholder] Would send to ${token}: ${title} - ${body}`);
-    return { success: true, placeholder: true };
+let webpush;
+try {
+  webpush = require("web-push");
+} catch {
+  webpush = null;
 }
 
-/**
- * Send notification to multiple devices
- * @param {string[]} tokens - Array of FCM device tokens
- * @param {string} title - Notification title
- * @param {string} body - Notification body
- * @param {object} data - Additional data payload
- */
-async function sendToMultiple(tokens, title, body, data = {}) {
-    // TODO: Uncomment after Firebase setup
-    // const message = {
-    //   notification: { title, body },
-    //   data: { ...data, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
-    //   tokens
-    // };
-    // 
-    // try {
-    //   const response = await admin.messaging().sendEachForMulticast(message);
-    //   console.log('Successfully sent notifications:', response.successCount);
-    //   return response;
-    // } catch (error) {
-    //   console.error('Error sending notifications:', error);
-    //   throw error;
-    // }
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || "";
+const VAPID_EMAIL = process.env.VAPID_EMAIL || "mailto:admin@mhub.com";
 
-    console.log(`[FCM Placeholder] Would send to ${tokens.length} devices: ${title} - ${body}`);
-    return { success: true, successCount: tokens.length, placeholder: true };
+if (webpush && VAPID_PUBLIC && VAPID_PRIVATE) {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+  logger.info("[Push] Web Push configured with VAPID keys");
+} else {
+  logger.warn("[Push] web-push not configured — install web-push and set VAPID env vars to enable sending");
 }
 
+// M-02: Android notification channel IDs.
+// These match channel IDs that must be registered in the Capacitor Android project.
+const ANDROID_CHANNELS = {
+  chat:          'chat_messages',
+  transaction:   'transactions',
+  promotion:     'promotions',
+  reward:        'rewards',
+  system:        'system',
+  default:       'general',
+};
+
 /**
- * Send notification to all devices of a user
- * @param {number} userId - User ID
- * @param {string} title - Notification title
- * @param {string} body - Notification body
- * @param {object} data - Additional data payload
+ * Resolves the Android notification channel ID from notification type.
+ * @param {string} [type] - notification type hint from data
+ * @returns {string} channel ID
  */
-async function sendToUser(userId, title, body, data = {}) {
-    try {
-        const result = await pool.query(
-            'SELECT token FROM device_tokens WHERE user_id = $1 AND is_active = true',
-            [userId]
-        );
-
-        if (result.rows.length === 0) {
-            console.log(`No active devices for user ${userId}`);
-            return { success: false, reason: 'No active devices' };
-        }
-
-        const tokens = result.rows.map(row => row.token);
-        return await sendToMultiple(tokens, title, body, data);
-    } catch (error) {
-        console.error('Error sending to user:', error);
-        throw error;
-    }
+function resolveAndroidChannel(type) {
+  const normalized = String(type || '').toLowerCase();
+  if (normalized.includes('chat') || normalized.includes('message')) return ANDROID_CHANNELS.chat;
+  if (normalized.includes('transaction') || normalized.includes('payment') || normalized.includes('order')) return ANDROID_CHANNELS.transaction;
+  if (normalized.includes('promo') || normalized.includes('deal') || normalized.includes('offer')) return ANDROID_CHANNELS.promotion;
+  if (normalized.includes('reward') || normalized.includes('coin') || normalized.includes('referral')) return ANDROID_CHANNELS.reward;
+  if (normalized.includes('system') || normalized.includes('alert') || normalized.includes('security')) return ANDROID_CHANNELS.system;
+  return ANDROID_CHANNELS.default;
 }
 
-/**
- * Register a device token for a user
- */
-async function registerToken(userId, token, deviceType = 'web', deviceName = null) {
-    try {
+async function sendNotification(subscriptionJSON, title, body, data = {}) {
+  if (!webpush || !VAPID_PUBLIC || !VAPID_PRIVATE) {
+    logger.warn("[Push] Cannot send — web-push not configured");
+    return { success: false, reason: "not_configured" };
+  }
+
+  let subscription;
+  try {
+    subscription = typeof subscriptionJSON === "string" ? JSON.parse(subscriptionJSON) : subscriptionJSON;
+  } catch {
+    return { success: false, reason: "invalid_subscription" };
+  }
+
+  // M-02: Include Android channel ID in payload so the Capacitor Android
+  // app can route notifications to the correct notification channel.
+  const androidChannelId = resolveAndroidChannel(data?.type);
+
+  const payload = JSON.stringify({
+    notification: {
+      title,
+      body,
+      android_channel_id: androidChannelId,
+    },
+    data: {
+      ...data,
+      android_channel_id: androidChannelId,
+    },
+    timestamp: Date.now(),
+  });
+
+  try {
+    await webpush.sendNotification(subscription, payload);
+    return { success: true };
+  } catch (err) {
+    if (err.statusCode === 410 || err.statusCode === 404) {
+      // Subscription expired — deactivate
+      try {
         await pool.query(
-            `INSERT INTO device_tokens (user_id, token, device_type, device_name)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (token) 
-       DO UPDATE SET user_id = $1, device_type = $3, device_name = $4, is_active = true, updated_at = NOW()`,
-            [userId, token, deviceType, deviceName]
+          "UPDATE device_tokens SET is_active = false WHERE token = $1",
+          [typeof subscriptionJSON === "string" ? subscriptionJSON : JSON.stringify(subscriptionJSON)]
         );
-        return { success: true };
-    } catch (error) {
-        console.error('Error registering token:', error);
-        throw error;
+      } catch {}
     }
+    logger.error("[Push] Send failed:", err.message);
+    return { success: false, error: err.message };
+  }
 }
 
-/**
- * Unregister a device token (on logout)
- */
-async function unregisterToken(token, userId = null) {
-    try {
-        let result;
-        if (userId === null || userId === undefined || String(userId).trim() === '') {
-            result = await pool.query(
-                'UPDATE device_tokens SET is_active = false WHERE token = $1',
-                [token]
-            );
-        } else {
-            result = await pool.query(
-                'UPDATE device_tokens SET is_active = false WHERE token = $1 AND user_id::text = $2',
-                [token, String(userId)]
-            );
-        }
-        return { success: true, deactivatedCount: result.rowCount || 0 };
-    } catch (error) {
-        console.error('Error unregistering token:', error);
-        throw error;
+async function sendToMultiple(tokens, title, body, data = {}) {
+  const results = await Promise.allSettled(
+    tokens.map((token) => sendNotification(token, title, body, data))
+  );
+  const successCount = results.filter(
+    (r) => r.status === "fulfilled" && r.value?.success
+  ).length;
+  return { success: true, successCount, totalCount: tokens.length };
+}
+
+async function sendToUser(userId, title, body, data = {}) {
+  try {
+    const result = await pool.query(
+      "SELECT token FROM device_tokens WHERE user_id = $1 AND is_active = true",
+      [userId]
+    );
+    if (result.rows.length === 0) {
+      return { success: false, reason: "No active devices" };
     }
+    const tokens = result.rows.map((row) => row.token);
+    return await sendToMultiple(tokens, title, body, data);
+  } catch (error) {
+    logger.error("[Push] Error sending to user:", error);
+    throw error;
+  }
+}
+
+async function registerToken(userId, token, deviceType = "web", deviceName = null) {
+  try {
+    await pool.query(
+      `INSERT INTO device_tokens (user_id, token, device_type, device_name)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (token)
+       DO UPDATE SET user_id = $1, device_type = $3, device_name = $4, is_active = true, updated_at = NOW()`,
+      [userId, token, deviceType, deviceName]
+    );
+    return { success: true };
+  } catch (error) {
+    logger.error("[Push] Error registering token:", error);
+    throw error;
+  }
+}
+
+async function unregisterToken(token, userId = null) {
+  try {
+    let result;
+    if (userId === null || userId === undefined || String(userId).trim() === "") {
+      result = await pool.query(
+        "UPDATE device_tokens SET is_active = false WHERE token = $1",
+        [token]
+      );
+    } else {
+      result = await pool.query(
+        "UPDATE device_tokens SET is_active = false WHERE token = $1 AND user_id::text = $2",
+        [token, String(userId)]
+      );
+    }
+    return { success: true, deactivatedCount: result.rowCount || 0 };
+  } catch (error) {
+    logger.error("[Push] Error unregistering token:", error);
+    throw error;
+  }
 }
 
 module.exports = {
-    sendNotification,
-    sendToMultiple,
-    sendToUser,
-    registerToken,
-    unregisterToken
+  sendNotification,
+  sendToMultiple,
+  sendToUser,
+  registerToken,
+  unregisterToken,
 };

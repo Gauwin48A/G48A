@@ -5,35 +5,47 @@
  * Usage: pm2 start ecosystem.config.js
  */
 
+const deployHosts = String(process.env.MHUB_DEPLOY_HOSTS || "")
+    .split(",")
+    .map((host) => host.trim())
+    .filter(Boolean);
+const appPort = Number.parseInt(process.env.PORT || "5001", 10) || 5001;
+const healthCheckHost = process.env.MHUB_HEALTHCHECK_HOST || "localhost";
+
 module.exports = {
     apps: [
         {
             name: 'mhub-api',
-            script: './src/server.js',
-            instances: 'max',  // Use all CPU cores
+            script: './src/index.js',
+            instances: Math.max(1, require('os').cpus().length - 1),  // Leave 1 core for OS
             exec_mode: 'cluster',
 
             // Environment variables
             env: {
                 NODE_ENV: 'development',
-                PORT: 5000,
+                PORT: appPort,
             },
             env_production: {
                 NODE_ENV: 'production',
-                PORT: 5000,
+                PORT: appPort,
             },
 
             // Auto-restart on memory limit (prevent memory leaks)
             max_memory_restart: '1G',
 
-            // Logging
+            // Logging — O-04: structured JSON logs for centralized aggregation
+            log_type: 'json',
             log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
             error_file: './logs/error.log',
             out_file: './logs/out.log',
             merge_logs: true,
+            log_rotate: true,
+            max_size: '10M',
+            retain: 5,
+            compress: true,
 
             // Graceful restart
-            kill_timeout: 5000,
+            kill_timeout: 10000,
             wait_ready: true,
             listen_timeout: 10000,
 
@@ -43,7 +55,7 @@ module.exports = {
 
             // Health monitoring
             health_check: {
-                url: 'http://localhost:5000/health',
+                url: `http://${healthCheckHost}:${appPort}/health`,
                 interval: 30000,
                 timeout: 5000,
             },
@@ -54,7 +66,7 @@ module.exports = {
     deploy: {
         production: {
             user: 'ubuntu',
-            host: ['server1.mhub.com', 'server2.mhub.com'],
+            host: deployHosts.length > 0 ? deployHosts : ['localhost'],
             ref: 'origin/main',
             repo: 'git@github.com:mhub/mhub.git',
             path: '/var/www/mhub',

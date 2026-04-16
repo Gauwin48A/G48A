@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next';
 const CarouselContext = createContext(null)
 
 function useCarousel() {
-  const { t } = useTranslation();
   const context = useContext(CarouselContext)
   if (!context) {
     throw new Error("useCarousel must be used within a <Carousel />")
@@ -151,6 +150,7 @@ const CarouselItem = forwardRef(({ className, ...props }, ref) => {
 CarouselItem.displayName = "CarouselItem"
 
 const CarouselPrevious = forwardRef(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+  const { t } = useTranslation()
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
 
   return (
@@ -170,13 +170,14 @@ const CarouselPrevious = forwardRef(({ className, variant = "outline", size = "i
       {...props}
     >
       <ArrowLeft className="h-4 w-4" />
-      <span className="sr-only">Previous slide</span>
+      <span className="sr-only">{t("previous_slide")}</span>
     </Button>
   )
 })
 CarouselPrevious.displayName = "CarouselPrevious"
 
 const CarouselNext = forwardRef(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+  const { t } = useTranslation()
   const { orientation, scrollNext, canScrollNext } = useCarousel()
 
   return (
@@ -196,7 +197,7 @@ const CarouselNext = forwardRef(({ className, variant = "outline", size = "icon"
       {...props}
     >
       <ArrowRight className="h-4 w-4" />
-      <span className="sr-only">Next slide</span>
+      <span className="sr-only">{t("next_slide")}</span>
     </Button>
   )
 })

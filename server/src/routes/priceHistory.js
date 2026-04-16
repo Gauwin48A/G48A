@@ -1,18 +1,20 @@
-/**
- * Price History Routes
- */
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth');
-const priceHistoryController = require('../controllers/priceHistoryController');
+const { protect } = require("../middleware/auth");
+const priceHistoryController = require("../controllers/priceHistoryController");
 
-// Record price change (usually called internally when updating post)
-router.post('/record', protect, priceHistoryController.recordPriceChange);
+/**
+ * @route Price History routes
+ * @description Tracks and exposes price change history for posts
+ */
 
-// Get price history for a post
-router.get('/post/:postId', priceHistoryController.getPriceHistory);
+/** @route POST /record - Record a price change (protected) */
+router.post("/record", protect, priceHistoryController.recordPriceChange);
 
-// Get posts with recent price drops
-router.get('/drops', priceHistoryController.getRecentPriceDrops);
+/** @route GET /post/:postId - Get full price history for a post (public) */
+router.get("/post/:postId", priceHistoryController.getPriceHistory);
+
+/** @route GET /drops - Get recent price drops across all posts (public) */
+router.get("/drops", priceHistoryController.getRecentPriceDrops);
 
 module.exports = router;

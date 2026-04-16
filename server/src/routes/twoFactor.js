@@ -1,31 +1,30 @@
-/**
- * Two-Factor Authentication Routes
- */
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const twoFactorController = require('../controllers/twoFactorController');
-const { protect } = require('../middleware/auth');
+const twoFactorController = require("../controllers/twoFactorController");
+const { protect } = require("../middleware/auth");
 
-// All 2FA routes require authentication (except validate)
-router.use('/setup', protect);
-router.use('/verify', protect);
-router.use('/disable', protect);
-router.use('/status', protect);
+/**
+ * Protected 2FA management routes
+ * Setup, verify, disable, and status all require authentication.
+ */
+router.use("/setup", protect);
+router.use("/verify", protect);
+router.use("/disable", protect);
+router.use("/status", protect);
 
-// Setup 2FA - Get QR code and secret
-router.post('/setup', twoFactorController.setup2FA);
+/** @route POST /setup - Initialize 2FA setup and generate secret/QR code */
+router.post("/setup", twoFactorController.setup2FA);
 
-// Verify 2FA setup - Enable 2FA
-router.post('/verify', twoFactorController.verify2FA);
+/** @route POST /verify - Verify a 2FA token to complete setup */
+router.post("/verify", twoFactorController.verify2FA);
 
-// Disable 2FA
-router.post('/disable', twoFactorController.disable2FA);
+/** @route POST /disable - Disable 2FA for the current user */
+router.post("/disable", twoFactorController.disable2FA);
 
-// Get 2FA status
-router.get('/status', twoFactorController.get2FAStatus);
+/** @route GET /status - Check whether 2FA is enabled for the current user */
+router.get("/status", twoFactorController.get2FAStatus);
 
-// Validate 2FA code (for login flow - doesn't require auth)
-router.post('/validate', twoFactorController.validate2FA);
+/** @route POST /validate - Validate a 2FA code during login (unauthenticated) */
+router.post("/validate", twoFactorController.validate2FA);
 
 module.exports = router;

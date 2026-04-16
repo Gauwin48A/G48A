@@ -1,14 +1,120 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Verified Mobile Phone Sale Platform</title>
-    <meta name="description" content="Secure platform for buying and selling mobile phones with verification" />
+    <title>MHub - Verified Marketplace</title>
+    <meta
+      name="description"
+      content="MHub is a secure marketplace for buying and selling verified products with trust-first listings and local discovery."
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="google" content="notranslate" />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="canonical" href="/" />
+
+    <!-- Resource hints — zero-cost 100-300ms savings on first API/image load -->
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MHub" />
+    <meta property="og:title" content="MHub - Verified Marketplace" />
+    <meta
+      property="og:description"
+      content="Explore trusted listings, discover nearby deals, and buy or sell confidently on MHub."
+    />
+    <meta property="og:url" content="/" />
+    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MHub - Verified Marketplace" />
+    <meta
+      name="twitter:description"
+      content="Explore trusted listings, discover nearby deals, and buy or sell confidently on MHub."
+    />
+    <meta name="twitter:image" content="/pwa-512x512.png" />
+
+    <!-- Security headers via meta -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Structured data: Organization + WebSite search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "name": "MHub",
+          "url": "https://mhub.market",
+          "logo": "https://mhub.market/pwa-512x512.png",
+          "description": "Premium verified marketplace for buying and selling products",
+          "sameAs": []
+        },
+        {
+          "@type": "WebSite",
+          "name": "MHub",
+          "url": "https://mhub.market",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://mhub.market/all-posts?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
+
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
+    <script>
+      // Prevent theme FOUC: apply theme mode before first paint
+      (function(){
+        try {
+          var mode = localStorage.getItem('mhub-theme');
+          if (mode !== 'light' && mode !== 'dark' && mode !== 'system') {
+            var legacy = localStorage.getItem('darkMode');
+            if (legacy !== null) {
+              try { mode = JSON.parse(legacy) ? 'dark' : 'light'; } catch (e) { mode = 'system'; }
+            } else {
+              mode = 'system';
+            }
+          }
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var resolved = (mode === 'dark' || (mode === 'system' && prefersDark)) ? 'dark' : 'light';
+          var root = document.documentElement;
+          root.setAttribute('data-theme', resolved);
+          root.setAttribute('data-theme-mode', mode);
+          if (resolved === 'dark') root.classList.add('dark');
+          var metaTheme = document.querySelector('meta[name="theme-color"]');
+          if (metaTheme) metaTheme.setAttribute('content', resolved === 'dark' ? '#0f1115' : '#ffffff');
+        } catch(e){}
+      })();
+    </script>
+    <script>
+      // Block React DevTools, Redux DevTools, and other inspection tools before React loads
+      (function(){
+        try {
+          var n=function(){},h=window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+          if(h&&typeof h==='object'){for(var k in h){if(typeof h[k]==='function')h[k]=n}h.inject=n;h.renderers=new Map();try{Object.freeze(h)}catch(e){}}
+          if(!window.__REACT_DEVTOOLS_GLOBAL_HOOK__){Object.defineProperty(window,'__REACT_DEVTOOLS_GLOBAL_HOOK__',{value:Object.freeze({inject:n,onCommitFiberRoot:n,onCommitFiberUnmount:n,supportsFiber:false,renderers:new Map(),isDisabled:true}),writable:false,configurable:false})}
+          // Block Redux DevTools
+          if(!window.__REDUX_DEVTOOLS_EXTENSION__){Object.defineProperty(window,'__REDUX_DEVTOOLS_EXTENSION__',{value:undefined,writable:false,configurable:false})}
+          if(!window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__){Object.defineProperty(window,'__REDUX_DEVTOOLS_EXTENSION_COMPOSE__',{value:undefined,writable:false,configurable:false})}
+        }catch(e){}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -1,158 +1,207 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
-import { useTranslation } from 'react-i18next';
+const SelectContext = createContext(null);
 
-// Fix: Ensure select dropdown works for both controlled and uncontrolled usage
-export function Select({ children, onValueChange, value, defaultValue, name, ...props }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = React.useState(false);
-  const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = React.useState(defaultValue || "");
-  const selected = isControlled ? value : internalValue;
-  const selectRef = React.useRef(null);
-
-  // Normalize children
-  const childArray = React.Children.toArray(children);
-  const triggerChild = childArray.find(c => c && c.type && (c.type.name === 'SelectTrigger'));
-  const contentChild = childArray.find(c => c && c.type && (c.type.name === 'SelectContent'));
-
-  // Helper to find placeholder from SelectValue inside trigger
-  let placeholder = 'Select...';
-  if (triggerChild && triggerChild.props && triggerChild.props.children) {
-    const triggerChildren = React.Children.toArray(triggerChild.props.children);
-    const valueNode = triggerChildren.find(ch => ch && ch.type && ch.type.name === 'SelectValue');
-    if (valueNode && valueNode.props && valueNode.props.placeholder) placeholder = valueNode.props.placeholder;
+function isSelectItemElement(child) {
+  if (!React.isValidElement(child)) {
+    return false;
   }
+  return child.type === SelectItem || child.type?.displayName === "SelectItem";
+}
 
-  const findLabelForValue = (val) => {
-    // Search items inside contentChild then fallback to direct children
-    const items = contentChild ? React.Children.toArray(contentChild.props.children) : childArray.filter(c => c && c.type && c.type.name === 'SelectItem');
-    const found = items.find(it => it && it.props && it.props.value === val);
-    return found ? (found.props.children || String(found.props.value)) : '';
-  };
+function collectOptions(children, acc = []) {
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) {
+      return;
+    }
 
-  const handleSelect = (val) => {
-    if (!isControlled) setInternalValue(val);
-    if (onValueChange) onValueChange(val);
+    if (isSelectItemElement(child) && child.props?.value !== undefined) {
+      acc.push({ value: child.props.value, label: child.props.children });
+    }
+
+    if (child.props?.children) {
+      collectOptions(child.props.children, acc);
+    }
+  });
+  return acc;
+}
+
+function useSelectContext(componentName) {
+  const context = useContext(SelectContext);
+  if (!context) {
+    throw new Error(`${componentName} must be used inside Select`);
+  }
+  return context;
+}
+
+function Select({
+  children,
+  onValueChange,
+  value,
+  defaultValue = "",
+  name,
+  disabled = false,
+  className,
+  ...props
+}) {
+  const [open, setOpen] = useState(false);
+  const [internalValue, setInternalValue] = useState(defaultValue);
+  const containerRef = useRef(null);
+
+  const isControlled = value !== undefined;
+  const currentValue = isControlled ? value : internalValue;
+
+  const options = useMemo(() => collectOptions(children), [children]);
+  const selectedOption = useMemo(
+    () => options.find((option) => option.value === currentValue) || null,
+    [options, currentValue],
+  );
+
+  const selectValue = useCallback((nextValue) => {
+    if (!isControlled) {
+      setInternalValue(nextValue);
+    }
+    if (onValueChange) {
+      onValueChange(nextValue);
+    }
     setOpen(false);
-  };
+  }, [isControlled, onValueChange]);
 
-  // Close on outside click
-  React.useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (selectRef.current && !selectRef.current.contains(e.target)) {
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const onPointerDown = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
         setOpen(false);
       }
     };
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    const onEscape = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onEscape);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onEscape);
+    };
   }, [open]);
 
-  // Render
-  return (
-    <div className="relative" ref={selectRef} {...props}>
-      {triggerChild ? (
-        React.cloneElement(triggerChild, {
-          onClick: (e) => { e?.preventDefault(); e?.stopPropagation(); setOpen(o => !o); },
-          children: (
-            <span className="flex items-center justify-between w-full">
-              <span>{selected ? findLabelForValue(selected) : placeholder}</span>
-              {/* keep any right-side icons if triggerChild provided them */}
-            </span>
-          )
-        })
-      ) : (
-        <button
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          className="w-full border rounded px-3 py-2 text-left"
-          onClick={() => setOpen(o => !o)}
-        >
-          {selected ? findLabelForValue(selected) : placeholder}
-        </button>
-      )}
+  const contextValue = useMemo(
+    () => ({
+      open,
+      setOpen,
+      disabled,
+      value: currentValue,
+      selectedLabel: selectedOption?.label ?? null,
+      selectValue,
+    }),
+    [open, disabled, currentValue, selectedOption, selectValue],
+  );
 
-      {open && (
-        contentChild ? (
-          React.cloneElement(contentChild, { className: cn("absolute top-full left-0 mt-1 z-[9999] min-w-[8rem] bg-white border rounded-md shadow-lg", contentChild.props.className) },
-            React.Children.map(contentChild.props.children, (opt) =>
-              React.cloneElement(opt, {
-                selected: opt.props.value === selected,
-                onClick: (e) => { e?.stopPropagation(); handleSelect(opt.props.value); },
-              })
-            )
-          )
-        ) : (
-          <ul
-            role="listbox"
-            tabIndex={-1}
-            className="absolute top-full left-0 z-[9999] mt-1 w-full bg-white border rounded shadow max-h-60 overflow-auto"
-          >
-            {React.Children.map(childArray.filter(c => c && c.type && c.type.name === 'SelectItem'), (opt) =>
-              React.cloneElement(opt, {
-                selected: opt.props.value === selected,
-                onClick: (e) => { e?.stopPropagation(); handleSelect(opt.props.value); },
-              })
-            )}
-          </ul>
-        )
-      )}
-    </div>
+  return (
+    <SelectContext.Provider value={contextValue}>
+      <div ref={containerRef} className={cn("relative w-full", className)} {...props}>
+        {children}
+        {name ? <input type="hidden" name={name} value={currentValue || ""} /> : null}
+      </div>
+    </SelectContext.Provider>
   );
 }
 
-export function SelectTrigger({ className, children, ...props }) {
+function SelectTrigger({ className, children, ...props }) {
+  const { open, setOpen, disabled } = useSelectContext("SelectTrigger");
+
   return (
     <button
+      type="button"
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      disabled={disabled}
       className={cn(
-        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
+        "mhub-input flex h-11 w-full items-center justify-between rounded-xl px-3.5 py-2 text-sm text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50",
+        className,
       )}
+      onClick={(event) => {
+        event.preventDefault();
+        setOpen((prev) => !prev);
+      }}
       {...props}
     >
       {children}
     </button>
   );
 }
+SelectTrigger.displayName = "SelectTrigger";
 
-export function SelectContent({ className, children, ...props }) {
+function SelectContent({ className, children, ...props }) {
+  const { open } = useSelectContext("SelectContent");
+  if (!open) {
+    return null;
+  }
+
   return (
     <div
       className={cn(
-        "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md",
-        className
+        "absolute top-full left-0 mt-2 z-[9999] w-full overflow-hidden rounded-xl mhub-premium-surface border border-[var(--chip-border)] text-[var(--text)] shadow-2xl",
+        className,
       )}
       {...props}
     >
-      <ul className="max-h-60 overflow-auto">{children}</ul>
+      <ul role="listbox" className="max-h-60 overflow-y-auto p-1">
+        {children}
+      </ul>
     </div>
   );
 }
+SelectContent.displayName = "SelectContent";
 
-export function SelectItem({ className, children, value, selected, onClick, ...props }) {
+function SelectItem({ className, children, value, ...props }) {
+  const { value: selectedValue, selectValue } = useSelectContext("SelectItem");
+  const isSelected = value === selectedValue;
+
   return (
     <li
       role="option"
-      aria-selected={selected}
+      aria-selected={isSelected}
       tabIndex={0}
       className={cn(
-        "px-3 py-2 cursor-pointer hover:bg-blue-100",
-        selected ? "bg-blue-100 font-bold" : "",
-        className
+        "px-3 py-2 cursor-pointer rounded-md text-sm text-[var(--text)] hover:bg-[var(--chip-bg)] focus:bg-[var(--chip-bg)] focus:outline-none",
+        isSelected ? "bg-[var(--chip-bg)] font-semibold text-[var(--text-strong)]" : "",
+        className,
       )}
-      onClick={onClick}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick && onClick(); }}
+      onClick={(event) => {
+        event.stopPropagation();
+        selectValue(value);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectValue(value);
+        }
+      }}
       {...props}
     >
       {children}
     </li>
   );
 }
+SelectItem.displayName = "SelectItem";
 
-export function SelectValue({ placeholder, children, ...props }) {
-  return <span className="pointer-events-none" {...props}>{children || placeholder}</span>;
+function SelectValue({ placeholder, children, className, ...props }) {
+  const { selectedLabel } = useSelectContext("SelectValue");
+  return (
+    <span className={cn("pointer-events-none truncate", className)} {...props}>
+      {selectedLabel ?? children ?? placeholder ?? "Select..."}
+    </span>
+  );
 }
+SelectValue.displayName = "SelectValue";
+
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue };

@@ -34,7 +34,7 @@ const SmartImage = memo(({
     };
 
     return (
-        <div className={`relative overflow-hidden bg-gray-100 dark:bg-gray-800 ${aspectRatio} ${className}`}>
+        <div className={`relative overflow-hidden bg-gray-100 dark:bg-[var(--surface-2)] ${aspectRatio} ${className}`}>
             {/* Skeleton Placeholder */}
             {!isLoaded && (
                 <div className="absolute inset-0 animate-pulse">
@@ -61,7 +61,7 @@ const SmartImage = memo(({
 
             {/* Error Fallback */}
             {(hasError || !src) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-[var(--surface-2)]">
                     <div className="text-center text-gray-400 dark:text-gray-500">
                         <svg
                             className="w-10 h-10 mx-auto mb-2 opacity-50"
@@ -87,3 +87,4 @@ const SmartImage = memo(({
 SmartImage.displayName = 'SmartImage';
 
 export default SmartImage;
+
