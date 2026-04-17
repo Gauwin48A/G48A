@@ -33,12 +33,13 @@ export default function Home() {
     [apiOrigin],
   );
 
-  const loadPosts = useCallback(async () => {
+  const loadPosts = useCallback(async (signal) => {
     setLoading(true);
     setError("");
     try {
       const response = await api.get("/posts", {
         params: { page: 1, limit: 8 },
+        signal,
       });
       const payload = response?.data ?? response;
       const list = Array.isArray(payload?.posts)
@@ -48,6 +49,7 @@ export default function Home() {
           : [];
       setPosts(list);
     } catch (err) {
+      if (err?.name === "CanceledError" || err?.name === "AbortError") return;
       setError(
         err?.message ||
           t("home_load_error", {
@@ -60,7 +62,9 @@ export default function Home() {
   }, [t]);
 
   useEffect(() => {
-    loadPosts();
+    const controller = new AbortController();
+    loadPosts(controller.signal);
+    return () => controller.abort();
   }, [loadPosts]);
 
   if (loading) {
@@ -68,14 +72,14 @@ export default function Home() {
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-emerald-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-6xl mx-auto px-4 py-10 page-shell page-pad">
           <div className="mb-8 space-y-3">
-            <div className="h-8 w-48 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse dark:bg-emerald-950/20" />
-            <div className="h-4 w-72 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse dark:bg-emerald-950/20" />
+            <div className="h-8 w-48 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse" />
+            <div className="h-4 w-72 bg-emerald-100 dark:bg-slate-700 rounded-full animate-pulse" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((item) => (
               <div
                 key={item}
-                className="h-56 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-emerald-100 dark:border-slate-700 animate-pulse dark:bg-slate-900/60 dark:border dark:border-emerald-600/40"
+                className="h-56 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-emerald-100 dark:border-slate-700 animate-pulse"
               />
             ))}
           </div>
@@ -87,8 +91,8 @@ export default function Home() {
   if (error) {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-rose-50 via-white to-amber-50 flex items-center justify-center px-4 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900">
-        <div className="max-w-lg w-full mhub-premium-surface rounded-3xl p-6 text-center dark:text-center">
-          <h2 className="text-2xl font-bold text-rose-700 dark:text-rose-200 mb-2 dark:text-rose-300">
+        <div className="max-w-lg w-full mhub-premium-surface rounded-3xl p-6 text-center">
+          <h2 className="text-2xl font-bold text-rose-700 dark:text-rose-300 mb-2">
             {t("something_went_wrong", { defaultValue: "Something went wrong" })}
           </h2>
           <p className="text-sm text-rose-600 dark:text-rose-300 mb-6">
