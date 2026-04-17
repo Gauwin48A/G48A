@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { requestSoftNavigate } from "@/utils/softNavigate";
+import { reportRuntimeError } from "@/lib/errorReporting";
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -20,6 +21,7 @@ class ErrorBoundary extends Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
     if (import.meta.env.DEV) console.error("[ErrorBoundary]", error, errorInfo);
+    reportRuntimeError(error, "ErrorBoundary");
   }
 
   handleRetry = () => {

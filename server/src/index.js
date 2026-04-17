@@ -398,10 +398,12 @@ io.on("connection", (socket) => {
     const roomId = String(data || "");
     const userId = String(socket.user?.userId || socket.user?.id || "");
 
-    // Validate room membership: user must be the room ID or a participant
+    // Validate room membership: user must be one of the exact participant IDs
+    // Room format: "{userId1}_{userId2}" for DM, or "{userId}" for personal
     if (roomId && userId) {
       const roomParts = roomId.split("_");
-      const isMember = roomId === userId || roomParts.includes(userId);
+      // Exact match: the userId must exactly equal one of the room segments
+      const isMember = roomParts.some((part) => part === userId);
       if (!isMember) {
         if (socketDebugEnabled) {
           console.warn(`[Socket] User ${userId} denied access to room: ${roomId}`);
