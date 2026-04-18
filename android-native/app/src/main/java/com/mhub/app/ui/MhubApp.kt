@@ -82,7 +82,13 @@ fun MhubApp(onReady: () -> Unit = {}) {
                     }
                 }
                 composable(Routes.CATEGORIES) {
-                    MainShell(navController, BottomTab.CATEGORIES) { CategoriesScreen() }
+                    MainShell(navController, BottomTab.CATEGORIES) {
+                        CategoriesScreen(
+                            onCategoryClick = { id, _ ->
+                                navController.navigate(Routes.SEARCH)
+                            },
+                        )
+                    }
                 }
                 composable(Routes.WISHLIST) {
                     MainShell(navController, BottomTab.WISHLIST) {

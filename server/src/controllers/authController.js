@@ -891,7 +891,7 @@ exports.getMe = async (req, res) => {
     if (rewardsAvailable) {
       try {
         user = await runQuery(
-          `\n            SELECT\n              u.user_id,\n              u.name,\n              u.phone_number,\n              u.email,\n              u.role,\n              NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,\n              NULLIF(to_jsonb(u)->>'tier', '') AS tier,\n              COALESCE(r.tier, 'Bronze') AS rewards_rank\n            FROM users u\n            LEFT JOIN rewards r ON r.user_id = u.user_id\n            WHERE u.user_id = $1\n          `,
+          `\n            SELECT\n              u.user_id,\n              u.name,\n              u.phone_number,\n              u.email,\n              u.role,\n              NULLIF(to_jsonb(u)->>'current_plan', '') AS current_plan,\n              NULLIF(to_jsonb(u)->>'tier', '') AS tier,\n              COALESCE(r.tier, 'Bronze') AS rewards_rank\n            FROM users u\n            LEFT JOIN rewards r ON r.user_id::text = u.user_id::text\n            WHERE u.user_id = $1\n          `,
           [userId],
         );
       } catch (err) {

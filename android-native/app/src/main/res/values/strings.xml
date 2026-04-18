@@ -99,4 +99,10 @@
     <!-- Generic -->
     <string name="generic_error_network">Network error. Please try again.</string>
     <string name="generic_loading">Loading…</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_confirm_delete">Are you sure you want to delete this?</string>
+    <string name="my_posts_title">My posts</string>
+    <string name="my_posts_empty">You haven\'t posted anything yet.</string>
 </resources>
