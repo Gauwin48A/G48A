@@ -99,7 +99,7 @@ fun WishlistScreen(
                                         Text("₹${"%,.0f".format(it)}", color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
-                                TextButton(onClick = { viewModel.remove(post.stableId) }) { Text("Remove") }
+                                TextButton(onClick = { viewModel.remove(post.stableId) }) { Text(stringResource(R.string.action_remove)) }
                             }
                         }
                     }

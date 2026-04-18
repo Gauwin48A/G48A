@@ -185,10 +185,11 @@ const startServer = async () => {
       ...process.env,
       PORT: String(AUTH_ITEST_PORT),
       NODE_ENV: process.env.NODE_ENV || 'test',
-      DISABLE_BACKGROUND_JOBS: process.env.DISABLE_BACKGROUND_JOBS || 'true',
-      AUTH_EXPOSE_TEST_SECRETS: process.env.AUTH_EXPOSE_TEST_SECRETS || 'true',
-      DEVICE_BINDING_ENABLED: process.env.DEVICE_BINDING_ENABLED || 'false',
-      AUTH_ADAPTIVE_MFA_ENABLED: process.env.AUTH_ADAPTIVE_MFA_ENABLED || 'false'
+      DISABLE_BACKGROUND_JOBS: 'true',
+      AUTH_EXPOSE_TEST_SECRETS: 'true',
+      DEVICE_BINDING_ENABLED: 'false',
+      AUTH_ADAPTIVE_MFA_ENABLED: 'false',
+      API_INTEGRITY_ENABLED: 'false'
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });

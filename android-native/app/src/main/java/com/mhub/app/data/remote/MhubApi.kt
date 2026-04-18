@@ -12,6 +12,15 @@ interface MhubApi {
     @POST("api/auth/google")
     suspend fun googleSignIn(@Body body: GoogleAuthRequest): AuthResponse
 
+    @POST("api/auth/login")
+    suspend fun emailLogin(@Body body: EmailLoginRequest): AuthResponse
+
+    @POST("api/auth/signup")
+    suspend fun emailSignup(@Body body: EmailSignupRequest): AuthResponse
+
+    @GET("api/auth/csrf-token")
+    suspend fun csrfToken(): CsrfTokenResponse
+
     @POST("api/auth/logout")
     suspend fun logout(): MessageResponse
 

@@ -43,6 +43,36 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun signInWithEmail(identifier: String, password: String) {
+        if (_state.value.loading) return
+        if (identifier.isBlank() || password.isBlank()) {
+            _state.value = AuthUiState(error = "Email/phone and password are required")
+            return
+        }
+        _state.value = AuthUiState(loading = true)
+        viewModelScope.launch {
+            when (val res = repo.signInWithEmail(identifier, password)) {
+                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
+                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
+            }
+        }
+    }
+
+    fun signUp(fullName: String, email: String, phone: String, password: String) {
+        if (_state.value.loading) return
+        if (fullName.isBlank() || email.isBlank() || phone.isBlank() || password.isBlank()) {
+            _state.value = AuthUiState(error = "All fields are required")
+            return
+        }
+        _state.value = AuthUiState(loading = true)
+        viewModelScope.launch {
+            when (val res = repo.signUp(fullName, email, phone, password)) {
+                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
+                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
+            }
+        }
+    }
+
     fun onGoogleError(message: String) {
         _state.value = AuthUiState(loading = false, error = message)
     }

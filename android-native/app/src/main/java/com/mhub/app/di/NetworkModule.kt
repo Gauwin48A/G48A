@@ -5,9 +5,11 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import com.mhub.app.BuildConfig
 import com.mhub.app.data.local.AppPreferences
 import com.mhub.app.data.local.TokenStore
+import com.mhub.app.data.remote.AppCookieJar
 import com.mhub.app.data.remote.AuthInterceptor
 import com.mhub.app.data.remote.MhubApi
 import com.mhub.app.data.remote.RetryInterceptor
+import com.mhub.app.data.remote.SecurityHeadersInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,7 +39,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttp(tokenStore: TokenStore): OkHttpClient {
+    fun provideCookieJar(): AppCookieJar = AppCookieJar()
+
+    @Provides
+    @Singleton
+    fun provideOkHttp(tokenStore: TokenStore, cookieJar: AppCookieJar): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
             else HttpLoggingInterceptor.Level.NONE
@@ -48,7 +54,9 @@ object NetworkModule {
             .writeTimeout(30, TimeUnit.SECONDS)
             .callTimeout(45, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            .cookieJar(cookieJar)
             .addInterceptor(AuthInterceptor(tokenStore))
+            .addInterceptor(SecurityHeadersInterceptor(cookieJar))
             .addInterceptor(RetryInterceptor())
             .addInterceptor(logging)
             .build()

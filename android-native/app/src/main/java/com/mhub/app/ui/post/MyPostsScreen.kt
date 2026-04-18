@@ -72,26 +72,53 @@ fun MyPostsScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit, viewModel: M
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 state.error != null -> Text(state.error!!, Modifier.padding(24.dp), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
-                state.items.isEmpty() -> Text("You haven't posted anything yet.", Modifier.padding(24.dp), textAlign = TextAlign.Center)
-                else -> LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize(),
+                state.items.isEmpty() -> Column(
+                    Modifier.fillMaxSize().padding(24.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    items(state.items, key = { it.stableId }) { post ->
-                        ElevatedCard(onClick = { onOpenPost(post.stableId) }, shape = RoundedCornerShape(14.dp)) {
-                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                post.primaryImage?.let {
-                                    AsyncImage(model = it, contentDescription = null, contentScale = ContentScale.Crop,
-                                        modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)))
-                                    Spacer(Modifier.width(10.dp))
-                                }
-                                Column(Modifier.weight(1f)) {
-                                    Text(post.displayTitle, style = MaterialTheme.typography.titleSmall, maxLines = 2)
-                                    post.price?.let { Text("₹${"%,.0f".format(it)}", color = MaterialTheme.colorScheme.primary) }
-                                }
-                                IconButton(onClick = { viewModel.delete(post.stableId) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    Text(stringResource(R.string.my_posts_empty), textAlign = TextAlign.Center)
+                }
+                else -> {
+                    var deleteTarget by remember { mutableStateOf<Post?>(null) }
+
+                    if (deleteTarget != null) {
+                        AlertDialog(
+                            onDismissRequest = { deleteTarget = null },
+                            title = { Text(stringResource(R.string.action_delete)) },
+                            text = { Text(stringResource(R.string.action_confirm_delete)) },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    viewModel.delete(deleteTarget!!.stableId)
+                                    deleteTarget = null
+                                }) { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.action_cancel)) }
+                            },
+                        )
+                    }
+
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(state.items, key = { it.stableId }) { post ->
+                            ElevatedCard(onClick = { onOpenPost(post.stableId) }, shape = RoundedCornerShape(14.dp)) {
+                                Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    post.primaryImage?.let {
+                                        AsyncImage(model = it, contentDescription = null, contentScale = ContentScale.Crop,
+                                            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)))
+                                        Spacer(Modifier.width(10.dp))
+                                    }
+                                    Column(Modifier.weight(1f)) {
+                                        Text(post.displayTitle, style = MaterialTheme.typography.titleSmall, maxLines = 2)
+                                        post.price?.let { Text("₹${"%,.0f".format(it)}", color = MaterialTheme.colorScheme.primary) }
+                                    }
+                                    IconButton(onClick = { deleteTarget = post }) {
+                                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.error)
+                                    }
                                 }
                             }
                         }

@@ -35,7 +35,7 @@ android {
         buildConfigField(
             "String",
             "DEFAULT_API_BASE_URL",
-            "\"https://mhub-api.workers.dev/\""
+            "\"http://10.0.2.2:5001/\""
         )
         // Google OAuth 2.0 Web Client ID (type "Web application" in Google Cloud Console).
         // REPLACE with your own; this is the `audience` the server verifies.

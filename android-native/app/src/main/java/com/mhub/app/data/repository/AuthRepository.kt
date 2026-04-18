@@ -4,6 +4,8 @@ import com.mhub.app.core.ApiResult
 import com.mhub.app.core.safeApiCall
 import com.mhub.app.data.local.TokenStore
 import com.mhub.app.data.remote.MhubApi
+import com.mhub.app.data.remote.dto.EmailLoginRequest
+import com.mhub.app.data.remote.dto.EmailSignupRequest
 import com.mhub.app.data.remote.dto.GoogleAuthRequest
 import com.mhub.app.domain.model.User
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +25,24 @@ class AuthRepository @Inject constructor(
     /** Exchanges a Google ID token for an app JWT. */
     suspend fun signInWithGoogle(idToken: String): ApiResult<User?> = safeApiCall {
         val res = api.googleSignIn(GoogleAuthRequest(idToken))
+        val token = res.token ?: error("Server did not return token")
+        tokenStore.save(token, res.refreshToken)
+        res.user
+    }
+
+    /** Email/password login. Prefetches CSRF token first. */
+    suspend fun signInWithEmail(identifier: String, password: String): ApiResult<User?> = safeApiCall {
+        runCatching { api.csrfToken() } // Prefetch to set XSRF-TOKEN cookie
+        val res = api.emailLogin(EmailLoginRequest(identifier, password))
+        val token = res.token ?: error("Server did not return token")
+        tokenStore.save(token, res.refreshToken)
+        res.user
+    }
+
+    /** Email/password signup. Prefetches CSRF token first. */
+    suspend fun signUp(fullName: String, email: String, phone: String, password: String): ApiResult<User?> = safeApiCall {
+        runCatching { api.csrfToken() } // Prefetch to set XSRF-TOKEN cookie
+        val res = api.emailSignup(EmailSignupRequest(fullName, email, phone, password))
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
         res.user

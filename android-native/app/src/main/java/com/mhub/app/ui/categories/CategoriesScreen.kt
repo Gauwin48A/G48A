@@ -54,7 +54,7 @@ class CategoriesViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
+fun CategoriesScreen(onCategoryClick: (String, String) -> Unit = { _, _ -> }, viewModel: CategoriesViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_categories)) }) }
@@ -73,7 +73,9 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(state.items, key = { it.stableId }) { c -> CategoryTile(c) }
+                    items(state.items, key = { it.stableId }) { c ->
+                        CategoryTile(c, onClick = { onCategoryClick(c.stableId, c.displayName) })
+                    }
                 }
             }
         }
@@ -81,8 +83,12 @@ fun CategoriesScreen(viewModel: CategoriesViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun CategoryTile(category: Category) {
-    ElevatedCard(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
+private fun CategoryTile(category: Category, onClick: () -> Unit) {
+    ElevatedCard(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+    ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(12.dp),
             verticalArrangement = Arrangement.Center,

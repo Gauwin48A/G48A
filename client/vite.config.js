@@ -227,9 +227,6 @@ export default defineConfig(({ mode }) => {
         },
         mangle: {
           toplevel: true,
-          properties: {
-            regex: /^_[a-z]/,  // Mangle private-style properties starting with _
-          },
         },
         format: {
           comments: false,  // Remove all comments

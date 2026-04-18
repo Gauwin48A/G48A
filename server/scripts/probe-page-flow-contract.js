@@ -133,11 +133,21 @@ function buildSignupIdentity() {
   };
 }
 
+async function fetchCsrfContext() {
+  const csrfRes = await httpRequest({ method: 'GET', path: '/api/auth/csrf-token' });
+  if (!csrfRes.ok || csrfRes.status !== 200) return { csrfCookie: '', csrfToken: '' };
+  const csrfCookie = getCookieHeaderFromSetCookie(csrfRes.headers['set-cookie']);
+  // Extract XSRF-TOKEN value from cookie header
+  const match = csrfCookie.match(/XSRF-TOKEN=([^;,\s]+)/);
+  return { csrfCookie, csrfToken: match ? match[1] : '' };
+}
+
 async function authenticateFlowUser() {
   const configuredIdentifier = String(process.env.PROACTIVE_TEST_USER_IDENTIFIER || '').trim();
   const configuredPassword = String(process.env.PROACTIVE_TEST_USER_PASSWORD || '').trim();
 
   if (configuredIdentifier && configuredPassword) {
+    const csrf = await fetchCsrfContext();
     const loginPayload = JSON.stringify({
       identifier: configuredIdentifier,
       password: configuredPassword
@@ -145,7 +155,11 @@ async function authenticateFlowUser() {
     const loginResult = await httpRequest({
       method: 'POST',
       path: '/api/auth/login',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrf.csrfCookie ? { Cookie: csrf.csrfCookie } : {}),
+        ...(csrf.csrfToken ? { 'X-XSRF-TOKEN': csrf.csrfToken } : {})
+      },
       body: loginPayload
     });
 
@@ -166,15 +180,21 @@ async function authenticateFlowUser() {
     return {
       token,
       userId: String(userId),
-      cookieHeader: getCookieHeaderFromSetCookie(loginResult.headers['set-cookie'])
+      cookieHeader: getCookieHeaderFromSetCookie(loginResult.headers['set-cookie']),
+      csrfToken: csrf.csrfToken
     };
   }
 
+  const csrf = await fetchCsrfContext();
   const signupIdentity = buildSignupIdentity();
   const signupResult = await httpRequest({
     method: 'POST',
     path: '/api/auth/signup',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(csrf.csrfCookie ? { Cookie: csrf.csrfCookie } : {}),
+      ...(csrf.csrfToken ? { 'X-XSRF-TOKEN': csrf.csrfToken } : {})
+    },
     body: JSON.stringify(signupIdentity)
   });
 
@@ -195,7 +215,8 @@ async function authenticateFlowUser() {
   return {
     token,
     userId: String(userId),
-    cookieHeader: getCookieHeaderFromSetCookie(signupResult.headers['set-cookie'])
+    cookieHeader: getCookieHeaderFromSetCookie(signupResult.headers['set-cookie']),
+    csrfToken: csrf.csrfToken
   };
 }
 
@@ -206,6 +227,12 @@ function buildAuthHeaders(authContext) {
   if (authContext.cookieHeader) {
     headers.Cookie = authContext.cookieHeader;
   }
+  if (authContext.csrfToken) {
+    headers['X-XSRF-TOKEN'] = authContext.csrfToken;
+  }
+  // Always include timestamp + nonce for write requests
+  headers['X-MHub-Timestamp'] = String(Date.now());
+  headers['X-MHub-Nonce'] = `probe-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   return headers;
 }
 
@@ -213,7 +240,12 @@ async function run() {
   const env = {
     ...process.env,
     PORT: String(PORT),
-    NODE_ENV: process.env.NODE_ENV || 'development'
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    DEVICE_BINDING_ENABLED: 'false',
+    AUTH_ADAPTIVE_MFA_ENABLED: 'false',
+    API_INTEGRITY_ENABLED: 'false',
+    DISABLE_BACKGROUND_JOBS: 'true',
+    RATE_LIMIT_BYPASS_DEV: 'true'
   };
 
   const serverProcess = spawn(process.execPath, ['src/index.js'], {
@@ -324,8 +356,33 @@ async function run() {
         ...authHeaders,
         ...(probe.headers || {})
       };
+
+      // For POST/PUT/DELETE requests, fetch a fresh CSRF token
+      const method = probe.method || 'GET';
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) {
+        // eslint-disable-next-line no-await-in-loop
+        const freshCsrf = await fetchCsrfContext();
+        if (freshCsrf.csrfToken) {
+          headers['X-XSRF-TOKEN'] = freshCsrf.csrfToken;
+          // Replace any existing XSRF-TOKEN in Cookie with the fresh one
+          if (freshCsrf.csrfCookie) {
+            const existingCookie = headers.Cookie || '';
+            // Remove old XSRF-TOKEN entries from cookie string
+            const cleaned = existingCookie
+              .split(/;\s*/)
+              .filter(c => !c.trim().startsWith('XSRF-TOKEN='))
+              .join('; ');
+            headers.Cookie = cleaned
+              ? `${cleaned}; ${freshCsrf.csrfCookie}`
+              : freshCsrf.csrfCookie;
+          }
+        }
+        headers['X-MHub-Timestamp'] = String(Date.now());
+        headers['X-MHub-Nonce'] = `probe-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      }
+
       const result = await httpRequest({
-        method: probe.method || 'GET',
+        method,
         path: probe.path,
         headers,
         body: probe.body || ''

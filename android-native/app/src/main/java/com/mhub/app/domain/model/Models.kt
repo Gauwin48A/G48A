@@ -10,14 +10,17 @@ data class User(
     val email: String? = null,
     @SerialName("phone_number") val phone: String? = null,
     @SerialName("full_name") val fullName: String? = null,
+    val name: String? = null,
     val username: String? = null,
     val role: String? = null,
     @SerialName("kyc_status") val kycStatus: String? = null,
     @SerialName("picture_url") val pictureUrl: String? = null,
     @SerialName("profile_image_url") val profileImageUrl: String? = null,
+    @SerialName("current_plan") val currentPlan: String? = null,
+    @SerialName("rewards_rank") val rewardsRank: String? = null,
 ) {
     val stableId: String get() = userId ?: id ?: email ?: phone ?: "unknown"
-    val displayName: String get() = fullName ?: username ?: email ?: phone ?: "User"
+    val displayName: String get() = fullName ?: name ?: username ?: email ?: phone ?: "User"
     val avatar: String? get() = pictureUrl ?: profileImageUrl
     val isSeller: Boolean get() = role == "seller" || role == "admin"
     val isKycVerified: Boolean get() = kycStatus == "verified"

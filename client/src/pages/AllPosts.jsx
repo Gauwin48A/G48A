@@ -956,7 +956,6 @@ const ve = 5,
       [showAllQuickFilters, setShowAllQuickFilters] = useState(!1),
       [compareItems, setCompareItems] = useState([]),
       [showComparePanel, setShowComparePanel] = useState(!1);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { density, setDensity } = usePageDensity("mhub_allposts_density");
     const languageRef = useRef(l);
     const secondaryStickyRef = useRef(null);
