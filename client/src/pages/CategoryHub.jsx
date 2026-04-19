@@ -8,6 +8,7 @@ import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { useCmsPage } from "@/hooks/useCmsPage";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { Capacitor } from "@capacitor/core";
 import { Smartphone, Tablet, Monitor } from "lucide-react";
 
 const LAYOUT_STORAGE_KEY = 'mhub_layout_preview_mode';
@@ -204,7 +205,7 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
       ].join(" ")}
       style={{ willChange: "transform", transition: "transform 0.15s ease, box-shadow 0.3s ease" }}
       aria-pressed={isActive}
-      aria-label={t('enter_app', { defaultValue: `Enter ${app.label} app` })}
+      aria-label={t('enter_app', { label: app.label, defaultValue: `Enter ${app.label} app` })}
     >
       {/* Decorative blobs */}
       <span className="pointer-events-none absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10 blur-2xl dark:bg-slate-900/10" />
@@ -468,7 +469,8 @@ export default function CategoryHub() {
             </div>
           )}
 
-          {/* ── Quick settings below categories ── */}
+          {/* ── Quick settings below categories (hidden on native mobile) ── */}
+          {!Capacitor.isNativePlatform() && (
           <div className="mt-6 mb-2 flex flex-col items-center gap-4">
             {/* Layout switcher */}
             <div className="flex items-center gap-1 p-1 rounded-xl bg-white shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
@@ -501,6 +503,7 @@ export default function CategoryHub() {
               <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{isDark ? t('light_mode', { defaultValue: 'Light' }) : t('dark_mode', { defaultValue: 'Dark' })}</span>
             </div>
           </div>
+          )}
         </div>
 
       </div>

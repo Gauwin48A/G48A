@@ -19,6 +19,9 @@
     "test:e2e:comprehensive:headed": "npx playwright test -c playwright.config.mjs --project=comprehensive --headed --workers=2",
     "test:e2e:visual": "npx playwright test -c playwright.config.mjs --project=visual",
     "test:e2e:all": "npm run test:e2e:smoke && npm run test:e2e:comprehensive && npm run test:e2e:visual",
+    "test:e2e:android": "npx playwright test -c playwright.config.mjs --project=android --workers=2",
+    "test:e2e:android:headed": "npx playwright test -c playwright.config.mjs --project=android --headed --workers=1",
+    "test:e2e:android:screenshots": "npx playwright test -c playwright.config.mjs --project=android --workers=2 --reporter=list",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest run"
@@ -28,6 +31,7 @@
     "@capacitor/app": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "@capacitor/geolocation": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.3",

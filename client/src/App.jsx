@@ -19,6 +19,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import PwaEnhancements from "./components/PwaEnhancements.jsx";
 import VPNBlocker from "./components/VPNBlocker.jsx";
 import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import { getUserId } from "@/utils/authStorage";
 import { MapPin } from "lucide-react";
 import { registerSoftReloadHandler, requestSoftReload } from "@/utils/softReload";
@@ -307,6 +309,16 @@ function AppShell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isDev = import.meta.env.DEV;
+
+  // Configure native status bar and mark native platform for CSS
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      document.documentElement.setAttribute('data-native-platform', 'true');
+      StatusBar.setBackgroundColor({ color: "#2563eb" }).catch(() => {});
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     const syncLocation = async () => {

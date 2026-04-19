@@ -622,7 +622,7 @@
     "enter_aadhaar_pan":  "Enter your Aadhaar and PAN details",
     "enter_address":  "Enter address",
     "enter_amount":  "Enter amount",
-    "enter_app":  "Enter ${app.label} app",
+    "enter_app":  "Enter {{label}} app",
     "enter_authenticator_code":  "Enter your authenticator code.",
     "enter_city":  "City",
     "enter_code":  "Enter code",

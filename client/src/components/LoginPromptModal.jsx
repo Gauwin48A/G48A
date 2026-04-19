@@ -56,7 +56,7 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center pb-[calc(var(--bottom-nav-height,64px)+env(safe-area-inset-bottom,0px)+0.5rem)] sm:pb-0"
       role="dialog"
       aria-modal="true"
       aria-labelledby="login-prompt-title"
@@ -65,7 +65,7 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative mhub-premium-surface rounded-3xl shadow-2xl p-6 md:p-8 w-[95%] max-w-md mx-auto animate-fadeIn border border-gray-200 dark:border-gray-700">
+      <div className="relative mhub-premium-surface rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 md:p-8 w-full sm:w-[95%] max-w-md mx-auto animate-fadeIn border border-gray-200 dark:border-gray-700">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"

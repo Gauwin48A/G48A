@@ -681,15 +681,17 @@ api.interceptors.request.use(
     ) {
       config.url = config.url.slice(4);
     }
-    const deviceId = getDeviceId();
+    const deviceId = (() => { try { return getDeviceId(); } catch { return ""; } })();
     if (deviceId) {
       headers["X-Device-Id"] = deviceId;
     }
     // Send persistent device fingerprint for device binding enforcement
-    const storedFp = localStorage.getItem("mhub_device_fp");
-    if (storedFp) {
-      headers["X-Device-Fingerprint"] = storedFp;
-    }
+    try {
+      const storedFp = localStorage.getItem("mhub_device_fp");
+      if (storedFp) {
+        headers["X-Device-Fingerprint"] = storedFp;
+      }
+    } catch { /* storage unavailable */ }
     headers["X-Timezone"] = CLIENT_TIMEZONE;
     // Send request timestamp for anti-replay protection
     headers["X-MHub-Timestamp"] = String(Date.now());
@@ -701,19 +703,21 @@ api.interceptors.request.use(
       }
     } catch { /* ignore in dev */ }
     // Send client-side VPN detection result to server for cross-validation
-    const vpnStatus = sessionStorage.getItem("mhub_vpn_status");
-    if (vpnStatus) {
-      try {
+    try {
+      const vpnStatus = sessionStorage.getItem("mhub_vpn_status");
+      if (vpnStatus) {
         const parsed = JSON.parse(vpnStatus);
         if (parsed?.vpnDetected) {
           headers["X-MHub-VPN-Detected"] = "true";
         }
-      } catch { /* ignore */ }
-    }
-    headers["Accept-Language"] =
-      localStorage.getItem("mhub_language") ||
-      localStorage.getItem("lang") ||
-      "en";
+      }
+    } catch { /* ignore */ }
+    headers["Accept-Language"] = (() => {
+      try {
+        return localStorage.getItem("mhub_language") ||
+          localStorage.getItem("lang") || "en";
+      } catch { return "en"; }
+    })();
     const method = String(config.method || "get").toLowerCase();
     if (method === "get") {
       const rateLimitKey = buildRateLimitKey(config);
