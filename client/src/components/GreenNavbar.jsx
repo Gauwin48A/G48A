@@ -145,7 +145,9 @@ const GreenNavbar = () => {
   ]);
   const hasActiveFilters = activeFilterCount > 0;
   const { mode: themeMode, setThemeMode } = useTheme();
+  const isNativePlatform = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.();
   const [layoutMode, setLayoutMode] = useState(() => {
+    if (isNativePlatform) return 'mobile';
     const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || '').trim().toLowerCase();
     return LAYOUT_PRESETS.some((preset) => preset.key === stored) ? stored : 'desktop';
   });
@@ -781,7 +783,7 @@ const GreenNavbar = () => {
               </div>
 
               {/* Mobile layout quick toggle (visible when preview is not desktop) */}
-              {layoutMode !== 'desktop' && (
+              {!isNativePlatform && layoutMode !== 'desktop' && (
                 <button
                   type="button"
                   onClick={cycleLayout}

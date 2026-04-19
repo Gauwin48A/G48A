@@ -6,6 +6,17 @@ const LOCALHOST_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
 const FORCE_ABSOLUTE_LOCAL_API_ORIGIN =
   String(import.meta.env.VITE_FORCE_ABSOLUTE_API_ORIGIN || "").toLowerCase() ===
   "true";
+
+// Capacitor Android: remap localhost → 10.0.2.2 (emulator alias for host machine)
+const isCapacitorNativeAndroid = () =>
+  typeof window !== "undefined" &&
+  window.Capacitor?.isNativePlatform?.() === true &&
+  window.Capacitor?.getPlatform?.() === "android";
+
+const remapLocalhostForCapacitor = (origin) => {
+  if (!origin || !isCapacitorNativeAndroid()) return origin;
+  return origin.replace(/\/\/(localhost|127\.0\.0\.1)(:\d+)/i, "//10.0.2.2$2");
+};
 const normalize = (value) =>
   String(value || "")
     .trim()
@@ -59,7 +70,7 @@ export function getApiOriginBase() {
   }
   const normalizedConfiguredOrigin = normalizeAbsoluteOrigin(configuredBase);
   if (normalizedConfiguredOrigin) {
-    return normalizedConfiguredOrigin;
+    return remapLocalhostForCapacitor(normalizedConfiguredOrigin);
   }
   if (import.meta.env.DEV || isLocalhostRuntime()) {
     return DEFAULT_DEV_API_ORIGIN;
@@ -100,7 +111,7 @@ export function getSocketUrl() {
       }
       return "";
     }
-    return configuredSocketUrl;
+    return remapLocalhostForCapacitor(configuredSocketUrl);
   }
   const originBase = getApiOriginBase();
   if (originBase && !originBase.startsWith("/")) {

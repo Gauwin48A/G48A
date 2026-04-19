@@ -506,11 +506,33 @@ html[data-layout-preview="mobile"] #root {
   font-size: 14px;
 }
 
+/* Native Android/iOS: remove transform that breaks position:fixed,
+   and undo desktop-preview styling not needed on native */
+html[data-native-platform] #root {
+  transform: none;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  border: 0;
+  box-shadow: none;
+  overflow-x: clip;
+}
+
 @media (max-width: 900px) {
   html[data-layout-preview="mobile"] body::before,
   html[data-layout-preview="tablet"] body::before {
     top: 66px;
   }
+}
+
+/* Hide preview badge on native platforms */
+html[data-native-platform] body::before {
+  display: none !important;
+}
+
+/* Native: use plain background instead of preview gradient */
+html[data-native-platform] body {
+  background: var(--bg, #ffffff);
 }
 
 @layer components {
@@ -1024,6 +1046,7 @@ html[data-layout-preview="mobile"] #root {
   background: linear-gradient(90deg, rgba(37, 99, 235, 0.96) 0%, rgba(59, 130, 246, 0.9) 45%, rgba(14, 165, 233, 0.9) 100%);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
   backdrop-filter: blur(10px);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .dark .mhub-top-ribbon {
   background: linear-gradient(90deg, rgba(11, 18, 32, 0.96) 0%, rgba(15, 23, 42, 0.9) 45%, rgba(9, 14, 26, 0.96) 100%);
@@ -1401,5 +1424,124 @@ html[data-layout-preview="mobile"] #root {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   ANDROID / MOBILE-SPECIFIC FIXES
+   Capacitor WebView + mobile viewport optimizations
+   ───────────────────────────────────────────────── */
+
+/* Safe-area CSS custom properties for Android/iOS */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+/* Ensure bottom nav never gets hidden behind Android system nav bar */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .mhub-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .app-main {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+  }
+}
+
+/* Top navbar: account for status bar / notch on native */
+@supports (padding: env(safe-area-inset-top)) {
+  .mhub-top-nav--primary {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Mobile: ensure touch targets are adequate (48dp minimum) */
+@media (max-width: 480px) {
+  /* Bottom nav buttons need adequate touch area */
+  .mhub-bottom-nav-button {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 6px 4px;
+  }
+
+  /* Cards should not overflow viewport */
+  .app-main > * {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Fix top navbar wrapping on narrow screens */
+  .mhub-top-nav--primary .flex {
+    flex-wrap: nowrap;
+  }
+
+  /* Login prompt modal: bottom-sheet style on mobile */
+  [aria-labelledby="login-prompt-title"] {
+    align-items: flex-end;
+    padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 0.5rem);
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* More menu takes full height minus bottom nav on mobile */
+  .mhub-bottom-nav ~ [role="dialog"] aside {
+    max-height: calc(100vh - var(--bottom-nav-height, 64px) - env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Ensure filter modal doesn't get cut off */
+  .fixed.inset-0.z-\[1000\] .mhub-premium-surface {
+    max-height: calc(100vh - var(--bottom-nav-height, 64px) - env(safe-area-inset-bottom, 0px) - 2rem);
+    overflow-y: auto;
+  }
+}
+
+/* Android Capacitor: disable user-select on nav elements for native feel */
+@media (hover: none) and (pointer: coarse) {
+  .mhub-bottom-nav,
+  .mhub-bottom-nav-button,
+  .mhub-bottom-nav-label {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smoother scrolling on touch devices */
+  .app-main {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Larger font for mobile readability */
+  .mhub-bottom-nav-label {
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  /* Native-feel tap feedback for interactive elements */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: rgba(37, 99, 235, 0.15);
+  }
+
+  /* Prevent text selection on nav, cards for native feel */
+  .mhub-top-nav,
+  .mhub-top-nav--primary {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Disable overscroll bounce (rubber-banding) for native feel */
+  html, body {
+    overscroll-behavior: none;
+  }
+
+  /* Smooth momentum scrolling */
+  .app-main,
+  [role="dialog"] aside {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 }

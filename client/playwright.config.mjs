@@ -29,6 +29,19 @@ export default defineConfig({
       testMatch: 'comprehensive/**/*.pw.ts',
       timeout: 60_000,
       retries: 1
+    },
+    {
+      name: 'android',
+      testMatch: 'android/**/*.pw.ts',
+      timeout: 60_000,
+      retries: 1,
+      use: {
+        viewport: { width: 412, height: 915 },
+        hasTouch: true,
+        isMobile: true,
+        userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.165 Mobile Safari/537.36',
+        screenshot: 'on',
+      }
     }
   ],
   use: {

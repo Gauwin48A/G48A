@@ -10,6 +10,11 @@
   "plugins": {
     "App": {
       "appUrlScheme": "mhub"
+    },
+    "StatusBar": {
+      "backgroundColor": "#2563eb",
+      "style": "LIGHT",
+      "overlaysWebView": false
     }
   }
 }
