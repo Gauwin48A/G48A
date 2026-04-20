@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { FaLock, FaUserPlus, FaSignInAlt } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -52,9 +53,9 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center pb-[calc(var(--bottom-nav-height,64px)+env(safe-area-inset-bottom,0px)+0.5rem)] sm:pb-0"
       role="dialog"
@@ -130,12 +131,13 @@ const LoginPromptModal = React.memo(({ isOpen, onClose }) => {
         <button
           type="button"
           onClick={onClose}
-          className="w-full text-center text-xs text-gray-500 dark:text-gray-400 mt-4 hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 transition-colors cursor-pointer"
+          className="w-full text-center text-xs text-gray-500 dark:text-gray-400 mt-4 mb-2 hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 transition-colors cursor-pointer"
         >
           {guestMessage}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
 

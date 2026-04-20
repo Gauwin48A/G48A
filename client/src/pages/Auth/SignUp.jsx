@@ -392,20 +392,20 @@ export default function SignUp() {
           </p>
         </div>
 
-        <div className="flex justify-center gap-6">
+        <div className="flex justify-center gap-3 sm:gap-6 px-2">
           {[
-            { n: 1, label: t("aadhaar_verification") || "Verify Aadhaar" },
-            { n: 2, label: t("otp_verification") || "Enter OTP" },
-            { n: 3, label: t("pan_verification") || "Verify PAN" },
-            { n: 4, label: t("create_password") || "Set Password" },
+            { n: 1, label: t("step_aadhaar", { defaultValue: "Aadhaar" }) },
+            { n: 2, label: t("step_otp", { defaultValue: "OTP" }) },
+            { n: 3, label: t("step_pan", { defaultValue: "PAN" }) },
+            { n: 4, label: t("step_password", { defaultValue: "Password" }) },
           ].map(({ n, label }) => (
-            <div key={n} className="flex flex-col items-center gap-1" aria-current={step === n ? "step" : undefined}>
+            <div key={n} className="flex flex-col items-center gap-1 flex-1 min-w-0" aria-current={step === n ? "step" : undefined}>
               <div
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   step >= n ? "bg-purple-500 scale-110" : "bg-gray-300 dark:bg-gray-600"
                 }`}
               />
-              <span className={`text-[10px] font-medium ${step >= n ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}>
+              <span className={`text-[10px] sm:text-xs font-medium text-center truncate w-full ${step >= n ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}>
                 {label}
               </span>
             </div>

@@ -251,6 +251,25 @@ function setupContextMenuBlock() {
 // ── Console protection ──────────────────────────────────────
 
 function setupConsoleProtection() {
+  // Preserve original console methods on a private global so internal diagnostic
+  // helpers (e.g. the API interceptor) can still emit logs that bridge to native
+  // logcat via the Capacitor Console plugin. This is set BEFORE the public
+  // console object is frozen, and is non-enumerable to keep it out of casual view.
+  try {
+    const orig = {
+      log: window.console.log.bind(window.console),
+      info: window.console.info.bind(window.console),
+      warn: window.console.warn.bind(window.console),
+      error: window.console.error.bind(window.console),
+      debug: (window.console.debug || window.console.log).bind(window.console),
+    };
+    Object.defineProperty(window, "__mhubConsole", {
+      value: orig,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  } catch {}
   // Replace console methods with no-ops (keep console.error for crash reporting)
   const noop = () => {};
   try {

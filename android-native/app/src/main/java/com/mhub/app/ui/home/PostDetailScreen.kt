@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -140,14 +141,19 @@ fun PostDetailScreen(onBack: () -> Unit, viewModel: PostDetailViewModel = hiltVi
                             }
 
                             // Chips row
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            @OptIn(ExperimentalLayoutApi::class)
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
                                 p.categoryName?.let {
-                                    AssistChip(onClick = {}, label = { Text(it) })
+                                    AssistChip(onClick = {}, label = { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) })
                                 }
                                 p.location?.let {
                                     AssistChip(
                                         onClick = {},
-                                        label = { Text(it) },
+                                        label = { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                         leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp)) },
                                     )
                                 }

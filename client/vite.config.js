@@ -220,7 +220,7 @@ export default defineConfig(({ mode }) => {
           evaluate: true,
           reduce_vars: true,
           collapse_vars: true,
-          booleans_as_integers: true,
+          booleans_as_integers: false,
           hoist_funs: true,
           join_vars: true,
           sequences: true,

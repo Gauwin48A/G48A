@@ -807,7 +807,7 @@ const u = "recentSearches",
       "div",
       {
         className:
-          "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 dark:bg-gradient-to-br" +
+          "min-h-screen mhub-premium-page pb-24 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 dark:bg-gradient-to-br" +
           densityClass,
       },
       e.createElement(

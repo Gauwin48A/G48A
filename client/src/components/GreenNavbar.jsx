@@ -721,16 +721,16 @@ const GreenNavbar = () => {
       {!hideChromeOnHub && showFullNavbar ? (
         // Full Navbar
         <nav ref={topNavRef} className="mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
-          <div className="mx-auto flex w-full max-w-[92rem] items-center gap-3 px-3 py-2 md:px-4 md:py-3 lg:gap-4">
+          <div className="mx-auto flex w-full max-w-[92rem] items-center gap-1.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 md:px-4 md:py-3 lg:gap-4">
             {/* Logo and Location */}
-            <div className="flex shrink-0 items-center gap-2.5 lg:gap-3">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
               <Link
                 to="/"
-                className="mhub-nav-pill flex items-center gap-2 rounded-full px-2.5 py-1.5 transition-colors"
+                className="mhub-nav-pill flex items-center gap-1.5 sm:gap-2 rounded-full px-1.5 sm:px-2.5 py-1 sm:py-1.5 transition-colors"
                 aria-label="Home"
               >
-                <span className="mhub-nav-logo-chip rounded-xl p-2">
-                  <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
+                <span className="mhub-nav-logo-chip rounded-xl p-1.5 sm:p-2">
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" style={{ minWidth: '22px' }}>
                     <rect width="24" height="24" rx="6" fill="#2563eb" />
                     <path
                       d="M7 17V9.5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1V17"
@@ -742,45 +742,47 @@ const GreenNavbar = () => {
                     <circle cx="12" cy="13" r="2" fill="#fff" />
                   </svg>
                 </span>
-                <span className="hidden text-lg font-bold tracking-tight sm:block">
+                <span className="hidden text-base font-bold tracking-tight md:block">
                   {t('home')}
                 </span>
               </Link>
 
-              {/* Location label - display only */}
-              <div className="relative group">
-                <div
-                  className={`mhub-nav-pill relative inline-flex h-10 max-w-[180px] sm:max-w-[220px] cursor-default select-none items-center gap-1.5 rounded-full border px-2.5 transition-all ${
-                    locationLoading ? 'border-yellow-400/40 bg-yellow-500/20' :
-                    isIpFallback ? 'border-orange-400/40 bg-orange-500/15' :
-                    accuracyTier === 'precise' || accuracyTier === 'good' ? 'border-green-400/40 bg-green-500/15' :
-                    ''
-                  }`}
-                  aria-label={`${t('location', { defaultValue: 'Location' })}: ${resolvedLocationLabel}`}
-                  title={resolvedLocationLabel}
-                >
-                  <FiMapPin className={`w-4 h-4 shrink-0 ${locationLoading ? 'animate-pulse' : ''}`} />
-                  <span className="truncate text-xs font-medium leading-tight">
-                    {shortLocationLabel}
+              {/* Location label - hidden on native Android (location badge shows it) and hidden on small mobile */}
+              {!isNativePlatform && (
+                <div className="relative group hidden sm:block">
+                  <div
+                    className={`mhub-nav-pill relative inline-flex h-9 max-w-[160px] sm:max-w-[180px] md:max-w-[220px] cursor-default select-none items-center gap-1.5 rounded-full border px-2 sm:px-2.5 transition-all ${
+                      locationLoading ? 'border-yellow-400/40 bg-yellow-500/20' :
+                      isIpFallback ? 'border-orange-400/40 bg-orange-500/15' :
+                      accuracyTier === 'precise' || accuracyTier === 'good' ? 'border-green-400/40 bg-green-500/15' :
+                      ''
+                    }`}
+                    aria-label={`${t('location', { defaultValue: 'Location' })}: ${resolvedLocationLabel}`}
+                    title={resolvedLocationLabel}
+                  >
+                    <FiMapPin className={`w-3.5 h-3.5 shrink-0 ${locationLoading ? 'animate-pulse' : ''}`} />
+                    <span className="truncate text-xs font-medium leading-tight">
+                      {shortLocationLabel}
+                    </span>
+                    {(accuracyTier === 'precise' || accuracyTier === 'good') && !locationLoading && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border border-white/50" />
+                    )}
+                    {isIpFallback && !locationLoading && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-orange-400 rounded-full border border-white/50" />
+                    )}
+                  </div>
+                  <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 pointer-events-none z-50">
+                    <span className="block font-medium">{resolvedLocationLabel}</span>
+                    <span className="block text-white/60 text-[10px] mt-0.5">
+                      {locationLoading ? (t('detecting', { defaultValue: 'Detecting...' })) :
+                       isIpFallback ? (t('approximate_ip', { defaultValue: 'Approximate (IP)' })) :
+                       accuracyTier === 'precise' ? (t('precise_gps', { defaultValue: 'Precise GPS' })) :
+                       accuracyTier === 'good' ? (t('good_gps', { defaultValue: 'Good GPS' })) :
+                       (t('location', { defaultValue: 'Location' }))}
+                    </span>
                   </span>
-                  {(accuracyTier === 'precise' || accuracyTier === 'good') && !locationLoading && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border border-white/50" />
-                  )}
-                  {isIpFallback && !locationLoading && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-orange-400 rounded-full border border-white/50" />
-                  )}
                 </div>
-                <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 pointer-events-none z-50">
-                  <span className="block font-medium">{resolvedLocationLabel}</span>
-                  <span className="block text-white/60 text-[10px] mt-0.5">
-                    {locationLoading ? (t('detecting', { defaultValue: 'Detecting...' })) :
-                     isIpFallback ? (t('approximate_ip', { defaultValue: 'Approximate (IP)' })) :
-                     accuracyTier === 'precise' ? (t('precise_gps', { defaultValue: 'Precise GPS' })) :
-                     accuracyTier === 'good' ? (t('good_gps', { defaultValue: 'Good GPS' })) :
-                     (t('location', { defaultValue: 'Location' }))}
-                  </span>
-                </span>
-              </div>
+              )}
 
               {/* Mobile layout quick toggle (visible when preview is not desktop) */}
               {!isNativePlatform && layoutMode !== 'desktop' && (
@@ -797,7 +799,7 @@ const GreenNavbar = () => {
               )}
             </div>
 
-            <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
               {/* Search Button / Bar */}
               <div
                 onClick={openSearchPage}
@@ -807,13 +809,13 @@ const GreenNavbar = () => {
                     openSearchPage();
                   }
                 }}
-                className="mhub-nav-search relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-4 py-2.5 transition-all cursor-pointer group"
+                className="mhub-nav-search relative flex min-w-0 flex-1 items-center gap-2 rounded-full px-3 py-2.5 sm:px-4 sm:py-2.5 transition-all cursor-pointer group min-h-[44px]"
                 role="button"
                 tabIndex={0}
                 aria-label={t('search', { defaultValue: 'Search' })}
               >
-                <FiSearch className="w-5 h-5 text-[color:var(--icon-color-muted)]" />
-                <span className={`flex-1 truncate text-sm ${filters.search ? 'text-[color:var(--text-primary)]' : 'mhub-nav-search-placeholder'}`}>
+                <FiSearch className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-[color:var(--icon-color-muted)]" />
+                <span className={`flex-1 truncate text-xs sm:text-sm ${filters.search ? 'text-[color:var(--text-primary)]' : 'mhub-nav-search-placeholder'}`}>
                   {navbarSearchLabel}
                 </span>
 
@@ -842,7 +844,7 @@ const GreenNavbar = () => {
                   <button
                     type="button"
                     onClick={() => setShowFilter(true)}
-                    className={`mhub-nav-action inline-flex h-11 items-center gap-2 rounded-full px-3.5 text-sm font-semibold backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters ? 'ring-2 ring-[color:var(--primary)] shadow-md' : ''}`}
+                    className={`mhub-nav-action inline-flex h-10 sm:h-11 items-center gap-1.5 rounded-full px-2.5 sm:px-3.5 text-sm font-semibold backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters ? 'ring-2 ring-[color:var(--primary)] shadow-md' : ''}`}
                     aria-label={`${t('filter', { defaultValue: 'Filter' })}${hasActiveFilters ? ` (${activeFilterCount})` : ''}`}
                   >
                     <FiFilter className="h-4 w-4" />
@@ -1137,12 +1139,12 @@ const GreenNavbar = () => {
             </div>
 
             {/* Icons */}
-            <div className="flex shrink-0 items-center gap-2 lg:gap-2.5">
-              {/* Add Post Button - Only show for logged-in users */}
-              {isLoggedIn && (
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:gap-2.5">
+              {/* Add Post Button - Only show for logged-in users; hidden on native (FAB in bottom nav handles it) */}
+              {isLoggedIn && !isNativePlatform && (
                 <Link to="/post-welcome" aria-label="Add Post" className="relative group">
                   <span
-                    className="mhub-nav-cta inline-flex h-11 w-11 items-center justify-center rounded-full text-2xl font-extrabold transition-all duration-200 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-blue-400"
+                    className="mhub-nav-cta inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full text-xl sm:text-2xl font-extrabold transition-all duration-200 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-blue-400"
                     style={{ cursor: 'pointer', zIndex: 20 }}
                     tabIndex={0}
                     role="button"
@@ -1211,11 +1213,14 @@ const GreenNavbar = () => {
                   </span>
                 </Link>
               </div>
-              {/* Language Selector */}
+              {/* Language Selector — hidden on native Android */}
+              {!isNativePlatform && (
               <div>
                 <LanguageSelector compact />
               </div>
-              {/* Theme Toggle */}
+              )}
+              {/* Theme Toggle — hidden on native Android */}
+              {!isNativePlatform && (
               <div
                 className="mhub-theme-toggle"
                 role="radiogroup"
@@ -1264,6 +1269,7 @@ const GreenNavbar = () => {
                   <span className="hidden sm:inline">{t('dark_mode', { defaultValue: 'Dark' })}</span>
                 </button>
               </div>
+              )}
 
               {/* Layout Toggle (Desktop/Mobile/Tablet) — dev only */}
               {import.meta.env.DEV && (
@@ -1585,15 +1591,16 @@ const GreenNavbar = () => {
             <button
               key={link.key}
               {...navButtonProps(t(link.key))}
+              data-navkey={link.key}
               aria-current={isActive ? 'page' : undefined}
               onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen((open) => !open); } : () => navigate(link.path)}
               style={{ background: 'none', border: 'none', outline: 'none' }}
-              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[48px] p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
+              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[44px] min-h-[48px] px-1 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
             >
               <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
                 {link.icon}
               </span>
-              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '0.85rem', position: 'relative' }}>
+              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '0.72rem', position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {t(link.key)}
               </span>
               {isActive && <span className="mhub-bottom-nav-indicator" />}
@@ -1626,15 +1633,16 @@ const GreenNavbar = () => {
             <button
               key={link.key}
               {...navButtonProps(t(link.key))}
+              data-navkey={link.key}
               aria-current={isActive ? 'page' : undefined}
               onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen((open) => !open); } : () => navigate(link.path)}
               style={{ background: 'none', border: 'none', outline: 'none' }}
-              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[48px] min-h-[48px] p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
+              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[44px] min-h-[48px] px-1 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
             >
               <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
                 {link.icon}
               </span>
-              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '0.85rem', position: 'relative' }}>
+              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '0.72rem', position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {t(link.key)}
               </span>
               {isActive && <span className="mhub-bottom-nav-indicator" />}

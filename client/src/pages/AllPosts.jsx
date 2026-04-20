@@ -1152,22 +1152,9 @@ const ve = 5,
       }
       setShuffleSeed(null);
     }, [C]);
-    useEffect(() => {
-      if (typeof window > "u" || typeof document > "u") return;
-      const e = () => {
-        if (C) return;
-        const a = window.innerHeight + window.scrollY;
-        const o = document.documentElement.scrollHeight;
-        a >= o - 200 && setLoginPromptOpen((n) => n || !0);
-      };
-      return (
-        window.addEventListener("scroll", e, { passive: !0 }),
-        e(),
-        () => {
-          window.removeEventListener("scroll", e);
-        }
-      );
-    }, [C]);
+    // Login prompt is shown only on explicit user actions (wishlist, shuffle, etc.)
+    // Removed aggressive scroll-based auto-trigger which caused the prompt to overlap
+    // quick filters and bottom nav tabs on small Android screens.
     useEffect(() => {
       if (typeof window > "u") return;
       const e = () => {
@@ -2801,7 +2788,7 @@ const ve = 5,
       "div",
       {
           className:
-            `mhub-page-allposts mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-24 ${density === "compact" ? "mhub-compact" : ""}`,
+            `mhub-page-allposts mhub-premium-page min-h-screen overflow-x-hidden transition-colors duration-300 pb-28 ${density === "compact" ? "mhub-compact" : ""}`,
       },
       showModeBanner &&
         React.createElement(
@@ -2952,7 +2939,7 @@ const ve = 5,
           compact: !0,
           showCategoryCounts: !1,
         }),
-        React.createElement(
+        C && React.createElement(
           "div",
           { className: "w-full mhub-allposts-filters" },
           React.createElement(
@@ -2973,7 +2960,7 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "mhub-allposts-action-group inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
+                      "mhub-allposts-action-group hidden sm:inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                   },
                   React.createElement(
                     "button",
@@ -3029,7 +3016,7 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "quick-filters-sort inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
+                      "quick-filters-sort hidden sm:inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                   },
                   React.createElement(
                     "span",
@@ -3068,7 +3055,7 @@ const ve = 5,
                   value: density,
                   onChange: setDensity,
                   label: tr("view", "View"),
-                  className: "ml-1",
+                  className: "hidden sm:inline-flex ml-1",
                 }),
                 activeFiltersCount > 0 &&
                   React.createElement(
@@ -3984,7 +3971,7 @@ const ve = 5,
             "div",
             {
               className:
-                "fixed bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[9999] dark:bg-blue-700/40 dark:text-white",
+                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+8px)] left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[9999] dark:bg-blue-700/40 dark:text-white",
             },
             ne,
           ),
@@ -4019,7 +4006,7 @@ const ve = 5,
             "div",
             {
               className:
-                "fixed bottom-20 left-1/2 -translate-x-1/2 z-[9998] bg-purple-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 dark:bg-purple-700",
+                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+80px)] left-1/2 -translate-x-1/2 z-[9998] bg-purple-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 dark:bg-purple-700",
             },
             React.createElement(CompareIcon, { className: "w-4 h-4" }),
             React.createElement(

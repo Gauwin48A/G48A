@@ -410,7 +410,7 @@ export default function CategoryHub() {
   }, [clearCategory, clearSubcategory, setActiveApp, setFilters, navigate]);
 
   return (
-    <div className="h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-x-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100 pb-24">
       {/* Full-screen gradient aurora background */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
@@ -455,7 +455,7 @@ export default function CategoryHub() {
           {statsLoading && Object.keys(stats).length === 0 ? (
             <AppSkeleton />
           ) : (
-            <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           {apps.map((app) => (
                 <AppTile
                   key={app.key}

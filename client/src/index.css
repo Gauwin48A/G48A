@@ -1441,6 +1441,9 @@ html[data-native-platform] body {
 }
 
 /* Ensure bottom nav never gets hidden behind Android system nav bar */
+.app-main {
+  padding-bottom: calc(var(--bottom-nav-height) + var(--bottom-nav-safe, 0px) + 1.5rem);
+}
 @supports (padding: env(safe-area-inset-bottom)) {
   .mhub-bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -1472,7 +1475,14 @@ html[data-native-platform] body {
     overflow-x: hidden;
   }
 
-  /* Fix top navbar wrapping on narrow screens */
+  /* Fix top navbar on narrow screens: reduce padding, allow natural wrap management */
+  .mhub-top-nav--primary > div {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .mhub-top-nav--primary > div::-webkit-scrollbar {
+    display: none;
+  }
   .mhub-top-nav--primary .flex {
     flex-wrap: nowrap;
   }
@@ -1517,8 +1527,12 @@ html[data-native-platform] body {
 
   /* Larger font for mobile readability */
   .mhub-bottom-nav-label {
-    font-size: 0.7rem;
+    font-size: 0.72rem !important;
     line-height: 1.2;
+    max-width: 56px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* Native-feel tap feedback for interactive elements */
@@ -1545,3 +1559,246 @@ html[data-native-platform] body {
     scroll-behavior: smooth;
   }
 }
+
+/* Android mobile: form inputs and buttons should be comfortable to tap */
+@media (max-width: 640px) {
+  /* Ensure all form inputs are at least 44px tall for comfortable touch */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="search"],
+  input[type="url"],
+  textarea,
+  select {
+    min-height: 44px;
+    font-size: 16px; /* prevents iOS zoom on focus, good for Android readability */
+  }
+
+  /* Prevent auto-zoom on focus for WebView */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    font-size: 16px;
+  }
+
+  /* Ensure action buttons in cards have adequate tap targets */
+  .mhub-premium-surface button,
+  .mhub-surface button {
+    min-height: 40px;
+  }
+
+  /* Full-width buttons on narrow screens for easier tapping */
+  .mhub-premium-surface .flex-wrap.gap-3 > button,
+  .mhub-premium-surface .flex-wrap.gap-3 > a {
+    min-width: 120px;
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   ANDROID-FIRST: Comprehensive mobile UI fixes
+   Addresses: cramped navbar, quick-filters overlap,
+   bottom nav crowding, touch target sizing
+   ───────────────────────────────────────────────── */
+
+/* ── 1. AllPosts quick-filter toolbar: mobile simplification ── */
+@media (max-width: 639px) {
+  /* Hide the Browse/Shuffle/Live and Sort button groups on mobile.
+     Users access sort via the main Filter button in the top nav.     */
+  .mhub-allposts-action-group,
+  .quick-filters-sort {
+    display: none !important;
+  }
+
+  /* Make the chips row horizontally scrollable, no wrap */
+  .all-posts-quick-filters-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .all-posts-quick-filters-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Compact the secondary sticky bar so it takes less vertical space */
+  .mhub-allposts-toolbar {
+    /* Tighter padding so the bar is compact */
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* Ensure quick-filter chips have enough touch area */
+  .mhub-quick-filter-chip {
+    min-height: 36px;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+}
+
+/* ── 2. Top navbar: proper sizing and spacing on mobile ── */
+@media (max-width: 639px) {
+  /* Search bar touch target: Android 48dp requirement */
+  .mhub-nav-search {
+    min-height: 44px;
+  }
+
+  /* Filter button adequate size */
+  .mhub-nav-action {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Reduce logo area gap so search gets maximum space */
+  .mhub-top-nav--primary > div > div:first-child {
+    gap: 0.375rem;
+  }
+
+  /* Logo chip: slightly smaller on mobile */
+  .mhub-nav-logo-chip {
+    padding: 0.25rem;
+  }
+}
+
+/* ── 3. Bottom nav: prevent crowding when FAB is shown ── */
+/* When logged-in (FAB present), hide the 'rewards' tab on narrow screens
+   so the right side has 3 items instead of 4, giving each 52px+ width.    */
+@media (max-width: 480px) {
+  .mhub-bottom-nav [data-navkey="rewards"] {
+    display: none !important;
+  }
+}
+
+/* On very small screens (< 360px), reduce bottom nav button padding */
+@media (max-width: 359px) {
+  .mhub-bottom-nav-button {
+    min-width: 40px !important;
+    padding-left: 0.125rem !important;
+    padding-right: 0.125rem !important;
+  }
+  .mhub-bottom-nav-label {
+    font-size: 0.64rem !important;
+    max-width: 44px !important;
+  }
+}
+
+/* ── 4. FAB positioning: don't let it overlap neighbour buttons ── */
+.mhub-fab {
+  /* Raise FAB above bar but not too much to avoid viewport clipping */
+  transform: translateY(-14px);
+  flex-shrink: 0;
+}
+@media (max-width: 359px) {
+  .mhub-fab {
+    width: 2.75rem;   /* 44px */
+    height: 2.75rem;
+    font-size: 1.5rem;
+    transform: translateY(-10px);
+  }
+}
+
+/* ── 5. Login CTA card: ensure clearance from bottom nav ── */
+/* The guestPreviewLimited card's Login button should not be hidden
+   behind the bottom nav bar.                                      */
+.mhub-page-allposts {
+  /* pb-28 set inline; ensure scroll padding too */
+  scroll-padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
+/* ── 6. General page bottom clearance ── */
+/* All pages with the sticky bottom nav need clearance */
+.app-main {
+  padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 1.5rem) !important;
+}
+
+/* ── 7. Post action row: wrap properly on mobile ── */
+@media (max-width: 480px) {
+  .post-action-row button,
+  .post-action-row a {
+    min-height: 36px;
+    padding-inline: 0.625rem;
+  }
+}
+
+/* ── 8. Hero section: compact on mobile ── */
+@media (max-width: 639px) {
+  .mhub-allposts-hero {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .mhub-allposts-hero-card {
+    padding: 0.75rem !important;
+    border-radius: 0.75rem !important;
+  }
+  .mhub-allposts-hero-title {
+    font-size: 1.1rem !important;
+    line-height: 1.3 !important;
+  }
+  .mhub-allposts-hero-subtitle {
+    font-size: 0.78rem !important;
+  }
+  .mhub-allposts-hero-kicker {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* ── 9. Cards: appropriate sizing for mobile ── */
+@media (max-width: 639px) {
+  /* Ensure cards don't have excessive padding */
+  .mhub-allposts-card {
+    border-radius: 0.75rem;
+  }
+
+  /* Post card image: taller on mobile for better visual hierarchy */
+  .mhub-allposts-card img,
+  .mhub-allposts-card .aspect-video {
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+}
+
+/* ── 10. More menu drawer: full-screen on small mobile ── */
+@media (max-width: 480px) {
+  .mhub-bottom-nav ~ [role="dialog"] aside,
+  [role="dialog"][aria-label] aside {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 1rem 1rem 0 0;
+    bottom: 0;
+    top: auto !important;
+    height: auto;
+    max-height: 90vh;
+  }
+}
+
+/* ── 11. Category bar chips: compact on mobile ── */
+@media (max-width: 639px) {
+  /* Subcategory bar chips: shorter, easier to scan */
+  .mhub-category-chip,
+  [class*="category-chip"] {
+    min-height: 32px;
+    font-size: 0.72rem;
+    padding-inline: 0.625rem;
+  }
+}
+
+/* ── 12. Filter modal: proper safe area on mobile ── */
+@media (max-width: 639px) {
+  .fixed.inset-0.z-\[1000\] > div.mhub-premium-surface,
+  .fixed.inset-0 .mhub-premium-surface {
+    max-height: calc(
+      100dvh - var(--bottom-nav-height, 64px) -
+      env(safe-area-inset-bottom, 0px) - 1rem
+    );
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── 13. Prevent horizontal scroll on all pages ── */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
