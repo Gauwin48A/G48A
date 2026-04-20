@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation as useRouterLocation } from "react-router-dom";
 import { useLocation } from "../context/LocationContext";
 import { getDeviceInfo } from "../utils/deviceInfo";
 import {
@@ -63,6 +64,22 @@ function LocationGate({ children }) {
   const [deviceInfoSent, setDeviceInfoSent] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [bypassed, setBypassed] = useState(false);
+  const [badgeDismissed, setBadgeDismissed] = useState(false);
+
+  // Routes where the floating accuracy badge should be hidden because it
+  // overlaps the primary CTA (auth/onboarding flows have no bottom-nav).
+  const routerLoc = (() => { try { return useRouterLocation(); } catch { return { pathname: "" }; } })();
+  const HIDE_BADGE_ROUTES = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/aadhaar-verify",
+    "/tier-selection",
+  ];
+  const shouldHideBadge =
+    badgeDismissed ||
+    HIDE_BADGE_ROUTES.some((p) => (routerLoc?.pathname || "").startsWith(p));
 
   const isWebDriver =
     typeof navigator !== "undefined" && navigator.webdriver;
@@ -142,6 +159,7 @@ function LocationGate({ children }) {
   // L10: Accuracy badge component — clickable to force refresh
   const AccuracyBadge = () => {
     if (!permissionGranted && !bypassed) return null;
+    if (shouldHideBadge) return null;
     const badge = getAccuracyBadge(provider, accuracy);
     const BadgeIcon = badge.icon;
     const ageText = lastRefreshedAt
@@ -157,30 +175,42 @@ function LocationGate({ children }) {
         forceRefreshLocation().catch(() => {});
       }
     };
+    const labelText = loading || isStaleLocation ? "Detecting..." : (() => {
+      const areaName = colony || village || suburb || locality || area || city || readUserCity() || "";
+      const cleanName = areaName.replace(/\s+(mandal|district|municipality|tehsil|taluk|block)$/i, "").trim();
+      const accuracyText = accuracy ? ` ±${Math.round(accuracy)}m` : "";
+      const parts = [];
+      if (cleanName) parts.push(cleanName);
+      parts.push(badge.label + accuracyText);
+      if (ageText) parts.push(ageText);
+      return parts.join(" · ");
+    })();
     return React.createElement(
-      "button",
-      {
-        className: "location-accuracy-badge",
-        style: { borderColor: badge.color, cursor: "pointer" },
-        onClick: handleRefresh,
-        "aria-label": "Refresh location",
-        type: "button",
-      },
-      loading
-        ? React.createElement(Loader2, { size: 14, className: "spin", style: { color: badge.color } })
-        : React.createElement(BadgeIcon, { size: 14, style: { color: badge.color } }),
-      React.createElement("span", { style: { color: badge.color } },
-        loading || isStaleLocation ? "Detecting..." : (() => {
-          // Show the most specific area name available
-          const areaName = colony || village || suburb || locality || area || city || readUserCity() || "";
-          const cleanName = areaName.replace(/\s+(mandal|district|municipality|tehsil|taluk|block)$/i, "").trim();
-          const accuracyText = accuracy ? ` ±${Math.round(accuracy)}m` : "";
-          const parts = [];
-          if (cleanName) parts.push(cleanName);
-          parts.push(badge.label + accuracyText);
-          if (ageText) parts.push(ageText);
-          return parts.join(" · ");
-        })(),
+      "div",
+      { className: "location-accuracy-badge-wrap" },
+      React.createElement(
+        "button",
+        {
+          className: "location-accuracy-badge",
+          style: { borderColor: badge.color, cursor: "pointer" },
+          onClick: handleRefresh,
+          "aria-label": "Refresh location",
+          type: "button",
+        },
+        loading
+          ? React.createElement(Loader2, { size: 12, className: "spin", style: { color: badge.color } })
+          : React.createElement(BadgeIcon, { size: 12, style: { color: badge.color } }),
+        React.createElement("span", { style: { color: badge.color } }, labelText),
+      ),
+      React.createElement(
+        "button",
+        {
+          className: "location-accuracy-badge-close",
+          onClick: () => setBadgeDismissed(true),
+          "aria-label": "Hide location indicator",
+          type: "button",
+        },
+        "×",
       ),
     );
   };
@@ -433,26 +463,64 @@ function LocationGate({ children }) {
 }
 
 const badgeStyles = `
-  .location-accuracy-badge {
+  .location-accuracy-badge-wrap {
     position: fixed;
-    bottom: calc(var(--bottom-nav-height, 64px) + var(--bottom-nav-safe, 0px) + 28px);
-    left: 12px;
+    bottom: calc(var(--bottom-nav-height, 64px) + var(--bottom-nav-safe, 0px) + 12px);
+    left: 8px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(8px);
-    border: 1px solid;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 0.7rem;
-    font-weight: 600;
+    gap: 4px;
     z-index: 40;
     pointer-events: auto;
-    transition: opacity 0.3s;
+    max-width: calc(100vw - 16px);
   }
-  html.dark .location-accuracy-badge {
+  .location-accuracy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(8px);
+    border: 1px solid;
+    border-radius: 16px;
+    padding: 4px 9px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1.1;
+    max-width: 70vw;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: opacity 0.3s;
+    border-color: currentColor;
+  }
+  .location-accuracy-badge span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60vw;
+  }
+  .location-accuracy-badge-close {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(8px);
+    color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+  html.dark .location-accuracy-badge,
+  html.dark .location-accuracy-badge-close {
     background: rgba(241, 245, 249, 0.12);
+  }
+  @media (max-width: 480px) {
+    .location-accuracy-badge { font-size: 0.58rem; padding: 3px 7px; }
+    .location-accuracy-badge-close { width: 20px; height: 20px; }
   }
 `;
 

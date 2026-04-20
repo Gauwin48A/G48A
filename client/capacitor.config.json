@@ -2,6 +2,10 @@
   "appId": "com.mhub.app",
   "appName": "MHub",
   "webDir": "dist",
+  "android": {
+    "loggingBehavior": "debug",
+    "webContentsDebuggingEnabled": true
+  },
   "server": {
     "androidScheme": "http",
     "cleartext": true,

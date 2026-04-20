@@ -719,7 +719,7 @@ const Ve = 5,
       "div",
       {
         className:
-          `mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 min-h-screen dark:bg-gradient-to-b ${density === "compact" ? "mhub-compact" : ""}`,
+          `mhub-premium-page bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:via-slate-900/70 dark:to-slate-950 min-h-screen pb-24 dark:bg-gradient-to-b ${density === "compact" ? "mhub-compact" : ""}`,
       },
       e.createElement(
         "div",

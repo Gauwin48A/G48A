@@ -340,7 +340,7 @@ const W = {
                 "div",
                 {
                   className:
-                    "min-h-screen mhub-premium-page bg-gray-50 transition-colors duration-300 dark:bg-gray-950",
+                    "min-h-screen mhub-premium-page pb-24 bg-gray-50 transition-colors duration-300 dark:bg-gray-950",
                 },
                 e.createElement(
                   "div",

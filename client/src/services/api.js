@@ -670,10 +670,38 @@ const api = axios.create({
   xsrfHeaderName: CSRF_HEADER_NAME,
   timeout: 15e3,
 });
+// Expose for runtime diagnostics (no-op in production but harmless)
+try {
+  if (typeof window !== "undefined") {
+    window.__mhubApi = api;
+    const c = window.__mhubConsole || console;
+    (c.log || console.log)("[MHub:api.js] module loaded; baseURL=" + getCurrentApiRootUrl());
+    const buf = window.__mhubDiagBuffer || (window.__mhubDiagBuffer = []);
+    buf.push({ t: Date.now(), tag: "MODULE_LOAD", detail: getCurrentApiRootUrl() });
+  }
+} catch {}
 api.interceptors.request.use(
   async (config) => {
+    const _diag = (tag, detail) => {
+      try {
+        const line = `[MHub:Interceptor] ${tag}`;
+        const payload = detail === undefined ? "" : detail;
+        // Prefer preserved native console (survives anti-debug nooping in production)
+        const c = (typeof window !== "undefined" && window.__mhubConsole) || console;
+        (c.log || console.log)(line, payload);
+        // Also append to a small in-memory buffer that can be retrieved later
+        if (typeof window !== "undefined") {
+          const buf = window.__mhubDiagBuffer || (window.__mhubDiagBuffer = []);
+          buf.push({ t: Date.now(), tag, detail: typeof payload === "string" ? payload : (() => { try { return JSON.stringify(payload); } catch { return String(payload); } })() });
+          if (buf.length > 300) buf.shift();
+        }
+      } catch {}
+    };
+    try {
+    _diag("START", config?.url);
     const headers = config.headers || {};
     config.baseURL = getCurrentApiRootUrl();
+    _diag("baseURL", config.baseURL);
     if (
       typeof config.url === "string" &&
       !/^https?:\/\//i.test(config.url) &&
@@ -681,27 +709,29 @@ api.interceptors.request.use(
     ) {
       config.url = config.url.slice(4);
     }
-    const deviceId = (() => { try { return getDeviceId(); } catch { return ""; } })();
+    const deviceId = (() => { try { return getDeviceId(); } catch (e) { _diag("getDeviceId FAIL", e?.message); return ""; } })();
     if (deviceId) {
       headers["X-Device-Id"] = deviceId;
     }
+    _diag("deviceId", deviceId ? "ok" : "empty");
     // Send persistent device fingerprint for device binding enforcement
     try {
       const storedFp = localStorage.getItem("mhub_device_fp");
       if (storedFp) {
         headers["X-Device-Fingerprint"] = storedFp;
       }
-    } catch { /* storage unavailable */ }
+    } catch (e) { _diag("localStorage(fp) FAIL", e?.message); }
     headers["X-Timezone"] = CLIENT_TIMEZONE;
     // Send request timestamp for anti-replay protection
     headers["X-MHub-Timestamp"] = String(Date.now());
     headers["X-MHub-Nonce"] = createRequestNonce();
+    _diag("nonce", "ok");
     // Send DevTools detection signal for sensitive operation blocking
     try {
       if (isDevToolsOpen()) {
         headers["X-MHub-DevTools"] = "true";
       }
-    } catch { /* ignore in dev */ }
+    } catch (e) { _diag("isDevToolsOpen FAIL", e?.message); }
     // Send client-side VPN detection result to server for cross-validation
     try {
       const vpnStatus = sessionStorage.getItem("mhub_vpn_status");
@@ -711,7 +741,7 @@ api.interceptors.request.use(
           headers["X-MHub-VPN-Detected"] = "true";
         }
       }
-    } catch { /* ignore */ }
+    } catch (e) { _diag("vpnStatus FAIL", e?.message); }
     headers["Accept-Language"] = (() => {
       try {
         return localStorage.getItem("mhub_language") ||
@@ -789,17 +819,31 @@ api.interceptors.request.use(
       }
     }
     config.headers = headers;
+    _diag("DONE", config?.url);
     return config;
+    } catch (fatalErr) {
+      console.error("[MHub:Interceptor] FATAL", fatalErr?.message, fatalErr?.stack);
+      // Don't block the request — return config as-is so the call still goes out
+      return config;
+    }
   },
   (error) => Promise.reject(error),
 );
 api.interceptors.response.use(
   (response) => {
+    try {
+      const c = (typeof window !== "undefined" && window.__mhubConsole) || console;
+      (c.log || console.log)(`[MHub:Response] OK ${response?.status} ${response?.config?.url}`);
+    } catch {}
     const normalized = normalizeApiMediaPayload(response.data);
     const guarded = applyResponseGuard(response?.config?.url, normalized);
     return applyCategoryModeFilter(guarded, response?.config);
   },
   async (error) => {
+    try {
+      const c = (typeof window !== "undefined" && window.__mhubConsole) || console;
+      (c.log || console.log)(`[MHub:Response] ERR url=${error?.config?.url} status=${error?.response?.status} msg=${error?.message} code=${error?.code}`);
+    } catch {}
     const originalRequest = error.config;
     const status = error.response?.status;
     const isNetworkError = !error.response;

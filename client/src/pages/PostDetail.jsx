@@ -503,7 +503,7 @@ function PostDetail() {
       "div",
       {
         className:
-          "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4 dark:bg-gradient-to-br",
+          "min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 to-blue-50 flex items-start justify-center pt-20 p-4 dark:bg-gradient-to-br",
       },
       React.createElement(
         "div",
@@ -2268,7 +2268,7 @@ function PostDetail() {
     {
       id: "top",
       className:
-        "mhub-post-detail min-h-screen mhub-premium-page bg-gradient-to-b from-slate-100 via-white to-slate-50 dark:bg-gradient-to-b",
+        "mhub-post-detail min-h-screen mhub-premium-page pb-24 bg-gradient-to-b from-slate-100 via-white to-slate-50 dark:bg-gradient-to-b",
     },
     /* ── SEO: Dynamic meta tags for this listing ── */
     React.createElement(SEOHead, {

@@ -51,15 +51,12 @@ export default function Home() {
     } catch (err) {
       if (err?.name === "CanceledError" || err?.name === "AbortError") return;
       setError(
-        err?.message ||
-          t("home_load_error", {
-            defaultValue: "Unable to load posts right now.",
-          }),
+        err?.message || "Unable to load posts right now.",
       );
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -99,7 +96,7 @@ export default function Home() {
             {error}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button onClick={loadPosts}>
+            <Button onClick={() => loadPosts()}>
               {t("reload_page", { defaultValue: "Reload Page" })}
             </Button>
             <Button variant="outline" onClick={() => navigate("/all-posts")}>

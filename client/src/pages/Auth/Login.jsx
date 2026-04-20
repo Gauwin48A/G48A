@@ -300,7 +300,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 px-4 py-8 sm:py-12 transition-colors duration-300 dark:bg-gradient-to-br">
+    <div className="min-h-screen mhub-premium-page flex items-start justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 px-4 pt-10 pb-8 sm:items-center sm:py-12 transition-colors duration-300 dark:bg-gradient-to-br">
       <div className="w-full max-w-md space-y-6">
         <button
           type="button"
