@@ -10,8 +10,8 @@ sealed interface ApiResult<out T> {
 }
 
 sealed class ApiError(open val message: String) {
-    object Network : ApiError("Network unavailable. Check your connection.")
-    object Timeout : ApiError("Request timed out. Please try again.")
+    object Network : ApiError("Can't reach MHub services. Check your internet or API URL in Settings.")
+    object Timeout : ApiError("Server took too long to respond. Please try again.")
     object Unauthorized : ApiError("Session expired. Please sign in again.")
     data class Http(val code: Int, override val message: String) : ApiError(message)
     data class Unknown(override val message: String) : ApiError(message)

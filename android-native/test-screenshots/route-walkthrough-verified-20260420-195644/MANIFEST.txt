@@ -1,0 +1,18 @@
+01_login_signin.png - Login (Sign in tab)
+02_login_signup.png - Login (Create account tab)
+03_login_signin_tab.png - Login (Back to Sign in tab)
+04_settings_from_login.png - Settings opened from login
+05_home.png - Home feed route
+06_post_detail_state.png - Post detail route
+07_categories.png - Categories route
+08_search_initial.png - Search initial
+09_search_query.png - Search with query text
+10_create_post.png - Create listing route
+11_explore.png - Explore tab
+12_notifications.png - Alerts tab
+13_wishlist.png - Wishlist tab
+14_profile.png - Profile tab
+15_my_listings.png - My listings route
+16_kyc.png - KYC route
+17_settings_from_profile.png - Settings from profile route
+18_profile_return.png - Profile after returning from settings

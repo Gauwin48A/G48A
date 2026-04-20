@@ -1,13 +1,36 @@
 package com.mhub.app.ui.settings
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -16,32 +39,94 @@ import com.mhub.app.BuildConfig
 import com.mhub.app.R
 import com.mhub.app.data.local.AppPreferences
 import com.mhub.app.ui.components.AppTextField
+import com.mhub.app.ui.components.ErrorBanner
 import com.mhub.app.ui.components.PrimaryButton
+import com.mhub.app.ui.components.SuccessBanner
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(private val prefs: AppPreferences) : ViewModel() {
+class SettingsViewModel @Inject constructor(
+    private val prefs: AppPreferences,
+) : ViewModel() {
     private val _baseUrl = MutableStateFlow("")
     val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
+
     private val _saved = MutableStateFlow(false)
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
 
+    private val _validationMessage = MutableStateFlow<String?>(null)
+    val validationMessage: StateFlow<String?> = _validationMessage.asStateFlow()
+
     init {
-        viewModelScope.launch { _baseUrl.value = prefs.baseUrl.first() }
+        viewModelScope.launch {
+            _baseUrl.value = prefs.baseUrl.first()
+        }
     }
 
-    fun update(value: String) { _baseUrl.value = value; _saved.value = false }
+    fun applyPreset(value: String) {
+        _baseUrl.value = normalize(value)
+        _saved.value = false
+        _validationMessage.value = null
+    }
+
+    fun update(value: String) {
+        _baseUrl.value = value
+        _saved.value = false
+        _validationMessage.value = null
+    }
+
     fun save() {
         viewModelScope.launch {
-            prefs.setBaseUrl(_baseUrl.value)
+            prefs.setBaseUrl(normalize(_baseUrl.value))
             _saved.value = true
+            _validationMessage.value = null
         }
+    }
+
+    fun validateNow() {
+        viewModelScope.launch {
+            val normalized = normalize(_baseUrl.value)
+            _validationMessage.value = "Checking $normalized ..."
+            _validationMessage.value = withContext(Dispatchers.IO) {
+                val healthUrl = "${normalized}api/health"
+                runCatching {
+                    val conn = URL(healthUrl).openConnection() as HttpURLConnection
+                    conn.connectTimeout = 3500
+                    conn.readTimeout = 3500
+                    conn.requestMethod = "GET"
+                    conn.instanceFollowRedirects = true
+                    conn.inputStream.bufferedReader().use { it.readText() }
+                    conn.responseCode
+                }.fold(
+                    onSuccess = { code ->
+                        if (code in 200..299) {
+                            "Connection verified. API responded with HTTP $code."
+                        } else {
+                            "API reachable but returned HTTP $code. Check backend health."
+                        }
+                    },
+                    onFailure = { err ->
+                        "Connection failed: ${err.message ?: "unknown error"}"
+                    },
+                )
+            }
+        }
+    }
+
+    private fun normalize(value: String): String {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return BuildConfig.DEFAULT_API_BASE_URL
+        return if (trimmed.endsWith("/")) trimmed else "$trimmed/"
     }
 }
 
@@ -53,54 +138,126 @@ fun SettingsScreen(
 ) {
     val baseUrl by viewModel.baseUrl.collectAsState()
     val saved by viewModel.saved.collectAsState()
+    val validationMessage by viewModel.validationMessage.collectAsState()
+    val localPreset = BuildConfig.DEFAULT_API_BASE_URL
+    val stagingPreset = BuildConfig.STAGING_API_BASE_URL.takeIf { it.isNotBlank() }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.nav_settings)) },
+                title = { Text(stringResource(R.string.nav_settings), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Column(
-            modifier = Modifier.padding(padding).fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(stringResource(R.string.settings_api_base_url), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.settings_api_base_url_helper),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            AppTextField(
-                value = baseUrl,
-                onValueChange = viewModel::update,
-                label = stringResource(R.string.settings_api_base_url),
-            )
-            Text(
-                "Default: ${BuildConfig.DEFAULT_API_BASE_URL}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            PrimaryButton(
-                text = stringResource(R.string.action_save),
-                onClick = viewModel::save,
-            )
-            if (saved) {
-                Text(
-                    "Saved. Restart the app to apply.",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Cloud, contentDescription = null)
+                        Text(
+                            text = stringResource(R.string.settings_api_base_url),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.settings_api_base_url_helper),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    AppTextField(
+                        value = baseUrl,
+                        onValueChange = viewModel::update,
+                        label = "URL",
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilterChip(
+                            selected = baseUrl == localPreset,
+                            onClick = { viewModel.applyPreset(localPreset) },
+                            label = { Text("Local emulator") },
+                        )
+                        if (stagingPreset != null) {
+                            FilterChip(
+                                selected = baseUrl == stagingPreset,
+                                onClick = { viewModel.applyPreset(stagingPreset) },
+                                label = { Text("Staging") },
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Default: ${BuildConfig.DEFAULT_API_BASE_URL}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    PrimaryButton(text = stringResource(R.string.action_save), onClick = viewModel::save)
+                    PrimaryButton(text = "Validate connection", onClick = viewModel::validateNow)
+
+                    if (saved) {
+                        SuccessBanner(message = "Saved. Restart app to apply new API URL.")
+                    }
+                    validationMessage?.let { msg ->
+                        if (msg.startsWith("Connection failed")) {
+                            ErrorBanner(message = msg)
+                        } else {
+                            SuccessBanner(message = msg)
+                        }
+                    }
+                }
             }
-            Spacer(Modifier.weight(1f))
-            Text(
-                "MHub v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Default.Info, contentDescription = null)
+                    Text(
+                        text = "MHub v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
         }
     }
 }

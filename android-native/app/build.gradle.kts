@@ -18,6 +18,7 @@ val keystoreProps = Properties().apply {
 }
 
 android {
+    val stagingApiBaseUrl = System.getenv("MHUB_STAGING_API_BASE_URL") ?: ""
     namespace = "com.mhub.app"
     compileSdk = 35
 
@@ -43,6 +44,11 @@ android {
             "String",
             "GOOGLE_WEB_CLIENT_ID",
             "\"REPLACE_WITH_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com\""
+        )
+        buildConfigField(
+            "String",
+            "STAGING_API_BASE_URL",
+            "\"$stagingApiBaseUrl\""
         )
     }
 

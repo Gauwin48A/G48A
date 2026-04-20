@@ -102,3 +102,47 @@ Then update the app's API URL via Settings to `https://api.yourdomain.com/` and 
 **Implemented:** Splash, Login, Signup, Feed (posts list), Post Detail, Categories grid, Profile, Settings, logout, encrypted token storage, auto-retry interceptor, edge-to-edge Material 3 UI (light/dark), Hilt DI, ProGuard/R8 hardened, release signing.
 
 **Roadmap (next iterations):** Chat & Socket.IO, wishlist, offers, rewards, push notifications (FCM), image upload/create-post flow, advanced search, admin features, 2FA, profile editing. The architecture (Retrofit + Hilt + Compose + repository pattern) is set up so each of these is a new screen + repository method.
+
+## Route walkthrough and visual regression
+
+Use these scripts from `android-native\scripts`:
+
+1. Capture a full route-by-route screenshot pack:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\capture-route-walkthrough.ps1 -Serial emulator-5554
+```
+
+2. Capture full web parity pages (all routes from `WebRouteCatalog.kt`):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\capture-web-parity-pack.ps1 -Serial emulator-5554
+```
+
+3. Compare a new pack against baseline:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\compare-screenshot-pack.ps1 `
+  -BaselineDir .\test-screenshots\baseline\emulator-5554 `
+  -CandidateDir .\test-screenshots\route-pack-emulator-5554-<timestamp>
+```
+
+4. Run capture + comparison in one command:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-visual-regression.ps1 -Serial emulator-5554
+```
+
+Baseline folder for current QA run:
+`test-screenshots\baseline\emulator-5554`
+
+## Web parity reference workflow
+
+To fetch all web pages from `http://localhost:8081` for Android design parity:
+
+```powershell
+cd ..\client
+node .\scripts\capture-route-reference.mjs
+```
+
+This generates a full screenshot set in:
+`android-native\test-screenshots\web-reference-<timestamp>`
+
+Android parity implementation lives under:
+`app\src\main\java\com\mhub\app\ui\parity`

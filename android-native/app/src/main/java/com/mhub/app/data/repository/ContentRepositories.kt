@@ -8,6 +8,7 @@ import com.mhub.app.data.remote.dto.KycStatusResponse
 import com.mhub.app.data.remote.dto.KycSubmitRequest
 import com.mhub.app.data.remote.dto.KycSubmitResponse
 import com.mhub.app.domain.model.Category
+import com.mhub.app.domain.model.Notification
 import com.mhub.app.domain.model.Post
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
@@ -67,4 +68,26 @@ class KycRepository @Inject constructor(private val api: MhubApi) {
     suspend fun status(): ApiResult<KycStatusResponse> = safeApiCall { api.kycStatus() }
     suspend fun submit(req: KycSubmitRequest): ApiResult<KycSubmitResponse> =
         safeApiCall { api.submitKyc(req) }
+}
+
+@Singleton
+class NotificationsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(page: Int = 1): ApiResult<List<Notification>> = safeApiCall {
+        api.notifications(page = page).items
+    }
+    suspend fun markRead(id: String): ApiResult<Unit> = safeApiCall { api.markRead(id); Unit }
+    suspend fun markAllRead(): ApiResult<Unit> = safeApiCall { api.markAllRead(); Unit }
+}
+
+@Singleton
+class ChatRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun conversations(): ApiResult<List<com.mhub.app.domain.model.ChatConversation>> = safeApiCall {
+        api.conversations().conversations
+    }
+    suspend fun messages(conversationId: String): ApiResult<List<com.mhub.app.domain.model.ChatMessage>> = safeApiCall {
+        api.messages(conversationId).items
+    }
+    suspend fun send(conversationId: String, content: String): ApiResult<Unit> = safeApiCall {
+        api.sendMessage(conversationId, com.mhub.app.data.remote.dto.SendMessageRequest(content = content)); Unit
+    }
 }

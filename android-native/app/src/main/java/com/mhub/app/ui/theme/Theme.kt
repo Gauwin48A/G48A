@@ -12,45 +12,63 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColors = lightColorScheme(
-    primary = BrandBlue500,
+    primary = BrandPrimary,
     onPrimary = Neutral0,
-    primaryContainer = BrandBlue100,
-    onPrimaryContainer = BrandBlue700,
-    secondary = BrandBlue600,
+    primaryContainer = BrandContainer,
+    onPrimaryContainer = BrandOnContainer,
+    secondary = AccentTeal,
     onSecondary = Neutral0,
+    secondaryContainer = Color(0xFFE5DFFF),
+    onSecondaryContainer = Color(0xFF221A4E),
+    tertiary = AccentAmber,
+    onTertiary = Neutral900,
+    tertiaryContainer = Color(0xFFFFE7C8),
+    onTertiaryContainer = Color(0xFF261900),
     background = Neutral50,
     onBackground = Neutral900,
     surface = Neutral0,
     onSurface = Neutral900,
-    surfaceVariant = Neutral100,
+    surfaceVariant = Color(0xFFE9EDF7),
     onSurfaceVariant = Neutral600,
-    outline = Neutral200,
+    outline = Neutral300,
+    outlineVariant = Neutral200,
     error = ErrorRed,
     onError = Neutral0,
+    errorContainer = Color(0xFFFFE5E1),
+    onErrorContainer = Color(0xFF7A271A),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = BrandBlue400,
+    primary = BrandPrimaryDark,
     onPrimary = Neutral900,
-    primaryContainer = BrandBlue700,
-    onPrimaryContainer = BrandBlue50,
-    secondary = BrandBlue400,
-    onSecondary = Neutral900,
-    background = Neutral900,
+    primaryContainer = Color(0xFF284AA0),
+    onPrimaryContainer = Color(0xFFDCE6FF),
+    secondary = Color(0xFFC9BCFF),
+    onSecondary = Color(0xFF2D1E67),
+    secondaryContainer = Color(0xFF43318A),
+    onSecondaryContainer = Color(0xFFE5DFFF),
+    tertiary = Color(0xFFFBC56A),
+    onTertiary = Color(0xFF3A2A00),
+    tertiaryContainer = Color(0xFF564000),
+    onTertiaryContainer = Color(0xFFFFE9C9),
+    background = Color(0xFF0F1422),
     onBackground = Neutral50,
-    surface = Neutral800,
+    surface = Color(0xFF161D2D),
     onSurface = Neutral50,
-    surfaceVariant = Color(0xFF2A2F3C),
-    onSurfaceVariant = Neutral200,
-    outline = Color(0xFF3B4150),
-    error = Color(0xFFFF6B6B),
-    onError = Neutral900,
+    surfaceVariant = Color(0xFF26324A),
+    onSurfaceVariant = Neutral300,
+    outline = Neutral500,
+    outlineVariant = Neutral700,
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
 )
 
 @Composable
 fun MhubTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colors = if (useDarkTheme) DarkColors else LightColors
     val view = LocalView.current
@@ -65,6 +83,7 @@ fun MhubTheme(
             }
         }
     }
+
     MaterialTheme(
         colorScheme = colors,
         typography = MhubTypography,

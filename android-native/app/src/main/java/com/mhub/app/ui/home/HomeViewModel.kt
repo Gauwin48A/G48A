@@ -3,7 +3,9 @@ package com.mhub.app.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
+import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Post
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,12 +18,14 @@ data class HomeUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val posts: List<Post> = emptyList(),
+    val categories: List<Category> = emptyList(),
     val error: String? = null,
 )
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repo: PostsRepository,
+    private val categoriesRepo: CategoriesRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -36,8 +40,8 @@ class HomeViewModel @Inject constructor(
             error = null,
         )
         viewModelScope.launch {
-            when (val res = repo.feed(page = 1, limit = 20)) {
-                is ApiResult.Success -> _state.value = HomeUiState(
+            when (val res = repo.feed(page = 1, limit = 30)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false,
                     refreshing = false,
                     posts = res.data,
@@ -50,5 +54,12 @@ class HomeViewModel @Inject constructor(
                 )
             }
         }
+        viewModelScope.launch {
+            when (val res = categoriesRepo.all()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(categories = res.data)
+                is ApiResult.Failure -> Unit
+            }
+        }
     }
 }
+
