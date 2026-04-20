@@ -65,6 +65,56 @@ data class Category(
 }
 
 @Serializable
+data class ChatConversation(
+    @SerialName("conversation_id") val conversationId: String? = null,
+    val id: String? = null,
+    @SerialName("other_user_id") val otherUserId: String? = null,
+    @SerialName("other_user_name") val otherUserName: String? = null,
+    @SerialName("other_user_avatar") val otherUserAvatar: String? = null,
+    @SerialName("last_message") val lastMessage: String? = null,
+    @SerialName("last_message_time") val lastMessageTime: String? = null,
+    @SerialName("unread_count") val unreadCount: Int = 0,
+    @SerialName("post_id") val postId: String? = null,
+    @SerialName("post_title") val postTitle: String? = null,
+) {
+    val stableId: String get() = conversationId ?: id ?: otherUserId ?: "unknown"
+    val displayName: String get() = otherUserName ?: "Unknown"
+    val initials: String get() = displayName.take(1).uppercase()
+}
+
+@Serializable
+data class ChatMessage(
+    val id: String? = null,
+    @SerialName("message_id") val messageId: String? = null,
+    val content: String? = null,
+    @SerialName("sender_id") val senderId: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("is_read") val isRead: Boolean = false,
+) {
+    val stableId: String get() = id ?: messageId ?: "${senderId}-${createdAt}"
+    val displayContent: String get() = content ?: ""
+}
+
+@Serializable
+data class Notification(
+    val id: String? = null,
+    @SerialName("notification_id") val notificationId: String? = null,
+    val type: String? = null,
+    val title: String? = null,
+    val message: String? = null,
+    val body: String? = null,
+    @SerialName("is_read") val isRead: Boolean = false,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("post_id") val postId: String? = null,
+    @SerialName("actor_name") val actorName: String? = null,
+    @SerialName("actor_avatar") val actorAvatar: String? = null,
+) {
+    val stableId: String get() = id ?: notificationId ?: "${type}-${createdAt}"
+    val displayTitle: String get() = title ?: actorName ?: "Notification"
+    val displayMessage: String get() = message ?: body ?: ""
+}
+
+@Serializable
 data class KycSubmission(
     val id: String? = null,
     val status: String? = null,

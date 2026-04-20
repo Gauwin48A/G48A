@@ -78,4 +78,36 @@ interface MhubApi {
 
     @DELETE("api/wishlist/{id}")
     suspend fun removeWishlist(@Path("id") id: String): MessageResponse
+
+    // ---- Notifications ----
+    @GET("api/notifications")
+    suspend fun notifications(
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 30,
+    ): NotificationsResponse
+
+    @POST("api/notifications/{id}/read")
+    suspend fun markRead(@Path("id") id: String): MessageResponse
+
+    @POST("api/notifications/mark-all-read")
+    suspend fun markAllRead(): MessageResponse
+
+    // ---- Chat ----
+    @GET("api/chat/conversations")
+    suspend fun conversations(): ConversationsResponse
+
+    @GET("api/chat/conversations/{id}")
+    suspend fun messages(@Path("id") conversationId: String): MessagesResponse
+
+    @POST("api/chat/conversations/{id}/messages")
+    suspend fun sendMessage(
+        @Path("id") conversationId: String,
+        @Body body: SendMessageRequest,
+    ): MessageResponse
+
+    @POST("api/chat/conversations/{recipientId}/start")
+    suspend fun startConversation(
+        @Path("recipientId") recipientId: String,
+        @Body body: SendMessageRequest,
+    ): MessageResponse
 }

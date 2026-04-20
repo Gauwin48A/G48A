@@ -1,26 +1,47 @@
 package com.mhub.app.ui.categories
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import coil.compose.AsyncImage
-import com.mhub.app.R
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.domain.model.Category
+import com.mhub.app.ui.components.AppEmptyState
+import com.mhub.app.ui.components.AppErrorState
+import com.mhub.app.ui.theme.CategoryTints
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,13 +61,20 @@ class CategoriesViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow(CategoriesState())
     val state: StateFlow<CategoriesState> = _state.asStateFlow()
-    init { load() }
+
+    init {
+        load()
+    }
+
     fun load() {
         _state.value = CategoriesState(loading = true)
         viewModelScope.launch {
-            when (val r = repo.all()) {
-                is ApiResult.Success -> _state.value = CategoriesState(loading = false, items = r.data)
-                is ApiResult.Failure -> _state.value = CategoriesState(loading = false, error = r.error.message)
+            when (val result = repo.all()) {
+                is ApiResult.Success -> _state.value = CategoriesState(loading = false, items = result.data)
+                is ApiResult.Failure -> _state.value = CategoriesState(
+                    loading = false,
+                    error = result.error.message,
+                )
             }
         }
     }
@@ -54,27 +82,83 @@ class CategoriesViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoriesScreen(onCategoryClick: (String, String) -> Unit = { _, _ -> }, viewModel: CategoriesViewModel = hiltViewModel()) {
+fun CategoriesScreen(
+    onBack: () -> Unit,
+    onCategoryClick: (String, String) -> Unit,
+    viewModel: CategoriesViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsState()
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.nav_categories)) }) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Categories", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
-            when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                state.error != null -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.error!!, color = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = { viewModel.load() }) { Text(stringResource(R.string.action_retry)) }
-                }
-                else -> LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
+        when {
+            state.loading -> Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+
+            state.error != null -> Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                AppErrorState(
+                    title = "Categories unavailable",
+                    message = state.error ?: "Unable to load categories",
+                    onRetry = { viewModel.load() },
+                    retryLabel = "Retry categories",
+                )
+            }
+
+            state.items.isEmpty() -> Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                AppEmptyState(
+                    icon = Icons.Outlined.Category,
+                    title = "No categories",
+                    subtitle = "Categories will appear here when available.",
+                )
+            }
+
+            else -> {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 ) {
-                    items(state.items, key = { it.stableId }) { c ->
-                        CategoryTile(c, onClick = { onCategoryClick(c.stableId, c.displayName) })
+                    items(state.items, key = { it.stableId }) { category ->
+                        val idx = state.items.indexOf(category)
+                        CategoryTile(
+                            category = category,
+                            tint = CategoryTints[idx % CategoryTints.size],
+                            onClick = { onCategoryClick(category.stableId, category.displayName) },
+                        )
                     }
                 }
             }
@@ -83,29 +167,30 @@ fun CategoriesScreen(onCategoryClick: (String, String) -> Unit = { _, _ -> }, vi
 }
 
 @Composable
-private fun CategoryTile(category: Category, onClick: () -> Unit) {
-    ElevatedCard(
+private fun CategoryTile(
+    category: Category,
+    tint: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
+) {
+    Card(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = tint),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 20.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = category.iconUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
-            )
-            Spacer(Modifier.height(8.dp))
             Text(
-                category.displayName,
-                style = MaterialTheme.typography.labelLarge,
+                text = category.displayName,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

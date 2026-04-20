@@ -104,3 +104,34 @@ data class KycStatusResponse(
 // -------- Wishlist --------
 @Serializable
 data class WishlistResponse(val posts: List<Post> = emptyList())
+
+// -------- Notifications --------
+@Serializable
+data class NotificationsResponse(
+    val notifications: List<com.mhub.app.domain.model.Notification> = emptyList(),
+    val data: List<com.mhub.app.domain.model.Notification> = emptyList(),
+    val unreadCount: Int? = null,
+) {
+    val items: List<com.mhub.app.domain.model.Notification> get() = if (notifications.isNotEmpty()) notifications else data
+}
+
+// -------- Chat --------
+@Serializable
+data class ConversationsResponse(
+    val conversations: List<com.mhub.app.domain.model.ChatConversation> = emptyList(),
+)
+
+@Serializable
+data class MessagesResponse(
+    val messages: List<com.mhub.app.domain.model.ChatMessage> = emptyList(),
+    val data: List<com.mhub.app.domain.model.ChatMessage> = emptyList(),
+) {
+    val items: List<com.mhub.app.domain.model.ChatMessage> get() = if (messages.isNotEmpty()) messages else data
+}
+
+@Serializable
+data class SendMessageRequest(
+    val content: String,
+    @SerialName("post_id") val postId: String? = null,
+    @SerialName("recipient_id") val recipientId: String? = null,
+)
