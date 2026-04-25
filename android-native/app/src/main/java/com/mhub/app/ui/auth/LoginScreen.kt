@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mhub.app.BuildConfig
 import com.mhub.app.R
+import com.mhub.app.ui.common.InputValidators
 import com.mhub.app.ui.components.AppTextField
 import com.mhub.app.ui.components.ErrorBanner
 import com.mhub.app.ui.components.PrimaryButton
@@ -70,6 +71,48 @@ fun LoginScreen(
     var fullName by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
+    val googleConfigured = !BuildConfig.GOOGLE_WEB_CLIENT_ID.startsWith("REPLACE_WITH")
+
+    val identifierError = if (!isSignUp && identifier.isNotBlank() && !InputValidators.isValidEmailOrPhone(identifier)) {
+        "Enter a valid email or 10-digit phone number"
+    } else {
+        null
+    }
+    val fullNameError = if (isSignUp && fullName.isNotBlank() && !InputValidators.isValidFullName(fullName)) {
+        "Enter full name (2-60 characters)"
+    } else {
+        null
+    }
+    val emailError = if (isSignUp && email.isNotBlank() && !InputValidators.isValidEmail(email)) {
+        "Enter a valid email address"
+    } else {
+        null
+    }
+    val phoneError = if (isSignUp && phone.isNotBlank() && !InputValidators.isValidPhone(phone)) {
+        "Enter a valid 10-digit phone number"
+    } else {
+        null
+    }
+    val passwordError = if (password.isNotBlank() && !InputValidators.isStrongPassword(password)) {
+        "Password must be at least 8 characters"
+    } else {
+        null
+    }
+    val canSubmit = if (isSignUp) {
+        fullName.isNotBlank() &&
+            email.isNotBlank() &&
+            phone.isNotBlank() &&
+            password.isNotBlank() &&
+            fullNameError == null &&
+            emailError == null &&
+            phoneError == null &&
+            passwordError == null
+    } else {
+        identifier.isNotBlank() &&
+            password.isNotBlank() &&
+            identifierError == null &&
+            passwordError == null
+    }
 
     LaunchedEffect(state.success) {
         if (state.success) onSignedIn()
@@ -196,11 +239,18 @@ fun LoginScreen(
                                 }
                             }
                         },
-                        enabled = !state.loading,
+                        enabled = !state.loading && googleConfigured,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(stringResource(R.string.action_sign_in_google))
+                    }
+                    if (!googleConfigured) {
+                        Text(
+                            text = stringResource(R.string.google_signin_not_configured),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -231,18 +281,21 @@ fun LoginScreen(
                                 value = fullName,
                                 onValueChange = { fullName = it },
                                 label = stringResource(R.string.field_full_name),
+                                error = fullNameError,
                             )
                             AppTextField(
                                 value = email,
                                 onValueChange = { email = it },
                                 label = stringResource(R.string.field_email),
                                 keyboardType = KeyboardType.Email,
+                                error = emailError,
                             )
                             AppTextField(
                                 value = phone,
-                                onValueChange = { phone = it },
+                                onValueChange = { phone = it.filter { ch -> ch.isDigit() || ch == '+' || ch == ' ' } },
                                 label = stringResource(R.string.field_phone),
                                 keyboardType = KeyboardType.Phone,
+                                error = phoneError,
                             )
                         }
                     }
@@ -252,7 +305,8 @@ fun LoginScreen(
                             value = identifier,
                             onValueChange = { identifier = it },
                             label = stringResource(R.string.field_identifier),
-                            keyboardType = KeyboardType.Email,
+                            keyboardType = KeyboardType.Text,
+                            error = identifierError,
                         )
                     }
 
@@ -261,6 +315,7 @@ fun LoginScreen(
                         onValueChange = { password = it },
                         label = stringResource(R.string.field_password),
                         isPassword = true,
+                        error = passwordError,
                     )
 
                     PrimaryButton(
@@ -270,6 +325,7 @@ fun LoginScreen(
                             stringResource(R.string.action_sign_in)
                         },
                         loading = state.loading,
+                        enabled = canSubmit,
                         onClick = {
                             viewModel.clearError()
                             if (isSignUp) {

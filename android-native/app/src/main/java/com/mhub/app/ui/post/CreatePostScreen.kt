@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.mhub.app.R
+import com.mhub.app.ui.common.InputValidators
 import com.mhub.app.ui.components.AppTextField
 import com.mhub.app.ui.components.ErrorBanner
 import com.mhub.app.ui.components.PrimaryButton
@@ -66,6 +68,23 @@ fun CreatePostScreen(
     var priceText by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
+    val titleError = if (title.isNotBlank() && !InputValidators.isValidTitle(title)) {
+        "Title must be 3-120 characters"
+    } else {
+        null
+    }
+    val priceError = if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) {
+        "Enter a valid price"
+    } else {
+        null
+    }
+    val categoryError = if (state.selectedCategory == null) "Select a category" else null
+    val imageError = if (!InputValidators.hasSufficientImages(state.imageUris.size)) "Add at least one photo" else null
+    val canSubmit = title.isNotBlank() &&
+        titleError == null &&
+        priceError == null &&
+        categoryError == null &&
+        imageError == null
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 8),
@@ -106,6 +125,7 @@ fun CreatePostScreen(
 
             Surface(
                 onClick = {
+                    viewModel.clearError()
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
                 shape = RoundedCornerShape(18.dp),
@@ -151,12 +171,20 @@ fun CreatePostScreen(
                     }
                 }
             }
+            if (imageError != null) {
+                Text(
+                    text = imageError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
 
             AppTextField(
                 value = title,
                 onValueChange = { title = it; viewModel.clearError() },
                 label = stringResource(R.string.post_title),
                 imeAction = ImeAction.Next,
+                error = titleError,
             )
             AppTextField(
                 value = description,
@@ -169,11 +197,15 @@ fun CreatePostScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 AppTextField(
                     value = priceText,
-                    onValueChange = { priceText = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                    onValueChange = {
+                        priceText = it.filter { ch -> ch.isDigit() || ch == '.' }
+                        viewModel.clearError()
+                    },
                     label = stringResource(R.string.post_price),
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Next,
                     modifier = Modifier.weight(1f),
+                    error = priceError,
                 )
                 AppTextField(
                     value = location,
@@ -196,7 +228,10 @@ fun CreatePostScreen(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(),
+                        .menuAnchor(
+                            type = MenuAnchorType.PrimaryNotEditable,
+                            enabled = true,
+                        ),
                     shape = RoundedCornerShape(16.dp),
                 )
                 ExposedDropdownMenu(
@@ -213,6 +248,13 @@ fun CreatePostScreen(
                         )
                     }
                 }
+            }
+            if (categoryError != null) {
+                Text(
+                    text = categoryError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
 
             if (state.uploading || state.submitting) {
@@ -243,7 +285,7 @@ fun CreatePostScreen(
             PrimaryButton(
                 text = stringResource(R.string.post_publish),
                 loading = state.uploading || state.submitting,
-                enabled = title.length >= 3,
+                enabled = canSubmit,
                 onClick = {
                     viewModel.uploadImagesAndSubmit(
                         title = title,

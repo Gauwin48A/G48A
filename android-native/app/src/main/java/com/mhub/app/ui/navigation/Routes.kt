@@ -10,11 +10,18 @@ object Routes {
 
     // Main graph
     const val MAIN_GRAPH = "main"
-    const val HOME = "main/home"
-    const val EXPLORE = "main/explore"
+    const val HOME = "main/category-hub"
+    const val ALL_POSTS = "main/all-posts"
+    const val FOR_YOU = "main/for-you"
+    const val FEED = "main/feed"
+    const val REWARDS = "main/rewards"
+    const val PROFILE = "main/profile"
+    const val MORE = "main/more"
+
+    // Legacy aliases retained while routes migrate to web-style IA.
+    const val EXPLORE = ALL_POSTS
     const val NOTIFICATIONS = "main/notifications"
     const val WISHLIST = "main/wishlist"
-    const val PROFILE = "main/profile"
 
     // Full screen routes
     const val SEARCH = "search"

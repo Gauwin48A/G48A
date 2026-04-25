@@ -1,0 +1,19 @@
+[
+  {
+    "hash": "89004e46e1660f5d475b9cc74b2f414933e0f7197a3208518b910cfac399198a",
+    "routeCount": 3,
+    "routes": [
+      "/t&c",
+      "/terms",
+      "/terms-and-conditions"
+    ]
+  },
+  {
+    "hash": "1767f746dfae48d9ebb8c981c08c8414a981f561e1ac0376ac57c2503751dc83",
+    "routeCount": 2,
+    "routes": [
+      "/chat",
+      "/chats"
+    ]
+  }
+]

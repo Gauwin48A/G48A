@@ -1,0 +1,16 @@
+{
+  "mode": "auth",
+  "baseUrl": "http://localhost:8081",
+  "totalRoutes": 76,
+  "okCount": 76,
+  "errorCount": 0,
+  "duplicateGroupCount": 5,
+  "largestDuplicateGroupSize": 4,
+  "likelyAuthGatedRoutes": [
+    "/all-posts",
+    "/listings",
+    "/admin-panel",
+    "/categories/:slug"
+  ],
+  "storageStateUsed": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\client\\authStorageState.json"
+}

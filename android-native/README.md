@@ -129,6 +129,36 @@ powershell -ExecutionPolicy Bypass -File .\scripts\compare-screenshot-pack.ps1 `
 powershell -ExecutionPolicy Bypass -File .\scripts\run-visual-regression.ps1 -Serial emulator-5554
 ```
 
+5. Verify Android parity coverage against web routes (`client/src/App.jsx`):
+```powershell
+node .\scripts\verify-web-parity-coverage.mjs
+```
+
+6. Validate screenshot pack quality (missing/tiny files, web errors):
+```powershell
+node .\scripts\validate-parity-pack.mjs
+```
+
+7. Generate review-ready parity report markdown:
+```powershell
+node .\scripts\generate-parity-report.mjs
+```
+
+8. Generate route-by-route parity matrix (`Matched / Partial / Missing`):
+```powershell
+node .\scripts\generate-route-matrix.mjs
+```
+
+9. Enforce release thresholds (`Missing=0`, minimum matched ratio, improvement over previous release):
+```powershell
+node .\scripts\check-parity-thresholds.mjs
+```
+
+10. Generate strict page-by-page web-vs-Android re-compare (Claude-review ready):
+```powershell
+node .\scripts\generate-strict-recompare.mjs
+```
+
 Baseline folder for current QA run:
 `test-screenshots\baseline\emulator-5554`
 
@@ -141,8 +171,30 @@ cd ..\client
 node .\scripts\capture-route-reference.mjs
 ```
 
+For authenticated capture mode (supply Playwright storage state file):
+
+```powershell
+cd ..\client
+node .\scripts\capture-route-reference.mjs --mode auth --storageState .\storageState.json
+```
+
+Capture all modes in one run (guest always, auth/admin when storage states are provided):
+
+```powershell
+cd ..\client
+node .\scripts\capture-reference-all-modes.mjs `
+  --authState .\authStorageState.json `
+  --adminState .\adminStorageState.json
+```
+
 This generates a full screenshot set in:
 `android-native\test-screenshots\web-reference-<timestamp>`
 
 Android parity implementation lives under:
 `app\src\main\java\com\mhub\app\ui\parity`
+
+## Route behavior tests
+
+Route-level behavior rules (commerce/chat/profile/kyc/payment) are tested in:
+
+- `app/src/test/java/com/mhub/app/ui/parity/RouteBehaviorRulesTest.kt`

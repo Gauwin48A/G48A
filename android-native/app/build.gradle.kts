@@ -50,6 +50,28 @@ android {
             "STAGING_API_BASE_URL",
             "\"$stagingApiBaseUrl\""
         )
+        // Web reference base URL used by parity WebView screens.
+        buildConfigField(
+            "String",
+            "WEB_REFERENCE_BASE_URL",
+            "\"http://10.0.2.2:8081/\""
+        )
+        // Debug parity login defaults (kept empty by default; set in debug build type).
+        buildConfigField(
+            "String",
+            "PARITY_TEST_IDENTIFIER",
+            "\"\""
+        )
+        buildConfigField(
+            "String",
+            "PARITY_TEST_PASSWORD",
+            "\"\""
+        )
+        buildConfigField(
+            "boolean",
+            "PARITY_AUTO_LOGIN_ENABLED",
+            "false"
+        )
     }
 
     signingConfigs {
@@ -68,6 +90,9 @@ android {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            buildConfigField("String", "PARITY_TEST_IDENTIFIER", "\"9876543210\"")
+            buildConfigField("String", "PARITY_TEST_PASSWORD", "\"Password123\"")
+            buildConfigField("boolean", "PARITY_AUTO_LOGIN_ENABLED", "true")
         }
         release {
             isMinifyEnabled = true

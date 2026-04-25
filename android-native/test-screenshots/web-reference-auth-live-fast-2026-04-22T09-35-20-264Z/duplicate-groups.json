@@ -1,0 +1,42 @@
+[
+  {
+    "hash": "499900a5153c88913b293d8ef9a73e6de531880ea7b128ec4987798787b8a6df",
+    "routeCount": 8,
+    "routes": [
+      "/post/:id",
+      "/my-home",
+      "/feedback",
+      "/rewards",
+      "/analytics",
+      "/channels",
+      "/centre/create",
+      "/centre/:id"
+    ]
+  },
+  {
+    "hash": "bd9243bfd289885ce6a75ec07854ced3904b3c7ba6f44c7c6d8b0a0f0ef20ff2",
+    "routeCount": 12,
+    "routes": [
+      "/listing/:id",
+      "/account/delete",
+      "/add-post",
+      "/post-welcome",
+      "/edit-post/:postId",
+      "/chat",
+      "/chats",
+      "/t&c",
+      "/privacy-policy",
+      "/support-ticket-policy",
+      "/search",
+      "/channels/create"
+    ]
+  },
+  {
+    "hash": "a2af0a0237d41e467193d27e7a53d4c9020a513fbc52b4a06e0894e5d10b6eba",
+    "routeCount": 2,
+    "routes": [
+      "/refund-policy",
+      "/payment"
+    ]
+  }
+]

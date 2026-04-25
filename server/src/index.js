@@ -253,7 +253,7 @@ const requireCriticalTenantWriteContext = (routeName) =>
    ───────────────────────────────────────────────────────── */
 
 const localhostOriginPattern =
-  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+  /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|10\.0\.3\.2)(:\d+)?$/i;
 
 const defaultCorsOrigins = [
   "http://localhost:5173",
@@ -261,6 +261,16 @@ const defaultCorsOrigins = [
   "http://localhost:8081",
   "http://localhost:8082",
   "http://localhost:3000",
+  "http://10.0.2.2:5173",
+  "http://10.0.2.2:8080",
+  "http://10.0.2.2:8081",
+  "http://10.0.2.2:8082",
+  "http://10.0.2.2:3000",
+  "http://10.0.3.2:5173",
+  "http://10.0.3.2:8080",
+  "http://10.0.3.2:8081",
+  "http://10.0.3.2:8082",
+  "http://10.0.3.2:3000",
 ];
 
 const parseOriginList = (...rawLists) =>

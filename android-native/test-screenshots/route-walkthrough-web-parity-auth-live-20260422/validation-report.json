@@ -1,0 +1,26 @@
+{
+  "webPack": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\web-reference-auth-live-fast-2026-04-22T09-35-20-264Z",
+  "androidPack": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\route-walkthrough-web-parity-auth-live-20260422",
+  "minSize": 20000,
+  "web": {
+    "routes": 76,
+    "ok": 76,
+    "errors": 0,
+    "missingFiles": [],
+    "tinyFiles": [
+      {
+        "file": "69_centre.png",
+        "size": 11947
+      }
+    ],
+    "criticalTinyFiles": [],
+    "badDimensions": []
+  },
+  "android": {
+    "states": 62,
+    "missingFiles": [],
+    "tinyFiles": [],
+    "criticalTinyFiles": [],
+    "badDimensions": []
+  }
+}

@@ -1,0 +1,40 @@
+name: Parity Gates
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  parity-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify route coverage
+        run: node android-native/scripts/verify-web-parity-coverage.mjs
+
+      - name: Generate route matrix
+        run: node android-native/scripts/generate-route-matrix.mjs
+
+      - name: Check parity thresholds
+        run: node android-native/scripts/check-parity-thresholds.mjs
+
+      - name: Validate parity screenshot packs
+        run: node android-native/scripts/ci-validate-parity-pack.mjs
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Unit tests
+        working-directory: android-native
+        run: ./gradlew :app:testDebugUnitTest --console=plain

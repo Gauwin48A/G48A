@@ -1,0 +1,45 @@
+[
+  {
+    "hash": "4d28ab28ec2d83f7dd87929cd9837fdf96c1fc3ea13f4452aa474fc5a667fbcc",
+    "routeCount": 4,
+    "routes": [
+      "/all-posts",
+      "/listings",
+      "/admin-panel",
+      "/categories/:slug"
+    ]
+  },
+  {
+    "hash": "89004e46e1660f5d475b9cc74b2f414933e0f7197a3208518b910cfac399198a",
+    "routeCount": 3,
+    "routes": [
+      "/t&c",
+      "/terms",
+      "/terms-and-conditions"
+    ]
+  },
+  {
+    "hash": "77c2f107be0113abbbc5e2be218340378975900af8fb7cc4803d65e38f71814f",
+    "routeCount": 2,
+    "routes": [
+      "/add-post",
+      "/sell"
+    ]
+  },
+  {
+    "hash": "9c2a4cdf74ab46cf0af4b5707b217aac174d6efc237aec04ecd9eb62fd53e637",
+    "routeCount": 2,
+    "routes": [
+      "/categories",
+      "/subcategories"
+    ]
+  },
+  {
+    "hash": "23962363d878842957c77aa71d9318721235605a444e6aa8ab12512c9cab02e1",
+    "routeCount": 2,
+    "routes": [
+      "/chat",
+      "/chats"
+    ]
+  }
+]

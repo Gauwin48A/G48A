@@ -120,7 +120,16 @@ export default function RequireAuth({
     if (typeof fallback === "function") {
       return fallback({ returnTo, loading: true });
     }
-    return fallback || null;
+    if (fallback) return fallback;
+    // Show a minimal skeleton instead of null to prevent blank screens
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    );
   }
 
   if (!authed) {

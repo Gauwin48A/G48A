@@ -9,6 +9,7 @@ import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
 import com.mhub.app.data.repository.UploadRepository
 import com.mhub.app.domain.model.Category
+import com.mhub.app.ui.common.InputValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,12 +46,16 @@ class CreatePostViewModel @Inject constructor(
         }
     }
 
-    fun selectCategory(c: Category) { _state.value = _state.value.copy(selectedCategory = c) }
+    fun selectCategory(c: Category) { _state.value = _state.value.copy(selectedCategory = c, error = null) }
 
     fun clearError() { _state.value = _state.value.copy(error = null) }
 
     fun setImages(uris: List<Uri>) {
-        _state.value = _state.value.copy(imageUris = uris.take(8), uploadedUrls = emptyList())
+        _state.value = _state.value.copy(
+            imageUris = uris.take(8),
+            uploadedUrls = emptyList(),
+            error = null,
+        )
     }
 
     fun uploadImagesAndSubmit(
@@ -61,11 +66,21 @@ class CreatePostViewModel @Inject constructor(
         bytesProvider: suspend (Uri) -> Pair<ByteArray, String>?,
     ) {
         if (_state.value.submitting || _state.value.uploading) return
-        val price = priceText.toDoubleOrNull()
-        _state.value = _state.value.copy(error = null, uploading = true)
+        val validationError = validateSubmission(
+            title = title,
+            priceText = priceText,
+        )
+        if (validationError != null) {
+            _state.value = _state.value.copy(error = validationError)
+            return
+        }
+
+        val snapshot = _state.value
+        val price = priceText.trim().takeIf { it.isNotEmpty() }?.let(InputValidators::parsePositiveAmount)
+        _state.value = snapshot.copy(error = null, uploading = true)
         viewModelScope.launch {
             val urls = mutableListOf<String>()
-            for (uri in _state.value.imageUris) {
+            for (uri in snapshot.imageUris) {
                 val pair = bytesProvider(uri)
                 if (pair == null) {
                     _state.value = _state.value.copy(uploading = false, error = "Could not read image")
@@ -87,7 +102,7 @@ class CreatePostViewModel @Inject constructor(
                 description = description.trim().ifBlank { null },
                 price = price,
                 location = location.trim().ifBlank { null },
-                categoryId = _state.value.selectedCategory?.stableId,
+                categoryId = snapshot.selectedCategory?.stableId,
                 images = urls,
             )
             when (val r = postsRepo.create(req)) {
@@ -95,5 +110,21 @@ class CreatePostViewModel @Inject constructor(
                 is ApiResult.Failure -> _state.value = _state.value.copy(submitting = false, error = r.error.message)
             }
         }
+    }
+
+    private fun validateSubmission(title: String, priceText: String): String? {
+        if (!InputValidators.isValidTitle(title)) {
+            return "Title must be 3-120 characters"
+        }
+        if (!InputValidators.hasSufficientImages(_state.value.imageUris.size)) {
+            return "Add at least one photo"
+        }
+        if (_state.value.selectedCategory == null) {
+            return "Select a category"
+        }
+        if (priceText.isNotBlank() && InputValidators.parsePositiveAmount(priceText) == null) {
+            return "Enter a valid price"
+        }
+        return null
     }
 }

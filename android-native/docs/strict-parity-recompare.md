@@ -1,0 +1,102 @@
+# Strict Web-vs-Android Re-Comparison
+
+Generated: 2026-04-25T02:36:40.051Z
+
+Web pack: `C:\Users\laksh\GITHUB\Android_Kotlin\Mhub\android-native\test-screenshots\web-reference-auth-live-auth-20260422-2026-04-22T12-53-47-110Z`
+Android pack used for route walk: `C:\Users\laksh\GITHUB\Android_Kotlin\Mhub\android-native\test-screenshots\route-walkthrough-web-parity-auth-live-replica-20260422`
+
+## Strict Summary
+- Total web routes checked: **76**
+- Partial Match: **28**
+- Not Same (Parity Placeholder): **47**
+- Far Different: **1**
+- Missing: **0**
+- Functionality avg: **3.4/10**
+- Features avg: **3.4/10**
+- UI/UX avg: **3.1/10**
+- Overall strict parity: **3.3/10**
+
+## Key Confirmed Gaps
+- Bottom navbar structure differs from web IA/interaction in several routes.
+- Rewards still fails strict parity because Android capture remains auth-gated/parity-mode for the route walkthrough.
+- Many routes are parity placeholders, not production-native equivalents yet.
+
+## Route-by-Route (Strict)
+| Route | Android Key | Strict Status | Functionality | Features | UI/UX | Notes | Web Screenshot |
+|---|---|---|---:|---:|---:|---|---|
+| `/login` | `login` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 01_login.png |
+| `/signup` | `signup` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 02_signup.png |
+| `/invite/:code` | `invite` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 03_invite_code.png |
+| `/forgot-password` | `forgot_password` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 04_forgot-password.png |
+| `/reset-password` | `reset_password` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 05_reset-password.png |
+| `/reset-password/:token` | `reset_password` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 06_reset-password_token.png |
+| `/` | `category_hub` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 07_root.png |
+| `/all-posts` | `all_posts` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 08_all-posts.png |
+| `/listings` | `all_posts` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 09_listings.png |
+| `/post/:id` | `post_detail` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 10_post_id.png |
+| `/listing/:id` | `post_detail` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 11_listing_id.png |
+| `/dashboard` | `dashboard` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 12_dashboard.png |
+| `/activity` | `activity` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 13_activity.png |
+| `/profile` | `profile` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 14_profile.png |
+| `/security` | `security` | Partial Match | 5/10 | 4/10 | 4/10 | Closest Android flow exists but does not reproduce full web route behavior or layout. | 15_security.png |
+| `/account/delete` | `account_delete` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 16_account_delete.png |
+| `/add-post` | `add_post` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 17_add-post.png |
+| `/post-welcome` | `post_welcome` | Partial Match | 5/10 | 4/10 | 4/10 | Closest Android flow exists but does not reproduce full web route behavior or layout. | 18_post-welcome.png |
+| `/sell` | `add_post` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 19_sell.png |
+| `/category-hub` | `category_hub` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 20_category-hub.png |
+| `/edit-post/:postId` | `edit_post` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 21_edit-post_postId.png |
+| `/tier-selection` | `tiers` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 22_tier-selection.png |
+| `/tiers` | `tiers` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 23_tiers.png |
+| `/pricing` | `tiers` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 24_pricing.png |
+| `/my-home` | `my_home` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 25_my-home.png |
+| `/home` | `category_hub` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 26_home.png |
+| `/for-you` | `for_you` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 27_for-you.png |
+| `/bought-posts` | `bought_posts` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 28_bought-posts.png |
+| `/sold-posts` | `sold_posts` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 29_sold-posts.png |
+| `/buyer-view` | `buyer_view` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 30_buyer-view.png |
+| `/saledone` | `sale_done` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 31_saledone.png |
+| `/saleundone` | `sale_undone` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 32_saleundone.png |
+| `/admin-panel` | `admin_panel` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 33_admin-panel.png |
+| `/aadhaar-verify` | `kyc` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 34_aadhaar-verify.png |
+| `/public-wall` | `public_wall` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 35_public-wall.png |
+| `/notifications` | `notifications` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 36_notifications.png |
+| `/complaints` | `complaints` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 37_complaints.png |
+| `/feedback` | `feedback` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 38_feedback.png |
+| `/rewards` | `rewards` | Far Different | 2/10 | 2/10 | 2/10 | Android rewards route is still parity-preview/auth-gate style, while web rewards is a full signed-in dashboard. | 39_rewards.png |
+| `/categories` | `subcategories` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 40_categories.png |
+| `/subcategories` | `subcategories` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 41_subcategories.png |
+| `/compare` | `compare` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 42_compare.png |
+| `/categories/:slug` | `all_posts` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 43_categories_slug.png |
+| `/feed` | `feed` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 44_feed.png |
+| `/feed/:id` | `feed_detail` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 45_feed_id.png |
+| `/my-feed` | `my_feed` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 46_my-feed.png |
+| `/my-posts` | `my_home` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 47_my-posts.png |
+| `/post_add` | `post_add` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 48_post_add.png |
+| `/feed/feedpostadd` | `post_add` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 49_feed_feedpostadd.png |
+| `/wishlist` | `wishlist` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 50_wishlist.png |
+| `/cart` | `cart` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 51_cart.png |
+| `/recently-viewed` | `recently_viewed` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 52_recently-viewed.png |
+| `/saved-searches` | `saved_searches` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 53_saved-searches.png |
+| `/verification` | `verification` | Partial Match | 5/10 | 4/10 | 4/10 | Closest Android flow exists but does not reproduce full web route behavior or layout. | 54_verification.png |
+| `/nearby` | `nearby` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 55_nearby.png |
+| `/chat` | `chat` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 56_chat.png |
+| `/chats` | `chat` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 57_chats.png |
+| `/t&c` | `terms` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 58_t_c.png |
+| `/terms` | `terms` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 59_terms.png |
+| `/terms-and-conditions` | `terms` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 60_terms-and-conditions.png |
+| `/privacy-policy` | `privacy` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 61_privacy-policy.png |
+| `/refund-policy` | `refund` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 62_refund-policy.png |
+| `/support-ticket-policy` | `support_policy` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 63_support-ticket-policy.png |
+| `/search` | `search` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 64_search.png |
+| `/analytics` | `analytics` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 65_analytics.png |
+| `/channels` | `channels` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 66_channels.png |
+| `/channels/create` | `channel_create` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 67_channels_create.png |
+| `/channels/:id` | `channel_detail` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 68_channels_id.png |
+| `/centre` | `centre_list` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 69_centre.png |
+| `/centre/create` | `centre_create` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 70_centre_create.png |
+| `/centre/:id/listings` | `centre_listings` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 71_centre_id_listings.png |
+| `/centre/:id` | `centre_detail` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 72_centre_id.png |
+| `/kyc` | `kyc` | Partial Match | 6/10 | 6/10 | 5/10 | Native Android screen exists, but structure/components/navigation differ from web baseline. | 73_kyc.png |
+| `/payment` | `payment` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 74_payment.png |
+| `/offers` | `offers` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 75_offers.png |
+| `/reviews/:userId` | `reviews` | Not Same (Parity Placeholder) | 2/10 | 2/10 | 2/10 | Currently represented via parity preview/detail surface, not a production-native equivalent screen. | 76_reviews_userId.png |

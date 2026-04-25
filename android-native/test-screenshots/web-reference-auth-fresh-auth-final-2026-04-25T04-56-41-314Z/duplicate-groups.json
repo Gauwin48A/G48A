@@ -1,0 +1,55 @@
+[
+  {
+    "hash": "f461f7781cc73c6519b234ea9a223ae0813238655764df32aab8bddbf85a9426",
+    "routeCount": 16,
+    "routes": [
+      "/activity",
+      "/account/delete",
+      "/add-post",
+      "/post-welcome",
+      "/sell",
+      "/edit-post/:postId",
+      "/tiers",
+      "/pricing",
+      "/saledone",
+      "/admin-panel",
+      "/my-feed",
+      "/chats",
+      "/channels/create",
+      "/centre",
+      "/kyc",
+      "/payment"
+    ]
+  },
+  {
+    "hash": "428636e8654a4c982ca43709917e07479868d85ca5b2217a4891b5559d4ff0e3",
+    "routeCount": 7,
+    "routes": [
+      "/my-home",
+      "/bought-posts",
+      "/sold-posts",
+      "/analytics",
+      "/centre/create",
+      "/centre/:id/listings",
+      "/centre/:id"
+    ]
+  },
+  {
+    "hash": "999e713f1e9aa21608ffe6d10219b6cedb9a683984897a203a0512f6812eeab9",
+    "routeCount": 3,
+    "routes": [
+      "/buyer-view",
+      "/post_add",
+      "/chat"
+    ]
+  },
+  {
+    "hash": "8ce022b9d12a1ae2347381f3409d53aa6044091752f08d931f9e3a7ab85e7b69",
+    "routeCount": 3,
+    "routes": [
+      "/t&c",
+      "/terms",
+      "/terms-and-conditions"
+    ]
+  }
+]

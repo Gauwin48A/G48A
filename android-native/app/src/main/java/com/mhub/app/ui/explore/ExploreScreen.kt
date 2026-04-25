@@ -192,6 +192,8 @@ fun ExploreScreen(
     onOpenPost: (String) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
+    title: String = "Explore",
+    subtitle: String = "Discover categories & trending",
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -203,12 +205,12 @@ fun ExploreScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Explore",
+                            text = title,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = "Discover categories & trending",
+                            text = subtitle,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
