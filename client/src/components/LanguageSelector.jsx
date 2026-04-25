@@ -43,7 +43,7 @@ function normalizeLangCode(code) {
   return LANGUAGES.some((lang) => lang.code === base) ? base : "en";
 }
 
-export default function LanguageSelector({ className = "", compact = false }) {
+export default function LanguageSelector({ className = "", compact = false, variant = "nav" }) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
@@ -68,6 +68,13 @@ export default function LanguageSelector({ className = "", compact = false }) {
     LANGUAGES.find((lang) => lang.code === activeCode) || LANGUAGES[0];
   const selectedLabel = `${selectedLanguage.label} (${selectedLanguage.native})`;
   const buttonLabel = compact ? selectedLanguage.label : selectedLabel;
+  const panelVariant = variant === "panel";
+  const toneClasses = panelVariant
+    ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-100 focus:ring-blue-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus:ring-blue-300/40"
+    : "border-white/20 bg-white/10 text-white hover:bg-white/20 focus:ring-white/40";
+  const shapeClasses = panelVariant
+    ? "w-full justify-between rounded-xl px-3.5"
+    : "rounded-full px-3";
 
   useEffect(() => {
     const onDocumentClick = (event) => {
@@ -200,7 +207,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
         onClick={() => setOpen((value) => !value)}
         disabled={isSwitching}
         ref={buttonRef}
-        className={`inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 font-semibold text-white shadow-sm transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 ${
+        className={`inline-flex items-center gap-2 border font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 ${toneClasses} ${shapeClasses} ${
           compact ? "h-8 text-[11px]" : "h-9 text-sm"
         }`}
       >

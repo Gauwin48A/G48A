@@ -46,6 +46,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -67,6 +68,7 @@ import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.data.repository.PostsRepository
+import com.mhub.app.data.repository.RecommendationsRepository
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppEmptyState
@@ -84,17 +86,21 @@ import javax.inject.Inject
 data class ExploreState(
     val categories: List<Category> = emptyList(),
     val trending: List<Post> = emptyList(),
+    val recommendations: List<Post> = emptyList(),
     val searchQuery: String = "",
     val searchResults: List<Post> = emptyList(),
     val isSearching: Boolean = false,
+    val refreshing: Boolean = false,
     val loadingCategories: Boolean = true,
     val loadingTrending: Boolean = true,
+    val loadingRecs: Boolean = true,
 )
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
     private val categoriesRepo: CategoriesRepository,
     private val postsRepo: PostsRepository,
+    private val recsRepo: RecommendationsRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ExploreState())
     val state: StateFlow<ExploreState> = _state.asStateFlow()
@@ -104,6 +110,7 @@ class ExploreViewModel @Inject constructor(
     init {
         loadCategories()
         loadTrending()
+        loadRecommendations()
     }
 
     private fun loadCategories() {
@@ -127,6 +134,25 @@ class ExploreViewModel @Inject constructor(
                 )
                 is ApiResult.Failure -> _state.value = _state.value.copy(loadingTrending = false)
             }
+        }
+    }
+
+    private fun loadRecommendations() {
+        viewModelScope.launch {
+            when (val result = recsRepo.forYou()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(loadingRecs = false, recommendations = result.data)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loadingRecs = false)
+            }
+        }
+    }
+
+    fun refresh() {
+        _state.value = _state.value.copy(refreshing = true)
+        viewModelScope.launch {
+            loadCategories()
+            loadTrending()
+            loadRecommendations()
+            _state.value = _state.value.copy(refreshing = false)
         }
     }
 
@@ -221,10 +247,14 @@ fun ExploreScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+                .fillMaxSize(),
         ) {
             // Search bar
             OutlinedTextField(
@@ -258,6 +288,7 @@ fun ExploreScreen(
             } else {
                 DiscoveryFeed(state = state, onOpenPost = onOpenPost, onOpenSearch = onOpenSearch)
             }
+        }
         }
     }
 }
@@ -319,7 +350,7 @@ private fun DiscoveryFeed(
                 }
             }
         } else {
-            items(state.categories.chunked(3)) { row ->
+            items(state.categories.chunked(3), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -373,6 +404,36 @@ private fun DiscoveryFeed(
                 }
             }
         }
+
+        // For You header
+        item {
+            SectionHeader(
+                title = "For You",
+                subtitle = "Personalized recommendations",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+
+        // For You grid (2 columns)
+        if (state.loadingRecs) {
+            item {
+                Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        } else if (state.recommendations.isNotEmpty()) {
+            items(state.recommendations.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    row.forEach { post ->
+                        TrendingCard(post = post, onClick = { onOpenPost(post.stableId) }, modifier = Modifier.weight(1f))
+                    }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
     }
 }
 
@@ -416,13 +477,13 @@ private fun CategoryCard(
 }
 
 @Composable
-private fun TrendingCard(post: Post, onClick: () -> Unit) {
+private fun TrendingCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier.width(160.dp)) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.width(160.dp),
+        modifier = modifier,
     ) {
         Column {
             Box(

@@ -1,0 +1,218 @@
+[
+  {
+    "index": 0,
+    "route": "/category-hub",
+    "file": "000_category_hub_start.png",
+    "size": 687493,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 1,
+    "route": "/category-hub",
+    "file": "002_category-hub.png",
+    "size": 437474,
+    "status": "ok",
+    "actualPath": "/category-hub"
+  },
+  {
+    "index": 2,
+    "route": "/all-posts",
+    "file": "003_all-posts.png",
+    "size": 181660,
+    "status": "ok",
+    "actualPath": "/all-posts"
+  },
+  {
+    "index": 3,
+    "route": "/listings",
+    "file": "004_listings.png",
+    "size": 181660,
+    "status": "ok",
+    "actualPath": "/listings"
+  },
+  {
+    "index": 4,
+    "route": "/home",
+    "file": "005_home.png",
+    "size": 152403,
+    "status": "ok",
+    "actualPath": "/home"
+  },
+  {
+    "index": 5,
+    "route": "/for-you",
+    "file": "006_for-you.png",
+    "size": 181922,
+    "status": "ok",
+    "actualPath": "/for-you"
+  },
+  {
+    "index": 6,
+    "route": "/feed",
+    "file": "007_feed.png",
+    "size": 416600,
+    "status": "ok",
+    "actualPath": "/feed"
+  },
+  {
+    "index": 7,
+    "route": "/public-wall",
+    "file": "008_public-wall.png",
+    "size": 771217,
+    "status": "ok",
+    "actualPath": "/public-wall"
+  },
+  {
+    "index": 8,
+    "route": "/search",
+    "file": "009_search.png",
+    "size": 325278,
+    "status": "ok",
+    "actualPath": "/search"
+  },
+  {
+    "index": 9,
+    "route": "/nearby",
+    "file": "010_nearby.png",
+    "size": 289095,
+    "status": "ok",
+    "actualPath": "/nearby"
+  },
+  {
+    "index": 10,
+    "route": "/login",
+    "file": "011_login.png",
+    "size": 266405,
+    "status": "ok",
+    "actualPath": "/login"
+  },
+  {
+    "index": 11,
+    "route": "/signup",
+    "file": "012_signup.png",
+    "size": 376064,
+    "status": "ok",
+    "actualPath": "/signup"
+  },
+  {
+    "index": 12,
+    "route": "/forgot-password",
+    "file": "013_forgot-password.png",
+    "size": 240553,
+    "status": "ok",
+    "actualPath": "/forgot-password"
+  },
+  {
+    "index": 13,
+    "route": "/invite/demo",
+    "file": "014_invite_demo.png",
+    "size": 155587,
+    "status": "ok",
+    "actualPath": "/signup"
+  },
+  {
+    "index": 14,
+    "route": "/reset-password",
+    "file": "015_reset-password.png",
+    "size": 70849,
+    "status": "ok",
+    "actualPath": "/reset-password"
+  },
+  {
+    "index": 15,
+    "route": "/reset-password/demo",
+    "file": "016_reset-password_demo.png",
+    "size": 306403,
+    "status": "ok",
+    "actualPath": "/reset-password/demo"
+  },
+  {
+    "index": 16,
+    "route": "/dashboard",
+    "file": "017_dashboard.png",
+    "size": 554873,
+    "status": "ok",
+    "actualPath": "/dashboard"
+  },
+  {
+    "index": 17,
+    "route": "/activity",
+    "file": "018_activity.png",
+    "size": 346534,
+    "status": "ok",
+    "actualPath": "/activity"
+  },
+  {
+    "index": 18,
+    "route": "/profile",
+    "file": "019_profile.png",
+    "size": 621162,
+    "status": "ok",
+    "actualPath": "/profile"
+  },
+  {
+    "index": 19,
+    "route": "/security",
+    "file": "020_security.png",
+    "size": 506368,
+    "status": "ok",
+    "actualPath": "/security"
+  },
+  {
+    "index": 20,
+    "route": "/my-home",
+    "file": "021_my-home.png",
+    "size": 385899,
+    "status": "ok",
+    "actualPath": "/my-home"
+  },
+  {
+    "index": 21,
+    "route": "/my-posts",
+    "file": "022_my-posts.png",
+    "size": 180520,
+    "status": "ok",
+    "actualPath": "/my-posts"
+  },
+  {
+    "index": 22,
+    "route": "/my-feed",
+    "file": "023_my-feed.png",
+    "size": 498903,
+    "status": "ok",
+    "actualPath": "/my-feed"
+  },
+  {
+    "index": 23,
+    "route": "/bought-posts",
+    "file": "024_bought-posts.png",
+    "size": 344699,
+    "status": "ok",
+    "actualPath": "/bought-posts"
+  },
+  {
+    "index": 24,
+    "route": "/sold-posts",
+    "file": "025_sold-posts.png",
+    "size": 78953,
+    "status": "ok",
+    "actualPath": "/sold-posts"
+  },
+  {
+    "index": 25,
+    "route": "/add-post",
+    "file": "026_add-post.png",
+    "size": 0,
+    "status": "failed",
+    "actualPath": "/add-post"
+  },
+  {
+    "index": 26,
+    "route": "/edit-post/demo",
+    "file": "027_edit-post_demo.png",
+    "size": 0,
+    "status": "failed",
+    "actualPath": ""
+  }
+]

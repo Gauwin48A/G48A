@@ -1,0 +1,98 @@
+[
+  {
+    "index": 0,
+    "route": "/category-hub",
+    "file": "000_category_hub_start.png",
+    "size": 766233,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 1,
+    "route": "/all-posts",
+    "file": "002_all-posts.png",
+    "size": 28325,
+    "status": "blank",
+    "actualPath": "/all-posts"
+  },
+  {
+    "index": 2,
+    "route": "/profile",
+    "file": "003_profile.png",
+    "size": 605567,
+    "status": "ok",
+    "actualPath": "/profile"
+  },
+  {
+    "index": 3,
+    "route": "/rewards",
+    "file": "004_rewards.png",
+    "size": 77217,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 4,
+    "route": "/tier-selection",
+    "file": "005_tier-selection.png",
+    "size": 153521,
+    "status": "ok",
+    "actualPath": "/tier-selection"
+  },
+  {
+    "index": 5,
+    "route": "/pricing",
+    "file": "006_pricing.png",
+    "size": 606321,
+    "status": "ok",
+    "actualPath": "/pricing"
+  },
+  {
+    "index": 6,
+    "route": "/notifications",
+    "file": "007_notifications.png",
+    "size": 586942,
+    "status": "ok",
+    "actualPath": "/notifications"
+  },
+  {
+    "index": 7,
+    "route": "/wishlist",
+    "file": "008_wishlist.png",
+    "size": 70644,
+    "status": "ok",
+    "actualPath": "/wishlist"
+  },
+  {
+    "index": 8,
+    "route": "/cart",
+    "file": "009_cart.png",
+    "size": 70644,
+    "status": "ok",
+    "actualPath": "/cart"
+  },
+  {
+    "index": 9,
+    "route": "/my-feed",
+    "file": "010_my-feed.png",
+    "size": 577171,
+    "status": "ok",
+    "actualPath": "/my-feed"
+  },
+  {
+    "index": 10,
+    "route": "/security",
+    "file": "011_security.png",
+    "size": 549492,
+    "status": "ok",
+    "actualPath": "/security"
+  },
+  {
+    "index": 11,
+    "route": "/account/delete",
+    "file": "012_account_delete.png",
+    "size": 378835,
+    "status": "ok",
+    "actualPath": "/account/delete"
+  }
+]

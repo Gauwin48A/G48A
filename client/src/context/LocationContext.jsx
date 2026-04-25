@@ -84,6 +84,16 @@ const writeJson = (key, value) => {
   }
 };
 
+const isAndroidReplicaWebView = () => {
+  if (typeof window === "undefined") return false;
+  if (window.__MHUB_ANDROID_WEB_REPLICA__ === true) return true;
+  const userAgent = String(window.navigator?.userAgent || "").toLowerCase();
+  return (
+    userAgent.includes("mhubandroidwebreplica") ||
+    (userAgent.includes("android") && /\bwv\b/.test(userAgent))
+  );
+};
+
 const isAuthenticatedSession = () => {
   try {
     return hasAuthSession();
@@ -204,6 +214,9 @@ const clearManualLocation = () => {
 };
 
 const readSkipFlag = () => {
+  if (isAndroidReplicaWebView()) {
+    return true;
+  }
   const payload = readJson("mhub_location_skipped");
   if (!payload?.timestamp) return false;
   const fresh = Date.now() - Number(payload.timestamp) < SKIP_TTL_MS;

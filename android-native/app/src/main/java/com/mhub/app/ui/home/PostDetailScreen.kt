@@ -22,20 +22,25 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,28 +50,41 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.remote.dto.TrustScoreResponse
+import com.mhub.app.data.repository.OffersRepository
 import com.mhub.app.data.repository.PostsRepository
+import com.mhub.app.data.repository.SocialRepository
+import com.mhub.app.data.repository.TrustRepository
 import com.mhub.app.data.repository.WishlistRepository
 import com.mhub.app.domain.model.Post
 import com.mhub.app.ui.components.AppErrorState
@@ -84,6 +102,10 @@ data class PostDetailState(
     val error: String? = null,
     val wishlisted: Boolean = false,
     val wishlistLoading: Boolean = false,
+    val trustScore: TrustScoreResponse? = null,
+    val offerSent: Boolean = false,
+    val offerError: String? = null,
+    val reported: Boolean = false,
 )
 
 @HiltViewModel
@@ -91,6 +113,9 @@ class PostDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repo: PostsRepository,
     private val wishlistRepo: WishlistRepository,
+    private val trustRepo: TrustRepository,
+    private val offersRepo: OffersRepository,
+    private val socialRepo: SocialRepository,
 ) : ViewModel() {
     private val postId: String = savedStateHandle.get<String>("postId").orEmpty()
     private val _state = MutableStateFlow(PostDetailState())
@@ -104,7 +129,21 @@ class PostDetailViewModel @Inject constructor(
         _state.value = PostDetailState(loading = true)
         viewModelScope.launch {
             when (val result = repo.detail(postId)) {
-                is ApiResult.Success -> _state.value = PostDetailState(loading = false, post = result.data)
+                is ApiResult.Success -> {
+                    _state.value = PostDetailState(loading = false, post = result.data)
+                    // Track view + recently viewed
+                    launch { runCatching { socialRepo.viewPost(postId) } }
+                    launch { runCatching { socialRepo.trackViewed(postId) } }
+                    // Load trust score for seller
+                    result.data.userId?.let { userId ->
+                        launch {
+                            when (val t = trustRepo.score(userId)) {
+                                is ApiResult.Success -> _state.value = _state.value.copy(trustScore = t.data)
+                                is ApiResult.Failure -> {} // non-critical
+                            }
+                        }
+                    }
+                }
                 is ApiResult.Failure -> _state.value = PostDetailState(
                     loading = false,
                     error = result.error.message,
@@ -126,6 +165,22 @@ class PostDetailViewModel @Inject constructor(
                 wishlistRepo.add(postId)
                 _state.value = _state.value.copy(wishlisted = true, wishlistLoading = false)
             }
+        }
+    }
+
+    fun makeOffer(amount: Double) {
+        viewModelScope.launch {
+            when (offersRepo.makeOffer(postId, amount)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(offerSent = true, offerError = null)
+                is ApiResult.Failure -> _state.value = _state.value.copy(offerError = "Failed to send offer")
+            }
+        }
+    }
+
+    fun reportPost() {
+        viewModelScope.launch {
+            runCatching { repo.report(postId) }
+            _state.value = _state.value.copy(reported = true)
         }
     }
 }
@@ -324,6 +379,28 @@ fun PostDetailScreen(
                                     }
                                 }
 
+                                // Trust Score Badge
+                                state.trustScore?.let { ts ->
+                                    val score = ts.trustScore.toInt()
+                                    val trustColor = when { score >= 80 -> Color(0xFF22C55E); score >= 50 -> Color(0xFFF59E0B); else -> Color(0xFFEF4444) }
+                                    Card(shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = trustColor.copy(alpha = 0.1f)), modifier = Modifier.fillMaxWidth()) {
+                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Filled.VerifiedUser, null, tint = trustColor, modifier = Modifier.size(22.dp))
+                                            Spacer(Modifier.width(8.dp))
+                                            Column {
+                                                Text("Trust Score: $score/100", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = trustColor)
+                                                Text(ts.trustLabel ?: when { score >= 80 -> "Highly Trusted"; score >= 50 -> "Trusted"; else -> "New Seller" }, fontSize = 12.sp, color = trustColor.copy(alpha = 0.8f))
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Condition & Brand chips
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    post.condition?.let { c -> AssistChip(onClick = {}, label = { Text(c) }) }
+                                    post.brand?.let { b -> AssistChip(onClick = {}, label = { Text(b) }) }
+                                }
+
                                 post.userName?.let {
                                     Card(
                                         shape = RoundedCornerShape(14.dp),
@@ -360,30 +437,61 @@ fun PostDetailScreen(
                     }
 
                     Surface(color = MaterialTheme.colorScheme.surface) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .navigationBarsPadding()
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            OutlinedButton(
-                                onClick = {},
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(14.dp),
-                            ) {
-                                Icon(Icons.Default.Chat, contentDescription = null)
-                                Spacer(Modifier.width(6.dp))
-                                Text("Chat")
+                        Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            // Make Offer / Report row
+                            var showOfferDialog by remember { mutableStateOf(false) }
+                            var offerAmount by remember { mutableStateOf("") }
+
+                            if (state.offerSent) {
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                                    Text("Offer sent successfully!", color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
+                                }
                             }
-                            Button(
-                                onClick = {},
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(14.dp),
-                            ) {
-                                Icon(Icons.Default.ShoppingBag, contentDescription = null)
-                                Spacer(Modifier.width(6.dp))
-                                Text("Buy now")
+
+                            if (showOfferDialog) {
+                                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedTextField(
+                                        value = offerAmount, onValueChange = { offerAmount = it.filter(Char::isDigit) },
+                                        placeholder = { Text("Your offer ₹") }, singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        shape = RoundedCornerShape(10.dp), modifier = Modifier.weight(1f).height(48.dp),
+                                    )
+                                    Button(onClick = {
+                                        offerAmount.toDoubleOrNull()?.let { viewModel.makeOffer(it) }
+                                        showOfferDialog = false
+                                    }, enabled = offerAmount.isNotBlank(), shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))) {
+                                        Text("Send", fontWeight = FontWeight.SemiBold)
+                                    }
+                                    TextButton(onClick = { showOfferDialog = false }) { Text("Cancel") }
+                                }
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = { showOfferDialog = !showOfferDialog }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
+                                    Icon(Icons.Filled.LocalOffer, null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Make Offer")
+                                }
+                                OutlinedButton(onClick = { if (!state.reported) viewModel.reportPost() }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = if (state.reported) Color(0xFF94A3B8) else Color(0xFFEF4444))) {
+                                    Icon(Icons.Filled.Flag, null, modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(if (state.reported) "Reported" else "Report")
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                OutlinedButton(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
+                                    Icon(Icons.Default.Chat, contentDescription = null)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Chat")
+                                }
+                                Button(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) {
+                                    Icon(Icons.Default.ShoppingBag, contentDescription = null)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Buy now")
+                                }
                             }
                         }
                     }

@@ -1,0 +1,210 @@
+[
+  {
+    "index": 0,
+    "route": "/category-hub",
+    "file": "000_category_hub_start.png",
+    "size": 23087,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 1,
+    "route": "/category-hub",
+    "file": "002_category-hub.png",
+    "size": 25932,
+    "status": "blank",
+    "actualPath": "/category-hub"
+  },
+  {
+    "index": 2,
+    "route": "/all-posts",
+    "file": "003_all-posts.png",
+    "size": 24407,
+    "status": "blank",
+    "actualPath": "/all-posts"
+  },
+  {
+    "index": 3,
+    "route": "/for-you",
+    "file": "004_for-you.png",
+    "size": 26952,
+    "status": "blank",
+    "actualPath": "/for-you"
+  },
+  {
+    "index": 4,
+    "route": "/feed",
+    "file": "005_feed.png",
+    "size": 26931,
+    "status": "blank",
+    "actualPath": "/feed"
+  },
+  {
+    "index": 5,
+    "route": "/public-wall",
+    "file": "006_public-wall.png",
+    "size": 24109,
+    "status": "blank",
+    "actualPath": "/public-wall"
+  },
+  {
+    "index": 6,
+    "route": "/search",
+    "file": "007_search.png",
+    "size": 26115,
+    "status": "blank",
+    "actualPath": "/search"
+  },
+  {
+    "index": 7,
+    "route": "/nearby",
+    "file": "008_nearby.png",
+    "size": 27201,
+    "status": "blank",
+    "actualPath": "/nearby"
+  },
+  {
+    "index": 8,
+    "route": "/my-home",
+    "file": "009_my-home.png",
+    "size": 26704,
+    "status": "blank",
+    "actualPath": "/my-home"
+  },
+  {
+    "index": 9,
+    "route": "/my-posts",
+    "file": "010_my-posts.png",
+    "size": 24047,
+    "status": "blank",
+    "actualPath": "/my-posts"
+  },
+  {
+    "index": 10,
+    "route": "/my-feed",
+    "file": "011_my-feed.png",
+    "size": 27117,
+    "status": "blank",
+    "actualPath": "/my-feed"
+  },
+  {
+    "index": 11,
+    "route": "/dashboard",
+    "file": "012_dashboard.png",
+    "size": 24121,
+    "status": "blank",
+    "actualPath": "/dashboard"
+  },
+  {
+    "index": 12,
+    "route": "/profile",
+    "file": "013_profile.png",
+    "size": 27791,
+    "status": "blank",
+    "actualPath": "/profile"
+  },
+  {
+    "index": 13,
+    "route": "/rewards",
+    "file": "014_rewards.png",
+    "size": 27539,
+    "status": "blank",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 14,
+    "route": "/notifications",
+    "file": "015_notifications.png",
+    "size": 26453,
+    "status": "blank",
+    "actualPath": "/notifications"
+  },
+  {
+    "index": 15,
+    "route": "/wishlist",
+    "file": "016_wishlist.png",
+    "size": 27656,
+    "status": "blank",
+    "actualPath": "/wishlist"
+  },
+  {
+    "index": 16,
+    "route": "/cart",
+    "file": "017_cart.png",
+    "size": 24817,
+    "status": "blank",
+    "actualPath": "/cart"
+  },
+  {
+    "index": 17,
+    "route": "/recently-viewed",
+    "file": "018_recently-viewed.png",
+    "size": 26908,
+    "status": "blank",
+    "actualPath": "/recently-viewed"
+  },
+  {
+    "index": 18,
+    "route": "/saved-searches",
+    "file": "019_saved-searches.png",
+    "size": 27251,
+    "status": "blank",
+    "actualPath": "/saved-searches"
+  },
+  {
+    "index": 19,
+    "route": "/subcategories",
+    "file": "020_subcategories.png",
+    "size": 24600,
+    "status": "blank",
+    "actualPath": "/subcategories"
+  },
+  {
+    "index": 20,
+    "route": "/categories",
+    "file": "021_categories.png",
+    "size": 27171,
+    "status": "blank",
+    "actualPath": "/categories"
+  },
+  {
+    "index": 21,
+    "route": "/tier-selection",
+    "file": "022_tier-selection.png",
+    "size": 24227,
+    "status": "blank",
+    "actualPath": "/tier-selection"
+  },
+  {
+    "index": 22,
+    "route": "/post-welcome",
+    "file": "023_post-welcome.png",
+    "size": 25849,
+    "status": "blank",
+    "actualPath": "/post-welcome"
+  },
+  {
+    "index": 23,
+    "route": "/centre",
+    "file": "024_centre.png",
+    "size": 27308,
+    "status": "blank",
+    "actualPath": "/centre"
+  },
+  {
+    "index": 24,
+    "route": "/offers",
+    "file": "025_offers.png",
+    "size": 27036,
+    "status": "blank",
+    "actualPath": "/offers"
+  },
+  {
+    "index": 25,
+    "route": "/analytics",
+    "file": "026_analytics.png",
+    "size": 24324,
+    "status": "blank",
+    "actualPath": "/analytics"
+  }
+]

@@ -5,8 +5,8 @@
     <!-- Auth -->
     <string name="login_title">Welcome back</string>
     <string name="login_subtitle">Sign in to continue</string>
-    <string name="signup_title">Create your account</string>
-    <string name="signup_subtitle">Join the MHub marketplace community</string>
+    <string name="signup_title">Create Account</string>
+    <string name="signup_subtitle">Join MHub in just a minute</string>
     <string name="auth_brand_subtitle">Buy and sell locally</string>
     <string name="auth_tab_signin">Sign in</string>
     <string name="auth_tab_signup">Create account</string>
@@ -27,6 +27,54 @@
     <string name="password_show">Show password</string>
     <string name="password_hide">Hide password</string>
     <string name="login_legal">By continuing, you agree to Terms and Privacy Policy.</string>
+
+    <!-- Auth (web parity) -->
+    <string name="auth_back">Back</string>
+    <string name="auth_welcome_back">Welcome Back</string>
+    <string name="auth_sign_in_subtitle">Sign in with your mobile number</string>
+    <string name="auth_sign_in">Sign In</string>
+    <string name="auth_aadhaar_hint">Use your Aadhaar-registered mobile number</string>
+    <string name="auth_mobile_number">Mobile Number</string>
+    <string name="auth_mobile_placeholder">9876543210</string>
+    <string name="auth_mobile_help">Enter the mobile number linked to your Aadhaar.</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_password_placeholder">Enter your password</string>
+    <string name="auth_dont_have_account">Don\'t have an account?</string>
+    <string name="auth_sign_up_here">Sign up here</string>
+    <string name="auth_forgot_password">Forgot Password?</string>
+    <string name="auth_verifying">Verifying…</string>
+    <string name="auth_country_code">+91</string>
+
+    <!-- Forgot password -->
+    <string name="forgot_back_to_login">Back to Login</string>
+    <string name="forgot_title">Forgot Password</string>
+    <string name="forgot_subtitle">Enter your email, phone, or username to reset your password</string>
+    <string name="forgot_check_email">Check Your Email</string>
+    <string name="forgot_check_email_subtitle">We sent you password reset instructions</string>
+    <string name="forgot_field_label">Email / Phone / Username</string>
+    <string name="forgot_field_placeholder">Enter your email, phone, or username</string>
+    <string name="forgot_send_button">Send Reset Link</string>
+    <string name="forgot_sending">Sending…</string>
+    <string name="forgot_sent_to">We\'ve sent reset instructions for</string>
+    <string name="forgot_check_inbox">Please check your inbox and follow the instructions.</string>
+    <string name="forgot_didnt_receive">Didn\'t receive the email?</string>
+    <string name="forgot_try_again">try again</string>
+
+    <!-- Signup -->
+    <string name="signup_back_to_login">Back to Login</string>
+    <string name="signup_full_name">Full Name</string>
+    <string name="signup_full_name_placeholder">Enter your full name</string>
+    <string name="signup_email">Email</string>
+    <string name="signup_email_placeholder">you@example.com</string>
+    <string name="signup_mobile">Mobile Number</string>
+    <string name="signup_mobile_placeholder">9876543210</string>
+    <string name="signup_password">Password</string>
+    <string name="signup_password_placeholder">At least 8 characters</string>
+    <string name="signup_create_button">Create Account</string>
+    <string name="signup_creating">Creating account…</string>
+    <string name="signup_already_have">Already have an account?</string>
+    <string name="signup_sign_in_here">Sign in here</string>
+    <string name="signup_terms">By signing up you agree to our Terms and Privacy Policy.</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

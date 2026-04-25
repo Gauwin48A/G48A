@@ -3,11 +3,7 @@ package com.mhub.app.data.repository
 import com.mhub.app.core.ApiResult
 import com.mhub.app.core.safeApiCall
 import com.mhub.app.data.remote.MhubApi
-import com.mhub.app.data.remote.dto.CreatePostRequest
-import com.mhub.app.data.remote.dto.KycStatusResponse
-import com.mhub.app.data.remote.dto.KycSubmitRequest
-import com.mhub.app.data.remote.dto.KycSubmitResponse
-import com.mhub.app.data.remote.dto.RewardsOverviewResponse
+import com.mhub.app.data.remote.dto.*
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Notification
 import com.mhub.app.domain.model.Post
@@ -34,7 +30,25 @@ class PostsRepository @Inject constructor(private val api: MhubApi) {
         api.createPost(req).id ?: error("No id returned")
     }
 
+    suspend fun update(id: String, req: CreatePostRequest): ApiResult<Unit> = safeApiCall {
+        api.updatePost(id, req); Unit
+    }
+
     suspend fun mine(): ApiResult<List<Post>> = safeApiCall { api.myPosts().items }
+
+    suspend fun sold(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.soldPosts(page).items }
+
+    suspend fun bought(page: Int = 1): ApiResult<List<Post>> = safeApiCall { api.boughtPosts(page).items }
+
+    suspend fun nearby(lat: Double, lng: Double, radius: Int = 10): ApiResult<List<Post>> = safeApiCall {
+        api.nearbyPosts(lat, lng, radius).items
+    }
+
+    suspend fun recentlyViewed(): ApiResult<List<Post>> = safeApiCall { api.recentlyViewed().items }
+
+    suspend fun compareList(): ApiResult<List<Post>> = safeApiCall { api.compareList().items }
+
+    suspend fun report(id: String): ApiResult<Unit> = safeApiCall { api.reportPost(id); Unit }
 
     suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deletePost(id); Unit }
 }
@@ -42,6 +56,7 @@ class PostsRepository @Inject constructor(private val api: MhubApi) {
 @Singleton
 class CategoriesRepository @Inject constructor(private val api: MhubApi) {
     suspend fun all(): ApiResult<List<Category>> = safeApiCall { api.categories().items }
+    suspend fun stats(): ApiResult<List<CategoryStat>> = safeApiCall { api.categoryStats().stats }
 }
 
 @Singleton
@@ -89,11 +104,211 @@ class ChatRepository @Inject constructor(private val api: MhubApi) {
         api.messages(conversationId).items
     }
     suspend fun send(conversationId: String, content: String): ApiResult<Unit> = safeApiCall {
-        api.sendMessage(conversationId, com.mhub.app.data.remote.dto.SendMessageRequest(content = content)); Unit
+        api.sendMessage(conversationId, SendMessageRequest(content = content)); Unit
     }
 }
 
 @Singleton
 class RewardsRepository @Inject constructor(private val api: MhubApi) {
     suspend fun overview(): ApiResult<RewardsOverviewResponse> = safeApiCall { api.rewards() }
+}
+
+@Singleton
+class DashboardRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun get(): ApiResult<DashboardResponse> = safeApiCall { api.dashboard() }
+}
+
+@Singleton
+class ReviewsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun forUser(userId: String): ApiResult<ReviewsResponse> = safeApiCall { api.reviews(userId) }
+    suspend fun submit(req: ReviewRequest): ApiResult<Unit> = safeApiCall { api.submitReview(req); Unit }
+    suspend fun markHelpful(id: String): ApiResult<Unit> = safeApiCall { api.markReviewHelpful(id); Unit }
+    suspend fun respond(id: String, response: String): ApiResult<Unit> = safeApiCall {
+        api.respondToReview(id, ReviewRespondRequest(response = response)); Unit
+    }
+}
+
+@Singleton
+class OffersRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(type: String = "received"): ApiResult<List<Offer>> = safeApiCall { api.offers(type).offers }
+    suspend fun accept(id: String): ApiResult<Unit> = safeApiCall { api.acceptOffer(id); Unit }
+    suspend fun decline(id: String): ApiResult<Unit> = safeApiCall { api.declineOffer(id); Unit }
+    suspend fun counter(id: String, price: Double): ApiResult<Unit> = safeApiCall {
+        api.patchOffer(id, OfferActionRequest(action = "counter", counterPrice = price)); Unit
+    }
+    suspend fun makeOffer(postId: String, amount: Double): ApiResult<Unit> = safeApiCall {
+        api.makeOffer(MakeOfferRequest(postId = postId, amount = amount)); Unit
+    }
+}
+
+@Singleton
+class CartRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun get(): ApiResult<CartResponse> = safeApiCall { api.cart() }
+    suspend fun add(postId: String): ApiResult<Unit> = safeApiCall { api.addToCart(postId); Unit }
+    suspend fun remove(postId: String): ApiResult<Unit> = safeApiCall { api.removeFromCart(postId); Unit }
+    suspend fun updateQty(postId: String, qty: Int): ApiResult<Unit> = safeApiCall {
+        api.updateCartQty(postId, CartQtyRequest(quantity = qty)); Unit
+    }
+    suspend fun applyCoupon(code: String): ApiResult<CouponResponse> = safeApiCall {
+        api.applyCoupon(CouponRequest(code = code))
+    }
+}
+
+@Singleton
+class SavedSearchesRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(): ApiResult<List<SavedSearch>> = safeApiCall { api.savedSearches().searches }
+    suspend fun delete(id: String): ApiResult<Unit> = safeApiCall { api.deleteSavedSearch(id); Unit }
+}
+
+@Singleton
+class ChannelsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(): ApiResult<List<Channel>> = safeApiCall { api.channels().channels }
+    suspend fun detail(id: String): ApiResult<Channel> = safeApiCall { api.channelDetail(id) }
+    suspend fun create(req: CreateChannelRequest): ApiResult<String> = safeApiCall {
+        api.createChannel(req).id ?: error("No id")
+    }
+    suspend fun follow(id: String): ApiResult<Unit> = safeApiCall { api.followChannel(id); Unit }
+    suspend fun unfollow(id: String): ApiResult<Unit> = safeApiCall { api.unfollowChannel(id); Unit }
+}
+
+@Singleton
+class CentresRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(): ApiResult<List<Centre>> = safeApiCall { api.centres().centres }
+    suspend fun detail(id: String): ApiResult<Centre> = safeApiCall { api.centreDetail(id) }
+    suspend fun listings(id: String): ApiResult<List<Post>> = safeApiCall { api.centreListings(id).items }
+    suspend fun create(req: CreateCentreRequest): ApiResult<String> = safeApiCall {
+        api.createCentre(req).id ?: error("No id")
+    }
+}
+
+@Singleton
+class ComplaintsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun submit(req: ComplaintRequest): ApiResult<Unit> = safeApiCall { api.submitComplaint(req); Unit }
+    suspend fun submitFeedback(req: FeedbackRequest): ApiResult<Unit> = safeApiCall { api.submitFeedback(req); Unit }
+}
+
+@Singleton
+class AnalyticsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun get(): ApiResult<AnalyticsResponse> = safeApiCall { api.analytics() }
+    suspend fun sellerStats(range: String? = null): ApiResult<SellerAnalyticsResponse> = safeApiCall {
+        api.sellerAnalyticsStats(range)
+    }
+    suspend fun postAnalytics(range: String? = null): ApiResult<List<PostAnalytic>> = safeApiCall {
+        api.analyticsPerPost(range).posts
+    }
+    suspend fun categoryAnalytics(range: String? = null): ApiResult<List<CategoryAnalytic>> = safeApiCall {
+        api.analyticsCategories(range).categories
+    }
+}
+
+@Singleton
+class SecurityRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun sessions(): ApiResult<List<UserSession>> = safeApiCall { api.sessions().sessions }
+    suspend fun revokeSession(id: String): ApiResult<Unit> = safeApiCall { api.revokeSession(id); Unit }
+    suspend fun revokeAll(): ApiResult<Unit> = safeApiCall { api.revokeAllSessions(); Unit }
+    suspend fun twoFaStatus(): ApiResult<TwoFaStatusResponse> = safeApiCall { api.twoFaStatus() }
+    suspend fun changePassword(current: String, new: String): ApiResult<Unit> = safeApiCall {
+        api.changePassword(ChangePasswordRequest(currentPassword = current, newPassword = new)); Unit
+    }
+    suspend fun twoFaSetup(): ApiResult<TwoFaSetupResponse> = safeApiCall { api.twoFaSetup() }
+    suspend fun twoFaVerify(code: String): ApiResult<TwoFaVerifyResponse> = safeApiCall {
+        api.twoFaVerify(TwoFaVerifyRequest(code = code))
+    }
+    suspend fun twoFaDisable(code: String): ApiResult<Unit> = safeApiCall {
+        api.twoFaDisable(TwoFaVerifyRequest(code = code)); Unit
+    }
+}
+
+@Singleton
+class AccountRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun deleteAccount(reason: String?): ApiResult<Unit> = safeApiCall {
+        api.deleteAccount(DeleteAccountRequest(reason)); Unit
+    }
+    suspend fun verificationStatus(): ApiResult<VerificationStatusResponse> = safeApiCall {
+        api.verificationStatus()
+    }
+    suspend fun requestVerification(req: VerificationRequest): ApiResult<Unit> = safeApiCall {
+        api.requestVerification(req); Unit
+    }
+}
+
+@Singleton
+class TiersRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(): ApiResult<List<Tier>> = safeApiCall { api.tiers().tiers }
+    suspend fun subscribe(req: SubscribeRequest): ApiResult<Unit> = safeApiCall {
+        api.subscribe(req); Unit
+    }
+}
+
+@Singleton
+class CmsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun terms(): ApiResult<CmsContentResponse> = safeApiCall { api.termsContent() }
+    suspend fun privacy(): ApiResult<CmsContentResponse> = safeApiCall { api.privacyContent() }
+    suspend fun refund(): ApiResult<CmsContentResponse> = safeApiCall { api.refundContent() }
+    suspend fun supportPolicy(): ApiResult<CmsContentResponse> = safeApiCall { api.supportPolicyContent() }
+}
+
+@Singleton
+class InviteRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun info(code: String): ApiResult<InviteResponse> = safeApiCall { api.inviteInfo(code) }
+}
+
+@Singleton
+class AdminRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun dashboard(): ApiResult<AdminDashboardResponse> = safeApiCall { api.adminDashboard() }
+}
+
+@Singleton
+class TransactionsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun initiate(req: InitiateSaleRequest): ApiResult<SaleResponse> = safeApiCall { api.initiateSale(req) }
+    suspend fun confirm(req: ConfirmSaleRequest): ApiResult<SaleResponse> = safeApiCall { api.confirmSale(req) }
+    suspend fun pending(): ApiResult<List<PendingSale>> = safeApiCall { api.pendingSales().sales }
+    suspend fun undoSale(req: UndoSaleRequest): ApiResult<Unit> = safeApiCall { api.undoSale(req); Unit }
+    suspend fun undoneHistory(): ApiResult<List<UndoneRecord>> = safeApiCall { api.undoneHistory().records }
+}
+
+@Singleton
+class PaymentsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun upiDetails(): ApiResult<PaymentUpiDetailsResponse> = safeApiCall { api.paymentUpiDetails() }
+    suspend fun history(): ApiResult<List<PaymentHistoryItem>> = safeApiCall { api.paymentHistory().payments }
+    suspend fun submit(req: SubmitPaymentRequest): ApiResult<Unit> = safeApiCall { api.submitPayment(req); Unit }
+}
+
+@Singleton
+class BrandsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun list(): ApiResult<List<Brand>> = safeApiCall { api.brands().brands }
+}
+
+@Singleton
+class RecommendationsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun forYou(
+        search: String? = null,
+        categoryId: String? = null,
+        minPrice: Double? = null,
+        maxPrice: Double? = null,
+        location: String? = null,
+    ): ApiResult<List<Post>> = safeApiCall {
+        api.recommendations(search, categoryId, minPrice, maxPrice, location).items
+    }
+}
+
+@Singleton
+class TrustRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun score(userId: String): ApiResult<TrustScoreResponse> = safeApiCall { api.trustScore(userId) }
+}
+
+@Singleton
+class SocialRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun feed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.feed(page).allItems }
+    suspend fun feedDetail(id: String): ApiResult<FeedItem> = safeApiCall { api.feedDetail(id) }
+    suspend fun myFeed(page: Int = 1): ApiResult<List<FeedItem>> = safeApiCall { api.myFeed(page).allItems }
+    suspend fun publicWall(userId: String): ApiResult<List<FeedItem>> = safeApiCall { api.publicWall(userId).allItems }
+    suspend fun createPost(req: CreateFeedRequest): ApiResult<String> = safeApiCall {
+        api.createFeedPost(req).id ?: error("No id")
+    }
+    suspend fun likePost(id: String): ApiResult<Unit> = safeApiCall { api.likePost(id); Unit }
+    suspend fun viewPost(id: String): ApiResult<Unit> = safeApiCall { api.viewPost(id); Unit }
+    suspend fun trackViewed(postId: String): ApiResult<Unit> = safeApiCall {
+        api.trackRecentlyViewed(TrackViewRequest(postId = postId)); Unit
+    }
 }

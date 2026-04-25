@@ -72,6 +72,12 @@ android {
             "PARITY_AUTO_LOGIN_ENABLED",
             "false"
         )
+        // When enabled, primary Android routes render the same web pages inside WebView.
+        buildConfigField(
+            "boolean",
+            "WEB_REPLICA_MODE",
+            "false"
+        )
     }
 
     signingConfigs {
@@ -91,8 +97,9 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             buildConfigField("String", "PARITY_TEST_IDENTIFIER", "\"9876543210\"")
-            buildConfigField("String", "PARITY_TEST_PASSWORD", "\"Password123\"")
+            buildConfigField("String", "PARITY_TEST_PASSWORD", "\"Pass12345\"")
             buildConfigField("boolean", "PARITY_AUTO_LOGIN_ENABLED", "true")
+            buildConfigField("boolean", "WEB_REPLICA_MODE", "true")
         }
         release {
             isMinifyEnabled = true

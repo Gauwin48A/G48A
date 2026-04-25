@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
-import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart, FiSun, FiMoon } from 'react-icons/fi';
+import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart } from 'react-icons/fi';
 import { useFilter } from '@/context/FilterContext';
 import { useCategoryMode } from '@/context/CategoryModeContext';
 import { useLocation } from '@/context/LocationContext';
@@ -41,6 +41,12 @@ const LAYOUT_PRESETS = [
   { key: 'tablet', labelKey: 'tablet', icon: FiTablet, width: 834, height: 1112 },
   { key: 'desktop', labelKey: 'desktop', icon: FiMonitor, width: 1366, height: 900 },
 ];
+
+const isAndroidReplicaWebView = () => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = String(navigator.userAgent || '').toLowerCase();
+  return ua.includes('mhubandroidwebreplica') || (ua.includes('android') && /\bwv\b/.test(ua));
+};
 
 const AUTH_ONLY_PATHS = new Set(['/login', '/signup', '/forgot-password', '/reset-password']);
 const ADMIN_ACCESS_ROLES = new Set([
@@ -145,17 +151,14 @@ const GreenNavbar = () => {
   ]);
   const hasActiveFilters = activeFilterCount > 0;
   const { mode: themeMode, setThemeMode } = useTheme();
-  const isNativePlatform = typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.();
+  const isNativePlatform =
+    typeof window !== 'undefined' &&
+    (window.Capacitor?.isNativePlatform?.() || isAndroidReplicaWebView());
   const [layoutMode, setLayoutMode] = useState(() => {
     if (isNativePlatform) return 'mobile';
     const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || '').trim().toLowerCase();
     return LAYOUT_PRESETS.some((preset) => preset.key === stored) ? stored : 'desktop';
   });
-  const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
-  const layoutMenuRef = useRef(null);
-  const layoutMenuPanelRef = useRef(null);
-  const [layoutMenuStyle, setLayoutMenuStyle] = useState(null);
-
   // Large font mode for accessibility
   const [largeFont, setLargeFont] = useState(() => {
     const stored = localStorage.getItem('largeFont');
@@ -216,17 +219,6 @@ const GreenNavbar = () => {
     localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode);
   }, [layoutMode]);
 
-  useEffect(() => {
-    const onClickOutside = (event) => {
-      if (layoutMenuRef.current?.contains(event.target)) return;
-      if (layoutMenuPanelRef.current?.contains(event.target)) return;
-      setIsLayoutMenuOpen(false);
-    };
-
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, []);
-
   // Large Font effect
   useEffect(() => {
     localStorage.setItem('largeFont', JSON.stringify(largeFont));
@@ -257,7 +249,7 @@ const GreenNavbar = () => {
   const { data: rawUnreadCount = 0 } = useUnreadCount({ enabled: isLoggedIn, refetchInterval: 60000 });
   const unreadCount = isLoggedIn ? rawUnreadCount : 0;
 
-  // Wishlist count badge — subscribe to savedPosts events so badge updates immediately
+  // Wishlist count badge - subscribe to savedPosts events so badge updates immediately
   const [wishlistCount, setWishlistCount] = useState(0);
   useEffect(() => {
     if (!isLoggedIn) {
@@ -294,21 +286,6 @@ const GreenNavbar = () => {
     return filtered.reduce((sum, entry) => sum + Number(entry.qty ?? 1), 0);
   }, [cartItems, totalCount, activeApp, activeCategory, categoryModeCategories]);
   const navigate = useNavigate();
-  const currentLayoutPreset = useMemo(
-    () => LAYOUT_PRESETS.find((preset) => preset.key === layoutMode) || LAYOUT_PRESETS[2],
-    [layoutMode],
-  );
-  const CurrentLayoutIcon = currentLayoutPreset.icon;
-  const cycleLayout = () => {
-    const currentIndex = LAYOUT_PRESETS.findIndex((preset) => preset.key === layoutMode);
-    const nextPreset =
-      currentIndex === -1
-        ? LAYOUT_PRESETS[0]
-        : LAYOUT_PRESETS[(currentIndex + 1) % LAYOUT_PRESETS.length];
-    markLayoutUserOverride();
-    setLayoutMode(nextPreset.key);
-  };
-
   const handleLogout = async () => {
     setMoreOpen(false);
     try {
@@ -396,7 +373,6 @@ const GreenNavbar = () => {
     if (!next) return;
     markLayoutUserOverride();
     setLayoutMode(next.key);
-    setIsLayoutMenuOpen(false);
   };
 
   // Add animation for sliding pane via JS-in-CSS (React-safe)
@@ -454,7 +430,6 @@ const GreenNavbar = () => {
   useEffect(() => {
     setShowFilter(false);
     setMoreOpen(false);
-    setIsLayoutMenuOpen(false);
   }, [routerLocation.pathname]);
   const activeAppMatcher = useMemo(
     () => buildActiveAppMatcher(activeApp, categoryModeCategories),
@@ -500,7 +475,7 @@ const GreenNavbar = () => {
   const hideChromeOnHub =
     normalizedPath === '/category-hub' ||
     normalizedPath === '/category-mode';
-  // Build the most specific area name — colony/neighbourhood > village > locality > area > city
+  // Build the most specific area name - colony/neighbourhood > village > locality > area > city
   // Skip values that duplicate city/mandal level names (e.g. area = "Bachupally mandal" equals city)
   const bestAreaName = (() => {
     const candidates = [colony, village, locality, area, city];
@@ -509,13 +484,13 @@ const GreenNavbar = () => {
     for (const c of candidates.reverse()) {
       if (c && c.trim()) seen.add(c.trim().toLowerCase());
     }
-    // Walk from most specific → least specific, return the first that isn't also a less-specific level
+    // Walk from most specific -> least specific, return the first that isn't also a less-specific level
     const normalize = (v) => (v || '').trim().toLowerCase().replace(/\s+(mandal|district|municipality|tehsil|taluk|block)$/i, '');
     const cityNorm = normalize(city);
     for (const c of [colony, village, locality]) {
       if (c && c.trim() && normalize(c) !== cityNorm) return c.trim();
     }
-    // area might be same as city (e.g. both "Bachupally mandal") — still use it but strip mandal suffix
+    // area might be same as city (e.g. both "Bachupally mandal") - still use it but strip mandal suffix
     if (area && area.trim()) {
       const cleaned = area.trim().replace(/\s+(mandal|district|municipality|tehsil|taluk|block)$/i, '');
       if (cleaned && cleaned.toLowerCase() !== cityNorm) return cleaned;
@@ -527,7 +502,7 @@ const GreenNavbar = () => {
     return '';
   })();
 
-  // Build visible location label — prefer most specific area name
+  // Build visible location label - prefer most specific area name
   const cachedUserCity = readUserCity();
   const showStalePlaceholder = isStaleLocation && !locationLoading;
   const resolvedLocationLabel = (locationLoading || showStalePlaceholder)
@@ -648,37 +623,6 @@ const GreenNavbar = () => {
     return () => window.removeEventListener('resize', applyHeight);
   }, [hideChromeOnHub, hideTopRibbon, showFullNavbar]);
 
-  useLayoutEffect(() => {
-    if (!isLayoutMenuOpen || typeof window === 'undefined') {
-      setLayoutMenuStyle(null);
-      return;
-    }
-
-    const update = () => {
-      const anchor = layoutMenuRef.current;
-      if (!anchor) {
-        setLayoutMenuStyle(null);
-        return;
-      }
-      const rect = anchor.getBoundingClientRect();
-      const right = Math.max(12, window.innerWidth - rect.right);
-      const minWidth = Math.max(rect.width || 0, 176);
-      setLayoutMenuStyle({
-        top: rect.bottom + 8,
-        right,
-        minWidth,
-      });
-    };
-
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [isLayoutMenuOpen]);
-
   // Helper for ARIA and touch target
   const navButtonProps = (label) => ({
     'aria-label': label,
@@ -721,9 +665,9 @@ const GreenNavbar = () => {
       {!hideChromeOnHub && showFullNavbar ? (
         // Full Navbar
         <nav ref={topNavRef} className="mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
-          <div className="mx-auto flex w-full max-w-[92rem] items-center gap-1.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 md:px-4 md:py-3 lg:gap-4">
+          <div className="mhub-top-nav-main mx-auto flex w-full max-w-[92rem] items-center gap-1.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 md:px-4 md:py-3 lg:gap-4">
             {/* Logo and Location */}
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
+            <div className="mhub-top-nav-brand flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
               <Link
                 to="/"
                 className="mhub-nav-pill flex items-center gap-1.5 sm:gap-2 rounded-full px-1.5 sm:px-2.5 py-1 sm:py-1.5 transition-colors"
@@ -784,22 +728,9 @@ const GreenNavbar = () => {
                 </div>
               )}
 
-              {/* Mobile layout quick toggle (visible when preview is not desktop) */}
-              {!isNativePlatform && layoutMode !== 'desktop' && (
-                <button
-                  type="button"
-                  onClick={cycleLayout}
-                  className="mhub-nav-action inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                  aria-label={`${t('layout', { defaultValue: 'Layout' })}: ${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })}`}
-                  title={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
-                >
-                  <CurrentLayoutIcon className="h-4 w-4" />
-                  <span>{t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })}</span>
-                </button>
-              )}
             </div>
 
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+            <div className="mhub-top-nav-search-area flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
               {/* Search Button / Bar */}
               <div
                 onClick={openSearchPage}
@@ -1139,10 +1070,10 @@ const GreenNavbar = () => {
             </div>
 
             {/* Icons */}
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:gap-2.5">
+            <div className="mhub-nav-utility-cluster flex shrink-0 items-center gap-1.5 sm:gap-2 lg:gap-2.5">
               {/* Add Post Button - Only show for logged-in users; hidden on native (FAB in bottom nav handles it) */}
               {isLoggedIn && !isNativePlatform && (
-                <Link to="/post-welcome" aria-label="Add Post" className="relative group">
+                <Link to="/post-welcome" aria-label="Add Post" className="relative group hidden sm:inline-flex">
                   <span
                     className="mhub-nav-cta inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full text-xl sm:text-2xl font-extrabold transition-all duration-200 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-blue-400"
                     style={{ cursor: 'pointer', zIndex: 20 }}
@@ -1213,124 +1144,6 @@ const GreenNavbar = () => {
                   </span>
                 </Link>
               </div>
-              {/* Language Selector — hidden on native Android */}
-              {!isNativePlatform && (
-              <div>
-                <LanguageSelector compact />
-              </div>
-              )}
-              {/* Theme Toggle — hidden on native Android */}
-              {!isNativePlatform && (
-              <div
-                className="mhub-theme-toggle"
-                role="radiogroup"
-                aria-label={t('theme_mode', { defaultValue: 'Theme mode' })}
-              >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={themeMode === 'light'}
-                  data-active={themeMode === 'light'}
-                  onClick={() => setThemeMode('light')}
-                  className="mhub-theme-toggle-btn"
-                  title={t('light_mode', { defaultValue: 'Light mode' })}
-                >
-                  <span className="mhub-theme-toggle-icon">
-                    <FiSun className="h-4 w-4" />
-                  </span>
-                  <span className="hidden sm:inline">{t('light_mode', { defaultValue: 'Light' })}</span>
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={themeMode === 'system'}
-                  data-active={themeMode === 'system'}
-                  onClick={() => setThemeMode('system')}
-                  className="mhub-theme-toggle-btn"
-                  title={t('system', { defaultValue: 'System' })}
-                >
-                  <span className="mhub-theme-toggle-icon">
-                    <FiMonitor className="h-4 w-4" />
-                  </span>
-                  <span className="hidden sm:inline">{t('system', { defaultValue: 'System' })}</span>
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={themeMode === 'dark'}
-                  data-active={themeMode === 'dark'}
-                  onClick={() => setThemeMode('dark')}
-                  className="mhub-theme-toggle-btn"
-                  title={t('dark_mode', { defaultValue: 'Dark mode' })}
-                >
-                  <span className="mhub-theme-toggle-icon">
-                    <FiMoon className="h-4 w-4" />
-                  </span>
-                  <span className="hidden sm:inline">{t('dark_mode', { defaultValue: 'Dark' })}</span>
-                </button>
-              </div>
-              )}
-
-              {/* Layout Toggle (Desktop/Mobile/Tablet) — dev only */}
-              {import.meta.env.DEV && (
-              <div ref={layoutMenuRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsLayoutMenuOpen((value) => !value)}
-                  aria-expanded={isLayoutMenuOpen}
-                  aria-haspopup="menu"
-                  className="mhub-nav-action inline-flex h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold"
-                  aria-label={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
-                  title={`${t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })} ${t('layout', { defaultValue: 'layout' })}`}
-                >
-                  <CurrentLayoutIcon className="h-4 w-4" />
-                  <span className="hidden xl:inline">
-                    {t(currentLayoutPreset.labelKey, { defaultValue: currentLayoutPreset.key })}
-                  </span>
-                </button>
-
-                {isLayoutMenuOpen && typeof document !== 'undefined' && layoutMenuStyle
-                  ? createPortal(
-                      <div
-                        ref={layoutMenuPanelRef}
-                        style={{
-                          top: `${layoutMenuStyle.top}px`,
-                          right: `${layoutMenuStyle.right}px`,
-                          minWidth: `${layoutMenuStyle.minWidth}px`,
-                        }}
-                        className="mhub-layout-menu fixed z-[1000] w-44 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl"
-                      >
-                        {LAYOUT_PRESETS.map((preset) => {
-                          const Icon = preset.icon;
-                          const active = preset.key === layoutMode;
-                          return (
-                            <button
-                              key={preset.key}
-                              type="button"
-                              onClick={() => handleLayoutModeChange(preset.key)}
-                              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                                active
-                                  ? 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300'
-                                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
-                              }`}
-                            >
-                              <Icon className="h-4 w-4" />
-                              <span className="flex flex-1 flex-col">
-                                <span>{t(preset.labelKey, { defaultValue: preset.key })}</span>
-                                <span className="text-[11px] font-normal text-slate-500">
-                                  {preset.width} x {preset.height}
-                                </span>
-                              </span>
-                              {active ? <FiCheck className="h-4 w-4" /> : null}
-                            </button>
-                          );
-                        })}
-                      </div>,
-                      document.body,
-                    )
-                  : null}
-              </div>
-              )}
             </div>
           </div>
         </nav >
@@ -1450,6 +1263,13 @@ const GreenNavbar = () => {
                 );
               });
             })()}
+
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
+                {t('language', { defaultValue: 'Language' })}
+              </p>
+              <LanguageSelector variant="panel" compact className="w-full" />
+            </div>
 
             <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
               <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">

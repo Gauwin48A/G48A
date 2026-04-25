@@ -1,0 +1,498 @@
+[
+  {
+    "index": 0,
+    "route": "/category-hub",
+    "file": "000_category_hub_start.png",
+    "size": 687682,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 1,
+    "route": "/category-hub",
+    "file": "002_category-hub.png",
+    "size": 858101,
+    "status": "ok",
+    "actualPath": "/category-hub"
+  },
+  {
+    "index": 2,
+    "route": "/all-posts",
+    "file": "003_all-posts.png",
+    "size": 601554,
+    "status": "ok",
+    "actualPath": "/all-posts"
+  },
+  {
+    "index": 3,
+    "route": "/listings",
+    "file": "004_listings.png",
+    "size": 572163,
+    "status": "ok",
+    "actualPath": "/listings"
+  },
+  {
+    "index": 4,
+    "route": "/home",
+    "file": "005_home.png",
+    "size": 180317,
+    "status": "ok",
+    "actualPath": "/home"
+  },
+  {
+    "index": 5,
+    "route": "/for-you",
+    "file": "006_for-you.png",
+    "size": 339653,
+    "status": "ok",
+    "actualPath": "/for-you"
+  },
+  {
+    "index": 6,
+    "route": "/feed",
+    "file": "007_feed.png",
+    "size": 412685,
+    "status": "ok",
+    "actualPath": "/feed"
+  },
+  {
+    "index": 7,
+    "route": "/public-wall",
+    "file": "008_public-wall.png",
+    "size": 771455,
+    "status": "ok",
+    "actualPath": "/public-wall"
+  },
+  {
+    "index": 8,
+    "route": "/search",
+    "file": "009_search.png",
+    "size": 327276,
+    "status": "ok",
+    "actualPath": "/search"
+  },
+  {
+    "index": 9,
+    "route": "/nearby",
+    "file": "010_nearby.png",
+    "size": 289280,
+    "status": "ok",
+    "actualPath": "/nearby"
+  },
+  {
+    "index": 10,
+    "route": "/login",
+    "file": "011_login.png",
+    "size": 266764,
+    "status": "ok",
+    "actualPath": "/login"
+  },
+  {
+    "index": 11,
+    "route": "/signup",
+    "file": "012_signup.png",
+    "size": 376105,
+    "status": "ok",
+    "actualPath": "/signup"
+  },
+  {
+    "index": 12,
+    "route": "/forgot-password",
+    "file": "013_forgot-password.png",
+    "size": 240984,
+    "status": "ok",
+    "actualPath": "/forgot-password"
+  },
+  {
+    "index": 13,
+    "route": "/dashboard",
+    "file": "014_dashboard.png",
+    "size": 555291,
+    "status": "ok",
+    "actualPath": "/dashboard"
+  },
+  {
+    "index": 14,
+    "route": "/activity",
+    "file": "015_activity.png",
+    "size": 346457,
+    "status": "ok",
+    "actualPath": "/activity"
+  },
+  {
+    "index": 15,
+    "route": "/profile",
+    "file": "016_profile.png",
+    "size": 621681,
+    "status": "ok",
+    "actualPath": "/profile"
+  },
+  {
+    "index": 16,
+    "route": "/security",
+    "file": "017_security.png",
+    "size": 506005,
+    "status": "ok",
+    "actualPath": "/security"
+  },
+  {
+    "index": 17,
+    "route": "/my-home",
+    "file": "018_my-home.png",
+    "size": 384781,
+    "status": "ok",
+    "actualPath": "/my-home"
+  },
+  {
+    "index": 18,
+    "route": "/my-posts",
+    "file": "019_my-posts.png",
+    "size": 180632,
+    "status": "ok",
+    "actualPath": "/my-posts"
+  },
+  {
+    "index": 19,
+    "route": "/my-feed",
+    "file": "020_my-feed.png",
+    "size": 498158,
+    "status": "ok",
+    "actualPath": "/my-feed"
+  },
+  {
+    "index": 20,
+    "route": "/bought-posts",
+    "file": "021_bought-posts.png",
+    "size": 366617,
+    "status": "ok",
+    "actualPath": "/bought-posts"
+  },
+  {
+    "index": 21,
+    "route": "/sold-posts",
+    "file": "022_sold-posts.png",
+    "size": 338052,
+    "status": "ok",
+    "actualPath": "/sold-posts"
+  },
+  {
+    "index": 22,
+    "route": "/add-post",
+    "file": "023_add-post.png",
+    "size": 449307,
+    "status": "ok",
+    "actualPath": "/post-welcome"
+  },
+  {
+    "index": 23,
+    "route": "/post-welcome",
+    "file": "024_post-welcome.png",
+    "size": 384156,
+    "status": "ok",
+    "actualPath": "/post-welcome"
+  },
+  {
+    "index": 24,
+    "route": "/sell",
+    "file": "025_sell.png",
+    "size": 385192,
+    "status": "ok",
+    "actualPath": "/post-welcome"
+  },
+  {
+    "index": 25,
+    "route": "/tier-selection",
+    "file": "026_tier-selection.png",
+    "size": 559411,
+    "status": "ok",
+    "actualPath": "/tier-selection"
+  },
+  {
+    "index": 26,
+    "route": "/tiers",
+    "file": "027_tiers.png",
+    "size": 541460,
+    "status": "ok",
+    "actualPath": "/tiers"
+  },
+  {
+    "index": 27,
+    "route": "/pricing",
+    "file": "028_pricing.png",
+    "size": 535663,
+    "status": "ok",
+    "actualPath": "/pricing"
+  },
+  {
+    "index": 28,
+    "route": "/wishlist",
+    "file": "029_wishlist.png",
+    "size": 739848,
+    "status": "ok",
+    "actualPath": "/wishlist"
+  },
+  {
+    "index": 29,
+    "route": "/cart",
+    "file": "030_cart.png",
+    "size": 669570,
+    "status": "ok",
+    "actualPath": "/cart"
+  },
+  {
+    "index": 30,
+    "route": "/recently-viewed",
+    "file": "031_recently-viewed.png",
+    "size": 646518,
+    "status": "ok",
+    "actualPath": "/recently-viewed"
+  },
+  {
+    "index": 31,
+    "route": "/saved-searches",
+    "file": "032_saved-searches.png",
+    "size": 167970,
+    "status": "ok",
+    "actualPath": "/saved-searches"
+  },
+  {
+    "index": 32,
+    "route": "/saledone",
+    "file": "033_saledone.png",
+    "size": 703863,
+    "status": "ok",
+    "actualPath": "/saledone"
+  },
+  {
+    "index": 33,
+    "route": "/saleundone",
+    "file": "034_saleundone.png",
+    "size": 720385,
+    "status": "ok",
+    "actualPath": "/saleundone"
+  },
+  {
+    "index": 34,
+    "route": "/buyer-view",
+    "file": "035_buyer-view.png",
+    "size": 251674,
+    "status": "ok",
+    "actualPath": "/buyer-view"
+  },
+  {
+    "index": 35,
+    "route": "/verification",
+    "file": "036_verification.png",
+    "size": 370697,
+    "status": "ok",
+    "actualPath": "/verification"
+  },
+  {
+    "index": 36,
+    "route": "/aadhaar-verify",
+    "file": "037_aadhaar-verify.png",
+    "size": 258081,
+    "status": "ok",
+    "actualPath": "/aadhaar-verify"
+  },
+  {
+    "index": 37,
+    "route": "/kyc",
+    "file": "038_kyc.png",
+    "size": 180900,
+    "status": "ok",
+    "actualPath": "/kyc"
+  },
+  {
+    "index": 38,
+    "route": "/notifications",
+    "file": "039_notifications.png",
+    "size": 608445,
+    "status": "ok",
+    "actualPath": "/notifications"
+  },
+  {
+    "index": 39,
+    "route": "/complaints",
+    "file": "040_complaints.png",
+    "size": 679346,
+    "status": "ok",
+    "actualPath": "/complaints"
+  },
+  {
+    "index": 40,
+    "route": "/feedback",
+    "file": "041_feedback.png",
+    "size": 669991,
+    "status": "ok",
+    "actualPath": "/feedback"
+  },
+  {
+    "index": 41,
+    "route": "/rewards",
+    "file": "042_rewards.png",
+    "size": 687009,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 42,
+    "route": "/categories",
+    "file": "043_categories.png",
+    "size": 614451,
+    "status": "ok",
+    "actualPath": "/categories"
+  },
+  {
+    "index": 43,
+    "route": "/subcategories",
+    "file": "044_subcategories.png",
+    "size": 582735,
+    "status": "ok",
+    "actualPath": "/subcategories"
+  },
+  {
+    "index": 44,
+    "route": "/compare",
+    "file": "045_compare.png",
+    "size": 180532,
+    "status": "ok",
+    "actualPath": "/compare"
+  },
+  {
+    "index": 45,
+    "route": "/chat",
+    "file": "046_chat.png",
+    "size": 221595,
+    "status": "ok",
+    "actualPath": "/chat"
+  },
+  {
+    "index": 46,
+    "route": "/chats",
+    "file": "047_chats.png",
+    "size": 222342,
+    "status": "ok",
+    "actualPath": "/chats"
+  },
+  {
+    "index": 47,
+    "route": "/channels",
+    "file": "048_channels.png",
+    "size": 341088,
+    "status": "ok",
+    "actualPath": "/channels"
+  },
+  {
+    "index": 48,
+    "route": "/channels/create",
+    "file": "049_channels_create.png",
+    "size": 261241,
+    "status": "ok",
+    "actualPath": "/channels/create"
+  },
+  {
+    "index": 49,
+    "route": "/centre",
+    "file": "050_centre.png",
+    "size": 275174,
+    "status": "ok",
+    "actualPath": "/centre"
+  },
+  {
+    "index": 50,
+    "route": "/centre/create",
+    "file": "051_centre_create.png",
+    "size": 215709,
+    "status": "ok",
+    "actualPath": "/centre/create"
+  },
+  {
+    "index": 51,
+    "route": "/payment",
+    "file": "052_payment.png",
+    "size": 480629,
+    "status": "ok",
+    "actualPath": "/payment"
+  },
+  {
+    "index": 52,
+    "route": "/offers",
+    "file": "053_offers.png",
+    "size": 375971,
+    "status": "ok",
+    "actualPath": "/offers"
+  },
+  {
+    "index": 53,
+    "route": "/analytics",
+    "file": "054_analytics.png",
+    "size": 523585,
+    "status": "ok",
+    "actualPath": "/analytics"
+  },
+  {
+    "index": 54,
+    "route": "/terms",
+    "file": "055_terms.png",
+    "size": 599806,
+    "status": "ok",
+    "actualPath": "/terms"
+  },
+  {
+    "index": 55,
+    "route": "/terms-and-conditions",
+    "file": "056_terms-and-conditions.png",
+    "size": 599806,
+    "status": "ok",
+    "actualPath": "/terms-and-conditions"
+  },
+  {
+    "index": 56,
+    "route": "/privacy-policy",
+    "file": "057_privacy-policy.png",
+    "size": 602994,
+    "status": "ok",
+    "actualPath": "/privacy-policy"
+  },
+  {
+    "index": 57,
+    "route": "/refund-policy",
+    "file": "058_refund-policy.png",
+    "size": 594111,
+    "status": "ok",
+    "actualPath": "/refund-policy"
+  },
+  {
+    "index": 58,
+    "route": "/support-ticket-policy",
+    "file": "059_support-ticket-policy.png",
+    "size": 582946,
+    "status": "ok",
+    "actualPath": "/support-ticket-policy"
+  },
+  {
+    "index": 59,
+    "route": "/account/delete",
+    "file": "060_account_delete.png",
+    "size": 303999,
+    "status": "ok",
+    "actualPath": "/account/delete"
+  },
+  {
+    "index": 60,
+    "route": "/post_add",
+    "file": "061_post_add.png",
+    "size": 314936,
+    "status": "ok",
+    "actualPath": "/post_add"
+  },
+  {
+    "index": 61,
+    "route": "/feed/feedpostadd",
+    "file": "062_feed_feedpostadd.png",
+    "size": 315373,
+    "status": "ok",
+    "actualPath": "/feed/feedpostadd"
+  }
+]

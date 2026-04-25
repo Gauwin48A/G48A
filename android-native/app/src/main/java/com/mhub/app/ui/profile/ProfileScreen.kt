@@ -20,8 +20,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
@@ -43,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -72,13 +75,18 @@ import javax.inject.Inject
 
 data class ProfileState(
     val loading: Boolean = true,
+    val refreshing: Boolean = false,
     val user: User? = null,
+    val listingsCount: String = "—",
+    val salesCount: String = "—",
+    val ratingValue: String = "—",
     val error: String? = null,
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val repo: AuthRepository,
+    private val dashboardRepo: com.mhub.app.data.repository.DashboardRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfileState())
     val state: StateFlow<ProfileState> = _state.asStateFlow()
@@ -89,9 +97,35 @@ class ProfileViewModel @Inject constructor(
         _state.value = ProfileState(loading = true)
         viewModelScope.launch {
             when (val result = repo.me()) {
-                is ApiResult.Success -> _state.value = ProfileState(loading = false, user = result.data)
-                is ApiResult.Failure -> _state.value = ProfileState(loading = false, error = result.error.message)
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, user = result.data)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = result.error.message)
             }
+            loadStats()
+        }
+    }
+
+    fun refresh() {
+        _state.value = _state.value.copy(refreshing = true)
+        viewModelScope.launch {
+            when (val result = repo.me()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(refreshing = false, user = result.data)
+                is ApiResult.Failure -> _state.value = _state.value.copy(refreshing = false, error = result.error.message)
+            }
+            loadStats()
+        }
+    }
+
+    private suspend fun loadStats() {
+        when (val r = dashboardRepo.get()) {
+            is ApiResult.Success -> {
+                val stats = r.data.quickStats
+                _state.value = _state.value.copy(
+                    listingsCount = stats.find { it.labelKey == "totalListings" || it.label?.contains("listing", true) == true }?.value?.toString() ?: "0",
+                    salesCount = stats.find { it.labelKey == "totalSales" || it.label?.contains("sale", true) == true }?.value?.toString() ?: "0",
+                    ratingValue = stats.find { it.labelKey == "avgRating" || it.label?.contains("rating", true) == true }?.value?.toString() ?: "—",
+                )
+            }
+            is ApiResult.Failure -> {} // non-critical
         }
     }
 
@@ -141,6 +175,11 @@ fun ProfileScreen(
     onOpenKyc: () -> Unit,
     onOpenChat: () -> Unit = {},
     onOpenWebParity: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
+    onOpenSecurity: () -> Unit = {},
+    onOpenDashboard: () -> Unit = {},
+    onOpenAnalytics: () -> Unit = {},
+    onOpenAccountDelete: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -167,9 +206,14 @@ fun ProfileScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
         when {
             state.loading -> Box(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
 
@@ -178,7 +222,6 @@ fun ProfileScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -317,13 +360,13 @@ fun ProfileScreen(
                                 .padding(vertical = 16.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                         ) {
-                            StatItem(label = "Listings", value = "N/A")
+                            StatItem(label = "Listings", value = state.listingsCount)
                             VerticalDivider()
                             StatItem(label = "Rank", value = tierLabel(user?.currentPlan))
                             VerticalDivider()
-                            StatItem(label = "Sales", value = "N/A")
+                            StatItem(label = "Sales", value = state.salesCount)
                             VerticalDivider()
-                            StatItem(label = "Rating", value = "N/A")
+                            StatItem(label = "Rating", value = state.ratingValue)
                         }
                     }
 
@@ -357,21 +400,28 @@ fun ProfileScreen(
                             icon = Icons.Default.Notifications,
                             label = "Notifications",
                             subtitle = "Push alerts and email preferences",
-                            onClick = onOpenSettings,
+                            onClick = onOpenNotifications,
                         )
                         HorizontalDivider(modifier = Modifier.padding(start = 68.dp))
                         ProfileMenuItem(
                             icon = Icons.Default.Security,
                             label = "Security",
                             subtitle = "Password, 2FA and sessions",
-                            onClick = onOpenSettings,
+                            onClick = onOpenSecurity,
                         )
                         HorizontalDivider(modifier = Modifier.padding(start = 68.dp))
                         ProfileMenuItem(
-                            icon = Icons.Default.Language,
-                            label = "Language",
-                            subtitle = "English (EN)",
-                            onClick = onOpenSettings,
+                            icon = Icons.Default.Dashboard,
+                            label = "Dashboard",
+                            subtitle = "Account metrics and shortcuts",
+                            onClick = onOpenDashboard,
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(start = 68.dp))
+                        ProfileMenuItem(
+                            icon = Icons.Default.BarChart,
+                            label = "Analytics",
+                            subtitle = "Seller trends and insights",
+                            onClick = onOpenAnalytics,
                         )
                         HorizontalDivider(modifier = Modifier.padding(start = 68.dp))
                         ProfileMenuItem(
@@ -404,6 +454,7 @@ fun ProfileScreen(
                     Spacer(Modifier.height(16.dp))
                 }
             }
+        }
         }
     }
 }

@@ -1,49 +1,57 @@
 package com.mhub.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mhub.app.core.ApiResult
+import com.mhub.app.data.remote.dto.CategoryStat
 import com.mhub.app.data.repository.CategoriesRepository
 import com.mhub.app.domain.model.Category
-import com.mhub.app.ui.components.AppEmptyState
-import com.mhub.app.ui.components.AppErrorState
-import com.mhub.app.ui.components.PrimaryButton
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,9 +59,34 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/* ── App tile data (mirrors web CategoryHub.jsx APPS array) ─────────────── */
+
+private data class AppDef(
+    val key: String,
+    val label: String,
+    val tagline: String,
+    val emoji: String,
+    val gradient: List<Color>,
+)
+
+private val APPS = listOf(
+    AppDef("electronics", "Electronics", "Phones, laptops & gadgets", "📱",
+        listOf(Color(0xFF3B82F6), Color(0xFF4F46E5), Color(0xFF7C3AED))),
+    AppDef("fashion", "Fashion", "Clothing, shoes & accessories", "👗",
+        listOf(Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFEF4444))),
+    AppDef("vehicles", "Vehicles", "Cars, bikes & spare parts", "🚗",
+        listOf(Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF0891B2))),
+    AppDef("others", "Others", "Home, services, jobs & more", "✨",
+        listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5))),
+)
+
+/* ── ViewModel ──────────────────────────────────────────────────────────── */
+
 data class CategoryHubState(
     val loading: Boolean = true,
+    val refreshing: Boolean = false,
     val categories: List<Category> = emptyList(),
+    val stats: List<CategoryStat> = emptyList(),
     val error: String? = null,
 )
 
@@ -64,188 +97,166 @@ class CategoryHubViewModel @Inject constructor(
     private val _state = MutableStateFlow(CategoryHubState())
     val state: StateFlow<CategoryHubState> = _state.asStateFlow()
 
-    init {
-        load()
-    }
+    init { load() }
 
     fun load() {
         _state.value = CategoryHubState(loading = true)
         viewModelScope.launch {
             when (val result = categoriesRepository.all()) {
-                is ApiResult.Success -> _state.value = CategoryHubState(
-                    loading = false,
-                    categories = result.data,
-                )
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, categories = result.data)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = result.error.message)
+            }
+            // Also fetch category stats (non-blocking)
+            when (val r = categoriesRepository.stats()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(stats = r.data)
+                is ApiResult.Failure -> {} // non-critical
+            }
+        }
+    }
 
-                is ApiResult.Failure -> _state.value = CategoryHubState(
-                    loading = false,
-                    error = result.error.message,
-                )
+    fun refresh() {
+        _state.value = _state.value.copy(refreshing = true)
+        viewModelScope.launch {
+            when (val result = categoriesRepository.all()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(refreshing = false, categories = result.data)
+                is ApiResult.Failure -> _state.value = _state.value.copy(refreshing = false, error = result.error.message)
+            }
+            when (val r = categoriesRepository.stats()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(stats = r.data)
+                is ApiResult.Failure -> {}
             }
         }
     }
 }
 
-private val hubGradients = listOf(
-    listOf(Color(0xFF2F80ED), Color(0xFF7F53F9)),
-    listOf(Color(0xFFEC4899), Color(0xFFF97316)),
-    listOf(Color(0xFF14B8A6), Color(0xFF0EA5E9)),
-    listOf(Color(0xFF8B5CF6), Color(0xFF4F46E5)),
-)
+/* ── Screen ─────────────────────────────────────────────────────────────── */
 
-private fun categoryDescription(name: String): String {
-    val normalized = name.lowercase()
-    return when {
-        "elect" in normalized -> "Phones, laptops, gadgets"
-        "fashion" in normalized -> "Clothing, shoes, accessories"
-        "vehicle" in normalized -> "Cars, bikes, spare parts"
-        "job" in normalized -> "Jobs, projects, local services"
-        "home" in normalized -> "Home decor, furniture, appliances"
-        else -> "Top picks curated for your area"
-    }
-}
-
-private fun categoryEmoji(name: String): String {
-    val normalized = name.lowercase()
-    return when {
-        "elect" in normalized -> "📱"
-        "fashion" in normalized -> "🛍️"
-        "vehicle" in normalized -> "🚗"
-        "job" in normalized -> "💼"
-        "home" in normalized -> "🏠"
-        else -> "✨"
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryHubScreen(
-    onOpenCategory: (Category) -> Unit,
+    onOpenCategory: (Category) -> Unit = {},
     onOpenAllPosts: () -> Unit,
     onOpenSearch: () -> Unit,
+    onSelectApp: (String) -> Unit = { _ -> onOpenAllPosts() },
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Choose Your World", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Android-optimized gateway for web category hub",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+    val pageGradient = Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
+    val titleGradient = Brush.horizontalGradient(listOf(Color(0xFF6366F1), Color(0xFFA855F7), Color(0xFFEC4899)))
+
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+    PullToRefreshBox(
+        isRefreshing = state.refreshing,
+        onRefresh = { viewModel.refresh() },
+        modifier = Modifier.fillMaxSize().background(pageGradient),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(WindowInsets.statusBars.asPaddingValues())
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(24.dp))
+
+            // Title
+            Text(
+                text = buildAnnotatedString {
+                    append("Choose Your ")
+                    withStyle(SpanStyle(brush = titleGradient)) { append("World") }
                 },
-                actions = {
-                    IconButton(onClick = onOpenSearch) {
-                        Icon(Icons.Outlined.Search, contentDescription = "Search")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF0F172A),
+                textAlign = TextAlign.Center,
             )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        when {
-            state.loading -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Select the app you want to open. Your choice becomes the active experience.",
+                fontSize = 13.sp, color = Color(0xFF64748B),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
 
-            state.error != null -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                AppErrorState(
-                    title = "Category hub unavailable",
-                    message = state.error ?: "Unable to load categories",
-                    onRetry = { viewModel.load() },
-                    retryLabel = "Retry",
-                )
-            }
+            Spacer(Modifier.height(24.dp))
 
-            state.categories.isEmpty() -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                AppEmptyState(
-                    icon = Icons.Outlined.Category,
-                    title = "No categories available",
-                    subtitle = "New categories will appear here.",
-                )
-            }
-
-            else -> LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(state.categories, key = { it.stableId }) { category ->
-                    val gradient = hubGradients[kotlin.math.abs(category.stableId.hashCode()) % hubGradients.size]
-                    Surface(
-                        onClick = { onOpenCategory(category) },
-                        shape = RoundedCornerShape(20.dp),
-                        tonalElevation = 1.dp,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Brush.linearGradient(gradient))
-                                .padding(horizontal = 18.dp, vertical = 16.dp),
-                        ) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    Text(categoryEmoji(category.displayName), style = MaterialTheme.typography.titleMedium)
-                                    Text(
-                                        category.displayName,
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                    )
-                                }
-                                Text(
-                                    categoryDescription(category.displayName),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.92f),
-                                )
-                                Text(
-                                    "Open listings",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = Color.White.copy(alpha = 0.86f),
-                                )
-                            }
+            if (state.loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF6366F1))
+                }
+            } else {
+                // App grid — 2 columns
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(bottom = 100.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(APPS, key = { it.key }) { app ->
+                        val catCount = state.categories.count { cat ->
+                            val group = (cat.categoryGroup ?: "others").lowercase()
+                            group == app.key || (app.key == "others" && group !in listOf("electronics", "fashion", "vehicles"))
+                        }
+                        val stat = state.stats.find { it.key?.lowercase() == app.key }
+                        val activeCount = stat?.activeCount ?: catCount
+                        val newToday = stat?.newToday ?: 0
+                        AppTile(app = app, listingsCount = activeCount, newToday = newToday) {
+                            onSelectApp(app.key)
                         }
                     }
                 }
-                item {
-                    PrimaryButton(
-                        text = "Browse all posts",
-                        onClick = onOpenAllPosts,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+            }
+        }
+    }
+}
+
+/* ── App tile composable ────────────────────────────────────────────────── */
+
+@Composable
+private fun AppTile(app: AppDef, listingsCount: Int, newToday: Int = 0, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .shadow(12.dp, RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(app.gradient))
+            .clickable { onClick() }
+            .padding(16.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            // Top: emoji
+            Text(app.emoji, fontSize = 36.sp)
+
+            // Middle: label + tagline
+            Column {
+                Text(app.label, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                Text(app.tagline, color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp)
+            }
+
+            // Bottom: stats + enter
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (listingsCount > 0) "$listingsCount listings" else "—",
+                    color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                )
+                if (newToday > 0) {
+                    Box(Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.2f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                        Text("+$newToday today", color = Color.White.copy(alpha = 0.85f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
-                item {
-                    Box(Modifier.size(56.dp))
+                Box(
+                    modifier = Modifier.size(28.dp).clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
                 }
             }
         }

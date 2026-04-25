@@ -1,0 +1,18 @@
+[
+  {
+    "index": 0,
+    "route": "/category-hub",
+    "file": "000_category_hub_start.png",
+    "size": 24588,
+    "status": "ok",
+    "actualPath": "/category-hub"
+  },
+  {
+    "index": 1,
+    "route": "/rewards",
+    "file": "002_rewards.png",
+    "size": 24588,
+    "status": "blank",
+    "actualPath": "/rewards"
+  }
+]
