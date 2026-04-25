@@ -1,0 +1,66 @@
+[
+  {
+    "index": 0,
+    "route": "/category-hub",
+    "file": "000_category_hub_start.png",
+    "size": 26490,
+    "status": "ok",
+    "actualPath": "/category-hub"
+  },
+  {
+    "index": 1,
+    "route": "/invite/demo",
+    "file": "002_invite_demo.png",
+    "size": 687153,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 2,
+    "route": "/reset-password",
+    "file": "003_reset-password.png",
+    "size": 71046,
+    "status": "ok",
+    "actualPath": "/reset-password"
+  },
+  {
+    "index": 3,
+    "route": "/reset-password/demo",
+    "file": "004_reset-password_demo.png",
+    "size": 306741,
+    "status": "ok",
+    "actualPath": "/reset-password/demo"
+  },
+  {
+    "index": 4,
+    "route": "/edit-post/demo",
+    "file": "005_edit-post_demo.png",
+    "size": 231523,
+    "status": "ok",
+    "actualPath": "/edit-post/demo"
+  },
+  {
+    "index": 5,
+    "route": "/admin-panel",
+    "file": "006_admin-panel.png",
+    "size": 586003,
+    "status": "ok",
+    "actualPath": "/all-posts"
+  },
+  {
+    "index": 6,
+    "route": "/centre/demo/listings",
+    "file": "007_centre_demo_listings.png",
+    "size": 77066,
+    "status": "ok",
+    "actualPath": "/centre/demo/listings"
+  },
+  {
+    "index": 7,
+    "route": "/reviews/demo",
+    "file": "008_reviews_demo.png",
+    "size": 173576,
+    "status": "ok",
+    "actualPath": "/reviews/demo"
+  }
+]

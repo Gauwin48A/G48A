@@ -46,6 +46,9 @@ data class Post(
     @SerialName("user_name") val userName: String? = null,
     val status: String? = null,
     @SerialName("view_count") val viewCount: Int? = null,
+    val condition: String? = null,
+    val brand: String? = null,
+    @SerialName("seller_name") val sellerName: String? = null,
 ) {
     val stableId: String get() = id ?: postId ?: "${title}-${createdAt}"
     val primaryImage: String? get() = imageUrl ?: images.firstOrNull()
@@ -59,6 +62,8 @@ data class Category(
     val name: String? = null,
     @SerialName("icon_url") val iconUrl: String? = null,
     val slug: String? = null,
+    @SerialName("category_group") val categoryGroup: String? = null,
+    @SerialName("product_count") val productCount: Int = 0,
 ) {
     val stableId: String get() = id ?: categoryId ?: slug ?: name.orEmpty()
     val displayName: String get() = name ?: slug ?: "Unnamed"

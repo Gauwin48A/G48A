@@ -1,0 +1,18 @@
+[
+  {
+    "index": 0,
+    "route": "/category-hub",
+    "file": "000_category_hub_start.png",
+    "size": 25793,
+    "status": "ok",
+    "actualPath": "/rewards"
+  },
+  {
+    "index": 1,
+    "route": "/signup",
+    "file": "002_signup.png",
+    "size": 377058,
+    "status": "ok",
+    "actualPath": "/signup"
+  }
+]

@@ -65,6 +65,14 @@ function LocationGate({ children }) {
   const [retrying, setRetrying] = useState(false);
   const [bypassed, setBypassed] = useState(false);
   const [badgeDismissed, setBadgeDismissed] = useState(false);
+  const userAgent =
+    typeof navigator !== "undefined" ? String(navigator.userAgent || "").toLowerCase() : "";
+  const isAndroidReplicaFlag =
+    typeof window !== "undefined" && window.__MHUB_ANDROID_WEB_REPLICA__ === true;
+  const isAndroidReplicaWebView =
+    isAndroidReplicaFlag ||
+    userAgent.includes("mhubandroidwebreplica") ||
+    (userAgent.includes("android") && /\bwv\b/.test(userAgent));
 
   // Routes where the floating accuracy badge should be hidden because it
   // overlaps the primary CTA (auth/onboarding flows have no bottom-nav).
@@ -79,6 +87,7 @@ function LocationGate({ children }) {
   ];
   const shouldHideBadge =
     badgeDismissed ||
+    isAndroidReplicaWebView ||
     HIDE_BADGE_ROUTES.some((p) => (routerLoc?.pathname || "").startsWith(p));
 
   const isWebDriver =

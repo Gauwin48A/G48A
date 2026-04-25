@@ -24,15 +24,19 @@ export default function AccountDeletion() {
     try {
       await api.delete("/users/account");
       toast({
-        title: t("account_deleted") || "Account Deleted",
-        description: t("account_deleted_desc") || "Your account has been permanently deleted.",
+        title: t("account_deleted", { defaultValue: "Account Deleted" }),
+        description: t("account_deleted_desc", {
+          defaultValue: "Your account has been permanently deleted.",
+        }),
       });
       await logout();
       navigate("/", { replace: true });
     } catch (err) {
       toast({
-        title: t("error") || "Error",
-        description: err?.response?.data?.error || t("delete_failed") || "Failed to delete account.",
+        title: t("error", { defaultValue: "Error" }),
+        description:
+          err?.response?.data?.error ||
+          t("delete_failed", { defaultValue: "Failed to delete account." }),
         variant: "destructive",
       });
     } finally {
@@ -57,18 +61,21 @@ export default function AccountDeletion() {
             </div>
           </div>
           <CardTitle className="text-xl font-bold">
-            {t("delete_account") || "Delete Account"}
+            {t("delete_account", { defaultValue: "Delete Account" })}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
           <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-4">
             <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-              {t("delete_warning") || "This action is permanent and cannot be undone. All your data, listings, messages, and transaction history will be permanently deleted."}
+              {t("delete_warning", {
+                defaultValue:
+                  "This action is permanent and cannot be undone. All your data, listings, messages, and transaction history will be permanently deleted.",
+              })}
             </p>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {t("type_delete") || 'Type "DELETE" to confirm'}
+              {t("type_delete", { defaultValue: 'Type "DELETE" to confirm' })}
             </label>
             <Input
               value={confirmation}
@@ -84,8 +91,10 @@ export default function AccountDeletion() {
           >
             <Trash2 className="w-4 h-4 mr-2" />
             {loading
-              ? t("deleting") || "Deleting..."
-              : t("permanently_delete") || "Permanently Delete My Account"}
+              ? t("deleting", { defaultValue: "Deleting..." })
+              : t("permanently_delete", {
+                  defaultValue: "Permanently Delete My Account",
+                })}
           </Button>
         </CardContent>
       </Card>

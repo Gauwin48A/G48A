@@ -29,6 +29,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,8 +40,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
 import com.mhub.app.BuildConfig
+import kotlinx.coroutines.delay
 
 private const val WEB_PARITY_TAG = "WebParityReplica"
+private const val WEB_REPLICA_USER_AGENT_TOKEN = "MhubAndroidWebReplica/1.0"
+private const val CURRENT_USER_PLACEHOLDER = "__CURRENT_USER__"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
@@ -62,7 +66,19 @@ fun WebParityWebReplicaScreen(
 
     var webViewRef by remember(pageKey) { mutableStateOf<WebView?>(null) }
     var isLoading by remember(pageKey) { mutableStateOf(true) }
+    var initialPageReady by remember(pageKey) { mutableStateOf(false) }
     var autoLoginTriggered by remember(pageKey) { mutableStateOf(false) }
+
+    // Vite/HMR reconnects can keep WebView progress below 95 forever, which leaves
+    // a native spinner covering the page. Force-hide it after a sane boot window.
+    LaunchedEffect(pageKey) {
+        isLoading = true
+        initialPageReady = false
+        delay(15000)
+        if (!initialPageReady) {
+            isLoading = false
+        }
+    }
 
     DisposableEffect(pageKey) {
         onDispose {
@@ -156,12 +172,21 @@ fun WebParityWebReplicaScreen(
                         settings.loadsImagesAutomatically = true
                         settings.useWideViewPort = true
                         settings.loadWithOverviewMode = true
+                        settings.builtInZoomControls = false
+                        settings.displayZoomControls = false
+                        settings.setSupportZoom(false)
                         settings.cacheMode = WebSettings.LOAD_DEFAULT
                         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                        val currentUa = settings.userAgentString.orEmpty()
+                        if (!currentUa.contains(WEB_REPLICA_USER_AGENT_TOKEN, ignoreCase = true)) {
+                            settings.userAgentString = "$currentUa $WEB_REPLICA_USER_AGENT_TOKEN".trim()
+                        }
 
                         webChromeClient = object : WebChromeClient() {
                             override fun onProgressChanged(view: WebView?, progress: Int) {
-                                isLoading = progress < 95
+                                if (!initialPageReady) {
+                                    isLoading = progress < 95
+                                }
                             }
                         }
                         webViewClient = object : WebViewClient() {
@@ -171,7 +196,14 @@ fun WebParityWebReplicaScreen(
                             ): Boolean = false
 
                             override fun onPageFinished(view: WebView, url: String?) {
+                                initialPageReady = true
                                 isLoading = false
+                                view.evaluateJavascript(buildWebReplicaSurfaceScript()) { result ->
+                                    Log.v(
+                                        WEB_PARITY_TAG,
+                                        "surface-patch route=$pageKey url=${url.orEmpty()} result=$result",
+                                    )
+                                }
                                 if (
                                     autoLoginEnabled &&
                                     !autoLoginTriggered
@@ -208,6 +240,8 @@ fun WebParityWebReplicaScreen(
                 update = { webView ->
                     webViewRef = webView
                     if (webView.url.isNullOrBlank()) {
+                        initialPageReady = false
+                        isLoading = true
                         webView.loadUrl(initialUrl)
                     }
                 },
@@ -239,12 +273,12 @@ private fun joinUrl(base: String, path: String): String {
 private fun resolveRoutePath(path: String): String {
     if (path == "*" || path.isBlank()) return "/404-not-found"
     return path
-        .replace(":id", "demo")
-        .replace(":postId", "demo")
-        .replace(":userId", "demo")
-        .replace(":token", "demo")
-        .replace(":code", "demo")
-        .replace(":slug", "demo")
+        .replace(":id", "1")
+        .replace(":postId", "1")
+        .replace(":userId", CURRENT_USER_PLACEHOLDER)
+        .replace(":token", "sample-token")
+        .replace(":code", "INVITE123")
+        .replace(":slug", "mobiles")
 }
 
 private fun shouldAutoLoginForRoute(route: WebRouteReference): Boolean {
@@ -263,10 +297,57 @@ private fun escapeForJs(value: String): String {
         .replace("'", "\\'")
 }
 
+private fun buildWebReplicaSurfaceScript(): String {
+    return """
+        (function () {
+          try {
+            window.__MHUB_ANDROID_WEB_REPLICA__ = true;
+            document.documentElement.setAttribute('data-android-web-replica', '1');
+            if (document.body) {
+              document.body.setAttribute('data-android-web-replica', '1');
+            }
+          } catch (_) {}
+          try {
+            var cap = window.Capacitor || {};
+            if (typeof cap.isNativePlatform !== 'function') {
+              cap.isNativePlatform = function () { return true; };
+            }
+            if (typeof cap.getPlatform !== 'function') {
+              cap.getPlatform = function () { return 'android'; };
+            }
+            window.Capacitor = cap;
+          } catch (_) {}
+          try {
+            localStorage.setItem('mhub_layout_preview_mode', 'mobile');
+            localStorage.setItem('mhub_layout_preview_user', '1');
+            sessionStorage.setItem('mhub_layout_preview_session', '1');
+            var skipPayload = JSON.stringify({ skipped: true, timestamp: Date.now() });
+            localStorage.setItem('mhub_location_skipped', skipPayload);
+            sessionStorage.setItem('mhub_location_skipped', skipPayload);
+            document.documentElement.setAttribute('data-layout-preview', 'mobile');
+            if (document.body) {
+              document.body.setAttribute('data-layout-preview', 'mobile');
+            }
+          } catch (_) {}
+          try {
+            var style = document.getElementById('mhub-android-replica-style');
+            if (!style) {
+              style = document.createElement('style');
+              style.id = 'mhub-android-replica-style';
+              style.textContent = 'html,body{max-width:100%;overflow-x:hidden !important;}.location-accuracy-badge-wrap,.location-accuracy-badge,.location-accuracy-badge-close{display:none !important;}';
+              document.head.appendChild(style);
+            }
+          } catch (_) {}
+          return 'surface_patch_ok';
+        })();
+    """.trimIndent()
+}
+
 private fun buildAutoLoginScript(targetPath: String): String {
     val identifier = escapeForJs(BuildConfig.PARITY_TEST_IDENTIFIER)
     val password = escapeForJs(BuildConfig.PARITY_TEST_PASSWORD)
     val safePath = escapeForJs(targetPath)
+    val userPathPlaceholder = escapeForJs(CURRENT_USER_PLACEHOLDER)
     val deviceFingerprint = escapeForJs("androidparity5554a1b2c3d4e5f6")
 
     return """
@@ -346,6 +427,13 @@ private fun buildAutoLoginScript(targetPath: String): String {
             signInButton.click();
             return true;
           };
+          const resolveTargetPath = (userId) => {
+            const template = '$safePath';
+            const placeholder = '$userPathPlaceholder';
+            if (!template.includes(placeholder)) return template;
+            const localId = String(userId || localStorage.getItem('userId') || localStorage.getItem('user_id') || '1');
+            return template.replace(placeholder, encodeURIComponent(localId));
+          };
           const markSessionAndRedirect = async () => {
             let meResponse = null;
             try {
@@ -355,16 +443,18 @@ private fun buildAutoLoginScript(targetPath: String): String {
             }
             if (!meResponse.ok) return false;
             localStorage.setItem('authSession', 'true');
+            let resolvedUserId = '';
             try {
               const user = await meResponse.json();
               localStorage.setItem('user', JSON.stringify(user));
               if (user && (user.id || user.user_id)) {
                 const id = String(user.id || user.user_id);
+                resolvedUserId = id;
                 localStorage.setItem('userId', id);
                 localStorage.setItem('user_id', id);
               }
             } catch (_) {}
-            window.location.assign('$safePath');
+            window.location.assign(resolveTargetPath(resolvedUserId));
             return true;
           };
 

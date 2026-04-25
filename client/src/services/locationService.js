@@ -107,6 +107,20 @@ const LOCATION_POI_PROVIDER = String(
 const LOCAL_DEV_BACKEND_ORIGINS = [
   "http://localhost:5001",
 ];
+const ANDROID_DEV_BACKEND_ORIGIN = "http://10.0.2.2:5001";
+const isAndroidReplicaWebViewRuntime = () => {
+  if (typeof window === "undefined") return false;
+  if (window.__MHUB_ANDROID_WEB_REPLICA__ === true) return true;
+  const userAgent = String(window.navigator?.userAgent || "").toLowerCase();
+  return (
+    userAgent.includes("mhubandroidwebreplica") ||
+    (userAgent.includes("android") && /\bwv\b/.test(userAgent))
+  );
+};
+const getLocalDevBackendOrigins = () =>
+  isAndroidReplicaWebViewRuntime()
+    ? [ANDROID_DEV_BACKEND_ORIGIN, ...LOCAL_DEV_BACKEND_ORIGINS]
+    : LOCAL_DEV_BACKEND_ORIGINS;
 const DEBUG = import.meta.env.DEV;
 let runtimeBestLocation = null;
 let placesEndpointUnavailableUntil = 0;
@@ -424,7 +438,7 @@ const getLocationEndpointCandidates = () => {
   const candidates = [buildApiPath("/location")];
   if (import.meta.env.DEV && typeof window !== "undefined") {
     candidates.push(`${window.location.origin}/api/location`);
-    LOCAL_DEV_BACKEND_ORIGINS.forEach((origin) => {
+    getLocalDevBackendOrigins().forEach((origin) => {
       candidates.push(`${origin}/api/location`);
     });
   }
@@ -446,7 +460,7 @@ const getLocationVerificationEndpointCandidates = () => {
   if (import.meta.env.DEV && typeof window !== "undefined") {
     candidates.push(`${window.location.origin}/api/v1/location/verify`);
     candidates.push(`${window.location.origin}/api/location/verify`);
-    LOCAL_DEV_BACKEND_ORIGINS.forEach((origin) => {
+    getLocalDevBackendOrigins().forEach((origin) => {
       candidates.push(`${origin}/api/v1/location/verify`);
       candidates.push(`${origin}/api/location/verify`);
     });
@@ -475,8 +489,12 @@ const isSecureGeoContext = () => {
   if (typeof window === "undefined") return true;
   if (window.isSecureContext) return true;
   const hostname = window.location?.hostname || "";
+  if (window.__MHUB_ANDROID_WEB_REPLICA__ === true) return true;
   return (
-    hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1"
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "10.0.2.2"
   );
 };
 const normalizeBrowserGeoError = (error) => {

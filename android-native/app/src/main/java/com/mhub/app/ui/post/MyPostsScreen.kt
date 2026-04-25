@@ -9,14 +9,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -27,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -221,18 +226,36 @@ fun MyPostsScreen(
                                         )
                                         post.price?.let {
                                             Text(
-                                                text = "INR ${"%,.0f".format(it)}",
+                                                text = "₹${"%,.0f".format(it)}",
                                                 style = MaterialTheme.typography.labelLarge,
                                                 color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Bold,
                                             )
                                         }
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            post.status?.let { s ->
+                                                val (bg, fg) = when (s.lowercase()) {
+                                                    "active" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary
+                                                    "sold" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary
+                                                    else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+                                                }
+                                                Surface(shape = RoundedCornerShape(8.dp), color = bg) {
+                                                    Text(s.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = fg, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                }
+                                            }
+                                            post.viewCount?.let { v ->
+                                                Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                                                Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
                                     }
-                                    IconButton(onClick = { deleteTarget = post }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = stringResource(R.string.action_delete),
-                                            tint = MaterialTheme.colorScheme.error,
-                                        )
+                                    Column {
+                                        IconButton(onClick = { onOpenPost(post.stableId) }, modifier = Modifier.size(34.dp)) {
+                                            Icon(Icons.Default.Edit, "Edit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                        }
+                                        IconButton(onClick = { deleteTarget = post }, modifier = Modifier.size(34.dp)) {
+                                            Icon(Icons.Default.Delete, stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                        }
                                     }
                                 }
                             }

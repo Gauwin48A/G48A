@@ -10,6 +10,7 @@ let lastSoftReloadAt = 0;
 const ALLOWED_DOMAINS = [
   "localhost",
   "127.0.0.1",
+  "10.0.2.2",
   "mhub-mini.vercel.app",
   "mhub-app.vercel.app",
 ];

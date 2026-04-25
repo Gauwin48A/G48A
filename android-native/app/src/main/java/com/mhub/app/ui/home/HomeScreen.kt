@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.Card
@@ -284,7 +285,7 @@ fun HomeScreen(
                             }
                         }
                     } else if (gridMode) {
-                        items(filteredPosts.chunked(2)) { row ->
+                        items(filteredPosts.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
                             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 row.forEach { post -> GridPostCard(post = post, onClick = { onOpenPost(post.stableId) }, modifier = Modifier.weight(1f)) }
                                 if (row.size == 1) Spacer(Modifier.weight(1f))
@@ -348,6 +349,21 @@ fun ListPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier)
                         Text(cat, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                     }
                 }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    post.condition?.let { cond ->
+                        Surface(shape = RoundedCornerShape(6.dp), color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant) {
+                            Text(cond.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    }
+                    post.brand?.let { b ->
+                        Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                            Text(b, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    }
+                    post.sellerName?.let {
+                        Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(14.dp))
+                    }
+                }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
@@ -391,6 +407,16 @@ fun GridPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier)
             }
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(text = post.displayTitle, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    post.condition?.let { cond ->
+                        Surface(shape = RoundedCornerShape(4.dp), color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant) {
+                            Text(cond.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                        }
+                    }
+                    post.sellerName?.let {
+                        Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(12.dp))
+                    }
+                }
                 post.location?.let {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(11.dp))

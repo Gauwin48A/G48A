@@ -1640,9 +1640,24 @@ html[data-native-platform] body {
 
 /* ── 2. Top navbar: proper sizing and spacing on mobile ── */
 @media (max-width: 639px) {
+  .mhub-top-nav-main {
+    gap: 0.45rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .mhub-top-nav-brand {
+    max-width: 38vw;
+  }
+
+  .mhub-top-nav-search-area {
+    min-width: 0;
+  }
+
   /* Search bar touch target: Android 48dp requirement */
   .mhub-nav-search {
     min-height: 44px;
+    min-width: 0;
   }
 
   /* Filter button adequate size */
@@ -1659,6 +1674,10 @@ html[data-native-platform] body {
   /* Logo chip: slightly smaller on mobile */
   .mhub-nav-logo-chip {
     padding: 0.25rem;
+  }
+
+  .mhub-nav-utility-cluster {
+    gap: 0.35rem;
   }
 }
 

@@ -1,20 +1,33 @@
-// Dev-only fallback origin — resolved at runtime, not embedded in production builds
+﻿// Dev-only fallback origin - resolved at runtime, not embedded in production builds
 const DEFAULT_DEV_API_ORIGIN = import.meta.env.DEV
-  ? (import.meta.env.VITE_DEV_API_ORIGIN || `http://${["local","host"].join("")}:${[5,0,0,1].join("")}`)
+  ? (import.meta.env.VITE_DEV_API_ORIGIN || `http://${["local", "host"].join("")}:${[5, 0, 0, 1].join("")}`)
   : "";
 const LOCALHOST_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
 const FORCE_ABSOLUTE_LOCAL_API_ORIGIN =
   String(import.meta.env.VITE_FORCE_ABSOLUTE_API_ORIGIN || "").toLowerCase() ===
   "true";
 
-// Capacitor Android: remap localhost → 10.0.2.2 (emulator alias for host machine)
+const isAndroidReplicaWebView = () => {
+  if (typeof window === "undefined") return false;
+  if (window.__MHUB_ANDROID_WEB_REPLICA__ === true) return true;
+  const userAgent = String(window.navigator?.userAgent || "").toLowerCase();
+  return (
+    userAgent.includes("mhubandroidwebreplica") ||
+    (userAgent.includes("android") && /\bwv\b/.test(userAgent))
+  );
+};
+
+// Capacitor Android: remap localhost -> 10.0.2.2 (emulator alias for host machine)
 const isCapacitorNativeAndroid = () =>
   typeof window !== "undefined" &&
   window.Capacitor?.isNativePlatform?.() === true &&
   window.Capacitor?.getPlatform?.() === "android";
 
+const isAndroidRuntime = () =>
+  isCapacitorNativeAndroid() || isAndroidReplicaWebView();
+
 const remapLocalhostForCapacitor = (origin) => {
-  if (!origin || !isCapacitorNativeAndroid()) return origin;
+  if (!origin || !isAndroidRuntime()) return origin;
   return origin.replace(/\/\/(localhost|127\.0\.0\.1)(:\d+)/i, "//10.0.2.2$2");
 };
 const normalize = (value) =>

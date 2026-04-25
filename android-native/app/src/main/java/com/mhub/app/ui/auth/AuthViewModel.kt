@@ -18,6 +18,16 @@ data class AuthUiState(
     val loading: Boolean = false,
     val error: String? = null,
     val success: Boolean = false,
+    // OTP 2FA challenge
+    val requireOtp: Boolean = false,
+    val otpPhone: String = "",
+    val otpCountdown: Int = 0,
+    // Aadhaar 4-step signup
+    val signupStep: Int = 1,  // 1=Aadhaar, 2=OTP, 3=PAN, 4=Password
+    val signupToken: String? = null,
+    val txnId: String? = null,
+    val aadhaarVerified: Boolean = false,
+    val panVerified: Boolean = false,
 )
 
 @HiltViewModel
@@ -61,10 +71,112 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState(loading = true)
         viewModelScope.launch {
             when (val res = repo.signInWithEmail(identifier, password)) {
-                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
+                is ApiResult.Success -> {
+                    val authRes = res.data
+                    if (authRes.requireOtp) {
+                        _state.value = AuthUiState(loading = false, requireOtp = true, otpPhone = identifier, otpCountdown = 120)
+                        startOtpCountdown()
+                    } else {
+                        _state.value = AuthUiState(loading = false, success = true)
+                    }
+                }
                 is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
             }
         }
+    }
+
+    fun sendOtp() {
+        val phone = _state.value.otpPhone
+        if (phone.isBlank()) return
+        viewModelScope.launch {
+            repo.sendLoginOtp(phone)
+            _state.value = _state.value.copy(otpCountdown = 120)
+            startOtpCountdown()
+        }
+    }
+
+    fun cancelOtp() {
+        _state.value = AuthUiState()
+    }
+
+    private fun startOtpCountdown() {
+        viewModelScope.launch {
+            var count = _state.value.otpCountdown
+            while (count > 0) {
+                kotlinx.coroutines.delay(1000)
+                count--
+                if (_state.value.requireOtp) {
+                    _state.value = _state.value.copy(otpCountdown = count)
+                } else break
+            }
+        }
+    }
+
+    // ── Aadhaar 4-step signup flow ──
+    fun aadhaarSendOtp(aadhaar: String, mobile: String) {
+        if (_state.value.loading) return
+        if (aadhaar.length != 12 || !aadhaar.all { it.isDigit() }) {
+            _state.value = _state.value.copy(error = "Enter a valid 12-digit Aadhaar number")
+            return
+        }
+        if (mobile.length != 10) {
+            _state.value = _state.value.copy(error = "Enter a valid 10-digit mobile number")
+            return
+        }
+        _state.value = _state.value.copy(loading = true, error = null)
+        viewModelScope.launch {
+            when (val r = repo.aadhaarSendOtp(aadhaar, mobile)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, signupStep = 2, txnId = r.data.txnId)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
+            }
+        }
+    }
+
+    fun aadhaarVerifyOtp(aadhaar: String, mobile: String, otp: String) {
+        if (_state.value.loading) return
+        if (otp.length != 6) { _state.value = _state.value.copy(error = "Enter 6-digit OTP"); return }
+        _state.value = _state.value.copy(loading = true, error = null)
+        viewModelScope.launch {
+            when (val r = repo.aadhaarVerifyOtp(aadhaar, mobile, otp, _state.value.txnId)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, signupStep = 3, signupToken = r.data.signupToken, aadhaarVerified = true)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = r.error.message)
+            }
+        }
+    }
+
+    fun panVerify(pan: String) {
+        val token = _state.value.signupToken
+        if (token == null) { _state.value = _state.value.copy(error = "Signup token missing"); return }
+        if (!pan.matches(Regex("[A-Z]{5}[0-9]{4}[A-Z]"))) { _state.value = _state.value.copy(error = "Invalid PAN format (e.g. ABCDE1234F)"); return }
+        _state.value = _state.value.copy(loading = true, error = null)
+        viewModelScope.launch {
+            when (repo.panVerify(token, pan)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, signupStep = 4, panVerified = true)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = "PAN verification failed")
+            }
+        }
+    }
+
+    fun skipPan() {
+        _state.value = _state.value.copy(signupStep = 4)
+    }
+
+    fun completeAadhaarSignup(password: String, confirmPassword: String, pan: String?, referral: String?) {
+        val token = _state.value.signupToken
+        if (token == null) { _state.value = _state.value.copy(error = "Signup token missing"); return }
+        if (password.length < 12) { _state.value = _state.value.copy(error = "Password must be at least 12 characters"); return }
+        if (password != confirmPassword) { _state.value = _state.value.copy(error = "Passwords don't match"); return }
+        _state.value = _state.value.copy(loading = true, error = null)
+        viewModelScope.launch {
+            when (repo.completeAadhaarSignup(token, password, pan, referral)) {
+                is ApiResult.Success -> _state.value = _state.value.copy(loading = false, success = true)
+                is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, error = "Signup failed")
+            }
+        }
+    }
+
+    fun resetSignupStep() {
+        _state.value = AuthUiState(signupStep = 1)
     }
 
     fun signUp(fullName: String, email: String, phone: String, password: String) {

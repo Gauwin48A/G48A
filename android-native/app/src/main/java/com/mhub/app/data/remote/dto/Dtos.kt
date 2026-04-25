@@ -23,6 +23,12 @@ data class EmailSignupRequest(
 )
 
 @Serializable
+data class ForgotPasswordRequest(val identifier: String)
+
+@Serializable
+data class ResetPasswordRequest(val token: String, val newPassword: String)
+
+@Serializable
 data class CsrfTokenResponse(val csrfToken: String? = null)
 
 @Serializable
@@ -31,7 +37,331 @@ data class AuthResponse(
     val token: String? = null,
     val refreshToken: String? = null,
     val user: User? = null,
+    val requireOtp: Boolean = false,
+    val code: String? = null,
 )
+
+// -------- Auth extended (OTP/Aadhaar/2FA) --------
+@Serializable
+data class SendOtpRequest(
+    val phone: String,
+    val purpose: String = "sim_verification",
+    val deviceId: String? = null,
+)
+
+@Serializable
+data class AadhaarSendOtpRequest(
+    val aadhaarNumber: String,
+    val mobileNumber: String,
+)
+
+@Serializable
+data class AadhaarOtpResponse(
+    val success: Boolean = true,
+    val txnId: String? = null,
+    val message: String? = null,
+)
+
+@Serializable
+data class AadhaarVerifyOtpRequest(
+    val aadhaarNumber: String,
+    val mobileNumber: String,
+    val otp: String,
+    val txnId: String? = null,
+)
+
+@Serializable
+data class AadhaarVerifyResponse(
+    val success: Boolean = true,
+    val signupToken: String? = null,
+    val message: String? = null,
+)
+
+@Serializable
+data class PanVerifyRequest(
+    val signupToken: String,
+    val panNumber: String,
+)
+
+@Serializable
+data class CompleteAadhaarSignupRequest(
+    val signupToken: String,
+    val password: String,
+    val confirmPassword: String,
+    val panNumber: String? = null,
+    val referralCode: String? = null,
+)
+
+@Serializable
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String,
+)
+
+@Serializable
+data class TwoFaSetupResponse(
+    val success: Boolean = true,
+    val qrCode: String? = null,
+    val secret: String? = null,
+)
+
+@Serializable
+data class TwoFaVerifyRequest(val code: String)
+
+@Serializable
+data class TwoFaVerifyResponse(
+    val success: Boolean = true,
+    val backupCodes: List<String> = emptyList(),
+)
+
+// -------- Extended Post/Discovery DTOs --------
+@Serializable
+data class TrackViewRequest(
+    @SerialName("post_id") val postId: String,
+)
+
+@Serializable
+data class BrandsResponse(
+    val brands: List<Brand> = emptyList(),
+)
+
+@Serializable
+data class Brand(
+    val id: String? = null,
+    val name: String? = null,
+    @SerialName("post_count") val postCount: Int = 0,
+)
+
+@Serializable
+data class TrustScoreResponse(
+    val trustScore: Float = 0f,
+    val trustLabel: String? = null,
+    val trustBadge: String? = null,
+    val riskState: String? = null,
+)
+
+@Serializable
+data class CategoryStatsResponse(
+    val stats: List<CategoryStat> = emptyList(),
+)
+
+@Serializable
+data class CategoryStat(
+    val key: String? = null,
+    val name: String? = null,
+    @SerialName("active_count") val activeCount: Int = 0,
+    @SerialName("new_today") val newToday: Int = 0,
+    @SerialName("new_week") val newWeek: Int = 0,
+)
+
+// -------- Offer extended DTOs --------
+@Serializable
+data class OfferActionRequest(
+    val action: String,
+    val counterPrice: Double? = null,
+)
+
+@Serializable
+data class MakeOfferRequest(
+    @SerialName("post_id") val postId: String,
+    val amount: Double,
+)
+
+// -------- Cart extended DTOs --------
+@Serializable
+data class CartQtyRequest(val quantity: Int)
+
+@Serializable
+data class CouponRequest(val code: String)
+
+@Serializable
+data class CouponResponse(
+    val success: Boolean = true,
+    val discount: Double = 0.0,
+    val message: String? = null,
+)
+
+// -------- Admin DTOs --------
+@Serializable
+data class AdminDashboardResponse(
+    val stats: AdminStats = AdminStats(),
+    val flaggedUsers: List<AdminFlaggedUser> = emptyList(),
+    val flaggedPosts: List<AdminFlaggedPost> = emptyList(),
+    val recentActivity: List<AdminActivity> = emptyList(),
+)
+
+@Serializable
+data class AdminStats(
+    val totalUsers: Int = 0,
+    val totalPosts: Int = 0,
+    val flaggedPosts: Int = 0,
+    val restrictedUsers: Int = 0,
+    val todaySignups: Int = 0,
+    val todayPosts: Int = 0,
+)
+
+@Serializable
+data class AdminFlaggedUser(
+    val id: String? = null,
+    val name: String? = null,
+    val email: String? = null,
+    val phone: String? = null,
+    val reason: String? = null,
+    val status: String? = null,
+)
+
+@Serializable
+data class AdminFlaggedPost(
+    val id: String? = null,
+    val title: String? = null,
+    val reason: String? = null,
+    val status: String? = null,
+    @SerialName("user_id") val userId: String? = null,
+)
+
+@Serializable
+data class AdminActivity(
+    val id: String? = null,
+    val type: String? = null,
+    val description: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+// -------- Sale / Transaction DTOs --------
+@Serializable
+data class InitiateSaleRequest(
+    @SerialName("post_id") val postId: String,
+    @SerialName("buyer_id") val buyerId: String,
+    @SerialName("sale_amount") val saleAmount: Double,
+)
+
+@Serializable
+data class ConfirmSaleRequest(
+    @SerialName("transaction_id") val transactionId: String,
+    val otp: String,
+)
+
+@Serializable
+data class SaleResponse(
+    val success: Boolean = true,
+    @SerialName("transaction_id") val transactionId: String? = null,
+    @SerialName("receipt_id") val receiptId: String? = null,
+    val message: String? = null,
+)
+
+@Serializable
+data class PendingSale(
+    val id: String? = null,
+    @SerialName("transaction_id") val transactionId: String? = null,
+    @SerialName("post_title") val postTitle: String? = null,
+    @SerialName("buyer_name") val buyerName: String? = null,
+    val amount: Double = 0.0,
+    val status: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class PendingSalesResponse(
+    val sales: List<PendingSale> = emptyList(),
+)
+
+@Serializable
+data class UndoSaleRequest(
+    @SerialName("post_id") val postId: String,
+    val reason: String,
+    val description: String? = null,
+)
+
+@Serializable
+data class UndoneRecord(
+    val id: String? = null,
+    @SerialName("post_title") val postTitle: String? = null,
+    @SerialName("post_image") val postImage: String? = null,
+    val amount: Double = 0.0,
+    val reason: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class UndoneHistoryResponse(
+    val records: List<UndoneRecord> = emptyList(),
+)
+
+// -------- Payment DTOs --------
+@Serializable
+data class PaymentUpiDetailsResponse(
+    @SerialName("upi_id") val upiId: String? = null,
+    @SerialName("merchant_name") val merchantName: String? = null,
+    @SerialName("gateway_enabled") val gatewayEnabled: Boolean = false,
+    val instructions: List<String> = emptyList(),
+)
+
+@Serializable
+data class PaymentHistoryItem(
+    val id: String? = null,
+    @SerialName("transaction_id") val transactionId: String? = null,
+    val plan: String? = null,
+    val purpose: String? = null,
+    val amount: Double = 0.0,
+    val status: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+)
+
+@Serializable
+data class PaymentHistoryResponse(
+    val payments: List<PaymentHistoryItem> = emptyList(),
+)
+
+@Serializable
+data class SubmitPaymentRequest(
+    val transactionId: String,
+    val plan: String? = null,
+    val purpose: String = "subscription",
+)
+
+// -------- Analytics extended DTOs --------
+@Serializable
+data class SellerAnalyticsResponse(
+    val totalViews: Int = 0,
+    val totalInquiries: Int = 0,
+    val soldPosts: Int = 0,
+    val totalRevenue: Double = 0.0,
+    val activePosts: Int = 0,
+    val conversionRate: Float = 0f,
+    val avgRating: Float = 0f,
+    val totalReviews: Int = 0,
+)
+
+@Serializable
+data class PostAnalytic(
+    @SerialName("post_id") val postId: String? = null,
+    val title: String? = null,
+    val views: Int = 0,
+    val inquiries: Int = 0,
+    val offers: Int = 0,
+)
+
+@Serializable
+data class PostAnalyticsResponse(
+    val posts: List<PostAnalytic> = emptyList(),
+)
+
+@Serializable
+data class CategoryAnalytic(
+    val category: String? = null,
+    val listings: Int = 0,
+    val views: Int = 0,
+    val sales: Int = 0,
+)
+
+@Serializable
+data class CategoryAnalyticsResponse(
+    val categories: List<CategoryAnalytic> = emptyList(),
+)
+
+// -------- Review extended DTOs --------
+@Serializable
+data class ReviewRespondRequest(val response: String)
 
 // -------- Generic --------
 @Serializable
@@ -224,4 +554,354 @@ data class RewardsReferralNodeDto(
 data class RewardsChainRuleDto(
     val depth: Int = 0,
     val points: Int = 0,
+)
+
+// -------- Dashboard --------
+@Serializable
+data class DashboardResponse(
+    val user: User? = null,
+    @SerialName("quickStats") val quickStats: List<DashboardStat> = emptyList(),
+    @SerialName("recentActivity") val recentActivity: List<DashboardActivity> = emptyList(),
+    @SerialName("topSellers") val topSellers: List<User> = emptyList(),
+)
+
+@Serializable
+data class DashboardStat(
+    @SerialName("labelKey") val labelKey: String? = null,
+    val label: String? = null,
+    val value: Int = 0,
+    val trend: String? = null,
+    val bg: String? = null,
+    val color: String? = null,
+)
+
+@Serializable
+data class DashboardActivity(
+    val id: String? = null,
+    val title: String? = null,
+    val type: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("post_id") val postId: String? = null,
+)
+
+// -------- Feed / Social --------
+@Serializable
+data class FeedItem(
+    val id: String? = null,
+    @SerialName("feed_id") val feedId: String? = null,
+    val content: String? = null,
+    val title: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    val images: List<String> = emptyList(),
+    @SerialName("user_id") val userId: String? = null,
+    @SerialName("user_name") val userName: String? = null,
+    @SerialName("user_avatar") val userAvatar: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("like_count") val likeCount: Int = 0,
+    @SerialName("comment_count") val commentCount: Int = 0,
+    @SerialName("is_liked") val isLiked: Boolean = false,
+    @SerialName("post_id") val postId: String? = null,
+) {
+    val stableId: String get() = id ?: feedId ?: "${userId}-${createdAt}"
+    val displayName: String get() = userName ?: "User"
+    val displayContent: String get() = content ?: title ?: ""
+}
+
+@Serializable
+data class FeedResponse(
+    val items: List<FeedItem> = emptyList(),
+    val feed: List<FeedItem> = emptyList(),
+    val total: Int? = null,
+) {
+    val allItems: List<FeedItem> get() = if (items.isNotEmpty()) items else feed
+}
+
+@Serializable
+data class CreateFeedRequest(
+    val content: String,
+    @SerialName("post_id") val postId: String? = null,
+    val images: List<String> = emptyList(),
+)
+
+// -------- Reviews --------
+@Serializable
+data class Review(
+    val id: String? = null,
+    @SerialName("reviewer_id") val reviewerId: String? = null,
+    @SerialName("reviewer_name") val reviewerName: String? = null,
+    @SerialName("reviewer_avatar") val reviewerAvatar: String? = null,
+    val rating: Float = 0f,
+    val comment: String? = null,
+    val response: String? = null,
+    @SerialName("helpful_count") val helpfulCount: Int = 0,
+    @SerialName("verified_purchase") val verifiedPurchase: Boolean = false,
+    @SerialName("created_at") val createdAt: String? = null,
+) {
+    val stableId: String get() = id ?: "${reviewerId}-${createdAt}"
+}
+
+@Serializable
+data class ReviewsResponse(
+    val reviews: List<Review> = emptyList(),
+    @SerialName("average_rating") val averageRating: Float = 0f,
+    @SerialName("total_reviews") val totalReviews: Int = 0,
+    val stats: ReviewStats? = null,
+)
+
+@Serializable
+data class ReviewStats(
+    val distribution: Map<String, Int> = emptyMap(),
+)
+
+@Serializable
+data class ReviewRequest(
+    @SerialName("reviewed_user_id") val reviewedUserId: String,
+    val rating: Int,
+    val comment: String? = null,
+)
+
+// -------- Offers --------
+@Serializable
+data class Offer(
+    val id: String? = null,
+    @SerialName("offer_id") val offerId: String? = null,
+    @SerialName("post_id") val postId: String? = null,
+    @SerialName("post_title") val postTitle: String? = null,
+    @SerialName("post_image") val postImage: String? = null,
+    @SerialName("buyer_id") val buyerId: String? = null,
+    @SerialName("buyer_name") val buyerName: String? = null,
+    @SerialName("seller_id") val sellerId: String? = null,
+    @SerialName("seller_name") val sellerName: String? = null,
+    val amount: Double = 0.0,
+    @SerialName("original_price") val originalPrice: Double = 0.0,
+    @SerialName("counter_price") val counterPrice: Double? = null,
+    val status: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+) {
+    val stableId: String get() = id ?: offerId ?: "${postId}-${buyerId}"
+    val savings: Double get() = if (originalPrice > 0) ((originalPrice - amount) / originalPrice * 100) else 0.0
+}
+
+@Serializable
+data class OffersResponse(
+    val offers: List<Offer> = emptyList(),
+)
+
+// -------- Cart --------
+@Serializable
+data class CartItem(
+    val id: String? = null,
+    @SerialName("post_id") val postId: String? = null,
+    val title: String? = null,
+    val price: Double? = null,
+    val currency: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("seller_name") val sellerName: String? = null,
+    val quantity: Int = 1,
+) {
+    val stableId: String get() = id ?: postId ?: title.orEmpty()
+}
+
+@Serializable
+data class CartResponse(
+    val items: List<CartItem> = emptyList(),
+    val total: Double = 0.0,
+)
+
+// -------- Saved Searches --------
+@Serializable
+data class SavedSearch(
+    val id: String? = null,
+    val query: String? = null,
+    val category: String? = null,
+    val location: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+) {
+    val stableId: String get() = id ?: "${query}-${createdAt}"
+    val displayQuery: String get() = query ?: "Search"
+}
+
+@Serializable
+data class SavedSearchesResponse(
+    val searches: List<SavedSearch> = emptyList(),
+)
+
+// -------- Channels --------
+@Serializable
+data class Channel(
+    val id: String? = null,
+    @SerialName("channel_id") val channelId: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("member_count") val memberCount: Int = 0,
+    @SerialName("post_count") val postCount: Int = 0,
+    @SerialName("owner_id") val ownerId: String? = null,
+    @SerialName("owner_name") val ownerName: String? = null,
+    @SerialName("is_member") val isMember: Boolean = false,
+    @SerialName("created_at") val createdAt: String? = null,
+) {
+    val stableId: String get() = id ?: channelId ?: name.orEmpty()
+    val displayName: String get() = name ?: "Channel"
+}
+
+@Serializable
+data class ChannelsResponse(
+    val channels: List<Channel> = emptyList(),
+)
+
+@Serializable
+data class CreateChannelRequest(
+    val name: String,
+    val description: String? = null,
+)
+
+// -------- Centres --------
+@Serializable
+data class Centre(
+    val id: String? = null,
+    @SerialName("centre_id") val centreId: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    val location: String? = null,
+    @SerialName("listing_count") val listingCount: Int = 0,
+    @SerialName("owner_id") val ownerId: String? = null,
+    @SerialName("owner_name") val ownerName: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+) {
+    val stableId: String get() = id ?: centreId ?: name.orEmpty()
+    val displayName: String get() = name ?: "Centre"
+}
+
+@Serializable
+data class CentresResponse(
+    val centres: List<Centre> = emptyList(),
+)
+
+@Serializable
+data class CreateCentreRequest(
+    val name: String,
+    val description: String? = null,
+    val location: String? = null,
+)
+
+// -------- Complaints / Feedback --------
+@Serializable
+data class ComplaintRequest(
+    val subject: String,
+    val description: String,
+    @SerialName("post_id") val postId: String? = null,
+    @SerialName("user_id") val userId: String? = null,
+)
+
+@Serializable
+data class FeedbackRequest(
+    val type: String,
+    val message: String,
+    val rating: Int? = null,
+)
+
+// -------- Analytics --------
+@Serializable
+data class AnalyticsResponse(
+    @SerialName("post_views") val postViews: Int = 0,
+    @SerialName("profile_visits") val profileVisits: Int = 0,
+    @SerialName("total_listings") val totalListings: Int = 0,
+    @SerialName("total_sales") val totalSales: Int = 0,
+    @SerialName("total_revenue") val totalRevenue: Double = 0.0,
+    @SerialName("click_rate") val clickRate: Float = 0f,
+    @SerialName("conversion_rate") val conversionRate: Float = 0f,
+    @SerialName("top_performing") val topPerforming: List<Post> = emptyList(),
+)
+
+// -------- Security --------
+@Serializable
+data class UserSession(
+    @SerialName("session_id") val sessionId: String? = null,
+    @SerialName("device_fingerprint") val deviceFingerprint: String? = null,
+    @SerialName("user_agent") val userAgent: String? = null,
+    @SerialName("ip_address") val ipAddress: String? = null,
+    @SerialName("last_activity") val lastActivity: String? = null,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("expires_at") val expiresAt: String? = null,
+) {
+    val stableId: String get() = sessionId ?: "${deviceFingerprint}-${createdAt}"
+    val displayDevice: String get() = deviceFingerprint ?: "Unknown device"
+    val maskedIp: String get() {
+        val ip = ipAddress?.removePrefix("::ffff:") ?: return "Unknown"
+        val parts = ip.split(".")
+        return if (parts.size == 4) "${parts[0]}.${parts[1]}.x.x" else ip.take(8) + "..."
+    }
+}
+
+@Serializable
+data class SessionsResponse(
+    val sessions: List<UserSession> = emptyList(),
+)
+
+@Serializable
+data class TwoFaStatusResponse(
+    val enabled: Boolean = false,
+    val available: Boolean = true,
+)
+
+// -------- Account --------
+@Serializable
+data class DeleteAccountRequest(val reason: String? = null)
+
+@Serializable
+data class VerificationStatusResponse(
+    val status: String? = null,
+    @SerialName("submitted_at") val submittedAt: String? = null,
+    @SerialName("verified_at") val verifiedAt: String? = null,
+)
+
+@Serializable
+data class VerificationRequest(
+    @SerialName("doc_type") val docType: String,
+    @SerialName("doc_number") val docNumber: String,
+)
+
+// -------- Tier / Payment --------
+@Serializable
+data class Tier(
+    val id: String? = null,
+    val name: String? = null,
+    val price: Double = 0.0,
+    val currency: String = "INR",
+    val duration: Int = 30,
+    val features: List<String> = emptyList(),
+    val popular: Boolean = false,
+)
+
+@Serializable
+data class TiersResponse(
+    val tiers: List<Tier> = emptyList(),
+)
+
+@Serializable
+data class SubscribeRequest(
+    @SerialName("tier_id") val tierId: String,
+    @SerialName("payment_method") val paymentMethod: String = "upi",
+)
+
+// -------- Legal / CMS --------
+@Serializable
+data class CmsContentResponse(
+    val content: String? = null,
+    val html: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+) {
+    val displayContent: String get() = content ?: html ?: ""
+}
+
+// -------- Invite --------
+@Serializable
+data class InviteResponse(
+    val valid: Boolean = false,
+    @SerialName("inviter_name") val inviterName: String? = null,
+    @SerialName("inviter_id") val inviterId: String? = null,
+    val bonus: Int = 0,
 )

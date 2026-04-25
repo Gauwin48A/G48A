@@ -1000,17 +1000,17 @@ export default function TierSelection() {
           </svg>
           <div className="relative z-10 px-6 py-5 sm:py-6">
             {/* Top nav row */}
-            <div className="flex items-center justify-between mb-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateBack(navigate)}
-                className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl dark:text-white/70 dark:hover:text-white dark:hover:bg-slate-900/10"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {tr("back", "Back")}
-              </Button>
-              <div className="flex items-center gap-2">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center justify-between gap-2 sm:justify-start">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigateBack(navigate)}
+                  className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 rounded-xl dark:text-white/70 dark:hover:text-white dark:hover:bg-slate-900/10"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {tr("back", "Back")}
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={() => navigate("/rewards")}
@@ -1018,17 +1018,14 @@ export default function TierSelection() {
                 >
                   {tr("see_rewards", "Rewards")}
                 </Button>
-                <PageDensityToggle
-                  value={density}
-                  onChange={setDensity}
-                  className="[&>span]:text-white/70 [&_select]:bg-white/15 [&_select]:text-white [&_select]:border-white/30"
-                />
+              </div>
+              <div className="flex items-center justify-end gap-2">
                 <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-xl border-white/30 text-white hover:text-white hover:bg-white/10 dark:border-white/30 dark:text-white dark:hover:text-white dark:hover:bg-slate-900/10"
+                      className="rounded-xl border-white/30 px-2.5 text-xs text-white hover:text-white hover:bg-white/10 sm:px-3 sm:text-sm dark:border-white/30 dark:text-white dark:hover:text-white dark:hover:bg-slate-900/10"
                     >
                       {tr("compare_plans", "Compare plans")}
                     </Button>
@@ -1043,6 +1040,11 @@ export default function TierSelection() {
                     </div>
                   </DialogContent>
                 </Dialog>
+                <PageDensityToggle
+                  value={density}
+                  onChange={setDensity}
+                  className="shrink-0 [&>span]:hidden [&>span]:text-white/70 sm:[&>span]:inline [&_select]:bg-white/15 [&_select]:text-white [&_select]:border-white/30"
+                />
               </div>
             </div>
             {/* Hero text */}

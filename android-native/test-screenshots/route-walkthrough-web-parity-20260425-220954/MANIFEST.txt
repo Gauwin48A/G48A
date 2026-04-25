@@ -1,0 +1,6 @@
+000_parity_hub.png | Web parity pages | parity/hub | n/a
+001_login.png | Login | parity/page/login | /login
+002_signup.png | Sign up | parity/page/signup | /signup
+003_forgot_password.png | Forgot password | parity/page/forgot_password | /forgot-password
+004_reset_password.png | Reset password | parity/page/reset_password | /reset-password/:token
+005_category_hub.png | Category hub | parity/page/category_hub | /category-hub

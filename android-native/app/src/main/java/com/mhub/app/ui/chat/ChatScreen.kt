@@ -92,6 +92,8 @@ class ChatViewModel @Inject constructor(
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
+    private var pollingJob: kotlinx.coroutines.Job? = null
+
     init { loadConversations() }
 
     fun loadConversations() {
@@ -111,6 +113,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun openConversation(conv: ChatConversation) {
+        pollingJob?.cancel()
         _state.value = _state.value.copy(
             selectedConversation = conv,
             messagesLoading = true,
@@ -127,6 +130,17 @@ class ChatViewModel @Inject constructor(
                     messagesLoading = false,
                     error = result.error.message,
                 )
+            }
+        }
+        // Start polling for new messages
+        pollingJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(5000)
+                val convId = _state.value.selectedConversation?.stableId ?: break
+                when (val result = repo.messages(convId)) {
+                    is ApiResult.Success -> _state.value = _state.value.copy(messages = result.data)
+                    is ApiResult.Failure -> {} // silent
+                }
             }
         }
     }
@@ -154,6 +168,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun closeConversation() {
+        pollingJob?.cancel()
         _state.value = _state.value.copy(selectedConversation = null, messages = emptyList())
     }
 }

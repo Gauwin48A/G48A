@@ -297,7 +297,7 @@ fun WishlistScreen(
                                 }
                             }
                         } else if (gridMode) {
-                            items(filteredItems.chunked(2)) { row ->
+                            items(filteredItems.chunked(2), key = { row -> row.joinToString("-") { it.stableId } }) { row ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
