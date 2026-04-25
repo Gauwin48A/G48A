@@ -110,4 +110,8 @@ interface MhubApi {
         @Path("recipientId") recipientId: String,
         @Body body: SendMessageRequest,
     ): MessageResponse
+
+    // ---- Rewards ----
+    @GET("api/rewards")
+    suspend fun rewards(): RewardsOverviewResponse
 }

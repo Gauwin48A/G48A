@@ -34,12 +34,26 @@ for (const mode of MODES) {
     });
 
     test("email and password fields are visible", async ({ page }) => {
-      const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first();
+      const identityInput = page.locator(
+        [
+          'input[type="email"]',
+          'input[name="email"]',
+          'input[type="tel"]',
+          'input[name="phone"]',
+          'input[placeholder*="email" i]',
+          'input[placeholder*="phone" i]'
+        ].join(", ")
+      ).first();
       const passwordInput = page.locator('input[type="password"], input[name="password"]').first();
-      // At least one of these should be visible
-      const emailVisible = await emailInput.isVisible().catch(() => false);
-      const passwordVisible = await passwordInput.isVisible().catch(() => false);
-      expect(emailVisible || passwordVisible).toBe(true);
+
+      await expect.poll(async () => {
+        const identityVisible = await identityInput.isVisible().catch(() => false);
+        const passwordVisible = await passwordInput.isVisible().catch(() => false);
+        return identityVisible || passwordVisible;
+      }, {
+        timeout: 7000,
+        message: "Expected at least one login credential field to be visible."
+      }).toBe(true);
     });
 
     test("login button is visible and accessible", async ({ page }) => {

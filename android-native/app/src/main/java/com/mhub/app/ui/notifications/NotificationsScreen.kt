@@ -19,8 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Favorite
@@ -30,16 +31,15 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -144,7 +144,7 @@ private fun notifStyle(type: String?): NotifIconStyle {
         t.contains("security") || t.contains("auth") ->
             NotifIconStyle(Icons.Default.Security, Color(0xFFDC2626), Color(0xFFFFE8E8))
         t.contains("message") || t.contains("chat") || t.contains("inquiry") ->
-            NotifIconStyle(Icons.Default.Chat, Color(0xFF2563EB), Color(0xFFE8F0FF))
+            NotifIconStyle(Icons.AutoMirrored.Filled.Chat, Color(0xFF2563EB), Color(0xFFE8F0FF))
         t.contains("gift") || t.contains("promo") || t.contains("reward") ->
             NotifIconStyle(Icons.Default.Campaign, Color(0xFF7C3AED), Color(0xFFF0E8FF))
         t.contains("heart") || t.contains("like") || t.contains("wishlist") ->
@@ -154,7 +154,7 @@ private fun notifStyle(type: String?): NotifIconStyle {
         t.contains("offer") || t.contains("price") || t.contains("deal") ->
             NotifIconStyle(Icons.Default.LocalOffer, Color(0xFF0891B2), Color(0xFFE0F8FF))
         t.contains("trend") ->
-            NotifIconStyle(Icons.Default.TrendingUp, Color(0xFF0F766E), Color(0xFFE6FFF9))
+            NotifIconStyle(Icons.AutoMirrored.Filled.TrendingUp, Color(0xFF0F766E), Color(0xFFE6FFF9))
         t.contains("alert") || t.contains("warning") ->
             NotifIconStyle(Icons.Default.WarningAmber, Color(0xFFB45309), Color(0xFFFFF3E0))
         else ->
@@ -324,7 +324,7 @@ fun NotificationsScreen(
                     } else {
                         if (unread.isNotEmpty()) {
                             item {
-                                SectionLabel("New • ${unread.size}")
+                                SectionLabel("New (${unread.size})")
                             }
                             items(unread, key = { it.stableId }) { notif ->
                                 NotificationRow(
@@ -443,7 +443,7 @@ private fun NotificationRow(
                 }
             }
         }
-        Divider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
     }
 }
 
@@ -470,3 +470,4 @@ private fun formatRelativeTime(iso: String): String {
         iso.take(10)
     }
 }
+

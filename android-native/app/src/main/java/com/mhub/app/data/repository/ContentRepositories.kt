@@ -7,6 +7,7 @@ import com.mhub.app.data.remote.dto.CreatePostRequest
 import com.mhub.app.data.remote.dto.KycStatusResponse
 import com.mhub.app.data.remote.dto.KycSubmitRequest
 import com.mhub.app.data.remote.dto.KycSubmitResponse
+import com.mhub.app.data.remote.dto.RewardsOverviewResponse
 import com.mhub.app.domain.model.Category
 import com.mhub.app.domain.model.Notification
 import com.mhub.app.domain.model.Post
@@ -90,4 +91,9 @@ class ChatRepository @Inject constructor(private val api: MhubApi) {
     suspend fun send(conversationId: String, content: String): ApiResult<Unit> = safeApiCall {
         api.sendMessage(conversationId, com.mhub.app.data.remote.dto.SendMessageRequest(content = content)); Unit
     }
+}
+
+@Singleton
+class RewardsRepository @Inject constructor(private val api: MhubApi) {
+    suspend fun overview(): ApiResult<RewardsOverviewResponse> = safeApiCall { api.rewards() }
 }

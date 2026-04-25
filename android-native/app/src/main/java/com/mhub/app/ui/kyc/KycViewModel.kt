@@ -8,6 +8,7 @@ import com.mhub.app.data.remote.dto.KycStatusResponse
 import com.mhub.app.data.remote.dto.KycSubmitRequest
 import com.mhub.app.data.repository.KycRepository
 import com.mhub.app.data.repository.UploadRepository
+import com.mhub.app.ui.common.InputValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,8 +49,19 @@ class KycViewModel @Inject constructor(
         }
     }
 
-    fun setDocType(v: String) { _state.value = _state.value.copy(docType = v) }
-    fun setDocNumber(v: String) { _state.value = _state.value.copy(docNumber = v) }
+    fun setDocType(v: String) {
+        _state.value = _state.value.copy(
+            docType = InputValidators.normalizeKycDocType(v),
+            docNumber = "",
+            error = null,
+        )
+    }
+    fun setDocNumber(v: String) {
+        val current = _state.value
+        _state.value = current.copy(
+            docNumber = InputValidators.sanitizeKycDocNumberInput(current.docType, v),
+        )
+    }
     fun setFront(uri: Uri) { _state.value = _state.value.copy(frontUri = uri) }
     fun setBack(uri: Uri) { _state.value = _state.value.copy(backUri = uri) }
     fun setSelfie(uri: Uri) { _state.value = _state.value.copy(selfieUri = uri) }
@@ -59,9 +71,17 @@ class KycViewModel @Inject constructor(
         val s = _state.value
         if (s.submitting) return
         if (s.frontUri == null) { _state.value = s.copy(error = "Front image required"); return }
-        if (s.docNumber.length < 4) { _state.value = s.copy(error = "Document number required"); return }
+        if (!InputValidators.isValidKycDocumentNumber(s.docType, s.docNumber)) {
+            _state.value = s.copy(error = InputValidators.kycDocValidationMessage(s.docType))
+            return
+        }
+        if (InputValidators.requiresKycBackImage(s.docType) && s.backUri == null) {
+            _state.value = s.copy(error = "Back image required for selected document type")
+            return
+        }
 
-        _state.value = s.copy(submitting = true, error = null)
+        val normalizedDocNumber = InputValidators.normalizeKycDocNumber(s.docNumber)
+        _state.value = s.copy(submitting = true, error = null, success = false)
         viewModelScope.launch {
             suspend fun upload(uri: Uri, slot: String): String? {
                 val pair = bytesProvider(uri) ?: run {
@@ -83,7 +103,7 @@ class KycViewModel @Inject constructor(
 
             val req = KycSubmitRequest(
                 docType = s.docType,
-                docNumber = s.docNumber.trim(),
+                docNumber = normalizedDocNumber,
                 docFrontKey = frontKey,
                 docBackKey = backKey,
                 selfieKey = selfieKey,

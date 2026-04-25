@@ -19,11 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -119,6 +120,18 @@ private fun tierLabel(plan: String?): String {
     }
 }
 
+private val profileHeroGradientLight = listOf(
+    Color(0xFF0EA5E9),
+    Color(0xFF3B82F6),
+    Color(0xFF8B5CF6),
+)
+
+private val profileHeroGradientDark = listOf(
+    Color(0xFF0B1220),
+    Color(0xFF1B2542),
+    Color(0xFF2A1F45),
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -131,6 +144,10 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val darkTheme = isSystemInDarkTheme()
+    val heroGradient = Brush.horizontalGradient(
+        if (darkTheme) profileHeroGradientDark else profileHeroGradientLight,
+    )
 
     Scaffold(
         topBar = {
@@ -168,23 +185,15 @@ fun ProfileScreen(
                 ) {
                     ErrorBanner(message = state.error)
 
-                    // ── Avatar header card ────────────────────────────────
                     Card(
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(
-                                    Brush.verticalGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.primary,
-                                            MaterialTheme.colorScheme.secondary,
-                                        ),
-                                    ),
-                                )
+                                .background(heroGradient)
                                 .padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -297,7 +306,6 @@ fun ProfileScreen(
                         }
                     }
 
-                    // ── Stats row ─────────────────────────────────────────
                     Card(
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -309,17 +317,16 @@ fun ProfileScreen(
                                 .padding(vertical = 16.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                         ) {
-                            StatItem(label = "Listings", value = "—")
+                            StatItem(label = "Listings", value = "N/A")
                             VerticalDivider()
                             StatItem(label = "Rank", value = tierLabel(user?.currentPlan))
                             VerticalDivider()
-                            StatItem(label = "Sales", value = "—")
+                            StatItem(label = "Sales", value = "N/A")
                             VerticalDivider()
-                            StatItem(label = "Rating", value = "—")
+                            StatItem(label = "Rating", value = "N/A")
                         }
                     }
 
-                    // ── Selling section ───────────────────────────────────
                     SectionHeader(title = "Selling")
                     ProfileMenuCard {
                         ProfileMenuItem(
@@ -337,14 +344,13 @@ fun ProfileScreen(
                         )
                         HorizontalDivider(modifier = Modifier.padding(start = 68.dp))
                         ProfileMenuItem(
-                            icon = Icons.Default.Message,
+                            icon = Icons.AutoMirrored.Filled.Message,
                             label = "Messages",
                             subtitle = "Chat with buyers and sellers",
                             onClick = onOpenChat,
                         )
                     }
 
-                    // ── Account section ───────────────────────────────────
                     SectionHeader(title = "Account")
                     ProfileMenuCard {
                         ProfileMenuItem(
@@ -383,7 +389,6 @@ fun ProfileScreen(
                         )
                     }
 
-                    // ── Sign out ──────────────────────────────────────────
                     OutlinedButton(
                         onClick = { viewModel.logout(onSignedOut) },
                         shape = RoundedCornerShape(16.dp),
@@ -475,13 +480,13 @@ private fun ProfileMenuItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(if (isSystemInDarkTheme()) Color(0xFF1E293B) else Color(0xFFEFF6FF)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = if (isSystemInDarkTheme()) Color(0xFFBFDBFE) else Color(0xFF1D4ED8),
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -501,3 +506,4 @@ private fun ProfileMenuItem(
         }
     }
 }
+

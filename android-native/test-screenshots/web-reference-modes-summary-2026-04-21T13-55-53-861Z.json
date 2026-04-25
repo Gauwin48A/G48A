@@ -1,0 +1,17 @@
+[
+  {
+    "mode": "guest",
+    "status": "captured",
+    "storageState": null
+  },
+  {
+    "mode": "auth",
+    "status": "captured",
+    "storageState": ".\\authStorageState.json"
+  },
+  {
+    "mode": "admin",
+    "status": "captured",
+    "storageState": ".\\authStorageState.json"
+  }
+]

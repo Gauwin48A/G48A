@@ -1,0 +1,32 @@
+{
+  "mode": "auth",
+  "baseUrl": "http://localhost:8081",
+  "totalRoutes": 76,
+  "okCount": 76,
+  "errorCount": 0,
+  "duplicateGroupCount": 5,
+  "largestDuplicateGroupSize": 20,
+  "likelyAuthGatedRoutes": [
+    "/activity",
+    "/account/delete",
+    "/add-post",
+    "/post-welcome",
+    "/sell",
+    "/edit-post/:postId",
+    "/tiers",
+    "/pricing",
+    "/buyer-view",
+    "/saledone",
+    "/saleundone",
+    "/admin-panel",
+    "/my-feed",
+    "/post_add",
+    "/chat",
+    "/chats",
+    "/channels/create",
+    "/centre",
+    "/kyc",
+    "/payment"
+  ],
+  "storageStateUsed": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\client\\authStorageState.json"
+}

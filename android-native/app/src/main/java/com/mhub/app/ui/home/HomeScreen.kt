@@ -24,6 +24,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
@@ -31,9 +34,6 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.ImageNotSupported
 import androidx.compose.material.icons.outlined.Inventory2
@@ -84,8 +84,8 @@ import com.mhub.app.ui.components.AppErrorState
 private enum class SortOption(val label: String) {
     NEWEST("New"),
     POPULAR("Popular"),
-    PRICE_ASC("Price ?"),
-    PRICE_DESC("Price ?"),
+    PRICE_ASC("Price low-high"),
+    PRICE_DESC("Price high-low"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -157,13 +157,13 @@ fun HomeScreen(
                     }
                     FilledTonalIconButton(onClick = onOpenWebParity) {
                         Icon(
-                            imageVector = Icons.Default.ViewList,
+                            imageVector = Icons.AutoMirrored.Filled.ViewList,
                             contentDescription = "Web parity pages",
                         )
                     }
                     FilledTonalIconButton(onClick = { gridMode = !gridMode }) {
                         Icon(
-                            imageVector = if (gridMode) Icons.Default.ViewList else Icons.Default.GridView,
+                            imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
                             contentDescription = "Toggle view",
                         )
                     }
@@ -253,8 +253,8 @@ fun HomeScreen(
                                     onClick = { sortBy = option },
                                     label = { Text(option.label, style = MaterialTheme.typography.labelMedium) },
                                     leadingIcon = when (option) {
-                                        SortOption.POPULAR -> ({ Icon(Icons.Default.TrendingUp, contentDescription = null, modifier = Modifier.size(14.dp)) })
-                                        SortOption.NEWEST -> ({ Icon(Icons.Default.Sort, contentDescription = null, modifier = Modifier.size(14.dp)) })
+                                        SortOption.POPULAR -> ({ Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, modifier = Modifier.size(14.dp)) })
+                                        SortOption.NEWEST -> ({ Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = null, modifier = Modifier.size(14.dp)) })
                                         else -> null
                                     },
                                     colors = FilterChipDefaults.filterChipColors(
@@ -334,7 +334,7 @@ fun ListPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier)
                 }
                 Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)), startY = 80f)))
                 post.price?.let { price ->
-                    Text("?${"%,.0f".format(price)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+                    Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
                 }
                 val heartColor by animateColorAsState(if (wishlisted) Color(0xFFEF4444) else Color.White, label = "wishlist")
                 IconButton(onClick = { wishlisted = !wishlisted }, modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(36.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape)) {
@@ -382,7 +382,7 @@ fun GridPostCard(post: Post, onClick: () -> Unit, modifier: Modifier = Modifier)
                 }
                 Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)), startY = 60f)))
                 post.price?.let { price ->
-                    Text("?${"%,.0f".format(price)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
+                    Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
                 }
                 val heartColor by animateColorAsState(if (wishlisted) Color(0xFFEF4444) else Color.White, label = "wishlist")
                 Box(modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape).clickable { wishlisted = !wishlisted }, contentAlignment = Alignment.Center) {

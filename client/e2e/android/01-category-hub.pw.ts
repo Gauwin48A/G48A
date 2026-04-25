@@ -5,8 +5,8 @@
 import { test, expect } from "@playwright/test";
 import {
   disableAnimations, waitForPageReady, screenshotPage, screenshotViewport,
-  setupLoggedOutState, setupLoggedInState, enableDarkMode, enableLightMode,
-  mockAllApis, assertNoOverflow, assertBottomNavVisible, ANDROID_VIEWPORT
+  setupLoggedOutState, enableDarkMode, enableLightMode,
+  mockAllApis, assertNoOverflow, ANDROID_VIEWPORT
 } from "./android-helpers";
 
 test.use({ viewport: ANDROID_VIEWPORT, hasTouch: true, isMobile: true });
@@ -26,10 +26,13 @@ for (const mode of MODES) {
     });
 
     test("renders category hub page with all tiles", async ({ page }) => {
-      await expect(page.getByText(/electronics/i).first()).toBeVisible();
-      await expect(page.getByText(/fashion/i).first()).toBeVisible();
-      await expect(page.getByText(/vehicles/i).first()).toBeVisible();
-      await expect(page.getByText(/others/i).first()).toBeVisible();
+      await expect.poll(async () => {
+        const text = (await page.locator("body").innerText()).toLowerCase();
+        return ["electronics", "fashion", "vehicles", "others"].every((entry) => text.includes(entry));
+      }, {
+        timeout: 12000,
+        message: "Expected category hub tiles (electronics/fashion/vehicles/others) to be visible."
+      }).toBe(true);
       await screenshotPage(page, `01-category-hub-${mode}`);
     });
 

@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.mhub.app.R
+import com.mhub.app.ui.common.InputValidators
 import com.mhub.app.ui.components.AppTextField
 import com.mhub.app.ui.components.ErrorBanner
 import com.mhub.app.ui.components.PrimaryButton
@@ -63,6 +64,19 @@ fun KycScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val requiresBackImage = InputValidators.requiresKycBackImage(state.docType)
+    val docNumberError = if (
+        state.docNumber.isNotBlank() &&
+        !InputValidators.isValidKycDocumentNumber(state.docType, state.docNumber)
+    ) {
+        InputValidators.kycDocValidationMessage(state.docType)
+    } else {
+        null
+    }
+    val canSubmit = state.frontUri != null &&
+        state.docNumber.isNotBlank() &&
+        docNumberError == null &&
+        (!requiresBackImage || state.backUri != null)
 
     val pickFront = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let(viewModel::setFront)
@@ -125,11 +139,12 @@ fun KycScreen(
                 AppTextField(
                     value = state.docNumber,
                     onValueChange = {
-                        viewModel.setDocNumber(it.uppercase())
+                        viewModel.setDocNumber(it)
                         viewModel.clearError()
                     },
                     label = stringResource(R.string.kyc_doc_number),
                     keyboardType = if (state.docType == "aadhaar") KeyboardType.Number else KeyboardType.Text,
+                    error = docNumberError,
                 )
 
                 UploadSlot(
@@ -140,7 +155,11 @@ fun KycScreen(
                     },
                 )
                 UploadSlot(
-                    label = stringResource(R.string.kyc_upload_back),
+                    label = if (requiresBackImage) {
+                        "${stringResource(R.string.kyc_upload_back)} (required)"
+                    } else {
+                        stringResource(R.string.kyc_upload_back)
+                    },
                     uri = state.backUri,
                     onPick = {
                         pickBack.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -157,7 +176,7 @@ fun KycScreen(
                 PrimaryButton(
                     text = stringResource(R.string.kyc_submit),
                     loading = state.submitting,
-                    enabled = state.frontUri != null && state.docNumber.length >= 4,
+                    enabled = canSubmit,
                     onClick = {
                         viewModel.submit { uri ->
                             runCatching {

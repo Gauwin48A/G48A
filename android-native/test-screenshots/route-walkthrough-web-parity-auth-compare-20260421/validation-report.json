@@ -1,0 +1,21 @@
+{
+  "webPack": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\web-reference-auth-auth-clean-2026-04-21T12-37-44-105Z",
+  "androidPack": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\route-walkthrough-web-parity-auth-compare-20260421",
+  "minSize": 20000,
+  "web": {
+    "routes": 76,
+    "ok": 76,
+    "errors": 0,
+    "missingFiles": [],
+    "tinyFiles": [],
+    "criticalTinyFiles": [],
+    "badDimensions": []
+  },
+  "android": {
+    "states": 62,
+    "missingFiles": [],
+    "tinyFiles": [],
+    "criticalTinyFiles": [],
+    "badDimensions": []
+  }
+}

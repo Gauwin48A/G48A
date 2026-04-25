@@ -1,16 +1,16 @@
 # MHub Full Page Audit Report
 
-**Date:** 2026-04-13T14:51:05.657Z
-**Pages Audited:** 51
-**Total Issues:** 66
+**Date:** 2026-04-21T13:38:58.392Z
+**Pages Audited:** 52
+**Total Issues:** 68
 
 ## Severity Breakdown
 | Severity | Count |
 |---|---|
 | 🔴 Critical | 0 |
-| 🟠 High | 15 |
-| 🟡 Medium | 44 |
-| 🔵 Low | 7 |
+| 🟠 High | 11 |
+| 🟡 Medium | 52 |
+| 🔵 Low | 5 |
 
 ## Page-by-Page Issues
 
@@ -37,42 +37,51 @@
 ### /all-posts (all-posts)
 | Type | Severity | Detail |
 |---|---|---|
-| OVERFLOW | high | Page has horizontal overflow/scroll |
 | DARK_MODE | medium | button has bg-white/10 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
-| DARK_MODE | medium | button has bg-white/50 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
-| A11Y | medium | 1 buttons without accessible labels |
-| WHITESPACE | low | 1 large empty containers (200px+ height) |
-| NETWORK | medium | 1 failed requests: http://127.0.0.1:5174/api/posts?page=1&limit=6&refresh=1776091686612 |
+| DARK_MODE | medium | button has bg-white without dark: variant |
+| NETWORK | medium | 1 failed requests: http://localhost:8081/api/posts?page=1&limit=6&refresh=1776778503266 |
+
+### /all-posts?category_group=fashion (all-posts-fashion)
+| Type | Severity | Detail |
+|---|---|---|
+| DARK_MODE | medium | button has bg-white/10 without dark: variant |
+| DARK_MODE | medium | button has bg-white without dark: variant |
+| DARK_MODE | medium | button has bg-white/50 without dark: variant |
+| DARK_MODE | medium | button has bg-white without dark: variant |
+| DARK_MODE | medium | button has bg-white/50 without dark: variant |
+| DARK_MODE | medium | button has bg-white without dark: variant |
+| DARK_MODE | medium | button has bg-white/50 without dark: variant |
+| DARK_MODE | medium | button has bg-white without dark: variant |
+| DARK_MODE | medium | button has bg-white/50 without dark: variant |
+| DARK_MODE | medium | button has bg-white without dark: variant |
+| NETWORK | medium | 1 failed requests: http://localhost:8081/api/posts?page=1&limit=6&refresh=1776778511389 |
 
 ### /listings (listings)
 | Type | Severity | Detail |
 |---|---|---|
-| OVERFLOW | high | Page has horizontal overflow/scroll |
 | DARK_MODE | medium | button has bg-white/10 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
-| DARK_MODE | medium | button has bg-white/50 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
 | DARK_MODE | medium | button has bg-white without dark: variant |
 | DARK_MODE | medium | button has bg-white/50 without dark: variant |
-| A11Y | medium | 1 buttons without accessible labels |
-| WHITESPACE | low | 1 large empty containers (200px+ height) |
+| DARK_MODE | medium | button has bg-white without dark: variant |
+| NETWORK | medium | 1 failed requests: http://localhost:8081/api/posts?category_group=fashion&page=1&limit=6&refresh=1776778516931 |
 
 ### /for-you (for-you)
 | Type | Severity | Detail |
 |---|---|---|
-| OVERFLOW | high | Page has horizontal overflow/scroll |
 | DARK_MODE | medium | button has bg-white/10 without dark: variant |
 
 ### /feed (feed)
@@ -85,14 +94,8 @@
 ### /home (home)
 | Type | Severity | Detail |
 |---|---|---|
-| OVERFLOW | high | Page has horizontal overflow/scroll |
 | DARK_MODE | medium | button has bg-white/10 without dark: variant |
 | WHITESPACE | low | 8 large empty containers (200px+ height) |
-
-### /search (search)
-| Type | Severity | Detail |
-|---|---|---|
-| A11Y | medium | 1 buttons without accessible labels |
 
 ### /post/123 (post-detail)
 | Type | Severity | Detail |
@@ -119,11 +122,6 @@
 |---|---|---|
 | WHITESPACE | low | 1 large empty containers (200px+ height) |
 | CONSOLE_ERROR | high | 1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
-
-### /reset-password/demo (reset-password)
-| Type | Severity | Detail |
-|---|---|---|
-| A11Y | medium | 2 buttons without accessible labels |
 
 ### /invite/demo (invite-redirect)
 | Type | Severity | Detail |
@@ -161,11 +159,13 @@
 | CONSOLE_ERROR | high | 1 console errors: Failed to load resource: the server responded with a status of 500 (Internal Server Error) |
 
 ## Clean Pages (No Issues)
+- ✅ /search
 - ✅ /nearby
 - ✅ /public-wall
 - ✅ /login
 - ✅ /signup
 - ✅ /forgot-password
+- ✅ /reset-password/demo
 - ✅ /profile
 - ✅ /dashboard
 - ✅ /add-post

@@ -1,0 +1,21 @@
+{
+  "webPack": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\web-reference-guest-ui100-latest-2026-04-21T11-29-20-535Z",
+  "androidPack": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\route-walkthrough-web-parity-ui100-20260421-163023",
+  "minSize": 20000,
+  "web": {
+    "routes": 76,
+    "ok": 76,
+    "errors": 0,
+    "missingFiles": [],
+    "tinyFiles": [],
+    "criticalTinyFiles": [],
+    "badDimensions": []
+  },
+  "android": {
+    "states": 62,
+    "missingFiles": [],
+    "tinyFiles": [],
+    "criticalTinyFiles": [],
+    "badDimensions": []
+  }
+}

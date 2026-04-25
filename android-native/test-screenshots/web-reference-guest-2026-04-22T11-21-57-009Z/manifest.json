@@ -1,0 +1,616 @@
+[
+  {
+    "route": "/login",
+    "resolved": "/login",
+    "url": "http://localhost:8081/login",
+    "file": "01_login.png",
+    "hash": "4cd8deb9987d0aed8efd5144664f0c2f306f5ba1eca0f3a53064bf30320650fd",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/signup",
+    "resolved": "/signup",
+    "url": "http://localhost:8081/signup",
+    "file": "02_signup.png",
+    "hash": "fb061749976174fede44a4e5bc5d28371bf201828278dcbb4ab59a1cdaf1e30c",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/invite/:code",
+    "resolved": "/invite/demo",
+    "url": "http://localhost:8081/invite/demo",
+    "file": "03_invite_code.png",
+    "hash": "a46bc56fb0c616ebf4dbc33f94f268b9e5f4e78cd0020e4ffb8fbc400b215d7f",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/forgot-password",
+    "resolved": "/forgot-password",
+    "url": "http://localhost:8081/forgot-password",
+    "file": "04_forgot-password.png",
+    "hash": "48aed02fd10c50a3f1c62429500674366d9cc85c2a263ce6001a34728e3c65a0",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/reset-password",
+    "resolved": "/reset-password",
+    "url": "http://localhost:8081/reset-password",
+    "file": "05_reset-password.png",
+    "hash": "ef9bb9f959dbcd2c4794e8338165fadf53a21cb378350472c9ce3231e7165a25",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/reset-password/:token",
+    "resolved": "/reset-password/demo",
+    "url": "http://localhost:8081/reset-password/demo",
+    "file": "06_reset-password_token.png",
+    "hash": "821a4d1239803c2a8e8c334ab67f4b8b173982dc55e496d86e8e0bb868662c26",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/",
+    "resolved": "/",
+    "url": "http://localhost:8081/",
+    "file": "07_root.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/all-posts",
+    "resolved": "/all-posts",
+    "url": "http://localhost:8081/all-posts",
+    "file": "08_all-posts.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/all-posts\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/listings",
+    "resolved": "/listings",
+    "url": "http://localhost:8081/listings",
+    "file": "09_listings.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/listings\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/post/:id",
+    "resolved": "/post/demo",
+    "url": "http://localhost:8081/post/demo",
+    "file": "10_post_id.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/post/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/listing/:id",
+    "resolved": "/listing/demo",
+    "url": "http://localhost:8081/listing/demo",
+    "file": "11_listing_id.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/listing/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/dashboard",
+    "resolved": "/dashboard",
+    "url": "http://localhost:8081/dashboard",
+    "file": "12_dashboard.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/dashboard\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/activity",
+    "resolved": "/activity",
+    "url": "http://localhost:8081/activity",
+    "file": "13_activity.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/activity\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/profile",
+    "resolved": "/profile",
+    "url": "http://localhost:8081/profile",
+    "file": "14_profile.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/profile\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/security",
+    "resolved": "/security",
+    "url": "http://localhost:8081/security",
+    "file": "15_security.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/security\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/account/delete",
+    "resolved": "/account/delete",
+    "url": "http://localhost:8081/account/delete",
+    "file": "16_account_delete.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/account/delete\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/add-post",
+    "resolved": "/add-post",
+    "url": "http://localhost:8081/add-post",
+    "file": "17_add-post.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/add-post\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/post-welcome",
+    "resolved": "/post-welcome",
+    "url": "http://localhost:8081/post-welcome",
+    "file": "18_post-welcome.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/post-welcome\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/sell",
+    "resolved": "/sell",
+    "url": "http://localhost:8081/sell",
+    "file": "19_sell.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/sell\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/category-hub",
+    "resolved": "/category-hub",
+    "url": "http://localhost:8081/category-hub",
+    "file": "20_category-hub.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/category-hub\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/edit-post/:postId",
+    "resolved": "/edit-post/demo",
+    "url": "http://localhost:8081/edit-post/demo",
+    "file": "21_edit-post_postId.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/edit-post/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/tier-selection",
+    "resolved": "/tier-selection",
+    "url": "http://localhost:8081/tier-selection",
+    "file": "22_tier-selection.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/tier-selection\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/tiers",
+    "resolved": "/tiers",
+    "url": "http://localhost:8081/tiers",
+    "file": "23_tiers.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/tiers\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/pricing",
+    "resolved": "/pricing",
+    "url": "http://localhost:8081/pricing",
+    "file": "24_pricing.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/pricing\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/my-home",
+    "resolved": "/my-home",
+    "url": "http://localhost:8081/my-home",
+    "file": "25_my-home.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/my-home\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/home",
+    "resolved": "/home",
+    "url": "http://localhost:8081/home",
+    "file": "26_home.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/home\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/for-you",
+    "resolved": "/for-you",
+    "url": "http://localhost:8081/for-you",
+    "file": "27_for-you.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/for-you\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/bought-posts",
+    "resolved": "/bought-posts",
+    "url": "http://localhost:8081/bought-posts",
+    "file": "28_bought-posts.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/bought-posts\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/sold-posts",
+    "resolved": "/sold-posts",
+    "url": "http://localhost:8081/sold-posts",
+    "file": "29_sold-posts.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/sold-posts\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/buyer-view",
+    "resolved": "/buyer-view",
+    "url": "http://localhost:8081/buyer-view",
+    "file": "30_buyer-view.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/buyer-view\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/saledone",
+    "resolved": "/saledone",
+    "url": "http://localhost:8081/saledone",
+    "file": "31_saledone.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/saledone\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/saleundone",
+    "resolved": "/saleundone",
+    "url": "http://localhost:8081/saleundone",
+    "file": "32_saleundone.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/saleundone\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/admin-panel",
+    "resolved": "/admin-panel",
+    "url": "http://localhost:8081/admin-panel",
+    "file": "33_admin-panel.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/admin-panel\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/aadhaar-verify",
+    "resolved": "/aadhaar-verify",
+    "url": "http://localhost:8081/aadhaar-verify",
+    "file": "34_aadhaar-verify.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/aadhaar-verify\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/public-wall",
+    "resolved": "/public-wall",
+    "url": "http://localhost:8081/public-wall",
+    "file": "35_public-wall.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/public-wall\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/notifications",
+    "resolved": "/notifications",
+    "url": "http://localhost:8081/notifications",
+    "file": "36_notifications.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/notifications\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/complaints",
+    "resolved": "/complaints",
+    "url": "http://localhost:8081/complaints",
+    "file": "37_complaints.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/complaints\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/feedback",
+    "resolved": "/feedback",
+    "url": "http://localhost:8081/feedback",
+    "file": "38_feedback.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/feedback\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/rewards",
+    "resolved": "/rewards",
+    "url": "http://localhost:8081/rewards",
+    "file": "39_rewards.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/rewards\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/categories",
+    "resolved": "/categories",
+    "url": "http://localhost:8081/categories",
+    "file": "40_categories.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/categories\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/subcategories",
+    "resolved": "/subcategories",
+    "url": "http://localhost:8081/subcategories",
+    "file": "41_subcategories.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/subcategories\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/compare",
+    "resolved": "/compare",
+    "url": "http://localhost:8081/compare",
+    "file": "42_compare.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/compare\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/categories/:slug",
+    "resolved": "/categories/demo",
+    "url": "http://localhost:8081/categories/demo",
+    "file": "43_categories_slug.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/categories/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/feed",
+    "resolved": "/feed",
+    "url": "http://localhost:8081/feed",
+    "file": "44_feed.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/feed\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/feed/:id",
+    "resolved": "/feed/demo",
+    "url": "http://localhost:8081/feed/demo",
+    "file": "45_feed_id.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/feed/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/my-feed",
+    "resolved": "/my-feed",
+    "url": "http://localhost:8081/my-feed",
+    "file": "46_my-feed.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/my-feed\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/my-posts",
+    "resolved": "/my-posts",
+    "url": "http://localhost:8081/my-posts",
+    "file": "47_my-posts.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/my-posts\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/post_add",
+    "resolved": "/post_add",
+    "url": "http://localhost:8081/post_add",
+    "file": "48_post_add.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/post_add\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/feed/feedpostadd",
+    "resolved": "/feed/feedpostadd",
+    "url": "http://localhost:8081/feed/feedpostadd",
+    "file": "49_feed_feedpostadd.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/feed/feedpostadd\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/wishlist",
+    "resolved": "/wishlist",
+    "url": "http://localhost:8081/wishlist",
+    "file": "50_wishlist.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/wishlist\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/cart",
+    "resolved": "/cart",
+    "url": "http://localhost:8081/cart",
+    "file": "51_cart.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/cart\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/recently-viewed",
+    "resolved": "/recently-viewed",
+    "url": "http://localhost:8081/recently-viewed",
+    "file": "52_recently-viewed.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/recently-viewed\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/saved-searches",
+    "resolved": "/saved-searches",
+    "url": "http://localhost:8081/saved-searches",
+    "file": "53_saved-searches.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/saved-searches\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/verification",
+    "resolved": "/verification",
+    "url": "http://localhost:8081/verification",
+    "file": "54_verification.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/verification\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/nearby",
+    "resolved": "/nearby",
+    "url": "http://localhost:8081/nearby",
+    "file": "55_nearby.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/nearby\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/chat",
+    "resolved": "/chat",
+    "url": "http://localhost:8081/chat",
+    "file": "56_chat.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/chat\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/chats",
+    "resolved": "/chats",
+    "url": "http://localhost:8081/chats",
+    "file": "57_chats.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/chats\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/t&c",
+    "resolved": "/t&c",
+    "url": "http://localhost:8081/t&c",
+    "file": "58_t_c.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/t&c\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/terms",
+    "resolved": "/terms",
+    "url": "http://localhost:8081/terms",
+    "file": "59_terms.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/terms\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/terms-and-conditions",
+    "resolved": "/terms-and-conditions",
+    "url": "http://localhost:8081/terms-and-conditions",
+    "file": "60_terms-and-conditions.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/terms-and-conditions\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/privacy-policy",
+    "resolved": "/privacy-policy",
+    "url": "http://localhost:8081/privacy-policy",
+    "file": "61_privacy-policy.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/privacy-policy\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/refund-policy",
+    "resolved": "/refund-policy",
+    "url": "http://localhost:8081/refund-policy",
+    "file": "62_refund-policy.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/refund-policy\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/support-ticket-policy",
+    "resolved": "/support-ticket-policy",
+    "url": "http://localhost:8081/support-ticket-policy",
+    "file": "63_support-ticket-policy.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/support-ticket-policy\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/search",
+    "resolved": "/search",
+    "url": "http://localhost:8081/search",
+    "file": "64_search.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/search\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/analytics",
+    "resolved": "/analytics",
+    "url": "http://localhost:8081/analytics",
+    "file": "65_analytics.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/analytics\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/channels",
+    "resolved": "/channels",
+    "url": "http://localhost:8081/channels",
+    "file": "66_channels.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/channels\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/channels/create",
+    "resolved": "/channels/create",
+    "url": "http://localhost:8081/channels/create",
+    "file": "67_channels_create.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/channels/create\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/channels/:id",
+    "resolved": "/channels/demo",
+    "url": "http://localhost:8081/channels/demo",
+    "file": "68_channels_id.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/channels/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/centre",
+    "resolved": "/centre",
+    "url": "http://localhost:8081/centre",
+    "file": "69_centre.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/centre\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/centre/create",
+    "resolved": "/centre/create",
+    "url": "http://localhost:8081/centre/create",
+    "file": "70_centre_create.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/centre/create\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/centre/:id/listings",
+    "resolved": "/centre/demo/listings",
+    "url": "http://localhost:8081/centre/demo/listings",
+    "file": "71_centre_id_listings.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/centre/demo/listings\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/centre/:id",
+    "resolved": "/centre/demo",
+    "url": "http://localhost:8081/centre/demo",
+    "file": "72_centre_id.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/centre/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/kyc",
+    "resolved": "/kyc",
+    "url": "http://localhost:8081/kyc",
+    "file": "73_kyc.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/kyc\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/payment",
+    "resolved": "/payment",
+    "url": "http://localhost:8081/payment",
+    "file": "74_payment.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/payment\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/offers",
+    "resolved": "/offers",
+    "url": "http://localhost:8081/offers",
+    "file": "75_offers.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/offers\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "route": "/reviews/:userId",
+    "resolved": "/reviews/demo",
+    "url": "http://localhost:8081/reviews/demo",
+    "file": "76_reviews_userId.png",
+    "status": "error",
+    "error": "page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"http://localhost:8081/reviews/demo\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  }
+]

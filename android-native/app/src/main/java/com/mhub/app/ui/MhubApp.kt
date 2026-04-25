@@ -9,16 +9,20 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.outlined.Article
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.Explore
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -51,18 +55,22 @@ import com.mhub.app.R
 import com.mhub.app.ui.auth.AuthViewModel
 import com.mhub.app.ui.auth.LoginScreen
 import com.mhub.app.ui.categories.CategoriesScreen
+import com.mhub.app.ui.chat.ChatScreen
 import com.mhub.app.ui.explore.ExploreScreen
+import com.mhub.app.ui.feed.FeedScreen
+import com.mhub.app.ui.home.CategoryHubScreen
 import com.mhub.app.ui.home.HomeScreen
 import com.mhub.app.ui.home.PostDetailScreen
 import com.mhub.app.ui.kyc.KycScreen
+import com.mhub.app.ui.more.MoreScreen
 import com.mhub.app.ui.navigation.Routes
 import com.mhub.app.ui.notifications.NotificationsScreen
+import com.mhub.app.ui.parity.WebParityHubScreen
+import com.mhub.app.ui.parity.WebParityWebReplicaScreen
 import com.mhub.app.ui.post.CreatePostScreen
 import com.mhub.app.ui.post.MyPostsScreen
-import com.mhub.app.ui.chat.ChatScreen
-import com.mhub.app.ui.parity.WebParityDetailScreen
-import com.mhub.app.ui.parity.WebParityHubScreen
 import com.mhub.app.ui.profile.ProfileScreen
+import com.mhub.app.ui.rewards.RewardsScreen
 import com.mhub.app.ui.search.SearchScreen
 import com.mhub.app.ui.settings.SettingsScreen
 import com.mhub.app.ui.theme.MhubTheme
@@ -84,7 +92,12 @@ fun MhubApp(
             val targetRoute = debugRouteOverride?.trim().orEmpty()
             if (targetRoute.isNotEmpty() && targetRoute != lastHandledDebugRoute) {
                 lastHandledDebugRoute = targetRoute
-                navController.navigate(targetRoute) { launchSingleTop = true }
+                navController.navigate(targetRoute) {
+                    launchSingleTop = true
+                    // Pop previous parity screens to prevent backstack overflow
+                    // during automated capture runs.
+                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                }
             }
         }
 
@@ -119,38 +132,58 @@ fun MhubApp(
             navigation(startDestination = Routes.HOME, route = Routes.MAIN_GRAPH) {
                 composable(Routes.HOME) {
                     MainShell(navController = navController, selected = BottomTab.HOME) {
+                        CategoryHubScreen(
+                            onOpenCategory = { navController.navigate(Routes.ALL_POSTS) },
+                            onOpenAllPosts = { navController.navigate(Routes.ALL_POSTS) },
+                            onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                        )
+                    }
+                }
+
+                composable(Routes.ALL_POSTS) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
                         HomeScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) },
                             onCreatePost = { navController.navigate(Routes.CREATE_POST) },
-                            onOpenExplore = { navController.navigate(Routes.EXPLORE) },
+                            onOpenExplore = { navController.navigate(Routes.FOR_YOU) },
                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
                             onOpenWebParity = { navController.navigate(Routes.WEB_PARITY_HUB) },
                         )
                     }
                 }
 
-                composable(Routes.EXPLORE) {
-                    MainShell(navController = navController, selected = BottomTab.EXPLORE) {
+                composable(Routes.FOR_YOU) {
+                    MainShell(navController = navController, selected = BottomTab.FOR_YOU) {
                         ExploreScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) },
                             onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
+                            title = "For You",
+                            subtitle = "Personalized picks based on your activity",
                         )
                     }
                 }
 
-                composable(Routes.NOTIFICATIONS) {
-                    MainShell(navController = navController, selected = BottomTab.NOTIFICATIONS) {
-                        NotificationsScreen(
+                composable(Routes.FEED) {
+                    MainShell(navController = navController, selected = BottomTab.FEED) {
+                        FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
                         )
                     }
                 }
 
-                composable(Routes.WISHLIST) {
-                    MainShell(navController = navController, selected = BottomTab.WISHLIST) {
-                        WishlistScreen(onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) })
+                composable(Routes.REWARDS) {
+                    MainShell(navController = navController, selected = BottomTab.REWARDS) {
+                        RewardsScreen(
+                            isAuthenticated = isAuthenticated,
+                            onSignInRequired = {
+                                navController.navigate(Routes.AUTH_GRAPH) {
+                                    popUpTo(Routes.MAIN_GRAPH) { inclusive = true }
+                                }
+                            },
+                            onBrowseMarketplace = { navController.navigate(Routes.ALL_POSTS) },
+                        )
                     }
                 }
 
@@ -169,6 +202,36 @@ fun MhubApp(
                             onOpenChat = { navController.navigate(Routes.CHAT) },
                             onOpenWebParity = { navController.navigate(Routes.WEB_PARITY_HUB) },
                         )
+                    }
+                }
+
+                composable(Routes.MORE) {
+                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                        MoreScreen(
+                            onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                            onOpenWishlist = { navController.navigate(Routes.WISHLIST) },
+                            onOpenSearch = { navController.navigate(Routes.SEARCH) },
+                            onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
+                            onOpenCreatePost = { navController.navigate(Routes.CREATE_POST) },
+                            onOpenChat = { navController.navigate(Routes.CHAT) },
+                            onOpenKyc = { navController.navigate(Routes.KYC) },
+                            onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                            onOpenParityHub = { navController.navigate(Routes.WEB_PARITY_HUB) },
+                        )
+                    }
+                }
+
+                composable(Routes.NOTIFICATIONS) {
+                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                        NotificationsScreen(
+                            onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) },
+                        )
+                    }
+                }
+
+                composable(Routes.WISHLIST) {
+                    MainShell(navController = navController, selected = BottomTab.MORE) {
+                        WishlistScreen(onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) })
                     }
                 }
             }
@@ -190,8 +253,8 @@ fun MhubApp(
             composable(Routes.CATEGORIES) {
                 CategoriesScreen(
                     onBack = { navController.popBackStack() },
-                    onCategoryClick = { _, name ->
-                        navController.navigate(Routes.SEARCH)
+                    onCategoryClick = { _, _ ->
+                        navController.navigate(Routes.ALL_POSTS)
                     },
                 )
             }
@@ -234,7 +297,7 @@ fun MhubApp(
                 arguments = listOf(navArgument("pageKey") { type = NavType.StringType }),
             ) { entry ->
                 val key = entry.arguments?.getString("pageKey").orEmpty()
-                WebParityDetailScreen(
+                WebParityWebReplicaScreen(
                     pageKey = key,
                     onBack = { navController.popBackStack() },
                 )
@@ -250,15 +313,12 @@ enum class BottomTab(
     val iconFilled: ImageVector,
 ) {
     HOME(Routes.HOME, R.string.nav_home, Icons.Outlined.Home, Icons.Filled.Home),
-    EXPLORE(Routes.EXPLORE, R.string.nav_explore, Icons.Outlined.Explore, Icons.Filled.Explore),
-    NOTIFICATIONS(
-        Routes.NOTIFICATIONS,
-        R.string.nav_notifications,
-        Icons.Outlined.Notifications,
-        Icons.Filled.Notifications,
-    ),
-    WISHLIST(Routes.WISHLIST, R.string.nav_wishlist, Icons.Outlined.FavoriteBorder, Icons.Filled.Favorite),
+    ALL_POSTS(Routes.ALL_POSTS, R.string.nav_all_posts, Icons.Outlined.GridView, Icons.Filled.GridView),
+    FOR_YOU(Routes.FOR_YOU, R.string.nav_for_you, Icons.Outlined.Star, Icons.Filled.Star),
+    FEED(Routes.FEED, R.string.nav_feed, Icons.AutoMirrored.Outlined.Article, Icons.AutoMirrored.Filled.Article),
+    REWARDS(Routes.REWARDS, R.string.nav_rewards, Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
     PROFILE(Routes.PROFILE, R.string.nav_profile, Icons.Outlined.Person, Icons.Filled.Person),
+    MORE(Routes.MORE, R.string.nav_more, Icons.Outlined.Menu, Icons.Filled.Menu),
 }
 
 @Composable
@@ -298,6 +358,7 @@ fun MainShell(
                         label = {
                             Text(
                                 text = stringResource(tab.labelRes),
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (tab == selected) FontWeight.SemiBold else FontWeight.Normal,
                             )
                         },

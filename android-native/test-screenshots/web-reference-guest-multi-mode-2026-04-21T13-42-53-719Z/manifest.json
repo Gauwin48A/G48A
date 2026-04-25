@@ -1,0 +1,686 @@
+[
+  {
+    "route": "/login",
+    "resolved": "/login",
+    "url": "http://localhost:8081/login",
+    "file": "01_login.png",
+    "hash": "7a906b2ee5b39c92c747ec7d8e6b5da8a645d9ce47d5571311e4ddd21e76aa84",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/signup",
+    "resolved": "/signup",
+    "url": "http://localhost:8081/signup",
+    "file": "02_signup.png",
+    "hash": "46d282c2d633d7cab692afddb552072610b2e3298c9e4a92c28010feea39e71c",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/invite/:code",
+    "resolved": "/invite/demo",
+    "url": "http://localhost:8081/invite/demo",
+    "file": "03_invite_code.png",
+    "hash": "877b6ee89893fef578428a7c9119468f9b20ee7b9bcb1e973c6e2403e2bee6be",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/forgot-password",
+    "resolved": "/forgot-password",
+    "url": "http://localhost:8081/forgot-password",
+    "file": "04_forgot-password.png",
+    "hash": "48aed02fd10c50a3f1c62429500674366d9cc85c2a263ce6001a34728e3c65a0",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/reset-password",
+    "resolved": "/reset-password",
+    "url": "http://localhost:8081/reset-password",
+    "file": "05_reset-password.png",
+    "hash": "ef9bb9f959dbcd2c4794e8338165fadf53a21cb378350472c9ce3231e7165a25",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/reset-password/:token",
+    "resolved": "/reset-password/demo",
+    "url": "http://localhost:8081/reset-password/demo",
+    "file": "06_reset-password_token.png",
+    "hash": "821a4d1239803c2a8e8c334ab67f4b8b173982dc55e496d86e8e0bb868662c26",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/",
+    "resolved": "/",
+    "url": "http://localhost:8081/",
+    "file": "07_root.png",
+    "hash": "6c3f079ca6141ed6457e293cc197dbf80b53e563f9424d6c51b960f5b9c93983",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/all-posts",
+    "resolved": "/all-posts",
+    "url": "http://localhost:8081/all-posts",
+    "file": "08_all-posts.png",
+    "hash": "2a5aca97b2ca3a409d31c58c080bf078d0b7872ceb6d921de52857d32d6d040b",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/listings",
+    "resolved": "/listings",
+    "url": "http://localhost:8081/listings",
+    "file": "09_listings.png",
+    "hash": "2a5aca97b2ca3a409d31c58c080bf078d0b7872ceb6d921de52857d32d6d040b",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/post/:id",
+    "resolved": "/post/demo",
+    "url": "http://localhost:8081/post/demo",
+    "file": "10_post_id.png",
+    "hash": "c760fd9ed91b8fb7298dbe721beec3697a741757a63c7e143caeceaeb3ff4daf",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/listing/:id",
+    "resolved": "/listing/demo",
+    "url": "http://localhost:8081/listing/demo",
+    "file": "11_listing_id.png",
+    "hash": "ebd351b687ce5e840e19c9cc40593f6780d44cfe592ab68bc2500747a42b8019",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/dashboard",
+    "resolved": "/dashboard",
+    "url": "http://localhost:8081/dashboard",
+    "file": "12_dashboard.png",
+    "hash": "3f646b5cb4ca7977dfba97d1fb0a91a5078a458a4d11d83b42232e31c72e1582",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/activity",
+    "resolved": "/activity",
+    "url": "http://localhost:8081/activity",
+    "file": "13_activity.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/profile",
+    "resolved": "/profile",
+    "url": "http://localhost:8081/profile",
+    "file": "14_profile.png",
+    "hash": "5f1a047a5705d9a1c73b62f8d8d8268614b5393c282bd4cc1b76a8182c2479c4",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/security",
+    "resolved": "/security",
+    "url": "http://localhost:8081/security",
+    "file": "15_security.png",
+    "hash": "6f302c09a102bf829bce8abd191b924e3dda1a6dd2328bb7e62bfe2573832f1d",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/account/delete",
+    "resolved": "/account/delete",
+    "url": "http://localhost:8081/account/delete",
+    "file": "16_account_delete.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/add-post",
+    "resolved": "/add-post",
+    "url": "http://localhost:8081/add-post",
+    "file": "17_add-post.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/post-welcome",
+    "resolved": "/post-welcome",
+    "url": "http://localhost:8081/post-welcome",
+    "file": "18_post-welcome.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/sell",
+    "resolved": "/sell",
+    "url": "http://localhost:8081/sell",
+    "file": "19_sell.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/category-hub",
+    "resolved": "/category-hub",
+    "url": "http://localhost:8081/category-hub",
+    "file": "20_category-hub.png",
+    "hash": "b814ea1f9338ece3f07238bf05fc0e8924941310a002dc857d7d6b4c048010dc",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/edit-post/:postId",
+    "resolved": "/edit-post/demo",
+    "url": "http://localhost:8081/edit-post/demo",
+    "file": "21_edit-post_postId.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/tier-selection",
+    "resolved": "/tier-selection",
+    "url": "http://localhost:8081/tier-selection",
+    "file": "22_tier-selection.png",
+    "hash": "4d508a1de79b8802b92efe7c8502de91d9cd76688f2ae6470b9cbfec2f5c2a29",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/tiers",
+    "resolved": "/tiers",
+    "url": "http://localhost:8081/tiers",
+    "file": "23_tiers.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/pricing",
+    "resolved": "/pricing",
+    "url": "http://localhost:8081/pricing",
+    "file": "24_pricing.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/my-home",
+    "resolved": "/my-home",
+    "url": "http://localhost:8081/my-home",
+    "file": "25_my-home.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/home",
+    "resolved": "/home",
+    "url": "http://localhost:8081/home",
+    "file": "26_home.png",
+    "hash": "27a8174e89f7c38db7e101f35d0845700a2e6f05688f672ce926d92134126448",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/for-you",
+    "resolved": "/for-you",
+    "url": "http://localhost:8081/for-you",
+    "file": "27_for-you.png",
+    "hash": "669d116ada1c3e90f4640fec9894fac4fbd5858dbdfb9c526bf10a840cfa6617",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/bought-posts",
+    "resolved": "/bought-posts",
+    "url": "http://localhost:8081/bought-posts",
+    "file": "28_bought-posts.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/sold-posts",
+    "resolved": "/sold-posts",
+    "url": "http://localhost:8081/sold-posts",
+    "file": "29_sold-posts.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/buyer-view",
+    "resolved": "/buyer-view",
+    "url": "http://localhost:8081/buyer-view",
+    "file": "30_buyer-view.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/saledone",
+    "resolved": "/saledone",
+    "url": "http://localhost:8081/saledone",
+    "file": "31_saledone.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/saleundone",
+    "resolved": "/saleundone",
+    "url": "http://localhost:8081/saleundone",
+    "file": "32_saleundone.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/admin-panel",
+    "resolved": "/admin-panel",
+    "url": "http://localhost:8081/admin-panel",
+    "file": "33_admin-panel.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/aadhaar-verify",
+    "resolved": "/aadhaar-verify",
+    "url": "http://localhost:8081/aadhaar-verify",
+    "file": "34_aadhaar-verify.png",
+    "hash": "c8711e92459a963a6435f74a121c937dd4bbeac6d7ff5f50396e09b2858aa73c",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/public-wall",
+    "resolved": "/public-wall",
+    "url": "http://localhost:8081/public-wall",
+    "file": "35_public-wall.png",
+    "hash": "db40fc1f054fc75452299497e9cc6efcfeae94ab2e4ce127b4b101b15f6182cc",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/notifications",
+    "resolved": "/notifications",
+    "url": "http://localhost:8081/notifications",
+    "file": "36_notifications.png",
+    "hash": "3038a72956cb9568684ebcab5cd2c96d8c60df8df5628c6855c598fe668dec5a",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/complaints",
+    "resolved": "/complaints",
+    "url": "http://localhost:8081/complaints",
+    "file": "37_complaints.png",
+    "hash": "d41119c7929e0900f22398d3df29ea2e7798cc40e0ae43e6c8f2ef3e17c6b646",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/feedback",
+    "resolved": "/feedback",
+    "url": "http://localhost:8081/feedback",
+    "file": "38_feedback.png",
+    "hash": "fa711313d2778758f694f9fc043ca939fefd7aca19aaf14afbf973a609686a58",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/rewards",
+    "resolved": "/rewards",
+    "url": "http://localhost:8081/rewards",
+    "file": "39_rewards.png",
+    "hash": "4890ce6942b7c98fbc629608b9cba82f5c16a61dc4577e2372f0931cf84c0195",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/categories",
+    "resolved": "/categories",
+    "url": "http://localhost:8081/categories",
+    "file": "40_categories.png",
+    "hash": "1d58baa57c2ead86496ed6e620fba0f77a5f0af95dd4f6eb31653c2bc77d3896",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/subcategories",
+    "resolved": "/subcategories",
+    "url": "http://localhost:8081/subcategories",
+    "file": "41_subcategories.png",
+    "hash": "1d58baa57c2ead86496ed6e620fba0f77a5f0af95dd4f6eb31653c2bc77d3896",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/compare",
+    "resolved": "/compare",
+    "url": "http://localhost:8081/compare",
+    "file": "42_compare.png",
+    "hash": "8c9b50551a7586712a2714801b7c29f3d9a43b5f2ba54a615a66a7a509adc7f1",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/categories/:slug",
+    "resolved": "/categories/demo",
+    "url": "http://localhost:8081/categories/demo",
+    "file": "43_categories_slug.png",
+    "hash": "2a5aca97b2ca3a409d31c58c080bf078d0b7872ceb6d921de52857d32d6d040b",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/feed",
+    "resolved": "/feed",
+    "url": "http://localhost:8081/feed",
+    "file": "44_feed.png",
+    "hash": "f52c3dd7b6e434384ecf60c9ca68a0494df4fc45a3f2ae25fec30ddae25057eb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/feed/:id",
+    "resolved": "/feed/demo",
+    "url": "http://localhost:8081/feed/demo",
+    "file": "45_feed_id.png",
+    "hash": "8070090949630adf888660da141d9f0ab057cb67cad20d024a84e011b8cda98a",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/my-feed",
+    "resolved": "/my-feed",
+    "url": "http://localhost:8081/my-feed",
+    "file": "46_my-feed.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/my-posts",
+    "resolved": "/my-posts",
+    "url": "http://localhost:8081/my-posts",
+    "file": "47_my-posts.png",
+    "hash": "79bbd79a033d49679ab703d72b95a28878b10f1a3f37f8756bf9879992379827",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/post_add",
+    "resolved": "/post_add",
+    "url": "http://localhost:8081/post_add",
+    "file": "48_post_add.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/feed/feedpostadd",
+    "resolved": "/feed/feedpostadd",
+    "url": "http://localhost:8081/feed/feedpostadd",
+    "file": "49_feed_feedpostadd.png",
+    "hash": "a63116008a544d434125d28725fccdc3ef6d9da37ea83dd56c1daee03ba141a8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/wishlist",
+    "resolved": "/wishlist",
+    "url": "http://localhost:8081/wishlist",
+    "file": "50_wishlist.png",
+    "hash": "2d9e7ad7ed77f4ccee6cac8d1c962bf295c3e5b5526917b561ad3a0671a29226",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/cart",
+    "resolved": "/cart",
+    "url": "http://localhost:8081/cart",
+    "file": "51_cart.png",
+    "hash": "4f5790e2b8a4fe695095e8bef053efda2f9842c05ddf4d773c774af9b8fddac3",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/recently-viewed",
+    "resolved": "/recently-viewed",
+    "url": "http://localhost:8081/recently-viewed",
+    "file": "52_recently-viewed.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/saved-searches",
+    "resolved": "/saved-searches",
+    "url": "http://localhost:8081/saved-searches",
+    "file": "53_saved-searches.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/verification",
+    "resolved": "/verification",
+    "url": "http://localhost:8081/verification",
+    "file": "54_verification.png",
+    "hash": "a97bb2ad5cbd8f193f171fd47cd10ac11ebeb38f56648a332174344be74dae46",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/nearby",
+    "resolved": "/nearby",
+    "url": "http://localhost:8081/nearby",
+    "file": "55_nearby.png",
+    "hash": "d7b1f4f5eadc8b3bf8c5f934c29f417cde228bb362e563ef5cfe38dc64d05a49",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/chat",
+    "resolved": "/chat",
+    "url": "http://localhost:8081/chat",
+    "file": "56_chat.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/chats",
+    "resolved": "/chats",
+    "url": "http://localhost:8081/chats",
+    "file": "57_chats.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/t&c",
+    "resolved": "/t&c",
+    "url": "http://localhost:8081/t&c",
+    "file": "58_t_c.png",
+    "hash": "da2fb13e7085e8873b6bf85e6e75a1f020bc92e1a593d3e493887230f9b15855",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/terms",
+    "resolved": "/terms",
+    "url": "http://localhost:8081/terms",
+    "file": "59_terms.png",
+    "hash": "da2fb13e7085e8873b6bf85e6e75a1f020bc92e1a593d3e493887230f9b15855",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/terms-and-conditions",
+    "resolved": "/terms-and-conditions",
+    "url": "http://localhost:8081/terms-and-conditions",
+    "file": "60_terms-and-conditions.png",
+    "hash": "da2fb13e7085e8873b6bf85e6e75a1f020bc92e1a593d3e493887230f9b15855",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/privacy-policy",
+    "resolved": "/privacy-policy",
+    "url": "http://localhost:8081/privacy-policy",
+    "file": "61_privacy-policy.png",
+    "hash": "b1b8c429a9d8aff4b1259912a95b08f3a1c135ea12f7c78927181df7629ac3ec",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/refund-policy",
+    "resolved": "/refund-policy",
+    "url": "http://localhost:8081/refund-policy",
+    "file": "62_refund-policy.png",
+    "hash": "f099dcc51a05320bc1267a3e4e8d56b22c7c25375a3f991a28a97184fd88b500",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/support-ticket-policy",
+    "resolved": "/support-ticket-policy",
+    "url": "http://localhost:8081/support-ticket-policy",
+    "file": "63_support-ticket-policy.png",
+    "hash": "ffc4bcdadc18201df56bdbdc54a0b27e6a0e03afbc72176a38222c859604ff8d",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/search",
+    "resolved": "/search",
+    "url": "http://localhost:8081/search",
+    "file": "64_search.png",
+    "hash": "d0b750de36a6e3413e5b6ad0c8e267bff726f2deb08855cd7cc026a12517ba40",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/analytics",
+    "resolved": "/analytics",
+    "url": "http://localhost:8081/analytics",
+    "file": "65_analytics.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/channels",
+    "resolved": "/channels",
+    "url": "http://localhost:8081/channels",
+    "file": "66_channels.png",
+    "hash": "9f6176107c56751c4bb4164f85e96ad97977167440d7155570cdf2431c90bd8d",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/channels/create",
+    "resolved": "/channels/create",
+    "url": "http://localhost:8081/channels/create",
+    "file": "67_channels_create.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/channels/:id",
+    "resolved": "/channels/demo",
+    "url": "http://localhost:8081/channels/demo",
+    "file": "68_channels_id.png",
+    "hash": "96c52ceb5801ac3b4867edf1d35f76ff00d4c6f86f873c9fa1d8880679a43ca1",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/centre",
+    "resolved": "/centre",
+    "url": "http://localhost:8081/centre",
+    "file": "69_centre.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/centre/create",
+    "resolved": "/centre/create",
+    "url": "http://localhost:8081/centre/create",
+    "file": "70_centre_create.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/centre/:id/listings",
+    "resolved": "/centre/demo/listings",
+    "url": "http://localhost:8081/centre/demo/listings",
+    "file": "71_centre_id_listings.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/centre/:id",
+    "resolved": "/centre/demo",
+    "url": "http://localhost:8081/centre/demo",
+    "file": "72_centre_id.png",
+    "hash": "223f12985b41aadc49f5704e9ec1a78d177c6f33ef70dd0fa2fcb12a1e474ccb",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/kyc",
+    "resolved": "/kyc",
+    "url": "http://localhost:8081/kyc",
+    "file": "73_kyc.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/payment",
+    "resolved": "/payment",
+    "url": "http://localhost:8081/payment",
+    "file": "74_payment.png",
+    "hash": "42c8c318321fae693d4ca3e5d93db45f41b0bf8ada0833ccac0fb14539e13eb8",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/offers",
+    "resolved": "/offers",
+    "url": "http://localhost:8081/offers",
+    "file": "75_offers.png",
+    "hash": "10cf965822e609422df8222e8a82cb821dc8d8148cb3b7d1dfc811e0ce582229",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  },
+  {
+    "route": "/reviews/:userId",
+    "resolved": "/reviews/demo",
+    "url": "http://localhost:8081/reviews/demo",
+    "file": "76_reviews_userId.png",
+    "hash": "83e88a0d18171a2e4cf8731173f258f097283ff0c106e99acf8f74781431f010",
+    "navigationStrategy": "networkidle",
+    "status": "ok"
+  }
+]

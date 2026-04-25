@@ -1,0 +1,69 @@
+[
+  {
+    "hash": "7196d53f48b3ae8cb93f7a6c26ec9c7426502ef82f97ee9f484af9cacb625b57",
+    "routeCount": 20,
+    "routes": [
+      "/activity",
+      "/account/delete",
+      "/add-post",
+      "/post-welcome",
+      "/sell",
+      "/edit-post/:postId",
+      "/tiers",
+      "/pricing",
+      "/buyer-view",
+      "/saledone",
+      "/saleundone",
+      "/admin-panel",
+      "/my-feed",
+      "/post_add",
+      "/chat",
+      "/chats",
+      "/channels/create",
+      "/centre",
+      "/kyc",
+      "/payment"
+    ]
+  },
+  {
+    "hash": "2c0f314c07c14c177e5c6035c682c53623b7ba144cfac5ce27069ea778b7a892",
+    "routeCount": 9,
+    "routes": [
+      "/my-home",
+      "/bought-posts",
+      "/sold-posts",
+      "/recently-viewed",
+      "/saved-searches",
+      "/analytics",
+      "/centre/create",
+      "/centre/:id/listings",
+      "/centre/:id"
+    ]
+  },
+  {
+    "hash": "fd7146c83f286578bc84a93b9b58ca8c60be08a18c249f7bbff8536b60b4856e",
+    "routeCount": 3,
+    "routes": [
+      "/all-posts",
+      "/listings",
+      "/categories/:slug"
+    ]
+  },
+  {
+    "hash": "bf93799938211fdd8bf4394ee568d0a8ee1342f97f5753f96cb501801628be43",
+    "routeCount": 3,
+    "routes": [
+      "/t&c",
+      "/terms",
+      "/terms-and-conditions"
+    ]
+  },
+  {
+    "hash": "048bfbd8fc43b9346b9bc8267cb9482493ed648a4b94559da3ef6bdded08be1a",
+    "routeCount": 2,
+    "routes": [
+      "/categories",
+      "/subcategories"
+    ]
+  }
+]

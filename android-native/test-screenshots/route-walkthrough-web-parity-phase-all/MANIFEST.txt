@@ -1,0 +1,21 @@
+000_parity_hub.png | Web parity pages | parity/hub | n/a
+001_login.png | Login | parity/page/login | /login
+002_signup.png | Sign up | parity/page/signup | /signup
+003_forgot_password.png | Forgot password | parity/page/forgot_password | /forgot-password
+004_reset_password.png | Reset password | parity/page/reset_password | /reset-password/:token
+005_category_hub.png | Category hub | parity/page/category_hub | /category-hub
+006_all_posts.png | All posts | parity/page/all_posts | /all-posts
+007_for_you.png | For you | parity/page/for_you | /for-you
+008_my_home.png | My home | parity/page/my_home | /my-home
+009_nearby.png | Nearby | parity/page/nearby | /nearby
+010_search.png | Search | parity/page/search | /search
+011_subcategories.png | Subcategories | parity/page/subcategories | /subcategories
+012_post_detail.png | Post detail | parity/page/post_detail | /post/:id
+013_add_post.png | Add post | parity/page/add_post | /add-post
+014_post_welcome.png | Post welcome | parity/page/post_welcome | /post-welcome
+015_edit_post.png | Edit post | parity/page/edit_post | /edit-post/:postId
+016_tiers.png | Tier selection | parity/page/tiers | /tier-selection
+017_payment.png | Payment | parity/page/payment | /payment
+018_cart.png | Cart | parity/page/cart | /cart
+019_wishlist.png | Wishlist | parity/page/wishlist | /wishlist
+020_recently_viewed.png | Recently viewed | parity/page/recently_viewed | /recently-viewed

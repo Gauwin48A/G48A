@@ -24,8 +24,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,6 +66,7 @@ import com.mhub.app.domain.model.ChatConversation
 import com.mhub.app.domain.model.ChatMessage
 import com.mhub.app.ui.components.AppEmptyState
 import com.mhub.app.ui.components.AppErrorState
+import com.mhub.app.ui.components.ErrorBanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -110,32 +111,44 @@ class ChatViewModel @Inject constructor(
     }
 
     fun openConversation(conv: ChatConversation) {
-        _state.value = _state.value.copy(selectedConversation = conv, messagesLoading = true)
+        _state.value = _state.value.copy(
+            selectedConversation = conv,
+            messagesLoading = true,
+            messages = emptyList(),
+            error = null,
+        )
         viewModelScope.launch {
             when (val result = repo.messages(conv.stableId)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     messagesLoading = false,
                     messages = result.data,
                 )
-                is ApiResult.Failure -> _state.value = _state.value.copy(messagesLoading = false)
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    messagesLoading = false,
+                    error = result.error.message,
+                )
             }
         }
     }
 
     fun sendMessage(content: String) {
         val conv = _state.value.selectedConversation ?: return
-        if (content.isBlank()) return
-        _state.value = _state.value.copy(sending = true)
+        val trimmed = content.trim()
+        if (trimmed.isBlank()) return
+        _state.value = _state.value.copy(sending = true, error = null)
         viewModelScope.launch {
-            when (repo.send(conv.stableId, content)) {
+            when (val result = repo.send(conv.stableId, trimmed)) {
                 is ApiResult.Success -> {
-                    val optimistic = ChatMessage(content = content, senderId = "me")
+                    val optimistic = ChatMessage(content = trimmed, senderId = "me")
                     _state.value = _state.value.copy(
                         sending = false,
                         messages = _state.value.messages + optimistic,
                     )
                 }
-                is ApiResult.Failure -> _state.value = _state.value.copy(sending = false)
+                is ApiResult.Failure -> _state.value = _state.value.copy(
+                    sending = false,
+                    error = result.error.message,
+                )
             }
         }
     }
@@ -160,6 +173,7 @@ fun ChatScreen(
             loading = state.messagesLoading,
             sending = state.sending,
             currentUserId = state.currentUserId,
+            errorMessage = state.error,
             onSend = { viewModel.sendMessage(it) },
             onBack = { viewModel.closeConversation() },
         )
@@ -229,7 +243,7 @@ private fun ConversationListScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 AppEmptyState(
-                    icon = Icons.Default.Chat,
+                    icon = Icons.AutoMirrored.Filled.Chat,
                     title = "No messages yet",
                     subtitle = "Start a conversation from any listing page.",
                 )
@@ -371,6 +385,7 @@ private fun MessageThreadScreen(
     loading: Boolean,
     sending: Boolean,
     currentUserId: String?,
+    errorMessage: String?,
     onSend: (String) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -479,26 +494,39 @@ private fun MessageThreadScreen(
                 contentAlignment = Alignment.Center,
             ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
 
-            messages.isEmpty() -> Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
+            else -> Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
             ) {
-                AppEmptyState(
-                    icon = Icons.Default.Chat,
-                    title = "Say hello!",
-                    subtitle = "Start the conversation below.",
+                ErrorBanner(
+                    message = errorMessage,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 )
-            }
 
-            else -> LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                items(messages, key = { it.stableId }) { msg ->
-                    val isMe = msg.senderId == currentUserId || msg.senderId == "me"
-                    MessageBubble(message = msg, isMe = isMe)
+                if (messages.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AppEmptyState(
+                            icon = Icons.AutoMirrored.Filled.Chat,
+                            title = "Say hello!",
+                            subtitle = "Start the conversation below.",
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        items(messages, key = { it.stableId }) { msg ->
+                            val isMe = msg.senderId == currentUserId || msg.senderId == "me"
+                            MessageBubble(message = msg, isMe = isMe)
+                        }
+                    }
                 }
             }
         }

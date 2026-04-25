@@ -38,6 +38,7 @@ import androidx.lifecycle.viewModelScope
 import com.mhub.app.BuildConfig
 import com.mhub.app.R
 import com.mhub.app.data.local.AppPreferences
+import com.mhub.app.ui.common.InputValidators
 import com.mhub.app.ui.components.AppTextField
 import com.mhub.app.ui.components.ErrorBanner
 import com.mhub.app.ui.components.PrimaryButton
@@ -64,6 +65,12 @@ class SettingsViewModel @Inject constructor(
     private val _saved = MutableStateFlow(false)
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
 
+    private val _saving = MutableStateFlow(false)
+    val saving: StateFlow<Boolean> = _saving.asStateFlow()
+
+    private val _validating = MutableStateFlow(false)
+    val validating: StateFlow<Boolean> = _validating.asStateFlow()
+
     private val _validationMessage = MutableStateFlow<String?>(null)
     val validationMessage: StateFlow<String?> = _validationMessage.asStateFlow()
 
@@ -74,7 +81,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun applyPreset(value: String) {
-        _baseUrl.value = normalize(value)
+        _baseUrl.value = InputValidators.toDisplayBaseUrl(value, BuildConfig.DEFAULT_API_BASE_URL)
         _saved.value = false
         _validationMessage.value = null
     }
@@ -86,47 +93,67 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun save() {
+        val normalized = normalize(_baseUrl.value)
+        if (!InputValidators.isSecureOrLocalDevUrl(normalized)) {
+            _saved.value = false
+            _validationMessage.value = "Invalid URL: use HTTPS or emulator local URL"
+            return
+        }
+
         viewModelScope.launch {
-            prefs.setBaseUrl(normalize(_baseUrl.value))
-            _saved.value = true
-            _validationMessage.value = null
+            _saving.value = true
+            try {
+                prefs.setBaseUrl(normalized)
+                _saved.value = true
+                _validationMessage.value = null
+            } finally {
+                _saving.value = false
+            }
         }
     }
 
     fun validateNow() {
+        val normalized = normalize(_baseUrl.value)
+        if (!InputValidators.isSecureOrLocalDevUrl(normalized)) {
+            _validationMessage.value = "Invalid URL: use HTTPS or emulator local URL"
+            return
+        }
+
         viewModelScope.launch {
-            val normalized = normalize(_baseUrl.value)
+            _validating.value = true
             _validationMessage.value = "Checking $normalized ..."
-            _validationMessage.value = withContext(Dispatchers.IO) {
-                val healthUrl = "${normalized}api/health"
-                runCatching {
-                    val conn = URL(healthUrl).openConnection() as HttpURLConnection
-                    conn.connectTimeout = 3500
-                    conn.readTimeout = 3500
-                    conn.requestMethod = "GET"
-                    conn.instanceFollowRedirects = true
-                    conn.inputStream.bufferedReader().use { it.readText() }
-                    conn.responseCode
-                }.fold(
-                    onSuccess = { code ->
-                        if (code in 200..299) {
-                            "Connection verified. API responded with HTTP $code."
-                        } else {
-                            "API reachable but returned HTTP $code. Check backend health."
-                        }
-                    },
-                    onFailure = { err ->
-                        "Connection failed: ${err.message ?: "unknown error"}"
-                    },
-                )
+            try {
+                _validationMessage.value = withContext(Dispatchers.IO) {
+                    val healthUrl = "${normalized}api/health"
+                    runCatching {
+                        val conn = URL(healthUrl).openConnection() as HttpURLConnection
+                        conn.connectTimeout = 3500
+                        conn.readTimeout = 3500
+                        conn.requestMethod = "GET"
+                        conn.instanceFollowRedirects = true
+                        conn.inputStream.bufferedReader().use { it.readText() }
+                        conn.responseCode
+                    }.fold(
+                        onSuccess = { code ->
+                            if (code in 200..299) {
+                                "Connection verified. API responded with HTTP $code."
+                            } else {
+                                "API reachable but returned HTTP $code. Check backend health."
+                            }
+                        },
+                        onFailure = { err ->
+                            "Connection failed: ${err.message ?: "unknown error"}"
+                        },
+                    )
+                }
+            } finally {
+                _validating.value = false
             }
         }
     }
 
     private fun normalize(value: String): String {
-        val trimmed = value.trim()
-        if (trimmed.isEmpty()) return BuildConfig.DEFAULT_API_BASE_URL
-        return if (trimmed.endsWith("/")) trimmed else "$trimmed/"
+        return InputValidators.toDisplayBaseUrl(value, BuildConfig.DEFAULT_API_BASE_URL)
     }
 }
 
@@ -138,9 +165,20 @@ fun SettingsScreen(
 ) {
     val baseUrl by viewModel.baseUrl.collectAsState()
     val saved by viewModel.saved.collectAsState()
+    val saving by viewModel.saving.collectAsState()
+    val validating by viewModel.validating.collectAsState()
     val validationMessage by viewModel.validationMessage.collectAsState()
     val localPreset = BuildConfig.DEFAULT_API_BASE_URL
     val stagingPreset = BuildConfig.STAGING_API_BASE_URL.takeIf { it.isNotBlank() }
+    val normalizedBaseUrl = InputValidators.toDisplayBaseUrl(baseUrl, localPreset)
+    val baseUrlError = if (
+        baseUrl.isNotBlank() &&
+        !InputValidators.isSecureOrLocalDevUrl(normalizedBaseUrl)
+    ) {
+        "Use HTTPS URL or local emulator URL"
+    } else {
+        null
+    }
 
     Scaffold(
         topBar = {
@@ -195,6 +233,7 @@ fun SettingsScreen(
                         value = baseUrl,
                         onValueChange = viewModel::update,
                         label = "URL",
+                        error = baseUrlError,
                     )
 
                     Row(
@@ -221,14 +260,24 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
-                    PrimaryButton(text = stringResource(R.string.action_save), onClick = viewModel::save)
-                    PrimaryButton(text = "Validate connection", onClick = viewModel::validateNow)
+                    PrimaryButton(
+                        text = stringResource(R.string.action_save),
+                        loading = saving,
+                        enabled = baseUrlError == null && !validating,
+                        onClick = viewModel::save,
+                    )
+                    PrimaryButton(
+                        text = "Validate connection",
+                        loading = validating,
+                        enabled = baseUrlError == null && !saving,
+                        onClick = viewModel::validateNow,
+                    )
 
                     if (saved) {
                         SuccessBanner(message = "Saved. Restart app to apply new API URL.")
                     }
                     validationMessage?.let { msg ->
-                        if (msg.startsWith("Connection failed")) {
+                        if (msg.startsWith("Connection failed") || msg.startsWith("Invalid URL")) {
                             ErrorBanner(message = msg)
                         } else {
                             SuccessBanner(message = msg)

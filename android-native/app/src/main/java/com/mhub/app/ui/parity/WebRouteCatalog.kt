@@ -28,9 +28,9 @@ object WebRouteCatalog {
         WebRouteReference("reset_password", "Reset password", "/reset-password/:token", aliases = listOf("/reset-password"), group = WebRouteGroup.AUTH, authRequired = false, summary = "Reset account password using token."),
 
         WebRouteReference("category_hub", "Category hub", "/category-hub", aliases = listOf("/", "/home"), group = WebRouteGroup.DISCOVERY, authRequired = false, summary = "Primary browse landing with category-first navigation."),
-        WebRouteReference("all_posts", "All posts", "/all-posts", aliases = listOf("/listings"), group = WebRouteGroup.DISCOVERY, authRequired = false, summary = "Main listing feed with filters and sort."),
+        WebRouteReference("all_posts", "All posts", "/all-posts", aliases = listOf("/listings", "/categories/:slug"), group = WebRouteGroup.DISCOVERY, authRequired = false, summary = "Main listing feed with filters and sort."),
         WebRouteReference("for_you", "For you", "/for-you", group = WebRouteGroup.DISCOVERY, authRequired = false, summary = "Personalized recommendation stream."),
-        WebRouteReference("my_home", "My home", "/my-home", group = WebRouteGroup.DISCOVERY, authRequired = true, summary = "Signed-in personalized home dashboard."),
+        WebRouteReference("my_home", "My home", "/my-home", aliases = listOf("/my-posts"), group = WebRouteGroup.DISCOVERY, authRequired = true, summary = "Signed-in personalized home dashboard."),
         WebRouteReference("nearby", "Nearby", "/nearby", group = WebRouteGroup.DISCOVERY, authRequired = true, summary = "Location scoped nearby listings."),
         WebRouteReference("search", "Search", "/search", group = WebRouteGroup.DISCOVERY, authRequired = false, summary = "Global listing and content search."),
         WebRouteReference("subcategories", "Subcategories", "/subcategories", aliases = listOf("/categories"), group = WebRouteGroup.DISCOVERY, authRequired = false, summary = "Category drill down and subcategory selection."),

@@ -1,0 +1,80 @@
+[
+  {
+    "hash": "f461f7781cc73c6519b234ea9a223ae0813238655764df32aab8bddbf85a9426",
+    "routeCount": 7,
+    "routes": [
+      "/account/delete",
+      "/tiers",
+      "/buyer-view",
+      "/saledone",
+      "/saleundone",
+      "/my-feed",
+      "/post_add"
+    ]
+  },
+  {
+    "hash": "999e713f1e9aa21608ffe6d10219b6cedb9a683984897a203a0512f6812eeab9",
+    "routeCount": 6,
+    "routes": [
+      "/add-post",
+      "/post-welcome",
+      "/pricing",
+      "/channels/create",
+      "/centre",
+      "/kyc"
+    ]
+  },
+  {
+    "hash": "428636e8654a4c982ca43709917e07479868d85ca5b2217a4891b5559d4ff0e3",
+    "routeCount": 5,
+    "routes": [
+      "/bought-posts",
+      "/recently-viewed",
+      "/saved-searches",
+      "/centre/:id/listings",
+      "/centre/:id"
+    ]
+  },
+  {
+    "hash": "9008b77efe846648d993a0108411672e18763711b36add3a76f43373c9078e14",
+    "routeCount": 4,
+    "routes": [
+      "/activity",
+      "/rewards",
+      "/categories/:slug",
+      "/chat"
+    ]
+  },
+  {
+    "hash": "43260ee2f13a0c8d18cc4f4148578558f2a4c56b30ca6f53ad3ba2f6be2955bc",
+    "routeCount": 2,
+    "routes": [
+      "/",
+      "/t&c"
+    ]
+  },
+  {
+    "hash": "281424454a63db16203959a64109d5fcb5a27d2897007a8bb3a3fae18bdedb23",
+    "routeCount": 2,
+    "routes": [
+      "/security",
+      "/offers"
+    ]
+  },
+  {
+    "hash": "3e93b271643a3b81aa5dc8b671c773277e6223d40c21c7021e1fefb028c62cd8",
+    "routeCount": 2,
+    "routes": [
+      "/my-home",
+      "/terms-and-conditions"
+    ]
+  },
+  {
+    "hash": "c45717785e24c431965a7a17323d36477c2594ec3baf589cf6b6b921102e8a7f",
+    "routeCount": 2,
+    "routes": [
+      "/categories",
+      "/search"
+    ]
+  }
+]

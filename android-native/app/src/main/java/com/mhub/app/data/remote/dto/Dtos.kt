@@ -135,3 +135,93 @@ data class SendMessageRequest(
     @SerialName("post_id") val postId: String? = null,
     @SerialName("recipient_id") val recipientId: String? = null,
 )
+
+// -------- Rewards --------
+@Serializable
+data class RewardsOverviewResponse(
+    val user: RewardsUserDto = RewardsUserDto(),
+    val referralChain: List<RewardsReferralNodeDto> = emptyList(),
+    val chainRules: List<RewardsChainRuleDto> = emptyList(),
+)
+
+@Serializable
+data class RewardsUserDto(
+    val id: String? = null,
+    val name: String? = null,
+    val rank: String? = null,
+    val tier: String? = null,
+    val membershipPlan: String? = null,
+    @SerialName("current_plan") val currentPlan: String? = null,
+    @SerialName("subscription_expiry") val subscriptionExpiry: String? = null,
+    val level: Int = 1,
+    val xpCurrent: Int = 0,
+    val xpRequired: Int = 100,
+    val referralCode: String? = null,
+    val totalReferrals: Int = 0,
+    val directReferrals: Int = 0,
+    val indirectReferrals: Int = 0,
+    val totalCoins: Int = 0,
+    val directPoints: Int = 0,
+    val indirectPoints: Int = 0,
+    val potentialReferralPoints: Int = 0,
+    val chainEarnedPoints: Int = 0,
+    val qualifiedReferrals: Int = 0,
+    val successfulRefs: Int = 0,
+    val streak: Int = 0,
+    val visitStreak: Int = 0,
+    val postStreak: Int = 0,
+    val profileComplete: Boolean = false,
+    val hasPosted: Boolean = false,
+    val dailySecretCode: String? = null,
+    val dailySecretCodeExpiresAt: String? = null,
+    val activityStats: RewardsActivityStatsDto = RewardsActivityStatsDto(),
+    val leaderboard: RewardsLeaderboardDto = RewardsLeaderboardDto(),
+    val referralLedger: RewardsReferralLedgerDto = RewardsReferralLedgerDto(),
+)
+
+@Serializable
+data class RewardsActivityStatsDto(
+    val salesCount: Int = 0,
+    val purchasesCount: Int = 0,
+    val referralsCount: Int = 0,
+    val postsCount: Int = 0,
+    val visitsCount: Int = 0,
+    val salesToday: Int = 0,
+    val purchasesToday: Int = 0,
+    val referralsToday: Int = 0,
+    val postsToday: Int = 0,
+    val visitsToday: Int = 0,
+)
+
+@Serializable
+data class RewardsLeaderboardDto(
+    val nextPayoutAt: String? = null,
+    val lastPayoutAt: String? = null,
+)
+
+@Serializable
+data class RewardsReferralLedgerDto(
+    val qualifiedReferralCount: Int = 0,
+    val qualifiedBonusEntries: Int = 0,
+    val chainRewardEntries: Int = 0,
+    val lastReferralRewardAt: String? = null,
+    val matchesQualifiedReferrals: Boolean = false,
+    val status: String? = null,
+)
+
+@Serializable
+data class RewardsReferralNodeDto(
+    val id: String? = null,
+    val parentId: String? = null,
+    val name: String? = null,
+    val depth: Int = 0,
+    val type: String? = null,
+    val coins: Int = 0,
+    val joinDate: String? = null,
+)
+
+@Serializable
+data class RewardsChainRuleDto(
+    val depth: Int = 0,
+    val points: Int = 0,
+)

@@ -1,13 +1,33 @@
 /**
  * Full-page audit: captures screenshots & detects UI issues for all public routes.
- * Usage: node scripts/audit-all-pages.mjs
+ * Usage:
+ *   node scripts/audit-all-pages.mjs
+ *   node scripts/audit-all-pages.mjs --baseUrl http://localhost:8081 --outDir audit-screenshots
  */
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 
-const BASE = process.env.BASE_URL || 'http://localhost:5173';
-const OUT_DIR = path.resolve('audit-screenshots');
+function parseArgs(argv) {
+  const parsed = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const token = argv[i];
+    if (!token.startsWith('--')) continue;
+    const key = token.slice(2);
+    const next = argv[i + 1];
+    if (!next || next.startsWith('--')) {
+      parsed[key] = true;
+    } else {
+      parsed[key] = next;
+      i += 1;
+    }
+  }
+  return parsed;
+}
+
+const args = parseArgs(process.argv.slice(2));
+const BASE = String(args.baseUrl || process.env.BASE_URL || 'http://localhost:8081').replace(/\/+$/, '');
+const OUT_DIR = path.resolve(String(args.outDir || 'audit-screenshots'));
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
 // All public + auth-gated routes to audit
@@ -16,6 +36,7 @@ const ROUTES = [
   { path: '/', name: 'root-redirect' },
   { path: '/category-hub', name: 'category-hub' },
   { path: '/all-posts', name: 'all-posts' },
+  { path: '/all-posts?category_group=fashion', name: 'all-posts-fashion' },
   { path: '/listings', name: 'listings' },
   { path: '/for-you', name: 'for-you' },
   { path: '/feed', name: 'feed' },
