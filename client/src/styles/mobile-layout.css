@@ -1,0 +1,1070 @@
+/* ============================================================
+   MHUB Mobile-First Layout System
+   Clean, spacious, user-friendly card & page layouts.
+   ============================================================ */
+
+/* ──────────────────── Page Shell ──────────────────── */
+.mhub-page-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
+.mhub-feed-container {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .mhub-feed-container {
+    max-width: 720px;
+    padding: 0 16px;
+    gap: 20px;
+  }
+}
+
+/* ──────────────────── Mobile Post Card ──────────────────── */
+.mhub-mobile-card {
+  background: var(--card, #fff);
+  border-radius: 16px;
+  border: 1px solid var(--chip-border, rgba(0,0,0,0.06));
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  position: relative;
+}
+
+.mhub-mobile-card:active {
+  transform: scale(0.99);
+}
+
+@media (hover: hover) {
+  .mhub-mobile-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+}
+
+.dark .mhub-mobile-card {
+  background: var(--card, #1e293b);
+  border-color: var(--chip-border, rgba(255,255,255,0.08));
+}
+
+/* --- Seller Row --- */
+.mhub-mobile-card-seller {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 8px;
+  position: relative;
+}
+
+.mhub-mobile-card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.mhub-mobile-card-seller-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mhub-mobile-card-seller-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  line-height: 1.3;
+}
+.dark .mhub-mobile-card-seller-name {
+  color: var(--text-primary, #f1f5f9);
+}
+
+.mhub-mobile-card-seller-name span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mhub-mobile-card-seller-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.3;
+}
+.dark .mhub-mobile-card-seller-meta {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.mhub-dot {
+  color: var(--text-faint, #cbd5e1);
+}
+
+.mhub-mobile-card-menu-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #64748b);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.mhub-mobile-card-menu-btn:hover {
+  background: var(--surface-2, rgba(0,0,0,0.05));
+}
+
+/* --- Dropdown Menu --- */
+.mhub-mobile-card-menu {
+  position: absolute;
+  top: 52px;
+  right: 14px;
+  z-index: 50;
+  min-width: 160px;
+  background: var(--card, #fff);
+  border: 1px solid var(--chip-border, rgba(0,0,0,0.08));
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+.dark .mhub-mobile-card-menu {
+  background: var(--card, #1e293b);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.mhub-mobile-card-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #1e293b);
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.dark .mhub-mobile-card-menu button {
+  color: var(--text-primary, #f1f5f9);
+}
+.mhub-mobile-card-menu button:hover {
+  background: var(--surface-2, rgba(0,0,0,0.04));
+}
+.dark .mhub-mobile-card-menu button:hover {
+  background: var(--surface-2, rgba(255,255,255,0.06));
+}
+
+.mhub-mobile-card-menu-danger {
+  color: #dc2626 !important;
+}
+.dark .mhub-mobile-card-menu-danger {
+  color: #f87171 !important;
+}
+
+/* --- Media / Carousel --- */
+.mhub-mobile-card-media {
+  position: relative;
+  width: 100%;
+  background: var(--surface-2, #f8fafc);
+}
+.dark .mhub-mobile-card-media {
+  background: var(--surface-2, #0f172a);
+}
+
+.mhub-mobile-card-carousel {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mhub-mobile-card-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.mhub-mobile-card-slide {
+  width: 100%;
+  flex-shrink: 0;
+  scroll-snap-align: center;
+}
+
+.mhub-mobile-card-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  object-position: center;
+}
+@media (min-width: 640px) {
+  .mhub-mobile-card-img {
+    height: 260px;
+  }
+}
+@media (min-width: 768px) {
+  .mhub-mobile-card-img {
+    height: 300px;
+  }
+}
+
+/* Price badge */
+.mhub-mobile-card-price-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(5,150,105,0.3);
+  letter-spacing: 0.01em;
+}
+
+/* Category badges */
+.mhub-mobile-card-category-badges {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mhub-mobile-card-cat-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(99,102,241,0.85);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+.mhub-mobile-card-subcat-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(168,85,247,0.85);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+/* Carousel nav arrows */
+.mhub-mobile-card-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.mhub-mobile-card:hover .mhub-mobile-card-nav,
+.mhub-mobile-card-nav:focus-visible {
+  opacity: 1;
+}
+/* Always visible on touch devices */
+@media (hover: none) {
+  .mhub-mobile-card-nav {
+    opacity: 0.7;
+  }
+}
+.mhub-mobile-card-nav-left { left: 8px; }
+.mhub-mobile-card-nav-right { right: 8px; }
+
+.mhub-mobile-card-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  background: rgba(0,0,0,0.35);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.mhub-mobile-card-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+.mhub-mobile-card-dot.active {
+  background: #fff;
+  width: 16px;
+  border-radius: 3px;
+}
+
+.mhub-mobile-card-counter {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+/* --- Card Body --- */
+.mhub-mobile-card-body {
+  padding: 12px 14px 8px;
+}
+
+.mhub-mobile-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  line-height: 1.35;
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dark .mhub-mobile-card-title {
+  color: var(--text-primary, #f1f5f9);
+}
+
+.mhub-mobile-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.45;
+  margin: 0 0 8px;
+}
+.dark .mhub-mobile-card-desc {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.mhub-mobile-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.mhub-mobile-card-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--surface-2, #f1f5f9);
+  color: var(--text-secondary, #475569);
+}
+.dark .mhub-mobile-card-chip {
+  background: var(--surface-2, #1e293b);
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* --- Action Bar --- */
+.mhub-mobile-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px 10px;
+  border-top: 1px solid var(--chip-border, rgba(0,0,0,0.06));
+}
+.dark .mhub-mobile-card-actions {
+  border-top-color: var(--chip-border, rgba(255,255,255,0.06));
+}
+
+.mhub-mobile-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.dark .mhub-mobile-card-action {
+  color: var(--text-secondary, #94a3b8);
+}
+.mhub-mobile-card-action:hover {
+  background: var(--surface-2, rgba(0,0,0,0.04));
+}
+.dark .mhub-mobile-card-action:hover {
+  background: var(--surface-2, rgba(255,255,255,0.06));
+}
+
+.mhub-mobile-card-action-interest {
+  color: #059669;
+}
+.dark .mhub-mobile-card-action-interest {
+  color: #34d399;
+}
+
+.mhub-mobile-card-views {
+  cursor: default;
+  color: var(--text-faint, #94a3b8);
+  font-size: 12px;
+}
+
+.mhub-mobile-card-cta {
+  margin-left: auto;
+  border-radius: 20px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 6px 16px !important;
+  min-height: 36px;
+}
+
+/* ──────────────────── Category & Subcategory Bars ──────────────────── */
+.mhub-filter-section {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px 12px;
+}
+@media (min-width: 768px) {
+  .mhub-filter-section {
+    max-width: 720px;
+    padding: 8px 16px;
+  }
+}
+
+.mhub-filter-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 4px 0;
+}
+.mhub-filter-row::-webkit-scrollbar {
+  display: none;
+}
+
+.mhub-filter-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--chip-border, rgba(0,0,0,0.08));
+  background: var(--card, #fff);
+  color: var(--text-primary, #334155);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  min-height: 40px;
+}
+.dark .mhub-filter-chip {
+  background: var(--card, #1e293b);
+  border-color: rgba(255,255,255,0.1);
+  color: var(--text-primary, #e2e8f0);
+}
+.mhub-filter-chip:hover {
+  border-color: var(--primary, #3b82f6);
+}
+.mhub-filter-chip.active,
+.mhub-filter-chip[data-active="true"] {
+  background: var(--primary, #3b82f6);
+  border-color: var(--primary, #3b82f6);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.25);
+}
+
+.mhub-filter-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #64748b);
+  padding: 0 4px 6px;
+}
+.dark .mhub-filter-label {
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* ──────────────────── Page Hero (compact for mobile) ──────────────────── */
+.mhub-page-hero-compact {
+  padding: 16px 14px 12px;
+  text-align: left;
+}
+.mhub-page-hero-compact h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.dark .mhub-page-hero-compact h1 {
+  color: var(--text-primary, #f1f5f9);
+}
+.mhub-page-hero-compact p {
+  font-size: 14px;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+  line-height: 1.4;
+}
+.dark .mhub-page-hero-compact p {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.mhub-page-hero-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.mhub-page-hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--surface-2, rgba(0,0,0,0.04));
+}
+.dark .mhub-page-hero-stat {
+  color: var(--text-secondary, #94a3b8);
+  background: var(--surface-2, rgba(255,255,255,0.06));
+}
+
+/* ──────────────────── Loading Skeleton ──────────────────── */
+.mhub-mobile-skeleton {
+  background: var(--card, #fff);
+  border-radius: 16px;
+  border: 1px solid var(--chip-border, rgba(0,0,0,0.06));
+  overflow: hidden;
+}
+.dark .mhub-mobile-skeleton {
+  background: var(--card, #1e293b);
+}
+
+.mhub-mobile-skeleton-bar {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200px 100%;
+  animation: mhub-skeleton 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+.dark .mhub-mobile-skeleton-bar {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200px 100%;
+}
+
+/* ──────────────────── Empty State ──────────────────── */
+.mhub-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+}
+.mhub-empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--surface-2, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint, #94a3b8);
+}
+.mhub-empty-state h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  margin: 0 0 8px;
+}
+.dark .mhub-empty-state h3 {
+  color: var(--text-primary, #f1f5f9);
+}
+.mhub-empty-state p {
+  font-size: 14px;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+}
+.dark .mhub-empty-state p {
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* ──────────────────── Back to Top FAB (unified) ──────────────────── */
+.mhub-back-to-top {
+  position: fixed;
+  z-index: 50;
+  right: 16px;
+  bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--card, #fff);
+  border: 1px solid var(--chip-border, rgba(0,0,0,0.08));
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  color: var(--primary, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+  backdrop-filter: blur(8px);
+}
+.dark .mhub-back-to-top {
+  background: var(--card, #1e293b);
+  border-color: rgba(255,255,255,0.1);
+}
+.mhub-back-to-top:active {
+  transform: scale(0.9);
+}
+
+/* ──────────────────── Global Mobile Overrides ──────────────────── */
+@media (max-width: 480px) {
+  /* Ensure minimum readable font sizes */
+  .mhub-page-allposts,
+  .mhub-page-foryou {
+    font-size: 14px;
+  }
+
+  /* Make category bars scrollable with proper sizing */
+  .mhub-category-shell,
+  .mhub-subcategory-shell {
+    border-radius: 0 !important;
+    padding: 4px 8px !important;
+  }
+
+  .mhub-category-item,
+  .mhub-subcategory-item {
+    min-height: 40px !important;
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* Quick filter chips - touch friendly */
+  .mhub-quick-filter-chip,
+  .all-posts-quick-filters-row button,
+  .for-you-quick-filters-row button {
+    min-height: 40px !important;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+  }
+
+  /* Feed action row - bigger touch targets */
+  .post-action-row button,
+  .post-action-row span {
+    min-height: 36px !important;
+    min-width: 36px !important;
+    font-size: 12px !important;
+  }
+
+  /* Card titles - readable size */
+  .mhub-card-title {
+    font-size: 15px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Card meta - don't go too small */
+  .mhub-card-meta {
+    font-size: 12px !important;
+  }
+
+  /* Ensure images have good mobile height */
+  .mhub-media-img {
+    height: 200px !important;
+  }
+
+  /* Hero sections - compact on mobile */
+  .mhub-allposts-hero-card,
+  .mhub-hero-card,
+  .foryou-hero {
+    padding: 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .mhub-allposts-hero-title,
+  .foryou-hero h1 {
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+  }
+
+  .mhub-allposts-hero-subtitle {
+    font-size: 13px !important;
+  }
+
+  /* Quick filters title smaller */
+  .mhub-quick-filters-title {
+    font-size: 12px !important;
+  }
+
+  /* Feed header */
+  .mhub-allposts-feed-header h2 {
+    font-size: 18px !important;
+  }
+}
+
+/* ──────────────────── ForYou Page Specific Fixes ──────────────────── */
+.mhub-page-foryou .for-you-post-media {
+  /* Ensure images are tall enough */
+  min-height: 180px;
+}
+
+.mhub-page-foryou .for-you-post-image {
+  height: 200px !important;
+  object-fit: cover;
+}
+
+@media (min-width: 640px) {
+  .mhub-page-foryou .for-you-post-image {
+    height: 240px !important;
+  }
+}
+
+/* Fix cramped action row in ForYou */
+.mhub-page-foryou .post-action-row {
+  gap: 4px !important;
+  padding: 8px 10px !important;
+}
+
+.mhub-page-foryou .post-action-row button {
+  min-height: 36px !important;
+  min-width: 36px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  border-radius: 18px !important;
+}
+
+/* ForYou filter section - breathing room */
+.mhub-page-foryou .for-you-quick-filters-row {
+  gap: 8px !important;
+  padding-bottom: 4px !important;
+}
+
+/* ForYou cards - more spacing between posts */
+.mhub-page-foryou .mhub-compact-feed > * + * {
+  margin-top: 16px !important;
+}
+
+/* ──────────────────── AllPosts Page Specific Fixes ──────────────────── */
+.mhub-page-allposts .post-action-row {
+  gap: 4px !important;
+  padding: 8px 10px !important;
+}
+
+.mhub-page-allposts .post-action-row button {
+  min-height: 36px !important;
+  min-width: 36px !important;
+  font-size: 12px !important;
+  border-radius: 18px !important;
+}
+
+/* AllPosts feed - space between cards */
+.mhub-page-allposts .mhub-compact-feed > * + * {
+  margin-top: 16px !important;
+}
+
+/* ──────────────────── Subcategory Bar Enhancement ──────────────────── */
+.mhub-subcategory-shell {
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  border-top: 1px solid var(--chip-border, rgba(0,0,0,0.04));
+}
+.dark .mhub-subcategory-shell {
+  background: var(--surface-2, rgba(255,255,255,0.02));
+  border-top-color: rgba(255,255,255,0.04);
+}
+
+.mhub-subcategory-item {
+  font-size: 12px !important;
+}
+
+.mhub-subcategory-item-active {
+  background: var(--primary, #6366f1) !important;
+}
+
+/* ──────────────────── Toast Notifications ──────────────────── */
+.mhub-toast {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: #1e293b;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  animation: mhub-toast-in 0.25s ease-out;
+}
+.dark .mhub-toast {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+@keyframes mhub-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ──────────────────── Compact card spacing in feeds ──────────────────── */
+.mhub-compact .mhub-card,
+.mhub-compact .mhub-premium-surface {
+  border-radius: 12px;
+}
+
+/* Ensure feed cards don't overlap on mobile */
+.mhub-compact .mhub-allposts-feed > * + * {
+  margin-top: 12px;
+}
+
+/* ──────────────────── Profile Page Mobile Fixes ──────────────────── */
+@media (max-width: 480px) {
+  /* Profile quick actions - 2 cols instead of 3 on small screens */
+  .grid.grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  /* Profile stats row - ensure readability */
+  .grid.grid-cols-3 .text-center {
+    padding: 10px 8px !important;
+  }
+  .grid.grid-cols-3 .text-center .text-2xl,
+  .grid.grid-cols-3 .text-center .text-xl {
+    font-size: 18px !important;
+  }
+
+  /* Profile tabs - scrollable */
+  [role="tablist"] {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  [role="tablist"]::-webkit-scrollbar {
+    display: none;
+  }
+  [role="tab"] {
+    white-space: nowrap;
+    font-size: 13px !important;
+    padding: 8px 14px !important;
+    min-height: 40px !important;
+  }
+}
+
+/* ──────────────────── Rewards Page Mobile Fixes ──────────────────── */
+@media (max-width: 480px) {
+  /* Rewards stat cards */
+  .grid.grid-cols-2 {
+    gap: 8px !important;
+  }
+  .grid.grid-cols-2 > div {
+    padding: 12px !important;
+  }
+
+  /* Rewards coin balance - don't let it overflow */
+  .text-4xl, .text-5xl {
+    font-size: 28px !important;
+  }
+}
+
+/* ──────────────────── Dashboard Mobile Fixes ──────────────────── */
+@media (max-width: 640px) {
+  /* Dashboard stat cards - full width on mobile */
+  .grid.sm\:grid-cols-2.lg\:grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+/* ──────────────────── General Mobile Improvements ──────────────────── */
+@media (max-width: 480px) {
+  /* All pages: ensure buttons are touch-friendly */
+  button:not(.mhub-mobile-card-dot):not(.mhub-mobile-card-nav) {
+    min-height: 36px;
+  }
+
+  /* All cards: proper border radius */
+  .rounded-2xl {
+    border-radius: 14px !important;
+  }
+  .rounded-3xl {
+    border-radius: 16px !important;
+  }
+
+  /* Ensure container padding */
+  .page-shell,
+  .page-pad {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Max-width containers - center on mobile */
+  .max-w-6xl,
+  .max-w-5xl,
+  .max-w-4xl,
+  .max-w-3xl,
+  .max-w-2xl,
+  [class*="max-w-[92rem]"] {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Hero sections across all pages */
+  h1 {
+    font-size: clamp(20px, 5vw, 28px) !important;
+    line-height: 1.25 !important;
+  }
+  h2 {
+    font-size: clamp(18px, 4.5vw, 24px) !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Modals and drawers - full width on mobile */
+  .rounded-t-3xl {
+    border-radius: 16px 16px 0 0 !important;
+  }
+
+  /* Cards should have reasonable spacing */
+  .space-y-6 > * + * {
+    margin-top: 16px !important;
+  }
+  .space-y-4 > * + * {
+    margin-top: 12px !important;
+  }
+
+  /* Skeleton loaders */
+  .animate-pulse {
+    border-radius: 12px;
+  }
+}
+
+/* ──────────────────── Performance: Reduce Motion ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin {
+    animation: none !important;
+  }
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ──────────────────── Touch Scrolling ──────────────────── */
+.overflow-x-auto,
+.overflow-y-auto,
+[class*="overflow-x-auto"],
+[class*="overflow-y-auto"],
+.rewards-tab-bar,
+.scrollbar-hide {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+/* ──────────────────── Safe Area Insets ──────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .mhub-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* ──────────────────── Consistent Card Padding on Mobile ──────────────────── */
+@media (max-width: 480px) {
+  .p-6:not(.no-compact) {
+    padding: 16px !important;
+  }
+  .p-5:not(.no-compact) {
+    padding: 14px !important;
+  }
+  .px-6:not(.no-compact) {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  .p-8:not(.no-compact) {
+    padding: 20px !important;
+  }
+  .p-10:not(.no-compact) {
+    padding: 24px !important;
+  }
+  .p-12:not(.no-compact) {
+    padding: 24px !important;
+  }
+  .pt-20:not(.no-compact) {
+    padding-top: 3rem !important;
+  }
+  .gap-6:not(.no-compact) {
+    gap: 12px !important;
+  }
+  .gap-8:not(.no-compact) {
+    gap: 16px !important;
+  }
+  .mb-8:not(.no-compact) {
+    margin-bottom: 16px !important;
+  }
+  .mb-6:not(.no-compact) {
+    margin-bottom: 12px !important;
+  }
+  .space-y-6:not(.no-compact) > * + * {
+    margin-top: 12px !important;
+  }
+  .space-y-5:not(.no-compact) > * + * {
+    margin-top: 10px !important;
+  }
+}

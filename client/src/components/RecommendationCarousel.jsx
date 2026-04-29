@@ -48,7 +48,7 @@ const RecommendationCarousel = memo(function RecommendationCarousel({
             {title}
           </h3>
           {subtitle && (
-            <p className="text-[11px] text-gray-500 dark:text-slate-400">{subtitle}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">{subtitle}</p>
           )}
         </div>
         <div className="flex gap-1">
@@ -104,7 +104,7 @@ const RecommendationCarousel = memo(function RecommendationCarousel({
                 )}
                 {item.reason && (
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1">
-                    <p className="text-[9px] text-white text-center leading-tight truncate">
+                    <p className="text-xs text-white text-center leading-tight truncate">
                       {item.reason}
                     </p>
                   </div>
@@ -113,7 +113,7 @@ const RecommendationCarousel = memo(function RecommendationCarousel({
 
               {/* Content */}
               <div className="p-1.5">
-                <h4 className="text-[11px] font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight">
+                <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight">
                   {item.title || "Untitled"}
                 </h4>
                 {price && (
@@ -122,7 +122,7 @@ const RecommendationCarousel = memo(function RecommendationCarousel({
                   </p>
                 )}
                 {item.interested_count > 0 && (
-                  <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-0.5">
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                     👥 {item.interested_count} interested
                   </p>
                 )}

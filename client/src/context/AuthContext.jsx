@@ -51,6 +51,39 @@ const AUTH_STORAGE_KEYS = [
 ];
 const LEGACY_TOKEN_KEYS = new Set(["authToken", "refreshToken", "token"]);
 
+function isParityOfflineAuthEnabled() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const localFlag = window.localStorage.getItem("mhub_parity_offline_auth") === "1";
+    if (localFlag) {
+      return true;
+    }
+
+    const sessionRaw = window.sessionStorage.getItem("mhub_parity_offline_auth");
+    if (sessionRaw) {
+      if (sessionRaw === "1" || sessionRaw === "true") {
+        return true;
+      }
+      try {
+        const parsed = JSON.parse(sessionRaw);
+        if (parsed?.enabled) {
+          return true;
+        }
+      } catch {
+        // ignore malformed session payloads
+      }
+    }
+
+    const userAgent = String(window.navigator?.userAgent || "").toLowerCase();
+    return userAgent.includes("mhubandroidwebreplica");
+  } catch {
+    return false;
+  }
+}
+
 function safeParseJson(rawValue) {
   if (!rawValue) return null;
   try {
@@ -328,6 +361,15 @@ export function AuthProvider({ children }) {
       const status = meta?.status ?? null;
       const forceClear =
         Boolean(force) || status === 401 || status === 403;
+
+      if (isParityOfflineAuthEnabled()) {
+        logAuthDiagnostic("auto_logout_suppressed_parity", {
+          reason,
+          forced: Boolean(forceClear),
+          ...meta,
+        });
+        return false;
+      }
 
       if (DISABLE_AUTO_LOGOUT && !forceClear) {
         logAuthDiagnostic("auto_logout_suppressed", {

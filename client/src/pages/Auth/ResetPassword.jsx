@@ -138,7 +138,7 @@ export default function ResetPassword() {
     <div className="min-h-screen mhub-premium-page flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 px-4 py-8 sm:py-12 transition-colors duration-300 dark:bg-gradient-to-br">
       <div className="w-full max-w-md">
         <Card className="shadow-xl border-0 rounded-2xl sm:rounded-3xl overflow-hidden mhub-premium-surface backdrop-blur-sm dark:border-0">
-          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-blue-500 to-blue-600 dark:text-center dark:bg-gradient-to-r">
+          <CardHeader className="text-center py-6 sm:py-8 bg-gradient-to-r from-blue-500 to-blue-600 dark:bg-gradient-to-r">
             <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-2xl bg-white/20 flex items-center justify-center dark:bg-slate-900/20">
               {success ? (
                 <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white dark:text-white" />
@@ -164,7 +164,7 @@ export default function ResetPassword() {
 
           <CardContent className="p-5 sm:p-8">
             {success ? (
-              <div className="text-center space-y-4 dark:text-center">
+              <div className="text-center space-y-4">
                 <p className="text-gray-600 dark:text-gray-300 text-sm dark:text-gray-200">
                   {t("password_reset_success_msg") ||
                     "Your password has been reset successfully. You will be redirected to the login page."}
@@ -178,7 +178,7 @@ export default function ResetPassword() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 {errorMessage && (
-                  <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200 flex items-start gap-2 dark:border-amber-600/40 dark:bg-amber-950/20">
                     <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
@@ -187,7 +187,7 @@ export default function ResetPassword() {
                 {otpMode && (
                   <>
                     <div>
-                      <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                      <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                         {t("phone") || "Phone Number"}
                       </Label>
                       <Input
@@ -195,14 +195,14 @@ export default function ResetPassword() {
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40"
+                        className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl dark:border-gray-700 dark:focus:border-blue-500/40"
                         placeholder="+91 XXXXXXXXXX"
                         disabled={loading}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="otp" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                      <Label htmlFor="otp" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                         {t("enter_otp") || "Enter OTP"}
                       </Label>
                       <Input
@@ -210,7 +210,7 @@ export default function ResetPassword() {
                         type="text"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
-                        className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40 dark:text-center"
+                        className="mt-2 h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl text-center text-lg tracking-widest dark:border-gray-700 dark:focus:border-blue-500/40"
                         placeholder="123456"
                         maxLength={6}
                         disabled={loading}
@@ -221,7 +221,7 @@ export default function ResetPassword() {
 
                 {/* New Password */}
                 <div>
-                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                     {t("new_password_label") || "New Password"}
                   </Label>
                   <div className="relative mt-2">
@@ -230,7 +230,7 @@ export default function ResetPassword() {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40"
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12 dark:border-gray-700 dark:focus:border-blue-500/40"
                       placeholder={t("create_password_placeholder") || "Create a new password"}
                       disabled={loading}
                     />
@@ -238,7 +238,7 @@ export default function ResetPassword() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 dark:text-gray-300"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? t("hide_password", "Hide password") : t("show_password", "Show password")}
                     >
@@ -249,7 +249,7 @@ export default function ResetPassword() {
 
                 {/* Confirm Password */}
                 <div>
-                  <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                  <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                     {t("confirm_new_password_label") || "Confirm New Password"}
                   </Label>
                   <div className="relative mt-2">
@@ -258,7 +258,7 @@ export default function ResetPassword() {
                       type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12 dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40"
+                      className="h-11 sm:h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white rounded-xl pr-12 dark:border-gray-700 dark:focus:border-blue-500/40"
                       placeholder={t("confirm_password_placeholder") || "Re-enter your password"}
                       disabled={loading}
                     />
@@ -266,7 +266,7 @@ export default function ResetPassword() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 dark:text-gray-300"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       aria-label={showConfirmPassword ? t("hide_password", "Hide password") : t("show_password", "Show password")}
                     >
@@ -281,11 +281,11 @@ export default function ResetPassword() {
                 </div>
 
                 {/* Requirements */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:border dark:border-gray-700">
-                  <p className="font-semibold mb-2 text-gray-700 dark:text-gray-300 dark:text-gray-200">
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-950 dark:border-gray-700">
+                  <p className="font-semibold mb-2 text-gray-700 dark:text-gray-200">
                     {t("password_requirements") || "Password Requirements"}
                   </p>
-                  <ul className="space-y-1 text-gray-600 dark:text-gray-400 dark:text-gray-200">
+                  <ul className="space-y-1 text-gray-600 dark:text-gray-200">
                     <li className={requirements.isLongEnough ? "text-green-600 dark:text-green-400" : ""}>
                       - {t("req_min_chars") || "At least 12 characters"}
                     </li>

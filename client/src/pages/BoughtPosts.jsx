@@ -120,7 +120,7 @@ const BoughtPosts = () => {
     authLoading
       ? React.createElement(
           "div",
-          { className: "text-center py-10 dark:text-center" },
+          { className: "text-center py-10" },
           translate("loading") || "Loading...",
         )
       : isAuthenticated
@@ -132,7 +132,7 @@ const BoughtPosts = () => {
             },
             React.createElement(
               "div",
-              { className: "w-full max-w-3xl mx-auto px-4 py-5 page-shell page-pad" },
+              { className: "w-full max-w-[640px] mx-auto px-4 py-5 page-shell page-pad" },
               React.createElement(
                 "div",
                 { className: "mb-4 mhub-hero-card rounded-2xl px-4 py-4 sm:px-6 sm:py-5 text-left" },
@@ -220,7 +220,7 @@ const BoughtPosts = () => {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
+                          "text-sm font-semibold text-slate-900 dark:text-slate-100",
                       },
                       "Category mode: ",
                       categoryModeCategory.name,
@@ -229,7 +229,7 @@ const BoughtPosts = () => {
                       "p",
                       {
                         className:
-                          "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                          "text-xs text-slate-500 dark:text-slate-300",
                       },
                       "Bought posts are filtered to this category.",
                     ),
@@ -277,7 +277,7 @@ const BoughtPosts = () => {
                       "div",
                       {
                         className:
-                          "rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-4 dark:border dark:border-red-600/40 dark:bg-red-950/20",
+                          "rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-4 dark:border-red-600/40 dark:bg-red-950/20",
                       },
                       React.createElement(
                         "p",
@@ -318,7 +318,7 @@ const BoughtPosts = () => {
                           "div",
                           {
                             className:
-                              "w-full rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
+                              "w-full rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border-blue-600/40 dark:bg-blue-950/20",
                           },
                           React.createElement(
                             "p",
@@ -385,7 +385,7 @@ const BoughtPosts = () => {
                               "h3",
                               {
                                 className:
-                                  "font-bold text-lg text-gray-900 dark:text-white dark:text-gray-100",
+                                  "font-bold text-lg text-gray-900 dark:text-gray-100",
                               },
                               post.title || "Untitled post",
                             ),
@@ -438,12 +438,12 @@ const BoughtPosts = () => {
             },
             React.createElement(
               "div",
-              { className: "text-center max-w-md dark:text-center" },
+              { className: "text-center max-w-md" },
               React.createElement(
                 "h2",
                 {
                   className:
-                    "text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-gray-100",
+                    "text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-gray-100",
                 },
                 translate("bought_posts") || "Bought Posts",
               ),
@@ -470,7 +470,7 @@ const BoughtPosts = () => {
                   {
                     to: "/signup",
                     className:
-                      "border border-blue-300 text-blue-600 py-3 rounded-xl font-semibold dark:border dark:border-blue-600/40 dark:text-blue-300",
+                      "border border-blue-300 text-blue-600 py-3 rounded-xl font-semibold dark:border-blue-600/40 dark:text-blue-300",
                   },
                   translate("signup") || "Create Account",
                 ),

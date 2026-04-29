@@ -208,7 +208,7 @@ export default function LanguageSelector({ className = "", compact = false, vari
         disabled={isSwitching}
         ref={buttonRef}
         className={`inline-flex items-center gap-2 border font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 ${toneClasses} ${shapeClasses} ${
-          compact ? "h-8 text-[11px]" : "h-9 text-sm"
+          compact ? "h-8 text-xs" : "h-9 text-sm"
         }`}
       >
         <FiGlobe className="h-4 w-4" />
@@ -251,7 +251,7 @@ export default function LanguageSelector({ className = "", compact = false, vari
                   >
                     <span className="whitespace-nowrap">{`${lang.label} (${lang.native})`}</span>
                     {active ? (
-                      <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-200">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-200">
                         {t("selected", { defaultValue: "selected" })}
                       </span>
                     ) : null}

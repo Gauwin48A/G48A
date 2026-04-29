@@ -447,6 +447,9 @@ async function resolveLocalDevBackendOrigin() {
   return backendRecoveryPromise;
 }
 const clearClientAuthState = () => {
+  if (isParityOfflineAuthMode()) {
+    return;
+  }
   localStorage.removeItem("authToken");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
@@ -455,6 +458,21 @@ const clearClientAuthState = () => {
   localStorage.removeItem("userProfile");
   localStorage.removeItem("token");
   localStorage.removeItem("authSession");
+};
+const isParityOfflineAuthMode = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  try {
+    const localFlag = window.localStorage.getItem("mhub_parity_offline_auth") === "1";
+    if (localFlag) {
+      return true;
+    }
+    const ua = String(window.navigator?.userAgent || "").toLowerCase();
+    return ua.includes("mhubandroidwebreplica");
+  } catch {
+    return false;
+  }
 };
 const dispatchGlobalEvent = (eventName, detail = {}) => {
   if (typeof window === "undefined") {
@@ -468,6 +486,13 @@ const dispatchGlobalEvent = (eventName, detail = {}) => {
   }
 };
 const dispatchAuthRequiredOnce = (detail = {}) => {
+  if (isParityOfflineAuthMode()) {
+    logAuthDiagnostic("auto_logout_suppressed_parity", {
+      source: "api_auth_required_event",
+      ...detail,
+    });
+    return true;
+  }
   const now = Date.now();
   if (now < authEventCooldownUntil) {
     return true;

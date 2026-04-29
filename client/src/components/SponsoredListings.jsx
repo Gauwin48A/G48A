@@ -290,7 +290,7 @@ export default function SponsoredListings({
                 }}
               />
               <span
-                className={`absolute top-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${badgeClass}`}
+                className={`absolute top-1 left-1 text-xs font-bold px-1.5 py-1 rounded-full ${badgeClass}`}
               >
                 {badge}
               </span>
@@ -303,7 +303,7 @@ export default function SponsoredListings({
                 {formatPrice(post.price)}
               </p>
               {post.location && (
-                <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+                <p className="text-xs text-gray-400 mt-0.5 truncate">
                   {post.location}
                 </p>
               )}
@@ -325,7 +325,7 @@ export default function SponsoredListings({
         <h3 className="font-bold text-gray-900 dark:text-white text-sm">
           Sponsored Listings
         </h3>
-        <span className="text-[10px] bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+        <span className="text-xs bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400 px-2 py-1 rounded-full">
           Ad
         </span>
       </div>

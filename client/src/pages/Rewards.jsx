@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import api from "../lib/api";
 import { buildApiPath } from "@/lib/networkConfig";
+import { isParityOfflineAuthMode } from "@/utils/parityMode";
+import { buildParityRewardsFallback } from "@/utils/parityFallbackData";
 import {
   getUserId,
   isAuthenticated,
@@ -173,6 +175,7 @@ const RewardsPage = () => {
     { toast: toast } = useToast(),
     { user: authUser, refreshAuth: refreshAuthFromContext } = useAuth(),
     isAuthed = useMemo(() => isAuthenticated(authUser), [authUser]),
+    parityOfflineMode = useMemo(() => isParityOfflineAuthMode(), []),
     currentUserId = useMemo(() => getUserId(authUser), [authUser]),
     localTrustPayload = normalizeTrustPayload(
       rewardsUser?.trust ||
@@ -315,9 +318,30 @@ const RewardsPage = () => {
         });
       }
     }, []),
+    applyParityRewardsFallback = useCallback(() => {
+      const fallback = buildParityRewardsFallback(authUser);
+      setRewardsUser(fallback);
+      setReferralChain(
+        Array.isArray(fallback.referralHistory) ? fallback.referralHistory : [],
+      );
+      setReferralTree(fallback.referralTree || null);
+      setChainRules(Array.isArray(fallback.chainRules) ? fallback.chainRules : []);
+      if (Number.isFinite(Number(fallback.totalCoins))) {
+        applyCoinBalanceUpdate(fallback.totalCoins, {
+          silentDelta: true,
+          source: "parity-fallback",
+        });
+      }
+    }, [applyCoinBalanceUpdate, authUser]),
     fetchRewards = useCallback(
       async ({ silent: t = !1, allowRetry: retry = !0 } = {}) => {
         if (!isAuthed) {
+          if (parityOfflineMode) {
+            applyParityRewardsFallback();
+            setErrorObj(null);
+            setIsLoading(!1);
+            return;
+          }
           setErrorObj({
             key: "rewards_login_required",
             fallback: "You must be logged in to view rewards.",
@@ -342,6 +366,11 @@ const RewardsPage = () => {
               return fetchRewards({ silent: t, allowRetry: false });
             }
           }
+          if (parityOfflineMode) {
+            applyParityRewardsFallback();
+            setErrorObj(null);
+            return;
+          }
           t ||
             setErrorObj({
               key: "rewards_fetch_failed",
@@ -351,7 +380,7 @@ const RewardsPage = () => {
           t || setIsLoading(!1);
         }
       },
-      [isAuthed, attemptAuthRefresh],
+      [isAuthed, attemptAuthRefresh, parityOfflineMode, applyParityRewardsFallback],
     ),
     fetchEngagement = useCallback(
       async ({ silent: t = !1 } = {}) => {
@@ -1084,7 +1113,7 @@ const RewardsPage = () => {
         "div",
         {
           className:
-            "bg-white/95 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl text-center max-w-md dark:bg-slate-900/95 dark:border dark:border-gray-700 dark:text-center",
+            "bg-white/95 dark:bg-slate-900/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl text-center max-w-md dark:bg-slate-900/95 dark:border-gray-700",
         },
         React.createElement(
           "div",
@@ -1096,12 +1125,12 @@ const RewardsPage = () => {
         ),
         React.createElement(
           "h2",
-          { className: "text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-gray-100" },
+          { className: "text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 dark:text-gray-100" },
           tFunc("rewards_referrals"),
         ),
         React.createElement(
           "p",
-          { className: "text-gray-600 dark:text-gray-300 text-lg mb-4 dark:text-gray-200" },
+          { className: "text-gray-600 dark:text-gray-300 text-base sm:text-lg mb-4 dark:text-gray-200" },
           tFunc("earn_coins_unlock_rewards"),
         ),
         React.createElement(
@@ -1112,7 +1141,7 @@ const RewardsPage = () => {
             {
               to: "/login",
               className:
-                "bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition dark:bg-gradient-to-r dark:text-white",
+                "bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-base px-5 py-2.5 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 transition dark:bg-gradient-to-r dark:text-white",
             },
             tFunc("login_to_continue"),
           ),
@@ -1121,7 +1150,7 @@ const RewardsPage = () => {
             {
               to: "/signup",
               className:
-                "border-2 border-blue-200 text-blue-700 dark:text-blue-200 text-lg px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 dark:hover:bg-white/10 transition dark:border-2 dark:border-blue-600/40 dark:text-blue-300 dark:hover:bg-blue-950/20",
+                "border-2 border-blue-200 text-blue-700 dark:text-blue-200 text-base px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-50 dark:hover:bg-white/10 transition dark:border-blue-600/40 dark:text-blue-300 dark:hover:bg-blue-950/20",
             },
             tFunc("create_account"),
           ),
@@ -1137,10 +1166,10 @@ const RewardsPage = () => {
       },
       React.createElement(
         "div",
-        { className: "text-center dark:text-center" },
+        { className: "text-center" },
         React.createElement("div", {
           className:
-            "w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-4 dark:border-blue-500/40 dark:border-t-transparent",
+            "w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4 dark:border-t-transparent",
         }),
         React.createElement(
           "p",
@@ -1149,7 +1178,7 @@ const RewardsPage = () => {
         ),
       ),
     );
-  if (errorMessage)
+  if (errorMessage && !(parityOfflineMode && rewardsUser))
     return React.createElement(
       "div",
       {
@@ -1158,11 +1187,11 @@ const RewardsPage = () => {
       },
       React.createElement(
         "div",
-        { className: "text-center max-w-sm mx-auto dark:text-center" },
+        { className: "text-center max-w-sm mx-auto" },
         React.createElement(
           "div",
-          { className: "w-20 h-20 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-500/10 dark:to-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-200/60 dark:border-red-500/20 shadow-lg shadow-red-100/30 dark:shadow-none dark:bg-gradient-to-br dark:border dark:border-red-600/60" },
-          React.createElement(AlertCircle, { className: "w-9 h-9 text-red-500 dark:text-red-400 dark:text-red-300" }),
+          { className: "w-20 h-20 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-500/10 dark:to-orange-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-200/60 dark:border-red-500/20 shadow-lg shadow-red-100/30 dark:shadow-none dark:bg-gradient-to-br dark:border-red-600/60" },
+          React.createElement(AlertCircle, { className: "w-9 h-9 text-red-500 dark:text-red-300" }),
         ),
         React.createElement(
           "h3",
@@ -1206,7 +1235,7 @@ const RewardsPage = () => {
         "div",
         {
           className:
-            "max-w-md w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-lg text-center dark:border dark:text-center",
+            "max-w-md w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-lg text-center dark:border",
         },
         React.createElement(
           "h2",
@@ -2005,13 +2034,13 @@ const RewardsPage = () => {
   const showMobileInviteCta =
     activeTab === "referrals" && !shareDisabled && !mobileInviteHidden;
   const tabButtonClass = (isActive) =>
-    "rewards-tab-btn inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-xs font-semibold transition-all duration-200 " +
+    "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 " +
     (isActive
       ? "active border-indigo-500 bg-indigo-600 text-white shadow-sm"
       : "border-slate-200 bg-white text-slate-600 hover:bg-white/95 hover:border-indigo-200 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white");
   return (
     <div
-      className="rewards-surface min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-sky-50 to-purple-50 pb-28 page-fade-in dark:bg-gradient-to-br"
+      className="rewards-surface min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-sky-50 to-purple-50 pb-20 page-fade-in dark:bg-gradient-to-br"
       style={{ "--top-nav-height": "0px" }}
     >
       <RewardsHero
@@ -2046,7 +2075,7 @@ const RewardsPage = () => {
 
       <div
         id="rewards-dashboard"
-        className="max-w-6xl mx-auto px-4 mt-3 sm:mt-4 pb-6 relative z-10 space-y-5 scroll-mt-24"
+        className="max-w-[640px] mx-auto px-4 mt-3 sm:mt-4 pb-6 relative z-10 space-y-3 scroll-mt-24"
       >
         <RewardsImpactDashboard
           displayCoins={displayCoins}
@@ -2093,12 +2122,12 @@ const RewardsPage = () => {
             className="rewards-tabs-sticky sticky z-30 mb-4"
             style={{ top: "calc(var(--top-nav-height, 0px) + 12px)" }}
           >
-            <div className="rounded-[24px] border border-white/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/75 backdrop-blur-xl shadow-[0_12px_28px_rgba(15,23,42,0.12)] px-2.5 py-2 dark:border dark:border-white/70 dark:bg-slate-900/80">
+            <div className="rounded-[24px] border border-white/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/75 backdrop-blur-xl shadow-[0_12px_28px_rgba(15,23,42,0.12)] px-2.5 py-2 dark:border-white/70 dark:bg-slate-900/80">
               <div className="flex items-center justify-between px-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300">
                   {tr("jump_to_section", "Jump to section")}
                 </p>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-300">
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   {tr("sticky_tabs_hint", "Scroll to switch")}
                 </span>
               </div>
@@ -2106,7 +2135,7 @@ const RewardsPage = () => {
               <div
                 role="navigation"
                 aria-label={tr("rewards_tabs", "Rewards sections")}
-                className="rewards-tab-bar mt-2 w-full flex gap-1.5 overflow-x-auto rounded-[18px] bg-white/70 dark:bg-slate-900/60 p-1.5 shadow-none border border-slate-200/60 dark:border-slate-700/50 scrollbar-hide dark:bg-slate-900/70 dark:border dark:border-slate-700/60"
+                className="rewards-tab-bar mt-2 w-full flex gap-1.5 overflow-x-auto rounded-[18px] bg-white/70 dark:bg-slate-900/60 p-1.5 shadow-none border border-slate-200/60 dark:border-slate-700/50 scrollbar-hide dark:bg-slate-900/70 dark:border-slate-700/60"
               >
                 {sectionNavItems.map((item) => (
                   <button
@@ -2281,7 +2310,7 @@ const RewardsPage = () => {
           }
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {redeemDialogReward?.title || tr("redeem_reward", "Redeem reward")}
@@ -2298,14 +2327,14 @@ const RewardsPage = () => {
           <div className="space-y-3">
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-4 py-3 dark:border dark:bg-slate-950">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 dark:text-slate-300 dark:text-slate-200">
+                <span className="text-slate-600 dark:text-slate-200">
                   {tr("cost", "Cost")}
                 </span>
                 <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {redeemDialogReward?.cost || 0} {tr("coins", "coins")}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs mt-2">
+              <div className="flex items-center justify-between text-sm mt-2">
                 <span className="text-slate-500 dark:text-slate-300">
                   {tr("available_coins", "Available coins")}
                 </span>
@@ -2315,13 +2344,13 @@ const RewardsPage = () => {
 
             {redeemDialogReward?.requiresPost ? (
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-200">
+                <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                   {tr("select_listing", "Select a listing")}
                 </p>
                 {redeemDialogLoading ? (
-                  <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-slate-200">{tr("loading", "Loading...")}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-200">{tr("loading", "Loading...")}</p>
                 ) : redeemDialogPosts.length ? (
-                  <div className="max-h-56 overflow-y-auto space-y-2">
+                  <div className="max-h-72 overflow-y-auto space-y-2">
                     {redeemDialogPosts.map((post) => {
                       const id = post?.post_id || post?.id;
                       const selected = String(redeemSelectedPostId) === String(id);
@@ -2331,7 +2360,7 @@ const RewardsPage = () => {
                           type="button"
                           onClick={() => setRedeemSelectedPostId(id ? String(id) : "")}
                           className={
-                            "w-full text-left rounded-xl border px-3 py-2 transition " +
+                            "w-full text-left rounded-xl border px-4 py-3 transition " +
                             (selected
                               ? "border-indigo-300 bg-indigo-50"
                               : "border-slate-200 hover:border-indigo-200")
@@ -2348,7 +2377,7 @@ const RewardsPage = () => {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-600 dark:text-slate-400 dark:text-slate-200">
+                  <p className="text-xs text-slate-600 dark:text-slate-200">
                     {tr(
                       "no_active_posts",
                       "No active posts available for redemption.",
@@ -2385,8 +2414,8 @@ const RewardsPage = () => {
       </Dialog>
 
       {showDiagnostics ? (
-        <div className="max-w-6xl mx-auto px-4 mb-3">
-          <div className="rounded-2xl border border-slate-200 bg-white/90 dark:bg-gray-900/60 px-4 py-3 shadow-sm dark:border dark:border-slate-700 dark:bg-slate-900/90">
+        <div className="max-w-[640px] mx-auto px-4 mb-3">
+          <div className="rounded-2xl border border-slate-200 bg-white/90 dark:bg-gray-900/60 px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/90">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 {tr("rewards_diagnostics", "Rewards diagnostics")}
@@ -2425,7 +2454,7 @@ const RewardsPage = () => {
       ) : null}
 
       {showMobileInviteCta ? (
-        <div className="fixed bottom-4 left-0 right-0 px-4 z-50 md:hidden">
+        <div className="fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+1rem)] left-0 right-0 px-4 z-[60] md:hidden">
           <Button
             type="button"
             onClick={shareReferral}
@@ -2450,6 +2479,17 @@ const RewardsPage = () => {
           </Button>
         </div>
       ) : null}
+
+      {/* Back to top FAB */}
+      <button
+        type="button"
+        aria-label={tr("back_to_top", "Back to top")}
+        className="rewards-back-to-top fixed z-50 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 backdrop-blur-sm active:scale-90 transition-transform"
+        style={{ bottom: "calc(var(--bottom-nav-height, 64px) + 16px)", right: "16px" }}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+      </button>
     </div>
   );
 };

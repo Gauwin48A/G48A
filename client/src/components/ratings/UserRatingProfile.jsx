@@ -92,7 +92,7 @@ function RatingCard({ type, data, categories }) {
         <h3 className={`text-sm font-bold ${accentColor}`}>
           {isSeller ? "Seller Rating" : "Buyer Rating"}
         </h3>
-        <span className="ml-auto text-[10px] text-gray-500 dark:text-gray-400">
+        <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
           {data.total || 0} review{data.total !== 1 ? "s" : ""}
         </span>
       </div>
@@ -103,7 +103,7 @@ function RatingCard({ type, data, categories }) {
         </span>
         <div>
           <StarDisplay rating={data.avgRating} />
-          <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Based on {data.total || 0} reviews
           </p>
         </div>
@@ -184,11 +184,11 @@ export default function UserRatingProfile({ userId }) {
     <div className="space-y-4">
       {/* Overall score */}
       <div className="text-center bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
-        <p className="text-[10px] uppercase tracking-wide font-semibold text-amber-700 dark:text-amber-300 mb-1">
+        <p className="text-xs uppercase tracking-wide font-semibold text-amber-700 dark:text-amber-300 mb-1">
           {tr("overall_reputation", "Overall Reputation")}
         </p>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-4xl font-black text-amber-700 dark:text-amber-300">
+          <span className="text-lg sm:text-2xl md:text-3xl font-black text-amber-700 dark:text-amber-300">
             {Number(stats.overallRating || 0) > 0 ? stats.overallRating : "—"}
           </span>
           <StarDisplay rating={stats.overallRating} size="h-5 w-5" />

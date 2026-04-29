@@ -11,6 +11,8 @@ import { useTranslation } from "react-i18next";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { getUserId, isAuthenticated } from "@/utils/authStorage";
+import { isParityOfflineAuthMode } from "@/utils/parityMode";
+import { buildParityNotificationsFallback } from "@/utils/parityFallbackData";
 import { useToast } from "@/hooks/use-toast";
 import { useCategoryMode } from "@/context/CategoryModeContext";
 import { buildActiveAppMatcher, matchesCategoryModeItem } from "@/utils/categoryModeFilters";
@@ -199,6 +201,7 @@ const NotificationsPage = () => {
   const notificationRefs = useRef(new Map());
   const userId = useMemo(() => getUserId(user), [user]);
   const isAuth = useMemo(() => isAuthenticated(user), [user]);
+  const parityOfflineMode = useMemo(() => isParityOfflineAuthMode(), []);
   const activeAppMatcher = useMemo(
     () => buildActiveAppMatcher(activeApp, categoryModeCategories),
     [activeApp, categoryModeCategories],
@@ -267,6 +270,23 @@ const NotificationsPage = () => {
       } catch (err) {
         if (counter !== fetchCounterRef.current) return;
         console.error("[Notifications] Failed to load notifications:", err);
+        if (parityOfflineMode) {
+          const fallbackNotifications = buildParityNotificationsFallback(userId);
+          const normalizedFallback = fallbackNotifications.map(normalizeNotification);
+          setNotifications((prev) =>
+            reset
+              ? dedupeNotifications(normalizedFallback)
+              : dedupeNotifications([...prev, ...normalizedFallback]),
+          );
+          setCursor(null);
+          cursorRef.current = null;
+          setHasMore(false);
+          setServerUnreadCount(
+            fallbackNotifications.reduce((count, item) => count + (item.read ? 0 : 1), 0),
+          );
+          setErrorMessage("");
+          return;
+        }
         if (reset) {
           setNotifications([]);
         }
@@ -281,7 +301,7 @@ const NotificationsPage = () => {
         }
       }
     },
-    [isAuth, searchQuery, sortBy, userId],
+    [isAuth, parityOfflineMode, searchQuery, sortBy, userId],
   );
 
   useEffect(
@@ -840,7 +860,7 @@ const NotificationsPage = () => {
   if (authLoading) {
     return (
       <div
-        className={`min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-gray-950 dark:bg-slate-950 ${densityClass}`}
+        className={`min-h-screen flex items-center justify-center mhub-premium-page bg-slate-50 dark:bg-slate-950 ${densityClass}`}
       >
         <div className="flex flex-col items-center gap-4">
           <div className="relative w-16 h-16">
@@ -869,23 +889,23 @@ const NotificationsPage = () => {
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/[0.06] rounded-full blur-3xl dark:bg-[ndigo-500/[0.06]" />
         </div>
 
-        <div className="relative mhub-premium-surface rounded-3xl p-10 max-w-md w-full text-center border border-white/60 dark:border-white/10 shadow-2xl shadow-blue-500/[0.08] dark:text-center dark:border dark:border-white/60">
+        <div className="relative mhub-premium-surface rounded-3xl p-10 max-w-md w-full text-center border border-white/60 dark:border-white/10 shadow-2xl shadow-blue-500/[0.08] dark:border-white/60">
           {/* Decorative top gradient line */}
           <div className="absolute top-0 left-6 right-6 h-[3px] rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 dark:bg-gradient-to-r" />
 
           {/* Lock icon with rings */}
           <div className="relative w-24 h-24 mx-auto mb-8">
-            <div className="absolute inset-0 rounded-full border-2 border-dashed border-blue-200 dark:border-blue-500/20 animate-[spin_20s_linear_infinite] dark:border-2 dark:border-dashed dark:border-blue-600/40" />
-            <div className="absolute inset-2 rounded-full border border-blue-100 dark:border-blue-500/10 dark:border dark:border-blue-600/40" />
+            <div className="absolute inset-0 rounded-full border-2 border-dashed border-blue-200 dark:border-blue-500/20 animate-[spin_20s_linear_infinite] dark:border-blue-600/40" />
+            <div className="absolute inset-2 rounded-full border border-blue-100 dark:border-blue-600/40" />
             <div className="absolute inset-4 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 dark:bg-gradient-to-br">
               <Bell className="w-8 h-8 text-white dark:text-white" />
             </div>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight dark:text-gray-100">
+          <h1 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight dark:text-gray-100">
             {t("login_required") || "Login Required"}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed text-[15px] dark:text-gray-300">
+          <p className="text-gray-500 dark:text-gray-300 mb-8 leading-relaxed text-sm ">
             {t("please_login_to_continue") ||
               "Please sign in to view your notifications."}
           </p>
@@ -893,7 +913,7 @@ const NotificationsPage = () => {
             onClick={() =>
               navigate("/login", { state: { returnTo: "/notifications" } })
             }
-            className="w-full min-h-[48px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98] dark:bg-gradient-to-r dark:text-white"
+            className="w-full min-h-[48px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-[0.98] dark:bg-gradient-to-r dark:text-white"
           >
             {t("sign_in") || "Sign In"}
           </button>
@@ -917,8 +937,8 @@ const NotificationsPage = () => {
                 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
             }}
           />
-        <div className="relative max-w-3xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
-          <div className="mb-3 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+        <div className="relative max-w-[640px] mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
+          <div className="mb-3 max-w-[640px] text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
             <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
               <button
                 type="button"
@@ -956,7 +976,7 @@ const NotificationsPage = () => {
           </div>
         </div>
         </div>
-        <div className="max-w-3xl mx-auto px-4 pt-5">
+        <div className="max-w-[640px] mx-auto px-4 pt-5">
           {/* Skeleton filter tabs */}
           <div className="mhub-premium-surface rounded-2xl p-1.5 mb-6 flex gap-1">
             {[1, 2, 3].map((i) => (
@@ -976,7 +996,7 @@ const NotificationsPage = () => {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="relative overflow-hidden rounded-2xl mhub-premium-surface border-l-4 border-l-gray-200 dark:border-l-white/10 p-4 dark:border-l-4 dark:border-l-gray-200"
+                className="relative overflow-hidden rounded-2xl mhub-premium-surface border-l-4 border-l-gray-200 dark:border-l-white/10 p-4 dark:border-l-gray-200"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
                 <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-white/5 to-transparent dark:bg-gradient-to-r" />
@@ -996,9 +1016,9 @@ const NotificationsPage = () => {
             ))}
           </div>
           {/* Skeleton stats */}
-          <div className="grid grid-cols-3 gap-3 mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-10">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="mhub-premium-surface rounded-2xl p-4 text-center dark:text-center">
+              <div key={i} className="mhub-premium-surface rounded-2xl p-4 text-center">
                 <div className="w-9 h-9 mx-auto mb-2.5 bg-gray-200/60 dark:bg-white/10 rounded-xl animate-pulse dark:bg-gray-900/60" />
                 <div className="h-7 w-10 mx-auto bg-gray-200/60 dark:bg-white/10 rounded-lg animate-pulse mb-1.5 dark:bg-gray-900/60" />
                 <div className="h-3 w-12 mx-auto bg-gray-100/50 dark:bg-white/5 rounded animate-pulse dark:bg-gray-950/50" />
@@ -1049,8 +1069,8 @@ const NotificationsPage = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <div className="relative max-w-3xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
-          <div className="mb-3 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+        <div className="relative max-w-[640px] mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
+          <div className="mb-3 max-w-[640px] text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
             <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
               <button
                 type="button"
@@ -1106,7 +1126,7 @@ const NotificationsPage = () => {
       </div>
 
       {/* Main container */}
-      <div className="relative z-10 max-w-3xl mx-auto px-4 pt-5">
+      <div className="relative z-10 max-w-[640px] mx-auto px-4 pt-5">
         <div className="mb-4 flex flex-col gap-3">
           <div className="flex justify-end">
             <PageDensityToggle value={density} onChange={setDensity} />
@@ -1182,7 +1202,7 @@ const NotificationsPage = () => {
 
         {/* Filter Tabs — Premium pill bar */}
         <div className="mb-4 pt-1">
-          <div className="mhub-premium-surface rounded-2xl p-1.5 shadow-sm border border-white/60 dark:border-white/[0.06] dark:border dark:border-white/60" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div className="mhub-premium-surface rounded-2xl p-1.5 shadow-sm border border-white/60 dark:border-white/60" style={{ boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)" }}>
             <div className="flex gap-1">
               {filterTabs.map((tab) => (
                 <button
@@ -1190,7 +1210,7 @@ const NotificationsPage = () => {
                   type="button"
                   onClick={() => setActiveFilter(tab.key)}
                   aria-pressed={activeFilter === tab.key}
-                  className={`relative flex items-center gap-1.5 px-3.5 min-h-[40px] py-2 rounded-xl font-semibold text-[13px] whitespace-nowrap transition-all duration-300 flex-1 justify-center ${
+                  className={`relative flex items-center gap-1.5 px-3.5 min-h-[40px] py-2 rounded-xl font-semibold text-sm whitespace-nowrap transition-all duration-300 flex-1 justify-center ${
                     activeFilter === tab.key
                       ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/25"
                       : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-700 dark:hover:text-gray-300"
@@ -1199,7 +1219,7 @@ const NotificationsPage = () => {
                   <tab.icon className="w-3.5 h-3.5" />
                   {tab.label}
                   <span
-                    className={`ml-0.5 min-w-[20px] px-1.5 py-0.5 rounded-full text-[11px] font-bold tabular-nums transition-colors duration-200 ${
+                    className={`ml-0.5 min-w-[20px] px-1.5 py-1 rounded-full text-xs font-bold tabular-nums transition-colors duration-200 ${
                       activeFilter === tab.key
                         ? "bg-white/20 text-white"
                         : "bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400"
@@ -1255,7 +1275,7 @@ const NotificationsPage = () => {
                   ? t("clear_selection") || "Clear selection"
                   : t("select_all") || "Select all"}
                 {selectedCount > 0 && (
-                  <span className="text-[10px] text-slate-400 dark:text-slate-400">
+                  <span className="text-xs text-slate-400 dark:text-slate-400">
                     ({selectedCount})
                   </span>
                 )}
@@ -1285,7 +1305,7 @@ const NotificationsPage = () => {
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="flex items-center gap-1.5 px-3.5 min-h-[36px] py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-500/20 rounded-full transition-all duration-200 active:scale-[0.97] dark:text-blue-300 dark:border dark:border-blue-600/40 dark:hover:bg-blue-800/30 dark:hover:text-white"
+                className="flex items-center gap-1.5 px-3.5 min-h-[36px] py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-500/20 rounded-full transition-all duration-200 active:scale-[0.97] dark:text-blue-300 dark:border-blue-600/40 dark:hover:bg-blue-800/30 dark:hover:text-white"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 {t("mark_all_as_read") || "Mark all as read"}
@@ -1308,15 +1328,15 @@ const NotificationsPage = () => {
         <div className="space-y-3">
           {groupedNotifications.length === 0 ? (
             /* Empty state — Premium illustration */
-            <div className="pt-12 pb-[calc(var(--bottom-nav-height)+var(--bottom-nav-safe)+2rem)] text-center dark:text-center">
+            <div className="pt-12 pb-[calc(var(--bottom-nav-height)+var(--bottom-nav-safe)+2rem)] text-center">
               {/* Concentric rings illustration */}
               <div className="relative w-36 h-36 mx-auto mb-10">
                 {/* Outer rotating dashed ring */}
-                <div className="absolute inset-0 rounded-full border-2 border-dashed border-blue-200/60 dark:border-blue-500/15 animate-[spin_25s_linear_infinite] dark:border-2 dark:border-dashed dark:border-blue-600/60" />
+                <div className="absolute inset-0 rounded-full border-2 border-dashed border-blue-200/60 dark:border-blue-500/15 animate-[spin_25s_linear_infinite] dark:border-blue-600/60" />
                 {/* Middle ring */}
-                <div className="absolute inset-3 rounded-full border border-indigo-100 dark:border-indigo-500/10 dark:border dark:border-indigo-600/40" />
+                <div className="absolute inset-3 rounded-full border border-indigo-100 dark:border-indigo-600/40" />
                 {/* Inner ring */}
-                <div className="absolute inset-6 rounded-full border border-purple-100/80 dark:border-purple-500/10 dark:border dark:border-purple-600/80" />
+                <div className="absolute inset-6 rounded-full border border-purple-100/80 dark:border-purple-600/80" />
                 {/* Center icon container */}
                 <div className="absolute inset-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 dark:bg-gradient-to-br">
                   <Bell className="w-10 h-10 text-white drop-shadow-sm dark:text-white" />
@@ -1328,12 +1348,12 @@ const NotificationsPage = () => {
                 <div className="absolute top-1/4 -left-1 w-1.5 h-1.5 rounded-full bg-blue-300/40 animate-bounce dark:bg-blue-900/40" style={{ animationDelay: "1.5s", animationDuration: "3.2s" }} />
               </div>
 
-              <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight dark:text-gray-100">
+              <h3 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white mb-3 tracking-tight dark:text-gray-100">
                 {activeFilter === "unread"
                   ? t("all_caught_up") || "All caught up!"
                   : t("no_notifications") || "No notifications"}
               </h3>
-              <p className="text-slate-400 dark:text-gray-400 max-w-xs mx-auto leading-relaxed mb-6 text-[15px] dark:text-slate-300">
+              <p className="text-slate-400 dark:text-gray-400 max-w-xs mx-auto leading-relaxed mb-6 text-sm dark:text-slate-300">
                 {activeFilter === "unread"
                   ? t("read_all_notifications") ||
                     "Great job! You've read all your notifications."
@@ -1351,7 +1371,7 @@ const NotificationsPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate("/chat")}
-                  className="min-h-[48px] px-7 py-3 rounded-2xl border-2 border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-gray-300 text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/15 transition-all duration-300 active:scale-[0.97] hover:shadow-md dark:border-2 dark:border-gray-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-gray-950 dark:hover:border-gray-600"
+                  className="min-h-[48px] px-7 py-3 rounded-2xl border-2 border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-gray-300 text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/15 transition-all duration-300 active:scale-[0.97] hover:shadow-md dark:border-gray-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-gray-950 dark:hover:border-gray-600"
                 >
                   Open Chat
                 </button>
@@ -1361,7 +1381,7 @@ const NotificationsPage = () => {
             groupedNotifications.map((group, groupIdx) => (
               <div key={`group-${group.label}-${groupIdx}`} className="space-y-3">
                 <div className="flex items-center gap-3 my-5 px-1">
-                  <span className="text-[10px] font-bold text-slate-400 dark:text-gray-400 uppercase tracking-[0.18em] whitespace-nowrap dark:text-slate-300">
+                  <span className="text-xs font-bold text-slate-400 dark:text-gray-400 uppercase tracking-[0.18em] whitespace-nowrap dark:text-slate-300">
                     {group.label}
                   </span>
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 dark:from-white/10 to-transparent dark:bg-gradient-to-r" />
@@ -1430,12 +1450,12 @@ const NotificationsPage = () => {
                                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                                   {notification.title}
                                 </h3>
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                   {formatTimeAgo(notification.created_at)}
                                 </span>
                               </div>
                               {senderName && (
-                                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                                   {senderAvatar ? (
                                     <img
                                       src={senderAvatar}
@@ -1444,31 +1464,31 @@ const NotificationsPage = () => {
                                       loading="lazy"
                                     />
                                   ) : (
-                                    <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[9px] font-semibold dark:bg-slate-800 dark:text-slate-200">
+                                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-semibold dark:bg-slate-800 dark:text-slate-200">
                                       {senderInitials}
                                     </span>
                                   )}
                                   <span className="truncate">{senderName}</span>
                                   {sender?.verified && (
-                                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20">
+                                    <span className="px-1.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20">
                                       {t("verified") || "Verified"}
                                     </span>
                                   )}
                                 </div>
                               )}
-                              <p className="mt-1 text-[13px] text-slate-600 dark:text-slate-300 line-clamp-2">
+                              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
                                 {notification.message}
                               </p>
                               <div className="mt-2 flex flex-wrap items-center gap-2">
                                 {expiresLabel && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold border border-slate-200 text-slate-500 dark:border-white/10 dark:text-slate-300">
-                                    <Clock className="w-3 h-3" />
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-slate-200 text-slate-500 dark:border-white/10 dark:text-slate-300">
+                                    <Clock className="w-4 h-4" />
                                     {expiresLabel}
                                   </span>
                                 )}
                                 {groupCount > 1 && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold border border-indigo-200 text-indigo-600 dark:border-indigo-500/30 dark:text-indigo-300">
-                                    <Sparkles className="w-3 h-3" />
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border border-indigo-200 text-indigo-600 dark:border-indigo-500/30 dark:text-indigo-300">
+                                    <Sparkles className="w-4 h-4" />
                                     {t("grouped") || "Grouped"} ×{groupCount}
                                   </span>
                                 )}
@@ -1480,7 +1500,7 @@ const NotificationsPage = () => {
                                     className="inline-flex items-center gap-1.5 min-h-[32px] px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 dark:border-white/10"
                                   >
                                     {notification.action.label}
-                                    <ChevronRight className="w-3 h-3" />
+                                    <ChevronRight className="w-4 h-4" />
                                   </button>
                                 )}
                                 {!notification.read && (
@@ -1591,7 +1611,7 @@ const NotificationsPage = () => {
 
         {/* Stats cards */}
         {notifications.length > 0 && (
-          <div data-density="extra" className="grid grid-cols-3 gap-3 mt-10">
+          <div data-density="extra" className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-10">
             {[
               { icon: Bell, label: t("total") || "Total", value: notifications.length, gradient: "from-blue-500 to-indigo-600", bgGradient: "from-blue-50 to-indigo-50", darkBg: "dark:from-blue-500/10 dark:to-indigo-500/10", shadow: "shadow-blue-500/15", labelColor: "text-blue-600/80 dark:text-blue-300/60" },
               { icon: Zap, label: t("unread") || "Unread", value: unreadCount, gradient: "from-purple-500 to-fuchsia-600", bgGradient: "from-purple-50 to-fuchsia-50", darkBg: "dark:from-purple-500/10 dark:to-fuchsia-500/10", shadow: "shadow-purple-500/15", labelColor: "text-purple-600/80 dark:text-purple-300/60" },
@@ -1604,10 +1624,10 @@ const NotificationsPage = () => {
                   <div className={`w-9 h-9 mx-auto mb-2.5 bg-gradient-to-br ${stat.gradient} rounded-xl flex items-center justify-center shadow-md ${stat.shadow}`}>
                     <stat.icon className="w-4 h-4 text-white dark:text-white" />
                   </div>
-                  <div className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1 dark:text-gray-100">
+                  <div className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-none mb-1 dark:text-gray-100">
                     {stat.value}
                   </div>
-                  <span className={`text-[10px] font-semibold uppercase tracking-widest ${stat.labelColor}`}>
+                  <span className={`text-xs font-semibold uppercase tracking-widest ${stat.labelColor}`}>
                     {stat.label}
                   </span>
                 </div>
@@ -1631,10 +1651,10 @@ const NotificationsPage = () => {
               <Sparkles className="w-5 h-5 text-white drop-shadow-sm dark:text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-white/95 text-[13px] tracking-wide uppercase mb-1.5 dark:text-white/95">
+              <h4 className="font-bold text-white/95 text-sm tracking-wide uppercase mb-1.5 dark:text-white/95">
                 {t("pro_tip") || "Pro Tip"}
               </h4>
-              <p className="text-[13px] text-white/70 leading-relaxed dark:text-white/70">
+              <p className="text-sm text-white/70 leading-relaxed dark:text-white/70">
                 {t("enable_push_notifications") ||
                   "Enable push notifications to never miss a buyer inquiry or price drop on your wishlist items!"}
               </p>

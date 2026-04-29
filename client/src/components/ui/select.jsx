@@ -149,7 +149,7 @@ function SelectContent({ className, children, ...props }) {
   return (
     <div
       className={cn(
-        "absolute top-full left-0 mt-2 z-[9999] w-full overflow-hidden rounded-xl mhub-premium-surface border border-[var(--chip-border)] text-[var(--text)] shadow-2xl",
+        "absolute top-full left-0 mt-2 z-[60] w-full overflow-hidden rounded-xl mhub-premium-surface border border-[var(--chip-border)] text-[var(--text)] shadow-2xl",
         className,
       )}
       {...props}

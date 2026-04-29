@@ -85,7 +85,7 @@ const PostActions = ({ isLiked = false, isSaved = false }) => {
       <Button
         variant="outline"
         size="sm"
-        className="h-8 px-2 text-[10px] sm:h-9 sm:px-3 sm:text-xs"
+        className="h-9 px-3 text-xs"
         onClick={handleLike}
       >
         <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
@@ -95,7 +95,7 @@ const PostActions = ({ isLiked = false, isSaved = false }) => {
       <Button
         variant="outline"
         size="sm"
-        className="h-8 px-2 text-[10px] sm:h-9 sm:px-3 sm:text-xs"
+        className="h-9 px-3 text-xs"
         onClick={handleShare}
       >
         <Share2 className="h-4 w-4 mr-2" />
@@ -105,7 +105,7 @@ const PostActions = ({ isLiked = false, isSaved = false }) => {
       <Button
         variant="outline"
         size="sm"
-        className="h-8 px-2 text-[10px] sm:h-9 sm:px-3 sm:text-xs"
+        className="h-9 px-3 text-xs"
         onClick={handleSave}
       >
         <BookmarkPlus className={`h-4 w-4 mr-2 ${isSaved ? 'fill-blue-500 text-blue-500' : ''}`} />
@@ -115,7 +115,7 @@ const PostActions = ({ isLiked = false, isSaved = false }) => {
       <Button
         variant="outline"
         size="sm"
-        className="h-8 px-2 text-[10px] sm:h-9 sm:px-3 sm:text-xs"
+        className="h-9 px-3 text-xs"
         onClick={handleReport}
       >
         <Flag className="h-4 w-4 mr-2" />

@@ -251,10 +251,491 @@
   box-shadow: var(--mhub-shadow-lg);
 }
 
-/* Compact density helpers */
+/* Compact density helpers — on mobile (<480px) show compact hero instead of hiding */
 .mhub-compact [data-density="extra"],
 .mhub-compact .mhub-density-extra {
   display: none;
+}
+@media (max-width: 480px) {
+  /* ---- Show hero banners in compact form on mobile ---- */
+  .mhub-compact [data-density="extra"] {
+    display: block !important;
+    padding: 8px 12px !important;
+  }
+  .mhub-compact [data-density="extra"] > div {
+    padding: 4px 8px !important;
+  }
+  /* Show compact title */
+  .mhub-compact [data-density="extra"] h1 {
+    font-size: 1.05rem !important;
+    display: inline !important;
+  }
+  /* Show subtitle in heroes — but smaller */
+  .mhub-compact [data-density="extra"] p:not(.foryou-hero-sub):not(.home-hero-sub) {
+    display: none !important;
+  }
+  .mhub-compact [data-density="extra"] .foryou-hero-sub,
+  .mhub-compact [data-density="extra"] .home-hero-sub {
+    display: block !important;
+  }
+  /* Show hero stat pills — critical for "android friendly" features */
+  .mhub-compact [data-density="extra"] .foryou-hero-stats,
+  .mhub-compact [data-density="extra"] .allposts-hero-stats,
+  .mhub-compact [data-density="extra"] .home-hero-stats {
+    display: flex !important;
+  }
+  /* Hide desktop action buttons (My Feed / Share Update) */
+  .mhub-compact [data-density="extra"] .flex.flex-col.md\:flex-row > .flex.gap-3 {
+    display: none !important;
+  }
+  /* Hide the old badges row */
+  .mhub-compact [data-density="extra"] .mt-3:not(.allposts-hero-stats):not(.foryou-hero-stats) {
+    display: none !important;
+  }
+  /* Make icon row compact */
+  .mhub-compact [data-density="extra"] .mb-2 {
+    margin-bottom: 0 !important;
+  }
+  .mhub-compact [data-density="extra"] .gap-4 {
+    gap: 4px !important;
+  }
+  .mhub-compact [data-density="extra"] .py-3 {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* ---- Feed sticky toolbar ---- */
+  .feed-sticky-toolbar {
+    background: rgba(255,255,255,0.92) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(148,163,184,0.15) !important;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.06) !important;
+  }
+  .dark .feed-sticky-toolbar {
+    background: rgba(15,23,42,0.92) !important;
+    border-bottom-color: rgba(100,116,139,0.2) !important;
+  }
+  .feed-search-input {
+    height: 36px !important;
+    font-size: 0.8125rem !important;
+  }
+  .feed-sort-select {
+    max-width: 110px !important;
+    height: 36px !important;
+    font-size: 0.75rem !important;
+  }
+  .feed-refresh-btn {
+    width: 36px !important;
+    height: 36px !important;
+    flex-shrink: 0 !important;
+  }
+  .feed-sort-pills {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .feed-sort-pills::-webkit-scrollbar { display: none; }
+  .feed-sort-pill {
+    flex-shrink: 0 !important;
+  }
+
+  /* ---- ForYou hero ---- */
+  .foryou-hero {
+    padding: 8px 12px !important;
+  }
+  .foryou-hero h1 {
+    font-size: 1.1rem !important;
+  }
+  .foryou-hero-badge {
+    flex-shrink: 0;
+  }
+  .foryou-hero-sub {
+    display: block !important;
+    font-size: 0.7rem !important;
+    margin-top: 2px !important;
+  }
+  .foryou-hero-stats {
+    margin-top: 6px !important;
+    gap: 6px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .foryou-hero-stats::-webkit-scrollbar { display: none; }
+  .foryou-stat {
+    flex-shrink: 0 !important;
+    padding: 3px 8px !important;
+    font-size: 0.65rem !important;
+  }
+
+  /* ---- AllPosts hero stats ---- */
+  .allposts-hero-stats {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px !important;
+    margin-top: 4px !important;
+  }
+  .allposts-hero-stats::-webkit-scrollbar { display: none; }
+
+  /* ---- Back to top FABs ---- */
+  .rewards-back-to-top,
+  .foryou-back-to-top,
+  .profile-back-to-top {
+    opacity: 0.85;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .rewards-back-to-top:active,
+  .foryou-back-to-top:active,
+  .profile-back-to-top:active {
+    transform: scale(0.85);
+  }
+
+  /* ---- Glassmorphism sticky bars (all pages) ---- */
+  .mhub-premium-bar {
+    background: rgba(255,255,255,0.88) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(148,163,184,0.12) !important;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.05) !important;
+  }
+  .dark .mhub-premium-bar {
+    background: rgba(15,23,42,0.88) !important;
+    border-bottom-color: rgba(100,116,139,0.2) !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+  }
+
+  /* ---- Rewards tab bar glassmorphism ---- */
+  .rewards-tabs-sticky {
+    margin-bottom: 8px !important;
+  }
+  .rewards-tab-bar {
+    gap: 3px !important;
+    padding: 3px !important;
+    border-radius: 16px !important;
+  }
+  .rewards-tab-bar button {
+    padding: 6px 10px !important;
+    font-size: 0.7rem !important;
+    border-radius: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  /* ---- Profile tabs sticky ---- */
+  .profile-tabs-sticky {
+    margin-bottom: 8px !important;
+  }
+
+  /* ---- Modern card styles ---- */
+  .mhub-premium-surface {
+    border-radius: 16px !important;
+    border: 1px solid rgba(148,163,184,0.12) !important;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.04) !important;
+  }
+  .dark .mhub-premium-surface {
+    border-color: rgba(100,116,139,0.2) !important;
+  }
+
+  /* ---- Home page hero ---- */
+  .home-hero {
+    background: linear-gradient(135deg, #3b82f6 0%, #10b981 50%, #06b6d4 100%);
+    padding: 18px 0 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .home-hero-kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    font-size: 0.6875rem;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 2px;
+  }
+  .home-hero-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .home-hero-live-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .home-hero-sub {
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.8);
+    margin-top: 2px;
+  }
+  .home-hero-stats {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .home-hero-stats::-webkit-scrollbar { display: none; }
+  .home-stat {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ---- Home quick actions ---- */
+  .home-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 10px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(15,23,42,0.08);
+    border: 1px solid rgba(148,163,184,0.12);
+  }
+  .dark .home-quick-actions {
+    background: rgba(15,23,42,0.92);
+    border-color: rgba(100,116,139,0.2);
+  }
+  .home-quick-actions .home-hero-stats {
+    grid-column: 1 / -1;
+    justify-content: center;
+    margin-top: 2px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(148,163,184,0.1);
+    gap: 8px;
+  }
+  .home-quick-actions .home-stat {
+    background: rgba(16,185,129,0.08);
+    color: #374151;
+    font-size: 0.65rem;
+  }
+  .dark .home-quick-actions .home-stat {
+    background: rgba(16,185,129,0.15);
+    color: #d1d5db;
+  }
+  .home-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border-radius: 12px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .home-action-card:active {
+    transform: scale(0.93);
+    background: rgba(16,185,129,0.08);
+  }
+  .home-action-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  .home-action-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #374151;
+  }
+  .dark .home-action-label {
+    color: #d1d5db;
+  }
+
+  /* ---- Home sticky bar ---- */
+  .home-sticky-bar {
+    position: sticky;
+    top: 40px;
+    z-index: 80;
+    padding: 8px 0 10px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    background: rgba(255,255,255,0.92) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    border-bottom: 1px solid rgba(148,163,184,0.15);
+    box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+  }
+  .dark .home-sticky-bar {
+    background: rgba(15,23,42,0.92) !important;
+    border-bottom-color: rgba(100,116,139,0.2);
+  }
+  .home-search-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .home-search-input {
+    flex: 1;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid rgba(148,163,184,0.2);
+    padding: 0 14px;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.8);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .home-search-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16,185,129,0.15);
+  }
+  .dark .home-search-input {
+    background: rgba(30,41,59,0.8);
+    border-color: rgba(100,116,139,0.3);
+    color: #e2e8f0;
+  }
+  .home-refresh-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(148,163,184,0.2);
+    background: rgba(255,255,255,0.8);
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+  .home-refresh-btn:active {
+    transform: rotate(180deg);
+  }
+  .dark .home-refresh-btn {
+    background: rgba(30,41,59,0.8);
+    border-color: rgba(100,116,139,0.3);
+    color: #e2e8f0;
+  }
+  .home-category-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+    margin-bottom: 2px;
+  }
+  .home-category-chip {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border: 1px solid rgba(148,163,184,0.2);
+    background: rgba(255,255,255,0.7);
+    color: #4b5563;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .home-category-chip.active {
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+  }
+  .dark .home-category-chip {
+    background: rgba(30,41,59,0.7);
+    border-color: rgba(100,116,139,0.3);
+    color: #d1d5db;
+  }
+  .dark .home-category-chip.active {
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+    color: #fff;
+  }
+
+  /* ---- Home section header ---- */
+  .home-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    margin-top: 12px;
+    padding: 0 2px;
+  }
+  .home-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+  .dark .home-section-title {
+    color: #f3f4f6;
+  }
+  .home-results-count {
+    font-size: 0.7rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  .dark .home-results-count {
+    color: #9ca3af;
+  }
+
+  /* ---- Home view all button ---- */
+  .home-view-all-btn {
+    border-radius: 999px !important;
+    padding: 8px 24px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    background: linear-gradient(135deg, #10b981, #3b82f6) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(16,185,129,0.3) !important;
+  }
+
+  /* ---- Home back to top ---- */
+  .home-back-to-top {
+    position: fixed;
+    bottom: 72px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+    color: #fff;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+    cursor: pointer;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.88;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .home-back-to-top:active {
+    transform: scale(0.85);
+  }
+
+  /* ---- Scrollbar hide utility ---- */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { scrollbar-width: none; }
 }
 
 .mhub-compact .mhub-density-tight {
@@ -786,10 +1267,10 @@ button[class*="border"]:hover {
    REWARDS PAGE SPECIFIC FIXES
    ============================================ */
 
-/* Fix rewards layout - force single column on mobile */
+/* Fix rewards layout - force single column on mobile (but not product grids) */
 @media (max-width: 768px) {
-  [class*="grid-cols-2"][class*="lg:grid-cols-"],
-  [class*="md:grid-cols-2"] {
+  [class*="grid-cols-2"][class*="lg:grid-cols-"]:not(.keep-cols),
+  [class*="md:grid-cols-2"]:not(.keep-cols) {
     grid-template-columns: 1fr;
   }
 }
@@ -1236,6 +1717,32 @@ button[class*="border"]:hover {
   color: #ffffff;
 }
 
+/* Compact chip layout (used by sticky All Posts bars on mobile/native) */
+.mhub-chip-compact {
+  min-height: 34px !important;
+  min-width: 0 !important;
+  padding: 0.35rem 0.7rem !important;
+  border-radius: 999px !important;
+}
+
+.mhub-chip-compact .mhub-category-icon,
+.mhub-chip-compact .mhub-subcategory-icon {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mhub-chip-compact .mhub-category-label,
+.mhub-chip-compact .mhub-subcategory-label {
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.mhub-chipbar .mhub-chip-compact.mhub-category-item-active,
+.mhub-chipbar .mhub-chip-compact.mhub-subcategory-item-active {
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.22);
+}
+
 @media (max-width: 640px) {
   .mhub-category-shell,
   .mhub-subcategory-shell {
@@ -1348,19 +1855,20 @@ button[class*="border"]:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.3rem 0.85rem;
+  padding: 0.25rem 0.7rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.35);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-weight: 700;
+  margin-bottom: 0.25rem;
 }
 
 .mhub-page-allposts .mhub-allposts-hero-title {
-  margin-top: 0.45rem;
-  font-size: clamp(1.5rem, 2vw, 2.2rem);
+  margin-top: 0.15rem;
+  font-size: clamp(1.3rem, 2vw, 2.2rem);
   font-weight: 800;
   line-height: 1.1;
 }
@@ -2555,28 +3063,763 @@ button[class*="bg-green-500"] {
 }
 
 /* ============================================
-   ADDITIONAL MOBILE OPTIMIZATIONS
+   MOBILE-FIRST LAYOUT OVERHAUL
+   Clean, user-friendly mobile marketplace layout
    ============================================ */
 
 @media (max-width: 640px) {
-  /* Tighter container padding */
+  /* ── Global spacing ── */
   .container {
-    padding-left: var(--mhub-space-sm);
-    padding-right: var(--mhub-space-sm);
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
-  /* Single column grids on mobile */
-  .grid-cols-2:not(.keep-cols) {
+  /* Single column grids on mobile — only for NON-product grids */
+  .grid-cols-2:not(.keep-cols):not(.gap-3):not(.gap-2) {
     grid-template-columns: 1fr;
   }
 
-  /* Smaller headings on mobile */
-  h1, .text-2xl, .text-3xl {
-    font-size: var(--mhub-text-xl);
+  /* Tighter page padding everywhere */
+  .page-pad, .px-4, .px-5 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
   }
 
+  /* ============================================
+     HOME PAGE – COMPACT HERO & CLEAN LAYOUT
+     ============================================ */
+
+  /* Hero — ultra-compact on mobile */
+  .home-hero {
+    padding: 0.75rem 0 0.5rem !important;
+  }
+  .home-hero-title {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.125rem !important;
+  }
+  .home-hero-sub {
+    font-size: 0.7rem !important;
+    margin-top: 0 !important;
+  }
+  .home-hero-kicker {
+    font-size: 0.6875rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .home-hero-live-badge {
+    font-size: 0.6875rem !important;
+    padding: 0.125rem 0.375rem !important;
+  }
+  .home-hero-stats {
+    margin-top: 0.375rem !important;
+    gap: 0.5rem !important;
+  }
+  .home-stat {
+    font-size: 0.6875rem !important;
+    padding: 0.1875rem 0.375rem !important;
+  }
+
+  /* Quick actions — tighter 4-col grid */
+  .home-quick-actions {
+    gap: 0.375rem !important;
+    padding: 0.5rem !important;
+  }
+  .home-action-card {
+    padding: 0.375rem 0.25rem !important;
+    border-radius: 0.625rem !important;
+    min-height: auto !important;
+  }
+  .home-action-icon {
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    font-size: 0.85rem !important;
+    margin-bottom: 0.125rem !important;
+  }
+  .home-action-label {
+    font-size: 0.6875rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Search bar — compact */
+  .home-sticky-bar {
+    padding: 0.375rem 0.5rem !important;
+  }
+  .home-search-input {
+    height: 2rem !important;
+    font-size: 0.75rem !important;
+    padding: 0 0.625rem !important;
+  }
+  .home-refresh-btn {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  /* Category chips — smaller */
+  .home-category-chip {
+    font-size: 0.6875rem !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 9999px !important;
+  }
+
+  /* Section headers — compact */
+  .home-section-header {
+    padding: 0.5rem 0 0.375rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .home-section-title {
+    font-size: 0.875rem !important;
+  }
+  .home-results-count {
+    font-size: 0.6875rem !important;
+  }
+
+  /* Product grid — 2-col guaranteed */
+  .home-section-header + div .grid.grid-cols-2,
+  .grid.grid-cols-2.keep-cols {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Home product cards — compact like Flipkart */
+  .home-section-header + div .grid .mhub-premium-surface.rounded-xl {
+    border-radius: 0.625rem !important;
+    overflow: hidden !important;
+  }
+  /* Image area */
+  .home-section-header + div .grid .aspect-square {
+    aspect-ratio: 4/3 !important;
+  }
+  /* Text area under image */
+  .home-section-header + div .grid .p-2 {
+    padding: 0.375rem !important;
+  }
+  .home-section-header + div .grid .p-2 .font-semibold {
+    font-size: 0.7rem !important;
+    line-height: 1.25 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  .home-section-header + div .grid .p-2 .text-xs {
+    font-size: 0.6875rem !important;
+  }
+  /* Price overlay on Home cards */
+  .home-section-header + div .grid .absolute.bottom-2 {
+    bottom: 0.25rem !important;
+    left: 0.25rem !important;
+  }
+  .home-section-header + div .grid .absolute.bottom-2 .font-bold {
+    font-size: 0.7rem !important;
+  }
+  /* Category badge on Home cards */
+  .home-section-header + div .grid .absolute.top-1\.5 {
+    top: 0.25rem !important;
+    right: 0.25rem !important;
+    font-size: 0.5625rem !important;
+    padding: 0.125rem 0.25rem !important;
+  }
+
+  /* CentrePage Updates — limit height */
+  .mb-6:has(> [class*="centre-updates"]),
+  .mb-6:has(> [class*="featured-centre"]) {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* ============================================
+     ALLPOSTS – COMPACT 2-COL MARKETPLACE CARDS
+     ============================================ */
+  .mhub-allposts-card {
+    border-radius: 0.625rem !important;
+  }
+  /* Move product image to TOP of card (visual hero first) */
+  .mhub-allposts-card > .mhub-media-frame {
+    order: -1 !important;
+    border-top-left-radius: 0.625rem !important;
+    border-top-right-radius: 0.625rem !important;
+    border-top: none !important;
+  }
+
+  /* Header row — compact */
+  .mhub-allposts-card > div:first-child {
+    padding: 0.25rem 0.375rem 0.125rem !important;
+    gap: 0.25rem !important;
+  }
+  /* Hide avatars on compact grid */
+  .mhub-allposts-card > div:first-child > span:first-child,
+  .mhub-allposts-card > div:first-child > .w-9,
+  .mhub-allposts-card > div:first-child > [class*="Avatar"] {
+    display: none !important;
+  }
+  /* Seller name — minimum readable */
+  .mhub-allposts-card > div:first-child .font-semibold {
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+  }
+  /* Verified badge — hide */
+  .mhub-allposts-card > div:first-child .bg-blue-50 {
+    display: none !important;
+  }
+
+  /* Price pill — readable padding */
+  .mhub-allposts-card .mhub-price-pill {
+    padding: 0.1875rem 0.375rem !important;
+    gap: 0.1875rem !important;
+  }
+  .mhub-allposts-card .mhub-price-pill .uppercase {
+    display: none !important;
+  }
+  .mhub-allposts-card .mhub-price-pill .font-bold {
+    font-size: 0.8125rem !important;
+  }
+
+  /* Title — 2 lines max, minimum 12px */
+  .mhub-allposts-card .mhub-card-title {
+    font-size: 0.75rem !important;
+    line-height: 1.3 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-top: 0.125rem !important;
+  }
+
+  /* Meta chips — readable */
+  .mhub-allposts-card .mhub-card-meta {
+    margin-top: 0.125rem !important;
+    gap: 0.125rem !important;
+  }
+  .mhub-allposts-card .mhub-card-meta .mhub-chip {
+    font-size: 0.75rem !important;
+    padding: 0.125rem 0.3125rem !important;
+  }
+
+  /* Image — constrained */
+  .mhub-allposts-card .mhub-media-img {
+    height: 120px !important;
+  }
+
+  /* Hide carousel arrows on 2-col cards — keep images visible */
+  .mhub-allposts-card .mhub-media-frame button {
+    display: none !important;
+  }
+  /* Hide carousel dots only (the flex row with dot indicators) */
+  .mhub-allposts-card .mhub-media-frame > div.flex.justify-center {
+    display: none !important;
+  }
+
+  /* Image counter badge — minimum readable */
+  .mhub-allposts-card .mhub-media-frame [class*="bg-black"] {
+    font-size: 0.625rem !important;
+    padding: 0.125rem 0.3125rem !important;
+    top: 0.25rem !important;
+    right: 0.25rem !important;
+  }
+
+  /* Action row — force single horizontal line */
+  .mhub-allposts-card .post-action-row {
+    flex-wrap: nowrap !important;
+    gap: 0.25rem !important;
+    padding: 0.25rem 0.375rem !important;
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+  /* Card body container — reduce excess padding */
+  .mhub-allposts-card .px-3.pb-3.pt-2 {
+    padding: 0.25rem 0.375rem 0.25rem !important;
+  }
+  .mhub-allposts-card .post-action-row button,
+  .mhub-allposts-card .post-action-row span,
+  .mhub-allposts-card .post-action-row .mhub-chip {
+    height: 1.75rem !important;
+    padding: 0 0.3125rem !important;
+    font-size: 0.75rem !important;
+    flex-shrink: 0 !important;
+  }
+  .mhub-allposts-card .post-action-row button svg,
+  .mhub-allposts-card .post-action-row span svg {
+    width: 0.8125rem !important;
+    height: 0.8125rem !important;
+  }
+  .mhub-allposts-card .post-action-row button span,
+  .mhub-allposts-card .post-action-row .mhub-chip span {
+    font-size: 0.75rem !important;
+  }
+  /* Hide View Details CTA on compact 2-col — it doesn't fit */
+  .mhub-allposts-card .post-action-row .mhub-cta {
+    display: none !important;
+  }
+
+  /* More options button — proper touch target */
+  .mhub-allposts-card .absolute.right-3.top-3 {
+    right: 0.25rem !important;
+    top: 0.25rem !important;
+    padding: 0.5rem !important;
+    min-width: 2.25rem !important;
+    min-height: 2.25rem !important;
+  }
+  .mhub-allposts-card .absolute.right-3.top-3 svg {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+  }
+  .mhub-allposts-card .absolute.left-3.top-3 {
+    left: 0.1875rem !important;
+    top: 0.1875rem !important;
+  }
+
+  /* "+N more" meta chip — bigger touch */
+  .mhub-allposts-card .mhub-card-meta button.mhub-chip {
+    min-height: 2.25rem !important;
+    padding: 0.375rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Hero stat/nav pills — bigger touch */
+  .allposts-hero-stats span {
+    padding: 0.375rem 0.625rem !important;
+    font-size: 0.75rem !important;
+    min-height: 2rem !important;
+  }
+
+  /* Category & subcategory chips — minimum touch height */
+  .mhub-category-item,
+  .mhub-allposts-toolbar .mhub-category-item,
+  .mhub-allposts-toolbar .mhub-subcategory-item {
+    min-height: 2.75rem !important;
+    height: 2.75rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* ============================================
+     FOR YOU – COMPACT 2-COL CARDS
+     ============================================ */
+  .for-you-post-card {
+    border-radius: 0.625rem !important;
+  }
+
+  /* Price bar */
+  .for-you-post-card > div:first-child {
+    padding: 0.125rem 0.25rem !important;
+  }
+  .for-you-post-card > div:first-child .inline-flex {
+    padding: 0.125rem 0.25rem !important;
+    font-size: 0.625rem !important;
+    gap: 0.125rem !important;
+  }
+  .for-you-post-card > div:first-child .uppercase {
+    display: none !important;
+  }
+  .for-you-post-card > div:first-child .font-bold {
+    font-size: 0.75rem !important;
+  }
+
+  /* Author row — compact, hide avatar */
+  .for-you-post-card .flex.items-start.gap-2 {
+    padding: 0.1875rem 0.25rem !important;
+    gap: 0.1875rem !important;
+  }
+  .for-you-post-card .flex.items-start.gap-2 > span:first-child,
+  .for-you-post-card .flex.items-start.gap-2 > [class*="Avatar"] {
+    display: none !important;
+  }
+  .for-you-post-card .flex.items-start.gap-2 .font-semibold {
+    font-size: 0.6875rem !important;
+  }
+
+  /* Image — constrained */
+  .for-you-post-card .mhub-media-img,
+  .for-you-post-card img[loading="lazy"] {
+    height: 120px !important;
+    max-height: 120px !important;
+  }
+
+  /* Title */
+  .for-you-post-card .mhub-card-title {
+    font-size: 0.7rem !important;
+    line-height: 1.2 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  /* Meta/description text */
+  .for-you-post-card .text-gray-800 {
+    font-size: 0.625rem !important;
+    line-height: 1.3 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  /* Action row */
+  .for-you-post-card .post-action-row {
+    gap: 0.25rem !important;
+    padding: 0.25rem 0.375rem 0.375rem !important;
+  }
+  .for-you-post-card .post-action-row button {
+    height: 1.75rem !important;
+    padding: 0 0.25rem !important;
+  }
+  .for-you-post-card .post-action-row button svg {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+  }
+  .for-you-post-card .post-action-row button span {
+    font-size: 0.5625rem !important;
+  }
+
+  /* Hide carousel controls */
+  .for-you-post-card .mhub-media-frame button {
+    display: none !important;
+  }
+
+  /* Dropdown menu */
+  .for-you-post-card .absolute.right-2.top-2,
+  .for-you-post-card .absolute.right-3.top-3 {
+    right: 0.25rem !important;
+    top: 0.25rem !important;
+    padding: 0.25rem !important;
+    min-width: 1.75rem !important;
+    min-height: 1.75rem !important;
+  }
+
+  /* ForYou hero — compact */
+  .foryou-hero {
+    padding: 0.5rem 0 !important;
+  }
+  .foryou-hero h1 {
+    font-size: 1.25rem !important;
+  }
+  .foryou-hero-sub {
+    font-size: 0.6875rem !important;
+  }
+  .foryou-hero-stats {
+    margin-top: 0.25rem !important;
+    gap: 0.375rem !important;
+  }
+  .foryou-stat {
+    font-size: 0.6875rem !important;
+    padding: 0.1875rem 0.375rem !important;
+  }
+
+  /* ForYou error state — centered, no excess whitespace */
+  .for-you-post-card ~ .max-w-2xl,
+  .mhub-premium-page .max-w-2xl.mx-auto.p-6.text-center {
+    padding: 1.5rem 1rem !important;
+    margin-top: 1rem !important;
+  }
+
+  /* ForYou loading skeleton — shorter */
+  .mhub-premium-surface.rounded-2xl.h-96.animate-pulse {
+    height: 10rem !important;
+  }
+
+  /* ============================================
+     FEED PAGE – CLEAN COMPACT CARDS
+     ============================================ */
+
+  /* Feed hero — compact */
+  .mhub-premium-page [class*="from-indigo-600"][data-density="extra"] {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .mhub-premium-page [class*="from-indigo-600"] h1 {
+    font-size: 1.125rem !important;
+    line-height: 1.3 !important;
+  }
+  .mhub-premium-page [class*="from-indigo-600"] .text-white\/70 {
+    font-size: 0.6875rem !important;
+  }
+
+  /* Feed sticky toolbar — compact */
+  .feed-sticky-toolbar {
+    padding: 0.25rem 0 !important;
+  }
+  .feed-sticky-toolbar .space-y-2 {
+    gap: 0.25rem !important;
+  }
+  .feed-search-input {
+    height: 2rem !important;
+    font-size: 0.75rem !important;
+    padding: 0 0.625rem !important;
+  }
+  .feed-sort-select {
+    height: 2rem !important;
+    font-size: 0.6875rem !important;
+    padding: 0 0.5rem !important;
+  }
+  .feed-refresh-btn {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+  .feed-sort-pills {
+    gap: 0.25rem !important;
+  }
+  .feed-sort-pill {
+    font-size: 0.6875rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* Feed cards container — tighter */
+  .space-y-2 {
+    gap: 0.5rem !important;
+  }
+
+  /* Feed compose card — compact */
+  .mb-6.p-4.mhub-premium-surface.rounded-2xl {
+    padding: 0.5rem 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* Individual feed card — clean and compact */
+  .space-y-2 > .mhub-premium-surface.rounded-2xl {
+    border-radius: 0.75rem !important;
+  }
+
+  /* Feed card author header — tighter */
+  .space-y-2 .mhub-premium-surface .flex.items-start.gap-2 {
+    padding: 0.375rem 0.5rem 0.25rem !important;
+    gap: 0.375rem !important;
+  }
+  /* Avatar — smaller */
+  .space-y-2 .mhub-premium-surface .flex.items-start.gap-2 > span.w-11 {
+    width: 2rem !important;
+    height: 2rem !important;
+    min-width: 2rem !important;
+  }
+  .space-y-2 .mhub-premium-surface .flex.items-start.gap-2 > span.w-11 .text-sm {
+    font-size: 0.6875rem !important;
+  }
+  /* Author name */
+  .space-y-2 .mhub-premium-surface .font-semibold.text-gray-900 {
+    font-size: 0.75rem !important;
+  }
+  /* Category badges under name */
+  .space-y-2 .mhub-premium-surface .flex.flex-wrap.items-center.gap-1.mt-0\.5 {
+    gap: 0.25rem !important;
+    margin-top: 0.125rem !important;
+  }
+  .space-y-2 .mhub-premium-surface .flex.flex-wrap.items-center.gap-1.mt-0\.5 span {
+    font-size: 0.6875rem !important;
+    padding: 0.125rem 0.3125rem !important;
+  }
+
+  /* Feed title + price row */
+  .space-y-2 .mhub-premium-surface .px-5.pb-4 {
+    padding: 0.25rem 0.5rem 0.25rem !important;
+  }
+  .space-y-2 .mhub-premium-surface .px-5.pb-4 h3 {
+    font-size: 0.8rem !important;
+    line-height: 1.3 !important;
+  }
+  .space-y-2 .mhub-premium-surface .px-5.pb-4 .font-bold {
+    font-size: 0.75rem !important;
+  }
+
+  /* Feed card image — constrained height */
+  .space-y-2 .mhub-premium-surface img.h-40,
+  .space-y-2 .mhub-premium-surface img[loading="lazy"] {
+    height: 140px !important;
+    max-height: 140px !important;
+    object-fit: cover !important;
+  }
+  /* Image container */
+  .space-y-2 .mhub-premium-surface .mb-3.overflow-hidden.rounded-xl {
+    margin-bottom: 0.25rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  /* Feed description — clamp to 2 lines */
+  .space-y-2 .mhub-premium-surface .text-sm.text-gray-700,
+  .space-y-2 .mhub-premium-surface .leading-snug {
+    font-size: 0.7rem !important;
+    line-height: 1.35 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    padding: 0 0.5rem !important;
+  }
+
+  /* Feed action bar — compact */
+  .space-y-2 .mhub-premium-surface .px-3.py-2\.5.border-t {
+    padding: 0.25rem 0.375rem !important;
+  }
+  .space-y-2 .post-action-row {
+    gap: 0.25rem !important;
+  }
+  .space-y-2 .post-action-row button {
+    font-size: 0.6875rem !important;
+    padding: 0.1875rem 0.375rem !important;
+    height: 2.25rem !important;
+  }
+  .space-y-2 .post-action-row button svg {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+  }
+
+  /* ============================================
+     REWARDS PAGE – COMPACT & USER-FRIENDLY
+     ============================================ */
+  /* Tighter section spacing */
+  .rewards-surface .space-y-3 {
+    gap: 0.625rem !important;
+  }
+  /* Rewards tabs bar — tighter padding */
+  .rewards-tabs-sticky .rounded-\[24px\] {
+    padding: 0.375rem 0.5rem !important;
+    border-radius: 1rem !important;
+  }
+  .rewards-tab-bar {
+    gap: 0.25rem !important;
+    padding: 0.25rem !important;
+    border-radius: 0.75rem !important;
+  }
+  .rewards-tab-bar button {
+    font-size: 0.6875rem !important;
+    padding: 0.375rem 0.625rem !important;
+    min-height: 2rem !important;
+  }
+  /* Rewards diagnostic chips — bigger touch targets */
+  .rewards-surface .inline-flex.items-center.gap-1.rounded-full {
+    padding: 0.375rem 0.625rem !important;
+    font-size: 0.6875rem !important;
+    min-height: 2rem !important;
+  }
+  /* Rewards hero — compact */
+  .rewards-surface .rewards-hero-card {
+    padding: 0.75rem !important;
+  }
+  /* Quick share buttons */
+  .rewards-quick-share {
+    gap: 0.375rem !important;
+  }
+  .rewards-quick-share button {
+    min-height: 2.25rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* ============================================
+     PROFILE PAGE – COMPACT & USER-FRIENDLY
+     ============================================ */
+  /* Profile hero — tighter */
+  .profile-surface .profile-hero-bg + div + div {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  /* Profile tab section — compact spacing */
+  .profile-surface .space-y-5 {
+    gap: 0.75rem !important;
+  }
+  /* Profile tabs — same compact treatment as rewards */
+  .profile-tabs-sticky .rounded-\[24px\] {
+    padding: 0.375rem 0.5rem !important;
+    border-radius: 1rem !important;
+  }
+  /* Profile feature grid cards — compact */
+  .profile-surface .grid.grid-cols-2 .bg-white\/10 {
+    padding: 0.625rem !important;
+  }
+  .profile-surface .grid.grid-cols-2 .bg-white\/10 svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .profile-surface .grid.grid-cols-2 .bg-white\/10 p {
+    font-size: 0.6875rem !important;
+  }
+  /* Settings sections — tighter */
+  .profile-surface .mhub-premium-surface {
+    padding: 0.625rem !important;
+  }
+  /* Profile stat cards — compact */
+  .profile-surface .rewards-hero-card {
+    padding: 0.625rem !important;
+  }
+
+  /* ============================================
+     DROPDOWN MENUS – PROPER TOUCH TARGETS
+     ============================================ */
+  [role="menuitem"],
+  [role="menu"] button,
+  [role="menu"] a {
+    min-height: 2.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    font-size: 0.8125rem !important;
+  }
+
+  /* ============================================
+     AUTH PAGES – TOUCH-FRIENDLY LINKS
+     ============================================ */
+  .mhub-premium-page a[href*="login"],
+  .mhub-premium-page a[href*="signup"],
+  .mhub-premium-page a[href*="forgot"],
+  .mhub-premium-page a[href*="reset"] {
+    min-height: 2.5rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  /* ============================================
+     GLOBAL MOBILE TYPOGRAPHY
+     ============================================ */
+  h1, .text-2xl, .text-3xl {
+    font-size: 1.125rem !important;
+    line-height: 1.3 !important;
+  }
   h2, .text-xl {
-    font-size: var(--mhub-text-lg);
+    font-size: 0.9375rem !important;
+  }
+
+  /* ============================================
+     BOTTOM NAV BAR – PROPER ALIGNMENT
+     ============================================ */
+  /* Ensure bottom nav icons are properly sized and aligned */
+  nav[class*="fixed"][class*="bottom-0"] button,
+  nav[class*="fixed"][class*="bottom-0"] a {
+    gap: 0.125rem !important;
+  }
+  nav[class*="fixed"][class*="bottom-0"] svg {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+  }
+  nav[class*="fixed"][class*="bottom-0"] span {
+    font-size: 0.6875rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* ============================================
+     GENERAL CARD CLEANUP
+     ============================================ */
+  /* All premium surface cards — consistent border radius */
+  .mhub-premium-surface {
+    border-radius: 0.625rem;
+  }
+
+  /* Loading spinners — centered */
+  .animate-spin {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Error cards — full width in grids */
+  .col-span-2 {
+    grid-column: span 2 / span 2 !important;
+  }
+
+  /* Dropdown menus — better z-index */
+  [role="menu"] {
+    z-index: 100 !important;
+  }
+
+  /* Scrollbar hide for chip rows */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;
   }
 }
 
@@ -3039,5 +4282,147 @@ button[class*="bg-green-500"] {
 /* Dialog shadow in dark */
 .dark [role="dialog"] {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* ─────────────────────────────────────────────────────────
+   GLOBAL MOBILE FIXES — accessibility minimums
+   ───────────────────────────────────────────────────────── */
+
+/* 1. Bottom nav labels: 11px → 12px minimum */
+.mhub-bottom-nav-label {
+  font-size: 0.75rem !important;   /* 12px */
+  line-height: 1 !important;
+}
+
+/* 2. FAB "Sell" label text */
+.mhub-fab + span,
+.mhub-fab ~ span,
+.absolute.left-1\/2.top-full {
+  font-size: 0.75rem !important;
+}
+
+/* 3. Feed sort pills — min-height 44px */
+.feed-sort-pill {
+  min-height: 2.75rem !important;  /* 44px */
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+}
+
+/* 4. Feed/AllPosts action row buttons (like, share, save, etc.) — 44px min */
+button.shrink-0[class*="inline-flex"][class*="h-9"],
+button.shrink-0[class*="inline-flex"][class*="h-10"] {
+  min-height: 2.75rem !important;  /* 44px */
+  min-width: 2.75rem !important;
+}
+
+/* 5. Feed refresh button */
+.feed-refresh-btn {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+}
+
+/* 6. Notification action buttons (mark-read, snooze, delete): 28x36 → 44px */
+button[class*="w-8 h-8"][class*="flex"][class*="items-center"][class*="justify-center"] {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+}
+
+/* 7. Rewards/Profile/general .mhub-btn buttons: min 44px height */
+.mhub-btn {
+  min-height: 2.75rem !important;
+}
+
+/* 8. Profile section tabs (Overview/Personal/Preferences) */
+.rewards-tab-btn {
+  min-height: 2.75rem !important;
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+}
+
+/* 9. Notification bulk action buttons */
+button[class*="flex"][class*="items-center"][class*="gap-1.5"][class*="px-3.5"][class*="min-h-"] {
+  min-height: 2.75rem !important;
+}
+
+/* 10. Profile quick action card descriptions — prevent truncation */
+.profile-quick-action p,
+[class*="quick-action"] p[class*="text-sm"][class*="text-slate-600"] {
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+/* 11. Notification "Alerts" clamp text — floor at 12px */
+p[class*="text-[clamp(9px"] {
+  font-size: 0.75rem !important;   /* 12px min */
+}
+
+/* 12. ForYou + AllPosts filter pills — ensure 44px */
+button[class*="inline-flex"][class*="h-10"][class*="shrink-0"][class*="items-center"] {
+  min-height: 2.75rem !important;
+}
+
+/* 13. Notification filter tabs */
+button[class*="relative"][class*="flex"][class*="items-center"][class*="gap-1.5"][class*="px-3"] {
+  min-height: 2.75rem !important;
+}
+
+/* 14. AllPosts hero kicker — 11.2px → 12px */
+.mhub-allposts-hero-kicker {
+  font-size: 0.75rem !important;
+}
+
+/* 15. Feed category badges — 11px → 12px */
+span[class*="inline-flex"][class*="items-center"][class*="px-1.5"][class*="py-1"][class*="rou"] {
+  font-size: 0.75rem !important;
+}
+
+/* 16. Profile camera button — too small at 28x36 */
+button[class*="absolute"][class*="-bottom-1"][class*="-right-1"][class*="w-7"][class*="h-7"] {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+}
+
+/* 17. Back to top buttons on all pages — ensure 44x44 */
+button[class*="back-to-top"] {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+}
+
+/* 18. AllPosts nav pill (Home) — h41 → 44 */
+a.mhub-nav-pill {
+  min-height: 2.75rem !important;
+}
+
+/* 19. Nav action button (Filter) */
+button.mhub-nav-action {
+  min-height: 2.75rem !important;
+}
+
+/* 20. AllPosts more options button */
+button[class*="absolute"][class*="right-3"][class*="top-3"][class*="rounded-full"][class*="p-2"] {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
+}
+
+/* 21. AllPosts +N more chip */
+.mhub-chip {
+  min-height: 2.75rem !important;
+}
+
+/* 22. Collapse/Expand toggle buttons */
+button[class*="inline-flex"][class*="items-center"][class*="gap-1.5"][class*="rounded"] {
+  min-height: 2.75rem !important;
+}
+
+/* 23. Three-dot / more-options small p-2 buttons */
+button[class*="p-2"][class*="rounded-full"][class*="text-gray-500"] {
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
 }
 

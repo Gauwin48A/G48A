@@ -193,7 +193,7 @@ const ImageUpload = ({
                                 className="w-full h-24 object-cover rounded-lg"
                             />
                             {/* Size badge */}
-                            <span className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-1.5 py-0.5 rounded">
+                            <span className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-1.5 py-1 rounded">
                                 {formatSize(img.compressedSize)}
                                 {img.compressedSize < img.originalSize && (
                                     <span className="text-green-400 ml-1">

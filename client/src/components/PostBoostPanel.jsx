@@ -199,7 +199,7 @@ export default function PostBoostPanel({ postId }) {
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
         Use plan quotas or redeem coins. Boosts appear in search, feeds, and homepage.
       </p>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-3">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
         Sponsored listings show boosted posts. Premium listings are from Premium-tier sellers.
       </p>
 
@@ -233,8 +233,8 @@ export default function PostBoostPanel({ postId }) {
                 <Icon className="w-5 h-5" />
               )}
               <span className="font-semibold text-xs">{label}</span>
-              <span className="text-[10px] text-center leading-tight">{days} days</span>
-              <span className="text-[10px] text-center text-gray-500 dark:text-gray-400 leading-tight">{desc}</span>
+              <span className="text-xs text-center leading-tight">{days} days</span>
+              <span className="text-xs text-center text-gray-500 dark:text-gray-400 leading-tight">{desc}</span>
 
               {/* Plan quota button */}
               {hasQuota && (
@@ -242,7 +242,7 @@ export default function PostBoostPanel({ postId }) {
                   type="button"
                   disabled={isLoading || !!loading}
                   onClick={() => handleBoost(type)}
-                  className="mt-1 w-full text-[10px] font-semibold px-2 py-1.5 rounded-lg bg-white/80 dark:bg-gray-700 border border-current/20 hover:shadow-sm transition-all disabled:opacity-50"
+                  className="mt-1 w-full text-xs font-semibold px-2 py-1.5 rounded-lg bg-white/80 dark:bg-gray-700 border border-current/20 hover:shadow-sm transition-all disabled:opacity-50"
                 >
                   Use Plan ({remaining} left {quotaLabel})
                 </button>
@@ -253,10 +253,10 @@ export default function PostBoostPanel({ postId }) {
                 type="button"
                 disabled={isLoading || !hasCoinBalance || !!loading}
                 onClick={() => handleRedeemCoin(type, coinCost)}
-                className="w-full text-[10px] font-semibold px-2 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:shadow-sm transition-all disabled:opacity-40"
+                className="w-full text-xs font-semibold px-2 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:shadow-sm transition-all disabled:opacity-40"
               >
                 <span className="flex items-center justify-center gap-1">
-                  <Coins className="w-3 h-3" />
+                  <Coins className="w-4 h-4" />
                   {coinCost} coins
                 </span>
               </button>
@@ -266,7 +266,7 @@ export default function PostBoostPanel({ postId }) {
                   type="button"
                   disabled={isLoading || !canPayDirect}
                   onClick={() => navigate(buildPaymentPath(type))}
-                  className="w-full text-[10px] font-semibold px-2 py-1.5 rounded-lg bg-white/90 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:shadow-sm transition-all disabled:opacity-40"
+                  className="w-full text-xs font-semibold px-2 py-1.5 rounded-lg bg-white/90 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:shadow-sm transition-all disabled:opacity-40"
                 >
                   Pay Rs {amount}
                 </button>
@@ -275,7 +275,7 @@ export default function PostBoostPanel({ postId }) {
           );
         })}
       </div>
-      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-3 text-center">
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-center">
         Visibility: Spotlight → Featured → Boost → Premium → Silver → Bronze → Basic
       </p>
     </div>

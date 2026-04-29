@@ -142,7 +142,7 @@ const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
             {"\u20B9"}
             {formatINR(price20Off)}
           </span>
-          <span className="text-[11px] uppercase tracking-wide text-orange-500">20% off</span>
+          <span className="text-xs uppercase tracking-wide text-orange-500">20% off</span>
         </Button>
 
         <Button
@@ -156,7 +156,7 @@ const BargainActions = React.memo(({ post, currentUser, onChatClick }) => {
             {"\u20B9"}
             {formatINR(price10Off)}
           </span>
-          <span className="text-[11px] uppercase tracking-wide text-blue-500">10% off</span>
+          <span className="text-xs uppercase tracking-wide text-blue-500">10% off</span>
         </Button>
       </div>
 

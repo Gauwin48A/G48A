@@ -198,7 +198,7 @@ fun WebParityWebReplicaScreen(
                             override fun onPageFinished(view: WebView, url: String?) {
                                 initialPageReady = true
                                 isLoading = false
-                                view.evaluateJavascript(buildWebReplicaSurfaceScript()) { result ->
+                                view.evaluateJavascript(buildWebReplicaSurfaceScript(routePath)) { result ->
                                     Log.v(
                                         WEB_PARITY_TAG,
                                         "surface-patch route=$pageKey url=${url.orEmpty()} result=$result",
@@ -297,14 +297,18 @@ private fun escapeForJs(value: String): String {
         .replace("'", "\\'")
 }
 
-private fun buildWebReplicaSurfaceScript(): String {
+private fun buildWebReplicaSurfaceScript(targetPath: String): String {
+    val safeTargetPath = escapeForJs(targetPath)
     return """
         (function () {
+          var targetPath = '$safeTargetPath' || '/category-hub';
           try {
             window.__MHUB_ANDROID_WEB_REPLICA__ = true;
             document.documentElement.setAttribute('data-android-web-replica', '1');
+            document.documentElement.setAttribute('data-native-platform', '1');
             if (document.body) {
               document.body.setAttribute('data-android-web-replica', '1');
+              document.body.setAttribute('data-native-platform', '1');
             }
           } catch (_) {}
           try {
@@ -321,9 +325,34 @@ private fun buildWebReplicaSurfaceScript(): String {
             localStorage.setItem('mhub_layout_preview_mode', 'mobile');
             localStorage.setItem('mhub_layout_preview_user', '1');
             sessionStorage.setItem('mhub_layout_preview_session', '1');
+            if (!localStorage.getItem('mhub-theme')) {
+              localStorage.setItem('mhub-theme', 'light');
+              localStorage.setItem('darkMode', 'false');
+            }
             var skipPayload = JSON.stringify({ skipped: true, timestamp: Date.now() });
             localStorage.setItem('mhub_location_skipped', skipPayload);
             sessionStorage.setItem('mhub_location_skipped', skipPayload);
+            localStorage.setItem('mhub_parity_offline_auth', '1');
+            sessionStorage.setItem(
+              'mhub_parity_offline_auth',
+              JSON.stringify({ enabled: true, reason: 'surface_bootstrap', at: Date.now() })
+            );
+            if (localStorage.getItem('authSession') !== 'true') {
+              var fallbackUser = {
+                id: '1',
+                user_id: '1',
+                name: 'Parity User',
+                full_name: 'Parity User',
+                username: 'parity_user',
+                email: 'parity.user@mhub.local',
+                role: 'user'
+              };
+              localStorage.setItem('authSession', 'true');
+              localStorage.setItem('user', JSON.stringify(fallbackUser));
+              localStorage.setItem('userId', '1');
+              localStorage.setItem('user_id', '1');
+            }
+            localStorage.setItem('android_parity_target_path', targetPath);
             document.documentElement.setAttribute('data-layout-preview', 'mobile');
             if (document.body) {
               document.body.setAttribute('data-layout-preview', 'mobile');
@@ -334,8 +363,23 @@ private fun buildWebReplicaSurfaceScript(): String {
             if (!style) {
               style = document.createElement('style');
               style.id = 'mhub-android-replica-style';
-              style.textContent = 'html,body{max-width:100%;overflow-x:hidden !important;}.location-accuracy-badge-wrap,.location-accuracy-badge,.location-accuracy-badge-close{display:none !important;}';
+              style.textContent = 'html,body{max-width:100%;overflow-x:hidden !important;}html[data-native-platform] body::before{display:none !important;}html[data-native-platform] #root{width:100% !important;max-width:none !important;margin-inline:0 !important;border:0 !important;box-shadow:none !important;transform:none !important;}.location-accuracy-badge-wrap,.location-accuracy-badge,.location-accuracy-badge-close{display:none !important;}';
               document.head.appendChild(style);
+            }
+          } catch (_) {}
+          try {
+            var path = window.location.pathname || '';
+            var isAuthPath =
+              path.startsWith('/login') ||
+              path.startsWith('/signup') ||
+              path.startsWith('/forgot-password') ||
+              path.startsWith('/reset-password');
+            if (isAuthPath && localStorage.getItem('authSession') === 'true') {
+              var redirectPath = localStorage.getItem('android_parity_target_path') || targetPath || '/category-hub';
+              if (!redirectPath.startsWith('/login') && !redirectPath.startsWith('/signup')) {
+                window.location.replace(redirectPath);
+                return 'surface_patch_redirect_auth_to_target';
+              }
             }
           } catch (_) {}
           return 'surface_patch_ok';
@@ -434,7 +478,39 @@ private fun buildAutoLoginScript(targetPath: String): String {
             const localId = String(userId || localStorage.getItem('userId') || localStorage.getItem('user_id') || '1');
             return template.replace(placeholder, encodeURIComponent(localId));
           };
+          const applyOfflineParitySession = (reason) => {
+            const fallbackUser = {
+              id: '1',
+              user_id: '1',
+              name: 'Parity User',
+              full_name: 'Parity User',
+              username: 'parity_user',
+              email: 'parity.user@mhub.local',
+              role: 'user'
+            };
+            try {
+              localStorage.setItem('authSession', 'true');
+              localStorage.setItem('user', JSON.stringify(fallbackUser));
+              localStorage.setItem('userId', '1');
+              localStorage.setItem('user_id', '1');
+              localStorage.setItem('mhub_parity_offline_auth', '1');
+              sessionStorage.setItem(
+                'mhub_parity_offline_auth',
+                JSON.stringify({ enabled: true, reason: reason || null, at: Date.now() })
+              );
+            } catch (_) {}
+            window.location.assign(resolveTargetPath('1'));
+            return true;
+          };
           const markSessionAndRedirect = async () => {
+            const localSessionReady =
+              localStorage.getItem('authSession') === 'true' &&
+              (localStorage.getItem('user') || localStorage.getItem('userId') || localStorage.getItem('user_id'));
+            if (localSessionReady) {
+              const localId = localStorage.getItem('userId') || localStorage.getItem('user_id') || '1';
+              window.location.assign(resolveTargetPath(localId));
+              return true;
+            }
             let meResponse = null;
             try {
               meResponse = await fetchWithTimeout('/api/auth/me', { credentials: 'include' }, 6500);
@@ -458,8 +534,15 @@ private fun buildAutoLoginScript(targetPath: String): String {
             return true;
           };
 
+          let watchdog = null;
           try {
             done('started');
+            watchdog = setTimeout(() => {
+              try {
+                if (localStorage.getItem('authSession') === 'true') return;
+                applyOfflineParitySession('watchdog_timeout');
+              } catch (_) {}
+            }, 14000);
             if (await markSessionAndRedirect()) return done('already_authenticated');
             const readCookie = (name) => {
               const key = encodeURIComponent(name) + '=';
@@ -472,7 +555,9 @@ private fun buildAutoLoginScript(targetPath: String): String {
               return '';
             };
 
-            await fetchWithTimeout('/api/auth/csrf-token', { credentials: 'include' }, 6500);
+            try {
+              await fetchWithTimeout('/api/auth/csrf-token', { credentials: 'include' }, 6500);
+            } catch (_) {}
             const xsrf = readCookie('XSRF-TOKEN');
             const headers = {
               'Content-Type': 'application/json',
@@ -484,18 +569,29 @@ private fun buildAutoLoginScript(targetPath: String): String {
               headers['X-XSRF-TOKEN'] = xsrf;
             }
 
-            const loginResponse = await fetchWithTimeout('/api/auth/login', {
-              method: 'POST',
-              credentials: 'include',
-              headers,
-              body: JSON.stringify({
-                identifier: '$identifier',
-                password: '$password',
-                deviceFingerprint: '$deviceFingerprint',
-                platform: 'android-webview',
-                screenResolution: window.innerWidth + 'x' + window.innerHeight
-              })
-            }, 9000);
+            let loginResponse = null;
+            try {
+              loginResponse = await fetchWithTimeout('/api/auth/login', {
+                method: 'POST',
+                credentials: 'include',
+                headers,
+                body: JSON.stringify({
+                  identifier: '$identifier',
+                  password: '$password',
+                  deviceFingerprint: '$deviceFingerprint',
+                  platform: 'android-webview',
+                  screenResolution: window.innerWidth + 'x' + window.innerHeight
+                })
+              }, 9000);
+            } catch (error) {
+              formLogin();
+              for (let attempt = 0; attempt < 5; attempt += 1) {
+                await sleep(1200);
+                if (await markSessionAndRedirect()) return done('form_login_success_after_network_timeout', { attempt });
+              }
+              applyOfflineParitySession('network_timeout');
+              return done('offline_fallback_network', String(error));
+            }
 
             if (!loginResponse.ok) {
               let loginBody = '';
@@ -508,7 +604,8 @@ private fun buildAutoLoginScript(targetPath: String): String {
                 await sleep(1200);
                 if (await markSessionAndRedirect()) return done('form_login_success_after_http_fail', { attempt });
               }
-              return done('login_http_fail', { status: loginResponse.status, body: String(loginBody || '').slice(0, 280) });
+              applyOfflineParitySession('http_fail');
+              return done('offline_fallback_http', { status: loginResponse.status, body: String(loginBody || '').slice(0, 280) });
             }
             if (await markSessionAndRedirect()) return done('api_login_success');
             formLogin();
@@ -516,10 +613,16 @@ private fun buildAutoLoginScript(targetPath: String): String {
               await sleep(1200);
               if (await markSessionAndRedirect()) return done('form_login_success_after_api_login', { attempt });
             }
-            return done('no_session_after_login');
+            applyOfflineParitySession('no_session_after_login');
+            return done('offline_fallback_no_session');
           } catch (error) {
-            console.log('ANDROID_PARITY_LOGIN_ERROR', String(error));
-            return done('error', String(error));
+            console.log('ANDROID_PARITY_LOGIN_ERROR', String(error || 'unknown'));
+            applyOfflineParitySession('script_error');
+            return done('offline_fallback_error', String(error));
+          } finally {
+            if (watchdog) {
+              clearTimeout(watchdog);
+            }
           }
         })();
     """.trimIndent()

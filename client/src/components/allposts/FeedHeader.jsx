@@ -22,7 +22,7 @@ const AllPostsFeedHeader = ({
   autoRefreshLabel = "Auto refresh every 30s",
   autoRefreshPausedLabel = "Auto refresh paused",
   onToggleAutoRefresh,
-  maxWidthClass = "max-w-[92rem]",
+  maxWidthClass = "max-w-[640px]",
   titleId,
   compact = false,
   sticky = false,
@@ -74,7 +74,7 @@ const AllPostsFeedHeader = ({
             {showResults ? (
               <p
                 className={`${
-                  compact ? "text-[10px] sm:text-[11px]" : "text-xs sm:text-sm"
+                  compact ? "text-xs sm:text-xs" : "text-xs sm:text-sm"
                 } font-semibold text-slate-600 dark:text-slate-300`}
               >
                 {resultsLabel ||
@@ -88,18 +88,18 @@ const AllPostsFeedHeader = ({
         <div className={controlsWrapperClass}>
           {showLiveStatus ? (
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 ${
-                compact ? "text-[9px]" : "text-[10px] sm:text-xs"
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 ${
+                compact ? "text-xs" : "text-xs"
               } font-semibold ${liveChipClass}`}
             >
-              <span className={`h-2 w-2 rounded-full ${liveDotClass}`} />
+              <span className={`h-3 w-3 rounded-full ${liveDotClass}`} />
               {liveLabel}
             </span>
           ) : null}
           {showUpdatedStatus ? (
             <span
               className={`${
-                compact ? "text-[10px]" : "text-xs md:text-sm"
+                compact ? "text-xs" : "text-xs md:text-sm"
               } text-slate-500 dark:text-slate-300 ${
                 updatedPulse ? "animate-pulse" : ""
               }`}
@@ -114,7 +114,7 @@ const AllPostsFeedHeader = ({
               onClick={onToggleAutoRefresh}
               aria-pressed={autoRefreshEnabled}
               className={`rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 ${
-                compact ? "h-8 px-2.5 text-[9px] sm:text-[10px]" : "h-10 px-3 text-[10px] sm:text-xs"
+                compact ? "h-8 px-2.5 text-xs" : "h-10 px-3 text-xs"
               }`}
             >
               <FaSyncAlt className={`w-3.5 h-3.5 ${autoRefreshEnabled ? "animate-spin" : ""}`} />
@@ -126,7 +126,7 @@ const AllPostsFeedHeader = ({
           <button
             type="button"
             className={`rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 ${
-              compact ? "h-8 px-2.5 text-[10px]" : "h-10 px-3.5 text-[11px] sm:text-xs"
+              compact ? "h-8 px-2.5 text-xs" : "h-10 px-3.5 text-xs sm:text-xs"
             }`}
             onClick={onRefresh}
             disabled={disabled || isRefreshing}

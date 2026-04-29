@@ -316,11 +316,11 @@ const EditPost = () => {
   if (!canUsePage) {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 flex items-center justify-center p-4 dark:bg-gradient-to-br">
-        <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 p-6 text-center page-shell page-pad dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-center">
+        <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/10 p-6 text-center page-shell page-pad dark:border-amber-600/40 dark:bg-amber-950/20">
           <h2 className="text-xl font-bold text-amber-800 dark:text-amber-200 mb-2">
             Login required
           </h2>
-          <p className="text-sm text-amber-700 dark:text-amber-200 mb-4 dark:text-amber-300">
+          <p className="text-sm text-amber-700 dark:text-amber-300 mb-4 ">
             Sign in to edit your listing.
           </p>
           <Button
@@ -348,8 +348,8 @@ const EditPost = () => {
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br">
-      <div className="max-w-2xl mx-auto p-4 pt-8 page-shell page-pad">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br">
+      <div className="max-w-[640px] mx-auto p-4 pt-8 page-shell page-pad">
         <div className="mb-4">
           <Button
             variant="ghost"
@@ -367,7 +367,7 @@ const EditPost = () => {
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 p-3 text-sm text-red-700 dark:text-red-300">
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 p-3 text-sm text-red-700 ">
                 {error}
               </div>
             )}
@@ -395,9 +395,9 @@ const EditPost = () => {
                         className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         aria-label={t("remove_image", "Remove image")}
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </button>
-                      <Badge className="absolute bottom-1 left-1 text-[10px] bg-black/50 text-white border-0">
+                      <Badge className="absolute bottom-1 left-1 text-xs bg-black/50 text-white border-0">
                         {i + 1}
                       </Badge>
                     </div>
@@ -415,9 +415,9 @@ const EditPost = () => {
                         className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         aria-label={t("remove_image", "Remove image")}
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </button>
-                      <Badge className="absolute bottom-1 left-1 text-[10px] bg-blue-500 text-white border-0">
+                      <Badge className="absolute bottom-1 left-1 text-xs bg-blue-500 text-white border-0">
                         {t("new", "New")}
                       </Badge>
                     </div>
@@ -425,7 +425,7 @@ const EditPost = () => {
                   {totalImages < MAX_IMAGES && (
                     <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 transition-colors">
                       <ImagePlus className="w-6 h-6 text-gray-400" />
-                      <span className="text-[10px] text-gray-400 mt-1">{t("add", "Add")}</span>
+                      <span className="text-xs text-gray-400 mt-1">{t("add", "Add")}</span>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp"

@@ -135,7 +135,7 @@ const MiniCartPopover = ({ className = "" }) => {
             <p className="text-sm font-semibold text-slate-900 dark:text-white">
               {summary?.title || "Cart"}
             </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-300">
+            <p className="text-xs text-slate-500 dark:text-slate-300">
               {totalCount} {totalCount === 1 ? "item" : "items"}
             </p>
           </div>
@@ -184,14 +184,14 @@ const MiniCartPopover = ({ className = "" }) => {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-slate-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                       {item.title}
                     </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-300">
+                    <p className="text-xs text-slate-500 dark:text-slate-300">
                       Qty {item.qty ?? 1}
                     </p>
                   </div>
-                  <Badge className="text-[10px] px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                  <Badge className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                     {formatCurrency(item.price, itemCurrency)}
                   </Badge>
                 </Link>
@@ -200,7 +200,7 @@ const MiniCartPopover = ({ className = "" }) => {
           </div>
 
           {scopedItems.length > displayItems.length && (
-            <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-300">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">
               +{scopedItems.length - displayItems.length} more item
               {scopedItems.length - displayItems.length === 1 ? "" : "s"}
             </p>

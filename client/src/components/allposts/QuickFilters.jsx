@@ -37,7 +37,7 @@ const AllPostsQuickFilters = ({
   onLatest10,
   onPostedToday,
   onNearMe,
-  maxWidthClass = "max-w-[92rem]",
+  maxWidthClass = "max-w-[640px]",
   compact = false,
   showDivider = true,
   headerRight,
@@ -60,9 +60,9 @@ const AllPostsQuickFilters = ({
     : isForYouVariant
       ? "min-h-[44px] h-9 px-4 text-sm"
     : compact
-      ? "min-h-[44px] h-8 px-3 text-[11px]"
+      ? "min-h-[44px] h-9 px-3 text-xs"
       : "min-h-[44px] h-9 px-3.5 text-xs";
-  const iconSize = compact ? "w-3 h-3" : "w-3.5 h-3.5";
+  const iconSize = compact ? "w-4 h-4" : "w-3.5 h-3.5";
   const chipBase = isDenseForYouVariant
     ? "inline-flex h-8 shrink-0 items-center justify-center rounded-full border px-3 text-xs font-semibold transition-colors whitespace-nowrap"
     : isForYouVariant
@@ -101,10 +101,10 @@ const AllPostsQuickFilters = ({
   ) : (
     <div
       className={`mhub-quick-filters-title inline-flex items-center gap-2 rounded-full ${
-        compact ? "text-[10px] sm:text-[11px]" : "text-[11px] sm:text-xs"
+        compact ? "text-xs sm:text-xs" : "text-xs sm:text-xs"
       } font-semibold`}
     >
-      <FaBolt className={compact ? "w-3 h-3" : "w-3.5 h-3.5"} />
+      <FaBolt className={compact ? "w-4 h-4" : "w-3.5 h-3.5"} />
       {title}
     </div>
   );
@@ -207,8 +207,8 @@ const AllPostsQuickFilters = ({
         </div>
         {showActiveCount ? (
           <span
-            className={`inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 ${
-              compact ? "text-[9px]" : "text-[10px]"
+            className={`inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 ${
+              compact ? "text-xs" : "text-xs"
             } font-semibold text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700`}
           >
             Active: {activeCount}
@@ -219,10 +219,10 @@ const AllPostsQuickFilters = ({
             type="button"
             onClick={onToggleAutoRefresh}
             aria-pressed={autoRefreshEnabled}
-            className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-[11px] md:text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs md:text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <FaSyncAlt
-              className={`w-3 h-3 ${
+              className={`w-4 h-4 ${
                 autoRefreshEnabled ? "animate-spin" : ""
               }`}
             />
@@ -244,8 +244,8 @@ const AllPostsQuickFilters = ({
         <div className="flex flex-wrap items-center gap-2">
           {showActiveCount ? (
             <span
-              className={`inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 ${
-                compact ? "text-[9px]" : "text-[10px]"
+              className={`inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 ${
+                compact ? "text-xs" : "text-xs"
               } font-semibold text-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700`}
             >
               Active: {activeCount}
@@ -256,10 +256,10 @@ const AllPostsQuickFilters = ({
               type="button"
               onClick={onToggleAutoRefresh}
               aria-pressed={autoRefreshEnabled}
-              className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-[11px] md:text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs md:text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <FaSyncAlt
-                className={`w-3 h-3 ${
+                className={`w-4 h-4 ${
                   autoRefreshEnabled ? "animate-spin" : ""
                 }`}
               />

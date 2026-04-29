@@ -121,7 +121,7 @@ const U = () => {
     m
       ? e.createElement(
           "div",
-          { className: "text-center py-10 dark:text-center" },
+          { className: "text-center py-10" },
           s("loading") || "Loading...",
         )
       : p
@@ -133,7 +133,7 @@ const U = () => {
             },
             e.createElement(
               "div",
-              { className: "w-full max-w-3xl mx-auto px-4 py-5 page-shell page-pad" },
+              { className: "w-full max-w-[640px] mx-auto px-4 py-5 page-shell page-pad" },
               e.createElement(
                 "div",
                 { className: "mb-4 mhub-hero-card rounded-2xl px-4 py-4 sm:px-6 sm:py-5 text-left" },
@@ -221,7 +221,7 @@ const U = () => {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
+                          "text-sm font-semibold text-slate-900 dark:text-slate-100",
                       },
                       "Category mode: ",
                       categoryModeCategory.name,
@@ -230,7 +230,7 @@ const U = () => {
                       "p",
                       {
                         className:
-                          "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                          "text-xs text-slate-500 dark:text-slate-300",
                       },
                       "Sold posts are filtered to this category.",
                     ),
@@ -278,7 +278,7 @@ const U = () => {
                       "div",
                       {
                         className:
-                          "rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-4 dark:border dark:border-red-600/40 dark:bg-red-950/20",
+                          "rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-4 dark:border-red-600/40 dark:bg-red-950/20",
                       },
                       e.createElement(
                         "p",
@@ -319,7 +319,7 @@ const U = () => {
                           "div",
                           {
                             className:
-                              "w-full rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
+                              "w-full rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-6 text-center dark:border-blue-600/40 dark:bg-blue-950/20",
                           },
                           e.createElement(
                             "p",
@@ -387,7 +387,7 @@ const U = () => {
                               "h3",
                               {
                                 className:
-                                  "font-bold text-lg text-gray-900 dark:text-white dark:text-gray-100",
+                                  "font-bold text-lg text-gray-900 dark:text-gray-100",
                               },
                               t.title || s("untitled_post") || "Untitled post",
                             ),
@@ -445,12 +445,12 @@ const U = () => {
             },
             e.createElement(
               "div",
-              { className: "text-center max-w-md dark:text-center" },
+              { className: "text-center max-w-md" },
               e.createElement(
                 "h2",
                 {
                   className:
-                    "text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-gray-100",
+                    "text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 dark:text-gray-100",
                 },
                 s("sold_posts") || "Sold Posts",
               ),
@@ -477,7 +477,7 @@ const U = () => {
                   {
                     to: "/signup",
                     className:
-                      "border border-blue-300 text-blue-600 py-3 rounded-xl font-semibold dark:border dark:border-blue-600/40 dark:text-blue-300",
+                      "border border-blue-300 text-blue-600 py-3 rounded-xl font-semibold dark:border-blue-600/40 dark:text-blue-300",
                   },
                   s("signup") || "Create Account",
                 ),

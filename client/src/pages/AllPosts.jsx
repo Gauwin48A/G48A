@@ -67,7 +67,7 @@ import {
 } from "@/utils/categoryModeFilters";
 import { isPostOwnedByUser } from "@/utils/postOwnership";
 const ve = 5,
-  SHOW_POST_ID_CHIP = !0,
+  SHOW_POST_ID_CHIP = !1,
   LOAD_MORE_COOLDOWN_MS = 1200,
   RATE_LIMIT_COOLDOWN_MS = 5000,
   D = "/placeholder.svg",
@@ -453,9 +453,9 @@ const ve = 5,
       } = Zt(),
       isForYouMode = useMemo(() => {
         const params = new URLSearchParams(Z.search);
-        return Z.pathname === "/for-you" || params.get("mode") === "for-you";
-      }, [Z.pathname, Z.search]),
-      basePath = Z.pathname === "/for-you" ? "/for-you" : "/all-posts",
+        return params.get("mode") === "for-you";
+      }, [Z.search]),
+      basePath = "/all-posts",
       returnTo = useMemo(() => `${Z.pathname}${Z.search}`, [Z.pathname, Z.search]),
       subcategoryCandidatesByName = useMemo(() => {
         const map = {};
@@ -758,6 +758,13 @@ const ve = 5,
     useEffect(() => {
       if (categoryModeLoading) return;
       if (hasCategoryMode) return;
+      // Guard: use window.location.pathname (always current) instead of the stale
+      // Z.pathname closure value. When React Router calls pushState then schedules
+      // a React re-render, effects may fire with the OLD Z.pathname before the
+      // component re-renders — checking window.location catches this.
+      const livePathname = typeof window !== 'undefined' ? window.location.pathname : Z.pathname;
+      if (!livePathname.startsWith('/all-posts') && !livePathname.startsWith('/listings')) return;
+      const effectiveBasePath = '/all-posts';
       const params = new URLSearchParams(Z.search);
       const currentGroup =
         params.get("category_group") || params.get("categoryGroup") || params.get("group") || "";
@@ -786,8 +793,8 @@ const ve = 5,
         params.set("category_group", nextGroup);
       }
       const nextQuery = params.toString();
-      const nextUrl = nextQuery ? `${basePath}?${nextQuery}` : basePath;
-      if (`${Z.pathname}${Z.search}` !== nextUrl) {
+      const nextUrl = nextQuery ? `${effectiveBasePath}?${nextQuery}` : effectiveBasePath;
+      if (`${livePathname}${Z.search}` !== nextUrl) {
         y(nextUrl, { replace: !0, state: { preserveScroll: !0 } });
       }
     }, [
@@ -802,6 +809,13 @@ const ve = 5,
     useEffect(() => {
       if (categoryModeLoading) return;
       if (!hasCategoryMode) return;
+      // Guard: use window.location.pathname (always current) instead of the stale
+      // Z.pathname closure value. When React Router calls pushState then schedules
+      // a React re-render, effects may fire with the OLD Z.pathname before the
+      // component re-renders — checking window.location catches this.
+      const livePathname = typeof window !== 'undefined' ? window.location.pathname : Z.pathname;
+      if (!livePathname.startsWith('/all-posts') && !livePathname.startsWith('/listings')) return;
+      const effectiveBasePath = '/all-posts';
       const nextCategory = categoryModeCategory?.name || "";
       const normalizedCategory = nextCategory && nextCategory !== "All" ? nextCategory : "";
       const normalizedActiveApp = activeApp ? String(activeApp).trim().toLowerCase() : "";
@@ -899,8 +913,8 @@ const ve = 5,
       }
       if (shouldReplace) {
         const nextQuery = params.toString();
-        const nextUrl = nextQuery ? `${basePath}?${nextQuery}` : basePath;
-        if (`${Z.pathname}${Z.search}` !== nextUrl) {
+        const nextUrl = nextQuery ? `${effectiveBasePath}?${nextQuery}` : effectiveBasePath;
+        if (`${livePathname}${Z.search}` !== nextUrl) {
           y(nextUrl, { replace: !0, state: { preserveScroll: !0 } });
         }
       }
@@ -955,12 +969,14 @@ const ve = 5,
       [showBackToTop, setShowBackToTop] = useState(!1),
       [showAllQuickFilters, setShowAllQuickFilters] = useState(!1),
       [compareItems, setCompareItems] = useState([]),
-      [showComparePanel, setShowComparePanel] = useState(!1);
+      [showComparePanel, setShowComparePanel] = useState(!1),
+      [isStalledLoading, setIsStalledLoading] = useState(!1);
     const { density, setDensity } = usePageDensity("mhub_allposts_density");
     const languageRef = useRef(l);
+    const stalledLoadingStartedAtRef = useRef(null);
     const secondaryStickyRef = useRef(null);
-    const pageMaxWidthClass = "max-w-[92rem]";
-    const feedMaxWidthClass = "max-w-[92rem]";
+    const pageMaxWidthClass = "max-w-[640px]";
+    const feedMaxWidthClass = "max-w-[640px]";
     const formatCurrency = useCallback(
       (e) => `\u20B9${ot(e).toLocaleString("en-IN")}`,
       [],
@@ -1097,6 +1113,16 @@ const ve = 5,
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [l]);
     useEffect(() => {
+      if (typeof window !== "undefined") {
+        const ua = String(window.navigator?.userAgent || "").toLowerCase();
+        const isNativeReplica =
+          ua.includes("mhubandroidwebreplica") ||
+          (ua.includes("android") && /\bwv\b/.test(ua));
+        if (isNativeReplica) {
+          sessionStorage.removeItem("allPostsScrollPosition");
+          return;
+        }
+      }
       const e = sessionStorage.getItem("allPostsScrollPosition");
       e &&
         f.length > 0 &&
@@ -1202,7 +1228,7 @@ const ve = 5,
         [t.latestWindow],
       ),
       secondaryStickyTop = useMemo(
-        () => navStickyTop + 8,
+        () => Math.max(56, navStickyTop + 2),
         [navStickyTop],
       ),
       canShuffle = useMemo(
@@ -1393,6 +1419,35 @@ const ve = 5,
           logCategoryFlow,
         ],
       ),
+      handleCategoryBarSelect = useCallback(
+        (e, a) => {
+          const categoryName =
+            typeof e === "string" ? e : a?.name || a?.category_name || "";
+          const categoryId =
+            a?.category_id || a?.id || ce[normalizeName(categoryName)] || "";
+          if (hasCategoryMode) {
+            selectCategoryMode({
+              name: categoryName,
+              category_id: categoryId || null,
+              id: categoryId || null,
+            });
+            clearSubcategoryMode();
+          }
+          b({
+            category: categoryName || "All",
+            subcategory: "All",
+            categoryGroup: "",
+          });
+        },
+        [b, hasCategoryMode, selectCategoryMode, clearSubcategoryMode, ce],
+      ),
+      handleCategoryBarSelectAll = useCallback(() => {
+        if (hasCategoryMode) {
+          clearCategoryMode();
+          clearSubcategoryMode();
+        }
+        b({ category: "All", subcategory: "All", categoryGroup: "" });
+      }, [b, hasCategoryMode, clearCategoryMode, clearSubcategoryMode]),
       jee = useCallback(
         (e) => {
           const a = String(e);
@@ -1549,6 +1604,17 @@ const ve = 5,
           });
         });
       }, [appScopedCategoryList, sortedSubcategories, activeCategoryId, activeAppMatcher]),
+      allPostsCategoryFallback = useMemo(() => {
+        if (allPostsSubcategoryBarList.length > 0) return allPostsSubcategoryBarList;
+        return (Array.isArray(categoryList) ? categoryList : [])
+          .filter((c) => String(c?.name || "").trim())
+          .map((c) => ({
+            id: c?.category_id || c?.id || c?.name,
+            name: c?.name || "",
+            post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
+            display_order: c?.display_order ?? 0,
+          }));
+      }, [allPostsSubcategoryBarList, categoryList]),
       browseOtherSubcategoriesPath = activeCategoryId
         ? `/subcategories?category_id=${encodeURIComponent(activeCategoryId)}`
         : "/subcategories",
@@ -1779,6 +1845,15 @@ const ve = 5,
       const e = P.current + 1;
       (P.current = e), v.current && v.current.abort();
       const a = new AbortController();
+      let didTimeout = false;
+      const requestTimeoutHandle = setTimeout(() => {
+        didTimeout = true;
+        try {
+          a.abort();
+        } catch {
+          // Ignore abort races.
+        }
+      }, 15000);
       if (typeof window !== "undefined") {
         const currentScroll = window.scrollY || 0;
         if (L === 1 && !userFilterChangeRef.current && currentScroll > 160) {
@@ -1926,7 +2001,15 @@ const ve = 5,
                 .catch(() => {});
             }
           } catch (n) {
-            if (n?.name === "AbortError" || e !== P.current) return;
+            if (n?.name === "AbortError") {
+              if (didTimeout && e === P.current) {
+                const timeoutMessage = tr("home_load_error", "Unable to load posts right now.");
+                z(timeoutMessage);
+                if (L === 1) ee(!1);
+              }
+              return;
+            }
+            if (e !== P.current) return;
             const status = n?.status ?? n?.response?.status ?? null;
             const backendMessage =
               n?.response?.data?.error || n?.response?.data?.message || "";
@@ -1945,6 +2028,7 @@ const ve = 5,
               ee(!1);
             }
           } finally {
+            clearTimeout(requestTimeoutHandle);
             v.current === a && (v.current = null),
               e === P.current && (R(!1), setIsLiveSyncing(!1));
             loadMorePendingRef.current = !1;
@@ -1952,6 +2036,7 @@ const ve = 5,
           }
         })(),
         () => {
+          clearTimeout(requestTimeoutHandle);
           a.abort(), v.current === a && (v.current = null);
         }
       );
@@ -1969,6 +2054,7 @@ const ve = 5,
       t.category,
       t.subcategory,
       t.categoryGroup,
+      tr,
     ]),
       useEffect(() => {
         T(1);
@@ -2047,6 +2133,28 @@ const ve = 5,
       }, 3e4);
       return () => clearInterval(e);
     }, [E, latestWindow, autoRefreshEnabled]);
+    useEffect(() => {
+      const hasPosts = Array.isArray(f) && f.length > 0;
+      if (hasPosts || V) {
+        stalledLoadingStartedAtRef.current = null;
+        if (isStalledLoading) {
+          setIsStalledLoading(!1);
+        }
+        return;
+      }
+      if (E && stalledLoadingStartedAtRef.current == null) {
+        stalledLoadingStartedAtRef.current = Date.now();
+      }
+      if (stalledLoadingStartedAtRef.current == null) return;
+      const evaluateStall = () => {
+        if (Date.now() - stalledLoadingStartedAtRef.current >= 15000) {
+          setIsStalledLoading(!0);
+        }
+      };
+      evaluateStall();
+      const intervalId = setInterval(evaluateStall, 1000);
+      return () => clearInterval(intervalId);
+    }, [E, V, f.length, isStalledLoading]);
     const filteredPosts = useMemo(() => {
       if (!Array.isArray(f) || f.length === 0) return [];
       const e = normalizeSearchText(t.search);
@@ -2307,9 +2415,9 @@ const ve = 5,
                 "Explore trending listings, fresh drops, and daily deals.",
               ),
       heroContextLabel = hasCategoryMode
-        ? `${tr("category_mode", "Category mode")}: ${categoryModeLabel}`
+        ? categoryModeLabel !== tr("all", "All") ? categoryModeLabel : tr("marketplace", "Marketplace")
         : activeAppLabel
-          ? `${tr("app_world", "App world")}: ${activeAppLabel}`
+          ? activeAppLabel
           : tr("marketplace", "Marketplace"),
       U = useRef(new Set()),
       fe = useRef(new Set()),
@@ -2713,16 +2821,12 @@ const ve = 5,
       feedHeaderCompact = !showModeBanner,
       showFeedTitle = showModeBanner,
     Fe = useCallback(() => {
-      if (!C) {
-        setLoginPromptOpen(!0);
-          return;
-        }
-        setIsLiveSyncing(!0);
-        if (canShuffle) {
-          setShuffleSeed(Date.now());
-        }
-        Ce((e) => e + 1);
-      }, [C, canShuffle]);
+      setIsLiveSyncing(!0);
+      if (C && canShuffle) {
+        setShuffleSeed(Date.now());
+      }
+      Ce((e) => e + 1);
+    }, [C, canShuffle]);
     useEffect(() => {
       const e = secondaryStickyRef.current;
       if (!e) {
@@ -2820,7 +2924,7 @@ const ve = 5,
                 {
                   type: "button",
                   className:
-                    "inline-flex items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 transition-colors dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
+                    "inline-flex items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 transition-colors dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                   onClick: () => y(hasCategoryMode ? "/category-mode" : "/category-hub"),
                 },
                 hasCategoryMode
@@ -2833,7 +2937,7 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "mt-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-300",
+                      "mt-1.5 text-xs text-slate-500 dark:text-slate-300",
                   },
                   tr("loading", "Loading"),
                 )
@@ -2842,7 +2946,7 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "mt-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-300",
+                      "mt-1.5 text-xs text-slate-500 dark:text-slate-300",
                   },
                   `${allPostsSubcategoryBarList.length} `,
                   tr("subcategories", "subcategories"),
@@ -2888,13 +2992,13 @@ const ve = 5,
                     "div",
                     {
                       className:
-                        "mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300",
+                        "mt-3 flex flex-wrap items-center gap-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300",
                     },
                     React.createElement(
                       "span",
                       {
                         className:
-                          "inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-600 px-2 py-0.5 dark:bg-blue-500/10 dark:text-blue-300",
+                          "inline-flex items-center gap-1.5 rounded-full bg-blue-50 text-blue-600 px-3 py-2 dark:bg-blue-500/10 dark:text-blue-300",
                       },
                       tr("marketplace_listings", "Marketplace listings"),
                     ),
@@ -2904,15 +3008,33 @@ const ve = 5,
                         type: "button",
                         onClick: () => y("/feed"),
                         className:
-                          "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 px-2 py-0.5 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10",
+                          "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-2 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10",
                       },
                       tr("community_feed", "Community Feed"),
-                      React.createElement(Bo, { className: "w-3 h-3" }),
+                      React.createElement(Bo, { className: "w-4 h-4" }),
                     ),
                     React.createElement(
                       "span",
-                      { className: "text-[10px] text-slate-500 dark:text-slate-400" },
+                      { className: "text-xs text-slate-500 dark:text-slate-400" },
                       tr("feed_updates_hint", "news & updates"),
+                    ),
+                  ),
+                  /* Stats row */
+                  React.createElement(
+                    "div",
+                    {
+                      className:
+                        "allposts-hero-stats mt-2 flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1",
+                    },
+                    resultsCount > 0 && React.createElement(
+                      "span",
+                      { className: "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 text-xs font-bold whitespace-nowrap" },
+                      "\uD83D\uDCE6 " + resultsCount + " " + tr("items_available", "items"),
+                    ),
+                    React.createElement(
+                      "span",
+                      { className: "inline-flex items-center gap-1.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 px-3 py-1.5 text-xs font-bold whitespace-nowrap" },
+                      "\u26A1 " + tr("live_marketplace", "Live marketplace"),
                     ),
                   ),
                 ),
@@ -2928,13 +3050,29 @@ const ve = 5,
           style: { top: `${secondaryStickyTop}px` },
         },
         React.createElement(AllPostsCategoryBar, {
-          categories: allPostsSubcategoryBarList,
-          activeCategory: activeSubcategoryLabel || "All",
-          onSelectAll: Ee,
-          onSelectCategory: handleSubcategoryBarSelect,
+          categories: Array.isArray(appScopedCategoryList) && appScopedCategoryList.length > 0
+            ? appScopedCategoryList.map((c) => ({
+                id: c?.category_id || c?.id || c?.name,
+                name: c?.name || "",
+                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
+                display_order: c?.display_order ?? 0,
+              }))
+            : (Array.isArray(categoryList) ? categoryList : []).map((c) => ({
+                id: c?.category_id || c?.id || c?.name,
+                name: c?.name || "",
+                post_count: c?.product_count ?? c?.post_count ?? c?.count ?? 0,
+              })),
+          activeCategory: effectiveCategoryLabel || "All",
+          onSelectAll: handleCategoryBarSelectAll,
+          onSelectCategory: handleCategoryBarSelect,
+          subcategories: allPostsSubcategoryBarList,
+          activeSubcategory: activeSubcategoryLabel || "All",
+          onSelectAllSubcategories: Ee,
+          onSelectSubcategory: handleSubcategoryBarSelect,
           translate: tr,
           icons: Le,
-          iconResolver: () => "\uD83C\uDFF7\uFE0F",
+          iconResolver: (name) => Le[name] || "\uD83D\uDCE6",
+          subcategoryIconResolver: () => "\uD83C\uDFF7\uFE0F",
           maxWidthClass: pageMaxWidthClass,
           compact: !0,
           showCategoryCounts: !1,
@@ -2960,7 +3098,7 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "mhub-allposts-action-group hidden sm:inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
+                      "mhub-allposts-action-group inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-1 dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                   },
                   React.createElement(
                     "button",
@@ -2975,7 +3113,7 @@ const ve = 5,
                         });
                       },
                     },
-                    React.createElement(Bo, { className: "w-3 h-3" }),
+                    React.createElement(Bo, { className: "w-4 h-4" }),
                     tr("browse", "Browse"),
                   ),
                   React.createElement(
@@ -2994,7 +3132,7 @@ const ve = 5,
                         }
                       },
                     },
-                    React.createElement(zo, { className: "w-3 h-3" }),
+                    React.createElement(zo, { className: "w-4 h-4" }),
                     tr("shuffle_feed", "Shuffle"),
                   ),
                   React.createElement(
@@ -3006,7 +3144,7 @@ const ve = 5,
                       }`,
                       onClick: () => setAutoRefreshEnabled((e) => !e),
                     },
-                    React.createElement(zo, { className: "w-3 h-3" }),
+                    React.createElement(zo, { className: "w-4 h-4" }),
                     autoRefreshEnabled
                       ? tr("live_updates_on", "Live")
                       : tr("live_updates_off", "Live"),
@@ -3016,11 +3154,11 @@ const ve = 5,
                   "div",
                   {
                     className:
-                      "quick-filters-sort hidden sm:inline-flex items-center gap-1 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
+                      "quick-filters-sort inline-flex items-center gap-1.5 rounded-full border border-[var(--chip-border)] bg-[var(--surface-2)] px-2 py-1 text-xs font-semibold text-slate-600 dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--surface-2)]",
                   },
                   React.createElement(
                     "span",
-                    { className: "px-1.5 text-[10px] uppercase tracking-wide" },
+                    { className: "px-1.5 text-xs uppercase tracking-wide" },
                     tr("sort", "Sort"),
                   ),
                   React.createElement(
@@ -3028,7 +3166,7 @@ const ve = 5,
                     {
                       type: "button",
                       onClick: () => b({ sortBy: "date_desc", latestWindow: "" }),
-                      className: `px-2 py-0.5 rounded-full transition ${t.sortBy === "date_desc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
+                      className: `px-2.5 py-1 rounded-full transition ${t.sortBy === "date_desc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
                     },
                     tr("newest", "Newest"),
                   ),
@@ -3037,7 +3175,7 @@ const ve = 5,
                     {
                       type: "button",
                       onClick: () => b({ sortBy: "price_asc", latestWindow: "" }),
-                      className: `px-2 py-0.5 rounded-full transition ${t.sortBy === "price_asc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
+                      className: `px-2.5 py-1 rounded-full transition ${t.sortBy === "price_asc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
                     },
                     tr("price_low", "Price \u2191"),
                   ),
@@ -3046,7 +3184,7 @@ const ve = 5,
                     {
                       type: "button",
                       onClick: () => b({ sortBy: "price_desc", latestWindow: "" }),
-                      className: `px-2 py-0.5 rounded-full transition ${t.sortBy === "price_desc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
+                      className: `px-2.5 py-1 rounded-full transition ${t.sortBy === "price_desc" ? "bg-blue-600 text-white" : "hover:bg-[var(--surface-2)]"}`,
                     },
                     tr("price_high", "Price \u2193"),
                   ),
@@ -3063,7 +3201,7 @@ const ve = 5,
                     {
                       type: "button",
                       className:
-                        "quick-filters-clear inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-100 dark:border-red-800/60 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40 transition-colors dark:border dark:border-red-600/40 dark:bg-red-950/20 dark:text-red-300 dark:hover:bg-red-950/20",
+                        "quick-filters-clear inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-600/40 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40 transition-colors",
                       onClick: Y,
                     },
                     tr("clear_all_filters", "Clear all filters"),
@@ -3078,7 +3216,7 @@ const ve = 5,
                   "span",
                   {
                     className:
-                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-indigo-200 bg-indigo-50 text-[10px] font-semibold text-indigo-700 dark:border-indigo-800/60 dark:bg-indigo-900/30 dark:text-indigo-200 dark:border dark:border-indigo-600/40 dark:bg-indigo-950/20 dark:text-indigo-300",
+                      "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-indigo-200 bg-indigo-50 text-xs font-semibold text-indigo-700 dark:border-indigo-600/40 dark:bg-indigo-900/30 dark:text-indigo-200",
                   },
                   `${tr("subcategory", "Subcategory")}: ${activeSubcategoryLabel}`,
                 ),
@@ -3091,7 +3229,7 @@ const ve = 5,
                       b({ subcategory: "All" });
                     },
                     className:
-                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[10px] font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
+                      "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                   },
                   tr("show_all_in_category", "Show all in category"),
                 ),
@@ -3101,7 +3239,7 @@ const ve = 5,
                     type: "button",
                     onClick: () => y(browseOtherSubcategoriesPath),
                     className:
-                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800/60 dark:bg-sky-900/30 dark:text-slate-200 dark:border dark:border-sky-600/40 dark:bg-sky-950/20 dark:text-sky-300 dark:hover:bg-sky-950/20",
+                      "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-sky-200 bg-sky-50 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-600/40 dark:bg-sky-900/30 dark:text-slate-200 dark:hover:bg-sky-950/20",
                   },
                   tr("browse_other_subcategories", "Browse other subcategories"),
                 ),
@@ -3118,11 +3256,11 @@ const ve = 5,
                       type: "button",
                       onClick: () => Te(e.key),
                       className:
-                        "inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[11px] font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
+                        "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] text-xs font-semibold text-slate-700 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:border-[var(--chip-border)] dark:bg-[var(--chip-bg)] dark:hover:bg-[var(--surface-2)]",
                       title: tr("remove_filter", "Remove filter"),
                     },
                     React.createElement("span", null, e.label),
-                    React.createElement(Jo, { className: "w-3 h-3 font-semibold" }),
+                    React.createElement(Jo, { className: "w-4 h-4 font-semibold" }),
                   ),
                 ),
               ),
@@ -3161,11 +3299,12 @@ const ve = 5,
               : React.createElement("span", { className: "sr-only" }, feedTitle),
             !E &&
               !V &&
+              !isStalledLoading &&
               React.createElement(
                 "div",
                 {
                   className:
-                    `mhub-feed-summary-line ${feedHeaderCompact ? "text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-300" : "text-sm font-semibold text-slate-600 dark:text-slate-300"}`,
+                    `mhub-feed-summary-line ${feedHeaderCompact ? "text-xs font-semibold text-slate-600 dark:text-slate-300" : "text-sm font-semibold text-slate-600 dark:text-slate-300"}`,
                 },
                 feedSummaryLine,
               ),
@@ -3179,39 +3318,35 @@ const ve = 5,
           React.createElement(
             "div",
             {
-              className: "order-1 flex flex-col gap-3 w-full min-w-0",
+              className: "order-1 grid grid-cols-2 gap-2 keep-cols w-full min-w-0",
             },
-            E
-              ? Array.from({ length: 3 }).map((e, a) =>
+            E && f.length === 0 && !isStalledLoading
+              ? Array.from({ length: 4 }).map((e, a) =>
                   React.createElement(Card,
                     {
                       key: `all-posts-skeleton-${a}`,
                       className:
-                        "rounded-2xl border border-slate-200/80 dark:border-gray-700/70 mhub-premium-surface p-4 shadow-sm animate-pulse dark:border dark:border-slate-700/80",
+                        "rounded-xl border border-slate-200/80 dark:border-gray-700/70 mhub-premium-surface p-2 shadow-sm animate-pulse dark:border-slate-700/80",
                     },
                     React.createElement("div", {
                       className:
-                        "h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-3 dark:bg-gray-900",
+                        "h-28 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-2 dark:bg-gray-900",
                     }),
                     React.createElement("div", {
                       className:
-                        "h-52 w-full bg-gray-200 dark:bg-gray-700 rounded-lg mb-3 dark:bg-gray-900",
+                        "h-3 w-5/6 bg-gray-200 dark:bg-gray-700 rounded mb-1.5 dark:bg-gray-900",
                     }),
                     React.createElement("div", {
                       className:
-                        "h-4 w-5/6 bg-gray-200 dark:bg-gray-700 rounded mb-2 dark:bg-gray-900",
-                    }),
-                    React.createElement("div", {
-                      className:
-                        "h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded dark:bg-gray-900",
+                        "h-3 w-2/3 bg-gray-200 dark:bg-gray-700 rounded dark:bg-gray-900",
                     }),
                   ),
                 )
-              : V
+              : V || isStalledLoading
                 ? React.createElement(Card,
                     {
                       className:
-                        "border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5 dark:border dark:border-red-600/40 dark:bg-red-950/20",
+                        "col-span-2 border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-5 dark:border-red-600/40 dark:bg-red-950/20",
                     },
                     React.createElement(
                       "p",
@@ -3219,7 +3354,7 @@ const ve = 5,
                         className:
                           "text-sm text-red-700 dark:text-red-300 mb-3",
                       },
-                      V,
+                      V || tr("home_load_error", "Unable to load posts right now."),
                     ),
                     React.createElement(
                       "div",
@@ -3248,7 +3383,7 @@ const ve = 5,
                   ? React.createElement(Card,
                       {
                         className:
-                          "border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 text-center dark:border dark:border-blue-600/40 dark:bg-blue-950/20 dark:text-center",
+                          "col-span-2 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-4 text-center dark:border-blue-600/40 dark:bg-blue-950/20",
                       },
                       React.createElement(
                         "h3",
@@ -3387,7 +3522,7 @@ const ve = 5,
                             key: "subcategory",
                             label: subcategoryLabel,
                             className:
-                              "mhub-chip inline-flex items-center px-2 py-0.5 rounded-full text-blue-700 dark:text-blue-300 font-medium",
+                              "mhub-chip inline-flex items-center px-2 py-1 rounded-full text-blue-700 dark:text-blue-300 font-medium",
                           }
                         : null;
                       const locationChip = we
@@ -3395,7 +3530,7 @@ const ve = 5,
                             key: "location",
                             label: we,
                             className:
-                              "mhub-chip inline-flex items-center px-2 py-0.5 rounded-full",
+                              "mhub-chip inline-flex items-center px-2 py-1 rounded-full",
                           }
                         : null;
                       const postedChip = he
@@ -3403,7 +3538,7 @@ const ve = 5,
                             key: "posted",
                             label: `${s("posted", { defaultValue: "Posted" })} ${he}`,
                             className:
-                              "mhub-chip inline-flex items-center px-2 py-0.5 rounded-full",
+                              "mhub-chip inline-flex items-center px-2 py-1 rounded-full",
                           }
                         : null;
                       const postIdChip =
@@ -3412,7 +3547,7 @@ const ve = 5,
                               key: "post-id",
                               label: `${s("post_id", { defaultValue: "Post ID" })}: ${a}`,
                               className:
-                                "mhub-chip inline-flex items-center px-2 py-0.5 rounded-full font-semibold text-gray-600 dark:text-gray-200",
+                                "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gray-600 dark:text-gray-200",
                             }
                           : null;
                       const visibleMetaChips = [subcategoryChip, locationChip].filter(
@@ -3446,7 +3581,7 @@ const ve = 5,
                           "div",
                           {
                             className:
-                              "flex items-start gap-3 px-3 pt-2 pb-2 relative sm:px-4",
+                              "flex items-start gap-3 px-3 pt-3 pb-2.5 relative sm:px-4",
                           },
                           React.createElement(Avatar,
                             {
@@ -3455,7 +3590,7 @@ const ve = 5,
                             React.createElement(AvatarFallback,
                               {
                                 className:
-                                  "bg-[var(--surface-2)] text-slate-600 dark:text-slate-100 text-[10px] dark:bg-[var(--surface-2)] dark:text-slate-200",
+                                  "bg-[var(--surface-2)] text-slate-600 dark:text-slate-100 text-xs dark:bg-[var(--surface-2)] dark:text-slate-200",
                               },
                               n || "U",
                             ),
@@ -3479,7 +3614,7 @@ const ve = 5,
                                   "span",
                                   {
                                     className:
-                                      "inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full border border-blue-200 dark:border-blue-700 shadow-sm",
+                                      "inline-flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-full border border-blue-200 dark:border-blue-700 shadow-sm",
                                     title: `Verified Seller${e.user?.aadhaarVerified ? " (Aadhaar)" : ""}${e.user?.panVerified ? " (PAN)" : ""}`,
                                   },
                                   React.createElement(
@@ -3502,13 +3637,13 @@ const ve = 5,
                                 "span",
                                 {
                                   className:
-                                    "mhub-price-pill inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] sm:text-sm font-semibold sm:ml-auto",
+                                    "mhub-price-pill inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold sm:ml-auto",
                                 },
                                 React.createElement(
                                   "span",
                                   {
                                     className:
-                                      "uppercase tracking-wide text-[9px] sm:text-[10px] text-emerald-600/80 dark:text-emerald-300/80",
+                                      "uppercase tracking-wide text-xs text-emerald-600/80 dark:text-emerald-300/80",
                                   },
                                   tr("price", "Price"),
                                 ),
@@ -3526,7 +3661,7 @@ const ve = 5,
                             "h3",
                             {
                               className:
-                                "mhub-card-title mt-1 text-lg sm:text-xl md:text-2xl leading-tight truncate",
+                                "mhub-card-title mt-1.5 text-base sm:text-lg md:text-xl leading-snug line-clamp-2",
                             },
                             title,
                           ),
@@ -3534,7 +3669,7 @@ const ve = 5,
                             "div",
                             {
                               className:
-                                "mhub-card-meta mt-1 flex flex-wrap items-center gap-1 text-[10px] sm:text-[11px]",
+                                "mhub-card-meta mt-1.5 flex flex-wrap items-center gap-1.5 text-xs",
                             },
                             shownMetaChips.map((X) =>
                               React.createElement(
@@ -3549,7 +3684,7 @@ const ve = 5,
                                 "button",
                                 {
                                   className:
-                                    "mhub-chip inline-flex items-center px-2 py-0.5 rounded-full font-semibold text-gray-600 dark:text-gray-200",
+                                    "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gray-600 dark:text-gray-200",
                                   title: hiddenMetaTitle,
                                   onClick: () =>
                                     setExpandedMetaPostId((X) =>
@@ -3569,7 +3704,7 @@ const ve = 5,
                                 "button",
                                 {
                                   className:
-                                    "mhub-chip inline-flex items-center px-2 py-0.5 rounded-full font-semibold text-gray-600 dark:text-gray-200",
+                                    "mhub-chip inline-flex items-center px-2 py-1 rounded-full font-semibold text-gray-600 dark:text-gray-200",
                                   onClick: () => setExpandedMetaPostId(null),
                                   "aria-expanded": !0,
                                   "aria-label": tr(
@@ -3596,7 +3731,7 @@ const ve = 5,
                                   type: "button",
                                   onClick: (X) => X.stopPropagation(),
                                   className:
-                                    "absolute right-3 top-3 rounded-full p-1.5 text-gray-500 hover:bg-[var(--surface-2)] sm:right-4 sm:top-4 sm:p-2 dark:text-gray-300 dark:hover:bg-[var(--surface-2)]",
+                                    "absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:bg-[var(--surface-2)] sm:right-4 sm:top-4 sm:p-2 dark:text-gray-300 dark:hover:bg-[var(--surface-2)]",
                                   title: tr("more_options", "More options"),
                                   "aria-label": tr("more_options", "More options"),
                                 },
@@ -3615,7 +3750,7 @@ const ve = 5,
                                 {
                                   onSelect: () => handleSharePost(a),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
                                 },
                                 s("share", { defaultValue: "Share" }),
                               ),
@@ -3624,7 +3759,7 @@ const ve = 5,
                                 {
                                   onSelect: () => toggleSave(a),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
                                 },
                                 savedPosts[a]
                                   ? s("saved", { defaultValue: "Saved" })
@@ -3639,7 +3774,7 @@ const ve = 5,
                                       setMenuPostId(null);
                                     },
                                     className:
-                                      "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
+                                      "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
                                   },
                                   tr("promote", "Promote"),
                                 ),
@@ -3648,7 +3783,7 @@ const ve = 5,
                                 {
                                   onSelect: () => handleCartToggle(e),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
                                 },
                                 inCart
                                   ? s("in_cart", { defaultValue: "In Cart" })
@@ -3659,7 +3794,7 @@ const ve = 5,
                                 {
                                   onSelect: () => toggleCompare(e),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:text-left dark:hover:bg-[var(--surface-2)]",
+                                    "w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-2)] rounded-lg dark:hover:bg-[var(--surface-2)]",
                                 },
                                 isInCompare(a)
                                   ? s("in_compare", { defaultValue: "In Compare" })
@@ -3670,7 +3805,7 @@ const ve = 5,
                                 {
                                   onSelect: () => handleReportPost(a),
                                   className:
-                                    "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
+                                    "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-red-300 dark:hover:bg-red-950/20",
                                 },
                                 s("report", { defaultValue: "Report" }),
                               ),
@@ -3681,7 +3816,7 @@ const ve = 5,
                           "div",
                           {
                             className:
-                              "relative w-full bg-[var(--surface-2)] border-y border-[var(--chip-border)] mhub-media-frame dark:bg-[var(--surface-2)] dark:border-y dark:border-[var(--chip-border)]",
+                              "relative w-full bg-[var(--surface-2)] border-y border-[var(--chip-border)] mhub-media-frame dark:bg-[var(--surface-2)] dark:border-[var(--chip-border)]",
                           },
                           React.createElement(PostPromoBadges, {
                             post: e,
@@ -3712,10 +3847,12 @@ const ve = 5,
                                   loading: "lazy",
                                   ref: (Nt) => {
                                     if (!Nt) return;
-                                    if (Nt.complete) {
-                                      if (Nt.naturalWidth === 0 && Nt.src !== D) {
-                                        Nt.src = D;
-                                      }
+                                    if (Nt.complete && Nt.naturalWidth > 0) {
+                                      Nt.dataset.loaded = "true";
+                                      const frame = Nt.closest(".mhub-media-frame");
+                                      frame && frame.setAttribute("data-loaded", "true");
+                                    } else if (Nt.complete && Nt.naturalWidth === 0 && Nt.src !== D) {
+                                      Nt.src = D;
                                       Nt.dataset.loaded = "true";
                                       const frame = Nt.closest(".mhub-media-frame");
                                       frame && frame.setAttribute("data-loaded", "true");
@@ -3749,11 +3886,11 @@ const ve = 5,
                                   onClick: (X) =>
                                     moveCarousel(a, -1, imageList.length, X),
                                   className:
-                                    "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8 dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
+                                    "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-9 sm:w-9 dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
                                   "aria-label":
                                     tr("previous_image", "Previous image"),
                                 },
-                                React.createElement(Lo, { className: "w-3 h-3" }),
+                                React.createElement(Lo, { className: "w-4 h-4" }),
                               ),
                               React.createElement(
                                 "button",
@@ -3762,16 +3899,16 @@ const ve = 5,
                                   onClick: (X) =>
                                     moveCarousel(a, 1, imageList.length, X),
                                   className:
-                                    "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-8 sm:w-8 dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
+                                    "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-9 sm:w-9 dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
                                   "aria-label": tr("next_image", "Next image"),
                                 },
-                                React.createElement(Co, { className: "w-3 h-3" }),
+                                React.createElement(Co, { className: "w-4 h-4" }),
                               ),
                               React.createElement(
                                 "div",
                                 {
                                   className:
-                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-[11px] font-medium dark:bg-black/55 dark:text-white",
+                                    "absolute top-3 right-3 px-2 py-1 rounded-full bg-black/55 text-white text-xs font-medium dark:bg-black/55 dark:text-white",
                                 },
                                 activeImageIndex + 1,
                                 "/",
@@ -3796,7 +3933,7 @@ const ve = 5,
                                         imageList.length,
                                       );
                                     },
-                                    className: `h-1.5 w-1.5 rounded-full transition-all ${_t === activeImageIndex ? "bg-white w-3" : "bg-white/50"}`,
+                                    className: `h-3 w-3 rounded-full transition-all ${_t === activeImageIndex ? "bg-white w-5 scale-110" : "bg-white/50"}`,
                                     "aria-label": `${tr("go_to_image", "Go to image")} ${_t + 1}`,
                                   }),
                                 ),
@@ -3807,19 +3944,19 @@ const ve = 5,
                           "div",
                           {
                             className:
-                              "px-3 pb-2.5 pt-2 border-t border-[var(--chip-border)] sm:pb-3 dark:border-t dark:border-[var(--chip-border)]",
+                              "px-3 pb-3 pt-2 border-t border-[var(--chip-border)] dark:border-[var(--chip-border)]",
                           },
                         React.createElement(
                           "div",
                           {
                             className:
-                              "post-action-row flex flex-wrap items-center gap-1 pr-1 scrollbar-hide sm:flex-nowrap sm:overflow-x-auto sm:whitespace-nowrap sm:gap-2",
+                              "post-action-row flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-hide",
                           },
                           React.createElement(
                             "button",
                               {
                                 className:
-                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none dark:bg-[var(--chip-bg)]",
+                                  "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-[var(--chip-bg)] text-gray-700 dark:text-gray-200 text-xs font-semibold focus:outline-none dark:bg-[var(--chip-bg)]",
                                 onClick: () => Me(a),
                               },
                               ae[a]
@@ -3828,7 +3965,7 @@ const ve = 5,
                                   })
                                 : React.createElement(qe, {
                                     className:
-                                      "w-4 h-4 text-black dark:text-gray-300 dark:text-slate-100",
+                                      "w-4 h-4 text-black dark:text-slate-100",
                                   }),
                               React.createElement(
                                 "span",
@@ -3837,7 +3974,7 @@ const ve = 5,
                               ),
                               React.createElement(
                                 "span",
-                                { className: "text-[10px] sm:text-xs" },
+                                { className: "text-xs" },
                                 Ae[a] || 0,
                               ),
                             ),
@@ -3845,7 +3982,7 @@ const ve = 5,
                               "button",
                               {
                                 className:
-                                  "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/20",
+                                  "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
                                 onClick: () => {
                                   ie(e), le(!0);
                                 },
@@ -3861,7 +3998,7 @@ const ve = 5,
                               "span",
                               {
                                 className:
-                                  "mhub-chip shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full text-gray-600 dark:text-gray-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold dark:text-gray-200",
+                                  "mhub-chip shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full text-gray-600 dark:text-gray-300 text-xs font-semibold",
                               },
                               React.createElement(Qe, { className: "w-4 h-4" }),
                               De[a] || 0,
@@ -3870,7 +4007,7 @@ const ve = 5,
                               {
                                 size: "sm",
                                 className:
-                                  "mhub-cta shrink-0 inline-flex items-center gap-1 rounded-full px-3 text-[10px] sm:text-xs font-semibold sm:ml-auto w-auto",
+                                  "mhub-cta shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 text-xs sm:text-sm font-semibold ml-auto w-auto",
                                 onClick: () => je(a),
                               },
                               React.createElement(Bo, { className: "w-3.5 h-3.5" }),
@@ -3914,7 +4051,7 @@ const ve = 5,
           React.createElement(Card,
             {
               className:
-                `w-full ${feedMaxWidthClass} mt-3 p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:border dark:border-blue-600/40 dark:bg-blue-950/20`,
+                `w-full ${feedMaxWidthClass} mt-3 p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-600/40 dark:bg-blue-950/20`,
             },
             React.createElement(
               "div",
@@ -3941,7 +4078,7 @@ const ve = 5,
               React.createElement(Button,
                 {
                   className:
-                    "bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center gap-1.5 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
+                    "bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center gap-1.5 h-11 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
                   onClick: () => y("/login", { state: { returnTo } }),
                 },
                 React.createElement(zo, { className: "w-3.5 h-3.5" }),
@@ -3955,7 +4092,7 @@ const ve = 5,
             {
               type: "button",
               className:
-                "fixed bottom-28 right-4 z-50 inline-flex items-center gap-2 rounded-full mhub-premium-surface px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-[var(--surface-2)] dark:text-slate-200 sm:bottom-24 dark:hover:bg-[var(--surface-2)]",
+                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+4.5rem)] right-4 z-50 inline-flex items-center gap-2 rounded-full mhub-premium-surface px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-lg hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
               onClick: () => {
                 if (typeof window !== "undefined") {
                   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3971,7 +4108,7 @@ const ve = 5,
             "div",
             {
               className:
-                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+8px)] left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[9999] dark:bg-blue-700/40 dark:text-white",
+                "fixed bottom-[calc(var(--bottom-nav-height,64px)+var(--bottom-nav-safe,0px)+8px)] left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-[60] dark:bg-blue-700/40 dark:text-white",
             },
             ne,
           ),
@@ -4014,7 +4151,7 @@ const ve = 5,
               { className: "text-sm font-semibold" },
               `${compareItems.length} ${s("items_to_compare", { defaultValue: "items selected" })}`,
             ),
-            (() => { const sub = String(compareItems[0]?.subcategory_name || compareItems[0]?.subcategory || "").trim(); return sub ? React.createElement("span", { className: "text-[10px] bg-white/20 rounded-full px-2 py-0.5 font-medium" }, sub) : null; })(),
+            (() => { const sub = String(compareItems[0]?.subcategory_name || compareItems[0]?.subcategory || "").trim(); return sub ? React.createElement("span", { className: "text-xs bg-white/20 rounded-full px-2.5 py-1 font-medium" }, sub) : null; })(),
             React.createElement(
               "button",
               {
@@ -4033,7 +4170,7 @@ const ve = 5,
                 className: "ml-1 p-1 hover:bg-purple-500 rounded-full transition",
                 "aria-label": "Clear compare",
               },
-              React.createElement(Jo, { className: "w-3 h-3" }),
+              React.createElement(Jo, { className: "w-4 h-4" }),
             ),
           ),
         showComparePanel &&
@@ -4041,14 +4178,14 @@ const ve = 5,
           React.createElement(
             "div",
             {
-              className: "fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center",
+              className: "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center",
               onClick: (ev) => { if (ev.target === ev.currentTarget) setShowComparePanel(!1); },
             },
             React.createElement(
               "div",
               {
                 className:
-                  "mhub-premium-surface w-full max-w-5xl max-h-[90vh] overflow-auto rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-8 sm:m-4",
+                  "mhub-premium-surface w-full max-w-[640px] max-h-[90vh] overflow-auto rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 animate-in slide-in-from-bottom-8 sm:m-4",
               },
               React.createElement(
                 "div",

@@ -976,7 +976,10 @@ const te = 12,
         activeAppMatcher?.activeApp,
       ]),
       I(() => {
-        if (!y || !m) return;
+        if (!y || !m) {
+          T(!1);
+          return;
+        }
         const now = Date.now();
         if (recommendationsCooldownRef.current > now) {
           return;
@@ -1127,7 +1130,7 @@ const te = 12,
           "div",
           {
               className:
-                `min-h-screen mhub-premium-page overflow-x-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-start justify-center p-4 pt-10 pb-24 relative dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
+                `min-h-screen mhub-premium-page overflow-x-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 flex items-start justify-center p-4 pt-6 pb-24 relative dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
           },
           e.createElement(
             "div",
@@ -1155,15 +1158,15 @@ const te = 12,
               },
               e.createElement("div", {
                 className:
-                  "h-28 rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-white/70 dark:border-white/10 shadow-sm dark:bg-slate-900/80 dark:border dark:border-white/70",
+                  "h-28 rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-white/70 dark:border-white/10 shadow-sm dark:bg-slate-900/80 dark:border-white/70",
               }),
               e.createElement("div", {
                 className:
-                  "h-28 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 shadow-sm dark:bg-slate-900/70 dark:border dark:border-white/60",
+                  "h-28 rounded-2xl bg-white/70 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 shadow-sm dark:bg-slate-900/70 dark:border-white/60",
               }),
               e.createElement("div", {
                 className:
-                  "h-28 rounded-2xl bg-white/60 dark:bg-slate-800/40 border border-white/50 dark:border-white/10 shadow-sm dark:bg-slate-900/60 dark:border dark:border-white/50",
+                  "h-28 rounded-2xl bg-white/60 dark:bg-slate-800/40 border border-white/50 dark:border-white/10 shadow-sm dark:bg-slate-900/60 dark:border-white/50",
               }),
             ),
           ),
@@ -1204,7 +1207,7 @@ const te = 12,
                 "h1",
                 {
                   className:
-                    "text-3xl font-bold text-gray-900 dark:text-white text-center mb-3 dark:text-gray-100 dark:text-center",
+                    "text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 text-center mb-3",
                 },
                 r("access_restricted") || "Access Restricted",
               ),
@@ -1212,7 +1215,7 @@ const te = 12,
                 "p",
                 {
                   className:
-                    "text-gray-600 dark:text-gray-300 text-center mb-8 dark:text-gray-200 dark:text-center",
+                    "text-gray-600 dark:text-gray-200 text-center mb-8",
                 },
                 "Sign in to view personalized recommendations curated just for you",
               ),
@@ -1229,7 +1232,7 @@ const te = 12,
                     {
                       key: a,
                       className:
-                        "flex items-center gap-3 text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                        "flex items-center gap-3 text-gray-600 dark:text-gray-200",
                     },
                     e.createElement(
                       "div",
@@ -1238,7 +1241,7 @@ const te = 12,
                           "w-8 h-8 rounded-lg bg-blue-50 dark:bg-white/10 flex items-center justify-center dark:bg-blue-950/20",
                       },
                       e.createElement(t.icon, {
-                        className: "w-4 h-4 text-blue-600 dark:text-purple-400 dark:text-blue-300",
+                        className: "w-4 h-4 text-blue-600 dark:text-blue-300",
                       }),
                     ),
                     e.createElement("span", { className: "text-sm" }, t.text),
@@ -1249,7 +1252,7 @@ const te = 12,
                 "p",
                 {
                   className:
-                    "text-xs text-gray-500 dark:text-gray-400 text-center mb-4 dark:text-gray-300 dark:text-center",
+                    "text-xs text-gray-500 dark:text-gray-300 text-center mb-4",
                 },
                 r("filters_unlock_after_signin", "Filters unlock after sign-in."),
               ),
@@ -1304,7 +1307,7 @@ const te = 12,
                 "p",
                 {
                   className:
-                    "text-gray-500 dark:text-gray-400 text-center mt-6 text-sm dark:text-gray-300 dark:text-center",
+                    "text-gray-500 dark:text-gray-300 text-center mt-6 text-sm",
                 },
                 "Don't have an account?",
                 " ",
@@ -1313,7 +1316,7 @@ const te = 12,
                   {
                     onClick: () => i("/signup"),
                     className:
-                      "text-blue-600 dark:text-purple-300 hover:text-blue-700 dark:hover:text-purple-200 cursor-pointer font-medium dark:text-blue-300 dark:hover:text-blue-300",
+                  "text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-200 cursor-pointer font-medium py-2 px-1 inline-block",
                   },
                   r("create_one_now") || "Create one now",
                 ),
@@ -1328,13 +1331,75 @@ const te = 12,
             "div",
             {
               className:
-                `min-h-screen mhub-premium-page overflow-x-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
+                `mhub-page-foryou min-h-screen mhub-premium-page overflow-x-hidden nav-clearance ${density === "compact" ? "mhub-compact" : ""}`,
             },
           e.createElement(
             "div",
             {
+              className: "w-full foryou-hero bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-[#0b1220] dark:via-[#1b2542] dark:to-[#0b1220]",
+              "data-density": "extra",
+            },
+            e.createElement(
+              "div",
+              { className: "max-w-[640px] mx-auto px-4 py-4" },
+              /* Title row */
+              e.createElement(
+                "div",
+                { className: "flex items-center justify-between" },
+                e.createElement(
+                  "div",
+                  { className: "flex items-center gap-2.5" },
+                  e.createElement("span", { className: "text-2xl" }, "\u2B50"),
+                  e.createElement("h1", { className: "text-xl font-bold text-white" }, tr("for_you", "For You")),
+                ),
+                e.createElement(
+                  "span",
+                  { className: "foryou-hero-badge text-xs font-bold text-white/90 bg-white/20 rounded-full px-3 py-1" },
+                  "\uD83E\uDD16 " + (tr("ai_curated", "AI Curated")),
+                ),
+              ),
+              /* Subtitle */
+              e.createElement(
+                "p",
+                { className: "text-white/70 text-sm mt-1.5" },
+                tr("personalized_picks", "Personalized picks based on your interests & activity"),
+              ),
+              /* Stats row */
+              e.createElement(
+                "div",
+                { className: "foryou-hero-stats flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide" },
+                oe > 0 && e.createElement(
+                  "div",
+                  { className: "foryou-stat flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-white/90 text-xs font-medium whitespace-nowrap" },
+                  e.createElement("span", null, "\uD83D\uDCE6"),
+                  e.createElement("span", null, oe + " " + tr("items_found", "items")),
+                ),
+                C && C.length > 0 && e.createElement(
+                  "div",
+                  { className: "foryou-stat flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-white/90 text-xs font-medium whitespace-nowrap" },
+                  e.createElement("span", null, "\u2728"),
+                  e.createElement("span", null, C.length + " " + tr("showing", "showing")),
+                ),
+                categories && categories.length > 0 && e.createElement(
+                  "div",
+                  { className: "foryou-stat flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-white/90 text-xs font-medium whitespace-nowrap" },
+                  e.createElement("span", null, "\uD83C\uDFF7"),
+                  e.createElement("span", null, categories.length + " " + tr("categories", "categories")),
+                ),
+                e.createElement(
+                  "div",
+                  { className: "foryou-stat flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-white/90 text-xs font-medium whitespace-nowrap" },
+                  e.createElement("span", null, "\u26A1"),
+                  e.createElement("span", null, tr("live_updates", "Live updates")),
+                ),
+              ),
+            ),
+          ),
+          e.createElement(
+            "div",
+            {
               className:
-                "w-full sticky z-30 mhub-premium-bar",
+                "w-full sticky z-40 mhub-premium-bar",
               style: { top: "calc(var(--top-nav-height, 56px) + 0.75rem)" },
             },
             e.createElement(
@@ -1344,7 +1409,7 @@ const te = 12,
                 "div",
                 {
                   className:
-                    "w-full max-w-[92rem] mhub-premium-surface rounded-2xl p-2.5",
+                    "w-full max-w-[640px] mhub-premium-surface rounded-2xl p-3",
                 },
                 e.createElement(
                   "div",
@@ -1356,7 +1421,7 @@ const te = 12,
                     "h3",
                     {
                       className:
-                        "text-base md:text-lg font-bold text-gray-900 dark:text-white dark:text-gray-100",
+                        "text-base md:text-lg font-bold text-gray-900 dark:text-gray-100",
                     },
                     tr("quick_filters", "Quick filters"),
                   ),
@@ -1377,7 +1442,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isUnder1000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isUnder1000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1396,7 +1461,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isRange500to2000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isRange500to2000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1415,7 +1480,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isRange2000to10000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isRange2000to10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1434,7 +1499,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isAbove10000Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isAbove10000Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1453,7 +1518,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isPostedTodayFilter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isPostedTodayFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1476,7 +1541,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isLatest10Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isLatest10Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1495,7 +1560,7 @@ const te = 12,
                     {
                       type: "button",
                       "data-active": isLatest50Filter ? "true" : "false",
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isLatest50Filter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1515,7 +1580,7 @@ const te = 12,
                       type: "button",
                       "data-active": isNearMeFilter ? "true" : "false",
                       disabled: !nearMeLocation,
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         isNearMeFilter
                           ? "!border-blue-600 !bg-blue-600 !text-white shadow-sm hover:!border-blue-600 hover:!bg-blue-600 hover:!text-white"
                           : "border-slate-200 bg-slate-50 !text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
@@ -1534,7 +1599,7 @@ const te = 12,
                     {
                       type: "button",
                       disabled: !_,
-                      className: `inline-flex h-9 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
+                      className: `inline-flex h-10 shrink-0 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors whitespace-nowrap dark:border ${
                         _
                           ? "border-slate-200 bg-white !text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:!text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:!text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700"
                           : "cursor-not-allowed border-slate-200 bg-slate-100 !text-slate-400 dark:border-slate-600 dark:bg-slate-800/50 dark:!text-slate-500"
@@ -1561,7 +1626,7 @@ const te = 12,
                     const t = document.getElementById("for-you-feed");
                     t?.scrollIntoView({ behavior: "smooth", block: "start" });
                   },
-                  maxWidthClass: "max-w-[92rem]",
+                  maxWidthClass: "max-w-[640px]",
                   t: tr,
                   compact: true,
                   outerPaddingClass: "px-3",
@@ -1578,7 +1643,7 @@ const te = 12,
                   "div",
                   {
                     className:
-                      "w-full max-w-[92rem] rounded-xl border border-amber-200/70 bg-amber-50 text-amber-800 px-3 py-2 text-[11px] font-semibold dark:border-amber-900/40 dark:bg-amber-900/30 dark:text-amber-200 dark:border dark:border-amber-600/70 dark:bg-amber-950/20",
+                      "w-full max-w-[640px] rounded-xl border border-amber-200/70 bg-amber-50 text-amber-800 px-3 py-2 text-xs font-semibold dark:border-amber-600/70 dark:bg-amber-900/30 dark:text-amber-200",
                   },
                   reportNotice,
                 ),
@@ -1592,7 +1657,7 @@ const te = 12,
                 "h2",
                 {
                   className:
-                    "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-[92rem] px-3 md:px-0 dark:text-gray-100",
+                    "text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-3 md:mb-4 w-full max-w-[640px] px-3 md:px-0",
                 },
                 tr("sponsored_deals", "Sponsored deals"),
               ),
@@ -1600,7 +1665,7 @@ const te = 12,
                 "div",
                 {
                   className:
-                    "flex gap-3 md:gap-4 w-full max-w-[92rem] overflow-x-auto scrollbar-hide px-3 md:px-0 snap-x snap-mandatory",
+                    "flex gap-3 md:gap-4 w-full max-w-[640px] overflow-x-auto scrollbar-hide px-3 md:px-0 snap-x snap-mandatory",
                 },
                 sponsoredPosts.map((t, a) => {
                   const imageList = collectPostImageUrls(t);
@@ -1610,14 +1675,14 @@ const te = 12,
                     {
                       key: t.post_id || t.id || a,
                       className:
-                        "rounded-xl shadow mhub-premium-surface border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[160px] max-w-[180px] md:min-w-[220px] md:max-w-[240px] hover:scale-[1.02] transition-transform duration-200 snap-start cursor-pointer dark:border dark:border-blue-600/40",
+                        "rounded-xl shadow mhub-premium-surface border border-blue-100 dark:border-gray-700 flex flex-col items-center p-3 md:p-4 min-w-[160px] max-w-[180px] md:min-w-[220px] md:max-w-[240px] hover:scale-[1.02] transition-transform duration-200 snap-start cursor-pointer dark:border-blue-600/40",
                       onClick: () => i(`/post/${t.post_id || t.id}`),
                     },
                     e.createElement("img", {
                       src: s,
                       alt: t.title || "Post",
                       className:
-                        "mhub-media-frame mhub-media-img w-20 h-20 md:w-24 md:h-24 object-cover rounded mb-2 bg-gray-100 dark:bg-gray-700 dark:bg-gray-950",
+                        "mhub-media-frame mhub-media-img w-20 h-20 md:w-24 md:h-24 object-cover rounded mb-2 bg-gray-100 dark:bg-gray-950",
                       onLoad: (u) => {
                         u.currentTarget.dataset.loaded = "true";
                       },
@@ -1630,7 +1695,7 @@ const te = 12,
                       "div",
                       {
                         className:
-                          "font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2 dark:text-gray-100 dark:text-center",
+                          "font-semibold text-gray-800 dark:text-white text-xs md:text-base text-center mb-1 line-clamp-2",
                       },
                       t.title,
                     ),
@@ -1664,7 +1729,7 @@ const te = 12,
                   { className: "mb-4 flex items-center gap-2 flex-wrap" },
                   e.createElement(
                     "span",
-                    { className: "text-sm text-gray-600 dark:text-gray-400 dark:text-gray-200" },
+                    { className: "text-sm text-gray-600 dark:text-gray-200" },
                     r("search_results_for") || "Search results for",
                     ":",
                   ),
@@ -1719,7 +1784,7 @@ const te = 12,
               onRefresh: O,
               isRefreshing: ae || D,
               disabled: ae || D,
-              maxWidthClass: "max-w-[92rem]",
+              maxWidthClass: "max-w-[640px]",
               titleId: "for-you-feed",
               compact: true,
             }),
@@ -1762,7 +1827,7 @@ const te = 12,
             ae
               ? e.createElement(
                   "div",
-                  { className: "flex flex-col gap-6 w-full max-w-[92rem] mx-auto page-shell page-pad" },
+                  { className: "flex flex-col gap-4 w-full max-w-[640px] mx-auto px-3" },
                   [1, 2, 3].map((t) =>
                     e.createElement(
                       "div",
@@ -1791,13 +1856,13 @@ const te = 12,
                     ee,
                     {
                       className:
-                        "max-w-2xl mx-auto p-6 text-center border-red-200 page-shell page-pad dark:text-center dark:border-red-600/40",
+                        "max-w-md mx-auto p-4 text-center border-red-200 page-shell page-pad dark:border-red-600/40",
                     },
                     e.createElement(
                       "div",
                       {
                         className:
-                          "w-12 h-12 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-3 dark:bg-red-950/20 dark:text-red-300",
+                          "w-10 h-10 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 dark:bg-red-950/20 dark:text-red-300",
                       },
                       e.createElement(Q, { className: "w-6 h-6" }),
                     ),
@@ -1805,7 +1870,7 @@ const te = 12,
                       "h4",
                       {
                         className:
-                          "text-lg font-semibold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
+                          "text-sm font-semibold text-gray-900 dark:text-white mb-1 dark:text-gray-100",
                       },
                       "Could not load recommendations",
                     ),
@@ -1813,7 +1878,7 @@ const te = 12,
                       "p",
                       {
                         className:
-                          "text-sm text-gray-600 dark:text-gray-300 mb-5 dark:text-gray-200",
+                          "text-xs text-gray-600 dark:text-gray-300 mb-3 dark:text-gray-200",
                       },
                       L,
                     ),
@@ -1844,28 +1909,28 @@ const te = 12,
                 : C.length === 0
                   ? e.createElement(
                       "div",
-                      { className: "w-full max-w-[92rem] mx-auto px-3 py-14" },
+                      { className: "w-full max-w-[640px] mx-auto px-3 py-6" },
                       e.createElement(
                         "div",
                         {
                           className:
-                            "mx-auto max-w-2xl rounded-3xl border border-slate-200/80 bg-white/92 dark:bg-slate-900/75 dark:border-slate-800/70 shadow-sm px-6 py-10 text-center backdrop-blur-sm dark:border dark:border-slate-700/80 dark:bg-slate-900/92 dark:text-center",
+                            "mx-auto max-w-md rounded-2xl border border-slate-200/80 bg-white/92 dark:bg-slate-900/75 dark:border-slate-800/70 shadow-sm px-4 py-6 text-center backdrop-blur-sm dark:border-slate-700/80 dark:bg-slate-900/92",
                         },
                         e.createElement(
                           "div",
                           {
                             className:
-                              "w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6 dark:bg-blue-950/20",
+                              "w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 dark:bg-blue-950/20",
                           },
                           e.createElement(K, {
-                            className: "w-12 h-12 text-blue-500 dark:text-blue-300",
+                            className: "w-7 h-7 text-blue-500 dark:text-blue-300",
                           }),
                         ),
                         e.createElement(
                           "h3",
                           {
                             className:
-                              "text-xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
+                              "text-base font-bold text-gray-900 dark:text-white mb-1 dark:text-gray-100",
                           },
                           r("no_recommendations"),
                         ),
@@ -1873,7 +1938,7 @@ const te = 12,
                           "p",
                           {
                             className:
-                              "mx-auto max-w-md text-gray-500 dark:text-gray-400 mb-6 dark:text-gray-300",
+                              "mx-auto max-w-md text-xs text-gray-500 dark:text-gray-400 mb-4 dark:text-gray-300",
                           },
                           _
                             ? "No matches found for your current filters."
@@ -1918,7 +1983,7 @@ const te = 12,
                         "div",
                         {
                           className:
-                            "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-2.5 w-full max-w-[92rem] mx-auto px-3",
+                            "flex flex-col gap-4 w-full max-w-[640px] mx-auto px-3",
                         },
                         ne.map((t) => {
                           const a = getPostId(t);
@@ -1979,25 +2044,25 @@ const te = 12,
                               },
                               "data-post-id": a,
                               className:
-                                "for-you-post-card rounded-xl shadow-sm mhub-premium-surface border border-blue-100 dark:border-gray-700 flex flex-col p-0 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 dark:border dark:border-blue-600/40",
+                                "for-you-post-card rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 flex flex-col p-0 overflow-hidden",
                             },
                             e.createElement(
                               "div",
                               {
                                 className:
-                                  "px-2 pt-0.5 pb-0.5 border-b border-gray-100 dark:border-gray-700/70 sm:px-2.5 sm:pt-0.5 sm:pb-1 dark:border-b dark:border-gray-700",
+                                  "px-3 pt-2.5 pb-2 border-b border-slate-100 dark:border-slate-700/50",
                               },
                               e.createElement(
                                 "div",
                                 {
                                   className:
-                                    "inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 px-1.5 py-0.5 sm:px-2 sm:py-0.5 dark:bg-emerald-950/20 dark:border dark:border-emerald-600/40",
+                                    "inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200/70 dark:border-emerald-700/50 px-3 py-1.5",
                                 },
                                 e.createElement(
                                   "span",
                                   {
                                       className:
-                                        "text-[9px] sm:text-[10px] md:text-[11px] uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300",
+                                        "text-xs uppercase tracking-wide font-semibold text-emerald-700 dark:text-emerald-300",
                                   },
                                   r("price") || "Price",
                                 ),
@@ -2005,8 +2070,8 @@ const te = 12,
                                   "span",
                                   {
                                       className: hasPrice
-                                        ? "text-xs sm:text-sm md:text-base font-bold text-emerald-800 dark:text-emerald-200"
-                                        : "text-[10px] sm:text-xs font-semibold text-emerald-700/70 dark:text-emerald-300/80",
+                                        ? "text-sm sm:text-base font-bold text-emerald-800 dark:text-emerald-200"
+                                        : "text-xs font-semibold text-emerald-700/70 dark:text-emerald-300/80",
                                   },
                                   priceText,
                                 ),
@@ -2016,14 +2081,14 @@ const te = 12,
                               "div",
                               {
                                 className:
-                                  "flex items-start gap-2 px-2 pt-1.5 pb-1.5 relative sm:px-2.5",
+                                  "flex items-start gap-2.5 px-3 pt-2.5 pb-2 relative",
                               },
                               e.createElement(
                                 ye,
-                                { className: "w-7 h-7 sm:w-8 sm:h-8" },
+                                { className: "w-8 h-8 sm:w-9 sm:h-9" },
                                 e.createElement(
                                   Ne,
-                                  { className: "dark:bg-gray-700 dark:text-white" },
+                                  { className: "dark:bg-gray-700 dark:text-white text-sm font-bold" },
                                   l || "U",
                                 ),
                               ),
@@ -2032,12 +2097,12 @@ const te = 12,
                                 { className: "flex-1 min-w-0 pr-10" },
                                 e.createElement(
                                   "div",
-                                  { className: "flex items-center gap-1.5 text-[11px] sm:text-[12px] text-gray-700 dark:text-gray-300 truncate" },
+                                  { className: "flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300 truncate" },
                                   e.createElement(
                                     "span",
                                     {
                                       className:
-                                        "font-semibold text-blue-900 dark:text-blue-200 truncate cursor-pointer hover:underline",
+                                        "font-semibold text-slate-900 dark:text-slate-100 truncate cursor-pointer hover:underline",
                                       onClick: (P) => { P.stopPropagation(); const uid = t.user?.id || t.user_id; if (uid) i(`/profile/${uid}`); },
                                     },
                                     u,
@@ -2058,17 +2123,15 @@ const te = 12,
                                       }),
                                     ),
                                   we && e.createElement("span", { className: "text-gray-400 dark:text-gray-500 flex-shrink-0" }, "\u00B7"),
-                                  we && e.createElement("span", { className: "truncate text-gray-500 dark:text-gray-400" }, we),
-                                  he && e.createElement("span", { className: "text-gray-400 dark:text-gray-500 flex-shrink-0" }, "\u00B7"),
-                                  he && e.createElement("span", { className: "text-gray-400 dark:text-gray-500 flex-shrink-0 whitespace-nowrap" }, he),
-                                  a && e.createElement("span", { className: "text-gray-400 dark:text-gray-500 flex-shrink-0" }, "\u00B7"),
-                                  a && e.createElement("span", { className: "text-[10px] text-gray-400 dark:text-gray-500 font-mono flex-shrink-0" }, "#", String(a)),
+                                  we && e.createElement("span", { className: "truncate text-slate-500 dark:text-slate-400 text-xs" }, we),
+                                  he && e.createElement("span", { className: "text-slate-400 dark:text-slate-500 flex-shrink-0" }, "\u00B7"),
+                                  he && e.createElement("span", { className: "text-slate-400 dark:text-slate-500 flex-shrink-0 whitespace-nowrap text-xs" }, he),
                                 ),
                                 (categoryNameById[String(t.category_id)] || resolvedSubcategoryLabel) && e.createElement(
                                   "div",
-                                  { className: "flex items-center gap-1 mt-0.5 flex-wrap" },
-                                  categoryNameById[String(t.category_id)] && e.createElement("span", { className: "text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-medium" }, categoryNameById[String(t.category_id)]),
-                                  resolvedSubcategoryLabel && e.createElement("span", { className: "text-[9px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 font-medium" }, resolvedSubcategoryLabel),
+                                  { className: "flex items-center gap-1.5 mt-1 flex-wrap" },
+                                  categoryNameById[String(t.category_id)] && e.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-semibold" }, categoryNameById[String(t.category_id)]),
+                                  resolvedSubcategoryLabel && e.createElement("span", { className: "text-xs px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 font-semibold" }, resolvedSubcategoryLabel),
                                 ),
                               ),
                               e.createElement(
@@ -2080,12 +2143,12 @@ const te = 12,
                                     setMenuPostId((s) => (s === a ? null : a));
                                   },
                                   className:
-                                    "absolute right-2.5 top-2.5 p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 sm:right-3 sm:top-3 sm:p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:text-gray-300 dark:hover:bg-gray-950",
+                                    "absolute right-3 top-3 p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 dark:text-slate-300",
                                   title: r("more_options", "More options"),
                                   "aria-label": r("more_options", "More options"),
                                   "data-for-you-menu-trigger": "true",
                                 },
-                                e.createElement(To, { className: "w-3.5 h-3.5" }),
+                                e.createElement(To, { className: "w-4 h-4" }),
                               ),
                               menuPostId === a &&
                                 e.createElement(
@@ -2105,7 +2168,7 @@ const te = 12,
                                     setMenuPostId(null);
                                   },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950",
                                     },
                                     r("share") || "Share",
                                   ),
@@ -2118,7 +2181,7 @@ const te = 12,
                                     setMenuPostId(null);
                                   },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950",
                                     },
                                     savedPosts[a]
                                       ? r("saved") || "Saved"
@@ -2134,7 +2197,7 @@ const te = 12,
                                           setMenuPostId(null);
                                         },
                                         className:
-                                          "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                          "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950",
                                       },
                                       r("promote") || "Promote",
                                     ),
@@ -2148,7 +2211,7 @@ const te = 12,
                                         setMenuPostId(null);
                                       },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950",
                                     },
                                     r("interested") || "Interested",
                                   ),
@@ -2161,7 +2224,7 @@ const te = 12,
                                         setMenuPostId(null);
                                       },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950",
+                                        "w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950",
                                     },
                                     inCart
                                       ? r("in_cart") || "In Cart"
@@ -2176,7 +2239,7 @@ const te = 12,
                                     setMenuPostId(null);
                                   },
                                       className:
-                                        "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20",
+                                        "w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-red-300 dark:hover:bg-red-950/20",
                                     },
                                     r("report") || "Report",
                                   ),
@@ -2186,7 +2249,7 @@ const te = 12,
                               "div",
                               {
                                 className:
-                                  "for-you-post-media group relative w-full bg-slate-100 dark:bg-slate-900/70 border-y border-slate-200/70 dark:border-slate-700 mhub-media-frame dark:bg-slate-950 dark:border-y dark:border-slate-700/70",
+                                  "for-you-post-media group relative w-full bg-slate-100 dark:bg-slate-900/70 border-y border-slate-200/70 dark:border-slate-700 mhub-media-frame dark:bg-slate-950 dark:border-slate-700/70",
                               },
                               /* PostPromoBadges removed from cards */
                               e.createElement(
@@ -2204,7 +2267,7 @@ const te = 12,
                                     {
                                       key: `${a}-media-${St}`,
                                       className:
-                                        "w-full shrink-0 snap-center bg-slate-100 dark:bg-slate-800 dark:bg-slate-950",
+                                        "w-full shrink-0 snap-center bg-slate-100 dark:bg-slate-950",
                                     },
                                     e.createElement("img", {
                                       src: P,
@@ -2213,7 +2276,7 @@ const te = 12,
                                       } ${St + 1}`,
                                       loading: "lazy",
                                       className:
-                                        `mhub-media-img for-you-post-image w-full h-[150px] sm:h-[185px] md:h-[210px] object-cover object-center ${
+                                        `mhub-media-img for-you-post-image w-full h-[220px] sm:h-[260px] md:h-[300px] object-cover object-center ${
                                           P === PLACEHOLDER_IMAGE
                                             ? "opacity-45 saturate-50 grayscale"
                                             : ""
@@ -2244,11 +2307,11 @@ const te = 12,
                                       onClick: (P) =>
                                         moveCarousel(a, -1, imageList.length, P),
                                       className:
-                                        "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-7 sm:w-7 opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
+                                        "absolute left-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-9 sm:w-9 opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
                                       "aria-label":
                                         r("previous_image") || "Previous image",
                                     },
-                                    e.createElement(Lo, { className: "w-3 h-3" }),
+                                    e.createElement(Lo, { className: "w-4 h-4" }),
                                   ),
                                   e.createElement(
                                     "button",
@@ -2257,16 +2320,16 @@ const te = 12,
                                       onClick: (P) =>
                                         moveCarousel(a, 1, imageList.length, P),
                                       className:
-                                        "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-7 sm:w-7 opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
+                                        "absolute right-3 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/45 text-white hover:bg-black/60 flex items-center justify-center sm:h-9 sm:w-9 opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/45 dark:text-white dark:hover:bg-black/60",
                                       "aria-label": r("next_image") || "Next image",
                                     },
-                                    e.createElement(Co, { className: "w-3 h-3" }),
+                                    e.createElement(Co, { className: "w-4 h-4" }),
                                   ),
                                   e.createElement(
                                     "div",
                                     {
                                       className:
-                                        "absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/55 text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/55 dark:text-white",
+                                        "absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/55 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/55 dark:text-white",
                                     },
                                     activeImageIndex + 1,
                                     "/",
@@ -2276,7 +2339,7 @@ const te = 12,
                                     "div",
                                     {
                                       className:
-                                        "absolute bottom-2.5 left-1/2 -translate-x-1/2 hidden sm:flex items-center gap-1.5 bg-black/40 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/40",
+                                        "absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity dark:bg-black/40",
                                     },
                                     imageList.map((P, St) =>
                                       e.createElement("button", {
@@ -2304,7 +2367,7 @@ const te = 12,
                               "div",
                               {
                                 className:
-                                  "px-2 py-1 text-gray-800 dark:text-gray-200 text-[10px] sm:text-xs md:text-sm leading-tight sm:px-2.5 sm:py-1.5 dark:text-gray-100",
+                                  "px-3 py-2 text-slate-800 dark:text-slate-200 text-sm leading-relaxed",
                               },
                               expandedPostId === a || !Oe
                                 ? d ||
@@ -2312,7 +2375,7 @@ const te = 12,
                                       "span",
                                       {
                                         className:
-                                          "italic text-gray-400 dark:text-gray-400 dark:text-gray-300",
+                                          "italic text-gray-500 dark:text-gray-400",
                                       },
                                       r("no_description") || "No description",
                                     )
@@ -2337,19 +2400,19 @@ const te = 12,
                               "div",
                               {
                                 className:
-                                  "px-2 pb-1 pt-0.5 border-t border-gray-100 dark:border-gray-700 sm:pb-1.5 dark:border-t",
+                                  "px-3 pb-2.5 pt-1.5 border-t border-slate-100 dark:border-slate-700/50",
                               },
                               e.createElement(
                                 "div",
                                 {
                                   className:
-                                    "post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 scrollbar-hide sm:gap-1.5",
+                                    "post-action-row flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide",
                                 },
                                 e.createElement(
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950",
+                                      "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold",
                                     onClick: () => handleLike(t),
                                     "aria-label": r("like") || "Like",
                                   },
@@ -2359,11 +2422,11 @@ const te = 12,
                                       })
                                     : e.createElement(qe, {
                                         className:
-                                          "w-4 h-4 text-black dark:text-gray-300 dark:text-slate-100",
+                                          "w-4 h-4 text-black dark:text-slate-100",
                                       }),
                                   e.createElement(
                                     "span",
-                                    { className: "text-[9px] sm:text-[10px]" },
+                                    { className: "text-xs" },
                                     likeCounts[a] || 0,
                                   ),
                                 ),
@@ -2371,7 +2434,7 @@ const te = 12,
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950",
+                                      "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold",
                                     onClick: () => handleSharePost(t),
                                     "aria-label": r("share") || "Share",
                                   },
@@ -2386,7 +2449,7 @@ const te = 12,
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-50 dark:bg-gray-700/70 text-gray-700 dark:text-gray-200 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-gray-950",
+                                      "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold",
                                     onClick: () => toggleSave(t),
                                     "aria-label":
                                       savedPosts[a]
@@ -2410,7 +2473,7 @@ const te = 12,
                                   "button",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-7 items-center gap-1.5 px-2 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs font-semibold focus:outline-none hover:bg-emerald-100 dark:hover:bg-emerald-900/50 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/20",
+                                      "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
                                     onClick: (P) => {
                                       P.stopPropagation();
                                       setInterestPost(t);
@@ -2429,7 +2492,7 @@ const te = 12,
                                   o,
                                   {
                                     variant: "outline",
-                                    className: `shrink-0 h-6 px-1 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold rounded inline-flex items-center gap-1 dark:sm:text-[10px]${inCart ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-blue-200 text-blue-700 hover:bg-blue-50"}`,
+                                    className: `shrink-0 h-9 px-3 text-xs font-semibold rounded-full inline-flex items-center gap-1.5 ${inCart ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-blue-200 text-blue-700 hover:bg-blue-50"}`,
                                     onClick: (P) => {
                                       P.stopPropagation();
                                       handleCartToggle(t);
@@ -2453,7 +2516,7 @@ const te = 12,
                                   "span",
                                   {
                                     className:
-                                      "shrink-0 inline-flex h-6 items-center gap-1 px-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-semibold dark:bg-gray-950 dark:text-gray-200",
+                                      "shrink-0 inline-flex h-9 items-center gap-1.5 px-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-semibold",
                                   },
                                   e.createElement(Qe, { className: "w-4 h-4" }),
                                   viewCounts[a] || 0,
@@ -2462,7 +2525,7 @@ const te = 12,
                                   o,
                                   {
                                     className:
-                                      "shrink-0 h-6 bg-blue-600 text-white px-1.5 text-[9px] sm:h-7 sm:px-2 sm:text-[10px] font-medium rounded hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
+                                      "shrink-0 h-9 bg-blue-600 text-white px-4 text-xs font-semibold rounded-full hover:bg-blue-700 ml-auto",
                                     onClick: () => handleViewDetails(t),
                                     "aria-label":
                                       r("view_details") || "View Details",
@@ -2483,13 +2546,13 @@ const te = 12,
                             "div",
                             {
                               className:
-                                "w-full max-w-[92rem] mx-auto px-3 pt-8 pb-28",
+                                "w-full max-w-[640px] mx-auto px-3 pt-8 pb-28",
                             },
                             e.createElement(
                               "div",
                               {
                                 className:
-                                  "rounded-2xl border border-slate-200/80 bg-white/90 dark:bg-slate-900/70 dark:border-slate-800/70 shadow-sm backdrop-blur-sm px-4 py-4 sm:px-5 dark:border dark:border-slate-700/80 dark:bg-slate-900/90",
+                                  "rounded-2xl border border-slate-200/80 bg-white/90 dark:bg-slate-900/70 dark:border-slate-800/70 shadow-sm backdrop-blur-sm px-4 py-4 sm:px-5 dark:border-slate-700/80 dark:bg-slate-900/90",
                               },
                               e.createElement(
                                 "div",
@@ -2512,7 +2575,7 @@ const te = 12,
                                     "p",
                                     {
                                       className:
-                                        "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                        "text-xs text-slate-500 dark:text-slate-300",
                                     },
                                     tr(
                                       "load_more_recommendations_hint",
@@ -2527,7 +2590,7 @@ const te = 12,
                                     onClick: () => Y((t) => t + 1),
                                     disabled: D,
                                     className:
-                                      "inline-flex min-h-11 min-w-[180px] items-center justify-center rounded-xl border border-blue-200 bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70 dark:border-blue-500/40 dark:border dark:border-blue-600/40 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
+                                      "inline-flex min-h-11 min-w-[180px] items-center justify-center rounded-xl border border-blue-200 bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70 dark:border-blue-600/40 dark:bg-blue-700/40 dark:text-white dark:hover:bg-blue-700/40",
                                   },
                                   D
                                     ? e.createElement(
@@ -2535,7 +2598,7 @@ const te = 12,
                                         null,
                                         e.createElement("div", {
                                           className:
-                                            "mr-2 h-4 w-4 rounded-full border-2 border-white/80 border-t-transparent animate-spin dark:border-2 dark:border-white/80 dark:border-t-transparent",
+                                            "mr-2 h-4 w-4 rounded-full border-2 border-white/80 border-t-transparent animate-spin dark:border-t-transparent",
                                         }),
                                         r("loading") || "Loading...",
                                       )
@@ -2569,6 +2632,18 @@ const te = 12,
             isOpen: loginPromptOpen,
             onClose: () => setLoginPromptOpen(!1),
           }),
+          /* Back to top FAB */
+          e.createElement("button", {
+            type: "button",
+            "aria-label": tr("back_to_top", "Back to top"),
+            className: "foryou-back-to-top fixed z-50 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 backdrop-blur-sm active:scale-90 transition-transform",
+            style: { bottom: "calc(var(--bottom-nav-height, 64px) + 16px)", right: "16px" },
+            onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+          },
+            e.createElement("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round" },
+              e.createElement("path", { d: "M18 15l-6-6-6 6" }),
+            ),
+          ),
           )
         )
         ;

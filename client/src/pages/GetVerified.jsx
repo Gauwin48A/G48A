@@ -221,15 +221,15 @@ const GetVerified = () => {
 
   return (
     <div className="min-h-screen mhub-premium-page bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 p-4 transition-colors duration-300 dark:bg-gradient-to-br">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8 dark:text-center">
+      <div className="max-w-[640px] mx-auto">
+        <div className="text-center mb-8">
           <div className="w-16 h-16 bg-green-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-green-950/20">
-            <Shield className="w-8 h-8 text-green-600 dark:text-emerald-300 dark:text-green-300" />
+            <Shield className="w-8 h-8 text-green-600 dark:text-green-300" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2 dark:text-gray-100">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2 dark:text-gray-100">
             {heroTitle}
           </h1>
-          <p className="text-gray-600 dark:text-slate-300 dark:text-gray-200">
+          <p className="text-gray-600 dark:text-gray-200">
             {heroSubtitle}
           </p>
         </div>
@@ -239,7 +239,7 @@ const GetVerified = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-green-600 dark:text-emerald-300 dark:text-green-300" />
+                <Shield className="w-5 h-5 text-green-600 dark:text-green-300" />
                 <span>{t("aadhaar_verification_title")}</span>
               </CardTitle>
               <CardDescription>{t("aadhaar_upload_desc")}</CardDescription>
@@ -248,7 +248,7 @@ const GetVerified = () => {
               {verificationStatus !== "verified" && (
                 <form onSubmit={handleVerifyOtp} className="space-y-4">
                   <div>
-                    <Label htmlFor="fullName" className="text-gray-700 dark:text-slate-200 dark:text-gray-200">
+                    <Label htmlFor="fullName" className="text-gray-700 dark:text-gray-200">
                       {t("full_name_aadhaar")}
                     </Label>
                     <Input
@@ -263,7 +263,7 @@ const GetVerified = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="aadhaarNumber" className="text-gray-700 dark:text-slate-200 dark:text-gray-200">
+                    <Label htmlFor="aadhaarNumber" className="text-gray-700 dark:text-gray-200">
                       {t("aadhaar_number") || "Aadhaar Number"}
                     </Label>
                     <Input
@@ -281,7 +281,7 @@ const GetVerified = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="dateOfBirth" className="text-gray-700 dark:text-slate-200 dark:text-gray-200">
+                    <Label htmlFor="dateOfBirth" className="text-gray-700 dark:text-gray-200">
                       {t("date_of_birth")}
                     </Label>
                     <Input
@@ -295,12 +295,12 @@ const GetVerified = () => {
                     />
                   </div>
 
-                  <div className="border-2 border-dashed border-gray-300 dark:border-slate-700 dark:bg-slate-900/40 rounded-lg p-6 dark:border-2 dark:border-dashed dark:border-gray-600">
-                    <div className="text-center dark:text-center">
+                  <div className="border-2 border-dashed border-gray-300 dark:border-slate-700 dark:bg-slate-900/40 rounded-lg p-6 dark:border-gray-600">
+                    <div className="text-center">
                       <Upload className="w-12 h-12 text-gray-400 dark:text-slate-400 mx-auto mb-4 dark:text-gray-300" />
                       <Label
                         htmlFor="aadhaarOtp"
-                        className="block text-sm font-medium mb-2 text-gray-700 dark:text-slate-200 dark:text-gray-200"
+                        className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200"
                       >
                         {t("aadhaar_otp") || "Aadhaar OTP"}
                       </Label>
@@ -352,18 +352,18 @@ const GetVerified = () => {
               )}
 
               {verificationStatus === "verified" && (
-                <div className="text-center space-y-4 dark:text-center">
+                <div className="text-center space-y-4">
                   <div className="w-16 h-16 bg-green-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto dark:bg-green-950/20">
-                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-emerald-300 dark:text-green-300" />
+                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-300" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-green-600 dark:text-emerald-300 dark:text-green-300">
+                    <h3 className="font-semibold text-lg text-green-600 dark:text-green-300">
                       {t("verification_complete")}
                     </h3>
-                    <p className="text-gray-600 dark:text-slate-300 dark:text-gray-200">{t("aadhaar_success_msg")}</p>
+                    <p className="text-gray-600 dark:text-gray-200">{t("aadhaar_success_msg")}</p>
                   </div>
                   <Badge className="bg-green-600 dark:bg-emerald-500/20 dark:text-emerald-100 dark:bg-green-700/40">
-                    <Shield className="w-3 h-3 mr-1" />
+                    <Shield className="w-4 h-4 mr-1" />
                     Aadhaar Verified
                   </Badge>
                 </div>
@@ -385,11 +385,11 @@ const GetVerified = () => {
                     return (
                       <div key={index} className="flex items-start space-x-3">
                         <div className="w-8 h-8 bg-blue-100 dark:bg-sky-900/40 rounded-full flex items-center justify-center flex-shrink-0 dark:bg-blue-950/20">
-                          <Icon className="w-4 h-4 text-blue-600 dark:text-sky-300 dark:text-blue-300" />
+                          <Icon className="w-4 h-4 text-blue-600 dark:text-blue-300" />
                         </div>
                         <div>
                           <h3 className="font-medium">{benefit.title}</h3>
-                          <p className="text-sm text-gray-600 dark:text-slate-300 dark:text-gray-200">
+                          <p className="text-sm text-gray-600 dark:text-gray-200">
                             {benefit.description}
                           </p>
                         </div>

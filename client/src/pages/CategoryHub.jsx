@@ -8,7 +8,6 @@ import { useTheme } from "@/context/ThemeContext";
 import api from "@/services/api";
 import { useCmsPage } from "@/hooks/useCmsPage";
 import DarkModeToggle from "@/components/DarkModeToggle";
-import { Capacitor } from "@capacitor/core";
 import { Smartphone, Tablet, Monitor } from "lucide-react";
 
 const LAYOUT_STORAGE_KEY = 'mhub_layout_preview_mode';
@@ -19,6 +18,18 @@ const LAYOUT_MODES = [
   { key: 'tablet', label: 'Tablet', icon: Tablet },
   { key: 'desktop', label: 'Desktop', icon: Monitor },
 ];
+
+const isAndroidReplicaWebView = () => {
+  if (typeof navigator === "undefined") return false;
+  const ua = String(navigator.userAgent || "").toLowerCase();
+  return ua.includes("mhubandroidwebreplica") || (ua.includes("android") && /\bwv\b/.test(ua));
+};
+
+const detectNativeRuntime = () => {
+  if (typeof window === "undefined") return false;
+  if (window.Capacitor?.isNativePlatform?.()) return true;
+  return isAndroidReplicaWebView();
+};
 
 // ─── App definitions ────────────────────────────────────────────────────────
 
@@ -34,7 +45,7 @@ const APPS = [
     ringColor: "ring-blue-400",
     chipBg: "bg-blue-500/20",
     chipText: "text-blue-200",
-    emoji: "📱",
+    emoji: "\uD83D\uDCF1",
     bgBlob: "bg-blue-400/10",
   },
   {
@@ -48,7 +59,7 @@ const APPS = [
     ringColor: "ring-pink-400",
     chipBg: "bg-pink-500/20",
     chipText: "text-pink-200",
-    emoji: "👗",
+    emoji: "\uD83D\uDC57",
     bgBlob: "bg-pink-400/10",
   },
   {
@@ -62,7 +73,7 @@ const APPS = [
     ringColor: "ring-emerald-400",
     chipBg: "bg-emerald-500/20",
     chipText: "text-emerald-200",
-    emoji: "🚗",
+    emoji: "\uD83D\uDE97",
     bgBlob: "bg-emerald-400/10",
   },
   {
@@ -76,7 +87,7 @@ const APPS = [
     ringColor: "ring-purple-400",
     chipBg: "bg-purple-500/20",
     chipText: "text-purple-200",
-    emoji: "✨",
+    emoji: "\u2728",
     bgBlob: "bg-purple-400/10",
   },
 ];
@@ -144,10 +155,11 @@ function deriveStatsFromCategories(payload) {
 // ─── Stat formatter ─────────────────────────────────────────────────────────
 
 function fmtCount(n) {
-  if (!n || n === 0) return "—";
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
-  return String(n);
+  const value = Number(n);
+  if (!Number.isFinite(value) || value <= 0) return "0";
+  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (value >= 1_000) return (value / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  return String(Math.round(value));
 }
 
 // ─── Loading skeleton ────────────────────────────────────────────────────────
@@ -203,7 +215,7 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
         isActive ? `ring-4 ${app.ringColor} ring-offset-2 ring-offset-slate-50 dark:ring-offset-gray-950` : "",
         hovered ? `shadow-2xl ${app.shadowColor}` : "shadow-lg",
       ].join(" ")}
-      style={{ willChange: "transform", transition: "transform 0.15s ease, box-shadow 0.3s ease" }}
+      style={{ transition: "transform 0.15s ease, box-shadow 0.3s ease" }}
       aria-pressed={isActive}
       aria-label={t('enter_app', { label: app.label, defaultValue: `Enter ${app.label} app` })}
     >
@@ -215,13 +227,13 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
         {/* Top row: emoji + active badge */}
         <div className="flex items-start justify-between">
           <span
-            className="text-3xl md:text-5xl select-none"
+            className="text-xl sm:text-3xl md:text-5xl select-none"
             style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.3))" }}
           >
             {app.emoji}
           </span>
           {isActive && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/25 px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider backdrop-blur-sm dark:bg-slate-900/25 dark:text-white">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-1 sm:px-3 sm:py-1 text-xs font-bold text-white uppercase tracking-wider backdrop-blur-sm dark:bg-slate-900/25 dark:text-white">
               <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse dark:bg-green-900/30" />
               {t('active', { defaultValue: 'Active' })}
             </span>
@@ -249,13 +261,13 @@ function AppTile({ app, stats, isActive, onSelect, t }) {
         </div>
 
         {/* Compact mobile stats */}
-        <p className="sm:hidden text-[11px] text-white/60 font-medium dark:text-white/60">
+        <p className="sm:hidden text-xs text-white/60 font-medium dark:text-white/60">
           {fmtCount(s.active_count)} {t('listings', { defaultValue: 'listings' })}
         </p>
 
         {/* CTA row */}
         <div className="hidden sm:flex items-center justify-between mt-1">
-          <p className="text-[11px] text-white/60 leading-tight max-w-[70%] line-clamp-2 hidden md:block dark:text-white/60">
+          <p className="text-xs text-white/60 leading-tight max-w-[70%] line-clamp-2 hidden md:block dark:text-white/60">
             {app.description}
           </p>
           <span className={[
@@ -294,19 +306,31 @@ export default function CategoryHub() {
   const [stats, setStats] = useState({});
   const [statsLoading, setStatsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const isNativeRuntime = useMemo(() => detectNativeRuntime(), []);
   const [layoutMode, setLayoutMode] = useState(() => {
+    if (detectNativeRuntime()) return "mobile";
     const stored = String(localStorage.getItem(LAYOUT_STORAGE_KEY) || '').trim().toLowerCase();
     return LAYOUT_MODES.some((m) => m.key === stored) ? stored : 'mobile';
   });
 
   const handleLayoutChange = useCallback((mode) => {
+    if (isNativeRuntime) return;
     setLayoutMode(mode);
     localStorage.setItem(LAYOUT_STORAGE_KEY, mode);
     localStorage.setItem(LAYOUT_USER_KEY, '1');
     try { sessionStorage.setItem(LAYOUT_SESSION_KEY, '1'); } catch {}
     document.documentElement.setAttribute('data-layout-preview', mode);
     document.body?.setAttribute('data-layout-preview', mode);
-  }, []);
+  }, [isNativeRuntime]);
+
+  useEffect(() => {
+    if (!isNativeRuntime) return;
+    document.documentElement.setAttribute("data-native-platform", "1");
+    document.body?.setAttribute("data-native-platform", "1");
+    document.documentElement.setAttribute("data-layout-preview", "mobile");
+    document.body?.setAttribute("data-layout-preview", "mobile");
+    localStorage.setItem(LAYOUT_STORAGE_KEY, "mobile");
+  }, [isNativeRuntime]);
 
   useEffect(() => { document.title = t('browse_categories', { defaultValue: 'MHub — Browse Categories' }); return () => { document.title = "MHub"; }; }, [t]);
 
@@ -410,7 +434,7 @@ export default function CategoryHub() {
   }, [clearCategory, clearSubcategory, setActiveApp, setFilters, navigate]);
 
   return (
-    <div className="min-h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-x-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100 pb-24">
+    <div className="min-h-[100dvh] mhub-premium-page bg-slate-50 text-slate-900 dark:bg-gray-950 dark:text-white relative overflow-x-hidden flex flex-col dark:bg-slate-950 dark:text-slate-100 pb-20">
       {/* Full-screen gradient aurora background */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
@@ -421,7 +445,7 @@ export default function CategoryHub() {
         <div className={`absolute top-1/3 left-0 w-72 h-72 rounded-full blur-3xl ${isDark ? "opacity-10 bg-emerald-600" : "opacity-20 bg-emerald-300"}`} />
       </div>
 
-      <div className="relative z-10 max-w-2xl mx-auto px-4 pt-6 md:pt-8 flex flex-col flex-1 min-h-0">
+      <div className="relative z-10 max-w-[640px] mx-auto px-4 pt-4 md:pt-8 flex flex-col flex-1 min-h-0">
         {/* Header */}
         <div
           className="mb-4 text-center transition-all duration-700 flex-shrink-0"
@@ -436,9 +460,9 @@ export default function CategoryHub() {
               <span className={isDark ? "text-white/45" : "text-slate-500"}>{t('switch_anytime', { defaultValue: 'Switch anytime from here' })}</span>
             </div>
           )}
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight leading-none">
             {t('choose_your', { defaultValue: 'Choose Your' })}{" "}
-            <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
+            <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent dark:bg-clip-text dark:text-transparent">
               {t('world', { defaultValue: 'World' })}
             </span>
           </h1>
@@ -470,7 +494,7 @@ export default function CategoryHub() {
           )}
 
           {/* ── Quick settings below categories (hidden on native mobile) ── */}
-          {!Capacitor.isNativePlatform() && (
+          {!isNativeRuntime && import.meta.env.DEV && (
           <div className="mt-6 mb-2 flex flex-col items-center gap-4">
             {/* Layout switcher */}
             <div className="flex items-center gap-1 p-1 rounded-xl bg-white shadow-md border border-gray-200 dark:bg-gray-800 dark:border-gray-600">
@@ -500,7 +524,7 @@ export default function CategoryHub() {
             {/* Dark mode toggle */}
             <div className="flex items-center gap-2">
               <DarkModeToggle className="!p-2 !rounded-xl !bg-white !shadow-md !border !border-gray-200 dark:!bg-gray-800 dark:!border-gray-600 hover:!shadow-lg transition-all" />
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{isDark ? t('light_mode', { defaultValue: 'Light' }) : t('dark_mode', { defaultValue: 'Dark' })}</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{isDark ? t('light_mode', { defaultValue: 'Light' }) : t('dark_mode', { defaultValue: 'Dark' })}</span>
             </div>
           </div>
           )}
@@ -510,3 +534,4 @@ export default function CategoryHub() {
     </div>
   );
 }
+

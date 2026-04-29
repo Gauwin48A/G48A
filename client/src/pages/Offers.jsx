@@ -569,7 +569,7 @@ const OffersPage = () => {
   if (!canUseOffers) {
     return (
       <div className="min-h-screen mhub-premium-page bg-gray-50 flex items-center justify-center p-4 dark:bg-gray-950">
-        <div className="max-w-md w-full mhub-premium-surface rounded-2xl p-6 text-center page-shell page-pad dark:text-center">
+        <div className="max-w-md w-full mhub-premium-surface rounded-2xl p-6 text-center page-shell page-pad">
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3 dark:text-amber-300" />
           <h2 className="text-xl font-bold text-gray-900 mb-2 dark:text-gray-100">
             {tr("login_required", "Login required")}
@@ -593,9 +593,9 @@ const OffersPage = () => {
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gray-50 dark:bg-gray-950">
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-[#0b1220] dark:to-[#0f2a2a] px-4 py-8 dark:bg-gradient-to-r">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-[640px] mx-auto">
           <div className="flex flex-wrap items-center gap-4 mb-4">
             <Button
               variant="ghost"
@@ -606,7 +606,7 @@ const OffersPage = () => {
               <ArrowLeft className="w-6 h-6" />
             </Button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-white">
+              <h1 className="text-xl sm:text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-white">
                 <DollarSign className="w-8 h-8" />{" "}
                 {tr("offers_title", "Price Negotiations")}
               </h1>
@@ -640,13 +640,13 @@ const OffersPage = () => {
       </div>
 
       {hasCategoryMode && categoryModeCategory?.name ? (
-        <div className="max-w-4xl mx-auto px-4 -translate-y-2 page-shell page-pad">
-          <div className="mb-3 rounded-2xl border border-emerald-100 bg-white/90 dark:border-emerald-900/40 dark:bg-gray-900/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm dark:border dark:border-emerald-600/40 dark:bg-slate-900/90">
+        <div className="max-w-[640px] mx-auto px-4 -translate-y-2 page-shell page-pad">
+          <div className="mb-3 rounded-2xl border border-emerald-100 bg-white/90 dark:border-emerald-900/40 dark:bg-gray-900/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm dark:border-emerald-600/40 dark:bg-slate-900/90">
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Category mode: {categoryModeCategory.name}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300">
+              <p className="text-xs text-slate-500 dark:text-slate-300">
                 Offers are filtered to this category.
               </p>
             </div>
@@ -662,16 +662,16 @@ const OffersPage = () => {
         </div>
       ) : null}
 
-      <div className="max-w-4xl mx-auto px-4 mt-2 -translate-y-2 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto px-4 mt-2 -translate-y-2 page-shell page-pad">
         <TransactionStepper
           steps={localizedSteps}
           currentStep={0}
-          className="bg-white dark:bg-gray-900 dark:bg-slate-900"
+          className="bg-white dark:bg-slate-900"
         />
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 -translate-y-2 page-shell page-pad">
-        <div className="mb-4 rounded-2xl border border-emerald-100 bg-white/95 dark:border-emerald-900/40 dark:bg-gray-900/70 p-4 shadow-sm dark:border dark:border-emerald-600/40 dark:bg-slate-900/95">
+      <div className="max-w-[640px] mx-auto px-4 -translate-y-2 page-shell page-pad">
+        <div className="mb-4 rounded-2xl border border-emerald-100 bg-white/95 dark:border-emerald-900/40 dark:bg-gray-900/70 p-4 shadow-sm dark:border-emerald-600/40 dark:bg-slate-900/95">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex items-center gap-2">
@@ -724,14 +724,14 @@ const OffersPage = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto px-4 py-6 page-shell page-pad">
         {loading ? (
-          <div className="text-center py-12 dark:text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto dark:border-b-2 dark:border-green-500/40" />
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto dark:border-green-500/40" />
           </div>
         ) : error ? (
           <Card className="border-0 shadow-lg dark:border-0">
-            <CardContent className="py-10 text-center dark:text-center">
+            <CardContent className="py-10 text-center">
               <h3 className="text-xl font-semibold text-red-600 mb-2 dark:text-red-300">
                 {tr("offers_unable_to_load", "Unable to load offers")}
               </h3>
@@ -754,7 +754,7 @@ const OffersPage = () => {
           </Card>
         ) : filteredOffers.length === 0 ? (
           <Card className="border-0 shadow-lg dark:border-0">
-            <CardContent className="text-center py-12 dark:text-center">
+            <CardContent className="text-center py-12">
               {isFilteredEmpty ? (
                 <>
                   <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4 dark:text-gray-300" />
@@ -844,7 +844,7 @@ const OffersPage = () => {
                   key={offerId}
                   className="border-0 shadow-lg overflow-hidden dark:border-0"
                 >
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -866,7 +866,7 @@ const OffersPage = () => {
                               {tr("saved", "Saved")}
                             </Badge>
                           )}
-                          <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                          <span className="text-sm text-gray-500 dark:text-gray-300">
                             <Clock className="w-4 h-4 inline mr-1" />
                             {offer.created_at
                               ? new Date(offer.created_at).toLocaleDateString()
@@ -896,7 +896,7 @@ const OffersPage = () => {
 
                         <div className="flex items-center gap-3 mb-3">
                           <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                            <p className="text-sm text-gray-500 dark:text-gray-300">
                               {tr("offers_original_price", "Original Price")}
                             </p>
                             <p className="text-lg font-bold text-gray-400 line-through dark:text-gray-300">
@@ -907,7 +907,7 @@ const OffersPage = () => {
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                            <p className="text-sm text-gray-500 dark:text-gray-300">
                               {tr("offers_offered_price", "Offered Price")}
                             </p>
                             <p className="text-xl font-bold text-green-600 dark:text-green-300">
@@ -921,7 +921,7 @@ const OffersPage = () => {
                             variant="outline"
                             className="text-red-500 border-red-200 dark:text-red-300 dark:border-red-600/40"
                           >
-                            <TrendingDown className="w-3 h-3 mr-1" />
+                            <TrendingDown className="w-4 h-4 mr-1" />
                             {tr("offers_percent_off", "{{percent}}% off", {
                               percent: toSavings(
                                 offer.offered_price,
@@ -945,7 +945,7 @@ const OffersPage = () => {
                           </p>
                         )}
                       
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
                           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                             {tr("offers_next_step", "Next step")}
                           </p>
@@ -990,7 +990,7 @@ const OffersPage = () => {
                                 "offers_counter_placeholder",
                                 "Counter",
                               )}
-                              className="w-24 text-sm"
+                              className="w-28 sm:w-24 text-sm h-10"
                               min="1"
                               value={counterByOfferId[offerId] || ""}
                               onChange={(event) =>
@@ -1040,7 +1040,7 @@ const OffersPage = () => {
                                 "offers_counter_placeholder",
                                 "Counter",
                               )}
-                              className="w-24 text-sm"
+                              className="w-28 sm:w-24 text-sm h-10"
                               min="1"
                               value={counterByOfferId[offerId] || ""}
                               onChange={(event) =>

@@ -43,7 +43,7 @@ const PageHeader = ({
       ${className}
     `}
     >
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-3 page-shell page-pad py-3">
+      <div className="mx-auto flex w-full max-w-[640px] items-center gap-3 page-shell page-pad py-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {showBack ? (
             <Button

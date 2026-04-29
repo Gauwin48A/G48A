@@ -132,7 +132,7 @@ export default function VPNBlocker({ children }) {
             </svg>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
             VPN / Proxy Detected
           </h1>
 

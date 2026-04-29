@@ -303,7 +303,7 @@ const FeedbackPage = () => {
         "div",
         {
           className:
-            `mhub-page-feedback min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 relative dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
+            `mhub-page-feedback min-h-screen mhub-premium-page mhub-page-pad-bottom bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 relative overflow-x-hidden dark:bg-gradient-to-br ${density === "compact" ? "mhub-compact" : ""}`,
           style: { minHeight: "100vh" },
         },
         e.createElement(
@@ -324,7 +324,7 @@ const FeedbackPage = () => {
         ),
         e.createElement(
           "div",
-          { className: "relative max-w-3xl mx-auto px-4 py-5 sm:px-6 sm:py-6 space-y-4" },
+          { className: "relative max-w-[640px] mx-auto px-4 py-5 sm:px-6 sm:py-6 space-y-4" },
           e.createElement(
             "div",
             { className: "text-center pt-4 mhub-hero-card rounded-3xl px-4 py-5 sm:px-6 sm:py-6" },
@@ -360,7 +360,7 @@ const FeedbackPage = () => {
                 "span",
                 {
                   className:
-                    "bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent",
+                    "bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent dark:bg-clip-text dark:text-transparent",
                 },
                 t("feedback"),
               ),
@@ -392,7 +392,7 @@ const FeedbackPage = () => {
                 type: "button",
                 onClick: () => toggleSection("heroHighlights"),
                 className:
-                  "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                  "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
                 "aria-expanded": !sectionCollapse.heroHighlights,
                 "aria-controls": "feedback-hero-highlights",
               },
@@ -410,7 +410,7 @@ const FeedbackPage = () => {
                   "span",
                   {
                     className:
-                      "text-[11px] text-slate-600 dark:text-slate-300",
+                      "text-xs text-slate-600 dark:text-slate-300",
                   },
                   tr(
                     "highlights_summary",
@@ -518,7 +518,7 @@ const FeedbackPage = () => {
                         type: "button",
                         onClick: () => toggleSection("feedbackCategory"),
                         className:
-                          "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                          "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
                         "aria-expanded": !sectionCollapse.feedbackCategory,
                         "aria-controls": "feedback-category-grid",
                       },
@@ -601,7 +601,7 @@ const FeedbackPage = () => {
                           type: "button",
                           onClick: () => toggleSection("feedbackCategory"),
                           className:
-                            "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                            "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
                           "aria-expanded": !sectionCollapse.feedbackCategory,
                           "aria-controls": "feedback-category-grid",
                         },
@@ -730,7 +730,7 @@ const FeedbackPage = () => {
                     onChange: C,
                     placeholder: t("brief_summary"),
                     className:
-                      "h-12 text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                      "h-12 text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors dark:border-gray-700 dark:focus:border-blue-500/40",
                     required: !0,
                   }),
                 ),
@@ -755,7 +755,7 @@ const FeedbackPage = () => {
                     placeholder: t("share_detailed_feedback"),
                     rows: 6,
                     className:
-                      "text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors resize-none dark:border-2 dark:border-gray-700 dark:focus:border-blue-500/40",
+                      "text-base rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-blue-500 transition-colors resize-none dark:border-gray-700 dark:focus:border-blue-500/40",
                     required: !0,
                   }),
                 ),
@@ -773,7 +773,7 @@ const FeedbackPage = () => {
                         { className: "flex items-center gap-3" },
                         e.createElement("div", {
                           className:
-                            "w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin dark:border-3 dark:border-white/30 dark:border-t-white",
+                            "w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin dark:border-t-white",
                         }),
                         t("submitting"),
                       )
@@ -805,7 +805,7 @@ const FeedbackPage = () => {
               n,
               {
                 className:
-                  "shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden dark:border dark:border-blue-600/40 dark:bg-blue-950/20",
+                  "shadow-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 rounded-2xl overflow-hidden dark:border-blue-600/40 dark:bg-blue-950/20",
               },
               e.createElement(
                 m,
@@ -883,7 +883,7 @@ const FeedbackPage = () => {
                       "p",
                       {
                         className:
-                          "text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300",
+                          "text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300",
                       },
                       tr("feedback_impact", "Impact"),
                     ),
@@ -914,7 +914,7 @@ const FeedbackPage = () => {
                     type: "button",
                     onClick: () => toggleSection("whyMatters"),
                     className:
-                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
                     "aria-expanded": !sectionCollapse.whyMatters,
                     "aria-controls": "feedback-why-body",
                   },
@@ -933,7 +933,7 @@ const FeedbackPage = () => {
                     "div",
                     {
                       className:
-                        "mt-4 flex flex-wrap gap-2 text-[11px] text-slate-600 dark:text-slate-300",
+                        "mt-4 flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300",
                     },
                     whyMattersItems.map((r) =>
                       e.createElement(
@@ -1048,7 +1048,7 @@ const FeedbackPage = () => {
                     type: "button",
                     onClick: () => toggleSection("directContact"),
                     className:
-                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
                     "aria-expanded": !sectionCollapse.directContact,
                     "aria-controls": "feedback-direct-contact",
                   },
@@ -1171,7 +1171,7 @@ const FeedbackPage = () => {
                     type: "button",
                     onClick: () => toggleSection("thankYou"),
                     className:
-                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
+                      "inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800",
                     "aria-expanded": !sectionCollapse.thankYou,
                     "aria-controls": "feedback-thank-you",
                   },
@@ -1229,7 +1229,7 @@ const FeedbackPage = () => {
         },
         e.createElement(
           "div",
-          { className: "pt-10 pb-8 px-6 text-center mhub-hero-card rounded-3xl max-w-2xl mx-auto" },
+          { className: "pt-10 pb-8 px-6 text-center mhub-hero-card rounded-3xl max-w-[640px] mx-auto" },
           e.createElement(
             "div",
             {
@@ -1252,7 +1252,7 @@ const FeedbackPage = () => {
         ),
         e.createElement(
           "div",
-          { className: "max-w-2xl mx-auto px-6 space-y-4" },
+          { className: "max-w-[640px] mx-auto px-6 space-y-4" },
           e.createElement(
             I,
             {
@@ -1293,7 +1293,7 @@ const FeedbackPage = () => {
             {
               to: "/signup",
               className:
-                "block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300 dark:bg-slate-900/10 dark:border dark:border-white/20 dark:hover:bg-slate-900/20",
+                "block bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/20 hover:scale-[1.02] transition-all duration-300 dark:bg-slate-900/10 dark:border-white/20 dark:hover:bg-slate-900/20",
             },
             e.createElement(
               "div",

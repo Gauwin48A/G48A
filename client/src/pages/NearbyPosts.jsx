@@ -216,14 +216,14 @@ export default function NearbyPosts() {
   );
 
   return (
-    <div className={`min-h-screen mhub-premium-page bg-gray-50 dark:bg-gray-950 ${densityClass}`}>
+    <div className={`min-h-screen mhub-premium-page nav-clearance bg-gray-50 dark:bg-gray-950 ${densityClass}`}>
       <div className="sticky top-0 z-10 bg-gradient-to-r from-green-600 to-teal-600 dark:from-[#0b1220] dark:via-[#0f2a2a] dark:to-[#0b1220] px-4 py-6 dark:bg-gradient-to-r">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-[640px] mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <MapPin className="w-8 h-8 text-white dark:text-white" />
               <div>
-                <h1 className="text-2xl font-bold text-white dark:text-white">
+                <h1 className="text-lg sm:text-2xl font-bold text-white dark:text-white">
                   {t("nearby_posts_title")}
                 </h1>
                 <p className="text-green-100 text-sm dark:text-green-200">{t("find_items_close")}</p>
@@ -271,14 +271,14 @@ export default function NearbyPosts() {
       </div>
 
       {hasCategoryMode && categoryModeCategory?.name && (
-        <div className="max-w-6xl mx-auto px-4 pt-4 page-shell page-pad">
+        <div className="max-w-[640px] mx-auto px-4 pt-4 page-shell page-pad">
           <div className="mhub-premium-surface rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {tr("category_mode_label", "Category mode")}:{" "}
                 {categoryModeCategory.name}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300">
+              <p className="text-xs text-slate-500 dark:text-slate-300">
                 {tr(
                   "nearby_category_filter_hint",
                   "Nearby results are filtered to this category.",
@@ -297,9 +297,9 @@ export default function NearbyPosts() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-6 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto px-4 py-6 page-shell page-pad">
         {permissionState === "prompt" && !locationReady && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 text-center mb-6 dark:bg-blue-950/20 dark:border dark:border-blue-600/40 dark:text-center">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 text-center mb-6 dark:bg-blue-950/20 dark:border-blue-600/40">
             <Navigation className="w-12 h-12 mx-auto mb-4 text-blue-500 dark:text-blue-300" />
             <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
               {t("enable_location_access")}
@@ -325,7 +325,7 @@ export default function NearbyPosts() {
           </div>
         )}
         {permissionState === "denied" && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6 text-center mb-6 dark:bg-yellow-950/20 dark:border dark:border-yellow-600/40 dark:text-center">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6 text-center mb-6 dark:bg-yellow-950/20 dark:border-yellow-600/40">
             <Navigation className="w-12 h-12 mx-auto mb-4 text-yellow-500 dark:text-yellow-300" />
             <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
               {t("location_access_required")}
@@ -349,11 +349,11 @@ export default function NearbyPosts() {
                 key={`nearby-skeleton-${idx}`}
                 className="overflow-hidden mhub-premium-surface rounded-2xl border border-gray-200 dark:border-gray-700 animate-pulse dark:border"
               >
-                <div className="h-48 w-full bg-gray-200 dark:bg-gray-700 dark:bg-gray-900" />
+                <div className="h-48 w-full bg-gray-200 dark:bg-gray-900" />
                 <div className="p-4 space-y-3">
-                  <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900" />
-                  <div className="h-6 w-1/2 rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900" />
-                  <div className="h-3 w-full rounded bg-gray-200 dark:bg-gray-700 dark:bg-gray-900" />
+                  <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-900" />
+                  <div className="h-6 w-1/2 rounded bg-gray-200 dark:bg-gray-900" />
+                  <div className="h-3 w-full rounded bg-gray-200 dark:bg-gray-900" />
                 </div>
               </Card>
             ))}
@@ -361,8 +361,8 @@ export default function NearbyPosts() {
         )}
 
         {hasError && !loading && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center dark:bg-red-950/20 dark:border dark:border-red-600/40 dark:text-center">
-            <p className="text-red-600 dark:text-red-400 dark:text-red-300">{errorMessage}</p>
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center dark:bg-red-950/20 dark:border-red-600/40">
+            <p className="text-red-600 dark:text-red-300">{errorMessage}</p>
             <Button onClick={requestFreshLocation} className="mt-4" variant="outline">
               {tr("try_again", "Try again")}
             </Button>
@@ -372,7 +372,7 @@ export default function NearbyPosts() {
                 {!loading && !hasError && displayPosts.length > 0 && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white dark:text-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 {t("nearby_listings") || "Nearby listings"}
               </h3>
               <Button
@@ -438,7 +438,7 @@ export default function NearbyPosts() {
                           {post.seller_verified && (
                             <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 dark:bg-green-800/30 dark:text-white">
                               <svg
-                                className="w-3 h-3"
+                                className="w-4 h-4"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -467,10 +467,10 @@ export default function NearbyPosts() {
                               )}
                             </div>
                           )}
-                          <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2 dark:text-green-300">
+                          <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 mb-2 dark:text-green-300">
                             ₹{post.price?.toLocaleString()}
                           </p>
-                          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-300">
                             <span className="flex items-center gap-1">
                               <MapPin className="w-4 h-4" />
                               {post.location || tr("unknown", "Unknown")}
@@ -478,7 +478,7 @@ export default function NearbyPosts() {
                             <span>{post.category_name}</span>
                           </div>
                           {post.seller_name && (
-                            <div className="mt-2 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200">
+                            <div className="mt-2 text-sm text-gray-600 dark:text-gray-200">
                               {t("seller_label")}: {post.seller_name}
                               {post.seller_rating > 0 && (
                                 <span className="ml-2 text-yellow-500 dark:text-yellow-300">
@@ -498,7 +498,7 @@ export default function NearbyPosts() {
               <div
                 className={`order-1 lg:order-2 ${showMap ? "block" : "hidden"} lg:block`}
               >
-                <div className="relative h-[320px] lg:h-full rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100 overflow-hidden dark:border dark:border-emerald-600/40 dark:bg-gradient-to-br">
+                <div className="relative h-[320px] lg:h-full rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100 overflow-hidden dark:border-emerald-600/40 dark:bg-gradient-to-br">
                   <div
                     className="absolute inset-0 opacity-40"
                     style={{
@@ -517,14 +517,14 @@ export default function NearbyPosts() {
                       style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
                     >
                       <div className="h-3 w-3 rounded-full bg-emerald-600 shadow dark:bg-emerald-700/40" />
-                      <div className="mt-1 text-[10px] text-emerald-700 dark:text-emerald-300">
+                      <div className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
                         {displayPosts[idx]?.price
                           ? `Rs ${Number(displayPosts[idx].price).toLocaleString("en-IN")}`
                           : t("listing") || "Listing"}
                       </div>
                     </div>
                   ))}
-                  <div className="absolute bottom-4 left-4 text-[11px] text-emerald-700 dark:text-emerald-300">
+                  <div className="absolute bottom-4 left-4 text-xs text-emerald-700 dark:text-emerald-300">
                     {t("map_preview_note") || "Map preview (approximate)"}
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function NearbyPosts() {
         )}
 
         {!loading && !hasError && displayPosts.length === 0 && locationReady && (
-          <div className="text-center py-16 dark:text-center">
+          <div className="text-center py-16">
             <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-300" />
             <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2 dark:text-gray-200">
               {isFilteredEmpty

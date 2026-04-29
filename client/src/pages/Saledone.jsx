@@ -78,7 +78,7 @@ const SaleDone = () => {
       `Receipt ID: ${receipt.receiptId || receipt.transactionId || "-"}`,
       `Transaction ID: ${receipt.transactionId || sale.transactionId || "-"}`,
       `Amount: ${formatCurrency(receipt.amount, receipt.currency || "INR")}`,
-      `Completed At: ${receipt.completedAt || sale.completedAt || "—"}`,
+      `Completed At: ${receipt.completedAt || sale.completedAt || "ï¿½"}`,
       `Item: ${item.title || "-"}`,
       `Buyer: ${buyer.name || buyer.username || "-"}`,
     ].join("\n");
@@ -536,9 +536,9 @@ const SaleDone = () => {
           <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-yellow-300/10 rounded-full blur-3xl animate-pulse dark:bg-yellow-900/10" style={{ animationDelay: "0.8s" }} />
           <div className="absolute top-1/3 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl animate-pulse dark:bg-slate-900/5" style={{ animationDelay: "1.4s" }} />
         </div>
-        <div className="relative max-w-3xl mx-auto page-shell page-pad pt-10 pb-12">
+        <div className="relative max-w-[640px] mx-auto page-shell page-pad pt-10 pb-12">
           <Card className="mhub-premium-surface rounded-3xl overflow-hidden">
-            <CardContent className="p-8 sm:p-10 text-center dark:text-center">
+            <CardContent className="p-8 sm:p-10 text-center">
               {/* Animated success icon */}
               <div className="relative inline-block mb-6">
                 <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-20 dark:bg-green-800/30" />
@@ -547,8 +547,8 @@ const SaleDone = () => {
                 </div>
               </div>
 
-              <div className="text-4xl mb-2">??</div>
-              <h2 className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-3 dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent">
+              <div className="text-lg sm:text-2xl md:text-3xl mb-2">??</div>
+              <h2 className="text-lg sm:text-2xl md:text-3xl font-black bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent mb-3 dark:bg-clip-text dark:text-transparent">
                 {t("sale_confirmed") || "Sale Confirmed!"}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 text-lg mb-6 dark:text-gray-200">
@@ -556,7 +556,7 @@ const SaleDone = () => {
               </p>
 
               {/* Transaction ID with copy button */}
-              <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 text-left mb-6 dark:border dark:border-green-600/40 dark:bg-green-950/20 dark:text-left">
+              <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 text-left mb-6 dark:border-green-600/40 dark:bg-green-950/20">
                 <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-1">
                   {tr("transaction_id", "Transaction ID")}
                 </p>
@@ -577,20 +577,20 @@ const SaleDone = () => {
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 mb-6 text-left dark:text-left">
-                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-gray-900/40 p-4 dark:border dark:border-emerald-600/40 dark:bg-slate-900/80">
+              <div className="grid gap-3 sm:grid-cols-2 mb-6 text-left">
+                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-gray-900/40 p-4 dark:border-emerald-600/40 dark:bg-slate-900/80">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-1">
                     {tr("listing_status", "Listing Status")}
                   </p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {(completedSale.postStatus || "sold").toUpperCase()}
                   </p>
                 </div>
-                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-gray-900/40 p-4 dark:border dark:border-emerald-600/40 dark:bg-slate-900/80">
+                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-gray-900/40 p-4 dark:border-emerald-600/40 dark:bg-slate-900/80">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-1">
                     {tr("completed_at", "Completed At")}
                   </p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {completedSale.completedAt
                       ? new Date(completedSale.completedAt).toLocaleString()
                       : "Just now"}
@@ -599,8 +599,8 @@ const SaleDone = () => {
               </div>
 
               {(saleItem || saleBuyer) && (
-                <div className="grid gap-4 sm:grid-cols-2 mb-6 text-left dark:text-left">
-                  <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 dark:border dark:border-emerald-600/40">
+                <div className="grid gap-4 sm:grid-cols-2 mb-6 text-left">
+                  <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 dark:border-emerald-600/40">
                     <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-2">
                       {tr("sold_item", "Sold Item")}
                     </p>
@@ -619,7 +619,7 @@ const SaleDone = () => {
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-300 mt-1">
                             {saleItem.category_name || tr("category", "Category")}
-                            {saleItem.subcategory_name ? ` • ${saleItem.subcategory_name}` : ""}
+                            {saleItem.subcategory_name ? ` ï¿½ ${saleItem.subcategory_name}` : ""}
                           </p>
                           <p className="text-sm text-slate-900 dark:text-slate-100 mt-1">
                             {tr("agreed_price", "Agreed")}: {formatCurrency(saleItem.agreed_price || completedSale.agreedPrice)}
@@ -652,7 +652,7 @@ const SaleDone = () => {
                     )}
                   </div>
 
-                  <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 dark:border dark:border-emerald-600/40">
+                  <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 dark:border-emerald-600/40">
                     <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-2">
                       {tr("buyer_details", "Buyer")}
                     </p>
@@ -717,7 +717,7 @@ const SaleDone = () => {
               )}
 
               {saleRewards && (
-                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 mb-6 text-left dark:text-left">
+                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 mb-6 text-left">
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-3">
                     {tr("rewards_summary", "Rewards Summary")}
                   </p>
@@ -759,7 +759,7 @@ const SaleDone = () => {
               )}
 
               {saleReceipt && (
-                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 mb-6 text-left dark:text-left">
+                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/90 dark:bg-slate-900/70 p-4 mb-6 text-left">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
@@ -806,7 +806,7 @@ const SaleDone = () => {
               )}
 
               {/* Next steps */}
-              <div className="rounded-xl border border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 text-left mb-8 dark:border dark:border-emerald-600/40 dark:bg-emerald-950/20 dark:text-left">
+              <div className="rounded-xl border border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 text-left mb-8 dark:border-emerald-600/40 dark:bg-emerald-950/20">
                 <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 mb-3">
                   {tr("next_steps", "What's next?")}
                 </p>
@@ -828,7 +828,7 @@ const SaleDone = () => {
                 <Button
                   variant="outline"
                   onClick={resetFlow}
-                  className="border-2 border-green-500 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl px-8 py-3 font-semibold dark:border-2 dark:border-green-500/40 dark:hover:bg-green-950/20"
+                  className="border-2 border-green-500 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl px-8 py-3 font-semibold dark:border-green-500/40 dark:hover:bg-green-950/20"
                 >
                   {t("confirm_another_sale") || "Confirm Another Sale"}
                 </Button>
@@ -843,7 +843,7 @@ const SaleDone = () => {
                       },
                     })
                   }
-                  className="border-2 border-emerald-500 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl px-8 py-3 font-semibold dark:border-2 dark:border-emerald-500/40 dark:hover:bg-emerald-950/20"
+                  className="border-2 border-emerald-500 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl px-8 py-3 font-semibold dark:border-emerald-500/40 dark:hover:bg-emerald-950/20"
                 >
                   <Star className="w-4 h-4 mr-2" />
                   {tr("leave_feedback", "Leave Feedback")}
@@ -875,8 +875,8 @@ const SaleDone = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <div className="relative max-w-3xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
-          <div className="mb-2 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
+        <div className="relative max-w-[640px] mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad">
+          <div className="mb-2 max-w-[640px] text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5">
             <div className="flex flex-wrap items-center justify-between gap-4 min-h-[34px]">
               <button
                 type="button"
@@ -910,13 +910,13 @@ const SaleDone = () => {
         </div>
       </div>
 
-      <div className="relative max-w-3xl mx-auto page-shell page-pad pt-5 pb-10 space-y-6">
+      <div className="relative max-w-[640px] mx-auto page-shell page-pad pt-5 pb-10 space-y-6">
         <div className="profile-panel rounded-2xl p-4 sm:p-5 space-y-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300">
               {tr("sale_progress_label", "Sale progress")}
             </p>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
               {tr("sale_progress_title", "Complete the verification")}
             </h2>
           </div>
@@ -952,18 +952,18 @@ const SaleDone = () => {
 
           <CardContent className="p-6 space-y-5">
             {/* -- Testing Guide -- */}
-            <details className="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 overflow-hidden dark:border dark:border-blue-600/40 dark:bg-blue-950/20">
+            <details className="rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 overflow-hidden dark:border-blue-600/40 dark:bg-blue-950/20">
               <summary className="flex items-center gap-2 cursor-pointer px-4 py-3 text-sm font-semibold text-blue-800 dark:text-blue-200 select-none">
                 <Info className="w-4 h-4 shrink-0" />
                 {tr(
                   "testing_guide_title",
-                  "How to test this page — click to expand",
+                  "How to test this page ï¿½ click to expand",
                 )}
               </summary>
-              <div className="px-4 pb-4 space-y-3 text-sm text-blue-900 dark:text-blue-100 dark:text-blue-200">
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border dark:border-blue-600/40">
+              <div className="px-4 pb-4 space-y-3 text-sm text-blue-900 dark:text-blue-200">
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step1_title", "Step 1 — Find your Post ID")}
+                    {tr("sale_test_step1_title", "Step 1 ï¿½ Find your Post ID")}
                   </p>
                   <p>
                     {tr("sale_test_step1_prefix", "Go to")}{" "}
@@ -978,11 +978,11 @@ const SaleDone = () => {
                     . {tr("sale_test_step1_suffix", "Copy that number.")}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border dark:border-blue-600/40">
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
                   <p className="font-bold">
                     {tr(
                       "sale_test_step2_title",
-                      "Step 2 — Find the Buyer's User ID",
+                      "Step 2 ï¿½ Find the Buyer's User ID",
                     )}
                   </p>
                   <p>
@@ -999,9 +999,9 @@ const SaleDone = () => {
                     )}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border dark:border-blue-600/40">
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step3_title", "Step 3 — Seller initiates")}
+                    {tr("sale_test_step3_title", "Step 3 ï¿½ Seller initiates")}
                   </p>
                   <p>
                     {tr(
@@ -1011,13 +1011,13 @@ const SaleDone = () => {
                     <strong>{tr("initiate_sale", "Initiate Sale")}</strong>.{" "}
                     {tr(
                       "sale_test_step3_suffix",
-                      "A Transaction ID and OTP will appear — share both with the buyer.",
+                      "A Transaction ID and OTP will appear ï¿½ share both with the buyer.",
                     )}
                   </p>
                 </div>
-                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border dark:border-blue-600/40">
+                <div className="rounded-xl bg-white/60 dark:bg-white/5 border border-blue-100 dark:border-blue-700 p-3 space-y-1 dark:bg-slate-900/60 dark:border-blue-600/40">
                   <p className="font-bold">
-                    {tr("sale_test_step4_title", "Step 4 — Buyer confirms")}
+                    {tr("sale_test_step4_title", "Step 4 ï¿½ Buyer confirms")}
                   </p>
                   <p>
                     {tr(
@@ -1053,7 +1053,7 @@ const SaleDone = () => {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="rewards-tab-bar grid w-full grid-cols-2 mb-6 bg-white/80 dark:bg-slate-900/70 rounded-2xl p-1.5 h-12 border border-slate-200/70 dark:border-slate-800/60 dark:bg-slate-900/80 dark:border dark:border-slate-700/70">
+              <TabsList className="rewards-tab-bar grid w-full grid-cols-2 mb-6 bg-white/80 dark:bg-slate-900/70 rounded-2xl p-1.5 h-12 border border-slate-200/70 dark:border-slate-800/60 dark:bg-slate-900/80 dark:border-slate-700/70">
                 <TabsTrigger
                   value="seller"
                   className="rewards-tab-btn rounded-xl text-sm sm:text-base font-semibold text-slate-600 dark:text-slate-300 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all dark:text-slate-200 dark:data-[state=active]:bg-emerald-700/40 dark:data-[state=active]:text-white"
@@ -1069,7 +1069,7 @@ const SaleDone = () => {
               </TabsList>
 
               <TabsContent value="seller" className="space-y-6">
-                <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 dark:border dark:border-green-600/40 dark:bg-green-950/20">
+                <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 dark:border-green-600/40 dark:bg-green-950/20">
                   <p className="text-sm text-green-800 font-medium dark:text-green-200">
                     {tr(
                       "seller_details_hint",
@@ -1163,7 +1163,7 @@ const SaleDone = () => {
                 </form>
 
                 {initiatedSale && (
-                  <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-2 dark:border dark:border-blue-600/40 dark:bg-blue-950/20">
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-2 dark:border-blue-600/40 dark:bg-blue-950/20">
                     <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
                       {tr("transaction_created", "Transaction created")}
                     </p>
@@ -1199,7 +1199,7 @@ const SaleDone = () => {
               </TabsContent>
 
               <TabsContent value="buyer" className="space-y-6">
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border dark:border-blue-600/40 dark:bg-blue-950/20">
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-600/40 dark:bg-blue-950/20">
                   <p className="text-sm text-blue-800 font-medium dark:text-blue-200">
                     {tr(
                       "buyer_confirm_hint",
@@ -1284,7 +1284,7 @@ const SaleDone = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 dark:text-gray-200">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-200">
                     <RefreshCw className="w-4 h-4 animate-spin" />{" "}
                     {tr("pending_sales_loading", "Loading pending sales...")}
                   </div>
@@ -1303,7 +1303,7 @@ const SaleDone = () => {
                     </Button>
                   </div>
                 ) : pendingSales.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300">
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
                     {tr("pending_sales_empty", "No pending sales right now.")}
                   </p>
                 ) : (
@@ -1316,7 +1316,7 @@ const SaleDone = () => {
                     return (
                       <div
                         key={transactionId}
-                        className="rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-3 dark:border dark:border-gray-700"
+                        className="rounded-xl border border-gray-200 p-3 flex items-center justify-between gap-3 dark:border-gray-700"
                       >
                         <div>
                           <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 break-all dark:text-gray-100">

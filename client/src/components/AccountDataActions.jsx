@@ -332,16 +332,16 @@ export default function AccountDataActions({ className = "" }) {
             <ShieldAlert className="w-5 h-5" />
           </div>
           <div>
-            <p className="font-semibold text-rose-700 dark:text-rose-200 dark:text-rose-300">
+            <p className="font-semibold text-rose-700 dark:text-rose-300">
               Danger Zone
             </p>
-            <p className="text-xs text-rose-600/90 dark:text-rose-200/80 dark:text-rose-300/90">
+            <p className="text-xs text-rose-600/90 dark:text-rose-300/90">
               Delete your account permanently.
             </p>
           </div>
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <p className="text-xs text-rose-600/80 dark:text-rose-200/70 dark:text-rose-300/80">
+          <p className="text-xs text-rose-600/80 dark:text-rose-300/80">
             This action cannot be undone.
           </p>
           <AlertDialog

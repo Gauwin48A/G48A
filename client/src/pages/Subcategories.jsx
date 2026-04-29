@@ -288,7 +288,7 @@ export default function Subcategories() {
       });
 
   return (
-    <div className={`mhub-page-subcategories min-h-screen mhub-premium-page bg-gradient-to-br from-blue-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:bg-gradient-to-br ${densityClass}`}>
+    <div className={`mhub-page-subcategories min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-blue-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:bg-gradient-to-br ${densityClass}`}>
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(12px); }
@@ -299,14 +299,14 @@ export default function Subcategories() {
           100% { background-position: -200% 0; }
         }
       `}</style>
-      <div className="mb-6 w-full max-w-6xl px-4 pt-8 md:pt-10 mx-auto page-shell page-pad">
+      <div className="mb-6 w-full max-w-[640px] px-4 pt-8 md:pt-10 mx-auto page-shell page-pad">
         {/* Post flow progress banner */}
         {isPostFlow ? (
-          <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 dark:border-emerald-900/40 dark:bg-emerald-900/10 dark:border dark:border-emerald-600/40 dark:bg-emerald-950/20">
+          <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 dark:border-emerald-900/40 dark:bg-emerald-900/10 dark:border-emerald-600/40 dark:bg-emerald-950/20">
             <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-white dark:bg-emerald-800/30 dark:text-white">
               3
             </div>
-            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 dark:text-emerald-200">
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
               {t("post_flow_step_3", { defaultValue: "Step 3 of 3 — Choose where your listing belongs" })}
             </p>
           </div>
@@ -320,7 +320,7 @@ export default function Subcategories() {
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 dark:from-slate-900 dark:via-blue-900 dark:to-slate-800 px-6 py-5 sm:py-6 shadow-xl dark:bg-gradient-to-r">
           <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl pointer-events-none dark:bg-blue-800/10" />
           <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none dark:bg-emerald-800/10" />
-          <div className="relative z-10 mx-auto max-w-4xl">
+          <div className="relative z-10 mx-auto max-w-[640px]">
             <button
               type="button"
               onClick={() => navigate(isPostFlow ? "/post-welcome" : "/category-hub")}
@@ -334,7 +334,7 @@ export default function Subcategories() {
 
             <div className="flex flex-wrap items-center gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70">
                   {isPostFlow ? t("posting_flow_label", { defaultValue: "Posting flow" }) : t("browse_label", { defaultValue: "Browse" })}
                 </p>
                 <h1 className="mb-2 text-xl sm:text-2xl md:text-3xl font-bold text-white dark:text-white">
@@ -369,7 +369,7 @@ export default function Subcategories() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 page-shell page-pad">
+      <div className="mx-auto max-w-[640px] px-4 page-shell page-pad">
         <div className="mb-5 mhub-premium-surface rounded-2xl p-4">
           <div className="relative" role="search">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-300" />
@@ -390,7 +390,7 @@ export default function Subcategories() {
                 type="button"
                 onClick={clearSearch}
                 aria-label={t("clear_search", { defaultValue: "Clear search" })}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:hover:bg-gray-700 dark:hover:text-gray-200 dark:text-gray-300 dark:hover:bg-gray-900"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 dark:hover:bg-gray-700 dark:hover:text-gray-200 dark:text-gray-300 dark:hover:bg-gray-900"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -418,14 +418,14 @@ export default function Subcategories() {
             >
               A-Z
             </Button>
-            <span className="ml-auto text-slate-500 dark:text-slate-400 dark:text-slate-300">
+            <span className="ml-auto text-slate-500 dark:text-slate-300">
               {filteredSubcategories.length} {t("results", { defaultValue: "results" })}
             </span>
           </div>
         </div>
 
         {error ? (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30 dark:border dark:border-red-600/40 dark:bg-red-950/20">
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30 dark:border-red-600/40 dark:bg-red-950/20">
             <p className="mb-3 text-sm text-red-700 dark:text-red-300">{error}</p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -472,7 +472,7 @@ export default function Subcategories() {
         ) : null}
 
         {!loading && filteredSubcategories.length === 0 ? (
-          <Card className="mhub-premium-surface rounded-2xl p-6 text-center dark:text-center">
+          <Card className="mhub-premium-surface rounded-2xl p-6 text-center">
             <Search className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4 animate-pulse dark:text-slate-300" />
             <h2 className="mb-2 text-lg font-semibold text-blue-900 dark:text-blue-200">
               {t("no_subcategories_match_search", {
@@ -552,14 +552,14 @@ export default function Subcategories() {
                         {subcategory?.name || t("subcategory", { defaultValue: "Subcategory" })}
                       </h3>
 
-                      <p className="min-h-[2.25rem] line-clamp-2 text-xs text-gray-500 md:text-sm dark:text-gray-400 dark:text-gray-300">
+                      <p className="min-h-[2.25rem] line-clamp-2 text-xs text-gray-500 md:text-sm dark:text-gray-300">
                         {subcategory?.description ||
                           t("browse_listings_subcategory", {
                             defaultValue: "Browse listings in this subcategory.",
                           })}
                       </p>
                       <p className="mt-2">
-                        <span className="inline-flex items-center gap-1 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-gray-700 dark:to-gray-600 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-xs font-bold dark:bg-gradient-to-r dark:text-slate-200">
+                        <span className="inline-flex items-center gap-1 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-gray-700 dark:to-gray-600 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full text-xs font-bold dark:bg-gradient-to-r dark:text-slate-200">
                         {count > 0 ? count : "\u2022"}
                         </span>
                       </p>
@@ -569,12 +569,12 @@ export default function Subcategories() {
               })}
             </div>
 
-            <div className="mt-8 text-center dark:text-center">
+            <div className="mt-8 text-center">
               <div className="mhub-premium-surface rounded-2xl p-6 md:p-8">
                 <h3 className="mb-3 text-xl font-bold mhub-gradient-text md:text-2xl">
                   {t("need_broader_results", { defaultValue: "Need broader results?" })}
                 </h3>
-                <p className="mb-5 text-sm text-gray-600 md:text-base dark:text-gray-300 dark:text-gray-200">
+                <p className="mb-5 text-sm text-gray-600 md:text-base dark:text-gray-200">
                   {t("return_to_home_hub_for_groups", {
                     defaultValue: "Return to the home hub to browse the top-level category groups.",
                   })}

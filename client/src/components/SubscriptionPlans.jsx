@@ -49,12 +49,12 @@ const PlanCard = memo(function PlanCard({ plan, currentPlan, onSubscribe, subscr
   return (
     <Card className={`relative overflow-hidden ${borderColor} ${isCurrent ? "bg-primary/5" : ""}`}>
       {plan.name === "premium" && (
-        <div className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] px-3 py-0.5 rounded-bl-lg font-medium">
+        <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs px-3 py-1 rounded-bl-lg font-medium">
           Best Value
         </div>
       )}
       {plan.trialDays > 0 && (
-        <div className="absolute top-0 left-0 bg-green-500 text-white text-[10px] px-3 py-0.5 rounded-br-lg font-medium">
+        <div className="absolute top-0 left-0 bg-green-500 text-white text-xs px-3 py-1 rounded-br-lg font-medium">
           {plan.trialDays}-day trial
         </div>
       )}
@@ -67,7 +67,7 @@ const PlanCard = memo(function PlanCard({ plan, currentPlan, onSubscribe, subscr
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <span className="text-3xl font-bold">₹{plan.price}</span>
+          <span className="text-xl sm:text-3xl font-bold">₹{plan.price}</span>
           <span className="text-sm text-muted-foreground">
             /{plan.name === "basic" ? "listing" : plan.durationLabel}
           </span>
@@ -180,7 +180,7 @@ export default function SubscriptionPlans() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Choose Your Plan</h2>
+        <h2 className="text-lg sm:text-2xl font-bold">Choose Your Plan</h2>
         <p className="text-muted-foreground mt-1">
           Boost your listings and unlock premium features
         </p>

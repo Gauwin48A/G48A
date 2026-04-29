@@ -111,10 +111,10 @@ const ProductCard = memo(function ProductCard({ product }) {
           <span className="ml-2 text-sm text-dark">{Number(rating).toFixed(1)}</span>
         </div>
         {trustLabel || isFrozen || underReview ? (
-          <div className="flex flex-wrap items-center gap-1 mb-2 text-[10px]">
+          <div className="flex flex-wrap items-center gap-1 mb-2 text-xs">
             {trustLabel ? (
               <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${trustBadgeClass}`}
+                className={`inline-flex items-center rounded-full px-2 py-1 font-semibold ${trustBadgeClass}`}
                 title={trustScore != null ? `${trustLabel} - ${trustScore}` : trustLabel}
               >
                 {trustLabel}
@@ -122,11 +122,11 @@ const ProductCard = memo(function ProductCard({ product }) {
               </span>
             ) : null}
             {isFrozen ? (
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 font-semibold bg-rose-600 text-white">
+              <span className="inline-flex items-center rounded-full px-2 py-1 font-semibold bg-rose-600 text-white">
                 {t("seller_frozen") || "Seller Frozen"}
               </span>
             ) : underReview ? (
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 font-semibold bg-amber-500 text-white">
+              <span className="inline-flex items-center rounded-full px-2 py-1 font-semibold bg-amber-500 text-white">
                 {t("under_review") || "Under Review"}
               </span>
             ) : null}

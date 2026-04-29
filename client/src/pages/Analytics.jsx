@@ -414,7 +414,7 @@ const D = [
               "p",
               {
                 className:
-                  "text-3xl font-bold mt-4 text-gray-900 dark:text-white dark:text-gray-100",
+                  "text-xl sm:text-3xl font-bold mt-4 text-gray-900 dark:text-gray-100",
               },
               d,
             ),
@@ -434,10 +434,10 @@ const D = [
         },
         e.createElement(
           "div",
-          { className: "text-center dark:text-center" },
+          { className: "text-center" },
           e.createElement("div", {
             className:
-              "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto dark:border-b-2 dark:border-blue-500/40",
+              "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto dark:border-blue-500/40",
           }),
           e.createElement(
             "p",
@@ -462,7 +462,7 @@ const D = [
         },
         e.createElement(
           "div",
-          { className: "max-w-6xl mx-auto" },
+          { className: "max-w-[640px] mx-auto" },
           e.createElement(
             "div",
             {
@@ -486,7 +486,7 @@ const D = [
                 "h1",
                 {
                   className:
-                    "text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-white",
+                    "text-xl sm:text-3xl font-bold text-white flex items-center gap-3 flex-wrap dark:text-white",
                 },
                 e.createElement(ae, { className: "w-8 h-8" }),
                 tr("seller_analytics", "Seller Analytics"),
@@ -525,7 +525,7 @@ const D = [
                 "div",
                 {
                   className:
-                    "mb-4 rounded-2xl border border-white/30 bg-white/15 px-4 py-3 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 dark:border dark:border-white/30 dark:bg-slate-900/15 dark:text-white",
+                    "mb-4 rounded-2xl border border-white/30 bg-white/15 px-4 py-3 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 dark:border-white/30 dark:bg-slate-900/15 dark:text-white",
                 },
                 e.createElement(
                   "div",
@@ -585,7 +585,7 @@ const D = [
       ),
       e.createElement(
         "div",
-        { className: "max-w-6xl mx-auto px-4 mt-6 -translate-y-6 space-y-6" },
+        { className: "max-w-[640px] mx-auto px-4 mt-6 -translate-y-6 space-y-6" },
         L
           ? e.createElement(
               O,
@@ -730,7 +730,7 @@ const D = [
             W
               ? e.createElement(
                   "div",
-                  { className: "text-center py-8 space-y-3 dark:text-center" },
+                  { className: "text-center py-8 space-y-3" },
                   e.createElement(
                     "p",
                     { className: "text-gray-500 dark:text-gray-300" },
@@ -765,7 +765,7 @@ const D = [
               : X
                 ? e.createElement(
                     "div",
-                    { className: "text-center py-8 space-y-3 dark:text-center" },
+                    { className: "text-center py-8 space-y-3" },
                     e.createElement(
                       "p",
                       { className: "text-gray-500 dark:text-gray-300" },
@@ -811,7 +811,7 @@ const D = [
                             "h4",
                             {
                               className:
-                                "font-semibold text-gray-900 dark:text-white dark:text-gray-100",
+                                "font-semibold text-gray-900 dark:text-gray-100",
                             },
                             t.title,
                           ),
@@ -837,7 +837,7 @@ const D = [
                         ),
                         e.createElement(
                           "div",
-                          { className: "flex items-center gap-6 text-center dark:text-center" },
+                          { className: "flex items-center gap-6 text-center" },
                           e.createElement(
                             "div",
                             null,
@@ -907,7 +907,7 @@ const D = [
             z.length === 0
               ? e.createElement(
                   "div",
-                  { className: "text-center py-8 space-y-3 dark:text-center" },
+                  { className: "text-center py-8 space-y-3" },
                   e.createElement(
                     "p",
                     { className: "text-gray-500 dark:text-gray-300" },
@@ -950,7 +950,7 @@ const D = [
                           "h4",
                           {
                             className:
-                              "font-semibold text-gray-900 dark:text-white dark:text-gray-100",
+                              "font-semibold text-gray-900 dark:text-gray-100",
                           },
                           t.category || tr("uncategorized", "Uncategorized"),
                         ),
@@ -965,7 +965,7 @@ const D = [
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-right dark:text-right" },
+                        { className: "text-right" },
                         e.createElement(
                           "p",
                           { className: "text-lg font-bold text-blue-600 dark:text-blue-300" },

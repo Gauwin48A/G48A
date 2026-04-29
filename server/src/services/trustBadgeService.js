@@ -121,12 +121,16 @@ const attachTrustToPosts = async (posts = []) => {
         ? {
             ...post.user,
             id: post.user.id || post.user.user_id || userId,
+            name: post.user.name || post.author_name || post.user_name || post.seller_name || post.user.name || null,
+            username: post.user.username || post.username || null,
             trust: trust || post.user.trust || null,
             risk_state: riskState || post.user.risk_state || null,
             under_review: underReview ?? post.user.under_review ?? false,
           }
         : {
             id: userId,
+            name: post.author_name || post.user_name || post.seller_name || null,
+            username: post.username || null,
             trust,
             risk_state: riskState,
             under_review: underReview,

@@ -18,17 +18,17 @@ export default function ProtectedChat() {
     return (
       <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-b">
         <div className="mx-auto flex w-full max-w-xl items-center justify-center px-4 pt-12 page-shell page-pad">
-          <Card className="w-full border-blue-100 shadow-sm dark:border-gray-700 dark:border-blue-600/40">
-            <CardHeader className="pb-2 text-center dark:text-center">
+          <Card className="w-full border-blue-100 shadow-sm dark:border-blue-600/40">
+            <CardHeader className="pb-2 text-center">
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:bg-blue-950/20">
                 <MessageCircle className="h-7 w-7" />
               </div>
-              <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <CardTitle className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {tr("please_login", "Please Login")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-center dark:text-center">
-              <p className="text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200">
+            <CardContent className="space-y-4 text-center">
+              <p className="text-sm text-slate-600 dark:text-slate-200">
                 <Lock className="mr-1 inline h-4 w-4" />
                 {tr("chat_history_protected", "Chat history is protected. Login to continue.")}
               </p>

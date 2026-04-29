@@ -8,6 +8,22 @@ import { resolveMediaUrl } from "@/lib/mediaUrl";
 import { getFollowingCentreUpdates } from "@/lib/api";
 
 const normalizeText = (value) => String(value || "").trim();
+const isNativeRuntime = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    if (
+      typeof window.Capacitor?.isNativePlatform === "function" &&
+      window.Capacitor.isNativePlatform()
+    ) {
+      return true;
+    }
+  } catch {
+    // Ignore runtime detection failures and fallback to UA.
+  }
+  if (window.__MHUB_ANDROID_WEB_REPLICA__ === true) return true;
+  const ua = String(window.navigator?.userAgent || "").toLowerCase();
+  return ua.includes("mhubandroidwebreplica") || (ua.includes("android") && /\bwv\b/.test(ua));
+};
 
 const normalizeImageList = (update) => {
   const collected = [];
@@ -40,6 +56,7 @@ export default function CentreUpdatesFeed({ limit = 8, className = "" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const mountedRef = useRef(true);
+  const nativeRuntime = useMemo(() => isNativeRuntime(), []);
 
   const headerTitle =
     t("centre_updates_feed", { defaultValue: "CentrePage Updates" }) ||
@@ -49,12 +66,13 @@ export default function CentreUpdatesFeed({ limit = 8, className = "" }) {
   });
 
   const queryParams = useMemo(() => ({ limit }), [limit]);
+  const requestTimeoutMs = nativeRuntime ? 6000 : 12000;
 
-  const loadUpdates = useCallback(async () => {
+  const loadUpdates = useCallback(async (signal) => {
     setLoading(true);
     setError("");
     try {
-      const response = await getFollowingCentreUpdates(queryParams);
+      const response = await getFollowingCentreUpdates(queryParams, { signal });
       const payload = response?.data ?? response;
       const list = Array.isArray(payload?.updates)
         ? payload.updates
@@ -65,6 +83,21 @@ export default function CentreUpdatesFeed({ limit = 8, className = "" }) {
       setUpdates(list);
     } catch (err) {
       if (!mountedRef.current) return;
+      const aborted =
+        err?.name === "CanceledError" ||
+        err?.name === "AbortError" ||
+        err?.code === "ERR_CANCELED";
+      if (aborted) {
+        setUpdates([]);
+        setError(
+          nativeRuntime
+            ? ""
+            : t("centre_updates_unavailable", {
+                defaultValue: "Updates are unavailable right now.",
+              }),
+        );
+        return;
+      }
       setUpdates([]);
       setError(
         err?.message ||
@@ -75,15 +108,19 @@ export default function CentreUpdatesFeed({ limit = 8, className = "" }) {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [queryParams, t]);
+  }, [nativeRuntime, queryParams, t]);
 
   useEffect(() => {
     mountedRef.current = true;
-    loadUpdates();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+    loadUpdates(controller.signal).finally(() => clearTimeout(timeoutId));
     return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
       mountedRef.current = false;
     };
-  }, [loadUpdates]);
+  }, [loadUpdates, requestTimeoutMs]);
 
   if (loading) {
     return (
@@ -105,6 +142,9 @@ export default function CentreUpdatesFeed({ limit = 8, className = "" }) {
   }
 
   if (error) {
+    if (nativeRuntime) {
+      return null;
+    }
     return (
       <Card className={`border border-rose-200 bg-rose-50/60 ${className}`}>
         <CardContent className="p-4 flex flex-col gap-2">
@@ -112,7 +152,15 @@ export default function CentreUpdatesFeed({ limit = 8, className = "" }) {
             {t("centre_updates_error", { defaultValue: "Could not load updates" })}
           </p>
           <p className="text-xs text-rose-600">{error}</p>
-          <Button size="sm" variant="outline" onClick={loadUpdates}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+              loadUpdates(controller.signal).finally(() => clearTimeout(timeoutId));
+            }}
+          >
             {t("retry", { defaultValue: "Retry" })}
           </Button>
         </CardContent>
@@ -191,7 +239,7 @@ export default function CentreUpdatesFeed({ limit = 8, className = "" }) {
                         {categoryLabel}
                       </p>
                     </div>
-                    <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
                       <Star className="h-3 w-3" />
                       {t("premium", { defaultValue: "Premium" })}
                     </span>

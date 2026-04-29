@@ -165,7 +165,7 @@ const LanguageSheet = ({ isOpen, onClose }) => {
 
                     {/* Footer */}
                     <div className="p-3 border-t border-gray-100 dark:border-gray-800 mhub-premium-bar">
-                        <p className="text-[10px] text-center text-gray-400 dark:text-gray-500">
+                        <p className="text-xs text-center text-gray-400 dark:text-gray-500">
                             ⚡ Zero-latency • Cached locally • Works offline
                         </p>
                     </div>

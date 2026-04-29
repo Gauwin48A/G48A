@@ -161,7 +161,7 @@ const Z = () => {
         },
         e.createElement("div", {
           className:
-            "animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-b-2 dark:border-purple-500/40",
+            "animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-purple-500/40",
         }),
       )
     : v
@@ -169,13 +169,14 @@ const Z = () => {
           "div",
           {
           className:
-            "min-h-screen mhub-premium-page bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-gradient-to-br",
+            "min-h-screen mhub-premium-page nav-clearance bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-gradient-to-br",
           },
           e.createElement(
             "div",
             {
               className:
-                "sticky top-0 z-50 mhub-premium-bar",
+                "sticky z-50 mhub-premium-bar",
+              style: { top: "var(--top-nav-height, 60px)" },
             },
             e.createElement(
               "div",
@@ -210,7 +211,7 @@ const Z = () => {
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                    { className: "text-xs text-gray-500 dark:text-gray-300" },
                     b.length,
                     ` ${tr("saved_searches_saved_suffix", "saved")}`,
                   ),
@@ -224,7 +225,7 @@ const Z = () => {
                   size: "sm",
                   onClick: g,
                   className:
-                    "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300 dark:text-gray-200",
+                    "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-200",
                 },
                 e.createElement(F, { className: "h-4 w-4 mr-1" }),
                 "Refresh",
@@ -249,7 +250,7 @@ const Z = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-indigo-100 bg-indigo-50/70 dark:border-indigo-900/40 dark:bg-gray-900/70 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 dark:border dark:border-indigo-600/40 dark:bg-indigo-950/70",
+                      "rounded-2xl border border-indigo-100 bg-indigo-50/70 dark:border-indigo-900/40 dark:bg-gray-900/70 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 dark:border-indigo-600/40 dark:bg-indigo-950/70",
                   },
                   e.createElement(
                     "div",
@@ -258,7 +259,7 @@ const Z = () => {
                       "p",
                       {
                         className:
-                          "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
+                          "text-sm font-semibold text-slate-900 dark:text-slate-100",
                       },
                       "Category mode: ",
                       categoryModeCategory.name,
@@ -267,7 +268,7 @@ const Z = () => {
                       "p",
                       {
                         className:
-                          "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                          "text-xs text-slate-500 dark:text-slate-300",
                       },
                       tr(
                         "saved_searches_category_notice",
@@ -293,7 +294,7 @@ const Z = () => {
                 "div",
                 {
                   className:
-                    "p-4 mhub-premium-surface border-b border-gray-200 dark:border-gray-700 dark:border-b",
+                    "p-4 mhub-premium-surface border-b border-gray-200 dark:border-b",
                 },
                 e.createElement(
                   "div",
@@ -367,7 +368,7 @@ const Z = () => {
                         variant: "outline",
                         onClick: () => y(!1),
                         className:
-                          "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300 dark:text-gray-200",
+                          "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-200",
                       },
                       "Cancel",
                     ),
@@ -384,13 +385,13 @@ const Z = () => {
                   { className: "flex justify-center items-center h-64" },
                   e.createElement("div", {
                     className:
-                      "animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-b-2 dark:border-purple-500/40",
+                      "animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 dark:border-purple-500/40",
                   }),
                 )
               : _
                 ? e.createElement(
                     "div",
-                    { className: "text-center py-16 dark:text-center" },
+                    { className: "text-center py-16" },
                     e.createElement(u, {
                       className: "h-16 w-16 mx-auto text-red-400 mb-4 dark:text-red-200",
                     }),
@@ -433,7 +434,7 @@ const Z = () => {
                 : b.length === 0
                   ? e.createElement(
                       "div",
-                      { className: "text-center py-16 dark:text-center" },
+                      { className: "text-center py-16" },
                       e.createElement(u, {
                         className: "h-16 w-16 mx-auto text-gray-600 mb-4 dark:text-gray-200",
                       }),
@@ -532,7 +533,7 @@ const Z = () => {
                                       {
                                         variant: "outline",
                                         className:
-                                          "text-xs border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                          "text-xs border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-200",
                                       },
                                       e.createElement(V, {
                                         className: "h-3 w-3 mr-1",
@@ -632,14 +633,14 @@ const Z = () => {
             "div",
             {
               className:
-                "bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center dark:bg-slate-900/10 dark:border dark:border-white/20 dark:text-center",
+                "bg-white/10 backdrop-blur-2xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full text-center dark:bg-slate-900/10 dark:border-white/20",
             },
             e.createElement(u, {
               className: "w-16 h-16 text-purple-300 mx-auto mb-4 dark:text-purple-200",
             }),
             e.createElement(
               "h1",
-              { className: "text-2xl font-bold text-white mb-3 dark:text-white" },
+              { className: "text-lg sm:text-2xl font-bold text-white mb-3 dark:text-white" },
               tr("saved_searches_sign_in_title", "Sign in to manage saved searches"),
             ),
             e.createElement(

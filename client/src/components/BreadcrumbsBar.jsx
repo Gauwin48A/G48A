@@ -239,8 +239,8 @@ const BreadcrumbsBar = ({
   const isDarkTone = resolvedTone === "dark";
   const listClassName = compact
     ? isDarkTone
-      ? "text-[11px] text-white/80"
-      : "text-[11px] text-slate-500"
+      ? "text-xs text-white/80"
+      : "text-xs text-slate-500"
     : isDarkTone
       ? "text-xs text-slate-200"
       : "text-xs text-slate-500";

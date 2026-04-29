@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation as useRouterLocation, useNavigate } from 'react-router-dom';
 import { FiUser, FiMenu, FiSearch, FiFilter, FiHome, FiGrid, FiUserCheck, FiMapPin, FiBell, FiBookmark, FiClock, FiFileText, FiMessageCircle, FiNavigation, FiLock, FiStar, FiX, FiMonitor, FiSmartphone, FiTablet, FiCheck, FiShoppingCart } from 'react-icons/fi';
@@ -166,6 +166,9 @@ const GreenNavbar = () => {
   });
 
   useEffect(() => {
+    // Defer subcategory fetch until filter drawer is actually opened
+    if (!showFilter) return;
+    if (subcategories.length > 0) return; // already fetched
     let cancelled = false;
 
     const fetchSubcategoryOptions = async () => {
@@ -186,7 +189,7 @@ const GreenNavbar = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [showFilter]);
 
   // Dark mode is now managed by ThemeContext
 
@@ -405,8 +408,16 @@ const GreenNavbar = () => {
         setMoreOpen(false);
       }
     };
+    // On Android WebView, setting overflow:hidden can trigger a spurious resize.
+    // Only close the drawer on real viewport dimension changes.
+    const initialWidth = window.innerWidth;
+    const initialHeight = window.innerHeight;
     const handleResize = () => {
-      setMoreOpen(false);
+      const dw = Math.abs(window.innerWidth - initialWidth);
+      const dh = Math.abs(window.innerHeight - initialHeight);
+      if (dw > 50 || dh > 100) {
+        setMoreOpen(false);
+      }
     };
 
     document.body.style.overflow = 'hidden';
@@ -645,9 +656,21 @@ const GreenNavbar = () => {
     });
   };
 
+  // Show all bottom nav links matching the web app: Home, All Posts, For You | +Sell | Feed, Rewards, Profile, More
   const visibleBottomNavLinks = bottomNavLinks.filter((link) => link.key !== '+Sell');
   const bottomNavLeftLinks = visibleBottomNavLinks.slice(0, 3);
   const bottomNavRightLinks = visibleBottomNavLinks.slice(3);
+  // Track when More drawer was last opened to prevent ghost-click immediate close on Android WebView
+  const moreOpenTimeRef = useRef(0);
+  // Dedicated handler for More button — always opens (never toggles) to prevent double-fire closing
+  const handleMoreOpen = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Debounce: ignore rapid taps (within 400ms)
+    if (Date.now() - moreOpenTimeRef.current < 400) return;
+    moreOpenTimeRef.current = Date.now();
+    setMoreOpen(true);
+  }, []);
   const scopedSubcategoryNames = useMemo(
     () => new Set(scopedSubcategories.map((item) => normalizeCategoryText(item?.name || item?.title || ""))),
     [scopedSubcategories],
@@ -665,7 +688,7 @@ const GreenNavbar = () => {
       {!hideChromeOnHub && showFullNavbar ? (
         // Full Navbar
         <nav ref={topNavRef} className="mhub-top-nav mhub-top-nav--primary sticky top-0 z-50 transition-all duration-300" role="navigation" aria-label={t('main_navigation')}>
-          <div className="mhub-top-nav-main mx-auto flex w-full max-w-[92rem] items-center gap-1.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 md:px-4 md:py-3 lg:gap-4">
+          <div className="mhub-top-nav-main mx-auto flex w-full max-w-[640px] items-center gap-1.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 md:px-4 md:py-3 lg:gap-4">
             {/* Logo and Location */}
             <div className="mhub-top-nav-brand flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
               <Link
@@ -717,7 +740,7 @@ const GreenNavbar = () => {
                   </div>
                   <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 pointer-events-none z-50">
                     <span className="block font-medium">{resolvedLocationLabel}</span>
-                    <span className="block text-white/60 text-[10px] mt-0.5">
+                    <span className="block text-white/60 text-xs mt-0.5">
                       {locationLoading ? (t('detecting', { defaultValue: 'Detecting...' })) :
                        isIpFallback ? (t('approximate_ip', { defaultValue: 'Approximate (IP)' })) :
                        accuracyTier === 'precise' ? (t('precise_gps', { defaultValue: 'Precise GPS' })) :
@@ -781,7 +804,7 @@ const GreenNavbar = () => {
                     <FiFilter className="h-4 w-4" />
                     <span className="hidden lg:inline">{t('filter', { defaultValue: 'Filter' })}</span>
                     {hasActiveFilters && (
-                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[var(--primary)] text-white text-[10px] font-bold px-1.5">
+                      <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[var(--primary)] text-white text-xs font-bold px-1.5">
                         {activeFilterCount}
                       </span>
                     )}
@@ -1088,6 +1111,7 @@ const GreenNavbar = () => {
                   </span>
                 </Link>
               )}
+              {!isNativePlatform && (
               <div className="mhub-nav-pill hidden md:flex items-center gap-1 rounded-full px-1.5 py-1 backdrop-blur-sm">
                 {/* Notifications Bell */}
                 <Link to="/notifications" aria-label={t('notifications')} className="relative group">
@@ -1095,7 +1119,7 @@ const GreenNavbar = () => {
                     <FiBell className="w-5 h-5" />
                   </span>
                   {isLoggedIn && Number(unreadCount) > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
+                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
                       {Number(unreadCount) > 99 ? '99+' : Number(unreadCount)}
                     </span>
                   )}
@@ -1109,7 +1133,7 @@ const GreenNavbar = () => {
                     <FiBookmark className="w-5 h-5" />
                   </span>
                   {isLoggedIn && wishlistCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
+                    <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
                       {wishlistCount > 99 ? '99+' : wishlistCount}
                     </span>
                   )}
@@ -1124,7 +1148,7 @@ const GreenNavbar = () => {
                       <FiShoppingCart className="w-5 h-5" />
                     </span>
                     {isLoggedIn && Number(categoryFilteredCartCount) > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
+                      <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center shadow-sm">
                         {Number(categoryFilteredCartCount) > 99 ? "99+" : Number(categoryFilteredCartCount)}
                       </span>
                     )}
@@ -1144,6 +1168,7 @@ const GreenNavbar = () => {
                   </span>
                 </Link>
               </div>
+              )}
             </div>
           </div>
         </nav >
@@ -1160,11 +1185,20 @@ const GreenNavbar = () => {
           aria-modal="true"
           aria-label={t('more_options', { defaultValue: 'More options' })}
           onKeyDown={(e) => { if (e.key === 'Escape') closeMoreMenu(); }}
-          onClick={closeMoreMenu}
+          onTouchEnd={(e) => {
+            // Prevent touch event on backdrop from closing drawer immediately after open
+            if (Date.now() - moreOpenTimeRef.current < 500) { e.preventDefault(); e.stopPropagation(); return; }
+          }}
+          onClick={(e) => {
+            // Guard against ghost click on Android WebView: ignore backdrop click
+            // if the drawer was opened within the last 500ms (prevents immediate close).
+            if (Date.now() - moreOpenTimeRef.current < 500) return;
+            closeMoreMenu();
+          }}
         >
           <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
           <aside
-            className="fixed right-0 top-0 z-[201] h-full w-[380px] max-w-[92vw] overflow-y-auto bg-gradient-to-b from-white via-slate-50 to-white p-6 pb-10 shadow-2xl dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
+            className="fixed right-0 top-0 z-[201] h-full w-[min(92vw,380px)] overflow-y-auto bg-gradient-to-b from-white via-slate-50 to-white p-6 pb-10 shadow-2xl dark:from-slate-900 dark:via-slate-900 dark:to-slate-950"
             onClick={(event) => event.stopPropagation()}
             data-no-auto-translate="true"
           >
@@ -1244,13 +1278,13 @@ const GreenNavbar = () => {
                               <span className="truncate">{labelText}</span>
                             </span>
                             {blockedForRole ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
                                 <FiLock className="h-3.5 w-3.5 shrink-0" />
                                 Admin
                               </span>
                             ) : null}
                             {blockedForGuest ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/80 px-2 py-1 text-[11px] font-semibold text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-200/80 px-2 py-1 text-xs font-semibold text-amber-900 dark:bg-amber-400/20 dark:text-amber-200">
                                 <FiLock className="h-3.5 w-3.5 shrink-0" />
                                 Login
                               </span>
@@ -1361,7 +1395,7 @@ const GreenNavbar = () => {
                         </span>
                         <span className="flex flex-1 flex-col">
                           <span>{t(preset.labelKey, { defaultValue: preset.key })}</span>
-                          <span className="text-[11px] font-normal text-slate-500">
+                          <span className="text-xs font-normal text-slate-500">
                             {preset.width} x {preset.height}
                           </span>
                         </span>
@@ -1413,14 +1447,15 @@ const GreenNavbar = () => {
               {...navButtonProps(t(link.key))}
               data-navkey={link.key}
               aria-current={isActive ? 'page' : undefined}
-              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen((open) => !open); } : () => navigate(link.path)}
-              style={{ background: 'none', border: 'none', outline: 'none' }}
-              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[44px] min-h-[48px] px-1 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
+              onClick={link.key === 'more' ? handleMoreOpen : () => startTransition(() => navigate(link.path))}
+              onTouchEnd={link.key === 'more' ? handleMoreOpen : undefined}
+              style={{ background: 'none', border: 'none', outline: 'none', touchAction: 'manipulation' }}
+              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[38px] min-h-[44px] px-1 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
             >
               <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
                 {link.icon}
               </span>
-              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '0.72rem', position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {t(link.key)}
               </span>
               {isActive && <span className="mhub-bottom-nav-indicator" />}
@@ -1433,9 +1468,9 @@ const GreenNavbar = () => {
           <div className="flex-none">
             <button
               aria-label={t('sell', { defaultValue: 'Sell' })}
-              className="mhub-fab relative group inline-flex items-center justify-center rounded-full w-12 h-12 text-3xl font-extrabold transition-all duration-200 -translate-y-4"
-              onClick={() => navigate('/post-welcome')}
-              style={{ zIndex: 100 }}
+              className="mhub-fab relative group inline-flex items-center justify-center rounded-full w-11 h-11 text-2xl font-extrabold transition-all duration-200 -translate-y-3"
+              onClick={() => startTransition(() => navigate('/post-welcome'))}
+              style={{ zIndex: 130 }}
             >
               +
               <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-3 py-1 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-lg pointer-events-none">
@@ -1455,14 +1490,15 @@ const GreenNavbar = () => {
               {...navButtonProps(t(link.key))}
               data-navkey={link.key}
               aria-current={isActive ? 'page' : undefined}
-              onClick={link.key === 'more' ? (e) => { e.preventDefault(); setMoreOpen((open) => !open); } : () => navigate(link.path)}
-              style={{ background: 'none', border: 'none', outline: 'none' }}
-              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[44px] min-h-[48px] px-1 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
+              onClick={link.key === 'more' ? handleMoreOpen : () => startTransition(() => navigate(link.path))}
+              onTouchEnd={link.key === 'more' ? handleMoreOpen : undefined}
+              style={{ background: 'none', border: 'none', outline: 'none', touchAction: 'manipulation' }}
+              className={`mhub-bottom-nav-button flex flex-col items-center justify-center min-w-[38px] min-h-[44px] px-1 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'is-active' : ''}`}
             >
               <span className={`mhub-bottom-nav-icon ${isActive ? 'is-active' : ''}`}>
                 {link.icon}
               </span>
-              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ fontSize: '0.72rem', position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className={`mhub-bottom-nav-label ${isActive ? 'is-active' : ''}`} style={{ position: 'relative', lineHeight: 1.2, maxWidth: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {t(link.key)}
               </span>
               {isActive && <span className="mhub-bottom-nav-indicator" />}

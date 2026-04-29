@@ -6,7 +6,7 @@ const GreenFooter = () => {
   const { t } = useTranslation();
   return (
     <footer className="bg-primary text-white py-8 mt-12" role="contentinfo">
-      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-[640px] mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
           <h2 className="font-bold text-lg mb-2">{t("brand_greenkart")}</h2>
           <p className="text-sm">{t('trusted_ecommerce')}</p>

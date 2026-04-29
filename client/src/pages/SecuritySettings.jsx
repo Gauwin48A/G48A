@@ -50,11 +50,11 @@ function SessionCard({ session, isRevoking, onRevoke }) {
     <div className="mhub-premium-surface rounded-xl p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <p className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
-            <Monitor className="h-4 w-4 text-blue-600 dark:text-blue-400 dark:text-blue-300" />
+          <p className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <Monitor className="h-4 w-4 text-blue-600 dark:text-blue-300" />
             {session.device_fingerprint || "Unknown device"}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300">
+          <p className="text-xs text-slate-500 dark:text-slate-300">
             {session.user_agent || "Unknown user agent"}
           </p>
         </div>
@@ -62,7 +62,7 @@ function SessionCard({ session, isRevoking, onRevoke }) {
           type="button"
           onClick={() => onRevoke(session.session_id)}
           disabled={isRevoking}
-          className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
+          className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {isRevoking ? t('revoking', { defaultValue: 'Revoking...' }) : t('revoke', { defaultValue: 'Revoke' })}
@@ -71,7 +71,7 @@ function SessionCard({ session, isRevoking, onRevoke }) {
 
       <div className="mt-3 grid gap-1 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-2 dark:text-slate-200">
         <p className="flex items-center gap-1.5">
-          <Clock3 className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-300" />
+          <Clock3 className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
           Last active:{" "}
           {formatDateTime(session.last_activity || session.created_at)}
         </p>
@@ -338,8 +338,8 @@ export default function SecuritySettings() {
   }
 
   return (
-    <div className="min-h-screen mhub-premium-page bg-slate-50 px-4 py-6 md:px-8 dark:bg-slate-950">
-      <div className="mx-auto max-w-5xl space-y-6 page-shell page-pad">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-slate-50 px-4 py-6 md:px-8 dark:bg-slate-950">
+      <div className="mx-auto max-w-[640px] space-y-6 page-shell page-pad">
         <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-md dark:bg-gradient-to-r dark:text-white">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -360,7 +360,7 @@ export default function SecuritySettings() {
                 void loadTwoFaStatus();
                 void loadSessions();
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20 dark:border dark:border-white/40 dark:bg-slate-900/10 dark:hover:bg-slate-900/20"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20 dark:border-white/40 dark:bg-slate-900/10 dark:hover:bg-slate-900/20"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
@@ -371,13 +371,13 @@ export default function SecuritySettings() {
         <section className="mhub-premium-surface rounded-2xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
-                <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400 dark:text-emerald-300" />
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+                <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 Two-Factor Authentication
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                 Status:{" "}
-                <span className="font-semibold text-slate-700 dark:text-slate-300 dark:text-slate-200">
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
                   {statusBadge}
                 </span>
               </p>
@@ -400,7 +400,7 @@ export default function SecuritySettings() {
                   setSetupQrCode("");
                   setBackupCodes([]);
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
               >
                 <Trash2 className="h-4 w-4" />
                 {disableMode ? "Cancel Disable" : "Disable 2FA"}
@@ -453,7 +453,7 @@ export default function SecuritySettings() {
                     type="button"
                     data-ux-action="security_setup_dismiss_error"
                     onClick={() => setSetupError("")}
-                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     Dismiss
                   </button>
@@ -463,11 +463,11 @@ export default function SecuritySettings() {
           ) : null}
 
           {setupQrCode ? (
-            <div className="mt-5 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 p-4 dark:border dark:border-slate-700 dark:bg-slate-950">
+            <div className="mt-5 rounded-xl border border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-700/50 p-4 dark:border-slate-700 dark:bg-slate-950">
               <p className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Step 1: Scan QR code
               </p>
-              <div className="flex justify-center rounded-lg border border-slate-200 dark:border-gray-600 bg-white p-4 dark:border dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex justify-center rounded-lg border border-slate-200 dark:border-gray-600 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                 <img
                   src={setupQrCode}
                   alt={t("two_fa_qr_code_alt")}
@@ -522,7 +522,7 @@ export default function SecuritySettings() {
                     type="button"
                     data-ux-action="security_verify_clear_error"
                     onClick={() => setVerifyError("")}
-                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     Dismiss
                   </button>
@@ -532,15 +532,15 @@ export default function SecuritySettings() {
           ) : null}
 
           {backupCodes.length > 0 ? (
-            <div className="mt-5 rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4 dark:border dark:border-amber-600/40 dark:bg-amber-950/20">
-              <p className="font-semibold text-amber-800 dark:text-amber-300 dark:text-amber-200">
+            <div className="mt-5 rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4 dark:border-amber-600/40 dark:bg-amber-950/20">
+              <p className="font-semibold text-amber-800 dark:text-amber-200">
                 Backup codes (save these now)
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                 {backupCodes.map((code) => (
                   <div
                     key={code}
-                    className="rounded border border-amber-300 dark:border-amber-600 mhub-premium-surface px-2 py-1.5 font-mono text-slate-800 dark:text-slate-200 dark:border dark:border-amber-600/40 dark:text-slate-100"
+                    className="rounded border border-amber-300 dark:border-amber-600 mhub-premium-surface px-2 py-1.5 font-mono text-slate-800 dark:text-slate-200 dark:border-amber-600/40 dark:text-slate-100"
                   >
                     {code}
                   </div>
@@ -550,7 +550,7 @@ export default function SecuritySettings() {
           ) : null}
 
           {disableMode ? (
-            <div className="mt-5 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 dark:border dark:border-red-600/40 dark:bg-red-950/20">
+            <div className="mt-5 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4 dark:border-red-600/40 dark:bg-red-950/20">
               <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                 Confirm disable using authenticator code
               </p>
@@ -599,7 +599,7 @@ export default function SecuritySettings() {
                     type="button"
                     data-ux-action="security_disable_clear_error"
                     onClick={() => setDisableError("")}
-                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     Dismiss
                   </button>
@@ -611,11 +611,11 @@ export default function SecuritySettings() {
 
         <section className="mhub-premium-surface rounded-2xl p-5">
           <div>
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
-              <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400 dark:text-amber-300" />
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+              <Lock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
               Change Password
             </h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
               Update your account password. You will need to enter your current password.
             </p>
           </div>
@@ -663,10 +663,10 @@ export default function SecuritySettings() {
             </div>
 
             {pwError && (
-              <p className="text-xs text-red-600 dark:text-red-400 dark:text-red-300">{pwError}</p>
+              <p className="text-xs text-red-600 dark:text-red-300">{pwError}</p>
             )}
             {pwSuccess && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 dark:text-emerald-300">{pwSuccess}</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-300">{pwSuccess}</p>
             )}
 
             <button
@@ -684,11 +684,11 @@ export default function SecuritySettings() {
         <section className="mhub-premium-surface rounded-2xl p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-200 dark:text-slate-100">
-                <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400 dark:text-blue-300" />
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+                <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-300" />
                 Active Sessions
               </h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 dark:text-slate-300">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
                 Revoke sessions you do not recognize.
               </p>
             </div>
@@ -698,7 +698,7 @@ export default function SecuritySettings() {
               disabled={
                 revokeAllLoading || sessionsLoading || sessions.length === 0
               }
-              className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-600/40 dark:text-red-300 dark:hover:bg-red-950/20"
             >
               <Trash2 className="h-4 w-4" />
               {revokeAllLoading ? t('revoking', { defaultValue: 'Revoking...' }) : t('revoke_all', { defaultValue: 'Revoke All' })}
@@ -739,7 +739,7 @@ export default function SecuritySettings() {
                     onClick={() => {
                       void loadSessions();
                     }}
-                    className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-950"
                   >
                     <RefreshCw className="h-4 w-4" />
                     Refresh Sessions

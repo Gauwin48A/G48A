@@ -8,6 +8,22 @@ import { resolveMediaUrl } from "@/lib/mediaUrl";
 import { getFeaturedCentrePages } from "@/lib/api";
 
 const normalizeText = (value) => String(value || "").trim();
+const isNativeRuntime = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    if (
+      typeof window.Capacitor?.isNativePlatform === "function" &&
+      window.Capacitor.isNativePlatform()
+    ) {
+      return true;
+    }
+  } catch {
+    // Ignore runtime detection failures and fallback to UA.
+  }
+  if (window.__MHUB_ANDROID_WEB_REPLICA__ === true) return true;
+  const ua = String(window.navigator?.userAgent || "").toLowerCase();
+  return ua.includes("mhubandroidwebreplica") || (ua.includes("android") && /\bwv\b/.test(ua));
+};
 
 export default function FeaturedCentrePages({
   limit = 6,
@@ -35,14 +51,20 @@ export default function FeaturedCentrePages({
     }
     return params;
   }, [limit, category]);
+  const nativeRuntime = useMemo(() => isNativeRuntime(), []);
+  const requestTimeoutMs = nativeRuntime ? 6000 : 12000;
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
     const loadFeatured = async () => {
       setLoading(true);
       setError("");
       try {
-        const response = await getFeaturedCentrePages(queryParams);
+        const response = await getFeaturedCentrePages(queryParams, {
+          signal: controller.signal,
+        });
         const payload = response?.data ?? response;
         const list = Array.isArray(payload?.channels)
           ? payload.channels
@@ -53,6 +75,21 @@ export default function FeaturedCentrePages({
         setCentres(list);
       } catch (err) {
         if (!active) return;
+        const aborted =
+          err?.name === "CanceledError" ||
+          err?.name === "AbortError" ||
+          err?.code === "ERR_CANCELED";
+        if (aborted) {
+          setCentres([]);
+          setError(
+            nativeRuntime
+              ? ""
+              : t("featured_centrepages_unavailable", {
+                  defaultValue: "Featured CentrePages are unavailable right now.",
+                }),
+          );
+          return;
+        }
         setCentres([]);
         setError(
           err?.message ||
@@ -61,14 +98,17 @@ export default function FeaturedCentrePages({
             }),
         );
       } finally {
+        clearTimeout(timeoutId);
         if (active) setLoading(false);
       }
     };
     loadFeatured();
     return () => {
       active = false;
+      clearTimeout(timeoutId);
+      controller.abort();
     };
-  }, [queryParams, t]);
+  }, [queryParams, requestTimeoutMs, nativeRuntime, t]);
 
   if (loading) {
     return (
@@ -154,7 +194,7 @@ export default function FeaturedCentrePages({
                       {categoryLabel}
                     </p>
                   </div>
-                  <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                  <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
                     <Star className="h-3 w-3" />
                     {t("premium", { defaultValue: "Premium" })}
                   </span>

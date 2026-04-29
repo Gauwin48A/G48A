@@ -213,14 +213,14 @@ const ge = {
         },
         e.createElement(
           "div",
-          { className: "max-w-6xl mx-auto py-20 text-center page-shell page-pad dark:text-center" },
+          { className: "max-w-[640px] mx-auto py-20 text-center page-shell page-pad" },
           e.createElement("div", {
             className:
-              "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-2 dark:border-blue-500/40 dark:border-t-transparent",
+              "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-t-transparent",
           }),
           e.createElement(
             "p",
-            { className: "mt-4 text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+            { className: "mt-4 text-gray-600 dark:text-gray-200" },
             "Checking admin access...",
           ),
         ),
@@ -499,14 +499,14 @@ const ge = {
           },
           e.createElement(
             "div",
-            { className: "max-w-6xl mx-auto py-20 text-center page-shell page-pad dark:text-center" },
+            { className: "max-w-[640px] mx-auto py-20 text-center page-shell page-pad" },
             e.createElement("div", {
               className:
-                "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-2 dark:border-blue-500/40 dark:border-t-transparent",
+                "w-12 h-12 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto dark:border-t-transparent",
             }),
             e.createElement(
               "p",
-              { className: "mt-4 text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+              { className: "mt-4 text-gray-600 dark:text-gray-200" },
               "Loading admin operations...",
             ),
           ),
@@ -519,21 +519,21 @@ const ge = {
           },
           e.createElement(
             "div",
-            { className: "max-w-6xl mx-auto space-y-4 page-shell page-pad" },
+            { className: "max-w-[640px] mx-auto space-y-4 page-shell page-pad" },
             e.createElement(
               "div",
-              { className: "text-center md:text-left dark:text-center dark:md:text-left" },
+              { className: "text-center md:text-left dark:md:text-left" },
               e.createElement(
                 "h1",
                 {
                   className:
-                    "text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
+                    "text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 dark:text-gray-100",
                 },
                 s("admin_panel"),
               ),
               e.createElement(
                 "p",
-                { className: "text-gray-600 dark:text-gray-300 dark:text-gray-200" },
+                { className: "text-gray-600 dark:text-gray-200" },
                 s("admin_panel_desc"),
               ),
             ),
@@ -626,7 +626,7 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold" },
+                        { className: "text-lg sm:text-2xl font-bold" },
                         Number(x.totalUsers || 0),
                       ),
                       e.createElement(
@@ -664,7 +664,7 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold" },
+                        { className: "text-lg sm:text-2xl font-bold" },
                         Number(x.totalPosts || 0),
                       ),
                       e.createElement(
@@ -704,7 +704,7 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold" },
+                        { className: "text-lg sm:text-2xl font-bold" },
                         Number(x.flaggedPosts || 0),
                       ),
                       e.createElement(
@@ -741,7 +741,7 @@ const ge = {
                       null,
                       e.createElement(
                         "div",
-                        { className: "text-2xl font-bold" },
+                        { className: "text-lg sm:text-2xl font-bold" },
                         Number(x.restrictedUsers || 0),
                       ),
                       e.createElement(
@@ -854,12 +854,12 @@ const ge = {
                     se.length === 0
                       ? e.createElement(
                           "div",
-                          { className: "text-center py-10 space-y-3 dark:text-center" },
+                          { className: "text-center py-10 space-y-3" },
                           e.createElement(
                             "p",
                             {
                               className:
-                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                "text-sm text-gray-500 dark:text-gray-300",
                             },
                             "No flagged users match this filter.",
                           ),
@@ -885,7 +885,7 @@ const ge = {
                               {
                                 key: t.id,
                                 className:
-                                  "border-l-4 border-l-red-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:border-l-4 dark:border-l-red-500 dark:bg-slate-900",
+                                  "border-l-4 border-l-red-500 bg-white dark:bg-gray-700 dark:border-l-red-500 dark:bg-slate-900",
                               },
                               e.createElement(
                                 g,
@@ -909,7 +909,7 @@ const ge = {
                                         "h3",
                                         {
                                           className:
-                                            "font-semibold text-lg text-gray-900 dark:text-white dark:text-gray-100",
+                                            "font-semibold text-lg text-gray-900 dark:text-gray-100",
                                         },
                                         t.name,
                                       ),
@@ -939,7 +939,7 @@ const ge = {
                                       "div",
                                       {
                                         className:
-                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                          "space-y-1 text-sm text-gray-600 dark:text-gray-200",
                                       },
                                       e.createElement(
                                         "p",
@@ -1111,12 +1111,12 @@ const ge = {
                     re.length === 0
                       ? e.createElement(
                           "div",
-                          { className: "text-center py-10 space-y-3 dark:text-center" },
+                          { className: "text-center py-10 space-y-3" },
                           e.createElement(
                             "p",
                             {
                               className:
-                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                "text-sm text-gray-500 dark:text-gray-300",
                             },
                             "No flagged posts match this filter.",
                           ),
@@ -1139,7 +1139,7 @@ const ge = {
                               {
                                 key: t.id,
                                 className:
-                                  "border-l-4 border-l-orange-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:border-l-4 dark:border-l-orange-500 dark:bg-slate-900",
+                                  "border-l-4 border-l-orange-500 bg-white dark:bg-gray-700 dark:border-l-orange-500 dark:bg-slate-900",
                               },
                               e.createElement(
                                 g,
@@ -1163,7 +1163,7 @@ const ge = {
                                         "h3",
                                         {
                                           className:
-                                            "font-semibold text-gray-900 dark:text-white dark:text-gray-100",
+                                            "font-semibold text-gray-900 dark:text-gray-100",
                                         },
                                         t.title,
                                       ),
@@ -1181,7 +1181,7 @@ const ge = {
                                       "div",
                                       {
                                         className:
-                                          "space-y-1 text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                          "space-y-1 text-sm text-gray-600 dark:text-gray-200",
                                       },
                                       e.createElement(
                                         "p",
@@ -1312,7 +1312,7 @@ const ge = {
                     null,
                     e.createElement(
                       D,
-                      { className: "text-gray-900 dark:text-white dark:text-gray-100" },
+                      { className: "text-gray-900 dark:text-gray-100" },
                       s("flag_management_system"),
                     ),
                     e.createElement(
@@ -1340,7 +1340,7 @@ const ge = {
                             "h3",
                             {
                               className:
-                                "font-semibold mb-2 text-yellow-800 dark:text-yellow-100 dark:text-yellow-200",
+                                "font-semibold mb-2 text-yellow-800 dark:text-yellow-200",
                             },
                             s("auto_detection_rules"),
                           ),
@@ -1348,7 +1348,7 @@ const ge = {
                             "ul",
                             {
                               className:
-                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-200",
                             },
                             e.createElement(
                               "li",
@@ -1386,7 +1386,7 @@ const ge = {
                             "h3",
                             {
                               className:
-                                "font-semibold mb-2 text-red-800 dark:text-red-100 dark:text-red-200",
+                                "font-semibold mb-2 text-red-800 dark:text-red-200",
                             },
                             s("user_report_categories"),
                           ),
@@ -1394,7 +1394,7 @@ const ge = {
                             "ul",
                             {
                               className:
-                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-300 dark:text-gray-200",
+                                "list-disc list-inside text-sm space-y-1 text-gray-700 dark:text-gray-200",
                             },
                             e.createElement(
                               "li",
@@ -1434,7 +1434,7 @@ const ge = {
                     null,
                     e.createElement(
                       D,
-                      { className: "text-gray-900 dark:text-white dark:text-gray-100" },
+                      { className: "text-gray-900 dark:text-gray-100" },
                       s("recent_platform_activity"),
                     ),
                     e.createElement(
@@ -1449,12 +1449,12 @@ const ge = {
                     K.length === 0
                       ? e.createElement(
                           "div",
-                          { className: "text-center py-8 space-y-3 dark:text-center" },
+                          { className: "text-center py-8 space-y-3" },
                           e.createElement(
                             "p",
                             {
                               className:
-                                "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                "text-sm text-gray-500 dark:text-gray-300",
                             },
                             "No recent admin activity available.",
                           ),
@@ -1492,7 +1492,7 @@ const ge = {
                                   "p",
                                   {
                                     className:
-                                      "font-medium text-gray-900 dark:text-white dark:text-gray-100",
+                                      "font-medium text-gray-900 dark:text-gray-100",
                                   },
                                   t.action || "Activity event",
                                 ),
@@ -1500,7 +1500,7 @@ const ge = {
                                   "p",
                                   {
                                     className:
-                                      "text-sm text-gray-600 dark:text-gray-300 dark:text-gray-200",
+                                      "text-sm text-gray-600 dark:text-gray-200",
                                   },
                                   s("by"),
                                   " ",
@@ -1510,7 +1510,7 @@ const ge = {
                                   "p",
                                   {
                                     className:
-                                      "text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                      "text-xs text-gray-500 dark:text-gray-300",
                                   },
                                   t.details ||
                                     "No additional details available.",
@@ -1518,12 +1518,12 @@ const ge = {
                               ),
                               e.createElement(
                                 "div",
-                                { className: "text-right dark:text-right" },
+                                { className: "text-right" },
                                 e.createElement(
                                   "span",
                                   {
                                     className:
-                                      "text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                      "text-sm text-gray-500 dark:text-gray-300",
                                   },
                                   t.time || "now",
                                 ),

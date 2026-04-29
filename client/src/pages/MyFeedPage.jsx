@@ -624,7 +624,7 @@ const MyFeedPage = () => {
             primaryAction={
               <Link
                 to="/login?returnTo=%2Fmy-feed"
-                className="bg-emerald-600 text-white px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-700 dark:bg-emerald-700/40 dark:text-white dark:text-center dark:hover:bg-emerald-700/40"
+                className="bg-emerald-600 text-white px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-700 dark:bg-emerald-700/40 dark:hover:bg-emerald-700/40"
               >
                 {t("login_to_continue") || "Login to Continue"}
               </Link>
@@ -632,7 +632,7 @@ const MyFeedPage = () => {
             secondaryAction={
               <Link
                 to="/signup?returnTo=%2Fmy-feed"
-                className="border border-emerald-300 text-emerald-700 px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-50 dark:border dark:border-emerald-600/40 dark:text-emerald-300 dark:text-center dark:hover:bg-emerald-950/20"
+                className="border border-emerald-300 text-emerald-700 px-4 py-2 rounded-md font-semibold text-center hover:bg-emerald-50 dark:border-emerald-600/40 dark:hover:bg-emerald-950/20"
               >
                 {t("create_account") || "Create Account"}
               </Link>
@@ -655,10 +655,10 @@ const MyFeedPage = () => {
               'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fillRule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fillOpacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
           }}
         />
-        <div className="relative max-w-4xl mx-auto px-4 py-2 sm:px-6 sm:py-3 page-shell page-pad">
+        <div className="relative max-w-[640px] mx-auto px-4 py-2 sm:px-6 sm:py-3 page-shell page-pad">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div className="max-w-2xl">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70">
                 {t("my_feed_label") || "Your feed"}
               </p>
               <div className="flex items-center gap-3">
@@ -678,7 +678,7 @@ const MyFeedPage = () => {
               <Button
                 onClick={handleRefresh}
                 variant="outline"
-                className="bg-white/10 border border-white/30 text-white hover:bg-white/20 font-semibold px-4 py-2.5 rounded-xl backdrop-blur-sm dark:bg-slate-900/10 dark:border dark:border-white/30 dark:text-white dark:hover:bg-slate-900/20"
+                className="bg-white/10 border border-white/30 text-white hover:bg-white/20 font-semibold px-4 py-2.5 rounded-xl backdrop-blur-sm dark:bg-slate-900/10 dark:border-white/30 dark:text-white dark:hover:bg-slate-900/20"
                 disabled={loading}
               >
                 {t("refresh") || "Refresh"}
@@ -694,15 +694,15 @@ const MyFeedPage = () => {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6 page-shell page-pad">
+      <div className="max-w-[640px] mx-auto px-4 py-6 page-shell page-pad">
         <UpsellBanner trigger="feed" className="mb-4" />
         <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div
-            className="rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border dark:border-slate-700/80"
+            className="rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border-slate-700/80"
             style={{ "--card-accent": "linear-gradient(90deg, #22c55e, #16a34a)" }}
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 dark:text-emerald-300">
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-300">
                 {metaStats
                   ? t("total_posts") || "Total posts"
                   : t("loaded_posts") || "Loaded posts"}
@@ -711,16 +711,16 @@ const MyFeedPage = () => {
                 <FaNewspaper className="text-emerald-600 dark:text-emerald-300" />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100">
+            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
               {statsTotalPosts}
             </div>
           </div>
           <div
-            className="rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border dark:border-slate-700/80"
+            className="rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border-slate-700/80"
             style={{ "--card-accent": "linear-gradient(90deg, #3b82f6, #6366f1)" }}
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 dark:text-blue-300">
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-300">
                 {metaStats
                   ? t("total_views") || "Total views"
                   : t("loaded_views") || "Loaded views"}
@@ -729,16 +729,16 @@ const MyFeedPage = () => {
                 <FaEye className="text-blue-600 dark:text-blue-300" />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100">
+            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
               {statsTotalViews}
             </div>
           </div>
           <div
-            className="rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border dark:border-slate-700/80"
+            className="rewards-stat-card rounded-2xl bg-white/95 dark:bg-slate-900/80 text-slate-900 dark:text-slate-100 p-4 shadow-lg border border-slate-100/80 dark:border-slate-800/60 dark:bg-slate-900/95 dark:border-slate-700/80"
             style={{ "--card-accent": "linear-gradient(90deg, #f43f5e, #ec4899)" }}
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-rose-600 dark:text-rose-400 dark:text-rose-300">
+              <p className="text-xs font-bold uppercase tracking-widest text-rose-600 dark:text-rose-300">
                 {metaStats
                   ? t("total_likes") || "Total likes"
                   : t("loaded_likes") || "Loaded likes"}
@@ -747,12 +747,12 @@ const MyFeedPage = () => {
                 <FaHeart className="text-rose-600 dark:text-rose-300" />
               </div>
             </div>
-            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white dark:text-slate-100">
+            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
               {statsTotalLikes}
             </div>
           </div>
         </div>
-        <p className="mt-1 mb-6 text-center text-xs text-gray-500 dark:text-gray-400 dark:text-center dark:text-gray-300">
+        <p className="mt-1 mb-6 text-center text-xs text-gray-500 dark:text-gray-300">
           {metaStats
             ? t("my_feed_stats_total_note") ||
               "Stats include all posts that match your filters."
@@ -893,7 +893,7 @@ const MyFeedPage = () => {
                           {timeAgo(post.created_at)}
                         </div>
                         <div className="mt-1">
-                          <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:text-gray-200 dark:bg-gray-950">
+                          <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-200 dark:bg-gray-950">
                             Post ID: {postId}
                           </span>
                         </div>
@@ -936,7 +936,7 @@ const MyFeedPage = () => {
                             handleShare(postId);
                             setMenuPostId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950"
                         >
                           {t("share") || "Share"}
                         </button>
@@ -946,7 +946,7 @@ const MyFeedPage = () => {
                             toggleSaveMyFeed(postId);
                             setMenuPostId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950"
                         >
                           {savedPosts[String(postId)]
                             ? t("saved") || "Saved"
@@ -959,7 +959,7 @@ const MyFeedPage = () => {
                               openPromote(postId, post.title);
                               setMenuPostId(null);
                             }}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-left dark:hover:bg-gray-950"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:hover:bg-gray-950"
                           >
                             {t("promote") || "Promote"}
                           </button>
@@ -970,7 +970,7 @@ const MyFeedPage = () => {
                             setDeleteConfirm(postId);
                             setMenuPostId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-left dark:text-red-300 dark:hover:bg-red-950/20"
+                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg dark:text-red-300 dark:hover:bg-red-950/20"
                         >
                           {t("delete") || "Delete"}
                         </button>
@@ -993,7 +993,7 @@ const MyFeedPage = () => {
                   <div className="px-5 pb-4">
                     {/* Category badge */}
                     {(post.category_name || post.category) && (
-                      <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-[11px] font-semibold text-green-700 dark:text-green-300 mb-2 dark:bg-green-950/20">
+                      <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-1 text-xs font-semibold text-green-700 dark:text-green-300 mb-2 dark:bg-green-950/20">
                         {post.category_name || post.category}
                       </span>
                     )}
@@ -1041,7 +1041,7 @@ const MyFeedPage = () => {
                   </div>
 
                   <div className="px-3 py-2.5 border-t mhub-premium-bar dark:border-t">
-                    <div className="post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-[11px] sm:text-xs scrollbar-hide sm:gap-2">
+                    <div className="post-action-row flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap pr-1 text-xs sm:text-xs scrollbar-hide sm:gap-2">
                       <span className="inline-flex h-7 items-center gap-1 rounded-full bg-red-50 px-2 text-red-500 dark:bg-red-950/20 dark:text-red-300">
                         <FaHeart /> {likeCounts[postId] || 0}
                       </span>
@@ -1051,7 +1051,7 @@ const MyFeedPage = () => {
 
                       <Button
                         variant="ghost"
-                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-200 hover:text-green-600 dark:bg-gray-950 dark:hover:text-green-300"
+                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-xs sm:text-xs text-gray-600 dark:text-gray-200 hover:text-green-600 dark:bg-gray-950 dark:hover:text-green-300"
                         onClick={() => handleShare(postId)}
                       >
                         <FaShare className="mr-1" />
@@ -1061,7 +1061,7 @@ const MyFeedPage = () => {
                       </Button>
                       <Button
                         variant="ghost"
-                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-200 hover:text-green-600 dark:bg-gray-950 dark:hover:text-green-300"
+                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-xs sm:text-xs text-gray-600 dark:text-gray-200 hover:text-green-600 dark:bg-gray-950 dark:hover:text-green-300"
                         onClick={() => toggleSaveMyFeed(postId)}
                       >
                         {savedPosts[String(postId)] ? (
@@ -1077,7 +1077,7 @@ const MyFeedPage = () => {
                       </Button>
                       <Button
                         variant="ghost"
-                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-[11px] sm:text-xs text-green-600 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 font-medium dark:bg-gray-950 dark:hover:bg-green-950/20"
+                        className="shrink-0 h-7 rounded-full bg-gray-100 dark:bg-gray-700 px-2 text-xs sm:text-xs text-green-600 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 font-medium dark:bg-gray-950 dark:hover:bg-green-950/20"
                         onClick={() => handleViewDetails(postId)}
                       >
                         <FaEye className="mr-1" />
@@ -1098,7 +1098,7 @@ const MyFeedPage = () => {
 
           {loadMoreError && displayPosts.length > 0 && (
             <Card
-              className="border border-amber-300 bg-amber-50 text-amber-900 p-4 dark:border dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200"
+              className="border border-amber-300 bg-amber-50 text-amber-900 p-4 dark:border-amber-600/40 dark:bg-amber-950/20 dark:text-amber-200"
               data-ux-state="my-feed-load-more-error"
             >
               <p className="font-semibold">
@@ -1119,7 +1119,7 @@ const MyFeedPage = () => {
           )}
 
           {!hasMore && displayPosts.length > 0 && (
-            <div className="text-center py-6 text-gray-400 text-sm dark:text-center dark:text-gray-300">
+            <div className="text-center py-6 text-gray-400 text-sm dark:text-gray-300">
               {t("thats_all") || "That's all your posts"}
             </div>
           )}

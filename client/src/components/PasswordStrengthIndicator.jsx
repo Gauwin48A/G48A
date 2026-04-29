@@ -76,7 +76,7 @@ const PasswordStrengthIndicator = ({ password }) => {
                 {analysis.checks.map((check, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-xs">
                         <span
-                            className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${check.met ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-200 dark:bg-gray-600/20 text-gray-400 dark:text-gray-500'
+                            className={`w-4 h-4 rounded-full flex items-center justify-center text-xs ${check.met ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-200 dark:bg-gray-600/20 text-gray-400 dark:text-gray-500'
                                 }`}
                         >
                             {check.met ? '✓' : '○'}

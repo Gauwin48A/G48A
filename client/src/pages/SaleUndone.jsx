@@ -610,7 +610,7 @@ const SaleUndonePage = () => {
         ),
         e.createElement(
           "div",
-          { className: "relative max-w-2xl mx-auto p-6 pt-20" },
+          { className: "relative max-w-[640px] mx-auto p-6 pt-20" },
           e.createElement(
             b,
             {
@@ -619,7 +619,7 @@ const SaleUndonePage = () => {
             },
             e.createElement(
               x,
-              { className: "p-12 text-center dark:text-center" },
+              { className: "p-6 sm:p-12 text-center" },
               e.createElement(
                 "div",
                 { className: "relative inline-block mb-8" },
@@ -640,7 +640,7 @@ const SaleUndonePage = () => {
                 "h2",
                 {
                   className:
-                    "text-4xl font-black bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent mb-4 dark:bg-gradient-to-r dark:bg-clip-text dark:text-transparent",
+                    "text-lg sm:text-2xl md:text-3xl font-black bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent mb-4 dark:bg-clip-text dark:text-transparent",
                 },
                 "\uD83D\uDD04 ",
                 tr("post_reactivated_title", "Post Reactivated!"),
@@ -657,14 +657,14 @@ const SaleUndonePage = () => {
                 "div",
                 {
                   className:
-                    "bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-6 mb-8 border border-emerald-200 dark:bg-gradient-to-r dark:border dark:border-emerald-600/40",
+                    "bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-6 mb-8 border border-emerald-200 dark:bg-gradient-to-r dark:border-emerald-600/40",
                 },
                 e.createElement(
                   "div",
                   { className: "flex items-center justify-center gap-6" },
                   e.createElement(
                     "div",
-                    { className: "text-center dark:text-center" },
+                    { className: "text-center" },
                     e.createElement(f, {
                       className: "w-8 h-8 text-orange-500 mx-auto mb-2 dark:text-orange-300",
                     }),
@@ -684,7 +684,7 @@ const SaleUndonePage = () => {
                   }),
                   e.createElement(
                     "div",
-                    { className: "text-center dark:text-center" },
+                    { className: "text-center" },
                     e.createElement(Q, {
                       className: "w-8 h-8 text-green-500 mx-auto mb-2 dark:text-green-300",
                     }),
@@ -710,7 +710,7 @@ const SaleUndonePage = () => {
                       variant: "outline",
                       onClick: W,
                       className:
-                        "border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-xl px-8 py-3 font-semibold dark:border-2 dark:border-emerald-500/40 dark:text-emerald-300 dark:hover:bg-emerald-950/20",
+                        "border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 rounded-xl px-8 py-3 font-semibold dark:border-emerald-500/40 dark:text-emerald-300 dark:hover:bg-emerald-950/20",
                     },
                     tr("reactivate_another", "Reactivate Another"),
                   ),
@@ -768,13 +768,13 @@ const SaleUndonePage = () => {
             "div",
             {
               className:
-                "relative max-w-3xl mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad",
+                "relative max-w-[640px] mx-auto px-4 py-5 sm:px-6 sm:py-6 page-shell page-pad",
             },
             e.createElement(
               "div",
               {
                 className:
-                  "mb-2 max-w-3xl text-left dark:text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5",
+                  "mb-2 max-w-[640px] text-left mhub-hero-card min-h-[132px] sm:min-h-[150px] rounded-2xl px-4 py-4 sm:px-6 sm:py-5",
               },
               e.createElement(
                 "div",
@@ -839,7 +839,7 @@ const SaleUndonePage = () => {
           "div",
           {
             className:
-              "relative max-w-3xl mx-auto px-4 pt-4 pb-10 sm:px-6 sm:pt-5 sm:pb-12 space-y-5",
+              "relative max-w-[640px] mx-auto px-4 pt-4 pb-10 sm:px-6 sm:pt-5 sm:pb-12 space-y-5",
           },
         hasCategoryMode &&
           categoryModeCategory?.name &&
@@ -856,7 +856,7 @@ const SaleUndonePage = () => {
                 "p",
                 {
                   className:
-                    "text-sm font-semibold text-slate-900 dark:text-white dark:text-slate-100",
+                    "text-sm font-semibold text-slate-900 dark:text-slate-100",
                 },
                 tr("category_mode_label", "Category mode: {{category}}", {
                   category: categoryModeCategory.name,
@@ -864,7 +864,7 @@ const SaleUndonePage = () => {
               ),
               e.createElement(
                 "p",
-                { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
+                { className: "text-xs text-slate-500 dark:text-slate-300" },
                 tr(
                   "reactivation_filtered_category",
                   "Reactivation history is filtered to this category.",
@@ -892,7 +892,7 @@ const SaleUndonePage = () => {
               "p",
               {
                 className:
-                  "text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300",
+                  "text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400 mb-1 dark:text-slate-300",
               },
               tr("sale_undone_progress_label", "Reactivation progress"),
             ),
@@ -900,7 +900,7 @@ const SaleUndonePage = () => {
               "h2",
               {
                 className:
-                  "text-base sm:text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                  "text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100",
               },
               tr("sale_undone_progress_title", "Confirm and reactivate"),
             ),
@@ -979,7 +979,7 @@ const SaleUndonePage = () => {
                 "div",
                 {
                   className:
-                    "bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 border-2 border-orange-200 dark:border-orange-700 rounded-2xl p-6 mb-8 dark:bg-gradient-to-r dark:border-2 dark:border-orange-600/40",
+                    "bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 border-2 border-orange-200 dark:border-orange-700 rounded-2xl p-6 mb-8 dark:bg-gradient-to-r dark:border-orange-600/40",
                 },
                 e.createElement(
                   "div",
@@ -991,7 +991,7 @@ const SaleUndonePage = () => {
                         "w-12 h-12 bg-orange-100 dark:bg-orange-800 rounded-xl flex items-center justify-center flex-shrink-0 dark:bg-orange-950/20",
                     },
                     e.createElement(K, {
-                      className: "w-6 h-6 text-orange-600 dark:text-orange-400 dark:text-orange-300",
+                      className: "w-6 h-6 text-orange-600 dark:text-orange-300",
                     }),
                   ),
                   e.createElement(
@@ -1009,7 +1009,7 @@ const SaleUndonePage = () => {
                       "ul",
                       {
                         className:
-                          "space-y-2 text-orange-700 dark:text-orange-400 dark:text-orange-300",
+                          "space-y-2 text-orange-700 dark:text-orange-300",
                       },
                       e.createElement(
                         "li",
@@ -1068,7 +1068,7 @@ const SaleUndonePage = () => {
                       validationErrors.postId
                         ? "border-red-400 dark:border-red-500/60 focus:border-red-500"
                         : "border-gray-200 dark:border-gray-600 focus:border-orange-500"
-                    } dark:bg-gray-700 dark:text-white transition-colors dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40`,
+                    } dark:bg-gray-700 dark:text-white transition-colors dark:border-gray-700 dark:focus:border-orange-500/40`,
                     required: !0,
                     "aria-invalid": Boolean(validationErrors.postId),
                   }),
@@ -1110,7 +1110,7 @@ const SaleUndonePage = () => {
                       value: n.reason,
                       onChange: (r) => updateField("reason", r.target.value),
                       className:
-                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-orange-500 transition-colors px-4 bg-white dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40 dark:bg-slate-900",
+                        "w-full h-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-orange-500 transition-colors px-4 bg-white dark:border-gray-700 dark:focus:border-orange-500/40 dark:bg-slate-900",
                     },
                     e.createElement(
                       "option",
@@ -1186,7 +1186,7 @@ const SaleUndonePage = () => {
                       validationErrors.description
                         ? "border-red-400 dark:border-red-500/60 focus:border-red-500"
                         : "border-gray-200 dark:border-gray-600 focus:border-orange-500"
-                    } dark:bg-gray-700 dark:text-white transition-colors px-4 py-3 resize-none dark:border-2 dark:border-gray-700 dark:focus:border-orange-500/40`,
+                    } dark:bg-gray-700 dark:text-white transition-colors px-4 py-3 resize-none dark:border-gray-700 dark:focus:border-orange-500/40`,
                     "aria-invalid": Boolean(validationErrors.description),
                   }),
                   validationErrors.description &&
@@ -1213,7 +1213,7 @@ const SaleUndonePage = () => {
                         { className: "flex items-center gap-3" },
                         e.createElement("div", {
                           className:
-                            "w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin dark:border-3 dark:border-white/30 dark:border-t-white",
+                            "w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin dark:border-t-white",
                         }),
                         t("reactivating"),
                       )
@@ -1252,21 +1252,21 @@ const SaleUndonePage = () => {
               D
                 ? e.createElement(
                     "div",
-                    { className: "text-center py-8 dark:text-center" },
+                    { className: "text-center py-8" },
                     e.createElement("div", {
                       className:
-                        "w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4 dark:border-4 dark:border-orange-600/40 dark:border-t-orange-500",
+                        "w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4 dark:border-t-orange-500",
                     }),
                     e.createElement(
                       "p",
-                      { className: "text-gray-500 dark:text-gray-400 dark:text-gray-300" },
+                      { className: "text-gray-500 dark:text-gray-300" },
                       t("loading_history"),
                     ),
                   )
                 : historyErrorMessage
                   ? e.createElement(
                       "div",
-                      { className: "text-center py-8 dark:text-center" },
+                      { className: "text-center py-8" },
                       e.createElement(
                         "p",
                         { className: "text-red-500 mb-3 dark:text-red-300" },
@@ -1285,7 +1285,7 @@ const SaleUndonePage = () => {
                   : displayHistory.length === 0
                     ? e.createElement(
                         "div",
-                        { className: "text-center py-12 dark:text-center" },
+                        { className: "text-center py-12" },
                         e.createElement(
                           "div",
                           {
@@ -1385,7 +1385,7 @@ const SaleUndonePage = () => {
                             {
                               key: r.id || r.post_id,
                               className:
-                                "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all dark:bg-gradient-to-r dark:border dark:border-gray-700",
+                                "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-600/50 rounded-2xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all dark:bg-gradient-to-r dark:border-gray-700",
                             },
                             e.createElement(
                               "div",
@@ -1425,7 +1425,7 @@ const SaleUndonePage = () => {
                                   "h4",
                                   {
                                     className:
-                                      "font-bold text-gray-900 dark:text-white dark:text-gray-100 truncate",
+                                      "font-bold text-gray-900 dark:text-gray-100 truncate",
                                   },
                                   r.title || tr("untitled_post", "Untitled"),
                                 ),
@@ -1433,14 +1433,14 @@ const SaleUndonePage = () => {
                                   "div",
                                   {
                                     className:
-                                      "mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                      "mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-300",
                                   },
                                   priceLabel &&
                                     e.createElement(
                                       "span",
                                       {
                                         className:
-                                          "inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-0.5 font-semibold dark:bg-green-950/20 dark:text-green-300",
+                                          "inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-1 font-semibold dark:bg-green-950/20 dark:text-green-300",
                                       },
                                       priceLabel,
                                     ),
@@ -1449,7 +1449,7 @@ const SaleUndonePage = () => {
                                       "span",
                                       {
                                         className:
-                                          "inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 font-semibold dark:bg-indigo-950/20 dark:text-indigo-300",
+                                          "inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2 py-1 font-semibold dark:bg-indigo-950/20 dark:text-indigo-300",
                                       },
                                       categoryLabel,
                                     ),
@@ -1458,7 +1458,7 @@ const SaleUndonePage = () => {
                                       "span",
                                       {
                                         className:
-                                          "inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-2 py-0.5 font-semibold dark:bg-slate-950/20 dark:text-slate-300",
+                                          "inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-2 py-1 font-semibold dark:bg-slate-950/20 dark:text-slate-300",
                                       },
                                       tr("buyer", "Buyer"),
                                       ": ",
@@ -1469,7 +1469,7 @@ const SaleUndonePage = () => {
                                       "span",
                                       {
                                         className:
-                                          "inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 font-semibold dark:bg-gray-950/20 dark:text-gray-300",
+                                          "inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2 py-1 font-semibold dark:bg-gray-950/20 dark:text-gray-300",
                                       },
                                       updatedLabel,
                                     ),
@@ -1478,7 +1478,7 @@ const SaleUndonePage = () => {
                                   "p",
                                   {
                                     className:
-                                      "mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-300",
+                                      "mt-2 text-sm text-gray-500 dark:text-gray-300",
                                   },
                                   r.reason ||
                                     tr(

@@ -6,8 +6,57 @@
 let deferredPrompt = null;
 let swRegistration = null;
 
+export function isNativeRuntime() {
+  if (typeof window === "undefined") return false;
+  try {
+    if (
+      typeof window.Capacitor?.isNativePlatform === "function" &&
+      window.Capacitor.isNativePlatform()
+    ) {
+      return true;
+    }
+  } catch {
+    // Ignore runtime detection errors and continue with UA fallback.
+  }
+  if (window.__MHUB_ANDROID_WEB_REPLICA__ === true) return true;
+  const userAgent = String(window.navigator?.userAgent || "").toLowerCase();
+  return (
+    userAgent.includes("mhubandroidwebreplica") ||
+    (userAgent.includes("android") && /\bwv\b/.test(userAgent))
+  );
+}
+
+/**
+ * Native shells (Capacitor WebView) should not use browser SW cache layers.
+ * Clear existing registrations/caches to avoid stale loading shells.
+ */
+export async function disableServiceWorkersForNativeRuntime() {
+  if (typeof window === "undefined") return;
+  if (!isNativeRuntime()) return;
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((reg) => reg.unregister().catch(() => false)));
+  } catch {
+    // Best-effort cleanup.
+  }
+
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key).catch(() => false)));
+    }
+  } catch {
+    // Best-effort cleanup.
+  }
+}
+
 /** Track the beforeinstallprompt event for later use */
 export function initInstallPrompt() {
+  if (typeof window === "undefined") return;
+  if (isNativeRuntime()) return;
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -37,6 +86,11 @@ export function canInstall() {
 
 /** Register SW and handle updates with user notification */
 export async function registerSW() {
+  if (typeof window === "undefined") return null;
+  if (isNativeRuntime()) {
+    await disableServiceWorkersForNativeRuntime();
+    return null;
+  }
   if (!('serviceWorker' in navigator)) return null;
 
   try {

@@ -80,6 +80,8 @@ import {
 import { getCurrentLocation as wt } from "@/services/locationService";
 import { subscribeSubscriptionUpdated } from "@/utils/appStateEvents";
 import { normalizeTrustPayload, isComplaintRiskState } from "@/hooks/useTrustScore";
+import { isParityOfflineAuthMode } from "@/utils/parityMode";
+import { buildParityProfileFallback } from "@/utils/parityFallbackData";
 
 const PREFERENCE_RADIUS_STORAGE_KEY = "profile_preferences_radius_km";
 const DEFAULT_PREFERENCE_RADIUS_KM = "25";
@@ -169,6 +171,7 @@ const ProfilePage = () => {
     }, []),
     Me = xt(y),
     G = $e(() => vt(y), [y, Me]),
+    isParityMode = $e(() => isParityOfflineAuthMode(), []),
     isPremiumPlan = $e(
       () =>
         FORCE_PREMIUM_CENTREPAGE ||
@@ -345,6 +348,26 @@ const ProfilePage = () => {
       if (r !== b.current) return;
       if (import.meta.env.DEV) console.error("Profile fetch error:", s);
       const l = s?.status || s?.response?.status;
+      if (isParityMode) {
+        const g = buildParityProfileFallback(y || W.current || null);
+        const profileForm = {
+          full_name: g.full_name || g.name || "",
+          phone: g.phone || "",
+          address: g.address || "",
+          avatar_url: g.avatar_url || "",
+          bio: g.bio || "",
+        };
+        N(g);
+        me(profileForm);
+        w(null);
+        try {
+          localStorage.setItem("userProfile", JSON.stringify(g));
+          localStorage.setItem("user", JSON.stringify(g));
+        } catch {
+          // ignore parity storage failures
+        }
+        return;
+      }
       if ((l === 401 || l === 403) && rr && !refreshAttemptedRef.current) {
         refreshAttemptedRef.current = !0;
         try {
@@ -371,7 +394,7 @@ const ProfilePage = () => {
     } finally {
       r === b.current && j(!1);
     }
-  }, [p, S, E, G]);
+  }, [p, S, E, G, isParityMode, y]);
   F(() => {
     if (!O) {
       if (!G) {
@@ -819,7 +842,7 @@ const ProfilePage = () => {
       },
       e.createElement(
         "div",
-        { className: "pt-10 pb-6 px-6 text-center dark:text-center" },
+        { className: "pt-10 pb-6 px-4 text-center" },
         e.createElement(
           "div",
           {
@@ -830,7 +853,7 @@ const ProfilePage = () => {
         ),
         e.createElement(
           "h1",
-          { className: "text-4xl font-bold text-white mb-3 dark:text-white" },
+          { className: "text-2xl sm:text-4xl font-bold text-white mb-3 dark:text-white" },
           t("profile") || "Profile",
         ),
         e.createElement(
@@ -841,7 +864,7 @@ const ProfilePage = () => {
       ),
       e.createElement(
         "div",
-        { className: "max-w-lg mx-auto px-6 space-y-4 page-shell page-pad" },
+        { className: "max-w-lg mx-auto px-4 space-y-4 page-shell page-pad" },
         e.createElement(
           _e,
           {
@@ -870,7 +893,7 @@ const ProfilePage = () => {
               ),
               e.createElement(
                 "p",
-                { className: "text-slate-600 dark:text-slate-300 text-sm dark:text-slate-200" },
+                { className: "text-slate-600 dark:text-slate-200 text-sm" },
                 t("login_desc") || "Already have an account? Sign in here",
               ),
             ),
@@ -915,15 +938,15 @@ const ProfilePage = () => {
       ),
       e.createElement(
         "div",
-        { className: "max-w-lg mx-auto px-6 mt-3 page-shell page-pad" },
+        { className: "max-w-lg mx-auto px-4 mt-3 page-shell page-pad" },
         e.createElement(
           "p",
-          { className: "text-center text-white/60 text-sm mb-3 dark:text-center dark:text-white/60" },
+          { className: "text-center text-white/60 text-sm mb-3 dark:text-white/60" },
           t("features") || "Features you unlock with an account",
         ),
         e.createElement(
           "div",
-          { className: "grid grid-cols-3 gap-4" },
+          { className: "grid grid-cols-2 sm:grid-cols-3 gap-4" },
           [
             { icon: le, label: t("wishlist") || "Wishlist" },
             { icon: Pe, label: t("alerts") || "Alerts" },
@@ -931,13 +954,13 @@ const ProfilePage = () => {
           ].map((r, a) =>
             e.createElement(
               "div",
-              { key: a, className: "bg-white/10 rounded-xl p-4 text-center dark:bg-slate-900/10 dark:text-center" },
+              { key: a, className: "bg-white/10 rounded-xl p-4 text-center dark:bg-slate-900/10" },
               e.createElement(r.icon, {
                 className: "w-6 h-6 mx-auto mb-2 text-white/80 dark:text-white/80",
               }),
               e.createElement(
                 "p",
-                { className: "text-white/80 text-xs font-medium dark:text-white/80" },
+                { className: "text-white/80 text-sm font-medium dark:text-white/80" },
                 r.label,
               ),
             ),
@@ -1007,7 +1030,7 @@ const ProfilePage = () => {
       ? tr("member_since_days", "{{count}} days", { count: $.memberDays })
       : tr("new_member", "New member");
   const profileTabClass = (tab) =>
-    "rewards-tab-btn inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-xs font-semibold transition-all duration-200 " +
+    "rewards-tab-btn inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 " +
     (je === tab
       ? "active border-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-500 text-white shadow-md ring-1 ring-white/30"
       : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-slate-600 hover:bg-[var(--surface-2)] hover:border-indigo-200 hover:text-slate-900 dark:text-slate-200");
@@ -1251,7 +1274,7 @@ const ProfilePage = () => {
     "div",
     {
       className:
-        `profile-surface min-h-screen mhub-premium-page pb-32 sm:pb-36 page-fade-in ${density === "compact" ? "mhub-compact" : ""}`,
+        `profile-surface min-h-screen mhub-premium-page pb-20 sm:pb-36 page-fade-in ${density === "compact" ? "mhub-compact" : ""}`,
       style: { "--top-nav-height": "0px" },
     },
     e.createElement(
@@ -1270,16 +1293,16 @@ const ProfilePage = () => {
         "div",
         {
           className:
-            "relative max-w-6xl mx-auto px-4 py-2 sm:px-6 sm:py-2",
+            "relative max-w-[640px] mx-auto px-4 py-2 sm:px-6 sm:py-2",
         },
         e.createElement(
           "div",
-          { className: "mb-1.5 max-w-2xl text-left text-white dark:text-left dark:text-white" },
+          { className: "mb-1.5 max-w-2xl text-left text-white dark:text-white" },
           e.createElement(
             "p",
             {
               className:
-                "text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70",
+                "text-xs font-semibold uppercase tracking-[0.16em] text-white/70 mb-1 dark:text-white/70",
             },
             tr("profile_banner_label", "Your profile"),
           ),
@@ -1359,7 +1382,7 @@ const ProfilePage = () => {
                         Ze,
                         {
                           className:
-                            "text-3xl font-bold text-white bg-gradient-to-br from-blue-500 to-indigo-600 dark:text-white dark:bg-gradient-to-br",
+                            "text-xl sm:text-3xl font-bold text-white bg-gradient-to-br from-blue-500 to-indigo-600 dark:text-white dark:bg-gradient-to-br",
                         },
                         gi(i?.name || i?.full_name, "U"),
                       ),
@@ -1442,7 +1465,7 @@ const ProfilePage = () => {
               ),
               e.createElement(
                 "div",
-                { className: "text-center sm:text-left min-w-0 dark:text-center dark:sm:text-left" },
+                { className: "text-center sm:text-left min-w-0 dark:sm:text-left" },
                 e.createElement(
                   "h2",
                   {
@@ -1457,8 +1480,8 @@ const ProfilePage = () => {
                   {
                     className:
                       emailMuted
-                        ? "text-white/70 italic mt-1 truncate max-w-[260px] sm:max-w-md md:max-w-full"
-                        : "text-white/85 mt-1 truncate max-w-[260px] sm:max-w-md md:max-w-full",
+                        ? "text-white/70 italic mt-1 truncate max-w-full"
+                        : "text-white/85 mt-1 truncate max-w-full",
                     title: i.email || emailDisplay,
                   },
                   emailDisplay,
@@ -1476,7 +1499,7 @@ const ProfilePage = () => {
                         ? "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-emerald-500/20 text-emerald-50 border border-emerald-200/40"
                         : "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/20 text-amber-50 border border-amber-200/40",
                     },
-                    e.createElement(se, { className: "w-3 h-3 mr-1" }),
+                    e.createElement(se, { className: "w-4 h-4 mr-1" }),
                     " ",
                     i.verified
                       ? tr("verified", "Verified")
@@ -1486,9 +1509,9 @@ const ProfilePage = () => {
                     z,
                     {
                       className:
-                        "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-white/15 text-white border border-white/20 dark:bg-slate-900/15 dark:text-white dark:border dark:border-white/20",
+                        "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-white/15 text-white border border-white/20 dark:bg-slate-900/15 dark:text-white dark:border-white/20",
                     },
-                    e.createElement(B, { className: "w-3 h-3 mr-1" }),
+                    e.createElement(B, { className: "w-4 h-4 mr-1" }),
                     " ",
                     t(i.role?.toLowerCase()) || i.role || t("member"),
                   ),
@@ -1496,7 +1519,7 @@ const ProfilePage = () => {
                     e.createElement(
                       z,
                       { className: trustBadgeClass },
-                      e.createElement(ot, { className: "w-3 h-3 mr-1" }),
+                      e.createElement(ot, { className: "w-4 h-4 mr-1" }),
                       " ",
                       trustLabel,
                       trustScore !== null ? ` \u00B7 ${trustScore}` : "",
@@ -1508,7 +1531,7 @@ const ProfilePage = () => {
                           className:
                             "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-rose-600/80 text-white border border-rose-500/60",
                         },
-                        e.createElement(XCircleIcon, { className: "w-3 h-3 mr-1" }),
+                        e.createElement(XCircleIcon, { className: "w-4 h-4 mr-1" }),
                         " ",
                         tr("account_frozen", "Account Frozen"),
                       )
@@ -1519,7 +1542,7 @@ const ProfilePage = () => {
                             className:
                               "inline-flex items-center gap-1 h-7 px-2.5 text-xs font-semibold bg-amber-500/80 text-white border border-amber-400/60",
                           },
-                          e.createElement(it, { className: "w-3 h-3 mr-1" }),
+                          e.createElement(it, { className: "w-4 h-4 mr-1" }),
                           " ",
                           tr("seller_under_review", "Under Review"),
                         )
@@ -1569,13 +1592,13 @@ const ProfilePage = () => {
               "div",
               {
                 className:
-                  "w-full lg:justify-self-end self-start text-left lg:text-right lg:w-[260px] dark:text-left dark:lg:text-right",
+                  "w-full lg:justify-self-end self-start text-left lg:text-right lg:w-[260px] dark:lg:text-right",
               },
               e.createElement(
                 "div",
                 {
                     className:
-                      "rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white shadow-md dark:border dark:border-white/20 dark:bg-slate-900/10 dark:text-white",
+                      "rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-white shadow-md dark:border-white/20 dark:bg-slate-900/10 dark:text-white",
                     "data-density": "extra",
                 },
                 e.createElement(
@@ -1619,7 +1642,7 @@ const ProfilePage = () => {
                 ),
                 e.createElement(
                   "p",
-                  { className: "mt-2 text-[11px] text-white/80 dark:text-white/80" },
+                  { className: "mt-2 text-xs text-white/80 dark:text-white/80" },
                   profileCompletionHint,
                 ),
               ),
@@ -1630,7 +1653,7 @@ const ProfilePage = () => {
     ),
     e.createElement(
       "div",
-      { className: "max-w-6xl mx-auto px-4" },
+      { className: "max-w-[640px] mx-auto px-4" },
       e.createElement("div", {
         className:
           "h-px bg-gradient-to-r from-transparent via-slate-200/70 to-transparent dark:via-slate-700/60 dark:bg-gradient-to-r",
@@ -1642,7 +1665,7 @@ const ProfilePage = () => {
         id: "profile-details",
         "data-active-tab": je,
         className:
-          "max-w-6xl mx-auto px-4 mt-3 sm:mt-4 pb-6 relative z-10 scroll-mt-24",
+          "max-w-[640px] mx-auto px-4 mt-3 sm:mt-4 pb-6 relative z-10 scroll-mt-24",
       },
         e.createElement(
           "div",
@@ -1650,14 +1673,14 @@ const ProfilePage = () => {
           e.createElement(
             "div",
             {
-              className: "profile-tabs-sticky rewards-tabs-sticky sticky z-30 mb-4",
+              className: "profile-tabs-sticky rewards-tabs-sticky sticky z-40 mb-4",
               style: { top: "calc(var(--top-nav-height, 0px) + 12px)" },
             },
             e.createElement(
               "div",
               {
                 className:
-                  "rounded-2xl bg-white/95 border border-slate-200 shadow-sm px-2.5 py-2 dark:bg-gray-900/70 dark:border-gray-700 dark:bg-slate-900/95 dark:border dark:border-slate-700",
+                  "rounded-2xl bg-white/95 border border-slate-200 shadow-sm px-2 py-1.5 dark:bg-slate-900/95 dark:border-slate-700",
               },
               e.createElement(
                 "div",
@@ -1666,13 +1689,13 @@ const ProfilePage = () => {
                   "p",
                   {
                     className:
-                      "text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300",
+                      "text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-300",
                   },
                   tr("jump_to_section", "Jump to section"),
                 ),
                 e.createElement(
                   "span",
-                  { className: "text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-300" },
+                  { className: "text-xs text-slate-400 dark:text-slate-400" },
                   tr("sticky_tabs_hint", "Scroll to switch"),
                 ),
               ),
@@ -1682,7 +1705,7 @@ const ProfilePage = () => {
                   role: "navigation",
                   "aria-label": tr("profile_sections", "Profile sections"),
                   className:
-                    "rewards-tab-bar mt-2 w-full flex gap-1.5 overflow-x-auto rounded-[18px] bg-slate-50 p-1.5 shadow-none border border-slate-200 scrollbar-hide dark:bg-gray-800 dark:border-gray-700 dark:bg-slate-950 dark:border dark:border-slate-700",
+                    "rewards-tab-bar mt-1.5 w-full flex gap-1 overflow-x-auto rounded-[18px] bg-slate-50 p-1 shadow-none border border-slate-200 scrollbar-hide dark:bg-slate-950 dark:border-slate-700",
                 },
                 e.createElement(
                   "button",
@@ -1758,7 +1781,7 @@ const ProfilePage = () => {
         "div",
         {
           className:
-            "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border dark:border-slate-700 dark:bg-slate-900",
+            "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
         },
                   e.createElement(
                     "div",
@@ -1789,7 +1812,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "mt-1 text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                              "mt-1 text-sm text-slate-600 dark:text-slate-300",
                           },
                           tr(
                             "quick_actions_desc",
@@ -1804,7 +1827,7 @@ const ProfilePage = () => {
                             type: "button",
                             onClick: () => toggleSection("quickActions"),
                             className:
-                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
+                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
                             "aria-expanded": !sectionCollapse.quickActions,
                             "aria-controls": "quick-actions-body",
                           },
@@ -1822,7 +1845,7 @@ const ProfilePage = () => {
                       "div",
                       {
                         className:
-                          "mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4",
+                          "mt-4 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 keep-cols",
                         id: "quick-actions-body",
                       },
             e.createElement(
@@ -1831,7 +1854,7 @@ const ProfilePage = () => {
                 onClick: () => p("/my-home"),
                 variant: "ghost",
               className:
-                  "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-indigo-500 dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900 dark:border-t-4 dark:border-t-indigo-500",
+                  "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:border-t-indigo-500",
                 style: { "--card-accent": "linear-gradient(90deg,#6366f1,#8b5cf6)" },
               },
             e.createElement(
@@ -1844,15 +1867,15 @@ const ProfilePage = () => {
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-left min-w-0 dark:text-left" },
+                        { className: "text-left min-w-0" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-slate-100 truncate" },
                           tr("my_home", "My Home"),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200" },
+                          { className: "text-sm text-slate-600 dark:text-slate-300 break-words" },
                           tr("access_dashboard", "Access your personal dashboard"),
                         ),
                       ),
@@ -1863,7 +1886,7 @@ const ProfilePage = () => {
               onClick: () => p("/my-feed"),
               variant: "ghost",
               className:
-                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-sky-500 dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900 dark:border-t-4 dark:border-t-sky-500",
+                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:border-t-sky-500",
               style: { "--card-accent": "linear-gradient(90deg,#38bdf8,#0ea5e9)" },
             },
             e.createElement(
@@ -1876,17 +1899,17 @@ const ProfilePage = () => {
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-left min-w-0 dark:text-left" },
+                        { className: "text-left min-w-0" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-slate-100 truncate" },
                           tr("my_feed", "My Feed"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
+                              "text-sm text-slate-600 dark:text-slate-300 break-words",
                           },
                           tr("view_feed", "View your personalized feed"),
                         ),
@@ -1898,7 +1921,7 @@ const ProfilePage = () => {
               onClick: () => p(i?.user_id || i?.id ? `/reviews/${i.user_id || i.id}` : "/profile"),
               variant: "ghost",
               className:
-                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-amber-500 dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900 dark:border-t-4 dark:border-t-amber-500",
+                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-amber-500 dark:border-slate-700 dark:bg-slate-900 dark:border-t-amber-500",
               style: { "--card-accent": "linear-gradient(90deg,#f59e0b,#fbbf24)" },
             },
             e.createElement(
@@ -1911,17 +1934,17 @@ const ProfilePage = () => {
             ),
             e.createElement(
               "div",
-              { className: "text-left min-w-0 dark:text-left" },
+              { className: "text-left min-w-0" },
               e.createElement(
                 "p",
-                { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
+                { className: "font-semibold text-base text-slate-900 dark:text-slate-100 truncate" },
                 tr("my_reviews", "My Reviews"),
               ),
               e.createElement(
                 "p",
                 {
                   className:
-                    "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
+                    "text-sm text-slate-600 dark:text-slate-300 break-words",
                 },
                 tr("view_reputation_desc", "Check public ratings and trust signals"),
               ),
@@ -1942,7 +1965,7 @@ const ProfilePage = () => {
               },
               variant: "ghost",
               className:
-                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-indigo-500 dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900 dark:border-t-4 dark:border-t-indigo-500",
+                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:border-t-indigo-500",
               style: { "--card-accent": "linear-gradient(90deg,#6366f1,#8b5cf6)" },
             },
             e.createElement(
@@ -1955,10 +1978,10 @@ const ProfilePage = () => {
             ),
             e.createElement(
               "div",
-              { className: "text-left min-w-0 dark:text-left" },
+              { className: "text-left min-w-0" },
               e.createElement(
                 "p",
-                { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
+                { className: "font-semibold text-base text-slate-900 dark:text-slate-100 truncate" },
                 isPremiumPlan
                   ? centreChannelId
                     ? tr("view_centre_page", "View CentrePage")
@@ -1969,7 +1992,7 @@ const ProfilePage = () => {
                 "p",
                 {
                   className:
-                    "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
+                    "text-sm text-slate-600 dark:text-slate-300 break-words",
                 },
                 isPremiumPlan
                   ? centreChannelId
@@ -1988,7 +2011,7 @@ const ProfilePage = () => {
               onClick: () => p("/saledone"),
               variant: "ghost",
               className:
-                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-emerald-500 dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900 dark:border-t-4 dark:border-t-emerald-500",
+                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:border-t-emerald-500",
               style: { "--card-accent": "linear-gradient(90deg,#10b981,#34d399)" },
             },
             e.createElement(
@@ -2001,17 +2024,17 @@ const ProfilePage = () => {
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-left min-w-0 dark:text-left" },
+                        { className: "text-left min-w-0" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-slate-100 truncate" },
                           tr("btn_sale_done", "Sale Done"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
+                              "text-sm text-slate-600 dark:text-slate-300 break-words",
                           },
                           tr("sale_done_desc", "Mark a sale as completed"),
                         ),
@@ -2023,7 +2046,7 @@ const ProfilePage = () => {
               onClick: () => p("/saleundone"),
               variant: "ghost",
               className:
-                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-rose-500 dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900 dark:border-t-4 dark:border-t-rose-500",
+                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-rose-500 dark:border-slate-700 dark:bg-slate-900 dark:border-t-rose-500",
               style: { "--card-accent": "linear-gradient(90deg,#fb7185,#f43f5e)" },
             },
             e.createElement(
@@ -2036,17 +2059,17 @@ const ProfilePage = () => {
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-left min-w-0 dark:text-left" },
+                        { className: "text-left min-w-0" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-slate-100 truncate" },
                           tr("btn_sale_undone", "Sale Undone"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
+                              "text-sm text-slate-600 dark:text-slate-300 break-words",
                           },
                           tr("profile_sale_undone_desc", "Report an issue with a sale"),
                         ),
@@ -2058,7 +2081,7 @@ const ProfilePage = () => {
               onClick: () => p("/offers"),
               variant: "ghost",
               className:
-                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-violet-500 dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900 dark:border-t-4 dark:border-t-violet-500",
+                "quick-action-card group relative min-h-[92px] !h-auto !py-4 !px-4 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3 justify-start border-t-4 border-t-violet-500 dark:border-slate-700 dark:bg-slate-900 dark:border-t-violet-500",
               style: { "--card-accent": "linear-gradient(90deg,#a78bfa,#8b5cf6)" },
             },
             e.createElement(
@@ -2071,17 +2094,17 @@ const ProfilePage = () => {
                       ),
                       e.createElement(
                         "div",
-                        { className: "text-left min-w-0 dark:text-left" },
+                        { className: "text-left min-w-0" },
                         e.createElement(
                           "p",
-                          { className: "font-semibold text-base text-slate-900 dark:text-white truncate dark:text-slate-100" },
+                          { className: "font-semibold text-base text-slate-900 dark:text-slate-100 truncate" },
                           tr("my_offers", "My Offers"),
                         ),
                         e.createElement(
                           "p",
                           {
                             className:
-                              "text-xs text-slate-600 dark:text-slate-300 break-words dark:text-slate-200",
+                              "text-sm text-slate-600 dark:text-slate-300 break-words",
                           },
                           tr("my_offers_desc", "Review negotiations and incoming offers"),
                         ),
@@ -2105,7 +2128,7 @@ const ProfilePage = () => {
                         "div",
                         {
                           className:
-                            "flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-300",
+                            "flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-300",
                         },
                         e.createElement(Le, { className: "h-5 w-5" }),
                       ),
@@ -2122,12 +2145,12 @@ const ProfilePage = () => {
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-sm font-semibold text-slate-800 dark:text-white dark:text-slate-100" },
+                          { className: "text-sm font-semibold text-slate-800 dark:text-slate-100" },
                           categoryModeCategory.name,
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
+                          { className: "text-xs text-slate-500 dark:text-slate-300" },
                           tr(
                             "profile_category_mode_hint",
                             "Profile stats are filtered to this category.",
@@ -2149,7 +2172,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-3 dark:border dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-3 dark:border-slate-700 dark:bg-slate-900",
                     "data-density": "extra",
                   },
                   e.createElement(
@@ -2173,13 +2196,13 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300",
+                              "text-xs font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-300",
                           },
                           tr("finish_profile", "Profile completion"),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-slate-200" },
+                          { className: "text-sm text-slate-600 dark:text-slate-200" },
                           tr(
                             "finish_profile_desc",
                             "Convert missing trust signals into clear next actions.",
@@ -2203,7 +2226,7 @@ const ProfilePage = () => {
                           "span",
                           {
                             className:
-                              "text-sm font-semibold text-violet-700 dark:text-violet-200 dark:text-violet-300",
+                              "text-sm font-semibold text-violet-700 dark:text-violet-300",
                           },
                           profileCompletionPercent,
                           "% ",
@@ -2213,7 +2236,7 @@ const ProfilePage = () => {
                           z,
                           {
                             className:
-                              "self-start rounded-full bg-violet-600 text-white border-0 shadow-sm dark:bg-violet-500 dark:bg-violet-700/40 dark:text-white dark:border-0",
+                              "self-start rounded-full bg-violet-600 text-white border-0 shadow-sm dark:bg-violet-700/40 dark:text-white dark:border-0",
                           },
                           profileChecklistDoneCount,
                           "/",
@@ -2225,7 +2248,7 @@ const ProfilePage = () => {
                             type: "button",
                             onClick: () => toggleSection("finishProfile"),
                             className:
-                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
+                              "inline-flex items-center gap-1.5 rounded-full profile-chip px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-[var(--surface-2)] dark:text-slate-200 dark:hover:bg-[var(--surface-2)]",
                             "aria-expanded": !sectionCollapse.finishProfile,
                             "aria-controls": "finish-profile-body",
                           },
@@ -2242,7 +2265,7 @@ const ProfilePage = () => {
                         "div",
                         {
                           className:
-                            "h-2.5 w-full sm:w-52 rounded-full bg-violet-100/80 overflow-hidden dark:bg-violet-900/40 dark:bg-violet-950/80",
+                            "h-2.5 w-full sm:w-52 rounded-full bg-violet-100/80 overflow-hidden dark:bg-violet-950/80",
                           role: "progressbar",
                           "aria-label": tr(
                             "profile_completion",
@@ -2263,7 +2286,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                                "text-xs text-slate-600 dark:text-slate-300",
                             },
                             tr("profile_next_step", "Next: {{step}}", {
                               step: nextProfileAction.label,
@@ -2273,7 +2296,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[11px] text-slate-600 dark:text-slate-300 dark:text-slate-200",
+                                "text-xs text-slate-600 dark:text-slate-300",
                             },
                             tr(
                               "profile_all_set",
@@ -2292,7 +2315,7 @@ const ProfilePage = () => {
                           {
                             key: r.key,
                             className:
-                              `checklist-item ${r.done ? "done" : ""} rounded-2xl border border-l-4 p-4 shadow-sm transition-all duration-200 dark:border dark:border-l-4${r.done ? "border-emerald-300/70 border-l-emerald-400 bg-emerald-50/80 dark:border-emerald-700/40 dark:bg-emerald-900/20" : "border-slate-200 border-l-indigo-300 bg-[var(--surface-1)] hover:border-indigo-300 hover:bg-[var(--surface-2)] dark:border-slate-700 dark:bg-[var(--surface-2)] dark:hover:bg-slate-800/60"}`,
+                              `checklist-item ${r.done ? "done" : ""} rounded-2xl border border-l-4 p-4 shadow-sm transition-all duration-200 dark:border-l-4${r.done ? "border-emerald-300/70 border-l-emerald-400 bg-emerald-50/80 dark:border-emerald-700/40 dark:bg-emerald-900/20" : "border-slate-200 border-l-indigo-300 bg-[var(--surface-1)] hover:border-indigo-300 hover:bg-[var(--surface-2)] dark:border-slate-700 dark:bg-[var(--surface-2)] dark:hover:bg-slate-800/60"}`,
                           },
                           e.createElement(
                             "div",
@@ -2310,7 +2333,7 @@ const ProfilePage = () => {
                                   "p",
                                   {
                                     className:
-                                      "text-sm font-semibold text-slate-800 dark:text-white dark:text-slate-100",
+                                      "text-sm font-semibold text-slate-800 dark:text-slate-100",
                                   },
                                   r.label,
                                 ),
@@ -2319,7 +2342,7 @@ const ProfilePage = () => {
                                 "p",
                                 {
                                   className:
-                                    "mt-1 text-xs text-slate-600 dark:text-slate-400 dark:text-slate-200",
+                                    "mt-1 text-xs text-slate-600 dark:text-slate-200",
                                 },
                                 r.description,
                               ),
@@ -2357,7 +2380,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
                   },
                   e.createElement(
                     "div",
@@ -2366,7 +2389,7 @@ const ProfilePage = () => {
                       "p",
                       {
                         className:
-                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-200",
+                          "text-xs font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-200",
                       },
                       tr("preferences_snapshot", "Preferences Snapshot"),
                     ),
@@ -2391,7 +2414,7 @@ const ProfilePage = () => {
                         {
                           key: item.key,
                           className:
-                            "flex items-center gap-3 rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border dark:border-slate-700/70 dark:bg-slate-950/80",
+                            "flex items-center gap-3 rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border-slate-700/70 dark:bg-slate-950/80",
                         },
                         e.createElement(
                           "div",
@@ -2408,7 +2431,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
+                                "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                             },
                             item.label,
                           ),
@@ -2429,7 +2452,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:border-slate-700 dark:bg-slate-900",
                   },
                   e.createElement(
                     "div",
@@ -2438,7 +2461,7 @@ const ProfilePage = () => {
                       "p",
                       {
                         className:
-                          "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-200",
+                          "text-xs font-bold uppercase tracking-[0.14em] text-slate-600 dark:text-slate-200",
                       },
                       tr("marketplace_pulse", "Marketplace Pulse"),
                     ),
@@ -2452,7 +2475,7 @@ const ProfilePage = () => {
                         {
                           key: item.key,
                           className:
-                            "rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border dark:border-slate-700/70 dark:bg-slate-950/80",
+                            "rounded-xl border border-slate-200/70 bg-slate-50/80 px-2.5 py-2 dark:border-slate-700/70 dark:bg-slate-950/80",
                         },
                         e.createElement(
                           "div",
@@ -2469,7 +2492,7 @@ const ProfilePage = () => {
                             "p",
                             {
                               className:
-                                "text-[10px] font-semibold uppercase tracking-wide text-slate-500 text-right dark:text-slate-300 dark:text-right",
+                                "text-xs font-semibold uppercase tracking-wide text-slate-500 text-right dark:text-slate-300",
                             },
                             item.label,
                           ),
@@ -2489,13 +2512,13 @@ const ProfilePage = () => {
               ),
               e.createElement("div", {
                 className:
-                  "my-4 h-px bg-slate-200/80 dark:bg-slate-700/60 dark:bg-slate-900/80",
+                  "my-4 h-px bg-slate-200/80 dark:bg-slate-900/80",
               }),
                 e.createElement(
                   "div",
                   {
                     className:
-                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-2 dark:border dark:border-slate-700 dark:bg-slate-900",
+                      "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 page-fade-in page-fade-in-delay-2 dark:border-slate-700 dark:bg-slate-900",
                   },
                   e.createElement(
                     "div",
@@ -2518,13 +2541,13 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300",
+                              "text-xs font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300",
                           },
                           tr("account_status", "Account status"),
                         ),
                         e.createElement(
                           "p",
-                          { className: "text-sm text-slate-600 dark:text-slate-400 dark:text-slate-200" },
+                          { className: "text-sm text-slate-600 dark:text-slate-200" },
                           tr(
                             "account_status_desc",
                             "Keep plan, verification, and profile freshness visible at a glance.",
@@ -2536,7 +2559,7 @@ const ProfilePage = () => {
                       z,
                       {
                         className:
-                          "self-start bg-emerald-600 text-white border-0 dark:bg-emerald-500 dark:bg-emerald-700/40 dark:text-white dark:border-0",
+                          "self-start bg-emerald-600 text-white border-0 dark:bg-emerald-700/40 dark:text-white dark:border-0",
                       },
                       currentPlanLabel,
                     ),
@@ -2594,11 +2617,11 @@ const ProfilePage = () => {
                 {
                   key: r.key,
                   className:
-                    "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900/40 dark:border dark:border-slate-700 dark:bg-slate-900",
+                    "rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900/40 dark:border-slate-700 dark:bg-slate-900",
                 },
                         e.createElement(
                           "div",
-                          { className: "flex items-center gap-2 text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                          { className: "flex items-center gap-2 text-slate-600 dark:text-slate-200" },
                           e.createElement(
                             "span",
                             {
@@ -2611,7 +2634,7 @@ const ProfilePage = () => {
                             "span",
                             {
                               className:
-                                "text-[11px] font-bold uppercase tracking-[0.12em]",
+                                "text-xs font-bold uppercase tracking-[0.12em]",
                             },
                             r.label,
                           ),
@@ -2620,7 +2643,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "mt-3 text-base font-semibold text-slate-900 dark:text-white dark:text-slate-100",
+                              "mt-3 text-base font-semibold text-slate-900 dark:text-slate-100",
                           },
                           r.value,
                         ),
@@ -2635,13 +2658,13 @@ const ProfilePage = () => {
             {
               "data-profile-tab": "personal",
               className:
-                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border dark:border-slate-700/80",
+                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border-slate-700/80",
             },
             e.createElement(
               ee,
               {
                 className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-slate-600/40 dark:border-gray-700/70 pb-3 dark:border-b dark:border-slate-700/70",
+                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-gray-700/70 pb-3 dark:border-slate-700/70",
               },
               e.createElement(
                 "div",
@@ -2659,12 +2682,12 @@ const ProfilePage = () => {
                   null,
                   e.createElement(
                     te,
-                    { className: "text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100" },
+                    { className: "text-lg font-bold text-slate-900 dark:text-slate-100" },
                     tr("personal_information", "Personal information"),
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                    { className: "text-xs text-slate-600 dark:text-slate-200" },
                     tr(
                       "personal_information_desc",
                       "Keep your contact details up to date for buyers.",
@@ -2806,7 +2829,7 @@ const ProfilePage = () => {
                           "p",
                           {
                             className:
-                              "mt-1 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                              "mt-1 text-xs text-slate-500 dark:text-slate-300",
                           },
                           tr("bio_character_counter", "{{count}} characters", {
                             count: String(f.bio || "").length,
@@ -2874,7 +2897,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-slate-100",
                         },
                         i.name || i.full_name || "-",
                       ),
@@ -2911,7 +2934,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-slate-100",
                         },
                         i.email || "-",
                       ),
@@ -2948,7 +2971,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-slate-100",
                         },
                         i.phone || "-",
                       ),
@@ -2985,7 +3008,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-slate-100",
                         },
                         i.address || "-",
                       ),
@@ -3018,7 +3041,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
+                            "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                         },
                         tr("your_user_id", "Your user ID"),
                       ),
@@ -3061,7 +3084,7 @@ const ProfilePage = () => {
                   "div",
                   {
                     className:
-                      "mt-2 flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                      "mt-2 flex items-start gap-2 text-xs text-slate-500 dark:text-slate-300",
                   },
                   e.createElement(Le, {
                     className: "mt-0.5 h-3.5 w-3.5 text-indigo-500/80 dark:text-indigo-300/80",
@@ -3103,7 +3126,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "font-semibold text-green-800 dark:text-green-300 dark:text-green-200",
+                            "font-semibold text-green-800 dark:text-green-200",
                         },
                         t("verification_status"),
                       ),
@@ -3111,7 +3134,7 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-sm text-green-600 dark:text-green-400 dark:text-green-300",
+                            "text-sm text-green-600 dark:text-green-300",
                         },
                         i.verified
                           ? t("account_verified") || "Your account is verified"
@@ -3141,13 +3164,13 @@ const ProfilePage = () => {
             {
               "data-profile-tab": "preferences",
               className:
-                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border dark:border-slate-700/80",
+                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border-slate-700/80",
             },
             e.createElement(
               ee,
               {
                 className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-slate-600/40 dark:border-gray-700/70 pb-3 dark:border-b dark:border-slate-700/70",
+                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-gray-700/70 pb-3 dark:border-slate-700/70",
               },
               e.createElement(
                 "div",
@@ -3167,14 +3190,14 @@ const ProfilePage = () => {
                     te,
                     {
                       className:
-                        "text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                        "text-lg font-bold text-slate-900 dark:text-slate-100",
                     },
                     t("recommendation_preferences") ||
                       "Recommendation Preferences",
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                    { className: "text-xs text-slate-600 dark:text-slate-200" },
                     tr(
                       "preferences_desc_short",
                       "Tune what shows up in your For You feed and All Posts.",
@@ -3357,7 +3380,7 @@ const ProfilePage = () => {
                           ),
                           e.createElement(
                             "p",
-                            { className: "mt-1 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300" },
+                            { className: "mt-1 text-xs text-slate-500 dark:text-slate-300" },
                             t("select_subcategories_desc") ||
                               "Select subcategories to see in For You page",
                           ),
@@ -3467,7 +3490,7 @@ const ProfilePage = () => {
                                               "p",
                                               {
                                                 className:
-                                                  "text-xs text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                                  "text-xs text-slate-500 dark:text-slate-300",
                                               },
                                               r.category_name,
                                             ),
@@ -3552,7 +3575,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-100 dark:text-indigo-200",
+                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-200",
                               },
                               tr("live_preview", "Live preview"),
                             ),
@@ -3566,7 +3589,7 @@ const ProfilePage = () => {
                                 {
                                   key: `${r}-${a}`,
                                   className:
-                                    "text-xs text-indigo-800 dark:text-indigo-100/90 dark:text-indigo-200",
+                                    "text-xs text-indigo-800 dark:text-indigo-200",
                                 },
                                 r,
                               ),
@@ -3596,7 +3619,7 @@ const ProfilePage = () => {
                             "div",
                             {
                               className:
-                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm dark:text-center",
+                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm",
                               style: {
                                 "--card-accent":
                                   "linear-gradient(90deg,#6366f1,#3b82f6)",
@@ -3614,7 +3637,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                               },
                               t("location") || "Location",
                             ),
@@ -3622,7 +3645,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-slate-100",
                               },
                               c.location || t("any") || "Any",
                             ),
@@ -3631,7 +3654,7 @@ const ProfilePage = () => {
                             "div",
                             {
                               className:
-                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm dark:text-center",
+                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm",
                               style: {
                                 "--card-accent":
                                   "linear-gradient(90deg,#38bdf8,#0ea5e9)",
@@ -3649,7 +3672,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                               },
                               tr("search_radius", "Search radius"),
                             ),
@@ -3657,7 +3680,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-slate-100",
                               },
                               preferenceRadiusKm,
                               " km",
@@ -3667,7 +3690,7 @@ const ProfilePage = () => {
                             "div",
                             {
                               className:
-                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm dark:text-center",
+                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm",
                               style: {
                                 "--card-accent":
                                   "linear-gradient(90deg,#34d399,#10b981)",
@@ -3685,7 +3708,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                               },
                               t("min_price") || "Min Price",
                             ),
@@ -3693,7 +3716,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-slate-100",
                               },
                               "\u20B9",
                               c.minPrice || "0",
@@ -3703,7 +3726,7 @@ const ProfilePage = () => {
                             "div",
                             {
                               className:
-                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm dark:text-center",
+                                "rewards-stat-card rounded-2xl profile-subpanel p-4 text-center shadow-sm",
                               style: {
                                 "--card-accent":
                                   "linear-gradient(90deg,#f59e0b,#fbbf24)",
@@ -3721,7 +3744,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                               },
                               t("max_price") || "Max Price",
                             ),
@@ -3729,7 +3752,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "mt-1 text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                                  "mt-1 text-base font-bold text-slate-900 dark:text-slate-100",
                               },
                               "\u20B9",
                               c.maxPrice || "\u221E",
@@ -3749,7 +3772,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                  "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300",
                               },
                               t("preferred_subcategories") ||
                                 "Preferred Subcategories",
@@ -3760,7 +3783,7 @@ const ProfilePage = () => {
                                   "span",
                                   {
                                     className:
-                                      "rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-300",
+                                      "rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200",
                                   },
                                   tr("selected_count", "{{count}} selected", {
                                     count: scopedPreferenceSelected.length,
@@ -3770,7 +3793,7 @@ const ProfilePage = () => {
                                   "span",
                                   {
                                     className:
-                                      "rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300 dark:bg-slate-950",
+                                      "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300",
                                   },
                                   tr("all_subcategories", "All"),
                                 ),
@@ -3786,7 +3809,7 @@ const ProfilePage = () => {
                                     {
                                       key: r,
                                       className:
-                                        "bg-indigo-100/90 text-indigo-700 dark:bg-indigo-800/80 dark:text-indigo-200 border border-indigo-200/60 dark:border-indigo-500/30 px-3 py-1 dark:bg-indigo-950/90 dark:text-indigo-300 dark:border dark:border-indigo-600/60",
+                                        "bg-indigo-100/90 text-indigo-700 dark:bg-indigo-800/80 dark:text-indigo-200 border border-indigo-200/60 dark:border-indigo-500/30 px-3 py-1 dark:bg-indigo-950/90 dark:text-indigo-300 dark:border-indigo-600/60",
                                     },
                                     r,
                                   ),
@@ -3796,7 +3819,7 @@ const ProfilePage = () => {
                                 "p",
                                 {
                                   className:
-                                "mt-2 text-xs italic text-slate-500 dark:text-slate-400 dark:text-slate-300",
+                                "mt-2 text-xs italic text-slate-500 dark:text-slate-300",
                               },
                               tr(
                                 "no_subcategories_selected",
@@ -3825,7 +3848,7 @@ const ProfilePage = () => {
                               "p",
                               {
                                 className:
-                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-100 dark:text-indigo-200",
+                                  "text-sm font-semibold text-indigo-900 dark:text-indigo-200",
                               },
                               tr("live_preview", "Live preview"),
                             ),
@@ -3839,7 +3862,7 @@ const ProfilePage = () => {
                                 {
                                   key: `${r}-${a}`,
                                   className:
-                                    "text-xs text-indigo-800 dark:text-indigo-100/90 dark:text-indigo-200",
+                                    "text-xs text-indigo-800 dark:text-indigo-200",
                                 },
                                 r,
                               ),
@@ -3855,13 +3878,13 @@ const ProfilePage = () => {
             {
               "data-profile-tab": "settings",
               className:
-                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border dark:border-slate-700/80",
+                "mhub-premium-surface border border-slate-200/80 dark:border-gray-700/70 shadow-xl rounded-2xl dark:border-slate-700/80",
             },
             e.createElement(
               ee,
               {
                 className:
-                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-slate-600/40 dark:border-gray-700/70 pb-3 dark:border-b dark:border-slate-700/70",
+                  "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/70 dark:border-gray-700/70 pb-3 dark:border-slate-700/70",
               },
               e.createElement(
                 "div",
@@ -3881,13 +3904,13 @@ const ProfilePage = () => {
                     te,
                     {
                       className:
-                        "text-lg font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                        "text-lg font-bold text-slate-900 dark:text-slate-100",
                     },
                     t("account_settings") || "Account Settings",
                   ),
                   e.createElement(
                     "p",
-                    { className: "text-xs text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                    { className: "text-xs text-slate-600 dark:text-slate-200" },
                     tr(
                       "account_settings_desc",
                       "Manage security, notifications, privacy, and language.",
@@ -3936,7 +3959,7 @@ const ProfilePage = () => {
                   onClick: we,
                   disabled: he,
                   className:
-                    "w-full flex items-center justify-between p-4 rounded-2xl profile-panel border-emerald-200/60 dark:border-emerald-500/30 shadow-sm hover:shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed text-left dark:border-emerald-600/60 dark:text-left",
+                    "w-full flex items-center justify-between p-4 rounded-2xl profile-panel border-emerald-200/60 dark:border-emerald-500/30 shadow-sm hover:shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed text-left dark:border-emerald-600/60",
                 },
                 e.createElement(
                   "div",
@@ -3956,13 +3979,13 @@ const ProfilePage = () => {
                       "p",
                       {
                         className:
-                          "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                          "text-base font-bold text-slate-900 dark:text-slate-100",
                       },
                       t("find_friends") || "Find Friends",
                     ),
                     e.createElement(
                       "p",
-                      { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                      { className: "text-sm text-slate-600 dark:text-slate-200" },
                       t("sync_contacts_desc") ||
                         "Sync contacts to connect with friends",
                     ),
@@ -4050,13 +4073,13 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-slate-100",
                         },
                         tr(r.labelKey, r.labelFallback || r.labelKey),
                       ),
                       e.createElement(
                         "p",
-                        { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                        { className: "text-sm text-slate-600 dark:text-slate-200" },
                         tr(r.descKey, r.descFallback || r.descKey),
                       ),
                     ),
@@ -4069,7 +4092,7 @@ const ProfilePage = () => {
                         "span",
                           {
                             className:
-                              "hidden sm:inline-flex items-center rounded-full profile-chip px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-200",
+                              "inline-flex items-center rounded-full profile-chip px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-200",
                           },
                         r.action,
                       ),
@@ -4107,13 +4130,13 @@ const ProfilePage = () => {
                         "p",
                         {
                           className:
-                            "text-base font-bold text-slate-900 dark:text-white dark:text-slate-100",
+                            "text-base font-bold text-slate-900 dark:text-slate-100",
                         },
                         t("language") || "Language",
                       ),
                       e.createElement(
                         "p",
-                        { className: "text-sm text-slate-600 dark:text-slate-300 dark:text-slate-200" },
+                        { className: "text-sm text-slate-600 dark:text-slate-200" },
                         t("choose_language") ||
                           "Choose your preferred language",
                       ),
@@ -4134,6 +4157,18 @@ const ProfilePage = () => {
                 { className: "mt-8" },
               ),
             ),
+          ),
+        ),
+        /* Back to top FAB */
+        e.createElement("button", {
+          type: "button",
+          "aria-label": tr("back_to_top", "Back to top"),
+          className: "profile-back-to-top fixed z-50 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 backdrop-blur-sm active:scale-90 transition-transform",
+          style: { bottom: "calc(var(--bottom-nav-height, 64px) + 16px)", right: "16px" },
+          onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+        },
+          e.createElement("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round" },
+            e.createElement("path", { d: "M18 15l-6-6-6 6" }),
           ),
         ),
       ));

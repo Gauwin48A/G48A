@@ -66,7 +66,7 @@ export default function SupportTicketPolicy() {
   );
   const updatedOn = resolvePolicyUpdatedOn(cmsContent, "March 10, 2026");
   return (
-    <div className="min-h-screen mhub-premium-page bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-b text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen mhub-premium-page nav-clearance bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900/60 dark:to-slate-950 dark:bg-gradient-to-b text-gray-900 dark:text-gray-100">
       <PolicyLayout
         title={title}
         subtitle={subtitle}

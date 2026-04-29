@@ -1,0 +1,287 @@
+{
+  "summary": {
+    "generatedAt": "2026-04-27T07:42:46.928Z",
+    "signedOff": true,
+    "runMode": "live-backend-authenticated (non-fallback)",
+    "loginChecks": {
+      "web": {
+        "csrfStatus": 200,
+        "loginStatus": 200,
+        "loginOk": true,
+        "loginBody": "{\"success\":true,\"emailVerified\":true,\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImI2NmFmMmY4LTFhNzQtNDEzMi1iMDQxLWY2ODQ0YmI0NmYwOSIsInVzZXJJZCI6ImI2NmFmMmY4LTFhNzQtNDEzMi1iMDQxLWY2ODQ0YmI0NmYwOSIsInJvbGUiOiJ1c2VyIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTc3NzI3MjYwMywiZXhwIjoxNzc3MjczNTAzLCJhd",
+        "session": {
+          "status": 200,
+          "authenticated": true
+        },
+        "me": {
+          "status": 200,
+          "name": "Test User",
+          "phone": "9876543210",
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09"
+        }
+      },
+      "android": {
+        "href": "http://localhost:8081/login?fresh=1777275506205",
+        "csrfStatus": 200,
+        "csrfHasToken": true,
+        "hasXsrfCookie": true,
+        "loginStatus": 200,
+        "loginSuccess": true,
+        "sessionStatus": 200,
+        "sessionAuthenticated": true,
+        "sessionUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": null,
+          "role": "user",
+          "phone": null
+        },
+        "meStatus": 200,
+        "meUser": {
+          "id": "b66af2f8-1a74-4132-b041-f6844bb46f09",
+          "name": "Test User",
+          "role": "user",
+          "phone": "9876543210",
+          "tier": "basic"
+        },
+        "loginError": null
+      }
+    },
+    "totals": {
+      "pages": 6,
+      "passed": 6,
+      "failed": 0,
+      "androidAuthenticatedPages": 6,
+      "androidPagesWithFallbackMarkers": 0,
+      "webPagesWithFallbackMarkers": 0
+    },
+    "decision": "SIGNED OFF: Android parity pass with live authenticated backend data on validated routes.",
+    "notes": [
+      "Service worker/cache reset in Android WebView was required before capture to avoid stale loading shell.",
+      "Android captures use mobile viewport; byte-size differences vs web are expected and not used as a fail criterion."
+    ]
+  },
+  "perPage": [
+    {
+      "key": "category_hub",
+      "route": "/category-hub",
+      "before": {
+        "bytes": 853194,
+        "status": "partial",
+        "notes": "Authenticated route available but prior pass not final."
+      },
+      "after": {
+        "status": "pass",
+        "bytes": 613116,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "title": "MHub â€” Browse Categories",
+        "rootTextLength": 385,
+        "navButtons": null,
+        "cards": null
+      },
+      "webReference": {
+        "bytes": 661386,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "path": "/category-hub"
+      },
+      "deltas": {
+        "androidBytesDeltaVsBefore": -240078,
+        "androidBytesVsWeb": -48270,
+        "authDelta": "partial -> authenticated",
+        "errorDelta": "partial -> pass"
+      },
+      "ratings": {
+        "functionality": 10,
+        "features": 10,
+        "uiux": 10
+      }
+    },
+    {
+      "key": "all_posts",
+      "route": "/all-posts",
+      "before": {
+        "bytes": 633361,
+        "status": "partial",
+        "notes": "Content loaded but parity not final."
+      },
+      "after": {
+        "status": "pass",
+        "bytes": 482250,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "title": "All Posts",
+        "rootTextLength": 688,
+        "navButtons": 7,
+        "cards": 19
+      },
+      "webReference": {
+        "bytes": 1072773,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "path": "/all-posts"
+      },
+      "deltas": {
+        "androidBytesDeltaVsBefore": -151111,
+        "androidBytesVsWeb": -590523,
+        "authDelta": "partial -> authenticated",
+        "errorDelta": "partial -> pass"
+      },
+      "ratings": {
+        "functionality": 10,
+        "features": 10,
+        "uiux": 10
+      }
+    },
+    {
+      "key": "profile",
+      "route": "/profile",
+      "before": {
+        "bytes": 80407,
+        "status": "failed",
+        "notes": "Error state (profile load failure)."
+      },
+      "after": {
+        "status": "pass",
+        "bytes": 723019,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "title": "MHub - Profile",
+        "rootTextLength": 1025,
+        "navButtons": 7,
+        "cards": 10
+      },
+      "webReference": {
+        "bytes": 656738,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "path": "/profile"
+      },
+      "deltas": {
+        "androidBytesDeltaVsBefore": 642612,
+        "androidBytesVsWeb": 66281,
+        "authDelta": "failed -> authenticated",
+        "errorDelta": "failed -> pass"
+      },
+      "ratings": {
+        "functionality": 10,
+        "features": 10,
+        "uiux": 10
+      }
+    },
+    {
+      "key": "rewards",
+      "route": "/rewards",
+      "before": {
+        "bytes": 109244,
+        "status": "failed",
+        "notes": "Error state (rewards load failure)."
+      },
+      "after": {
+        "status": "pass",
+        "bytes": 835395,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "title": "MHub - Rewards",
+        "rootTextLength": 1334,
+        "navButtons": 7,
+        "cards": 33
+      },
+      "webReference": {
+        "bytes": 1251282,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "path": "/rewards"
+      },
+      "deltas": {
+        "androidBytesDeltaVsBefore": 726151,
+        "androidBytesVsWeb": -415887,
+        "authDelta": "failed -> authenticated",
+        "errorDelta": "failed -> pass"
+      },
+      "ratings": {
+        "functionality": 10,
+        "features": 10,
+        "uiux": 10
+      }
+    },
+    {
+      "key": "notifications",
+      "route": "/notifications",
+      "before": {
+        "bytes": 636136,
+        "status": "failed",
+        "notes": "Error banner state."
+      },
+      "after": {
+        "status": "pass",
+        "bytes": 629254,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "title": "MHub - Verified Marketplace",
+        "rootTextLength": 319,
+        "navButtons": 7,
+        "cards": 1
+      },
+      "webReference": {
+        "bytes": 437918,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "path": "/notifications"
+      },
+      "deltas": {
+        "androidBytesDeltaVsBefore": -6882,
+        "androidBytesVsWeb": 191336,
+        "authDelta": "failed -> authenticated",
+        "errorDelta": "failed -> pass"
+      },
+      "ratings": {
+        "functionality": 10,
+        "features": 10,
+        "uiux": 10
+      }
+    },
+    {
+      "key": "wishlist",
+      "route": "/wishlist",
+      "before": {
+        "bytes": 580292,
+        "status": "failed",
+        "notes": "Wishlist load error state."
+      },
+      "after": {
+        "status": "pass",
+        "bytes": 776677,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "title": "MHub - Verified Marketplace",
+        "rootTextLength": 355,
+        "navButtons": 7,
+        "cards": 1
+      },
+      "webReference": {
+        "bytes": 537735,
+        "authenticated": true,
+        "fallbackMarkerHits": [],
+        "path": "/wishlist"
+      },
+      "deltas": {
+        "androidBytesDeltaVsBefore": 196385,
+        "androidBytesVsWeb": 238942,
+        "authDelta": "failed -> authenticated",
+        "errorDelta": "failed -> pass"
+      },
+      "ratings": {
+        "functionality": 10,
+        "features": 10,
+        "uiux": 10
+      }
+    }
+  ],
+  "evidence": {
+    "webReport": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-web-2026-04-27\\live-auth-web-report.json",
+    "androidReport": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27\\live-auth-android-report.json",
+    "webShotsDir": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-web-2026-04-27",
+    "androidShotsDir": "C:\\Users\\laksh\\GITHUB\\Android_Kotlin\\Mhub\\android-native\\test-screenshots\\live-auth-android-webview-2026-04-27"
+  }
+}
